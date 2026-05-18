@@ -15,7 +15,11 @@
     "oxc.oxc-vscode",
     "davidanson.vscode-markdownlint",
     "bradlc.vscode-tailwindcss",
-    "biomejs.biome"
+    "biomejs.biome",
+    "rust-lang.rust-analyzer",
+    "vadimcn.vscode-lldb",
+    "serayuzgur.crates",
+    "swellaby.vscode-rust-test-adapter"
   ],
   "unwantedRecommendations": []
 }
