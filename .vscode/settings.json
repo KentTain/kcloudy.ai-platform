@@ -1,7 +1,7 @@
 {
   "files.eol": "\n",
   // 解释器位置
-  "python.defaultInterpreterPath": "${workspaceFolder}/.venv",
+  "python.defaultInterpreterPath": "${workspaceFolder}/server/python/.venv",
   // 指定需要Cursorpyright排除分析的目录或文件路径
   // 作用：在已包含的路径中排除特定内容，优先级高于include配置（即排除规则会覆盖包含规则）
   // 特殊说明：若被排除的文件被未排除的源文件引用（导入），则仍可能被纳入分析
