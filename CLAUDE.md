@@ -38,7 +38,7 @@ init_project/
 
 | 目录 | 框架 | 语言 | 状态 |
 |------|------|------|------|
-| web/vue | Vue 3.5 | TypeScript 5.x | 🚧 规划中 |
+| web/vue | Vue 3.5 | TypeScript 5.x | ✅ 可用 |
 | web/react | React 19 | TypeScript 5.x | 🚧 规划中 |
 
 ### 前端 Mobile 项目 (app/)
@@ -53,12 +53,13 @@ init_project/
 每个子项目都有独立的 CLAUDE.md 文件，提供详细的技术指导：
 
 - **Python 后端**: [server/python/CLAUDE.md](server/python/CLAUDE.md)
+- **Vue 前端**: [web/vue/CLAUDE.md](web/vue/CLAUDE.md)
 - **Java 后端**: [server/java/CLAUDE.md](server/java/CLAUDE.md) (规划中)
 - **Rust 后端**: [server/rust/CLAUDE.md](server/rust/CLAUDE.md) (规划中)
 
 ## 开发指南
 
-### Python 后端（当前可用）
+### Python 后端
 
 ```bash
 cd server/python
@@ -76,6 +77,26 @@ uv run pytest
 详细文档：[server/python/CLAUDE.md](server/python/CLAUDE.md)
 
 **测试说明：** [server/python/tests/README.md](server/python/tests/README.md)
+
+### Vue 前端
+
+```bash
+cd web/vue
+
+# 安装依赖
+pnpm install
+
+# 启动开发服务器
+pnpm dev
+
+# 构建生产版本
+pnpm build
+
+# 运行测试
+pnpm test:unit -- --run
+```
+
+详细文档：[web/vue/CLAUDE.md](web/vue/CLAUDE.md)
 
 ### 配置管理
 

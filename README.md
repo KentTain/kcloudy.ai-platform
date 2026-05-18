@@ -31,8 +31,8 @@ init_project/
 ### 前端 PC 项目 (web/)
 
 | 框架 | 语言 | 目录 | 状态 |
-|------|------|------|------|
-| Vue | TypeScript | [web/vue](web/vue) | 🚧 规划中 |
+| ------ | ------ | ------ | ------ |
+| Vue | TypeScript | [web/vue](web/vue) | ✅ 可用 |
 | React | TypeScript | [web/react](web/react) | 🚧 规划中 |
 
 ### 前端 Mobile 项目 (app/)
@@ -62,6 +62,22 @@ uv run runserver
 访问：<http://localhost:8000/docs>
 
 详见 [server/python/README.md](server/python/README.md)
+
+### Vue 前端
+
+```bash
+cd web/vue
+
+# 安装依赖
+pnpm install
+
+# 启动开发服务器
+pnpm dev
+```
+
+访问：<http://localhost:5173>
+
+详见 [web/vue/README.md](web/vue/README.md)
 
 ## 环境要求
 
@@ -99,6 +115,7 @@ uv run runserver
 | ------ | ------ | ------ |
 | Python 后端 | [server/python/README.md](server/python/README.md) | FastAPI 后端功能、安装配置 |
 | Python 测试 | [server/python/tests/README.md](server/python/tests/README.md) | 测试框架、运行测试 |
+| Vue 前端 | [web/vue/README.md](web/vue/README.md) | Vue 3 前端功能、安装配置 |
 | Docker 部署 | [docker/README.md](docker/README.md) | Docker Compose 部署指南 |
 
 ## License
