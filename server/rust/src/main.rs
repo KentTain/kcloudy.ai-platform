@@ -45,7 +45,9 @@ async fn main() -> Result<()> {
     let app = create_app(&config).await?;
 
     // 绑定地址
-    let addr: SocketAddr = format!("{}:{}", args.host, args.port).parse()?;
+    let addr: SocketAddr = format!("{}:{}", args.host, args.port)
+        .parse()
+        .map_err(|e| demo::common::error::Error::Internal(format!("地址解析失败: {}", e)))?;
     info!("服务器启动于 http://{}", addr);
 
     // 启动服务器

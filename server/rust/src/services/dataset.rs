@@ -1,6 +1,5 @@
 //! Dataset 服务层
 
-use sqlx::PgPool;
 use uuid::Uuid;
 
 use crate::common::error::{Error, Result};
@@ -9,6 +8,7 @@ use crate::models::Dataset;
 use crate::schemas::{DatasetCreate, DatasetUpdate, DatasetVo, PageResponse};
 
 /// 知识库服务
+#[derive(Clone)]
 pub struct DatasetService {
     db: Database,
 }

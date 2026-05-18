@@ -13,8 +13,5 @@ pub mod schemas;
 pub mod services;
 pub mod utils;
 
-#[cfg(feature = "examples")]
-pub mod examples;
-
 pub use config::AppConfig;
 pub use common::error::{Error, Result};

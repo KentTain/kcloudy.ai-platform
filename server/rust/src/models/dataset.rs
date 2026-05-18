@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
 use uuid::Uuid;
 
-use super::{BaseModel, TimestampMixin};
+use super::{BaseModel, TimestampBehavior};
 
 /// 知识库模型
 #[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
@@ -46,7 +46,7 @@ impl BaseModel for Dataset {
     }
 }
 
-impl TimestampMixin for Dataset {
+impl TimestampBehavior for Dataset {
     fn created_at(&self) -> DateTime<Utc> {
         self.created_at
     }

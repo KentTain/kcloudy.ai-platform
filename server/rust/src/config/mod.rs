@@ -7,7 +7,6 @@ pub use settings::*;
 use std::path::Path;
 
 use config::{Config, File, FileFormat};
-use serde::Deserialize;
 use thiserror::Error;
 
 /// 配置错误

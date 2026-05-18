@@ -114,7 +114,7 @@ pub async fn update_dataset(
         ("id" = Uuid, Path, description = "知识库 ID")
     ),
     responses(
-        (status = 200, description = "删除成功", body = ApiResponse<()>),
+        (status = 200, description = "删除成功"),
         (status = 404, description = "知识库不存在")
     ),
     tag = "Dataset"
@@ -122,10 +122,10 @@ pub async fn update_dataset(
 pub async fn delete_dataset(
     State(state): State<AppState>,
     Path(id): Path<Uuid>,
-) -> Result<Json<ApiResponse<()>>> {
+) -> Result<Json<ApiResponse<String>>> {
     let success = state.dataset_service.delete(id).await?;
     if !success {
         return Err(Error::NotFound("知识库不存在".to_string()));
     }
-    Ok(Json(ApiResponse::success_empty()))
+    Ok(Json(ApiResponse::success("删除成功".to_string())))
 }

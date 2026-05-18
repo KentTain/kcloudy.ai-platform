@@ -4,14 +4,21 @@ use axum::{extract::State, Json};
 use serde_json::json;
 
 use super::AppState;
-use crate::common::error::ApiResponse;
+
+/// 健康检查响应
+#[derive(serde::Serialize, utoipa::ToSchema)]
+pub struct HealthResponse {
+    pub status: String,
+    pub database: String,
+    pub redis: String,
+}
 
 /// 健康检查端点
 #[utoipa::path(
     get,
     path = "/health",
     responses(
-        (status = 200, description = "服务健康", body = ApiResponse<Value>)
+        (status = 200, description = "服务健康", body = HealthResponse)
     ),
     tag = "Health"
 )]

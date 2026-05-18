@@ -14,7 +14,7 @@ use std::sync::Arc;
 use tower::ServiceBuilder;
 use tower_http::{
     cors::CorsLayer,
-    request_id::RequestIdLayer,
+    request_id::{SetRequestIdLayer, MakeRequestUuid},
     trace::TraceLayer,
     compression::CompressionLayer,
 };
@@ -71,7 +71,7 @@ pub async fn create_app(config: &AppConfig) -> crate::Result<Router> {
         .with_state(state)
         .layer(
             ServiceBuilder::new()
-                .layer(RequestIdLayer::new())
+                .layer(SetRequestIdLayer::x_request_id(MakeRequestUuid))
                 .layer(TraceLayer::new_for_http())
                 .layer(CorsLayer::permissive())
                 .layer(CompressionLayer::new()),

@@ -1,6 +1,6 @@
 //! Redis 缓存管理
 
-use redis::{AsyncCommands, Client as RedisClient};
+use redis::AsyncCommands;
 use serde::{de::DeserializeOwned, Serialize};
 use std::time::Duration;
 
@@ -10,23 +10,23 @@ use crate::config::RedisConfig;
 /// Redis 缓存客户端
 #[derive(Clone)]
 pub struct Cache {
-    client: RedisClient,
+    client: redis::Client,
 }
 
 impl Cache {
     /// 创建新的缓存客户端
     pub fn new(config: &RedisConfig) -> Result<Self> {
-        let client = RedisClient::open(config.url.as_str())
+        let client = redis::Client::open(config.url.as_str())
             .map_err(|e| Error::Internal(format!("Redis 连接失败: {}", e)))?;
 
         tracing::info!("Redis 客户端已创建");
         Ok(Self { client })
     }
 
-    /// 获取异步连接
-    pub async fn get_connection(&self) -> Result<redis::aio::Connection> {
+    /// 获取多路复用连接
+    pub async fn get_connection(&self) -> Result<redis::aio::MultiplexedConnection> {
         self.client
-            .get_async_connection()
+            .get_multiplexed_async_connection()
             .await
             .map_err(Error::Redis)
     }
@@ -41,11 +41,11 @@ impl Cache {
         let serialized = serde_json::to_string(value)?;
 
         if let Some(ttl) = ttl {
-            conn.set_ex(key.as_ref(), serialized, ttl.as_secs())
+            conn.set_ex::<_, _, ()>(key.as_ref(), serialized, ttl.as_secs())
                 .await
                 .map_err(Error::Redis)?;
         } else {
-            conn.set(key.as_ref(), serialized)
+            conn.set::<_, _, ()>(key.as_ref(), serialized)
                 .await
                 .map_err(Error::Redis)?;
         }
@@ -108,7 +108,7 @@ impl Cache {
     pub async fn health_check(&self) -> Result<bool> {
         let mut conn = self.get_connection().await?;
         let result: String = redis::cmd("PING")
-            .query(&mut conn)
+            .query_async(&mut conn)
             .await
             .map_err(Error::Redis)?;
         Ok(result == "PONG")

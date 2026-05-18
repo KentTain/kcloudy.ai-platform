@@ -5,7 +5,6 @@ use axum::{
     response::{IntoResponse, Response},
     Json,
 };
-use serde_json::json;
 use thiserror::Error;
 
 /// 应用错误类型
@@ -49,7 +48,7 @@ pub enum Error {
 pub type Result<T> = std::result::Result<T, Error>;
 
 /// API 响应结构
-#[derive(Debug, serde::Serialize)]
+#[derive(Debug, serde::Serialize, utoipa::ToSchema)]
 pub struct ApiResponse<T> {
     pub code: u16,
     pub msg: String,

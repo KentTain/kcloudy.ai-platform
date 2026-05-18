@@ -58,23 +58,32 @@ uv run runserver
 
 **环境要求：** Rust 1.75+ / Cargo
 
+#### 配置国内镜像（加速）
+
+```powershell
+# Windows (PowerShell) 执行以下命令
+$env:RUSTUP_HOME="D:\DevTool\rust-1.85\.rustup"
+$env:CARGO_HOME="D:\DevTool\rust-1.85\.cargo"
+$env:RUSTUP_DIST_SERVER="https://mirrors.ustc.edu.cn/rust-static"
+$env:RUSTUP_UPDATE_ROOT="https://mirrors.ustc.edu.cn/rust-static/rustup"
+```
+
 #### 安装 Rust（推荐使用 rustup）
 
 ```bash
-# Windows (PowerShell)
-# 下载并运行 rustup-init.exe
-# 或访问 https://rustup.rs/
+# Windows (PowerShell), 下载并运行 rustup-init.exe
+.\rustup-init.exe
 
 # macOS / Linux
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 ```
 
-#### 配置国内镜像（加速）
+#### Windows安装时会弹出安装选项菜单。由于我们要指定版本，**不要直接按回车**，请按以下步骤操作：
 
-```powershell
-$env:RUSTUP_DIST_SERVER="https://mirrors.ustc.edu.cn/rust-static"
-$env:RUSTUP_UPDATE_ROOT="https://mirrors.ustc.edu.cn/rust-static/rustup"
-```
+1. 输入 `2` 并回车，选择 **“Customize installation”**（自定义安装）。
+2. 在 `Default host triple?` 和 `Default toolchain?` 等提示中，一路按回车保持默认（即 `stable` 稳定版）。
+3. 在最后确认 `Modify PATH variable? (Y/n)` 时，输入 `Y` 并回车，让安装程序自动把 Rust 的命令添加到系统环境变量中。
+4. 等待下载安装完成，看到 `Rust is installed now. Great!` 的提示即代表成功。
 
 #### 安装指定版本
 
@@ -82,8 +91,8 @@ $env:RUSTUP_UPDATE_ROOT="https://mirrors.ustc.edu.cn/rust-static/rustup"
 # 安装 stable 版本
 rustup install stable
 
-# 安装指定版本（如 1.85）
-rustup install 1.85
+# 安装指定版本（如 1.95）
+rustup install 1.95
 
 # 设置默认版本
 rustup default stable

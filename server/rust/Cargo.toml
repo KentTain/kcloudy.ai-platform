@@ -34,10 +34,10 @@ dotenvy = "0.15"
 sqlx = { version = "0.8", features = ["runtime-tokio", "tls-rustls", "postgres", "uuid", "chrono", "json"] }
 
 # Redis
-redis = { version = "0.29", features = ["tokio-comp", "connection-manager", "rustls"] }
+redis = { version = "0.29", features = ["tokio-rustls-comp", "connection-manager"] }
 
-# AI 编排 (LangChain Rust)
-langchain-rust = { version = "4.6", features = ["openai"] }
+# AI 编排 (LangChain Rust) - OpenAI 支持默认包含
+langchain-rust = "4.6"
 
 # 异步运行时支持
 async-trait = "0.1"
@@ -142,7 +142,6 @@ debug = true
 debug-assertions = true
 overflow-checks = true
 lto = false
-panic = "unwind"
 incremental = true
 codegen-units = 256
 
@@ -152,6 +151,5 @@ debug = false
 debug-assertions = false
 overflow-checks = false
 lto = "thin"
-panic = "unwind"
 incremental = false
 codegen-units = 16

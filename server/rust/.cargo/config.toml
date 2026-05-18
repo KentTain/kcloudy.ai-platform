@@ -24,11 +24,11 @@ linker = "x86_64-w64-mingw32-gcc"
 linker = "gcc"
 
 # 注册国内镜像源（需要时取消注释）
-# [source.crates-io]
-# replace-with = "ustc"
-#
-# [source.ustc]
-# registry = "https://mirrors.ustc.edu.cn/crates.io-index"
-#
-# [source.tuna]
-# registry = "https://mirrors.tuna.tsinghua.edu.cn/git/crates.io-index.git"
+[source.crates-io]
+replace-with = "ustc"
+
+[source.ustc]
+registry = "https://mirrors.ustc.edu.cn/crates.io-index"
+
+[source.tuna]
+registry = "https://mirrors.tuna.tsinghua.edu.cn/git/crates.io-index.git"

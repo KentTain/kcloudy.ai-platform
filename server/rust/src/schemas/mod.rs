@@ -5,10 +5,10 @@ mod dataset;
 pub use dataset::*;
 
 use serde::{Deserialize, Serialize};
-use utoipa::ToSchema;
+use utoipa::{IntoParams, ToSchema};
 
 /// 分页请求参数
-#[derive(Debug, Clone, Deserialize, ToSchema)]
+#[derive(Debug, Clone, Deserialize, IntoParams, ToSchema)]
 pub struct PageRequest {
     /// 当前页码
     #[serde(default = "default_page")]
