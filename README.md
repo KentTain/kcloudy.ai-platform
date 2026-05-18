@@ -15,8 +15,7 @@ init_project/
 │   └── react/                 # React + TypeScript
 ├── app/                       # 前端 Mobile 项目
 ├── docker/                    # Docker 部署配置
-├── docs/                      # 项目文档
-└── tests/                     # 测试代码
+└──  docs/                      # 项目文档
 ```
 
 ## 技术选型
@@ -97,8 +96,9 @@ uv run runserver
 ## 模块文档
 
 | 模块 | 文档 | 说明 |
-|------|------|------|
+| ------ | ------ | ------ |
 | Python 后端 | [server/python/README.md](server/python/README.md) | FastAPI 后端功能、安装配置 |
+| Python 测试 | [server/python/tests/README.md](server/python/tests/README.md) | 测试框架、运行测试 |
 | Docker 部署 | [docker/README.md](docker/README.md) | Docker Compose 部署指南 |
 
 ## License

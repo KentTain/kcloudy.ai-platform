@@ -21,8 +21,7 @@ init_project/
 │   └── react/                 # React + TypeScript
 ├── app/                       # 前端 Mobile 项目
 ├── docker/                    # Docker 部署配置
-├── docs/                      # 项目文档
-└── tests/                     # 测试代码
+└── docs/                      # 项目文档
 ```
 
 ## 技术选型
@@ -75,6 +74,8 @@ uv run pytest
 ```
 
 详细文档：[server/python/CLAUDE.md](server/python/CLAUDE.md)
+
+**测试说明：** [server/python/tests/README.md](server/python/tests/README.md)
 
 ### 配置管理
 

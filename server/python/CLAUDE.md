@@ -133,7 +133,26 @@ uv run pytest tests/path/to/test_file.py   # 运行指定测试文件
 
 ## 测试
 
-测试框架使用 pytest，配置文件为项目根目录的 `pytest.ini`。
+测试框架使用 pytest，配置文件为项目根目录的 `pytest.ini`。详细测试说明见 [tests/README.md](tests/README.md) 和 [tests/CLAUDE.md](tests/CLAUDE.md)。
+
+**测试目录结构：**
+
+```text
+tests/
+├── unit/               # 单元测试
+│   ├── cache/          # Redis 缓存测试
+│   ├── config/         # 配置管理测试
+│   ├── model/          # Pydantic 模型测试
+│   ├── serialization/  # 序列化测试
+│   ├── services/       # 服务层测试
+│   └── utils/          # 工具函数测试
+├── fixtures/           # 测试夹具和数据
+├── studies/            # 代码预研（非正式测试）
+├── examples/           # 示例代码测试
+├── conftest.py         # pytest 全局配置
+├── README.md           # 测试说明文档
+└── CLAUDE.md           # 测试规范文档
+```
 
 **常用命令：**
 
