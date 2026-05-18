@@ -17,7 +17,7 @@
 
 ## 项目结构
 
-```
+```text
 server/rust/
 ├── Cargo.toml              # 项目配置
 ├── .cargo/

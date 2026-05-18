@@ -177,6 +177,7 @@
     "tsconfig.json": "tsconfig.*.json, env.d.ts, typed-router.d.ts",
     "vite.config.*": "jsconfig*, vitest.config.*, cypress.config.*, playwright.config.*",
     "package.json": "package-lock.json, pnpm*, .yarnrc*, yarn*, .eslint*, eslint*, .oxlint*, oxlint*, .oxfmt*, .prettier*, prettier*, .editorconfig, biome.jsonc",
+    "Cargo.toml": "rust-toolchain.toml, rustfmt.toml, .nextest.toml",
     "AI编程及智能体开发教案大纲.md": "Day*.md"
   },
   "python.languageServer": "None"

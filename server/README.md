@@ -4,7 +4,7 @@
 
 ## 目录结构
 
-```
+```text
 server/
 ├── python/     # Python 后端（FastAPI）✅ 可用
 ├── rust/       # Rust 后端（Axum）✅ 可用
@@ -67,6 +67,13 @@ uv run runserver
 
 # macOS / Linux
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+```
+
+#### 配置国内镜像（加速）
+
+```powershell
+$env:RUSTUP_DIST_SERVER="https://mirrors.ustc.edu.cn/rust-static"
+$env:RUSTUP_UPDATE_ROOT="https://mirrors.ustc.edu.cn/rust-static/rustup"
 ```
 
 #### 安装指定版本

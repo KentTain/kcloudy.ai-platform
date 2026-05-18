@@ -4,22 +4,26 @@
     "ms-python.debugpy",
     "kevinrose.vsc-python-indent",
     "charliermarsh.ruff",
-    "tamasfe.even-better-toml",
-    "redhat.vscode-yaml",
     "njpwerner.autodocstring",
-    "Vue.volar",
-    "vitest.explorer",
-    "ms-playwright.playwright",
-    "sdras.vue-vscode-snippets",
-    "lokalise.i18n-ally",
-    "oxc.oxc-vscode",
-    "davidanson.vscode-markdownlint",
-    "bradlc.vscode-tailwindcss",
-    "biomejs.biome",
+
     "rust-lang.rust-analyzer",
     "vadimcn.vscode-lldb",
     "serayuzgur.crates",
-    "swellaby.vscode-rust-test-adapter"
+    "swellaby.vscode-rust-test-adapter",
+
+    "Vue.volar",
+    "sdras.vue-vscode-snippets",
+    "vitest.explorer",
+    "lokalise.i18n-ally",
+    "bradlc.vscode-tailwindcss",
+
+    "oxc.oxc-vscode",
+    "biomejs.biome",
+
+    "tamasfe.even-better-toml",
+    "redhat.vscode-yaml",
+    "davidanson.vscode-markdownlint",
+    "ms-playwright.playwright"
   ],
   "unwantedRecommendations": []
 }

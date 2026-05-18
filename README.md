@@ -9,6 +9,7 @@ init_project/
 ├── server/                    # 后端服务
 │   ├── python/                # Python 后端（FastAPI）
 │   ├── java/                  # Java 后端（Spring Boot）
+│   ├── netcore/               # netcore 后端（DotNet Core）
 │   └── rust/                  # Rust 后端（Actix-web）
 ├── web/                       # 前端 PC 项目
 │   ├── vue/                   # Vue 3 + TypeScript
@@ -26,6 +27,7 @@ init_project/
 |------|------|------|------|
 | Python | FastAPI + SQLAlchemy | [server/python](server/python) | ✅ 可用 |
 | Java | Spring Boot | [server/java](server/java) | 🚧 规划中 |
+| DotNet | Dotnet Core | [server/netcore](server/netcore) | 🚧 规划中 |
 | Rust | Actix-web | [server/rust](server/rust) | 🚧 规划中 |
 
 ### 前端 PC 项目 (web/)
@@ -85,6 +87,7 @@ pnpm dev
 
 - Python 3.12+ / uv
 - Java 21+ / Maven (规划中)
+- Netcore 8.0+ / nuget（规划中）
 - Rust 1.75+ / Cargo (规划中)
 - PostgreSQL 14+
 - Redis 6+
