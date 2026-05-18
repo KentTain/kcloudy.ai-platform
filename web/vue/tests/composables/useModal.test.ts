@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { useModal } from "../useModal";
+import { useModal } from "@/composables/useModal";
 
 describe("useModal", () => {
   it("initializes with isOpen set to false", () => {

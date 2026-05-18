@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { mount } from "@vue/test-utils";
-import AppCard from "../ui/AppCard.vue";
+import AppCard from "@/components/ui/AppCard.vue";
 
 describe("AppCard", () => {
   it("renders with default slot content", () => {

@@ -53,19 +53,21 @@ src/
 ├── api/              # API 客户端
 ├── assets/           # 静态资源
 ├── components/       # 通用组件
-│   ├── ui/           # UI 基础组件
-│   └── __tests__/    # 组件测试
+│   └── ui/           # UI 基础组件
 ├── composables/      # 组合式函数
-│   └── __tests__/    # Composable 测试
 ├── layouts/          # 布局组件
 ├── pages/            # 页面组件
 ├── router/           # 路由配置
 ├── stores/           # Pinia 状态管理
-│   └── __tests__/    # Store 测试
 ├── styles/           # 全局样式
 ├── types/            # TypeScript 类型定义
 ├── App.vue           # 根组件
 └── main.ts           # 应用入口
+
+tests/                # 单元测试
+├── components/       # 组件测试
+├── composables/      # Composable 测试
+└── stores/           # Store 测试
 ```
 
 ## 开发说明
@@ -93,20 +95,20 @@ src/
 
 ## 测试
 
-项目使用 Vitest 进行单元测试，测试文件位于 `src/**/__tests__/` 目录。
+项目使用 Vitest 进行单元测试，测试文件位于 `tests/` 目录。
 
 ### 测试文件组织
 
-- 组件测试：`src/components/__tests__/`
-- Store 测试：`src/stores/__tests__/`
-- Composable 测试：`src/composables/__tests__/`
+- 组件测试：`tests/components/`
+- Store 测试：`tests/stores/`
+- Composable 测试：`tests/composables/`
 
 ### 编写测试
 
 ```typescript
 import { describe, expect, it } from "vitest";
 import { mount } from "@vue/test-utils";
-import MyComponent from "../MyComponent.vue";
+import MyComponent from "@/components/MyComponent.vue";
 
 describe("MyComponent", () => {
   it("renders correctly", () => {

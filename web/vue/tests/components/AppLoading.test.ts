@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { mount } from "@vue/test-utils";
-import AppLoading from "../ui/AppLoading.vue";
+import AppLoading from "@/components/ui/AppLoading.vue";
 
 describe("AppLoading", () => {
   it("renders spinner element", () => {

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createPinia, setActivePinia } from "pinia";
-import { useDatasetsStore } from "../datasets";
+import { useDatasetsStore } from "@/stores/datasets";
 
 // Mock the API module
 vi.mock("@/api", () => ({

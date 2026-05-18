@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { mount } from "@vue/test-utils";
-import AppModal from "../ui/AppModal.vue";
+import AppModal from "@/components/ui/AppModal.vue";
 
 describe("AppModal", () => {
   let wrapper: ReturnType<typeof mount>;

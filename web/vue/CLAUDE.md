@@ -24,8 +24,7 @@ web/vue/
 │   ├── api/              # API 客户端（Axios 封装）
 │   ├── assets/           # 静态资源
 │   ├── components/       # 通用组件
-│   │   ├── ui/           # UI 基础组件（Button, Card, Loading）
-│   │   └── __tests__/    # 组件单元测试
+│   │   └── ui/           # UI 基础组件（Button, Card, Loading）
 │   ├── layouts/          # 布局组件（MainLayout）
 │   ├── pages/            # 页面组件
 │   ├── router/           # 路由配置
@@ -34,6 +33,10 @@ web/vue/
 │   ├── types/            # TypeScript 类型定义
 │   ├── App.vue           # 根组件
 │   └── main.ts           # 应用入口
+├── tests/                # 单元测试
+│   ├── components/       # 组件测试
+│   ├── composables/      # Composable 测试
+│   └── stores/           # Store 测试
 ├── public/               # 静态文件
 ├── biome.jsonc           # Biome 配置
 ├── vite.config.ts        # Vite 配置
@@ -126,7 +129,7 @@ pnpm test:unit -- --coverage # 运行并生成覆盖率报告
 
 **测试文件组织：**
 
-- 测试文件放在 `src/**/__tests__/` 目录
+- 测试文件放在 `tests/` 目录
 - 文件命名为 `*.test.ts` 或 `*.spec.ts`
 - 组件测试使用 `@vue/test-utils` 的 `mount` 函数
 
@@ -135,7 +138,7 @@ pnpm test:unit -- --coverage # 运行并生成覆盖率报告
 ```typescript
 import { describe, expect, it } from "vitest";
 import { mount } from "@vue/test-utils";
-import MyComponent from "../MyComponent.vue";
+import MyComponent from "@/components/MyComponent.vue";
 
 describe("MyComponent", () => {
   it("renders correctly", () => {
