@@ -1,0 +1,21 @@
+{
+  "recommendations": [
+    "ms-python.python",
+    "ms-python.debugpy",
+    "kevinrose.vsc-python-indent",
+    "charliermarsh.ruff",
+    "tamasfe.even-better-toml",
+    "redhat.vscode-yaml",
+    "njpwerner.autodocstring",
+    "Vue.volar",
+    "vitest.explorer",
+    "ms-playwright.playwright",
+    "sdras.vue-vscode-snippets",
+    "lokalise.i18n-ally",
+    "oxc.oxc-vscode",
+    "davidanson.vscode-markdownlint",
+    "bradlc.vscode-tailwindcss",
+    "biomejs.biome"
+  ],
+  "unwantedRecommendations": []
+}
