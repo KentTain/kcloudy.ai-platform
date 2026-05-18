@@ -1,0 +1,15 @@
+# Rust 格式化配置
+
+max_width = 100
+tab_spaces = 4
+edition = "2021"
+use_small_heuristics = "Default"
+newline_style = "Auto"
+use_field_init_shorthand = true
+use_try_shorthand = true
+format_code_in_doc_comments = true
+format_strings = true
+wrap_comments = true
+comment_width = 80
+imports_granularity = "Crate"
+group_imports = "StdExternalCrate"

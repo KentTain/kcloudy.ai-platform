@@ -1,0 +1,48 @@
+# Nextest 配置
+# 文档: https://nexte.st/book/configuration.html
+
+[store]
+# 存储测试结果的目录
+dir = "target/nextest"
+
+[ui]
+# 详细输出级别
+level = "auto"
+
+# 显示测试进度
+progress = "auto"
+
+# 显示失败测试的输出
+failure-output = "immediate"
+
+# 成功测试的输出
+success-output = "never"
+
+# 失败时的重试次数
+retries = 0
+
+# 失败时的重试策略
+fail-fast = true
+
+[profile.default]
+# 默认测试配置
+retries = 0
+fail-fast = true
+
+[profile.ci]
+# CI 环境配置
+retries = 2
+fail-fast = false
+
+[profile.ci.junit]
+# JUnit 报告配置
+path = "junit.xml"
+report-name = "demo-tests"
+
+[test-threads]
+# 并行测试线程数
+max = "auto"
+
+# 每个测试的超时时间
+[test-timeout]
+timeout = "60s"

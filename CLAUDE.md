@@ -15,7 +15,7 @@ init_project/
 ├── server/                    # 后端服务
 │   ├── python/                # Python 后端（FastAPI）
 │   ├── java/                  # Java 后端（Spring Boot）
-│   └── rust/                  # Rust 后端（Actix-web）
+│   └── rust/                  # Rust 后端（Axum）
 ├── web/                       # 前端 PC 项目
 │   ├── vue/                   # Vue 3 + TypeScript
 │   └── react/                 # React + TypeScript
@@ -32,7 +32,7 @@ init_project/
 |------|------|------|------|
 | server/python | Python 3.12 | FastAPI + SQLAlchemy 2.0 | ✅ 可用 |
 | server/java | Java 21 | Spring Boot 3.x | 🚧 规划中 |
-| server/rust | Rust 1.75+ | Actix-web | 🚧 规划中 |
+| server/rust | Rust 1.75+ | Axum + SQLx + LangChain | ✅ 可用 |
 
 ### 前端 PC 项目 (web/)
 
@@ -55,7 +55,7 @@ init_project/
 - **Python 后端**: [server/python/CLAUDE.md](server/python/CLAUDE.md)
 - **Vue 前端**: [web/vue/CLAUDE.md](web/vue/CLAUDE.md)
 - **Java 后端**: [server/java/CLAUDE.md](server/java/CLAUDE.md) (规划中)
-- **Rust 后端**: [server/rust/CLAUDE.md](server/rust/CLAUDE.md) (规划中)
+- **Rust 后端**: [server/rust/CLAUDE.md](server/rust/CLAUDE.md)
 
 ## 开发指南
 
@@ -77,6 +77,26 @@ uv run pytest
 详细文档：[server/python/CLAUDE.md](server/python/CLAUDE.md)
 
 **测试说明：** [server/python/tests/README.md](server/python/tests/README.md)
+
+### Rust 后端
+
+```bash
+cd server/rust
+
+# 构建项目
+cargo build
+
+# 启动服务
+cargo run
+
+# 运行测试
+cargo nextest run
+
+# 运行基准测试
+cargo bench
+```
+
+详细文档：[server/rust/CLAUDE.md](server/rust/CLAUDE.md)
 
 ### Vue 前端
 
@@ -103,6 +123,7 @@ pnpm test:unit -- --run
 各子项目采用独立的配置管理：
 
 - Python 后端：基于 YAML 的分层配置（`config/application.yml`）
+- Rust 后端：基于 YAML 的配置 + 环境变量覆盖
 - 配置优先级：YAML 文件 → 环境变量覆盖
 
 ### API 设计规范
@@ -119,7 +140,7 @@ pnpm test:unit -- --run
 
 - Python 3.12+ / uv
 - Java 21+ / Maven（规划中）
-- Rust 1.75+ / Cargo（规划中）
+- Rust 1.75+ / Cargo
 - PostgreSQL 14+
 - Redis 6+
 
