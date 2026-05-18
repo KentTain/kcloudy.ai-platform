@@ -1,36 +1,106 @@
-# kcloudy.init_project
+# InitProject - Minimal AI Assistant Platform
 
-#### Description
-{**When you're done, you can delete the content in this README and update the file with details for others getting started with your repository**}
+This is a multi-tech-stack AI assistant platform demo project, providing various backend and frontend technology options for learning and comparing different implementation approaches.
 
-#### Software Architecture
-Software architecture description
+## Project Structure
 
-#### Installation
+```text
+init_project/
+├── server/                    # Backend Services
+│   ├── python/                # Python Backend (FastAPI)
+│   ├── java/                  # Java Backend (Spring Boot)
+│   └── rust/                  # Rust Backend (Actix-web)
+├── web/                       # Frontend PC Projects
+│   ├── vue/                   # Vue 3 + TypeScript
+│   └── react/                 # React + TypeScript
+├── app/                       # Frontend Mobile Projects
+├── docker/                    # Docker Deployment
+├── docs/                      # Documentation
+└── tests/                     # Test Code
+```
 
-1.  xxxx
-2.  xxxx
-3.  xxxx
+## Technology Stack
 
-#### Instructions
+### Backend Services (server/)
 
-1.  xxxx
-2.  xxxx
-3.  xxxx
+| Language | Framework | Directory | Status |
+|----------|-----------|-----------|--------|
+| Python | FastAPI + SQLAlchemy | [server/python](server/python) | ✅ Available |
+| Java | Spring Boot | [server/java](server/java) | 🚧 Planned |
+| Rust | Actix-web | [server/rust](server/rust) | 🚧 Planned |
 
-#### Contribution
+### Frontend PC Projects (web/)
 
-1.  Fork the repository
-2.  Create Feat_xxx branch
-3.  Commit your code
-4.  Create Pull Request
+| Framework | Language | Directory | Status |
+|-----------|----------|-----------|--------|
+| Vue | TypeScript | [web/vue](web/vue) | 🚧 Planned |
+| React | TypeScript | [web/react](web/react) | 🚧 Planned |
 
+### Frontend Mobile Projects (app/)
 
-#### Gitee Feature
+| Framework | Language | Directory | Status |
+|-----------|----------|-----------|--------|
+| Flutter | Dart | [app/flutter](app/flutter) | 🚧 Planned |
+| React Native | TypeScript | [app/react-native](app/react-native) | 🚧 Planned |
 
-1.  You can use Readme\_XXX.md to support different languages, such as Readme\_en.md, Readme\_zh.md
-2.  Gitee blog [blog.gitee.com](https://blog.gitee.com)
-3.  Explore open source project [https://gitee.com/explore](https://gitee.com/explore)
-4.  The most valuable open source project [GVP](https://gitee.com/gvp)
-5.  The manual of Gitee [https://gitee.com/help](https://gitee.com/help)
-6.  The most popular members  [https://gitee.com/gitee-stars/](https://gitee.com/gitee-stars/)
+## Quick Start
+
+### Python Backend
+
+```bash
+cd server/python
+
+# Install dependencies
+uv sync
+
+# Configuration
+cp config/application-local.yml.example config/application-local.yml
+
+# Start server
+uv run runserver
+```
+
+Visit: <http://localhost:8000/docs>
+
+See [server/python/README.md](server/python/README.md) for details.
+
+## Requirements
+
+### Backend
+
+- Python 3.12+ / uv
+- Java 21+ / Maven (Planned)
+- Rust 1.75+ / Cargo (Planned)
+- PostgreSQL 14+
+- Redis 6+
+
+### Frontend
+
+- Node.js 22+
+- pnpm 10+
+
+## Features
+
+### Core Capabilities
+
+- **RESTful API Design**: Unified JSON response format
+- **AI Framework Integration**: LangChain 1.3.0, LangGraph 1.2.0
+- **Database Support**: PostgreSQL + pgvector (vector search)
+- **Cache Support**: Redis high-performance caching
+- **Comprehensive Error Handling**: Global exception handling and automatic error tracking
+
+### Data & Storage
+
+- **Database Integration**: SQLAlchemy 2.0 + Alembic migrations
+- **Layered Configuration**: YAML-based multi-environment configuration system
+
+## Module Documentation
+
+| Module | Documentation | Description |
+|--------|---------------|-------------|
+| Python Backend | [server/python/README.md](server/python/README.md) | FastAPI backend features, installation |
+| Docker Deployment | [docker/README.md](docker/README.md) | Docker Compose deployment guide |
+
+## License
+
+Copyright © 2025 Moles. All Rights Reserved.

@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(uv sync*)",
+      "Bash(uv run*)",
+      "Bash(git status*)",
+      "Bash(git add*)",
+      "Bash(git commit*)",
+      "Bash(git push*)",
+      "Bash(git branch*)",
+      "Bash(git remote*)",
+      "Bash(git log*)",
+      "Bash(git diff*)",
+      "Bash(ls*)",
+      "Bash(cat*)",
+      "Bash(mkdir*)",
+      "Bash(cp*)",
+      "Bash(mv*)",
+      "Bash(curl*)",
+      "Bash(pnpm install*)",
+      "Bash(pnpm dev*)",
+      "Bash(pnpm build*)",
+      "WebSearch",
+      "WebFetch"
+    ]
+  }
+}
