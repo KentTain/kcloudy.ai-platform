@@ -96,7 +96,8 @@ class TestPydanticConstraints:
 
         link = Link(url="https://example.com")
 
-        assert str(link.url) == "https://example.com"
+        # Pydantic 2.x HttpUrl normalizes URLs with trailing slash
+        assert str(link.url) == "https://example.com/"
 
     def test_constrained_string(self):
         """Test using constr for string constraints"""

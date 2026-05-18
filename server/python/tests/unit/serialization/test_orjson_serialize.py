@@ -59,7 +59,8 @@ class TestOrjsonSerialize:
     def test_serialize_decimal(self):
         """Test serializing Decimal"""
         d = Decimal("123.45")
-        result = orjson.dumps(d)
+        # orjson requires a default handler for Decimal
+        result = orjson.dumps(d, default=lambda x: str(x))
         parsed = orjson.loads(result)
         assert parsed == "123.45"
 

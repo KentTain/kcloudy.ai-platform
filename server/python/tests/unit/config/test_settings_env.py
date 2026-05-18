@@ -47,26 +47,47 @@ class TestSettingsEnvOverride:
 
     def test_nested_env_override(self):
         """Test nested settings from environment"""
-        with patch.dict(os.environ, {
-            "DATABASE_URL": "postgresql://user:pass@localhost/db",
-            "DATABASE_POOL_SIZE": "20"
-        }):
+        # Clear relevant env vars first to avoid pollution
+        env_vars_to_clear = ["DATABASE_URL", "POOL_SIZE"]
+        original_values = {k: os.environ.get(k) for k in env_vars_to_clear}
+        for k in env_vars_to_clear:
+            os.environ.pop(k, None)
+
+        try:
+            os.environ["DATABASE_URL"] = "postgresql://user:pass@localhost/db"
+            os.environ["POOL_SIZE"] = "20"
+
             class DatabaseSettings(BaseSettings):
                 database_url: str = "default"
                 pool_size: int = 5
 
             settings = DatabaseSettings(_env_file=None)
 
-            # Environment variables override defaults
-            assert settings.database_url == "default"  # Without explicit env mapping
+            # pydantic-settings reads env vars with matching names (case-insensitive for uppercase)
+            assert settings.database_url == "postgresql://user:pass@localhost/db"
+            # POOL_SIZE maps to pool_size (case-insensitive matching)
+            assert settings.pool_size == 20
+        finally:
+            # Restore original values
+            for k, v in original_values.items():
+                if v is not None:
+                    os.environ[k] = v
+                else:
+                    os.environ.pop(k, None)
 
     def test_multiple_env_vars(self):
         """Test multiple environment variables"""
-        with patch.dict(os.environ, {
-            "HOST": "0.0.0.0",
-            "PORT": "8888",
-            "DEBUG": "true"
-        }):
+        # Clear relevant env vars first to avoid pollution
+        env_vars_to_clear = ["HOST", "PORT", "DEBUG"]
+        original_values = {k: os.environ.get(k) for k in env_vars_to_clear}
+        for k in env_vars_to_clear:
+            os.environ.pop(k, None)
+
+        try:
+            os.environ["HOST"] = "0.0.0.0"
+            os.environ["PORT"] = "8888"
+            os.environ["DEBUG"] = "true"
+
             class TestSettings(BaseSettings):
                 host: str = "localhost"
                 port: int = 8000
@@ -74,8 +95,17 @@ class TestSettingsEnvOverride:
 
             settings = TestSettings(_env_file=None)
 
-            # Values depend on pydantic-settings env mapping
-            assert settings.host == "localhost"  # Default without proper mapping
+            # pydantic-settings reads env vars with matching names
+            assert settings.host == "0.0.0.0"
+            assert settings.port == 8888
+            assert settings.debug is True
+        finally:
+            # Restore original values
+            for k, v in original_values.items():
+                if v is not None:
+                    os.environ[k] = v
+                else:
+                    os.environ.pop(k, None)
 
 
 class TestEnvPriority:

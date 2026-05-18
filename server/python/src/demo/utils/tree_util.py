@@ -76,7 +76,7 @@ class TreeUtil:
     def build_tree(
         cls,
         tree_list: list[Any],
-        parent_id: str = DEFAULT_ROOT_ID,
+        parent_id: Any = DEFAULT_ROOT_ID,
         transform_func: Callable[[Any], Any] | None = None,
     ) -> list[Any]:
         """
@@ -93,12 +93,15 @@ class TreeUtil:
         if not tree_list:
             return []
 
+        # Normalize parent_id for consistent comparison
+        normalized_parent_id = None if parent_id is None else str(parent_id)
+
         result = []
         for tree_node in tree_list:
             # 过滤父节点与传递的parent_id相同的TreeNode对象
             node_parent_id = cls._get_parent_id(tree_node)
 
-            if node_parent_id == parent_id:
+            if node_parent_id == normalized_parent_id:
                 # 递归设置子节点
                 node_id = cls._get_node_id(tree_node)
                 children = cls.build_tree(tree_list, node_id, transform_func)
@@ -127,12 +130,16 @@ class TreeUtil:
             return str(getattr(node, "id", ""))
 
     @classmethod
-    def _get_parent_id(cls, node: Any) -> str:
+    def _get_parent_id(cls, node: Any) -> Any:
         """获取父节点ID"""
         if isinstance(node, dict):
-            return str(node.get("parent_id", ""))
+            parent_id = node.get("parent_id", "")
         else:
-            return str(getattr(node, "parent_id", ""))
+            parent_id = getattr(node, "parent_id", "")
+        # Return None as-is for proper comparison, otherwise convert to string
+        if parent_id is None:
+            return None
+        return str(parent_id)
 
     @classmethod
     def _set_children(cls, node: Any, children: list[Any]) -> None:

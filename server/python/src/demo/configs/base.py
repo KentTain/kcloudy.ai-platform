@@ -24,3 +24,7 @@ class BaseSettings(PydanticBaseSettings):
             raise ValueError("配置字典不能为空")
         converted_dict = convert_dict_hyphen_to_underscore(config_dict)
         return cls.model_validate(converted_dict)
+
+    def to_dict(self) -> dict[str, Any]:
+        """将配置实例转换为字典"""
+        return self.model_dump()
