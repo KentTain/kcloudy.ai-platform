@@ -1,0 +1,106 @@
+"""
+请求上下文管理
+
+提供请求级别的上下文存储，支持存储当前用户、租户等信息。
+"""
+
+from typing import Any
+from contextvars import ContextVar
+from dataclasses import dataclass, field
+
+
+# 使用 contextvars 实现协程安全的上下文
+_context_var: ContextVar["Context | None"] = ContextVar("app_context", default=None)
+
+
+@dataclass
+class Context:
+    """请求上下文"""
+
+    user_id: str | None = None
+    user_name: str | None = None
+    tenant_id: str | None = None
+    workspace_id: str | None = None
+    roles: list[str] = field(default_factory=list)
+    permissions: list[str] = field(default_factory=list)
+    extra: dict[str, Any] = field(default_factory=dict)
+
+    def set(self, key: str, value: Any) -> None:
+        """设置额外属性"""
+        self.extra[key] = value
+
+    def get(self, key: str, default: Any = None) -> Any:
+        """获取额外属性"""
+        return self.extra.get(key, default)
+
+
+def get_context() -> Context:
+    """
+    获取当前上下文
+
+    Returns:
+        Context: 当前上下文，如果不存在则创建新的空上下文
+    """
+    ctx = _context_var.get()
+    if ctx is None:
+        ctx = Context()
+        _context_var.set(ctx)
+    return ctx
+
+
+def set_context(ctx: Context) -> None:
+    """
+    设置当前上下文
+
+    Args:
+        ctx: 上下文实例
+    """
+    _context_var.set(ctx)
+
+
+def clear_context() -> None:
+    """清理当前上下文"""
+    _context_var.set(None)
+
+
+def set_user(
+    user_id: str,
+    user_name: str | None = None,
+    tenant_id: str | None = None,
+    workspace_id: str | None = None,
+    roles: list[str] | None = None,
+    permissions: list[str] | None = None,
+) -> None:
+    """
+    设置当前用户信息
+
+    Args:
+        user_id: 用户 ID
+        user_name: 用户名
+        tenant_id: 租户 ID
+        workspace_id: 工作空间 ID
+        roles: 角色列表
+        permissions: 权限列表
+    """
+    ctx = get_context()
+    ctx.user_id = user_id
+    ctx.user_name = user_name
+    ctx.tenant_id = tenant_id
+    ctx.workspace_id = workspace_id
+    ctx.roles = roles or []
+    ctx.permissions = permissions or []
+
+
+def get_user_id() -> str | None:
+    """获取当前用户 ID"""
+    return get_context().user_id
+
+
+def get_tenant_id() -> str | None:
+    """获取当前租户 ID"""
+    return get_context().tenant_id
+
+
+def get_workspace_id() -> str | None:
+    """获取当前工作空间 ID"""
+    return get_context().workspace_id
