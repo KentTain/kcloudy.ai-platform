@@ -129,14 +129,48 @@ minio:
 
 ### 配置文件结构
 
-```
-server/config/
-├── application.yml           # 基础配置（提交）
+```text
+server/config/                   # 共享配置文件目录
+├── application.yml              # 基础配置（提交）
 ├── application-local.yml.example # 本地配置示例（提交）
-└── application-local.yml     # 本地配置（不提交）
+└── application-local.yml        # 本地配置（不提交）
 
-server/{技术栈}/config/       # 引用共享配置
+server/{技术栈}/config/          # 符号链接指向 server/config/
 ```
+
+### 符号链接配置
+
+各技术栈的 `config/` 目录通过**符号链接**指向共享配置目录，实现配置统一管理：
+
+```bash
+# 目录结构
+server/
+├── config/                      # 实际配置文件
+└── python/config/               # 符号链接 → ../config (即 server/config/)
+└── rust/config/                 # 符号链接 → ../config (即 server/config/)
+```
+
+**创建符号链接：**
+
+```bash
+# Linux/macOS
+cd server/python && ln -s ../config config
+cd server/rust && ln -s ../config config
+
+# Windows (需要管理员权限)
+cd server\python && mklink /D config ..\config
+cd server\rust && mklink /D config ..\config
+
+# Windows (PowerShell，需要管理员权限)
+New-Item -ItemType SymbolicLink -Path "server\python\config" -Target "server\config"
+New-Item -ItemType SymbolicLink -Path "server\rust\config" -Target "server\config"
+```
+
+**注意事项：**
+
+- Windows 创建符号链接需要**管理员权限**
+- 符号链接在 Git 中以 mode `120000` 存储
+- 修改任意技术栈的配置文件会同步到所有技术栈
 
 ### 配置优先级
 

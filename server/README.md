@@ -129,14 +129,49 @@ cargo run
 
 ## 配置管理
 
-配置文件采用分层结构：
+配置文件统一放置在 `server/config/` 目录下，各技术栈通过**符号链接**引用：
 
-```
-server/config/application.yml        # 基础配置
-server/config/application-{env}.yml  # 环境配置
+```text
+server/config/                   # 共享配置文件目录
+├── application.yml              # 基础配置
+├── application-local.yml.example # 本地配置示例
+└── application-local.yml        # 本地配置（不提交）
+
+server/python/config/            # 符号链接 → ../config
+server/rust/config/              # 符号链接 → ../config
 ```
 
-配置优先级：环境变量 > 环境配置 > 基础配置
+### 创建符号链接
+
+```bash
+# Linux/macOS
+cd server/python && ln -s ../config config
+cd server/rust && ln -s ../config config
+
+# Windows (需要管理员权限)
+cd server\python && mklink /D config ..\config
+cd server\rust && mklink /D config ..\config
+
+# Windows PowerShell (需要管理员权限)
+New-Item -ItemType SymbolicLink -Path "server\python\config" -Target "server\config"
+New-Item -ItemType SymbolicLink -Path "server\rust\config" -Target "server\config"
+```
+
+> **注意：** Windows 创建符号链接需要管理员权限。修改任意技术栈的配置文件会同步到所有技术栈。
+
+### 本地开发
+
+```bash
+# 复制配置模板
+cp server/config/application-local.yml.example server/config/application-local.yml
+
+# 编辑配置文件
+vim server/config/application-local.yml
+```
+
+### 配置优先级
+
+环境变量 > 环境配置 > 基础配置
 
 **环境选择：** 设置 `SERVICE_ENV` 环境变量（`local`/`dev`/`test`/`prod`）
 
