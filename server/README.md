@@ -1,248 +1,167 @@
 # 后端服务
 
-本目录包含多种后端技术实现，每种技术作为独立子项目存在。
+本目录包含多种后端技术栈的独立实现，每种技术栈作为独立子项目存在。所有实现遵循统一的架构设计和 API 规范。
 
 ## 目录结构
 
 ```text
 server/
-├── python/     # Python 后端（FastAPI）✅ 可用
-├── rust/       # Rust 后端（Axum）✅ 可用
-├── java/       # Java 后端（Spring Boot）🚧 规划中
-└── netcore/    # .NET 后端 🚧 规划中
+├── config/                   # 共享配置文件
+│   ├── application.yml          # 基础配置
+│   ├── application-local.yml.example # 本地配置示例
+│   └── application-local.yml    # 本地配置（不提交）
+├── python/                   # Python 后端 ✅
+├── rust/                     # Rust 后端 ✅
+├── java/                     # Java 后端 🚧
+└── netcore/                  # .NET 后端 🚧
 ```
 
-## 环境安装指南
+## 技术栈概览
 
-### Python 后端
+| 技术栈 | 语言 | 框架 | 状态 | 文档 |
+|--------|------|------|------|------|
+| Python | Python 3.12 | FastAPI + SQLAlchemy 2.0 | ✅ 可用 | [README](python/README.md) |
+| Rust | Rust 1.75+ | Axum + SQLx | ✅ 可用 | [README](rust/README.md) |
+| Java | Java 21 | Spring Boot 3.x + MyBatis | 🚧 规划中 | - |
+| .NET | .NET 8.0 | ASP.NET Core + EF Core | 🚧 规划中 | - |
 
-**环境要求：** Python 3.12+ / uv
+## 统一架构
 
-#### 安装 uv（推荐）
+所有技术栈采用统一的 MVC 架构和基础设施：
+
+### 架构分层
+
+| 层级 | 职责 |
+|------|------|
+| Controller | HTTP 请求处理、参数校验、响应封装 |
+| Service | 业务逻辑、事务管理 |
+| Model | 数据模型、数据库操作 |
+
+### 基础设施
+
+| 组件 | 用途 |
+|------|------|
+| PostgreSQL + pgvector | 主数据库 + 向量检索 |
+| Redis | 缓存 / 消息队列 / 发布订阅 |
+| MinIO | 对象存储 |
+
+### 统一 API
+
+所有技术栈提供统一的健康检查端点：
+
+```
+GET /health → {"status": "healthy", "timestamp": "..."}
+```
+
+## 快速开始
+
+### 1. 准备公共依赖
+
+**PostgreSQL (含 pgvector)**
 
 ```bash
-# Windows (PowerShell)
-powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
-
-# macOS / Linux
-curl -LsSf https://astral.sh/uv/install.sh | sh
-```
-
-#### 安装 Python
-
-```bash
-# 使用 uv 安装 Python 3.12
-uv python install 3.12
-
-# 验证安装
-uv python list
-```
-
-#### 启动项目
-
-```bash
-cd server/python
-
-# 安装依赖
-uv sync
-
-# 启动服务
-uv run runserver
-```
-
-详细文档：[python/CLAUDE.md](python/CLAUDE.md)
-
----
-
-### Rust 后端
-
-**环境要求：** Rust 1.75+ / Cargo
-
-#### 配置国内镜像（加速）
-
-```powershell
-# Windows (PowerShell) 执行以下命令
-$env:RUSTUP_HOME="D:\DevTool\rust-1.85\.rustup"
-$env:CARGO_HOME="D:\DevTool\rust-1.85\.cargo"
-$env:RUSTUP_DIST_SERVER="https://mirrors.ustc.edu.cn/rust-static"
-$env:RUSTUP_UPDATE_ROOT="https://mirrors.ustc.edu.cn/rust-static/rustup"
-```
-
-#### 安装 Rust（推荐使用 rustup）
-
-```bash
-# Windows (PowerShell), 下载并运行 rustup-init.exe
-.\rustup-init.exe
-
-# macOS / Linux
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-```
-
-#### Windows安装时会弹出安装选项菜单。由于我们要指定版本，**不要直接按回车**，请按以下步骤操作：
-
-1. 输入 `2` 并回车，选择 **“Customize installation”**（自定义安装）。
-2. 在 `Default host triple?` 和 `Default toolchain?` 等提示中，一路按回车保持默认（即 `stable` 稳定版）。
-3. 在最后确认 `Modify PATH variable? (Y/n)` 时，输入 `Y` 并回车，让安装程序自动把 Rust 的命令添加到系统环境变量中。
-4. 等待下载安装完成，看到 `Rust is installed now. Great!` 的提示即代表成功。
-
-#### 安装指定版本
-
-```bash
-# 安装 stable 版本
-rustup install stable
-
-# 安装指定版本（如 1.95）
-rustup install 1.95
-
-# 设置默认版本
-rustup default stable
-
-# 验证安装
-rustc --version
-cargo --version
-```
-
-#### 安装常用组件
-
-```bash
-# 安装 rust-analyzer（LSP）
-rustup component add rust-analyzer
-
-# 安装 clippy（Linter）
-rustup component add clippy
-
-# 安装 rustfmt（格式化）
-rustup component add rustfmt
-
-# 安装 rust-src（源码，用于 IDE）
-rustup component add rust-src
-```
-
-#### 安装 cargo-nextest（测试运行器）
-
-```bash
-cargo install cargo-nextest
-```
-
-#### 配置国内镜像（可选）
-
-编辑 `~/.cargo/config.toml`：
-
-```toml
-[source.crates-io]
-replace-with = "ustc"
-
-[source.ustc]
-registry = "https://mirrors.ustc.edu.cn/crates.io-index"
-```
-
-#### 启动项目
-
-```bash
-cd server/rust
-
-# 构建项目
-cargo build
-
-# 启动服务
-cargo run
-```
-
-详细文档：[rust/CLAUDE.md](rust/CLAUDE.md)
-
----
-
-### Java 后端（规划中）
-
-**环境要求：** Java 21+ / Maven
-
-#### 安装 JDK 21
-
-```bash
-# Windows (使用 scoop)
-scoop install openjdk21
-
-# macOS (使用 Homebrew)
-brew install openjdk@21
-
-# Ubuntu/Debian
-sudo apt install openjdk-21-jdk
-
-# 验证安装
-java -version
-```
-
-#### 安装 Maven
-
-```bash
-# Windows (使用 scoop)
-scoop install maven
-
-# macOS (使用 Homebrew)
-brew install maven
-
-# Ubuntu/Debian
-sudo apt install maven
-
-# 验证安装
-mvn -version
-```
-
----
-
-## 公共依赖
-
-### PostgreSQL
-
-所有后端项目共享同一个 PostgreSQL 数据库。
-
-```bash
-# Windows (使用 scoop)
+# Windows (scoop)
 scoop install postgresql
 
-# macOS (使用 Homebrew)
+# macOS
 brew install postgresql@14
-
-# Ubuntu/Debian
-sudo apt install postgresql-14
 
 # 创建数据库
 createdb demo
-
-# 验证连接
-psql -d demo
 ```
 
-### Redis
-
-所有后端项目共享同一个 Redis 缓存。
+**Redis**
 
 ```bash
-# Windows (使用 scoop)
+# Windows (scoop)
 scoop install redis
 
-# macOS (使用 Homebrew)
+# macOS
 brew install redis
 
-# Ubuntu/Debian
-sudo apt install redis-server
-
-# 启动服务
+# 启动并验证
 redis-server
-
-# 验证连接
 redis-cli ping
 ```
 
-## 开发工具推荐
+**MinIO (可选)**
 
-### VS Code 扩展
+```bash
+# Docker 方式
+docker run -d -p 9000:9000 -p 9001:9001 \
+  -e MINIO_ROOT_USER=minioadmin \
+  -e MINIO_ROOT_PASSWORD=minioadmin \
+  minio/minio server /data --console-address ":9001"
+```
 
-- **Python:** ms-python.python, charliermarsh.ruff
-- **Rust:** rust-lang.rust-analyzer, vadimcn.vscode-lldb, serayuzgur.crates
-- **通用:** tamasfe.even-better-toml, redhat.vscode-yaml
+### 2. 配置本地环境
 
-完整列表见项目根目录 `.vscode/extensions.json`。
+```bash
+# 复制配置模板
+cp server/config/application-local.yml.example server/config/application-local.yml
+
+# 编辑配置文件，填写数据库连接信息
+```
+
+### 3. 启动服务
+
+选择一个技术栈启动：
+
+**Python 后端**
+
+```bash
+cd server/python
+uv sync
+uv run runserver
+# 访问 http://localhost:8000/health
+```
+
+**Rust 后端**
+
+```bash
+cd server/rust
+cargo build
+cargo run
+# 访问 http://localhost:8000/health
+```
+
+详细说明请参阅各技术栈的 README 文档。
+
+## 配置管理
+
+配置文件采用分层结构：
+
+```
+server/config/application.yml        # 基础配置
+server/config/application-{env}.yml  # 环境配置
+```
+
+配置优先级：环境变量 > 环境配置 > 基础配置
+
+**环境选择：** 设置 `SERVICE_ENV` 环境变量（`local`/`dev`/`test`/`prod`）
+
+## 开发指南
+
+各技术栈的详细开发指南请参阅对应的 CLAUDE.md 文档：
+
+- [整体开发指南](CLAUDE.md)
+- [Python 开发指南](python/CLAUDE.md)
+- [Rust 开发指南](rust/CLAUDE.md)
+
+## 环境要求
+
+| 技术栈 | 语言版本 | 包管理器 |
+|--------|----------|----------|
+| Python | 3.12+ | uv |
+| Rust | 1.75+ | cargo |
+| Java | 21+ | maven |
+| .NET | 8.0+ | dotnet |
+
+| 公共组件 | 版本 |
+|----------|------|
+| PostgreSQL | 14+ |
+| Redis | 6+ |
+| MinIO | Latest |
 
 ## License
 

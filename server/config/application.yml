@@ -1,0 +1,26 @@
+# Demo 基础配置
+
+# 应用名称
+name: demo
+
+# 服务器配置
+server:
+  host: 0.0.0.0
+  port: 8000
+  debug: false
+
+# 日志配置
+logging:
+  level: INFO
+  format: "{time:YYYY-MM-DD HH:mm:ss} | {level} | {name}:{function}:{line} | {message}"
+
+# 数据库配置
+sqlalchemy:
+  database_url: postgresql+asyncpg://postgres:postgres@localhost:5432/demo
+  echo: false
+  pool_size: 5
+  max_overflow: 10
+
+# Redis 配置
+redis:
+  url: redis://localhost:6379/0

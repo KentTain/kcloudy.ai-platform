@@ -6,6 +6,7 @@
     "charliermarsh.ruff",
     "njpwerner.autodocstring",
 
+    "rust-lang.rust",
     "rust-lang.rust-analyzer",
     "vadimcn.vscode-lldb",
     "serayuzgur.crates",
