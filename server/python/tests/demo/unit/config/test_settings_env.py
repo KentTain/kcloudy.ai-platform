@@ -128,9 +128,10 @@ class TestEnvPriority:
     def test_yaml_config_base(self):
         """Test YAML provides base configuration"""
         from demo.configs.yaml import YamlParser
+        from demo.core.common.path import CONFIG_FOLDER
 
         parser = YamlParser(
-            config_dir="config",
+            config_dir=CONFIG_FOLDER,
             base_config_file="application.yml"
         )
 

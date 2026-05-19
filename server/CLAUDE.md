@@ -13,7 +13,7 @@
 | 技术栈 | 语言 | 框架 | 状态 |
 |--------|------|------|------|
 | Python | Python 3.12 | FastAPI + SQLAlchemy 2.0 | ✅ 可用 |
-| Rust | Rust 1.75+ | Axum + SQLx | ✅ 可用 |
+| Rust | Rust 1.95+ | Axum + SQLx | ✅ 可用 |
 | Java | Java 21 | Spring Boot 3.x | 🚧 规划中 |
 | .NET | .NET 8.0 | ASP.NET Core + EF Core | 🚧 规划中 |
 

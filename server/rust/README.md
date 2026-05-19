@@ -11,41 +11,36 @@
 | 数据库 | SQLx 0.8 | 编译期 SQL 检查，原生异步 |
 | 缓存 | redis-rs 0.29 | 官方标准客户端 |
 | 测试 | cargo-nextest | 新一代测试运行器 |
-| Mock 测试 | mockall | Mock 对象生成 |
-| 接口测试 | axum-test | 无网络接口测试 |
-| 性能测试 | Criterion | 高精度基准测试 |
 
 ## 项目结构
 
 ```text
 server/rust/
 ├── Cargo.toml              # 项目配置
-├── .cargo/
-│   └── config.toml         # Cargo 配置
 ├── src/
 │   ├── main.rs             # 入口文件
-│   ├── lib.rs              # 库入口
-│   ├── config/             # 配置管理
-│   ├── db/                 # 数据库连接
-│   ├── models/             # 数据库模型
-│   ├── schemas/            # 数据校验模型
-│   ├── services/           # 业务服务层
-│   ├── controllers/        # API 控制器
-│   ├── common/             # 通用模块
-│   └── utils/              # 工具函数
+│   └── demo/               # Demo 模块
+│       ├── lib.rs          # 库入口
+│       ├── config/         # 配置管理
+│       ├── db/             # 数据库连接
+│       ├── models/         # 数据库模型
+│       ├── schemas/        # 数据校验模型
+│       ├── services/       # 业务服务层
+│       ├── controllers/    # API 控制器
+│       ├── common/         # 通用模块
+│       ├── utils/          # 工具函数
+│       └── examples/       # 示例代码
 ├── tests/
-│   ├── unit/               # 单元测试
-│   ├── integration/        # 集成测试
+│   ├── unit.rs             # 单元测试
 │   └── fixtures/           # 测试数据
 ├── benches/                # 性能基准测试
-└── config/
-    ├── application.yml     # 基础配置
-    └── application-local.yml.example  # 本地配置示例
+└── config/                 # 配置目录（引用共享配置）
+    └── README.md           # 配置说明
 ```
 
 ## 环境要求
 
-- Rust 1.75+
+- Rust 1.95+
 - PostgreSQL 14+
 - Redis 6+
 
@@ -55,8 +50,8 @@ server/rust/
 # 进入项目目录
 cd server/rust
 
-# 复制配置文件
-cp config/application-local.yml.example config/application-local.yml
+# 复制配置文件（配置统一放置在 server/config/）
+cp server/config/application-local.yml.example server/config/application-local.yml
 
 # 构建项目
 cargo build
@@ -66,9 +61,6 @@ cargo run
 
 # 运行开发模式（带日志）
 RUST_LOG=debug cargo run
-
-# 指定配置文件
-cargo run -- --config config/application-local.yml
 ```
 
 ## 开发命令
@@ -88,9 +80,6 @@ cargo test
 
 # 使用 nextest 运行测试
 cargo nextest run
-
-# 运行特定测试
-cargo nextest run test_config
 
 # 运行基准测试
 cargo bench
@@ -118,7 +107,16 @@ cargo clippy
 
 ## 配置说明
 
-配置文件采用 YAML 格式，支持环境变量覆盖：
+配置文件统一放置在 `server/config/` 目录下：
+
+```bash
+server/config/
+├── application.yml              # 基础配置
+├── application-local.yml.example # 本地配置示例
+└── application-local.yml        # 本地配置（不提交）
+```
+
+支持环境变量覆盖：
 
 | 环境变量 | 说明 |
 |----------|------|

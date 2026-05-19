@@ -25,7 +25,7 @@ struct Args {
     debug: bool,
 
     /// 配置文件路径
-    #[arg(short, long, default_value = "config/application.yml")]
+    #[arg(short, long, default_value = "../config/application.yml")]
     config: String,
 }
 

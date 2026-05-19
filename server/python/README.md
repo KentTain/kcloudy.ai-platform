@@ -41,12 +41,14 @@ uv run check-dev
 
 ### 配置
 
+配置文件统一放置在 `server/config/` 目录下：
+
 ```bash
 # 复制配置文件
-cp config/application-local.yml.example config/application-local.yml
+cp server/config/application-local.yml.example server/config/application-local.yml
 
 # 编辑配置文件，配置数据库和 Redis 连接
-vim config/application-local.yml
+vim server/config/application-local.yml
 ```
 
 ### 运行
@@ -69,6 +71,8 @@ uv run runserver --reload
 - 健康检查：http://localhost:8000/health
 
 ## 开发指南
+
+详细开发指南见 [CLAUDE.md](CLAUDE.md)。
 
 ### 代码风格
 
@@ -95,20 +99,17 @@ alembic downgrade -1
 
 ### 测试
 
-详细测试说明见 [tests/README.md](tests/README.md) 和 [tests/CLAUDE.md](tests/CLAUDE.md)。
+详细测试说明见 [tests/README.md](tests/README.md)。
 
 ```bash
 # 运行所有测试
 uv run pytest
 
-# 运行指定目录的测试
-uv run pytest tests/unit/utils/ -v
+# 运行单元测试
+uv run pytest tests/demo/unit/ -v
 
 # 运行指定测试文件
-uv run pytest tests/unit/utils/test_dictionary_util.py
-
-# 运行并显示打印输出
-uv run pytest -s
+uv run pytest tests/demo/unit/config/ -v
 
 # 跳过慢测试
 uv run pytest -m "not slow"
@@ -123,25 +124,6 @@ uv run pytest -m "not slow"
 | `@pytest.mark.slow` | 慢测试 |
 | `@pytest.mark.db` | 数据库测试 |
 | `@pytest.mark.api` | API 测试 |
-
-**测试目录结构：**
-
-```text
-tests/
-├── unit/           # 单元测试
-│   ├── cache/      # Redis 缓存测试
-│   ├── config/     # 配置管理测试
-│   ├── model/      # Pydantic 模型测试
-│   ├── serialization/  # 序列化测试
-│   ├── services/   # 服务层测试
-│   └── utils/      # 工具函数测试
-├── fixtures/       # 测试夹具和数据
-├── studies/        # 代码预研（非正式测试）
-├── examples/       # 示例代码测试
-├── conftest.py     # pytest 全局配置
-├── README.md       # 测试说明文档
-└── CLAUDE.md       # 测试规范文档
-```
 
 ### MVC 架构
 
@@ -165,7 +147,7 @@ tests/
 
 ```text
 server/python/
-├── src/demo/              # 后端源码
+├── src/demo/              # Demo 模块源码
 │   ├── controllers/       # API 控制器
 │   ├── services/          # 业务逻辑层
 │   ├── models/            # 数据库模型
@@ -176,7 +158,15 @@ server/python/
 │   ├── utils/             # 工具函数
 │   ├── examples/          # 示例代码
 │   └── migrations/        # 数据库迁移
-├── config/                # 配置文件
-├── scripts/               # 开发脚本
-└── tests/                 # 测试文件
+├── tests/demo/            # Demo 模块测试
+│   ├── unit/              # 单元测试
+│   ├── examples/          # 示例测试
+│   ├── studies/           # 代码预研
+│   └── fixtures/          # 测试夹具
+├── config/                # 配置目录（引用共享配置）
+└── scripts/               # 开发脚本
 ```
+
+## License
+
+Copyright © 2025 Moles. All Rights Reserved.

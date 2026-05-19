@@ -8,6 +8,7 @@ pub mod common;
 pub mod config;
 pub mod controllers;
 pub mod db;
+pub mod examples;
 pub mod models;
 pub mod schemas;
 pub mod services;

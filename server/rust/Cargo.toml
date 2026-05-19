@@ -109,7 +109,7 @@ path = "src/main.rs"
 
 [lib]
 name = "demo"
-path = "src/lib.rs"
+path = "src/demo/lib.rs"
 
 [[bench]]
 name = "api_benchmark"
