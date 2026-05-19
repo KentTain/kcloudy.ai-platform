@@ -1,10 +1,21 @@
 """
 用户上下文
+
+从 framework.common.ctx 模块导入。
 """
 
-from contextvars import ContextVar
-
 from pydantic import BaseModel, Field
+
+# 从 framework 导入上下文管理
+from framework.common.ctx import (
+    Context,
+    get_context,
+    set_context,
+    clear_context,
+    set_user,
+    get_user_id,
+    get_tenant_id,
+)
 
 
 class User(BaseModel):
@@ -15,7 +26,13 @@ class User(BaseModel):
     username: str = Field(..., description="用户名")
 
 
-CTX_TOKEN: ContextVar[str | None] = ContextVar("token", default=None)
-CTX_TENANT_ID: ContextVar[str | None] = ContextVar("tenant_id", default=None)
-CTX_USER_ID: ContextVar[str | None] = ContextVar("user_id", default=None)
-CTX_USER: ContextVar[User | None] = ContextVar("user", default=None)
+__all__ = [
+    "Context",
+    "get_context",
+    "set_context",
+    "clear_context",
+    "set_user",
+    "get_user_id",
+    "get_tenant_id",
+    "User",
+]
