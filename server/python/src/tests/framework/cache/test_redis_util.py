@@ -65,7 +65,7 @@ class TestRedisUtilStringOperations:
             result = await RedisUtil.set("key", "value", ttl=60)
 
             assert result is True
-            mock_redis.set.assert_called_once_with("key", "value", ex=60)
+            mock_redis.set.assert_called_once_with("key", "value", ex=60, nx=False)
 
     @pytest.mark.asyncio
     async def test_set_without_ttl(self, mock_redis):
@@ -82,7 +82,7 @@ class TestRedisUtilStringOperations:
             result = await RedisUtil.set("key", "value")
 
             assert result is True
-            mock_redis.set.assert_called_once_with("key", "value", ex=None)
+            mock_redis.set.assert_called_once_with("key", "value", ex=None, nx=False)
 
     @pytest.mark.asyncio
     async def test_get_existing_key(self, mock_redis):

@@ -13,10 +13,18 @@ from framework.config.helpers import (
     hyphen_to_underscore,
     convert_dict_hyphen_to_underscore,
 )
+from framework.config.settings import (
+    Settings,
+    init_settings,
+    get_settings,
+)
 
 __all__ = [
     "BaseSettings",
     "YamlParser",
     "hyphen_to_underscore",
     "convert_dict_hyphen_to_underscore",
+    "Settings",
+    "init_settings",
+    "get_settings",
 ]

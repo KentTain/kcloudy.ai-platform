@@ -23,14 +23,16 @@ def to_snake_case(text: str) -> str:
     if not text:
         return text
 
-    # 在大写字母前插入下划线
-    result = re.sub(r"([A-Z])", r"_\1", text)
+    result = text
 
-    # 处理连续大写字母的情况（如 XMLParser -> xml_parser）
+    # 在小写字母和大写字母之间插入下划线（如 userName -> user_Name）
+    result = re.sub(r"([a-z])([A-Z])", r"\1_\2", result)
+
+    # 在连续大写字母和后续的大写字母+小写字母之间插入下划线（如 XMLParser -> XML_Parser）
     result = re.sub(r"([A-Z]+)([A-Z][a-z])", r"\1_\2", result)
 
-    # 移除开头的下划线，转换为小写
-    return result.lstrip("_").lower()
+    # 转换为小写
+    return result.lower()
 
 
 def to_camel_case(text: str, capitalize_first: bool = False) -> str:

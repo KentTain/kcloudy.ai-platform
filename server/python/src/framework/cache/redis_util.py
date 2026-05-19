@@ -4,6 +4,8 @@ RedisUtil - 统一的 Redis 工具类
 封装常用 Redis 操作，支持单机、集群、哨兵模式。
 """
 
+from __future__ import annotations
+
 from typing import Any, Optional
 from redis.asyncio import Redis, ConnectionPool
 from redis.exceptions import RedisError

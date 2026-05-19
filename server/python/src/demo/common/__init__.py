@@ -1,8 +1,10 @@
 """
 公共模块
+
+从 framework.common 模块导入。
 """
 
-from demo.common.ctx import CTX_TENANT_ID, CTX_TOKEN, CTX_USER, CTX_USER_ID, User
+from demo.common.ctx import User
 from demo.common.exception_handler import register_exception_handlers
 from demo.common.exceptions import (
     BadRequestError,
@@ -11,12 +13,22 @@ from demo.common.exceptions import (
     UnauthorizedError,
 )
 
+# 从 framework 提供的上下文管理函数
+from framework.common.ctx import (
+    get_context,
+    set_context,
+    clear_context,
+    get_user_id,
+    get_tenant_id,
+)
+
 __all__ = [
     "User",
-    "CTX_TOKEN",
-    "CTX_TENANT_ID",
-    "CTX_USER_ID",
-    "CTX_USER",
+    "get_context",
+    "set_context",
+    "clear_context",
+    "get_user_id",
+    "get_tenant_id",
     "UnauthorizedError",
     "ForbiddenError",
     "NotFoundError",
