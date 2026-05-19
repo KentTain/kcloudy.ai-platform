@@ -120,11 +120,11 @@
 - [x] 13.4 迁移 demo/utils 到 framework/utils
 - [x] 13.5 迁移 demo/models 到 framework/database
 - [x] 13.6 更新 demo 模块导入，使用 framework
-- [ ] 13.7 验证 demo 模块功能正常
+- [x] 13.7 验证 demo 模块功能正常
 
 ## 14. 文档和收尾
 
 - [x] 14.1 创建 `framework/CLAUDE.md` - 开发指南
 - [x] 14.2 创建 `framework/README.md` - 模块说明
-- [ ] 14.3 更新项目依赖配置（pyproject.toml）
-- [ ] 14.4 运行完整测试套件，确保通过
+- [x] 14.3 更新项目依赖配置（pyproject.toml）
+- [x] 14.4 运行完整测试套件，确保通过
