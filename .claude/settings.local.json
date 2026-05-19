@@ -21,7 +21,15 @@
       "Bash(pnpm dev*)",
       "Bash(pnpm build*)",
       "WebSearch",
-      "WebFetch"
+      "WebFetch",
+      "Bash(cargo test *)",
+      "Bash(cargo check *)",
+      "Bash(rustup toolchain *)",
+      "Bash(cat \"D:/Project/ai/kcloudy.init_project/server/rust/CLAUDE.md\")",
+      "Read(//tmp/**)",
+      "Bash(cmd //c \"mklink /J config ..\\\\\\\\config\")",
+      "Bash(ln -s ../config config)",
+      "Bash(powershell *)"
     ]
   }
 }

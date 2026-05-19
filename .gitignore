@@ -63,4 +63,5 @@ htmlcov/
 # obsidian
 .claudian
 .obsidian
+Excalidraw
 *.base

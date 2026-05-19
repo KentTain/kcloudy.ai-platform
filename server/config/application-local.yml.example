@@ -1,21 +1,217 @@
-# Demo 本地开发配置示例
-# 复制此文件为 application-local.yml 并修改配置
-
-# 服务器配置
+# 服务器地址和端口号
 server:
   host: 0.0.0.0
-  port: 8000
-  debug: true
+  port: 8081
+  workers: 1
 
-# 日志配置
-logging:
-  level: DEBUG
+# API文档配置
+api-docs:
+  # 全局开关，控制是否启用API文档
+  enabled: true
+
+# 服务发现配置
+discovery:
+  # 是否启用服务发现
+  enabled: false
 
 # 数据库配置
 sqlalchemy:
-  database_url: postgresql+asyncpg://postgres:postgres@localhost:5432/demo
+  # 数据库连接URL
+  url: "postgresql+asyncpg://alon:dXPk8Acy8UeUmJNxCJSa@10.60.6.10:30432/alon"
+  # 是否打印SQL语句
   echo: true
+  pool:
+    # 注意：启用此选项会输出详细的连接池操作日志，建议仅在调试时使用
+    echo: false
+    size: 20
+    max-overflow: 30
 
-# Redis 配置
+# redis 配置
 redis:
-  url: redis://localhost:6379/0
+  mode: single
+  single:
+    host: "10.60.6.10"
+    port: 30630
+    password: "nlySaHUwJfZt"
+    db: 9
+    # 连接池配置
+    connection-pool:
+      max-connections: 50 # 最大连接数
+      socket-timeout: 10.0 # 套接字超时时间（秒），增加到10秒支持Stream阻塞操作
+      socket-connect-timeout: 5.0 # 连接超时时间（秒）
+      socket-keepalive: true # 是否启用套接字保活
+      socket-keepalive-options: {} # 套接字保活选项
+      retry-on-timeout: true # 超时时重试
+      health-check-interval: 30 # 健康检查间隔（秒）
+
+# 对象存储配置
+oss:
+  default-type: minio
+  https: true
+  minio:
+    endpoint: "ossapi-dev.shuqu-info.cn"
+    internal-endpoint: "ossapi-dev.shuqu-info.cn"
+    access-key: "UYRTKNVyD164W7qSKaHw"
+    secret-key: "RRxNLpQ0I9UNpmUIQAB3K9BKNv7G4Z5DAdveiBx4"
+    secure: true
+
+# 定时任务配置
+scheduler:
+  enabled: false
+
+# 消息队列配置
+messaging:
+  # 连接配置
+  connections:
+    redis:
+      mode: single
+      single:
+        host: "10.60.6.10"
+        port: 30630
+        password: "nlySaHUwJfZt"
+        db: 9
+        # 连接池配置
+        connection-pool:
+          max-connections: 50 # 最大连接数
+          socket-timeout: 10.0 # 套接字超时时间（秒），增加到10秒支持Stream阻塞操作
+          socket-connect-timeout: 5.0 # 连接超时时间（秒）
+          socket-keepalive: true # 是否启用套接字保活
+          socket-keepalive-options: {} # 套接字保活选项
+          retry-on-timeout: true # 超时时重试
+          health-check-interval: 30 # 健康检查间隔（秒）
+  # 发布订阅配置
+  pubsub:
+    use: redis
+  # 队列配置
+  queue:
+    use: redis
+
+# 锁的配置
+lock:
+  provider: redis  # redis、sqlalchemy
+
+# 监听器配置
+listener:
+  # 队列消费者配置
+  queue-consumers:
+    # 向量化任务处理器
+    - handler: "alon.listeners.services.queue.vector_handler.VectorHandler"
+      concurrency: 5
+      enabled: true
+    # FAQ向量化任务处理器
+    - handler: "alon.listeners.services.queue.faq_vector_handler.FaqVectorHandler"
+      concurrency: 5
+      enabled: false
+    # 图谱化任务处理器
+    - handler: "alon.listeners.services.queue.dataset.document_graph.DocumentGraphTas\
+        kHandler"
+      concurrency: 1
+      enabled: true
+    # 分段索引任务处理器
+    - handler: "alon.listeners.services.queue.segment_index_handler.SegmentIndexHandler"
+      concurrency: 5
+      enabled: false
+    # 文档摘要生成任务处理器
+    - handler: "alon.listeners.services.queue.summary_vector_handler.SummaryVectorHan\
+        dler"
+      concurrency: 5
+      enabled: false
+
+# 租户配置
+tenant:
+  request-header: "x-alon-tenantid"
+  default-tenant-id: "00000000-0000-0000-0000-000000000000"
+  default-workspace-id: "42fd6df4-d488-43af-a389-1fb9696ae6cd"
+  default-dataset-path: "D:\\Work\\田长军\\会泽矿业\\知识库-整理后\\"
+  default-admin-ids:
+    - "2d1319f1-78f6-4408-ab90-1e7e4745b12b"
+    - "6c4287df-76fd-42ef-9eaa-12fae4917318"
+
+# 安全配置
+security:
+  authentication:
+    enabled: true
+    provider:
+      type: local # mock, local, keycloak, oauth2
+      mock-user:
+        tenant-id: "00000000-0000-0000-0000-000000000000"
+        user-id: "0beac92acb266eea120382fe53f7d7d7"
+        username: "debug-user"
+      oauth2:
+        client-id: "Ov23lif1S6E4BZdzYvmf"
+        client-secret: "8f0266d4a0b3d4698b72cb327b1d4a9e5c5da309"
+        redirect-uri: "http://127.0.0.1:8081/api/v1/console/base/callback"
+        base-url: "https://github.com"
+        authorize-url: "/login/oauth/authorize"
+        logout-url: "/auth/user/logout"
+        token-url: "/login/oauth/access_token"
+        token-mapping:
+          token_type: "token_type"
+          access_token: "access_token"
+          refresh_token: "refresh_token"
+          expires_in: "expires_in"
+          scope: "scope"
+        user-info-url: "https://api.github.com/user"
+        user-info-mapping:
+          user_id: "id"
+          user_name: "login"
+          user_email: "email"
+          user_mobile: "mobile"
+  service:
+    enabled: true
+    provider:
+      type: api_key # mock, api_key
+      mock-ctx:
+        tenant-id: xxxxx
+        app-id: xxxxx
+        workspace_id: xxxxx
+
+# 知识库配置
+knowledge:
+  # OCR服务端点
+  ocr-server:
+    endpoint: "https://paddleocr.zaki666.online"
+  # 语义分割服务端点
+  semantic-splitter-server:
+    endpoint: "https://semantic-splitter.zaki666.online"
+  # 图谱化引擎配置
+  graphrag:
+    # 引擎地址
+    endpoint: "http://192.168.0.101:30214"
+  # 解析引擎配置
+  parsing-engine:
+    # 知识库文档解析引擎服务地址
+    endpoint: "http://218.17.137.209:28000"
+
+# 代码沙箱环境地址
+code-sandbox:
+  endpoint: "https://code-sandbox.zaki666.online"
+  api-key: "dify-sandbox"
+  connect-timeout: 10
+  read-timeout: 10
+  write-timeout: 10
+
+# mineru配置
+mineru:
+  # mineru服务端点
+  endpoint: "http://218.17.137.209:28000"
+  # 超时时间（秒）
+  timeout: 1200
+  # 缓存目录
+  cache-dir: "/tmp/mineru_cache"
+
+web-config:
+  # 应用配置
+  app:
+    # 默认服务器知识库目录
+    default-dataset-path: ${tenant.default-dataset-path}
+    # 默认首页
+    default-home-page: "/"
+  # 文档地址
+  document:
+    version: "1.0.0"
+    url: "https://www.baidu.com"
+
+# 日志配置
+logging:
+  level: info
