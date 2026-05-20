@@ -21,8 +21,8 @@
   "python.testing.unittestEnabled": false,
   // 使用单元测试-pytest
   "python.testing.pytestEnabled": true,
-  // 配置测试目录（workspace根目录，pytest会自动发现所有tests）
-  "python.testing.cwd": "${workspaceFolder}",
+  // 配置测试工作目录（Python 子项目，确保加载 pytest.ini）
+  "python.testing.cwd": "${workspaceFolder}/server/python",
   // 配置单元测试参数
   "python.testing.pytestArgs": ["--no-header", "--no-summary", "--capture=no", "-v", "-s", "-q"],
   // 在保存时自动发现和运行测试
