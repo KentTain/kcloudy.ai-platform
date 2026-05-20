@@ -6,8 +6,8 @@ import pytest
 from unittest.mock import patch, MagicMock
 from pathlib import Path
 
-from framework.config.base import BaseSettings
-from framework.config.helpers import (
+from framework.configs.base import BaseSettings
+from framework.configs.helpers import (
     hyphen_to_underscore,
     convert_dict_hyphen_to_underscore,
     deep_merge_dict,

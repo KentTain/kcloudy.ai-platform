@@ -26,7 +26,7 @@ framework/
 ### 配置加载
 
 ```python
-from framework.config import init_settings, get_settings
+from framework.configs import init_settings, get_settings
 
 # 初始化配置
 settings = init_settings("path/to/config")
@@ -57,7 +57,7 @@ is_healthy = await RedisUtil.health_check()
 
 ```python
 from framework.storage import get_storage_provider
-from framework.config import get_settings
+from framework.configs import get_settings
 
 settings = get_settings()
 storage = get_storage_provider(settings.oss)
@@ -76,7 +76,7 @@ url = await storage.get_presigned_url("bucket", "path/file.txt", 3600)
 
 ```python
 from framework.lock import get_lock_provider
-from framework.config import get_settings
+from framework.configs import get_settings
 
 settings = get_settings()
 lock_provider = get_lock_provider(settings.lock)

@@ -34,10 +34,11 @@
       "Bash(git -c commit.gpgsign=false commit -m ' *)",
       "Bash(python -m py_compile demo/common/exceptions.py demo/common/ctx.py demo/configs/__init__.py)",
       "Bash(python -m py_compile src/demo/common/exceptions.py src/demo/common/ctx.py src/demo/configs/__init__.py)",
-      "Bash(python -m py_compile src/framework/common/exceptions.py src/framework/common/ctx.py src/framework/config/__init__.py)",
+      "Bash(python -m py_compile src/framework/common/exceptions.py src/framework/common/ctx.py src/framework/configs/__init__.py)",
       "Bash(python -c ' *)",
       "Bash(python -m pytest tests/ -v --collect-only)",
-      "Bash(openspec status *)"
+      "Bash(openspec status *)",
+      "Bash(git restore *)"
     ]
   }
 }

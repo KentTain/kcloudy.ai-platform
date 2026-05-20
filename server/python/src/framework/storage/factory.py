@@ -7,7 +7,7 @@
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from framework.config.settings import OssSettings
+    from framework.configs.settings import OssSettings
     from framework.core.storage import StorageProvider
 
 

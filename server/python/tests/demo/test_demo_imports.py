@@ -15,7 +15,7 @@ class TestDemoConfigsImports:
         from demo.configs import BaseSettings
 
         # 验证来自 framework
-        from framework.config.base import BaseSettings as FrameworkBaseSettings
+        from framework.configs.base import BaseSettings as FrameworkBaseSettings
 
         assert BaseSettings is FrameworkBaseSettings
 
@@ -23,7 +23,7 @@ class TestDemoConfigsImports:
         """demo.configs 应该从 framework 导入 YamlParser"""
         from demo.configs import YamlParser
 
-        from framework.config.yaml import YamlParser as FrameworkYamlParser
+        from framework.configs.yaml import YamlParser as FrameworkYamlParser
 
         assert YamlParser is FrameworkYamlParser
 
@@ -34,7 +34,7 @@ class TestDemoConfigsImports:
             convert_dict_hyphen_to_underscore,
         )
 
-        from framework.config.helpers import (
+        from framework.configs.helpers import (
             hyphen_to_underscore as framework_hyphen,
             convert_dict_hyphen_to_underscore as framework_convert,
         )

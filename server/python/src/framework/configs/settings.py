@@ -9,7 +9,7 @@ from typing import Any
 
 from pydantic import Field
 
-from framework.config.base import BaseSettings
+from framework.configs.base import BaseSettings
 
 
 # ==============================================================================
@@ -232,7 +232,7 @@ def init_settings(config_dir: Path | str) -> Settings:
 
     _config_dir = Path(config_dir) if isinstance(config_dir, str) else config_dir
 
-    from framework.config.yaml import YamlParser
+    from framework.configs.yaml import YamlParser
     parser = YamlParser(config_dir=_config_dir, base_config_file="application.yml")
     _settings = Settings.from_dict(parser.config_content or {})
 

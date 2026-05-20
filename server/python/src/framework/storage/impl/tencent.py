@@ -5,7 +5,7 @@
 from qcloud_cos import CosConfig, CosS3Client
 from typing import Any
 
-from framework.config.settings import TencentCosSettings
+from framework.configs.settings import TencentCosSettings
 
 
 class TencentStorage:

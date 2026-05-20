@@ -9,7 +9,7 @@ from typing import Any, TypeVar
 from pydantic_settings import BaseSettings as PydanticBaseSettings
 from pydantic_settings import SettingsConfigDict
 
-from framework.config.helpers import convert_dict_hyphen_to_underscore
+from framework.configs.helpers import convert_dict_hyphen_to_underscore
 
 T = TypeVar("T", bound="BaseSettings")
 

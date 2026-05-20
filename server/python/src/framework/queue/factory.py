@@ -7,7 +7,7 @@
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from framework.config.settings import MessagingSettings
+    from framework.configs.settings import MessagingSettings
     from framework.core.queue import QueueProvider
 
 

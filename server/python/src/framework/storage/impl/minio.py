@@ -8,7 +8,7 @@ from typing import Any
 from minio import Minio
 from minio.error import S3Error
 
-from framework.config.settings import MinioSettings
+from framework.configs.settings import MinioSettings
 
 
 class MinioStorage:

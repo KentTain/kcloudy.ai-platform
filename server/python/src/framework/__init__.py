@@ -2,7 +2,7 @@
 Framework 模块
 
 提供统一的基础设施组件，包括：
-- config: 统一配置
+- configs: 统一配置
 - cache: 缓存模块
 - core: 核心接口
 - common: 通用组件

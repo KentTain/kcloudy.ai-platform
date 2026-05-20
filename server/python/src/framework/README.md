@@ -23,7 +23,7 @@ pip install framework
 ## 快速开始
 
 ```python
-from framework.config import init_settings, get_settings
+from framework.configs import init_settings, get_settings
 
 # 初始化配置
 init_settings("config/")

@@ -115,7 +115,7 @@
 ## 13. demo 模块重构
 
 - [x] 13.1 分析 demo 模块现有结构
-- [x] 13.2 迁移 demo/configs 到 framework/config
+- [x] 13.2 迁移 demo/configs 到 framework/configs
 - [x] 13.3 迁移 demo/common 到 framework/common
 - [x] 13.4 迁移 demo/utils 到 framework/utils
 - [x] 13.5 迁移 demo/models 到 framework/database

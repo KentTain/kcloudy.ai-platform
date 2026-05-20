@@ -5,7 +5,7 @@
 import oss2
 from typing import Any
 
-from framework.config.settings import AliyunOssSettings
+from framework.configs.settings import AliyunOssSettings
 
 
 class AliyunStorage:

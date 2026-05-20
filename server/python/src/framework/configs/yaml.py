@@ -14,7 +14,7 @@ import re
 from pathlib import Path
 from typing import Any
 
-from framework.config.helpers import deep_merge_dict
+from framework.configs.helpers import deep_merge_dict
 
 
 VAR_PATTERN = re.compile(r"\$\{([^}]+)\}")

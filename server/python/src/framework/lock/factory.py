@@ -7,7 +7,7 @@
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from framework.config.settings import LockSettings
+    from framework.configs.settings import LockSettings
     from framework.core.lock import LockProvider
 
 

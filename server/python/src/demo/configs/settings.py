@@ -6,7 +6,7 @@ Demo 业务配置
 
 from pydantic import Field
 
-from framework.config.base import BaseSettings
+from framework.configs.base import BaseSettings
 from demo.configs.yaml import YamlParser
 from demo.core.common.path import CONFIG_FOLDER
 

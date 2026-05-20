@@ -7,7 +7,7 @@ YAML 配置文件解析器（代理模式）
 from pathlib import Path
 from typing import Any
 
-from framework.config.yaml import YamlParser as FrameworkYamlParser
+from framework.configs.yaml import YamlParser as FrameworkYamlParser
 
 
 class YamlParser(FrameworkYamlParser):

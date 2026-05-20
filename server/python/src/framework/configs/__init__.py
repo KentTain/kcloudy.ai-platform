@@ -7,13 +7,13 @@
 - Pydantic 验证
 """
 
-from framework.config.base import BaseSettings
-from framework.config.yaml import YamlParser
-from framework.config.helpers import (
+from framework.configs.base import BaseSettings
+from framework.configs.yaml import YamlParser
+from framework.configs.helpers import (
     hyphen_to_underscore,
     convert_dict_hyphen_to_underscore,
 )
-from framework.config.settings import (
+from framework.configs.settings import (
     Settings,
     init_settings,
     get_settings,
