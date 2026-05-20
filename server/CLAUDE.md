@@ -154,7 +154,7 @@ cd server\rust && mklink /D config ..\config
 | 技术栈 | 版本要求 | 包管理器 |
 |--------|----------|----------|
 | Python | 3.12+ | uv |
-| Rust | 1.75+ | cargo |
+| Rust | 1.95+ | cargo |
 | Java | 21+ | maven |
 | .NET | 8.0+ | dotnet cli |
 

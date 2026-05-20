@@ -1,4 +1,13 @@
-{
+{  
+  "env": {
+    "ANTHROPIC_AUTH_TOKEN": "PROXY_MANAGED",
+    "ANTHROPIC_BASE_URL": "http://127.0.0.1:15721",
+    "ANTHROPIC_DEFAULT_HAIKU_MODEL": "qianfan-code-latest",
+    "ANTHROPIC_DEFAULT_SONNET_MODEL": "qianfan-code-latest",
+    "ANTHROPIC_DEFAULT_OPUS_MODEL": "qianfan-code-latest",
+    "API_TIMEOUT_MS": "3000000",
+    "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1"
+  },
   "permissions": {
     "allow": [
       "Bash(uv sync*)",

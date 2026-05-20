@@ -21,7 +21,7 @@ server/
 | 技术栈 | 语言 | 框架 | 状态 | 文档 |
 |--------|------|------|------|------|
 | Python | Python 3.12 | FastAPI + SQLAlchemy 2.0 | ✅ 可用 | [README](python/README.md) |
-| Rust | Rust 1.75+ | Axum + SQLx | ✅ 可用 | [README](rust/README.md) |
+| Rust | Rust 1.95+ | Axum + SQLx | ✅ 可用 | [README](rust/README.md) |
 | Java | Java 21 | Spring Boot 3.x + MyBatis | 🚧 规划中 | - |
 | .NET | .NET 8.0 | ASP.NET Core + EF Core | 🚧 规划中 | - |
 
@@ -270,7 +270,7 @@ vim server/config/application-local.yml
 | 技术栈 | 语言版本 | 包管理器 |
 |--------|----------|----------|
 | Python | 3.12+ | uv |
-| Rust | 1.75+ | cargo |
+| Rust | 1.95+ | cargo |
 | Java | 21+ | maven |
 | .NET | 8.0+ | dotnet |
 
