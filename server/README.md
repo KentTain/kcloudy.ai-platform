@@ -25,6 +25,88 @@ server/
 | Java | Java 21 | Spring Boot 3.x + MyBatis | 🚧 规划中 | - |
 | .NET | .NET 8.0 | ASP.NET Core + EF Core | 🚧 规划中 | - |
 
+## 技术栈对比
+
+### 完整技术选型
+
+| 类别 | Python | Rust | Java | .NET |
+|------|--------|------|------|------|
+| **Web 框架** | FastAPI 0.115 | Axum 0.8 | Spring Boot 3.x | ASP.NET Core 8.0 |
+| **ORM** | SQLAlchemy 2.0 | SQLx 0.8 | MyBatis / Hibernate | Entity Framework Core 8.0 |
+| **数据库迁移** | Alembic 1.14 | SQLx migrations | Flyway / Liquibase | EF Core Migrations |
+| **数据验证** | Pydantic 2.10 | serde + validator | Bean Validation | FluentValidation |
+| **AI 框架** | LangChain 1.3 + LangGraph 1.2 | LangChainRust | LangChain4j | LangChain.NET |
+| **测试框架** | pytest + pytest-asyncio | cargo-nextest | JUnit 5 | xUnit |
+| **异步运行时** | asyncio | Tokio | Virtual Threads | Task Parallel Library |
+| **依赖注入** | 内置 / dependency-injector | 内置 | Spring IoC | Microsoft DI |
+| **配置管理** | PyYAML | config-rs | Spring Config | appsettings.json |
+| **HTTP 客户端** | httpx | reqwest | RestTemplate / WebClient | HttpClient |
+| **JSON 序列化** | orjson | serde_json | Jackson | System.Text.Json |
+| **Linter/Format** | Ruff | rustfmt + clippy | SpotBugs / Checkstyle | StyleCop |
+
+### Web 框架对比
+
+| 特性 | Python (FastAPI) | Rust (Axum) | Java (Spring Boot) | .NET (ASP.NET Core) |
+|------|------------------|-------------|--------------------|--------------------|
+| 类型系统 | 动态 + 类型提示 | 静态 | 静态 | 静态 |
+| 性能 | 中等 | 极高 | 高 | 高 |
+| 异步支持 | 原生 async/await | 原生 async/await | Virtual Threads | async/await |
+| API 文档 | 自动生成 (Swagger) | 需手动配置 | 自动生成 | 自动生成 |
+| 学习曲线 | 平缓 | 陡峭 | 中等 | 中等 |
+| 生态成熟度 | 高 | 中 | 极高 | 高 |
+
+### ORM 对比
+
+| 特性 | Python (SQLAlchemy) | Rust (SQLx) | Java (MyBatis) | .NET (EF Core) |
+|------|---------------------|-------------|----------------|----------------|
+| 类型 | 全功能 ORM | 编译时检查 SQL | SQL 映射框架 | 全功能 ORM |
+| 类型安全 | 运行时 | 编译时 | 运行时 | 编译时 |
+| 异步支持 | ✅ 原生 | ✅ 原生 | ✅ 需要 | ✅ 原生 |
+| 迁移工具 | Alembic | SQLx migrations | Flyway | 内置 |
+| 复杂查询 | 强大 | 灵活 SQL | 灵活 XML/注解 | LINQ |
+| 学习曲线 | 中等 | 中等 | 简单 | 中等 |
+
+### 数据验证对比
+
+| 特性 | Python (Pydantic) | Rust (serde) | Java (Bean Validation) | .NET (FluentValidation) |
+|------|-------------------|--------------|------------------------|------------------------|
+| 验证方式 | 装饰器 | derive 宏 | 注解 | Fluent API |
+| 运行时检查 | ✅ | ❌ 编译时 | ✅ | ✅ |
+| 自动转换 | ✅ 类型强制转换 | ✅ 反序列化 | ❌ | ❌ |
+| 错误信息 | 结构化 | 自定义 | 默认 | 自定义 |
+| OpenAPI 集成 | ✅ 自动 | 需手动 | ✅ | ✅ |
+
+### AI 框架对比
+
+| 特性 | Python (LangChain) | Rust (LangChainRust) | Java (LangChain4j) | .NET (LangChain.NET) |
+|------|--------------------|-----------------------|--------------------|-----------------------|
+| 成熟度 | 最高 | 中等 | 高 | 中等 |
+| 模型支持 | 全面 | 主要模型 | 主要模型 | 主要模型 |
+| 向量数据库 | 全面 | 基本 | 基本 | 基本 |
+| Agent 支持 | LangGraph | 基本 | 基本 | 基本 |
+| 文档质量 | 完善 | 完善 | 完善 | 完善 |
+
+### 测试框架对比
+
+| 特性 | Python (pytest) | Rust (nextest) | Java (JUnit 5) | .NET (xUnit) |
+|------|-----------------|----------------|----------------|--------------|
+| 并行测试 | 插件支持 | ✅ 内置 | 需配置 | ✅ 内置 |
+| 异步测试 | ✅ pytest-asyncio | ✅ 内置 | ✅ | ✅ |
+| Mock 支持 | pytest-mock | mockall | Mockito | Moq |
+| 参数化测试 | ✅ @pytest.mark.parametrize | ✅ #[test_case] | ✅ @ParameterizedTest | ✅ [Theory] |
+| Fixtures | ✅ 强大 | 无 | 无 | 共享上下文 |
+| 覆盖率报告 | pytest-cov | cargo-tarpaulin | JaCoCo | coverlet |
+
+### 项目结构差异
+
+| 目录/文件 | Python | Rust | Java | .NET |
+|-----------|--------|------|------|------|
+| 源码目录 | `src/demo/` | `src/` | `src/main/java/` | `src/` |
+| 测试目录 | `tests/` | `src/` 嵌入 | `src/test/java/` | `tests/` |
+| 配置文件 | `config/application.yml` | `config/` | `application.yml` | `appsettings.json` |
+| 入口文件 | `run.py` | `main.rs` | `Application.java` | `Program.cs` |
+| 依赖管理 | `pyproject.toml` | `Cargo.toml` | `pom.xml` | `.csproj` |
+
 ## 统一架构
 
 所有技术栈采用统一的 MVC 架构和基础设施：

@@ -24,100 +24,75 @@
 - Java: [java/CLAUDE.md](java/CLAUDE.md) (规划中)
 - .NET: [netcore/CLAUDE.md](netcore/CLAUDE.md) (规划中)
 
-## 统一架构设计
+## 技术选型
 
-所有技术栈采用统一的 MVC 架构和项目结构：
+| 技术栈 | 核心技术 | 详细文档 |
+|--------|----------|----------|
+| Python | FastAPI + SQLAlchemy 2.0 + Alembic + Pydantic + LangChain | [python/CLAUDE.md](python/CLAUDE.md) |
+| Rust | Axum + SQLx + serde + Tokio + LangChainRust | [rust/CLAUDE.md](rust/CLAUDE.md) |
+| Java | Spring Boot 3.x + MyBatis + LangChain4j | [java/CLAUDE.md](java/CLAUDE.md) (规划中) |
+| .NET | ASP.NET Core 8.0 + EF Core + LangChain.NET | [netcore/CLAUDE.md](netcore/CLAUDE.md) (规划中) |
+
+## 项目结构
+
+所有技术栈采用统一的 MVC 架构：
 
 ```text
 server/
 ├── config/                       # 共享配置文件目录
-│   ├── application.yml              # 基础配置
-│   ├── application-local.yml.example # 本地开发配置示例
-│   └── application-local.yml        # 本地开发配置（不提交）
+│   ├── application.yml           # 基础配置
+│   ├── application-local.yml.example # 本地配置示例
+│   └── application-local.yml     # 本地配置（不提交）
 └── {技术栈}/                     # 技术栈项目目录
-    ├── src/{模块}/                  # 源码模块（framework、examples、auth、user 等）
-    │   ├── components/              # 可插拔组件框架
-    │   ├── controllers/             # API 控制器
-    │   ├── services/                # 业务逻辑层
-    │   ├── models/                  # 数据库模型
-    │   ├── schemas/                 # DTO 模型
-    │   ├── configs/                 # 配置管理
-    │   ├── common/                  # 通用模块
-    │   ├── db/                      # 数据库引擎
-    │   ├── migrations/              # 数据库迁移
-    │   ├── core/                    # 核心框架
-    │   └── utils/                   # 工具函数
-    ├── tests/                       # 测试文件
-    ├── config/                      # 配置（引用共享配置）
-    ├── scripts/                     # 开发脚本
-    ├── CLAUDE.md                    # 开发指南
-    └── README.md                    # 说明文档
+    ├── src/                      # 源码
+    │   ├── controllers/          # API 控制器
+    │   ├── services/             # 业务逻辑层
+    │   ├── models/               # 数据库模型
+    │   ├── schemas/              # DTO 模型
+    │   ├── configs/              # 配置管理
+    │   ├── db/                   # 数据库引擎
+    │   ├── migrations/           # 数据库迁移
+    │   └── utils/                # 工具函数
+    ├── tests/                    # 测试文件
+    ├── config/                   # 配置（引用共享配置）
+    ├── CLAUDE.md                 # 开发指南
+    └── README.md                 # 说明文档
 ```
 
-### MVC 分层架构
+## MVC 分层架构
 
-| 层级 | 职责 | 说明 |
-|------|------|------|
-| Controller | HTTP 请求处理 | 路由、参数校验、响应封装 |
-| Service | 业务逻辑 | 核心业务、事务管理、缓存策略 |
-| Model | 数据模型 | ORM 映射、数据库操作 |
+| 层级 | 职责 |
+|------|------|
+| Controller | HTTP 请求处理：路由、参数校验、响应封装 |
+| Service | 业务逻辑：核心业务、事务管理、缓存策略 |
+| Model | 数据模型：ORM 映射、数据库操作 |
 
 ## 统一基础设施
 
-所有技术栈共享以下基础设施组件：
+| 组件 | 用途 |
+|------|------|
+| PostgreSQL + pgvector | 主数据库：关系数据存储 + 向量检索 |
+| Redis | 缓存 / 队列 / 发布订阅 |
+| MinIO | 对象存储：文件、图片等非结构化数据 |
 
-| 组件 | 用途 | 说明 |
-|------|------|------|
-| PostgreSQL + pgvector | 主数据库 | 关系数据存储 + 向量检索 |
-| Redis | 缓存 / 队列 / 发布订阅 | 多用途中间件 |
-| MinIO | 对象存储 | 文件、图片等非结构化数据 |
-
-### 连接配置示例
-
-```yaml
-# 数据库
-database:
-  url: postgresql://postgres:postgres@localhost:5432/demo
-
-# Redis
-redis:
-  url: redis://localhost:6379/0
-
-# MinIO
-minio:
-  endpoint: localhost:9000
-  access_key: minioadmin
-  secret_key: minioadmin
-  bucket: demo
-```
-
-## 统一 API 规范
+## API 规范
 
 ### 健康检查端点
 
 所有技术栈必须提供统一的健康检查 API：
 
-| 端点 | 方法 | 说明 |
-|------|------|------|
-| `/health` | GET | 服务健康状态检查 |
-
-**响应格式：**
-
-```json
-{
-  "status": "healthy",
-  "timestamp": "2025-05-19T10:00:00Z"
-}
+```
+GET /health → {"status": "healthy", "timestamp": "..."}
 ```
 
 ### API 文档
 
-各技术栈提供标准 API 文档：
-
-- **Python**: `/docs` (Swagger), `/redoc` (ReDoc)
-- **Rust**: 需通过代码注释生成
-- **Java**: `/swagger-ui.html` (规划)
-- **.NET**: `/swagger` (规划)
+| 技术栈 | 文档端点 |
+|--------|----------|
+| Python | `/docs` (Swagger), `/redoc` (ReDoc) |
+| Rust | 需手动配置 |
+| Java | `/swagger-ui.html` |
+| .NET | `/swagger` |
 
 ### RESTful 规范
 
@@ -125,7 +100,7 @@ minio:
 - HTTP 方法：GET 查询、POST 创建、PUT 更新、DELETE 删除
 - 响应格式：统一 JSON 结构，包含 `code`、`message`、`data` 字段
 
-## 统一配置管理
+## 配置管理
 
 ### 配置文件结构
 
@@ -140,18 +115,6 @@ server/{技术栈}/config/          # 符号链接指向 server/config/
 
 ### 符号链接配置
 
-各技术栈的 `config/` 目录通过**符号链接**指向共享配置目录，实现配置统一管理：
-
-```bash
-# 目录结构
-server/
-├── config/                      # 实际配置文件
-└── python/config/               # 符号链接 → ../config (即 server/config/)
-└── rust/config/                 # 符号链接 → ../config (即 server/config/)
-```
-
-**创建符号链接：**
-
 ```bash
 # Linux/macOS
 cd server/python && ln -s ../config config
@@ -160,17 +123,7 @@ cd server/rust && ln -s ../config config
 # Windows (需要管理员权限)
 cd server\python && mklink /D config ..\config
 cd server\rust && mklink /D config ..\config
-
-# Windows (PowerShell，需要管理员权限)
-New-Item -ItemType SymbolicLink -Path "server\python\config" -Target "server\config"
-New-Item -ItemType SymbolicLink -Path "server\rust\config" -Target "server\config"
 ```
-
-**注意事项：**
-
-- Windows 创建符号链接需要**管理员权限**
-- 符号链接在 Git 中以 mode `120000` 存储
-- 修改任意技术栈的配置文件会同步到所有技术栈
 
 ### 配置优先级
 
@@ -184,33 +137,9 @@ New-Item -ItemType SymbolicLink -Path "server\rust\config" -Target "server\confi
 
 ## 开发规范
 
-### 代码质量
-
 - 遵循各语言的社区规范和最佳实践
 - 统一使用 Conventional Commits 提交规范
 - 保持各技术栈 API 行为一致性
-
-### 测试要求
-
-- 单元测试覆盖核心业务逻辑
-- 集成测试验证 API 行为
-- 各技术栈使用对应测试框架
-
-### 技术栈对应测试框架
-
-| 技术栈 | 测试框架 |
-|--------|----------|
-| Python | pytest |
-| Rust | cargo-nextest |
-| Java | JUnit 5 (规划) |
-| .NET | xUnit (规划) |
-
-## 快速开始
-
-1. 选择目标技术栈目录
-2. 阅读对应 `CLAUDE.md` 开发指南
-3. 按文档安装依赖并启动服务
-4. 访问 `/health` 端点验证服务状态
 
 ## 环境要求
 
