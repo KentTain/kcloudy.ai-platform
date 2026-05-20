@@ -19,8 +19,10 @@ type: feedback
 - `server/{技术栈}/tests/{模块}/CLAUDE.md`：模块测试层 - 模块测试规范
 
 **README.md 层级限制：**
-- `server/{技术栈}/tests/README.md`：测试目录说明
-- 不深入到模块级子目录
+- `server/README.md`：根目录层 - 技术栈对比、统一架构、快速开始
+- `server/{技术栈}/README.md`：技术栈层 - 技术栈功能、环境要求、开发命令、项目结构
+- `server/{技术栈}/tests/README.md`：测试目录层 - 测试说明（可选）
+- 不深入到模块级（`server/{技术栈}/tests/{模块}/README.md` 不应存在）
 
 **禁止：**
 - README.md 不允许出现在模块级目录

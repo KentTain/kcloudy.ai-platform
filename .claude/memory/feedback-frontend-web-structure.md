@@ -20,7 +20,9 @@ type: feedback
 
 **README.md 层级限制：**
 - `web/README.md`：根目录层 - 技术栈对比、统一架构、快速开始
-- 不深入到技术栈级（`web/vue/README.md` 不应存在）
+- `web/{技术栈}/README.md`：技术栈层 - 技术栈功能、环境要求、开发命令、项目结构
+- `web/{技术栈}/tests/README.md`：测试目录层 - 测试说明（可选）
+- 不深入到模块级（`web/{技术栈}/tests/{模块}/README.md` 不应存在）
 
 **禁止：**
 - README.md 不允许出现在技术栈级目录
