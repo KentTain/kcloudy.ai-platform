@@ -1,39 +1,234 @@
+# Alon 配置文件使用指南
+# ================================================================================
+#
+# 本配置文件支持多种高级功能，参考了 Spring Boot 的配置设计理念：
+#
+# 1. 多环境配置支持
+#    - application.yml (基础配置)
+#    - application-common.yml (公共配置)
+#    - application-{env}.yml (环境特定配置，如 application-local.yml)
+#    加载顺序：基础 → 公共 → 环境特定，后加载的配置会覆盖前面的配置
+#
+# 2. 变量引用功能
+#    - 配置内引用：${server.host} 引用同文件内的其他配置值
+#    - 数组索引访问：${encryption.instance.1.pub-key} 访问数组元素的属性
+#    - 支持嵌套引用和复杂路径访问
+#
+# 3. 环境变量支持
+#    - 自动覆盖：SERVER_PORT 环境变量会覆盖 server.port 配置
+#    - 变量引用：${SERVER_PORT:8080} 使用环境变量，支持默认值
+#    - 类型转换：自动将字符串转换为数字、布尔值等适当类型
+#    - 命名规则：配置路径 server.port → 环境变量 SERVER_PORT
+#
+# 4. 数据类型支持
+#    - 字符串、数字、布尔值、数组、嵌套对象
+#    - 自动类型推断和转换
+#
+# 使用示例：
+#   环境变量设置：export SERVER_PORT=9090
+#   配置引用：api-url: "http://${server.host}:${server.port}/api"
+#   默认值语法：database-url: ${DATABASE_URL:postgresql://localhost:5432/alon}
+#
+# 更多详细信息请参考：docs/environment-variables.md
+#
+#################################################################################
+
+# 服务名称
+name: alon
+
 # 服务器地址和端口号
 server:
   host: 0.0.0.0
-  port: 8081
-  workers: 1
+  port: 8080
+  workers: 1 # 工作进程数，支持数字或 "auto"（自动设置为 CPU核心数 * 2 + 1）
 
 # API文档配置
 api-docs:
   # 全局开关，控制是否启用API文档
   enabled: true
+  # 其他文档的独立开关
+  endpoints:
+    # 公共接口文档
+    common:
+      enabled: true
+      pattern: "^/api/v[0-9]+/common"
+      title: "公共接口文档"
+      docs-url: "/common/docs"
+      redoc-url: "/common/redoc"
+    # 管理后台接口文档
+    admin:
+      enabled: true
+      pattern: "^/api/v[0-9]+/admin"
+      title: "管理后台接口文档"
+      docs-url: "/admin/docs"
+      redoc-url: "/admin/redoc"
+    # 控制台接口文档
+    console:
+      enabled: true
+      pattern: "^/api/v[0-9]+/console"
+      title: "控制台接口文档"
+      docs-url: "/console/docs"
+      redoc-url: "/console/redoc"
+    # 内部接口文档
+    inner:
+      enabled: true
+      pattern: "^/api/v[0-9]+/inner"
+      title: "内部接口文档"
+      docs-url: "/inner/docs"
+      redoc-url: "/inner/redoc"
+    # 服务接口文档
+    service:
+      enabled: true
+      pattern: "^/api/v[0-9]+/service"
+      title: "服务接口文档"
+      docs-url: "/service/docs"
+      redoc-url: "/service/redoc"
+    # 门户接口文档
+    web:
+      enabled: true
+      pattern: "^/api/v[0-9]+/portal"
+      title: "门户接口文档"
+      docs-url: "/portal/docs"
+      redoc-url: "/portal/redoc"
 
-# 服务发现配置
-discovery:
-  # 是否启用服务发现
-  enabled: false
+# cors配置
+cors:
+  allowed-origin-patterns: "*"
+  allowed-methods: "*"
+  allowed-headers: "*"
+  allow-credentials: true
+  max-age: 86400
+
+# 日志配置
+logging:
+  level: debug
+  path: logs/
+  # 日志文件轮转配置
+  rotation:
+    # 轮转方式：time(按时间) 或 size(按大小)
+    type: time
+    # 时间轮转配置（当type为time时生效）
+    time: "1 hour" # 支持: "1 minute", "1 hour", "1 day", "1 week", "1 month"
+    # 大小轮转配置（当type为size时生效）
+    size: "100 MB" # 支持: "1 KB", "1 MB", "1 GB"
+  # 日志文件保留配置
+  retention:
+    # 保留方式：time(按时间) 或 count(按数量)
+    type: time
+    # 时间保留配置（当type为time时生效）
+    time: "7 days" # 支持: "1 day", "1 week", "1 month"
+    # 数量保留配置（当type为count时生效）
+    count: 10
+  # 日志格式配置
+  format:
+    # 控制台日志格式（包含进程ID、链路追踪ID和用户ID）
+    console: "<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | <level>{level: <8}</level> | <magenta>PID:{process}</magenta> | <yellow>{extra[trace_id]}</yellow> | <blue>{extra[user_id]}</blue> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> | <level>{message}</level>"
+    # 文件日志格式（包含进程ID、链路追踪ID和用户ID）
+    file: "{time:YYYY-MM-DD HH:mm:ss.SSS} | {level: <8} | PID:{process} | {extra[trace_id]} | {extra[user_id]} | {name}:{function}:{line} | {message}"
+  # 是否在控制台输出日志
+  console-enabled: true
+  # 是否输出到文件
+  file-enabled: true
+  # 是否启用彩色输出（仅控制台）
+  colorize: true
+  # 是否启用诊断信息
+  diagnose: true
+  # 是否启用反向跟踪
+  backtrace: true
+  # 日志文件编码
+  encoding: "utf-8"
+  # 是否启用压缩（轮转后的日志文件）
+  compression: "gz" # 可选: null, "gz", "bz2", "xz"
+
+# 示例配置说明：
+#
+# 按大小轮转示例：
+# logging:
+#   rotation:
+#     type: size
+#     size: "50 MB"
+#   retention:
+#     type: count
+#     count: 5
+#
+# 按时间轮转示例：
+# logging:
+#   rotation:
+#     type: time
+#     time: "1 day"
+#   retention:
+#     type: time
+#     time: "30 days"
+#
+# 生产环境推荐配置：
+# logging:
+#   level: info
+#   diagnose: false  # 生产环境关闭诊断信息
+#   compression: "gz"  # 启用压缩节省空间
+
+# 异常处理器配置
+exception-handler:
+  # 是否启用详细错误信息输出,包括端点、请求信息、堆栈跟踪等信息 (生产环境建议设置为false)
+  verbose: false
+
+# 文件上传配置
+file-upload:
+  # 普通文件上传大小限制(字节)，默认50MB
+  max-file-size: 52428800 # 50 * 1024 * 1024
+  # 图片文件（多模态使用）上传大小限制(字节)，默认10MB
+  max-image-size: 10485760 # 10 * 1024 * 1024
 
 # 数据库配置
 sqlalchemy:
   # 数据库连接URL
-  url: "postgresql+asyncpg://alon:dXPk8Acy8UeUmJNxCJSa@10.60.6.10:30432/alon"
-  # 是否打印SQL语句
-  echo: true
+  url: "postgresql+asyncpg://user:password@localhost:5432/alon"
+  # 是否启用SQL语句日志
+  echo: false
   pool:
     # 注意：启用此选项会输出详细的连接池操作日志，建议仅在调试时使用
     echo: false
-    size: 20
-    max-overflow: 30
+    # 连接池类型（可选值：queue, null）
+    # queue: 默认异步连接池，适用于大多数异步应用（推荐）
+    # null: 禁用连接池，适用于多进程/多事件循环环境
+    #
+    # 多进程部署建议：
+    # - 如果使用uvicorn --workers > 1，推荐使用 queue（已优化多进程安全）
+    # - 如果遇到连接池问题，可以尝试 null（性能会有所下降）
+    class-name: "queue"
+    # 连接池大小 (根据并发需求调整)
+    # 多进程环境建议：总连接数 = pool_size × workers
+    # 建议值: 小型应用 5-10, 中型应用 10-20, 大型应用 20-40
+    # 注意：workers=2时，每个进程建议使用较小的pool_size
+    size: 5
+    # 最大溢出连接数 (临时连接)
+    # 建议值: 等于或略小于 pool_size
+    max-overflow: 5
+    # 连接预检测 (建议开启，特别是多进程环境)
+    # 能够及时检测失效的连接，避免跨进程连接问题
+    pre-ping: true
+    # 连接回收时间 (秒)
+    # 多进程环境建议适当缩短，避免长时间占用连接
+    # 建议值: 1800-3600 (30分钟到1小时)
+    recycle: 1800
+    # 连接池超时时间 (秒)
+    # 获取连接的最大等待时间
+    pool-timeout: 30
+    # 连接返回时的重置策略
+    # commit: 提交事务, rollback: 回滚事务, none: 不重置
+    pool-reset-on-return: "commit"
+    # 使用LIFO策略 (后进先出)
+    # 提高连接缓存效率，多进程环境推荐启用
+    pool-use-lifo: true
 
 # redis 配置
 redis:
   mode: single
   single:
-    host: "10.60.6.10"
-    port: 30630
-    password: "nlySaHUwJfZt"
-    db: 9
+    host: "127.0.0.1"
+    port: 6379
+    username: ""
+    password: ""
+    db: 0
     # 连接池配置
     connection-pool:
       max-connections: 50 # 最大连接数
@@ -43,42 +238,198 @@ redis:
       socket-keepalive-options: {} # 套接字保活选项
       retry-on-timeout: true # 超时时重试
       health-check-interval: 30 # 健康检查间隔（秒）
+  sentinel:
+    master: "mymaster" # 哨兵监控的主节点名称
+    nodes:
+      - "192.168.1.101:26379"
+      - "192.168.1.102:26379"
+      - "192.168.1.103:26379"
+    username: "" # 哨兵用户名
+    password: "" # 哨兵密码
+    node-username: "" # 节点用户名
+    node-password: "" # 节点密码
+    db: 0
+    # 哨兵特有参数
+    min-other-sentinels: 0 # 最小其他哨兵数量
+    # 连接池配置
+    connection-pool:
+      max-connections: 50 # 最大连接数
+      socket-timeout: 10.0 # 套接字超时时间（秒），增加到10秒支持Stream阻塞操作
+      socket-connect-timeout: 5.0 # 连接超时时间（秒）
+      socket-keepalive: true # 是否启用套接字保活
+      socket-keepalive-options: {} # 套接字保活选项
+      retry-on-timeout: true # 超时重试
+      health-check-interval: 30 # 健康检查间隔（秒）
+  cluster:
+    # 集群节点列表
+    nodes:
+      - "192.168.1.101:6379"
+      - "192.168.1.102:6379"
+      - "192.168.1.103:6379"
+      - "192.168.1.104:6379"
+      - "192.168.1.105:6379"
+      - "192.168.1.106:6379"
+    username: ""
+    password: ""
+    # 集群参数
+    require-full-coverage: true
+    read-from-replicas: false
+    reinitialize-steps: 5
+    cluster-error-retry-attempts: 3
+    connection-error-retry-attempts: 3
+    # 连接池配置
+    connection-pool:
+      max-connections: 50 # 每个节点的最大连接数
+      socket-timeout: 10.0 # 套接字超时时间（秒），增加到10秒支持Stream阻塞操作
+      socket-connect-timeout: 5.0 # 连接超时时间（秒）
+      socket-keepalive: true
+      socket-keepalive-options: {}
+      retry-on-timeout: true
+      health-check-interval: 30
+
+# 服务发现配置
+discovery:
+  # 是否启用服务发现
+  enabled: false
+  # 服务发现类型：zookeeper, nacos等
+  type: nacos
+  # 是否自动注册服务
+  auto-register: true
+  # 服务实例信息
+  service:
+    # 服务名称，默认使用全局name
+    name: ${name}
+    # 服务主机地址，不指定则使用server.host
+    host: ${server.host}
+    # 服务端口，不指定则使用server.port
+    port: ${server.port}
+    # 服务元数据
+    metadata:
+      version: "1.0.0"
+      description: "Alon服务"
+      api-version: "v1"
+      health-check-path: "/actuator/health"
+    # 服务标签
+    tags:
+      - "api"
+      - "backend"
+    # 服务权重
+    weight: 10
+  # Zookeeper配置
+  zookeeper:
+    # Zookeeper服务器地址
+    servers: "localhost:2181"
+    # 会话超时时间（毫秒）
+    session-timeout: 10000
+    # 连接超时时间（毫秒）
+    connection-timeout: 5000
+  # Nacos配置
+  nacos:
+    host: "localhost"
+    port: 8848
+    namespace: "public"
+    group: "DEFAULT_GROUP"
+    username: "" # 如果启用了鉴权才需要配置
+    password: "" # 如果启用了鉴权才需要配置
+
+# 配置中心配置
+config-center:
+  # 是否启用配置中心
+  enabled: false
+  # 配置中心类型：nacos等
+  type: nacos
+  # 是否自动刷新配置
+  auto-refresh: true
+  # 配置刷新间隔（秒）
+  refresh-interval: 30
+  # Nacos配置中心配置
+  nacos:
+    host: "localhost"
+    port: 8848
+    namespace: "public"
+    group: "DEFAULT_GROUP"
+    username: "" # 如果启用了鉴权才需要配置
+    password: "" # 如果启用了鉴权才需要配置
+    timeout: 3 # 请求超时时间（秒）
 
 # 对象存储配置
 oss:
   default-type: minio
-  https: true
+  https: false # 是否开启HTTPS访问
+  bucket: "alon"
   minio:
-    endpoint: "ossapi-dev.shuqu-info.cn"
-    internal-endpoint: "ossapi-dev.shuqu-info.cn"
-    access-key: "UYRTKNVyD164W7qSKaHw"
-    secret-key: "RRxNLpQ0I9UNpmUIQAB3K9BKNv7G4Z5DAdveiBx4"
-    secure: true
+    endpoint: "<minio-endpoint>" # 外部端点（访问使用）
+    internal-endpoint: "<minio-endpoint>" # 内部端点（上传使用）
+    access-key: "<minio-access-key>"
+    secret-key: "<minio-secret-key>"
+    secure: false # 是否开启HTTPS访问
+  aliyun:
+    endpoint: "<aliyun-endpoint>" # 外部端点（访问使用）
+    internal-endpoint: "<aliyun-endpoint>" # 内部端点（上传使用）
+    access-key-id: "<aliyun-access-key-id>"
+    access-key-secret: "<aliyun-access-key-secret>"
+  tencent:
+    endpoint: "<tencent-endpoint>" # 外部端点（访问使用）
+    internal-endpoint: "<tencent-endpoint>" # 内部端点（上传使用）
+    secret-id: "<tencent-secret-id>"
+    secret-key: "<tencent-secret-key>"
+    region: "<tencent-region>" # 区域，已创建桶归属的区域，例如：ap-guangzhou
+    token: "<tencent-token>" # 临时密钥，如果使用永久ak/sk不需要填入
+    scheme: "<tencent-scheme>" # "https" or "http"
 
-# 定时任务配置
-scheduler:
-  enabled: false
+# 工作流配置
+workflow:
+  graph:
+    # 递归限制
+    recursion-limit: 200
+    # 并行深度限制
+    parallel-depth-limit: 3
+    # 最大并发数（边）
+    max-concurrency: 32
+    # 最大变量大小
+    max-variable-size: 1048576
+    # 检测点配置
+    checkpoint:
+      # 连接池配置
+      pool:
+        min-size: 10
+        max-size: 100
+        max-queries: 50000
+        max-inactive-connection-lifetime: 300
+        command-timeout: 60
+    # 节点配置
+    node:
+      # http请求节点配置
+      http-request:
+        # 连接池配置
+        limits:
+          max-connections: 100 # 最大连接数
+          max-keepalive-connections: 20 # 保持活动连接数
+          keepalive-expiry: 30 # 保持活动超时时间(秒)
+      # 代码节点配置
+      code:
+        max-string-length: 80000 # 最大字符串长度
+        max-number: 1.7976931348623157e308 # 最大数字值
+        min-number: -1.7976931348623157e308 # 最小数字值
+        max-precision: 10 # 最大小数精度
+        max-depth: 5 # 最大对象嵌套深度
+        max-number-array-length: 1000 # 最大数字数组长度
+        max-string-array-length: 100 # 最大字符串数组长度
+        max-object-array-length: 100 # 最大对象数组长度
+
+  # 最大并发数（整体）
+  max-concurrent-tasks: 100
+  # 任务清理超时时间（秒）
+  task-cleanup-timeout: 3600
 
 # 消息队列配置
 messaging:
   # 连接配置
   connections:
     redis:
-      mode: single
-      single:
-        host: "10.60.6.10"
-        port: 30630
-        password: "nlySaHUwJfZt"
-        db: 9
-        # 连接池配置
-        connection-pool:
-          max-connections: 50 # 最大连接数
-          socket-timeout: 10.0 # 套接字超时时间（秒），增加到10秒支持Stream阻塞操作
-          socket-connect-timeout: 5.0 # 连接超时时间（秒）
-          socket-keepalive: true # 是否启用套接字保活
-          socket-keepalive-options: {} # 套接字保活选项
-          retry-on-timeout: true # 超时时重试
-          health-check-interval: 30 # 健康检查间隔（秒）
+    kafka:
+    rabbitmq:
+    rocketmq:
   # 发布订阅配置
   pubsub:
     use: redis
@@ -86,43 +437,44 @@ messaging:
   queue:
     use: redis
 
-# 锁的配置
-lock:
-  provider: redis  # redis、sqlalchemy
-
 # 监听器配置
 listener:
   # 队列消费者配置
   queue-consumers:
     # 向量化任务处理器
-    - handler: "alon.listeners.services.queue.vector_handler.VectorHandler"
+    - handler: "alon.listeners.services.queue.dataset.segment_vector.SegmentVectorTaskHandler"
       concurrency: 5
       enabled: true
     # FAQ向量化任务处理器
-    - handler: "alon.listeners.services.queue.faq_vector_handler.FaqVectorHandler"
+    - handler: "alon.listeners.services.queue.dataset.faq_vector.FaqVectorTaskHandler"
       concurrency: 5
-      enabled: false
-    # 图谱化任务处理器
-    - handler: "alon.listeners.services.queue.dataset.document_graph.DocumentGraphTas\
-        kHandler"
-      concurrency: 1
       enabled: true
     # 分段索引任务处理器
-    - handler: "alon.listeners.services.queue.segment_index_handler.SegmentIndexHandler"
+    - handler: "alon.listeners.services.queue.dataset.segment_index.SegmentIndexTaskHandler"
       concurrency: 5
-      enabled: false
+      enabled: true
     # 文档摘要生成任务处理器
-    - handler: "alon.listeners.services.queue.summary_vector_handler.SummaryVectorHan\
-        dler"
+    - handler: "alon.listeners.services.queue.dataset.document_summary.DocumentSummaryTaskHandler"
       concurrency: 5
-      enabled: false
+      enabled: true
+    # 图谱化任务处理器
+    - handler: "alon.listeners.services.queue.dataset.document_graph.DocumentGraphTaskHandler"
+      concurrency: 1
+      enabled: true
+
+# 提示词调试配置
+prompt-completion:
+  # 最大并发数
+  max-concurrent-tasks: 100
+  # 任务清理超时时间（秒）
+  task-cleanup-timeout: 3600
 
 # 租户配置
 tenant:
-  request-header: "x-alon-tenantid"
+  request-header: "X-Alon-TenantId"
   default-tenant-id: "00000000-0000-0000-0000-000000000000"
   default-workspace-id: "42fd6df4-d488-43af-a389-1fb9696ae6cd"
-  default-dataset-path: "D:\\Work\\田长军\\会泽矿业\\知识库-整理后\\"
+  default-dataset-path: "/app/知识库/"
   default-admin-ids:
     - "2d1319f1-78f6-4408-ab90-1e7e4745b12b"
     - "6c4287df-76fd-42ef-9eaa-12fae4917318"
@@ -132,86 +484,197 @@ security:
   authentication:
     enabled: true
     provider:
-      type: local # mock, local, keycloak, oauth2
+      type: mock # mock, local, keycloak, oauth2
       mock-user:
-        tenant-id: "00000000-0000-0000-0000-000000000000"
-        user-id: "0beac92acb266eea120382fe53f7d7d7"
-        username: "debug-user"
+        tenant-id: xxxxx
+        user-id: xxxxx
+        username: debug-user
+      keycloak:
+        user-info-url: https://gateway-standard-dev.flydiysz.cn/api/sso/lcwdev7232-service//api/v1/users/ai-agent/get-user-info
+        user-info-by-ids-url: https://gateway-standard-dev.flydiysz.cn/api/sso/lcwdev7232-service/api/v1/users/ai-agent/list-by-user-ids
+        user-info-by-pagelike-url: https://gateway-standard-dev.flydiysz.cn/api/sso/lcwdev7232-service/api/v1/users/ai-agent/page
+        # 以下是keycloak认证的配置，暂时不需要
+        # authorize-url: https://xxx-keycloak/oauth2/authorize
+        # token-url: https://xxx-keycloak/oauth2/token
+        # logout-url: https://xxx-keycloak/oauth2/logout
+        # client-id: "flydiy-client"
+        # client-secret: "flydiy-secret"
+        # scope: "openid"
+        # grant-type: "authorization_code"
+        # redirect-uri: "https://xxx-keycloak/oauth2/callback"
       oauth2:
-        client-id: "Ov23lif1S6E4BZdzYvmf"
-        client-secret: "8f0266d4a0b3d4698b72cb327b1d4a9e5c5da309"
-        redirect-uri: "http://127.0.0.1:8081/api/v1/console/base/callback"
-        base-url: "https://github.com"
-        authorize-url: "/login/oauth/authorize"
+        client-id: "hzky-ai"
+        client-secret: "a93b98122b863044"
+        redirect-uri: "http://10.10.65.90:8080/api/v1/console/base/callback"
+        base-url: "http://10.10.7.51:31622"
+        authorize-url: "http://auth.hzkydev.10.10.7.51.nip.io:30476/login"
         logout-url: "/auth/user/logout"
-        token-url: "/login/oauth/access_token"
+        token-url: "/auth/oauth/token"
         token-mapping:
-          token_type: "token_type"
-          access_token: "access_token"
-          refresh_token: "refresh_token"
-          expires_in: "expires_in"
-          scope: "scope"
-        user-info-url: "https://api.github.com/user"
+          token_type: "data.token_type"
+          access_token: "data.access_token"
+          refresh_token: "data.refresh_token"
+          expires_in: "data.expires_in"
+          scope: ""
+        user-info-url: "/system/user/getLoginUser"
         user-info-mapping:
-          user_id: "id"
-          user_name: "login"
-          user_email: "email"
-          user_mobile: "mobile"
+          user_id: "data.userId"
+          user_name: "data.userName"
+          user_email: ""
+          user_mobile: ""
+  authorization:
+    enabled: true
+    provider:
+      type: mock # mock, cur_user
+      mock-permission:
+        - "console:*"
+        - "inner:*"
+        - "service:*"
+        - "web:*"
+  inner:
+    enabled: true
+    provider:
+      type: mock # mock, token
+      mock-user:
+        tenant-id: xxxxx
+        user-id: xxxxx
+        username: debug-user
+      token: xxxxx
   service:
     enabled: true
     provider:
-      type: api_key # mock, api_key
+      type: mock # mock, api_key
       mock-ctx:
         tenant-id: xxxxx
         app-id: xxxxx
         workspace_id: xxxxx
 
-# 知识库配置
-knowledge:
-  # OCR服务端点
-  ocr-server:
-    endpoint: "https://paddleocr.zaki666.online"
-  # 语义分割服务端点
-  semantic-splitter-server:
-    endpoint: "https://semantic-splitter.zaki666.online"
-  # 图谱化引擎配置
-  graphrag:
-    # 引擎地址
-    endpoint: "http://192.168.0.101:30214"
-  # 解析引擎配置
-  parsing-engine:
-    # 知识库文档解析引擎服务地址
-    endpoint: "http://218.17.137.209:28000"
+# jwt 配置
+jwt:
+  secret-key: "3488a63e1765035d386f05409663f55c83bfae3b3c61a932744b20ad14244dcf"
+  algorithm: "HS256"
+  access-token-expire-minutes: 10080 # 60 * 24 * 7，7 day
+
+# 加密配置
+encryption:
+  # 是否启用数据加密
+  enabled: true
+  instance:
+    - name: "db-in"
+      algorithm: aes # aes, rsa
+      key: "l=iqcspKg#o-*%(BxrtY$OLTc5_YKpRo"
+    - name: "web-in"
+      algorithm: rsa
+      pri-key: "-----BEGIN RSA PRIVATE KEY-----\nMIIEpAIBAAKCAQEAqM8w5ZOTo2xnSMgG+yJV0nqAVtcEx7eTWU/lBOH+TzYWA1Lb\nlyirrXoK1iqL3PYl4aWEQ9AQkNFO8JM8/eA7jaAYeHpATY7cMIvjV7wWutUpwdFj\ntK4zT2mFYV1fvYsvLlveUHKUZ998+98LKTurAy95VNNl07Bqfa9JBOdaXdvQCiG7\n8ng3W2NbtsXiY2kM6wMcE0AZ3R/fzQAzt+qvkaUn/bWAKd9SYAbk64IHlWiTWV1W\npHiiqWcgTvOx2X1E4VzuiZkPtpwXb7hZmrF4kTkuvunvCiZzO8i6YKbXgPZuC0Jn\nDWKVpmemLXjo801krSlxFEx0mfz5vxcFIMyUUwIDAQABAoIBAAiGnmOZ9oT0fqrw\nX1njvA3rXfwE1Br6LJkALgL3Hw8FHkuArdKOnU0fsthqQbIhRHyHDY0XPx7xU1lX\nNmdkId3fTh0Xn5PLOVfCWPMfbs504a0GVFDV04WZQMFQI/vAwdtHjIznnJM6eGeI\nNloYx2Rby3b7TlNIv7glWDzFKo0+7dv9zYqJaOpTgg1rLDAJPQctLC3uh1NTN0bD\ntVPkwqPbvKiRb1F3FhcUZsVDRTeOxnOEs+P022vu83epzkzGgSIpN9yXGSuiNyyh\n+4+Rw08n/+IASgVTIX4gVt573DH9M6uWnecLbVT7uDMlnGCJvo47RDGQfiXqkjh5\n6jlaK8ECgYEAy3If0Ft5lOvPMPU9K1u4eu/Smp3Le5Vr3TzIO+DnNEmXO1fFnTBr\nhUE+vRbrww9MF2RwKnyk9JNUosDlEpMgxxX6DbwvGAa0GTKs27JdUXu0zpgZ9r+I\nq+SGM7g5WVgC4u1nH+D0etk+ylhRuDXU7l6mLqaYP2K93qNbYMiMn6MCgYEA1GqO\nkCViSufjpQnUsdT/h+UN6BUwJri8Acqc0G00KlWjJz/W1jiIGV2zIVwV/6BA1X7Q\ncnw50ZokeuC2w+PEIsofIBUczKDzEVp/8/cTbWTEpK0QUPRec0A5odGEVVXbIUCj\nUn3YV7b1aZwW/EqIJ7rN8DpL0bkf2XEbfbsPw5ECgYEAmtEuBJCX5QvNj6QP+H7D\n1EnMKn0J6/G5M5KdjXOIffHCdBZG+2dtaupLo/ldUALEFMkJ0ksn/DZhobjImWn8\n94Nx1iHudIolY0d843LIMMnCvbRhjbQTfTtaJOF8QtEG4UlnwIqfgRzw+2paRaQx\ndXPxYm7ETPgHJPWLBAuZd6ECgYEAk98mJbTQq2KouACS/8VOqhTLzI/LeHlL8FdT\nOUl8cigxryYi8fhizn3LMOMBMXYnDDj+9WQDgCW1VZFPyiiqJqncZyIrbUxySddd\nkcGj1Zi7yAPugtzLT6IbPMo1PI7LQGfWCpwu2kk0qPOPkMx14mqJ6L08gOBGCsJR\nqAJsI/ECgYBIHpz94h44P2gKI3IkSS0PxGyC/3QDU/3Uqxe/Vj5UBWadgCMNOf+b\n5fuZGMviWw9KEGZcraggRRqbl+kPxDCWyTdbtAqvdXSINPtVLf7Aq+XWOR9ofsK/\nZVWfgEMJaxC6/ktg/2PohR2aeeqvMc/ZbSkuFnJM7abLgaa20X03+A==\n-----END RSA PRIVATE KEY-----"
+      pub-key: "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAqM8w5ZOTo2xnSMgG+yJV\n0nqAVtcEx7eTWU/lBOH+TzYWA1LblyirrXoK1iqL3PYl4aWEQ9AQkNFO8JM8/eA7\njaAYeHpATY7cMIvjV7wWutUpwdFjtK4zT2mFYV1fvYsvLlveUHKUZ998+98LKTur\nAy95VNNl07Bqfa9JBOdaXdvQCiG78ng3W2NbtsXiY2kM6wMcE0AZ3R/fzQAzt+qv\nkaUn/bWAKd9SYAbk64IHlWiTWV1WpHiiqWcgTvOx2X1E4VzuiZkPtpwXb7hZmrF4\nkTkuvunvCiZzO8i6YKbXgPZuC0JnDWKVpmemLXjo801krSlxFEx0mfz5vxcFIMyU\nUwIDAQAB\n-----END PUBLIC KEY-----"
+  # 落库加密
+  db-in:
+    # 是否启用
+    enabled: true
+    use: "db-in"
+  # 前端输入加密
+  web-in:
+    # 是否启用
+    enabled: true
+    use: "web-in"
+  # 前端输出解密
+  web-out:
+    # 临时密钥有效期（秒）
+    temp-key-ttl: 300
 
 # 代码沙箱环境地址
 code-sandbox:
-  endpoint: "https://code-sandbox.zaki666.online"
-  api-key: "dify-sandbox"
+  endpoint: https://localhost:8081
+  api-key: ""
   connect-timeout: 10
   read-timeout: 10
   write-timeout: 10
 
+# OCR服务
+ocr-server:
+  endpoint: "http://localhost:8085"
+  timeout: 1200
+
+# 语义分割服务
+semantic-splitter-server:
+  endpoint: "http://localhost:8084"
+  timeout: 1200
+
 # mineru配置
 mineru:
   # mineru服务端点
-  endpoint: "http://218.17.137.209:28000"
-  # 超时时间（秒）
+  endpoint: "http://localhost:8083"
   timeout: 1200
   # 缓存目录
   cache-dir: "/tmp/mineru_cache"
 
+# TextIn (合合信息) 配置
+textin:
+  app-id: ""
+  secret-code: ""
+  api-url: "https://api.textin.com/ai/service/v1/pdf_to_markdown"
+  timeout: 60
+  cache-dir: "/tmp/textin_cache"
+
+# 网页配置
 web-config:
+  # 浏览器相关配置
+  browser:
+    # 标题
+    title: "智能应用开发"
+    # 图标
+    favicon: "./assets/images/logo.png"
+    # 加载图标
+    loading-icon: "./assets/images/loading-icon.png"
   # 应用配置
   app:
+    # 应用左上角logo
+    logo: ""
+    # 应用左上角名称
+    name: "智能体平台"
+    # 登录页背景图
+    login-banner: "./assets/images/login-banner.png"
+    # 登录标题
+    login-title: "👏欢迎登录智能体平台"
+    # 默认首页: "/wk" 、"/console"
+    default-home-page: "/wk"
+    # 默认租户
+    default-tenant-id: ${tenant.default-tenant-id}
+    # 默认项目空间
+    default-workspace-id: ${tenant.default-workspace-id}
     # 默认服务器知识库目录
     default-dataset-path: ${tenant.default-dataset-path}
-    # 默认首页
-    default-home-page: "/"
   # 文档地址
   document:
-    version: "1.0.0"
-    url: "https://www.baidu.com"
-
-# 日志配置
-logging:
-  level: info
+    version: "2.0.0"
+    url: ""
+  tenant:
+    # 租户请求头名称
+    request-header: ${tenant.request-header}
+  # 认证类型
+  authentication:
+    type: ${security.authentication.provider.type} # local, keycloak, oauth2
+  encryption:
+    pub-key: ${encryption.instance.1.pub-key}
+  experiments:
+    # 是否开启并行分支连线
+    parallel-branch: true
+    # 是否开启知识库 - 知识图谱功能
+    knowledge-graph: true
+    # 是否开启知识库 - 精准解析功能
+    precise-parsing: true
+    # 是否开启插件市场
+    plugin-market: true
+    # 是否开启在线文件预览
+    online-file-preview: true
+    # 是否开启反馈链
+    feedback-chain: false
+    # 是否开启智能体前端交互工具
+    agent-frontend-tool: false
+  # 是否显示错误信息
+  show-errors: false
+  # 知识库文件最大上传大小
+  knowledge-max-file-size: 52428800
+  settings:
+    # 人员选择器模式(org-tree,user-list)
+    personnel-picker-mode: ""

@@ -49,28 +49,28 @@
 
 ## 完整工作流
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────┐
-│                      完整协同工作流                              │
+│                      完整协同工作流                               │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
-│  阶段一：需求对齐（OpenSpec 主导）                               │
+│  阶段一：需求对齐（OpenSpec 主导）                                  │
 │  ─────────────────────────────                                  │
 │                                                                 │
-│  1. /opsx:explore        ← 探索技术方案                         │
-│  2. /opsx:new <name>     ← 创建变更                             │
-│  3. 人工审核产物          ← 检查 proposal/specs/design/tasks     │
+│  1. /opsx:explore        ← 探索技术方案                           │
+│  2. /opsx:new <name>     ← 创建变更                              │
+│  3. 人工审核产物          ← 检查 proposal/specs/design/tasks       │
 │                                                                 │
-│  阶段二：衔接转换                                                │
+│  阶段二：衔接转换                                                  │
 │  ─────────────────────────────                                  │
 │                                                                 │
-│  4. openspec-superpowers-bridge  ← 加载规范上下文               │
-│     - 读取 OpenSpec 产物                                        │
-│     - 跳过 brainstorming（explore 已完成）                      │
-│     - 场景转换为测试用例                                        │
-│     - Tasks 拆分为 TDD 步骤                                     │
+│  4. openspec-superpowers-bridge  ← 加载规范上下文                 │
+│     - 读取 OpenSpec 产物                                         │
+│     - 跳过 brainstorming（explore 已完成）                        │
+│     - 场景转换为测试用例                                          │
+│     - Tasks 拆分为 TDD 步骤                                      │
 │                                                                 │
-│  阶段三：实现执行（Superpowers 主导）                            │
+│  阶段三：实现执行（Superpowers 主导）                               │
 │  ─────────────────────────────                                  │
 │                                                                 │
 │  5. test-driven-development  ← TDD 循环实现                     │
@@ -93,7 +93,7 @@
 │  阶段六：归档收尾                                                │
 │  ─────────────────────────────                                  │
 │                                                                 │
-│  10. /opsx:archive  ← 归档并更新主规范                          │
+│  10. /opsx:archive  ← 归档并更新主规范                             │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 ```
@@ -113,6 +113,7 @@ OpenSpec 的 `explore` 已经讨论过需求和技术方案，Superpowers 的 `b
 | "实现 JWT 签发函数" | 1. 写失败测试 → 2. 运行测试 → 3. 写最小实现 → 4. 运行测试 → 5. 重构 → 6. 提交 |
 
 **转换规则**：
+
 - 每个 task 拆成 TDD 循环
 - 场景直接转换为测试用例
 - 保持每个 commit 粒度小
@@ -120,6 +121,7 @@ OpenSpec 的 `explore` 已经讨论过需求和技术方案，Superpowers 的 `b
 ### 3. 场景到测试的转换
 
 OpenSpec 场景格式：
+
 ```markdown
 ### 场景：有效凭证登录
 - 假设 用户持有有效的用户名和密码
@@ -128,6 +130,7 @@ OpenSpec 场景格式：
 ```
 
 转换为测试：
+
 ```python
 def test_有效凭证登录_返回token():
     # 假设 -> setup
@@ -178,6 +181,7 @@ def test_有效凭证登录_返回token():
 **现象**：代码质量没问题，但实现方式和技术方案不一致。
 
 **解决**：
+
 1. 实现前必须加载 design.md
 2. 使用 `spec-compliance-check` 检查
 
@@ -198,6 +202,7 @@ def test_有效凭证登录_返回token():
 **现象**：AI "好心" 多做了你没要求的功能。
 
 **解决**：
+
 1. 在 `proposal.md` 明确写出排除范围
 2. `spec-compliance-check` 会检查排除范围
 
@@ -256,6 +261,7 @@ def test_有效凭证登录_返回token():
 **触发时机**：代码实现完成后，代码审查之前
 
 **检查内容**：
+
 - 规范覆盖
 - 场景覆盖
 - 设计决策遵循
@@ -268,6 +274,7 @@ def test_有效凭证登录_返回token():
 **触发时机**：开始实现 OpenSpec tasks 时
 
 **功能**：
+
 - 自动加载规范上下文
 - 跳过重复的 brainstorming
 - 场景转测试用例
@@ -301,6 +308,6 @@ def test_有效凭证登录_返回token():
 
 ## 参考资料
 
-- OpenSpec 官方：https://github.com/fission-AI/open-spec
-- Superpowers 官方：https://github.com/jessevogt/superpowers
+- OpenSpec 官方：<https://github.com/fission-AI/open-spec>
+- Superpowers 官方：<https://github.com/jessevogt/superpowers>
 - 本项目 Skills 目录：`.claude/skills/`
