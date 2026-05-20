@@ -8,20 +8,20 @@
 app/
 └── {技术栈}/                     # 技术栈目录
     ├── src/                      # 源码目录
-    │   ├── api/                  # API 客户端
-    │   ├── components/           # 通用组件
-    │   ├── screens/              # 页面组件
-    │   │   └── {模块}/           # 业务模块页面
-    │   ├── navigation/           # 导航配置
-    │   ├── stores/               # 状态管理
-    │   │   └── {模块}/           # 业务模块状态
-    │   ├── styles/               # 全局样式
-    │   ├── types/                # 类型定义
-    │   └── App.tsx/App.ts        # 根组件
+    │   └── {模块}/               # 业务模块
+    │       ├── api/              # API 客户端
+    │       ├── components/       # 通用组件
+    │       ├── screens/          # 页面组件
+    │       ├── navigation/       # 导航配置
+    │       ├── stores/           # 状态管理
+    │       ├── styles/           # 全局样式
+    │       ├── types/            # 类型定义
+    │       └── App.tsx/App.ts    # 根组件
     │
     └── tests/                    # 测试目录
-        ├── components/           # 组件测试
-        └── stores/               # Store 测试
+        └── {模块}/               # 模块测试
+            ├── components/       # 组件测试
+            └── stores/           # Store 测试
 ```
 
 ## 技术栈概览

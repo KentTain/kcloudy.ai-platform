@@ -26,26 +26,26 @@
 web/
 └── {技术栈}/                     # 技术栈目录
     ├── src/                      # 源码目录
-    │   ├── api/                  # API 客户端
-    │   ├── components/           # 通用组件
-    │   │   └── ui/               # UI 基础组件
-    │   ├── composables/          # 组合式函数 (Vue)
-    │   ├── hooks/                # React Hooks (React)
-    │   ├── layouts/              # 布局组件
-    │   ├── pages/                # 页面组件
-    │   │   └── {模块}/           # 业务模块页面
-    │   ├── router/               # 路由配置
-    │   ├── stores/               # 状态管理
-    │   │   └── {模块}/           # 业务模块状态
-    │   ├── styles/               # 全局样式
-    │   ├── types/                # TypeScript 类型定义
-    │   ├── App.vue/App.tsx       # 根组件
-    │   └── main.ts               # 应用入口
+    │   └── {模块}/               # 业务模块
+    │       ├── api/              # API 客户端
+    │       ├── components/       # 通用组件
+    │       │   └── ui/           # UI 基础组件
+    │       ├── composables/      # 组合式函数 (Vue)
+    │       ├── hooks/            # React Hooks (React)
+    │       ├── layouts/          # 布局组件
+    │       ├── pages/            # 页面组件
+    │       ├── router/           # 路由配置
+    │       ├── stores/           # 状态管理
+    │       ├── styles/           # 全局样式
+    │       ├── types/            # TypeScript 类型定义
+    │       ├── App.vue/App.tsx   # 根组件
+    │       └── main.ts           # 应用入口
     │
     └── tests/                    # 测试目录
-        ├── components/           # 组件测试
-        ├── composables/          # Composable/Hook 测试
-        └── stores/               # Store 测试
+        └── {模块}/               # 模块测试
+            ├── components/       # 组件测试
+            ├── composables/      # Composable/Hook 测试
+            └── stores/           # Store 测试
 ```
 
 ## 技术选型
