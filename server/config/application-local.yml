@@ -17,7 +17,7 @@ discovery:
 # 数据库配置
 sqlalchemy:
   # 数据库连接URL
-  url: "postgresql+asyncpg://alon:dXPk8Acy8UeUmJNxCJSa@10.60.6.10:30432/alon"
+  url: "postgresql+asyncpg://admin:XdA9caoq@121.89.220.143:5432/alon_demo"
   # 是否打印SQL语句
   echo: true
   pool:
@@ -30,9 +30,9 @@ sqlalchemy:
 redis:
   mode: single
   single:
-    host: "10.60.6.10"
-    port: 30630
-    password: "nlySaHUwJfZt"
+    host: "121.89.220.143"
+    port: 6379
+    password: "XdA9caoq"
     db: 9
     # 连接池配置
     connection-pool:

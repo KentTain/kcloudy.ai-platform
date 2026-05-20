@@ -65,3 +65,4 @@ htmlcov/
 .obsidian
 Excalidraw
 *.base
+server/config/application-local.yml
