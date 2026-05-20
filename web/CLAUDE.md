@@ -27,69 +27,10 @@ web/
 └── {技术栈}/                     # 技术栈目录
     ├── src/                      # 源码目录
     │   └── {模块}/               # 业务模块
-    │       ├── api/              # API 客户端
-    │       ├── components/       # 通用组件
-    │       │   └── ui/           # UI 基础组件
-    │       ├── composables/      # 组合式函数 (Vue)
-    │       ├── hooks/            # React Hooks (React)
-    │       ├── layouts/          # 布局组件
-    │       ├── pages/            # 页面组件
-    │       ├── router/           # 路由配置
-    │       ├── stores/           # 状态管理
-    │       ├── styles/           # 全局样式
-    │       ├── types/            # TypeScript 类型定义
-    │       ├── App.vue/App.tsx   # 根组件
-    │       └── main.ts           # 应用入口
     │
     └── tests/                    # 测试目录
         └── {模块}/               # 模块测试
-            ├── components/       # 组件测试
-            ├── composables/      # Composable/Hook 测试
-            └── stores/           # Store 测试
 ```
-
-## 技术选型
-
-| 技术栈 | 核心技术 | 详细文档 |
-|--------|----------|----------|
-| Vue | Vue 3.5 + Vite + Pinia + Vue Router + Tailwind CSS | [vue/CLAUDE.md](vue/CLAUDE.md) |
-| React | React 19 + Vite + Zustand + TanStack Router + Tailwind CSS | [react/CLAUDE.md](react/CLAUDE.md) (规划中) |
-
-## 分层架构
-
-| 层级 | 职责 |
-|------|------|
-| Pages | 页面组件，路由对应的视图 |
-| Components | 可复用的 UI 组件 |
-| Stores | 全局状态管理 |
-| API | HTTP 请求封装 |
-| Composables/Hooks | 可复用逻辑 |
-
-## 统一基础设施
-
-| 组件 | 用途 |
-|------|------|
-| Vite 6.x | 开发服务器、构建工具 |
-| TypeScript 5.x | 类型系统 |
-| Tailwind CSS v4 | 样式框架 |
-| Axios | HTTP 客户端 |
-| Vitest | 测试框架 |
-| Biome | Lint + Format |
-
-## API 规范
-
-### 代理配置
-
-开发环境通过 Vite proxy 转发 API 请求到后端 `http://127.0.0.1:8000`：
-
-- `/api/*` → 后端 API
-- `/health` → 健康检查
-
-### RESTful 规范
-
-- URL 设计：资源导向，小写连字符分隔
-- HTTP 方法：GET 查询、POST 创建、PUT 更新、DELETE 删除
-- 响应格式：统一 JSON 结构，包含 `code`、`message`、`data` 字段
 
 ## 环境要求
 
