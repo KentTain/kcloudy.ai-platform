@@ -60,7 +60,7 @@ class RedisLock:
 
         while True:
             # 尝试获取锁
-            success = await RedisUtil.set(lock_key, lock_value, nx=True, ex=ttl)
+            success = await RedisUtil.set(lock_key, lock_value, nx=True, ttl=ttl)
 
             if success:
                 return Lock(

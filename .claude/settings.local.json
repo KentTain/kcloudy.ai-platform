@@ -38,7 +38,9 @@
       "Bash(python -c ' *)",
       "Bash(python -m pytest tests/ -v --collect-only)",
       "Bash(openspec status *)",
-      "Bash(git restore *)"
+      "Bash(git restore *)",
+      "Bash(openspec new *)",
+      "Bash(openspec instructions *)"
     ]
   }
 }
