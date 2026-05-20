@@ -7,31 +7,46 @@
 ```
 tests/framework/
 ├── conftest.py                    # 测试 fixtures 入口
-├── conftest_integration.py        # 集成测试专用 fixtures
-├── cache/
-│   ├── test_redis_util.py         # Redis 单元测试（mock）
-│   └── test_redis_integration.py  # Redis 集成测试
-├── lock/
-│   └── test_lock_integration.py   # 分布式锁集成测试
-├── queue/
-│   └── test_queue_integration.py  # Redis Stream 队列集成测试
-├── pubsub/
-│   └── test_pubsub_integration.py # Redis 发布订阅集成测试
-├── storage/
-│   └── test_storage_integration.py # MinIO 存储集成测试
-├── database/
-│   ├── test_database.py           # 数据库单元测试
-│   └── test_database_integration.py # PostgreSQL 集成测试
-├── common/
-│   └── test_common.py             # 通用组件测试
-├── utils/
-│   └── test_utils.py              # 工具函数测试
-├── core/
-│   └── test_core.py               # 核心接口测试
-├── configs/
-│   └── test_config.py             # 配置模块测试
-└── tenant/
-    └── test_tenant.py             # 租户模块测试
+├── fixtures/                      # 测试夹具和数据
+│   ├── __init__.py
+│   ├── conftest.py                # 单元测试 fixtures
+│   ├── conftest_integration.py    # 集成测试专用 fixtures
+│   ├── helpers.py                 # 测试辅助函数
+│   └── README.md
+├── unit/                          # 单元测试
+│   ├── cache/
+│   │   └── test_redis_util.py     # Redis 单元测试（mock）
+│   ├── common/
+│   │   └── test_common.py         # 通用组件测试
+│   ├── configs/
+│   │   └── test_config.py         # 配置模块测试
+│   ├── core/
+│   │   └── test_core.py           # 核心接口测试
+│   ├── database/
+│   │   └── test_database.py       # 数据库单元测试
+│   ├── tenant/
+│   │   ├── test_tenant.py         # 租户模块测试
+│   │   └── test_context.py        # 租户上下文测试
+│   └── utils/
+│       └── test_utils.py          # 工具函数测试
+└── integration/                   # 集成测试
+    ├── cache/
+    │   └── test_redis_integration.py  # Redis 集成测试
+    ├── database/
+    │   └── test_database_integration.py # PostgreSQL 集成测试
+    ├── lock/
+    │   └── test_lock_integration.py   # 分布式锁集成测试
+    ├── pubsub/
+    │   └── test_pubsub_integration.py # Redis 发布订阅集成测试
+    ├── queue/
+    │   └── test_queue_integration.py  # Redis Stream 队列集成测试
+    ├── storage/
+    │   └── test_storage_integration.py # MinIO 存储集成测试
+    └── tenant/
+        ├── test_tenant_context.py      # 租户上下文集成测试
+        ├── test_tenant_isolation.py    # 租户隔离测试
+        ├── test_tenant_admin_api.py    # 租户管理 API 测试
+        └── test_tenant_user_api.py     # 租户用户 API 测试
 ```
 
 ## 运行测试
@@ -43,32 +58,35 @@ tests/framework/
 uv run pytest tests/framework/ -v
 
 # 运行单元测试（排除集成测试）
-uv run pytest tests/framework/ -v -m "not integration"
+uv run pytest tests/framework/unit/ -v
 
 # 运行集成测试
-uv run pytest tests/framework/ -v -m integration
+uv run pytest tests/framework/integration/ -v
 ```
 
 ### 运行特定模块测试
 
 ```bash
 # Redis 缓存测试
-uv run pytest tests/framework/cache/ -v
+uv run pytest tests/framework/unit/cache/ tests/framework/integration/cache/ -v
 
 # 分布式锁测试
-uv run pytest tests/framework/lock/ -v
+uv run pytest tests/framework/integration/lock/ -v
 
 # 队列测试
-uv run pytest tests/framework/queue/ -v
+uv run pytest tests/framework/integration/queue/ -v
 
 # 发布订阅测试
-uv run pytest tests/framework/pubsub/ -v
+uv run pytest tests/framework/integration/pubsub/ -v
 
 # 存储测试
-uv run pytest tests/framework/storage/ -v
+uv run pytest tests/framework/integration/storage/ -v
 
 # 数据库测试
-uv run pytest tests/framework/database/ -v
+uv run pytest tests/framework/unit/database/ tests/framework/integration/database/ -v
+
+# 租户模块测试
+uv run pytest tests/framework/unit/tenant/ tests/framework/integration/tenant/ -v
 ```
 
 ## 测试标记
@@ -106,7 +124,7 @@ uv run pytest tests/framework/database/ -v
 | `redis_key_prefix` | function | 唯一键前缀 |
 | `postgres_engine` | session | PostgreSQL 引擎 |
 | `postgres_session` | function | PostgreSQL 会话 |
-| `minio_storage` | session | MinIO 存储实例 |
+| `minio_client` | session | MinIO 存储实例 |
 | `minio_test_bucket` | function | 测试存储桶名 |
 
 ### 服务可用性检测
@@ -144,4 +162,4 @@ uv run pytest tests/framework/database/ -v
 | utils | ✅ | - |
 | core | ✅ | - |
 | configs | ✅ | - |
-| tenant | ✅ | - |
+| tenant | ✅ | ✅ |
