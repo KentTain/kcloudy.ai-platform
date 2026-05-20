@@ -91,3 +91,24 @@ class ActiveRecordMixin:
         stmt = select(cls)
         result = await session.execute(stmt)
         return list(result.scalars().all())
+
+
+from demo.models.tenant import (
+    Tenant,
+    TenantAdmin,
+    TenantConfig,
+    TenantStatus,
+    UserTenant,
+)
+
+__all__ = [
+    "ActiveRecordMixin",
+    "BaseModel",
+    "TimestampMixin",
+    "UUIDPrimaryKeyMixin",
+    "Tenant",
+    "TenantConfig",
+    "TenantAdmin",
+    "TenantStatus",
+    "UserTenant",
+]

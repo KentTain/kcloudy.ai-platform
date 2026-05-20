@@ -28,6 +28,11 @@ async def lifespan(app: FastAPI):
     )
     # 初始化数据库引擎
     setup_orm()
+
+    # 初始化默认租户管理员
+    from demo.initializers.tenant_admin_initializer import init_tenant_admin
+    await init_tenant_admin()
+
     # 启动时的初始化逻辑
     yield
     # 关闭时的清理逻辑
@@ -50,10 +55,17 @@ def create_app() -> FastAPI:
     # 注册异常处理器
     register_exception_handlers(app)
 
-    # 注册路由
+    # 注册路由 - Dataset
     from demo.controllers import dataset
-
     app.include_router(dataset.router, prefix="/api/v1/datasets", tags=["Dataset"])
+
+    # 注册路由 - 管理后台
+    from demo.controllers.admin.tenant_controller import router as admin_tenant_router
+    app.include_router(admin_tenant_router, prefix="/admin/v1", tags=["Admin - Tenant"])
+
+    # 注册路由 - 用户端租户
+    from demo.controllers.console.tenant_controller import router as console_tenant_router
+    app.include_router(console_tenant_router, prefix="/console/v1/tenants", tags=["Console - Tenant"])
 
     # 健康检查端点
     @app.get("/health", tags=["Health"])
