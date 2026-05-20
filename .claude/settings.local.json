@@ -51,7 +51,8 @@
       "Bash(openspec new *)",
       "Bash(openspec instructions *)",
       "Bash(rtk ls *)",
-      "Bash(rtk git *)"
+      "Bash(rtk git *)",
+      "Bash(gh api *)"
     ]
   }
 }

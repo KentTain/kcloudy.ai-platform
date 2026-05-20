@@ -1,5 +1,5 @@
-import { afterEach, describe, expect, it } from "vitest";
 import { mount } from "@vue/test-utils";
+import { afterEach, describe, expect, it } from "vitest";
 import AppModal from "@/components/ui/AppModal.vue";
 
 describe("AppModal", () => {

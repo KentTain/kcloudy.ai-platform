@@ -1,5 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createPinia, setActivePinia } from "pinia";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useDatasetsStore } from "@/stores/datasets";
 
 // Mock the API module
@@ -94,9 +94,7 @@ describe("useDatasetsStore", () => {
   describe("$reset", () => {
     it("resets store to initial state", async () => {
       const store = useDatasetsStore();
-      mockedGetDatasets.mockResolvedValue([
-        { id: "1", name: "Dataset 1", description: "" },
-      ]);
+      mockedGetDatasets.mockResolvedValue([{ id: "1", name: "Dataset 1", description: "" }]);
 
       await store.fetchDatasets();
       expect(store.datasets.length).toBe(1);
