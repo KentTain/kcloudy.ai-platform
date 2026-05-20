@@ -1,4 +1,4 @@
-{  
+{
   "env": {
     "ANTHROPIC_AUTH_TOKEN": "PROXY_MANAGED",
     "ANTHROPIC_BASE_URL": "http://127.0.0.1:15721",
@@ -49,7 +49,9 @@
       "Bash(openspec status *)",
       "Bash(git restore *)",
       "Bash(openspec new *)",
-      "Bash(openspec instructions *)"
+      "Bash(openspec instructions *)",
+      "Bash(rtk ls *)",
+      "Bash(rtk git *)"
     ]
   }
 }
