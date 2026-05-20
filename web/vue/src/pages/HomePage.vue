@@ -15,7 +15,9 @@
             <RouterLink to="/datasets">
               <AppButton>查看知识库</AppButton>
             </RouterLink>
-            <AppButton variant="secondary">了解更多</AppButton>
+            <RouterLink to="/demo">
+              <AppButton variant="secondary">Demo 面板</AppButton>
+            </RouterLink>
           </div>
         </AppCard>
       </div>

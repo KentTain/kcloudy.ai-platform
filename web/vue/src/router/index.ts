@@ -30,6 +30,14 @@ const routes: RouteRecordRaw[] = [
           title: "知识库详情",
         },
       },
+      {
+        path: "demo",
+        name: "Demo",
+        component: () => import("@/demo/pages/DemoPage.vue"),
+        meta: {
+          title: "Demo 测试面板",
+        },
+      },
     ],
   },
   {
