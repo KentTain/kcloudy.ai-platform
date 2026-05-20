@@ -1,10 +1,12 @@
 """
-主配置类
+Demo 业务配置
+
+使用 framework 的 BaseSettings 作为基类，定义 demo 特有的配置结构。
 """
 
 from pydantic import Field
 
-from demo.configs.base import BaseSettings
+from framework.config.base import BaseSettings
 from demo.configs.yaml import YamlParser
 from demo.core.common.path import CONFIG_FOLDER
 

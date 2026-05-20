@@ -5,7 +5,7 @@ import os
 from unittest.mock import patch, MagicMock
 from pydantic import Field, SecretStr
 
-from demo.configs.base import BaseSettings
+from demo.configs import BaseSettings
 
 
 class TestSettingsEnvOverride:

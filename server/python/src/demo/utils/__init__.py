@@ -1,8 +1,10 @@
 """
 工具函数
+
+从 framework 导入通用工具函数，保留 demo 特有的业务工具。
 """
 
-from demo.utils.dictionary_util import deep_merge_dict
+from framework.config.helpers import deep_merge_dict
 from demo.utils.enum_util import EnumDataUtils, EnumMemberData
 from demo.utils.tree_util import TreeUtil
 

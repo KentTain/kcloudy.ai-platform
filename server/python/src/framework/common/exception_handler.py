@@ -5,10 +5,31 @@
 """
 
 from fastapi import Request
+from fastapi.exceptions import HTTPException
 from fastapi.responses import JSONResponse
 
 from framework.common.exceptions import AppException
 from framework.common.responses import error_response
+
+
+async def http_exception_handler(request: Request, exc: HTTPException) -> JSONResponse:
+    """
+    处理 HTTP 异常
+
+    Args:
+        request: 请求对象
+        exc: HTTP 异常实例
+
+    Returns:
+        JSONResponse: JSON 响应
+    """
+    return JSONResponse(
+        status_code=exc.status_code,
+        content=error_response(
+            message=str(exc.detail),
+            code=exc.status_code
+        )
+    )
 
 
 async def app_exception_handler(request: Request, exc: AppException) -> JSONResponse:
@@ -64,6 +85,10 @@ def register_exception_handlers(app):
         app: FastAPI 应用实例
     """
     from fastapi.exceptions import RequestValidationError
+
+    @app.exception_handler(HTTPException)
+    async def handle_http_exception(request: Request, exc: HTTPException):
+        return await http_exception_handler(request, exc)
 
     @app.exception_handler(AppException)
     async def handle_app_exception(request: Request, exc: AppException):

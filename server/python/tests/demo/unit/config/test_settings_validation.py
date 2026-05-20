@@ -2,7 +2,7 @@
 
 import pytest
 from pydantic import Field, field_validator, ValidationError
-from demo.configs.base import BaseSettings
+from demo.configs import BaseSettings
 
 
 class TestSettingsValidation:

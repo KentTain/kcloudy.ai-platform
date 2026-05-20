@@ -2,7 +2,7 @@
 
 import pytest
 
-from demo.utils.dictionary_util import deep_merge_dict
+from demo.utils import deep_merge_dict
 
 
 class TestDeepMergeDict:

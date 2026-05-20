@@ -4,7 +4,7 @@ import pytest
 from unittest.mock import patch, MagicMock
 from pydantic import Field
 
-from demo.configs.base import BaseSettings
+from demo.configs import BaseSettings
 from demo.configs.settings import Settings, ServerSettings, SqlalchemySettings
 
 
@@ -98,12 +98,12 @@ class TestBaseSettings:
         assert settings.app_name == "custom"
         assert settings.debug is True
 
-    def test_base_settings_to_dict(self):
-        """Test BaseSettings.to_dict"""
+    def test_base_settings_model_dump(self):
+        """Test BaseSettings.model_dump"""
         class TestSettings(BaseSettings):
             app_name: str = "test"
 
         settings = TestSettings()
-        result = settings.to_dict()
+        result = settings.model_dump()
 
         assert result["app_name"] == "test"
