@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-本文件为 Claude Code (claude.ai/code) 在后端服务目录工作时提供指导。
+本文件为 Claude Code 在后端服务目录工作时提供指导。
 
 ## 目录概述
 
@@ -24,6 +24,31 @@
 - Java: [java/CLAUDE.md](java/CLAUDE.md) (规划中)
 - .NET: [netcore/CLAUDE.md](netcore/CLAUDE.md) (规划中)
 
+## 项目结构
+
+```text
+server/
+├── config/                       # 共享配置文件目录
+│   ├── application.yml           # 基础配置
+│   ├── application-local.yml.example # 本地配置示例
+│   └── application-local.yml     # 本地配置（不提交）
+│
+└── {技术栈}/                     # 技术栈目录
+    ├── src/                      # 源码目录
+    │   └── {模块}/               # 业务模块
+    │       ├── controllers/      # API 控制器
+    │       ├── services/         # 业务逻辑层
+    │       ├── models/           # 数据库模型
+    │       ├── schemas/          # DTO 模型
+    │       └── ...
+    │
+    └── tests/                    # 测试目录
+        └── {模块}/               # 模块测试
+            ├── fixtures/         # 测试夹具
+            ├── unit/             # 单元测试
+            └── integration/      # 集成测试
+```
+
 ## 技术选型
 
 | 技术栈 | 核心技术 | 详细文档 |
@@ -32,32 +57,6 @@
 | Rust | Axum + SQLx + serde + Tokio + LangChainRust | [rust/CLAUDE.md](rust/CLAUDE.md) |
 | Java | Spring Boot 3.x + MyBatis + LangChain4j | [java/CLAUDE.md](java/CLAUDE.md) (规划中) |
 | .NET | ASP.NET Core 8.0 + EF Core + LangChain.NET | [netcore/CLAUDE.md](netcore/CLAUDE.md) (规划中) |
-
-## 项目结构
-
-所有技术栈采用统一的 MVC 架构：
-
-```text
-server/
-├── config/                       # 共享配置文件目录
-│   ├── application.yml           # 基础配置
-│   ├── application-local.yml.example # 本地配置示例
-│   └── application-local.yml     # 本地配置（不提交）
-└── {技术栈}/                     # 技术栈项目目录
-    ├── src/                      # 源码
-    │   ├── controllers/          # API 控制器
-    │   ├── services/             # 业务逻辑层
-    │   ├── models/               # 数据库模型
-    │   ├── schemas/              # DTO 模型
-    │   ├── configs/              # 配置管理
-    │   ├── db/                   # 数据库引擎
-    │   ├── migrations/           # 数据库迁移
-    │   └── utils/                # 工具函数
-    ├── tests/                    # 测试文件
-    ├── config/                   # 配置（引用共享配置）
-    ├── CLAUDE.md                 # 开发指南
-    └── README.md                 # 说明文档
-```
 
 ## MVC 分层架构
 
@@ -85,15 +84,6 @@ server/
 GET /health → {"status": "healthy", "timestamp": "..."}
 ```
 
-### API 文档
-
-| 技术栈 | 文档端点 |
-|--------|----------|
-| Python | `/docs` (Swagger), `/redoc` (ReDoc) |
-| Rust | 需手动配置 |
-| Java | `/swagger-ui.html` |
-| .NET | `/swagger` |
-
 ### RESTful 规范
 
 - URL 设计：资源导向，小写连字符分隔
@@ -102,44 +92,11 @@ GET /health → {"status": "healthy", "timestamp": "..."}
 
 ## 配置管理
 
-### 配置文件结构
+配置文件统一放置在 `server/config/` 目录下，各技术栈通过符号链接引用。
 
-```text
-server/config/                   # 共享配置文件目录
-├── application.yml              # 基础配置（提交）
-├── application-local.yml.example # 本地配置示例（提交）
-└── application-local.yml        # 本地配置（不提交）
+**配置优先级：** 环境变量 > 环境配置 > 基础配置
 
-server/{技术栈}/config/          # 符号链接指向 server/config/
-```
-
-### 符号链接配置
-
-```bash
-# Linux/macOS
-cd server/python && ln -s ../config config
-cd server/rust && ln -s ../config config
-
-# Windows (需要管理员权限)
-cd server\python && mklink /D config ..\config
-cd server\rust && mklink /D config ..\config
-```
-
-### 配置优先级
-
-1. 环境变量覆盖（最高优先级）
-2. 环境特定配置文件 `application-{env}.yml`
-3. 基础配置文件 `application.yml`
-
-### 环境选择
-
-通过 `SERVICE_ENV` 环境变量指定运行环境：`local`、`dev`、`test`、`prod`
-
-## 开发规范
-
-- 遵循各语言的社区规范和最佳实践
-- 统一使用 Conventional Commits 提交规范
-- 保持各技术栈 API 行为一致性
+**环境选择：** 通过 `SERVICE_ENV` 环境变量指定：`local`、`dev`、`test`、`prod`
 
 ## 环境要求
 
