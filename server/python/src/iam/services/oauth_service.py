@@ -10,7 +10,7 @@ from urllib.parse import urlencode
 from loguru import logger
 from sqlalchemy import select
 
-from models.iam import OAuthConnection, OAuthProvider, User
+from iam.models import OAuthConnection, OAuthProvider, User
 from framework.database.core.engine import async_session
 from framework.utils.crypto import hash_password
 

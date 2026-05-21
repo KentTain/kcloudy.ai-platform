@@ -4,12 +4,12 @@ IAM 控制器模块
 
 from fastapi import APIRouter
 
-from controllers.iam.auth_controller import router as auth_router
-from controllers.iam.department_controller import router as department_router
-from controllers.iam.oauth_controller import router as oauth_router
-from controllers.iam.permission_controller import router as permission_router
-from controllers.iam.role_controller import router as role_router
-from controllers.iam.user_controller import router as user_router
+from iam.controllers.auth_controller import router as auth_router
+from iam.controllers.department_controller import router as department_router
+from iam.controllers.oauth_controller import router as oauth_router
+from iam.controllers.permission_controller import router as permission_router
+from iam.controllers.role_controller import router as role_router
+from iam.controllers.user_controller import router as user_router
 
 # 创建 IAM 主路由
 router = APIRouter(prefix="/iam", tags=["IAM"])

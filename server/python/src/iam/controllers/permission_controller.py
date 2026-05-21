@@ -7,7 +7,7 @@
 from fastapi import APIRouter
 from fastapi.responses import ORJSONResponse
 
-from services.iam import permission_service
+from iam.services import permission_service
 
 router = APIRouter()
 

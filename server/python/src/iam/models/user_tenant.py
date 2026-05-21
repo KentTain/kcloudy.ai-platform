@@ -7,14 +7,10 @@
 from sqlalchemy import ForeignKey, Index, String
 from sqlalchemy.orm import Mapped, mapped_column
 
-from models import BaseModel, TimestampMixin, UUIDPrimaryKeyMixin
+from framework.database import BaseModel
 
 
-class UserTenant(
-    BaseModel,
-    UUIDPrimaryKeyMixin,
-    TimestampMixin,
-):
+class UserTenant(BaseModel):
     """用户-租户关联模型"""
 
     __tablename__ = "user_tenants"

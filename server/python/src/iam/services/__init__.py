@@ -2,22 +2,22 @@
 IAM 服务模块
 """
 
-from services.iam.auth_service import AuthService, auth_service
-from services.iam.department_service import DepartmentService, department_service
-from services.iam.oauth_service import OAuthService, oauth_service
-from services.iam.permission_service import (
+from iam.services.auth_service import AuthService, auth_service
+from iam.services.department_service import DepartmentService, department_service
+from iam.services.oauth_service import OAuthService, oauth_service
+from iam.services.permission_service import (
     PermissionCheckService,
     PermissionService,
     permission_check_service,
     permission_service,
 )
-from services.iam.role_service import (
+from iam.services.role_service import (
     RoleService,
     UserRoleService,
     role_service,
     user_role_service,
 )
-from services.iam.user_service import UserService, user_service
+from iam.services.user_service import UserService, user_service
 
 __all__ = [
     # 认证

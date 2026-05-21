@@ -2,7 +2,7 @@
 IAM 模块 Pydantic Schemas
 """
 
-from schemas.iam.department import (
+from iam.schemas.department import (
     DepartmentCreateRequest,
     DepartmentTreeVo,
     DepartmentUpdateRequest,
@@ -10,24 +10,24 @@ from schemas.iam.department import (
     DepartmentVo,
     UserDepartmentRequest,
 )
-from schemas.iam.login import (
+from iam.schemas.login import (
     LoginRequest,
     LoginResponse,
     LogoutRequest,
     LogoutResponse,
 )
-from schemas.iam.oauth import (
+from iam.schemas.oauth import (
     OAuthAuthorizeResponse,
     OAuthBindRequest,
     OAuthCallbackRequest,
     OAuthCompleteProfileRequest,
 )
-from schemas.iam.permission import (
+from iam.schemas.permission import (
     PermissionGroupVo,
     PermissionListVo,
     PermissionVo,
 )
-from schemas.iam.role import (
+from iam.schemas.role import (
     RoleCreateRequest,
     RoleListVo,
     RolePermissionRequest,
@@ -35,12 +35,12 @@ from schemas.iam.role import (
     RoleVo,
     RoleWithPermissionsVo,
 )
-from schemas.iam.token import (
+from iam.schemas.token import (
     TokenPayload,
     TokenRefreshRequest,
     TokenRefreshResponse,
 )
-from schemas.iam.user import (
+from iam.schemas.user import (
     PasswordChangeRequest,
     PasswordResetCodeRequest,
     PasswordResetRequest,

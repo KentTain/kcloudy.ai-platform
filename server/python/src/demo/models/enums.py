@@ -3,7 +3,7 @@
 """
 
 from enum import Enum
-from typing import Self
+from typing_extensions import Self
 
 from demo.utils.enum_util import EnumMemberData
 

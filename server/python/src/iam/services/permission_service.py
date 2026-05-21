@@ -10,7 +10,7 @@ from typing import Any
 from loguru import logger
 from sqlalchemy import func, select
 
-from models.iam import Permission, Role, RolePermission, UserRole
+from iam.models import Permission, Role, RolePermission, UserRole
 from framework.cache.redis_util import RedisUtil
 from framework.database.core.engine import async_session
 
@@ -194,7 +194,7 @@ class PermissionCheckService:
             tenant_id: 租户 ID
         """
         # 查找租户内所有用户
-        from models.iam import UserTenant
+        from iam.models import UserTenant
         async with async_session() as session:
             stmt = select(UserTenant.user_id).where(UserTenant.tenant_id == tenant_id)
             result = await session.execute(stmt)

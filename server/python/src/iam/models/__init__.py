@@ -4,22 +4,22 @@ IAM 模块数据模型
 包含身份与访问管理相关的所有模型。
 """
 
-from models.iam.department import Department, UserDepartment
-from models.iam.enums import (
+from .department import Department, UserDepartment
+from .enums import (
     DepartmentStatus,
     OAuthProvider,
     RoleCode,
     TenantStatus,
     UserStatus,
 )
-from models.iam.oauth_connection import OAuthConnection
-from models.iam.permission import Permission, RolePermission, UserRole
-from models.iam.role import Role
-from models.iam.tenant import Tenant
-from models.iam.tenant_admin import TenantAdmin
-from models.iam.tenant_config import TenantConfig
-from models.iam.user import User
-from models.iam.user_tenant import UserTenant
+from .oauth_connection import OAuthConnection
+from .permission import Permission, RolePermission, UserRole
+from .role import Role
+from .tenant import Tenant
+from .tenant_admin import TenantAdmin
+from .tenant_config import TenantConfig
+from .user import User
+from .user_tenant import UserTenant
 
 __all__ = [
     # 枚举

@@ -5,14 +5,10 @@
 from sqlalchemy import Boolean, ForeignKey, Index, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
-from models import BaseModel, TimestampMixin, UUIDPrimaryKeyMixin
+from framework.database import BaseModel
 
 
-class Permission(
-    BaseModel,
-    UUIDPrimaryKeyMixin,
-    TimestampMixin,
-):
+class Permission(BaseModel):
     """权限模型"""
 
     __tablename__ = "permissions"
@@ -39,11 +35,7 @@ class Permission(
     )
 
 
-class UserRole(
-    BaseModel,
-    UUIDPrimaryKeyMixin,
-    TimestampMixin,
-):
+class UserRole(BaseModel):
     """用户-角色关联模型"""
 
     __tablename__ = "user_roles"
@@ -62,11 +54,7 @@ class UserRole(
     )
 
 
-class RolePermission(
-    BaseModel,
-    UUIDPrimaryKeyMixin,
-    TimestampMixin,
-):
+class RolePermission(BaseModel):
     """角色-权限关联模型"""
 
     __tablename__ = "role_permissions"

@@ -9,8 +9,8 @@ from datetime import datetime, timezone
 from loguru import logger
 from sqlalchemy import select
 
-from models.iam import User, UserStatus
-from schemas.iam.user import UserVo
+from iam.models import User, UserStatus
+from iam.schemas.user import UserVo
 from framework.database.core.engine import async_session
 from framework.utils.crypto import hash_password, verify_password, validate_password_strength
 

@@ -7,8 +7,8 @@ OAuth 控制器
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import ORJSONResponse, RedirectResponse
 
-from schemas.iam.oauth import OAuthCompleteProfileRequest
-from services.iam import auth_service, oauth_service, user_service
+from iam.schemas.oauth import OAuthCompleteProfileRequest
+from iam.services import auth_service, oauth_service, user_service
 
 router = APIRouter()
 

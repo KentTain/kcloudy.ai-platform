@@ -8,7 +8,7 @@ from loguru import logger
 from sqlalchemy import func, select
 from sqlalchemy.orm import selectinload
 
-from models.iam import Permission, Role, RolePermission, UserRole
+from iam.models import Permission, Role, RolePermission, UserRole
 from framework.database.core.engine import async_session
 
 _logger = logger.bind(name=__name__)

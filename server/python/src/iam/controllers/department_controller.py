@@ -7,12 +7,12 @@
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import ORJSONResponse
 
-from schemas.iam.department import (
+from iam.schemas.department import (
     DepartmentCreateRequest,
     DepartmentUpdateRequest,
     UserDepartmentRequest,
 )
-from services.iam import department_service
+from iam.services import department_service
 
 router = APIRouter()
 

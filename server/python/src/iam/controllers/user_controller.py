@@ -7,7 +7,7 @@
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import ORJSONResponse
 
-from schemas.iam.user import (
+from iam.schemas.user import (
     PasswordChangeRequest,
     PasswordResetCodeRequest,
     PasswordResetRequest,
@@ -15,7 +15,7 @@ from schemas.iam.user import (
     UserUpdateRequest,
     UserVo,
 )
-from services.iam import auth_service, user_service
+from iam.services import auth_service, user_service
 
 router = APIRouter()
 

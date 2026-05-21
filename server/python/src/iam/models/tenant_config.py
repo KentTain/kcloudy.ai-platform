@@ -10,14 +10,10 @@ from sqlalchemy import ForeignKey, Index, String, Text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
-from models import BaseModel, TimestampMixin, UUIDPrimaryKeyMixin
+from framework.database import BaseModel
 
 
-class TenantConfig(
-    BaseModel,
-    UUIDPrimaryKeyMixin,
-    TimestampMixin,
-):
+class TenantConfig(BaseModel):
     """租户配置模型"""
 
     __tablename__ = "tenant_configs"

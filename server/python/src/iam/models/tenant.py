@@ -11,16 +11,12 @@ from sqlalchemy import DateTime, ForeignKey, Index, String, Text, func
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
-from models import ActiveRecordMixin, BaseModel, TimestampMixin, UUIDPrimaryKeyMixin
-from models.iam.enums import TenantStatus
+from framework.database import BaseModel
+from framework.database.mixins.active_record import ActiveRecordMixin
+from iam.models.enums import TenantStatus
 
 
-class Tenant(
-    BaseModel,
-    UUIDPrimaryKeyMixin,
-    TimestampMixin,
-    ActiveRecordMixin,
-):
+class Tenant(BaseModel, ActiveRecordMixin):
     """租户模型"""
 
     __tablename__ = "tenants"

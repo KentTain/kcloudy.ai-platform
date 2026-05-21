@@ -7,16 +7,12 @@ from datetime import datetime
 from sqlalchemy import DateTime, Index, String
 from sqlalchemy.orm import Mapped, mapped_column
 
-from models import ActiveRecordMixin, BaseModel, TimestampMixin, UUIDPrimaryKeyMixin
-from models.iam.enums import UserStatus
+from framework.database import BaseModel
+from framework.database.mixins.active_record import ActiveRecordMixin
+from iam.models.enums import UserStatus
 
 
-class User(
-    BaseModel,
-    UUIDPrimaryKeyMixin,
-    TimestampMixin,
-    ActiveRecordMixin,
-):
+class User(BaseModel, ActiveRecordMixin):
     """用户模型"""
 
     __tablename__ = "users"

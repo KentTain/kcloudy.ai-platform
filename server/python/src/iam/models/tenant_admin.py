@@ -7,14 +7,10 @@
 from sqlalchemy import Index, String
 from sqlalchemy.orm import Mapped, mapped_column
 
-from models import BaseModel, TimestampMixin, UUIDPrimaryKeyMixin
+from framework.database import BaseModel
 
 
-class TenantAdmin(
-    BaseModel,
-    UUIDPrimaryKeyMixin,
-    TimestampMixin,
-):
+class TenantAdmin(BaseModel):
     """租户管理员模型"""
 
     __tablename__ = "tenant_admins"

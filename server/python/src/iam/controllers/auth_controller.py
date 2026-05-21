@@ -7,9 +7,9 @@
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import ORJSONResponse
 
-from schemas.iam.login import LoginRequest, LoginResponse, LogoutResponse
-from schemas.iam.token import TokenRefreshRequest, TokenRefreshResponse
-from services.iam import auth_service
+from iam.schemas.login import LoginRequest, LoginResponse, LogoutResponse
+from iam.schemas.token import TokenRefreshRequest, TokenRefreshResponse
+from iam.services import auth_service
 
 router = APIRouter()
 

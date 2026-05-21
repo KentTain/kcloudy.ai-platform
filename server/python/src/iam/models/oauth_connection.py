@@ -7,14 +7,10 @@ from datetime import datetime
 from sqlalchemy import DateTime, ForeignKey, Index, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
-from models import BaseModel, TimestampMixin, UUIDPrimaryKeyMixin
+from framework.database import BaseModel
 
 
-class OAuthConnection(
-    BaseModel,
-    UUIDPrimaryKeyMixin,
-    TimestampMixin,
-):
+class OAuthConnection(BaseModel):
     """OAuth 关联模型"""
 
     __tablename__ = "oauth_connections"

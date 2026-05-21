@@ -37,7 +37,7 @@ async def lifespan(app: FastAPI):
     )
 
     # 初始化默认租户管理员
-    from demo.initializers.tenant_admin_initializer import init_tenant_admin
+    from iam.initializers.tenant_admin_initializer import init_tenant_admin
     await init_tenant_admin()
 
     # 启动时的初始化逻辑

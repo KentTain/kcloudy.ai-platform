@@ -5,15 +5,11 @@
 from sqlalchemy import ForeignKey, Index, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
 
-from models import BaseModel, TimestampMixin, UUIDPrimaryKeyMixin
-from models.iam.enums import DepartmentStatus
+from framework.database import BaseModel
+from iam.models.enums import DepartmentStatus
 
 
-class Department(
-    BaseModel,
-    UUIDPrimaryKeyMixin,
-    TimestampMixin,
-):
+class Department(BaseModel):
     """部门模型"""
 
     __tablename__ = "departments"
@@ -47,11 +43,7 @@ class Department(
     )
 
 
-class UserDepartment(
-    BaseModel,
-    UUIDPrimaryKeyMixin,
-    TimestampMixin,
-):
+class UserDepartment(BaseModel):
     """用户-部门关联模型"""
 
     __tablename__ = "user_departments"

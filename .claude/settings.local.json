@@ -54,7 +54,11 @@
       "Bash(rtk git *)",
       "Bash(gh api *)",
       "Bash(rtk *)",
-      "Bash(echo \"Exit code: $?\")"
+      "Bash(echo \"Exit code: $?\")",
+      "Bash(python -c \"from iam.models import Tenant, TenantAdmin, UserTenant\")",
+      "Bash(python -c \"from iam.services.tenant_service import TenantService\")",
+      "Bash(python -c \"from iam.controllers.admin.tenant_controller import router\")",
+      "Bash(python)"
     ]
   }
 }

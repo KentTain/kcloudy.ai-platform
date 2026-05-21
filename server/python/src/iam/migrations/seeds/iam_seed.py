@@ -10,7 +10,7 @@ import uuid
 
 from sqlalchemy import select
 
-from models.iam import Permission, Role
+from iam.models import Permission, Role
 
 
 # 预定义权限
@@ -131,7 +131,7 @@ async def run(*, dry_run: bool = False) -> int:
                 await session.flush()
 
                 # 关联权限（支持通配符）
-                from models.iam import RolePermission
+                from iam.models import RolePermission
 
                 for perm_code in perm_codes:
                     if perm_code.endswith(":*"):

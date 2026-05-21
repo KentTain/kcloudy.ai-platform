@@ -4,7 +4,7 @@ IAM 模块枚举定义
 
 from enum import Enum
 
-from models.enums import EnumBase
+from demo.models.enums import EnumBase
 
 
 class UserStatus(str, EnumBase):

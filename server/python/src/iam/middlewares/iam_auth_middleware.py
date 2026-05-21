@@ -7,7 +7,7 @@ IAM 认证中间件
 from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from services.iam import auth_service
+from iam.services import auth_service
 from framework.utils.jwt import decode_token
 
 
@@ -88,7 +88,7 @@ def require_permission(permission_code: str):
                 raise HTTPException(status_code=401, detail="未登录")
 
             # 检查权限
-            from services.iam import permission_check_service
+            from iam.services import permission_check_service
             has_perm = await permission_check_service.has_permission(user_id, permission_code)
             if not has_perm:
                 from fastapi import HTTPException

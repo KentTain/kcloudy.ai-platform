@@ -7,13 +7,13 @@
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import ORJSONResponse
 
-from schemas.iam.role import (
+from iam.schemas.role import (
     RoleCreateRequest,
     RolePermissionRequest,
     RoleUpdateRequest,
     RoleVo,
 )
-from services.iam import permission_service, role_service
+from iam.services import permission_service, role_service
 
 router = APIRouter()
 
