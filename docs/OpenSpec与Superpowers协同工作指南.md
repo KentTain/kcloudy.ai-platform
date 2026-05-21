@@ -68,7 +68,7 @@
 │     - 读取 OpenSpec 产物                                         │
 │     - 跳过 brainstorming（explore 已完成）                        │
 │     - 场景转换为测试用例                                          │
-│     - Tasks 拆分为 TDD 步骤                                      │
+│     - Tasks 拆分为 TDD 步骤 Superpowers planning                 │
 │                                                                 │
 │  阶段三：实现执行（Superpowers 主导）                               │
 │  ─────────────────────────────                                  │

@@ -52,7 +52,9 @@
       "Bash(openspec instructions *)",
       "Bash(rtk ls *)",
       "Bash(rtk git *)",
-      "Bash(gh api *)"
+      "Bash(gh api *)",
+      "Bash(rtk *)",
+      "Bash(echo \"Exit code: $?\")"
     ]
   }
 }
