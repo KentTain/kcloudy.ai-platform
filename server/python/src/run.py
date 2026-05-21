@@ -15,7 +15,7 @@ from demo.configs import settings
 def main(host: str, port: int, reload: bool):
     """启动 Web 服务器"""
     uvicorn.run(
-        "demo.application_web:app",
+        "application_web:app",
         host=host,
         port=port,
         reload=reload,

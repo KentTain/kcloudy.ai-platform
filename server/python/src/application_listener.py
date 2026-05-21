@@ -8,6 +8,7 @@ import signal
 import click
 from loguru import logger
 
+from demo.core.common.path import CONFIG_FOLDER
 from demo.listeners.setup import setup_listeners, cleanup_listeners
 from framework.configs import init_settings
 
@@ -16,7 +17,7 @@ _logger = logger.bind(name=__name__)
 
 async def run_listener() -> None:
     """启动消息监听器"""
-    settings = init_settings()
+    settings = init_settings(CONFIG_FOLDER)
 
     loop = asyncio.get_running_loop()
     stop = loop.create_future()
