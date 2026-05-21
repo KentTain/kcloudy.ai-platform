@@ -61,9 +61,10 @@ __pycache__
 htmlcov/
 
 # obsidian
-.claudian
-.obsidian
-Excalidraw
+docs/.claude
+docs/.claudian
+docs/.obsidian
+docs/Excalidraw
 *.base
 
 # 本地配置（含敏感信息，不提交）
