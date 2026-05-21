@@ -1,32 +1,32 @@
 # CLAUDE.md
 
-本文件为 Claude Code 在 Vue 前端项目中工作时提供指导。
+本文件为 Claude Code 在 React 前端项目中工作时提供指导。
 
 ## 项目概述
 
-Vue 前端使用 Vue 3 + TypeScript + Vite 构建，提供 AI 助手平台演示界面。项目采用模块化结构，支持功能模块的独立开发。
+React 前端使用 React 19 + TypeScript + Vite 构建，提供 AI 助手平台演示界面。项目采用模块化结构，支持功能模块的独立开发。
 
 **核心技术栈：**
 
-- 框架：Vue 3.5, TypeScript 5.8
+- 框架：React 19, TypeScript 5.8
 - 构建：Vite 6.x
-- 路由：Vue Router 4.x
-- 状态管理：Pinia 3.x
+- 路由：React Router 7.x
+- 状态管理：Zustand 5.x
 - 样式：Tailwind CSS v4
 - 代码质量：Biome
-- 测试：Vitest, @vue/test-utils
+- 测试：Vitest, @testing-library/react
 
 ## 项目结构
 
 ```text
-web/vue/
+web/react/
 ├── src/                       # 源码目录
 │   ├── components/            # 通用组件
-│   ├── composables/           # 组合式函数 (Vue)
+│   ├── hooks/                 # React Hooks
 │   ├── framework/             # Framework 前端UI框架模块
 │   ├── demo/                  # Demo 业务模块
-│   ├── App.vue                # 根组件
-│   └── main.ts                # 应用入口
+│   ├── App.tsx                # 根组件
+│   └── main.tsx               # 应用入口
 ├── tests/                     # 测试目录
 │   ├── demo/                  # Demo 模块测试
 │   └── framework/             # Framework 模块测试
@@ -41,12 +41,12 @@ web/vue/
 
 ## 功能模块
 
-| 模块     | 说明      | 详细文档      |
-|----|----|-----|
-| components | 通用组件  | [src/components/CLAUDE.md](src/components/CLAUDE.md) |
-| composables | 组合式函数 (Vue)  | [src/composables/CLAUDE.md](src/composables/CLAUDE.md) |
-| framework | 基础设施：前端UI框架、路由、状态管理  | [src/framework/CLAUDE.md](src/framework/CLAUDE.md) |
-| demo     | 业务演示模块：健康检查、知识库管理     | [src/demo/CLAUDE.md](src/demo/CLAUDE.md)         |
+| 模块 | 说明 | 详细文档 |
+| --- | --- | --- |
+| components | 通用组件 | [src/components/CLAUDE.md](src/components/CLAUDE.md) |
+| hooks | React Hooks | [src/hooks/CLAUDE.md](src/hooks/CLAUDE.md) |
+| framework | 基础设施：前端UI框架、路由、状态管理 | [src/framework/CLAUDE.md](src/framework/CLAUDE.md) |
+| demo | 业务演示模块：健康检查、知识库管理 | [src/demo/CLAUDE.md](src/demo/CLAUDE.md) |
 
 ## 开发命令
 
@@ -58,7 +58,7 @@ pnpm install
 pnpm dev
 
 # 指定端口启动
-pnpm dev --port 3000
+pnpm dev --port 3001
 
 # 生产构建
 pnpm build
@@ -88,7 +88,7 @@ pnpm test:unit -- --coverage
 - **Linter/格式化**：Biome
 - **行宽**：100 字符
 - **TypeScript 版本**：5.8
-- **组件语法**：`<script setup lang="ts">`
+- **组件语法**：React 函数组件 + TypeScript
 
 ## 详细文档
 

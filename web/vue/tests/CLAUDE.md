@@ -6,6 +6,8 @@
 
 ```text
 tests/
+├── components/            # 通用组件测试
+├── composables/           # 通用 Composable 测试
 ├── demo/                      # Demo 模块测试
 │   ├── components/            # 组件测试
 │   ├── composables/           # Composable 测试
