@@ -22,10 +22,45 @@ if sys.platform == "win32":
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
-# 添加 src 目录到路径
+# 添加 src 目录到路径（必须在其他导入之前）
 src_path = Path(__file__).parent.parent / "src"
 if str(src_path) not in sys.path:
     sys.path.insert(0, str(src_path))
+
+
+def check_database_connection() -> bool:
+    """检查数据库连接
+
+    Returns:
+        是否连接成功
+    """
+    try:
+        from demo.configs import settings
+        from framework.database.core.engine import setup_engine, get_engine
+
+        sqlalchemy_config = settings.sqlalchemy
+        setup_engine(
+            database_url=sqlalchemy_config.url,
+            echo=sqlalchemy_config.echo,
+            pool_size=sqlalchemy_config.pool.size,
+            max_overflow=sqlalchemy_config.pool.max_overflow,
+        )
+        engine = get_engine()
+
+        # 隐藏密码
+        db_url = settings.sqlalchemy.url
+        if "@" in db_url:
+            parts = db_url.split("@")
+            safe_url = parts[0].rsplit(":", 1)[0] + ":***@" + parts[1]
+        else:
+            safe_url = db_url
+
+        print(f"[INFO] 数据库: {safe_url}")
+        return True
+
+    except Exception as e:
+        print(f"[ERROR] 数据库连接失败: {e}")
+        return False
 
 
 def get_seed_modules() -> dict[str, Callable[[bool], Coroutine[None, None, int]]]:
@@ -38,8 +73,8 @@ def get_seed_modules() -> dict[str, Callable[[bool], Coroutine[None, None, int]]
         from demo.seeds import SEED_MODULES
 
         return SEED_MODULES
-    except ImportError:
-        print("[WARN] 未找到种子模块定义，请确保 src/demo/seeds/__init__.py 存在")
+    except ImportError as e:
+        print(f"[WARN] 未找到种子模块定义: {e}")
         return {}
 
 
@@ -95,35 +130,6 @@ async def run_all_seeds(
         total += count
 
     return total
-
-
-def check_database_connection() -> bool:
-    """检查数据库连接
-
-    Returns:
-        是否连接成功
-    """
-    try:
-        from demo.configs import settings
-        from demo.models.core.engine import setup_orm, get_engine
-
-        setup_orm()
-        engine = get_engine()
-
-        # 隐藏密码
-        db_url = settings.sqlalchemy.url
-        if "@" in db_url:
-            parts = db_url.split("@")
-            safe_url = parts[0].rsplit(":", 1)[0] + ":***@" + parts[1]
-        else:
-            safe_url = db_url
-
-        print(f"[INFO] 数据库: {safe_url}")
-        return True
-
-    except Exception as e:
-        print(f"[ERROR] 数据库连接失败: {e}")
-        return False
 
 
 async def main_async(args: argparse.Namespace) -> None:
