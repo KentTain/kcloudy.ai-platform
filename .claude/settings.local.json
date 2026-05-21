@@ -6,7 +6,8 @@
     "ANTHROPIC_DEFAULT_SONNET_MODEL": "qianfan-code-latest",
     "ANTHROPIC_DEFAULT_OPUS_MODEL": "qianfan-code-latest",
     "API_TIMEOUT_MS": "3000000",
-    "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1"
+    "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1",
+    "CLAUDE_CODE_ATTRIBUTION_HEADER": "0"
   },
   "permissions": {
     "allow": [
