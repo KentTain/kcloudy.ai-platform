@@ -12,7 +12,7 @@ from sqlalchemy import select
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import JSONResponse
 
-from demo.models.core.engine import async_session
+from framework.database.core.engine import async_session
 from demo.models.tenant import Tenant, TenantStatus
 from framework.common.ctx import set_context, Context
 from framework.tenant.context import TenantContext, SimpleTenant

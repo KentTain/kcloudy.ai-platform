@@ -8,7 +8,7 @@ from loguru import logger
 from sqlalchemy import select
 
 from demo.models.tenant import TenantAdmin
-from demo.models.core.engine import async_session
+from framework.database.core.engine import async_session
 from demo.middlewares.admin_auth_middleware import hash_password
 
 _logger = logger.bind(name=__name__)

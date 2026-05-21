@@ -3,16 +3,33 @@ Alembic 环境配置
 """
 
 import asyncio
+import sys
 from logging.config import fileConfig
+from pathlib import Path
 
 from alembic import context
 from sqlalchemy import pool
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
+# 添加 src 目录到路径，确保能导入 demo 模块
+src_path = Path(__file__).parent.parent.parent.parent
+if str(src_path) not in sys.path:
+    sys.path.insert(0, str(src_path))
+
 from demo.models import BaseModel
 
 config = context.config
+
+# 从 demo 配置中获取数据库 URL，覆盖 alembic.ini 中的配置
+try:
+    from demo.configs import settings
+
+    db_url = settings.sqlalchemy.url
+    config.set_main_option("sqlalchemy.url", db_url)
+except Exception as e:
+    print(f"[WARN] 无法从配置加载数据库 URL: {e}")
+    print("[INFO] 使用 alembic.ini 中的默认配置")
 
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)

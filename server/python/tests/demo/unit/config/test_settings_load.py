@@ -4,8 +4,8 @@ import pytest
 from unittest.mock import patch, MagicMock
 from pydantic import Field
 
-from demo.configs import BaseSettings
-from demo.configs.settings import Settings, ServerSettings, SqlalchemySettings
+from framework.configs.base import BaseSettings
+from framework.configs.settings import Settings, ServerSettings, SqlalchemySettings
 
 
 class TestSettingsLoad:
@@ -15,43 +15,38 @@ class TestSettingsLoad:
         """Test loading settings with default values"""
         settings = Settings()
 
-        assert settings.name == "demo"
         assert settings.server.host == "0.0.0.0"
-        assert settings.server.port == 8000
+        assert settings.server.port == 8080
 
     def test_server_settings_defaults(self):
         """Test ServerSettings default values"""
         settings = ServerSettings()
 
         assert settings.host == "0.0.0.0"
-        assert settings.port == 8000
-        assert settings.debug is False
+        assert settings.port == 8080
+        assert settings.workers == 1
 
     def test_sqlalchemy_settings_defaults(self):
         """Test SqlalchemySettings default values"""
         settings = SqlalchemySettings()
 
-        assert "postgresql" in settings.database_url
+        assert settings.url == ""
         assert settings.echo is False
-        assert settings.pool_size == 5
+        assert settings.pool.size == 20
 
     def test_settings_from_dict(self):
         """Test creating settings from dictionary"""
         config = {
-            "name": "test_app",
             "server": {
                 "host": "127.0.0.1",
                 "port": 9000,
-                "debug": True
             }
         }
 
         settings = Settings.from_dict(config)
 
-        assert settings.name == "test_app"
         assert settings.server.host == "127.0.0.1"
         assert settings.server.port == 9000
-        assert settings.server.debug is True
 
     def test_nested_settings(self):
         """Test nested settings configuration"""
@@ -60,14 +55,16 @@ class TestSettingsLoad:
                 "port": 8080
             },
             "sqlalchemy": {
-                "pool_size": 10
+                "pool": {
+                    "size": 10
+                }
             }
         }
 
         settings = Settings.from_dict(config)
 
         assert settings.server.port == 8080
-        assert settings.sqlalchemy.pool_size == 10
+        assert settings.sqlalchemy.pool.size == 10
 
 
 class TestBaseSettings:

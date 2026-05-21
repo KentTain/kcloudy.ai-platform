@@ -11,8 +11,9 @@ from fastapi.responses import ORJSONResponse
 from loguru import logger
 
 from demo.common.exception_handler import register_exception_handlers
-from demo.core.common.time import ChinaTimeZone
-from demo.models.core.engine import setup_orm
+from framework.common.time import ChinaTimeZone
+from framework.database.core.engine import setup_engine
+from demo.configs import settings
 
 _logger = logger.bind(name=__name__)
 
@@ -27,7 +28,13 @@ async def lifespan(app: FastAPI):
         f"\nDemo 应用开始启动... ({datetime.now(tz=ChinaTimeZone).strftime('%Y-%m-%d %H:%M:%S')})"
     )
     # 初始化数据库引擎
-    setup_orm()
+    sqlalchemy_config = settings.sqlalchemy
+    setup_engine(
+        database_url=sqlalchemy_config.url,
+        echo=sqlalchemy_config.echo,
+        pool_size=sqlalchemy_config.pool.size,
+        max_overflow=sqlalchemy_config.pool.max_overflow,
+    )
 
     # 初始化默认租户管理员
     from demo.initializers.tenant_admin_initializer import init_tenant_admin

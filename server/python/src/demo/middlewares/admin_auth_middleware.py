@@ -16,7 +16,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import JSONResponse
 
 from demo.models.tenant import TenantAdmin
-from demo.models.core.engine import async_session
+from framework.database.core.engine import async_session
 from framework.tenant.exceptions import TenantAdminAuthError
 from sqlalchemy import select
 

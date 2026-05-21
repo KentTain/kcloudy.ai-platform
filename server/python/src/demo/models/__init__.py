@@ -11,7 +11,7 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
-from demo.core.common.time import ChinaTimeZone
+from framework.common.time import ChinaTimeZone
 
 
 class BaseModel(DeclarativeBase):

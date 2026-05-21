@@ -5,7 +5,7 @@ Web 服务器入口
 import click
 import uvicorn
 
-from demo.configs.settings import settings
+from demo.configs import settings
 
 
 @click.command()
@@ -18,7 +18,7 @@ def main(host: str, port: int, reload: bool):
         "demo.application_web:app",
         host=host,
         port=port,
-        reload=reload or settings.server.debug,
+        reload=reload,
     )
 
 

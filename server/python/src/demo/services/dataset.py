@@ -4,7 +4,7 @@ Dataset Service
 
 from sqlalchemy import func, select
 
-from demo.models.core.engine import async_session
+from framework.database.core.engine import async_session
 from demo.models.dataset import Dataset
 from demo.schemas.dataset import DatasetCreate, DatasetUpdate
 

@@ -7,7 +7,7 @@ from fastapi.responses import ORJSONResponse
 from sqlalchemy import func, select
 
 from demo.models.tenant import Tenant, UserTenant
-from demo.models.core.engine import async_session
+from framework.database.core.engine import async_session
 from demo.schemas.admin.tenant import (
     TenantCreateRequest,
     TenantUpdateRequest,

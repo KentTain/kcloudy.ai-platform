@@ -86,15 +86,36 @@ uv run format-code --check-only
 
 ### 数据库迁移
 
-```bash
-# 创建迁移
-alembic revision --autogenerate -m "描述"
+项目采用模块化迁移架构，支持多业务模块独立迁移和数据初始化。
 
-# 应用迁移
-alembic upgrade head
+```bash
+# 查看迁移状态
+uv run python scripts/migrate_db.py --status
+
+# 执行迁移
+uv run python scripts/migrate_db.py
+
+# 预览迁移 SQL（不执行）
+uv run python scripts/migrate_db.py --dry-run
 
 # 回退迁移
-alembic downgrade -1
+uv run python scripts/migrate_db.py --downgrade
+
+# 创建新迁移
+alembic revision --autogenerate -m "描述"
+```
+
+### 数据初始化
+
+```bash
+# 初始化所有模块的默认数据
+uv run python scripts/seed_data.py
+
+# 预览待初始化的数据（不写入）
+uv run python scripts/seed_data.py --dry-run
+
+# 初始化指定模块
+uv run python scripts/seed_data.py --module tenant
 ```
 
 ### 测试
@@ -157,7 +178,8 @@ server/python/
 │   ├── core/              # 核心框架
 │   ├── utils/             # 工具函数
 │   ├── examples/          # 示例代码
-│   └── migrations/        # 数据库迁移
+│   ├── migrations/        # 数据库迁移
+│   └── seeds/             # 数据数据初始化脚本
 ├── tests/demo/            # Demo 模块测试
 │   ├── unit/              # 单元测试
 │   ├── examples/          # 示例测试
@@ -165,6 +187,8 @@ server/python/
 │   └── fixtures/          # 测试夹具
 ├── config/                # 配置目录（引用共享配置）
 └── scripts/               # 开发脚本
+    ├── migrate_db.py      # 数据库迁移脚本
+    └── seed_data.py       # 数据初始化入口
 ```
 
 ## License

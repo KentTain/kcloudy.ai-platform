@@ -12,7 +12,7 @@ import asyncio
 import pytest_asyncio
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 
-from demo.configs.settings import settings
+from demo.configs import settings
 from demo.models import BaseModel
 
 
@@ -67,7 +67,7 @@ async def async_engine():
         AsyncEngine: 异步数据库引擎实例
     """
     engine = create_async_engine(
-        url=settings.sqlalchemy.database_url,
+        url=settings.sqlalchemy.url,
         echo=settings.sqlalchemy.echo,
         pool_pre_ping=True,
     )

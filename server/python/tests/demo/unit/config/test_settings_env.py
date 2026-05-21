@@ -5,7 +5,7 @@ import os
 from unittest.mock import patch, MagicMock
 from pydantic import Field, SecretStr
 
-from demo.configs import BaseSettings
+from framework.configs.base import BaseSettings
 
 
 class TestSettingsEnvOverride:
@@ -15,8 +15,8 @@ class TestSettingsEnvOverride:
         """Test environment variable overrides YAML config"""
         with patch.dict(os.environ, {"SERVER_HOST": "192.168.1.1"}):
             # Reload settings
-            from demo.configs.settings import ServerSettings
-            settings = ServerSettings(_env_file=None)
+            from framework.configs.settings import ServerSettings
+            settings = ServerSettings()
 
             # Note: Pydantic-settings reads from env with prefix
             # This test demonstrates the concept
@@ -61,7 +61,7 @@ class TestSettingsEnvOverride:
                 database_url: str = "default"
                 pool_size: int = 5
 
-            settings = DatabaseSettings(_env_file=None)
+            settings = DatabaseSettings()
 
             # pydantic-settings reads env vars with matching names (case-insensitive for uppercase)
             assert settings.database_url == "postgresql://user:pass@localhost/db"
@@ -93,7 +93,7 @@ class TestSettingsEnvOverride:
                 port: int = 8000
                 debug: bool = False
 
-            settings = TestSettings(_env_file=None)
+            settings = TestSettings()
 
             # pydantic-settings reads env vars with matching names
             assert settings.host == "0.0.0.0"
@@ -116,10 +116,10 @@ class TestEnvPriority:
         config = {"server": {"port": 8080}}
 
         with patch.dict(os.environ, {"SERVER_PORT": "9090"}):
-            from demo.configs.settings import ServerSettings
+            from framework.configs.settings import ServerSettings
 
             # In production with pydantic-settings, env vars override everything
-            settings = ServerSettings(_env_file=None)
+            settings = ServerSettings()
 
             # This demonstrates the priority order
             # YAML < Environment Variables

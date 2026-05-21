@@ -2,7 +2,7 @@
 
 import pytest
 
-from demo.utils.tree_util import TreeUtil
+from demo.utils import TreeUtil
 
 
 class TreeNode:

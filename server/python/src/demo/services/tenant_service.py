@@ -12,7 +12,7 @@ from sqlalchemy import select, func, update, delete as sql_delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from demo.models.tenant import Tenant, TenantConfig, TenantAdmin, UserTenant, TenantStatus
-from demo.models.core.engine import async_session
+from framework.database.core.engine import async_session
 from framework.tenant.cache import TenantCache
 from framework.tenant.context import SimpleTenant
 from framework.tenant.exceptions import (

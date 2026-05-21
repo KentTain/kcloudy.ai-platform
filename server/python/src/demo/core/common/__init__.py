@@ -1,9 +1,10 @@
 """
 核心公共模块
+
+从 framework 导入通用组件，保留 demo 特有的路径和环境配置。
 """
 
 from demo.core.common.env import ENV
-from demo.core.common.instance import get_instance_id, set_instance_id
 from demo.core.common.path import (
     CONFIG_FOLDER,
     LOGS_DIR,
@@ -11,8 +12,9 @@ from demo.core.common.path import (
     SRC_DIR,
     WORKSPACE_ROOT_DIR,
 )
-from demo.core.common.singleton import AbstractSingleton, Singleton
-from demo.core.common.time import ChinaTimeZone
+from framework.common.singleton import Singleton, AbstractSingleton
+from framework.common.instance import get_instance_id, set_instance_id
+from framework.common.time import ChinaTimeZone
 
 __all__ = [
     "ENV",
