@@ -93,22 +93,52 @@ class ActiveRecordMixin:
         return list(result.scalars().all())
 
 
-from demo.models.tenant import (
+# 从 iam 模块导入模型（保持向后兼容）
+from iam.models import (
+    Department,
+    DepartmentStatus,
+    OAuthConnection,
+    OAuthProvider,
+    Permission,
+    Role,
+    RoleCode,
+    RolePermission,
     Tenant,
     TenantAdmin,
     TenantConfig,
     TenantStatus,
+    User,
+    UserDepartment,
+    UserRole,
+    UserStatus,
     UserTenant,
 )
 
 __all__ = [
+    # 基础类
     "ActiveRecordMixin",
     "BaseModel",
     "TimestampMixin",
     "UUIDPrimaryKeyMixin",
+    # 租户相关（向后兼容）
     "Tenant",
     "TenantConfig",
     "TenantAdmin",
     "TenantStatus",
     "UserTenant",
+    # 用户相关
+    "User",
+    "UserStatus",
+    "OAuthConnection",
+    "OAuthProvider",
+    # 组织架构
+    "Department",
+    "UserDepartment",
+    "DepartmentStatus",
+    # RBAC
+    "Role",
+    "RoleCode",
+    "Permission",
+    "UserRole",
+    "RolePermission",
 ]

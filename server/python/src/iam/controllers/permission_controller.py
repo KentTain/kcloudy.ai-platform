@@ -1,0 +1,59 @@
+"""
+权限控制器
+
+提供权限查询接口。
+"""
+
+from fastapi import APIRouter
+from fastapi.responses import ORJSONResponse
+
+from services.iam import permission_service
+
+router = APIRouter()
+
+
+@router.get("")
+async def list_permissions() -> ORJSONResponse:
+    """获取所有权限列表"""
+    permissions = await permission_service.get_all_permissions()
+    return ORJSONResponse(
+        content={
+            "code": 200,
+            "msg": "success",
+            "data": [
+                {
+                    "id": p.id,
+                    "code": p.code,
+                    "name": p.name,
+                    "resource": p.resource,
+                    "action": p.action,
+                    "description": p.description,
+                }
+                for p in permissions
+            ],
+        }
+    )
+
+
+@router.get("/grouped")
+async def get_permissions_grouped() -> ORJSONResponse:
+    """获取按资源分组的权限"""
+    grouped = await permission_service.get_permissions_grouped()
+    return ORJSONResponse(
+        content={
+            "code": 200,
+            "msg": "success",
+            "data": {
+                resource: [
+                    {
+                        "id": p.id,
+                        "code": p.code,
+                        "name": p.name,
+                        "action": p.action,
+                    }
+                    for p in perms
+                ]
+                for resource, perms in grouped.items()
+            },
+        }
+    )

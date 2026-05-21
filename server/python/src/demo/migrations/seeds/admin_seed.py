@@ -10,7 +10,7 @@ import uuid
 
 from sqlalchemy import select
 
-from demo.models.tenant import TenantAdmin
+from iam.models import TenantAdmin
 
 
 async def run(*, dry_run: bool = False) -> int:
@@ -25,6 +25,7 @@ async def run(*, dry_run: bool = False) -> int:
         初始化的记录数
     """
     from framework.database.core.engine import get_session
+    from framework.utils.crypto import hash_password
 
     async with get_session() as session:
         # 检查是否已存在默认管理员
@@ -41,11 +42,8 @@ async def run(*, dry_run: bool = False) -> int:
         admin_id = str(uuid.uuid4())
 
         # 默认密码: admin123 (生产环境应使用环境变量或配置文件)
-        # 这里使用简单的占位符，实际应用应使用 bcrypt 等加密
-        import hashlib
-
         default_password = "admin123"
-        password_hash = hashlib.sha256(default_password.encode()).hexdigest()
+        password_hash = hash_password(default_password)
 
         admin = TenantAdmin(
             id=admin_id,

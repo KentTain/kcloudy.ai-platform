@@ -16,6 +16,18 @@
 - **WHEN** 未携带 Token 访问管理后台 API
 - **THEN** 返回 HTTP 401 错误
 
+### Requirement: BCrypt 密码存储
+
+系统 SHALL 使用 BCrypt 算法存储租户管理员密码哈希。
+
+#### Scenario: 密码哈希存储
+- **WHEN** 创建或修改租户管理员密码
+- **THEN** 使用 BCrypt（cost factor = 12）计算哈希值并存储
+
+#### Scenario: 密码验证
+- **WHEN** 租户管理员登录时验证密码
+- **THEN** 使用 BCrypt 比对输入密码与存储的哈希值
+
 ### Requirement: 租户列表查询
 
 系统 SHALL 支持跨租户查询租户列表。

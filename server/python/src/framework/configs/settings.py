@@ -167,6 +167,53 @@ class TenantSettings(BaseSettings):
     )
 
 
+class JWTSettings(BaseSettings):
+    """JWT 配置"""
+    secret_key: str = Field(
+        default="change-me-in-production", description="JWT 签名密钥"
+    )
+    access_token_expire_hours: int = Field(
+        default=2, description="Access Token 有效期（小时）"
+    )
+    refresh_token_expire_days: int = Field(
+        default=7, description="Refresh Token 有效期（天）"
+    )
+    algorithm: str = Field(
+        default="HS256", description="JWT 签名算法"
+    )
+
+
+class OAuthWechatSettings(BaseSettings):
+    """微信 OAuth 配置"""
+    client_id: str = Field(default="", description="AppID")
+    client_secret: str = Field(default="", description="AppSecret")
+    redirect_uri: str = Field(default="", description="回调地址")
+
+
+class OAuthWeworkSettings(BaseSettings):
+    """企微 OAuth 配置"""
+    client_id: str = Field(default="", description="CorpID")
+    client_secret: str = Field(default="", description="CorpSecret")
+    redirect_uri: str = Field(default="", description="回调地址")
+    agentid: str = Field(default="", description="AgentID")
+
+
+class OAuthSettings(BaseSettings):
+    """OAuth 配置"""
+    wechat: OAuthWechatSettings = Field(
+        default_factory=OAuthWechatSettings, description="微信配置"
+    )
+    wework: OAuthWeworkSettings = Field(
+        default_factory=OAuthWeworkSettings, description="企微配置"
+    )
+
+
+class IAMSettings(BaseSettings):
+    """IAM 模块配置"""
+    jwt: JWTSettings = Field(default_factory=JWTSettings, description="JWT 配置")
+    oauth: OAuthSettings = Field(default_factory=OAuthSettings, description="OAuth 配置")
+
+
 # ==============================================================================
 # 主配置类
 # ==============================================================================
@@ -202,6 +249,9 @@ class Settings(BaseSettings):
     # 业务配置
     tenant: TenantSettings = Field(
         default_factory=TenantSettings, description="租户配置"
+    )
+    iam: IAMSettings = Field(
+        default_factory=IAMSettings, description="IAM 配置"
     )
 
     # 日志配置

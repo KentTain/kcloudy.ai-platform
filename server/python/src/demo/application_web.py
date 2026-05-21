@@ -66,6 +66,10 @@ def create_app() -> FastAPI:
     from demo.controllers import dataset
     app.include_router(dataset.router, prefix="/api/v1/datasets", tags=["Dataset"])
 
+    # 注册路由 - IAM
+    from iam.controllers import router as iam_router
+    app.include_router(iam_router, prefix="/api/v1", tags=["IAM"])
+
     # 注册路由 - 管理后台
     from demo.controllers.admin.tenant_controller import router as admin_tenant_router
     app.include_router(admin_tenant_router, prefix="/admin/v1", tags=["Admin - Tenant"])
