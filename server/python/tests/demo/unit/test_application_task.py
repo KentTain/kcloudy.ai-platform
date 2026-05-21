@@ -12,7 +12,7 @@ class TestApplicationTask:
     def test_main_is_click_command(self):
         """WHEN: 导入 main
         THEN: 是 click 命令"""
-        from demo.application_task import main
+        from application_task import main
 
         assert callable(main)
 
@@ -21,13 +21,13 @@ class TestApplicationTask:
         """WHEN: run_task 启动
         THEN: 调用 setup_scheduler()"""
         with patch(
-            "demo.application_task.setup_scheduler",
+            "application_task.setup_scheduler",
             new_callable=AsyncMock,
         ) as mock_setup, patch(
-            "demo.application_task.cleanup_scheduler",
+            "application_task.cleanup_scheduler",
             new_callable=AsyncMock,
         ) as mock_cleanup:
-            from demo.application_task import run_task
+            from application_task import run_task
 
             loop = asyncio.get_running_loop()
 

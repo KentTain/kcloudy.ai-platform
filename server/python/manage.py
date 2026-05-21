@@ -116,7 +116,7 @@ def runserver(host, port, reload):
     click.echo(f"  文档: http://{server_host}:{server_port}/docs")
 
     uvicorn.run(
-        "demo.application_web:app",
+        "application_web:app",
         host=server_host,
         port=server_port,
         reload=reload,
@@ -127,7 +127,7 @@ def runserver(host, port, reload):
 def runtask():
     """启动定时任务调度器"""
     click.echo("正在启动定时任务调度器...")
-    from demo.application_task import main
+    from application_task import main
 
     main()
 
@@ -136,7 +136,7 @@ def runtask():
 def runlistener():
     """启动监听器服务"""
     click.echo("正在启动监听器服务...")
-    from demo.application_listener import main
+    from application_listener import main
 
     main()
 

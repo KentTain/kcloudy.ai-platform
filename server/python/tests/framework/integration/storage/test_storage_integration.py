@@ -140,7 +140,7 @@ class TestMinioStorageDownload:
         WHEN: 下载不存在的文件
         THEN: 抛出异常
         """
-        with pytest.raises(Exception):
+        with pytest.raises(Exception, match=".*"):
             await minio_storage.download(test_bucket, "nonexistent_file.txt")
 
 

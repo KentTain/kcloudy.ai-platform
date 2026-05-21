@@ -73,7 +73,7 @@ class TestEnumDataUtils:
 
     def test_to_enum_invalid_value(self):
         """测试无效值转换"""
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match="is not a valid value"):
             EnumDataUtils.to_enum(Status, "INVALID")
 
     def test_thread_safety(self):

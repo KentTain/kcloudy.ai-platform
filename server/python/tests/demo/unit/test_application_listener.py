@@ -12,7 +12,7 @@ class TestApplicationListener:
     def test_main_is_click_command(self):
         """WHEN: 导入 main
         THEN: 是 click 命令"""
-        from demo.application_listener import main
+        from application_listener import main
 
         assert callable(main)
 
@@ -21,15 +21,15 @@ class TestApplicationListener:
         """WHEN: run_listener 启动
         THEN: 调用 setup_listeners()"""
         with patch(
-            "demo.application_listener.setup_listeners",
+            "application_listener.setup_listeners",
             new_callable=AsyncMock,
         ) as mock_setup, patch(
-            "demo.application_listener.cleanup_listeners",
+            "application_listener.cleanup_listeners",
             new_callable=AsyncMock,
         ) as mock_cleanup, patch(
-            "demo.application_listener.init_settings"
+            "application_listener.init_settings"
         ):
-            from demo.application_listener import run_listener
+            from application_listener import run_listener
 
             loop = asyncio.get_running_loop()
 
@@ -60,17 +60,17 @@ class TestApplicationListener:
         """WHEN: run_listener 启动
         THEN: 注册 SIGINT 和 SIGTERM 信号处理器"""
         with patch(
-            "demo.application_listener.setup_listeners",
+            "application_listener.setup_listeners",
             new_callable=AsyncMock,
         ), patch(
-            "demo.application_listener.cleanup_listeners",
+            "application_listener.cleanup_listeners",
             new_callable=AsyncMock,
         ), patch(
-            "demo.application_listener.init_settings"
+            "application_listener.init_settings"
         ):
             import signal
 
-            from demo.application_listener import run_listener
+            from application_listener import run_listener
 
             loop = asyncio.get_running_loop()
 
