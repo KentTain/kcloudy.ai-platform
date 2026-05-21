@@ -297,7 +297,7 @@ def seed(dry_run, module):
     """初始化默认数据"""
     import asyncio
 
-    from demo.seeds import SEED_MODULES
+    from demo.migrations.seeds import SEED_MODULES
 
     click.echo("=" * 60)
     click.echo("数据初始化")

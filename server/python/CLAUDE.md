@@ -26,7 +26,9 @@ server/python/
 │   │   ├── models/         # 数据库模型
 │   │   ├── schemas/        # Pydantic 模型
 │   │   ├── migrations/     # 数据库迁移
-│   │   └── seeds/          # 数据初始化脚本
+│   │   │   ├── versions/   # 迁移版本文件
+│   │   │   └── seeds/      # 数据初始化脚本
+│   │   └── ...
 │   └── framework/          # 基础设施框架
 ├── tests/                  # 测试目录
 ├── config/                 # 配置目录（符号链接到 server/config/）
@@ -132,7 +134,7 @@ def downgrade() -> None:
 
 ## 数据初始化
 
-数据初始化脚本位于 `src/demo/seeds/`，支持幂等执行和 dry-run 预览。
+数据初始化脚本位于 `src/demo/migrations/seeds/`，支持幂等执行和 dry-run 预览。
 
 ### 初始化命令
 
@@ -154,7 +156,7 @@ uv run python manage.py seed --module tenant
 uv run python manage.py db makemigrations -m "add user tables"
 ```
 
-**步骤 2：创建种子脚本** `src/demo/seeds/user_seed.py`
+**步骤 2：创建种子脚本** `src/demo/migrations/seeds/user_seed.py`
 
 ```python
 """用户模块数据初始化"""
@@ -186,10 +188,10 @@ async def run(*, dry_run: bool = False) -> int:
         return 1
 ```
 
-**步骤 3：注册模块** 在 `src/demo/seeds/__init__.py`
+**步骤 3：注册模块** 在 `src/demo/migrations/seeds/__init__.py`
 
 ```python
-from demo.seeds.user_seed import run as user_run
+from demo.migrations.seeds.user_seed import run as user_run
 
 SEED_MODULES["user"] = user_run
 ```

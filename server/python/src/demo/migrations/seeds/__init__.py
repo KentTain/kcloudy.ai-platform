@@ -26,14 +26,14 @@ def _register_modules() -> None:
     global SEED_MODULES
 
     try:
-        from demo.seeds import tenant_seed
+        from demo.migrations.seeds import tenant_seed
 
         SEED_MODULES["tenant"] = tenant_seed.run
     except ImportError:
         pass
 
     try:
-        from demo.seeds import admin_seed
+        from demo.migrations.seeds import admin_seed
 
         SEED_MODULES["admin"] = admin_seed.run
     except ImportError:

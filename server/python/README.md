@@ -194,7 +194,9 @@ server/python/
 │   ├── schemas/            # Pydantic 模型
 │   ├── configs/            # 配置管理
 │   ├── migrations/         # 数据库迁移
-│   └── seeds/              # 数据初始化脚本
+│   │   ├── versions/       # 迁移版本文件
+│   │   └── seeds/          # 数据初始化脚本
+│   └── ...
 ├── tests/demo/             # Demo 模块测试
 │   ├── unit/               # 单元测试
 │   ├── integration/        # 集成测试
