@@ -36,9 +36,8 @@ async def setup_scheduler() -> None:
 
     settings = init_settings()
 
-    # 本地调度器
+    # 本地调度器（使用默认 MemoryJobStore）
     _local_scheduler = AsyncIOScheduler(
-        jobstores={"default": "memory"},
         timezone="Asia/Shanghai",
         coalesce=True,
         max_instances=1,
@@ -61,8 +60,7 @@ async def setup_scheduler() -> None:
     # 集群调度器
     try:
         redis_config = settings.messaging.connections.get("redis", {})
-        redis_url = _build_redis_url(redis_config)
-        jobstore = RedisJobStore(url=redis_url)
+        jobstore = _create_redis_jobstore(redis_config)
 
         _cluster_scheduler = AsyncIOScheduler(
             jobstores={"default": jobstore},
@@ -97,13 +95,16 @@ async def cleanup_scheduler() -> None:
     _logger.info("调度器已停止")
 
 
-def _build_redis_url(redis_config: dict) -> str:
-    """从配置构建 Redis URL"""
+def _create_redis_jobstore(redis_config: dict) -> RedisJobStore:
+    """从配置创建 RedisJobStore"""
     host = redis_config.get("host", "localhost")
     port = redis_config.get("port", 6379)
-    password = redis_config.get("password", "")
+    password = redis_config.get("password") or None
     db = redis_config.get("db", 0)
 
-    if password:
-        return f"redis://:{password}@{host}:{port}/{db}"
-    return f"redis://{host}:{port}/{db}"
+    return RedisJobStore(
+        host=host,
+        port=port,
+        password=password,
+        db=db,
+    )
