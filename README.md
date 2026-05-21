@@ -16,7 +16,7 @@ init_project/
 │   └── react/                 # React + TypeScript
 ├── app/                       # 前端 Mobile 项目
 ├── docker/                    # Docker 部署配置
-└──  docs/                      # 项目文档
+└── docs/                      # 项目文档
 ```
 
 ## 技术选型
@@ -53,6 +53,9 @@ cd server/python
 
 # 安装依赖
 uv sync
+
+# 安装 LangChain 依赖（可选）
+uv sync --group langchain
 
 # 配置
 cp config/application-local.yml.example config/application-local.yml
@@ -120,6 +123,39 @@ pnpm dev
 | Python 测试 | [server/python/tests/README.md](server/python/tests/README.md) | 测试框架、运行测试 |
 | Vue 前端 | [web/vue/README.md](web/vue/README.md) | Vue 3 前端功能、安装配置 |
 | Docker 部署 | [docker/README.md](docker/README.md) | Docker Compose 部署指南 |
+
+## Python 后端模块结构
+
+Python 后端采用多模块架构：
+
+```text
+server/python/src/
+├── demo/                      # 业务演示模块
+│   ├── controllers/           # API 控制器
+│   ├── services/              # 业务逻辑层
+│   ├── models/                # 数据库模型
+│   └── ...
+├── iam/                       # IAM 身份认证模块
+│   ├── controllers/           # API 控制器
+│   ├── services/              # 业务逻辑层
+│   ├── models/                # 数据库模型
+│   └── ...
+├── framework/                 # 基础设施模块
+│   ├── configs/               # 配置管理
+│   ├── cache/                 # Redis 缓存
+│   ├── database/              # 数据库组件
+│   └── ...
+├── application_web.py         # FastAPI 应用入口
+├── application_task.py        # 任务调度器入口
+├── application_listener.py    # 消息监听器入口
+└── run.py                     # Web 服务器启动入口
+```
+
+| 模块 | 说明 |
+|------|------|
+| demo | 业务演示模块：知识库管理示例 |
+| iam | 身份认证模块：租户、用户、权限管理 |
+| framework | 基础设施模块：配置、缓存、存储、队列等 |
 
 ## License
 

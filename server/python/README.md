@@ -32,6 +32,9 @@ Demo AI 助手平台后端服务，基于 FastAPI 构建。
 # 安装依赖
 uv sync
 
+# 安装 LangChain 依赖（可选）
+uv sync --group langchain
+
 # 初始化开发环境
 uv run setup-dev
 
@@ -145,7 +148,7 @@ uv run python manage.py seed --module tenant
 uv run pytest
 
 # 运行单元测试
-uv run pytest tests/demo/unit/ -v
+uv run pytest tests/demo/unit/ tests/iam/unit/ -v
 
 # 运行指定测试文件
 uv run pytest tests/demo/unit/config/ -v
@@ -164,9 +167,17 @@ uv run pytest -m "not slow"
 | `@pytest.mark.db` | 数据库测试 |
 | `@pytest.mark.api` | API 测试 |
 
-### MVC 架构
+### 模块架构
 
-项目采用 Controller → Service → Model 三层架构：
+项目采用多模块架构，每个模块是 `src/` 目录下的顶级子目录：
+
+| 模块 | 说明 |
+|------|------|
+| demo | 业务演示模块：知识库管理示例 |
+| iam | 身份认证模块：租户、用户、权限管理 |
+| framework | 基础设施模块：配置、缓存、存储、队列等 |
+
+每个业务模块采用 Controller → Service → Model 三层架构：
 
 - **Controller**：HTTP 路由和参数解析
 - **Service**：业务逻辑和事务管理
@@ -186,22 +197,42 @@ uv run pytest -m "not slow"
 
 ```text
 server/python/
-├── manage.py               # 统一管理脚本
-├── src/demo/               # Demo 模块源码
-│   ├── controllers/        # API 控制器
-│   ├── services/           # 业务逻辑层
-│   ├── models/             # 数据库模型
-│   ├── schemas/            # Pydantic 模型
-│   ├── configs/            # 配置管理
-│   ├── migrations/         # 数据库迁移
-│   │   ├── versions/       # 迁移版本文件
-│   │   └── seeds/          # 数据初始化脚本
-│   └── ...
-├── tests/demo/             # Demo 模块测试
-│   ├── unit/               # 单元测试
-│   ├── integration/        # 集成测试
-│   └── fixtures/           # 测试夹具
-└── config/                 # 配置目录（引用共享配置）
+├── manage.py                   # 统一管理脚本
+├── src/                        # 源码目录
+│   ├── demo/                   # Demo 业务模块
+│   │   ├── controllers/        # API 控制器
+│   │   ├── services/           # 业务逻辑层
+│   │   ├── models/             # 数据库模型
+│   │   ├── schemas/            # Pydantic 模型
+│   │   ├── migrations/         # 数据库迁移
+│   │   ├── listeners/          # 消息监听器
+│   │   └── tasks/              # 定时任务
+│   ├── iam/                    # IAM 身份认证模块
+│   │   ├── controllers/        # API 控制器
+│   │   ├── services/           # 业务逻辑层
+│   │   ├── models/             # 数据库模型
+│   │   ├── schemas/            # Pydantic 模型
+│   │   ├── migrations/         # 数据库迁移
+│   │   ├── initializers/       # 初始化器
+│   │   └── middlewares/        # 中间件
+│   ├── framework/              # 基础设施模块
+│   │   ├── configs/            # 配置管理
+│   │   ├── cache/              # Redis 缓存
+│   │   ├── database/           # 数据库组件
+│   │   ├── storage/            # 对象存储
+│   │   ├── queue/              # 消息队列
+│   │   ├── pubsub/             # 发布订阅
+│   │   ├── lock/               # 分布式锁
+│   │   └── tenant/             # 租户模型
+│   ├── application_web.py      # FastAPI 应用入口
+│   ├── application_task.py     # 任务调度器入口
+│   ├── application_listener.py # 消息监听器入口
+│   └── run.py                  # Web 服务器启动入口
+├── tests/                      # 测试目录
+│   ├── demo/                   # Demo 模块测试
+│   ├── iam/                    # IAM 模块测试
+│   └── framework/              # Framework 模块测试
+└── config/                     # 配置目录（引用共享配置）
 ```
 
 ## License

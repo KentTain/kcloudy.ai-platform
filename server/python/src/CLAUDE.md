@@ -7,36 +7,57 @@
 ```text
 src/
 ├── demo/                      # Demo 业务模块
+│   ├── controllers/           # API 控制器
+│   ├── services/              # 业务逻辑层
+│   ├── models/                # SQLAlchemy 数据库模型
+│   ├── schemas/               # Pydantic 校验模型
+│   ├── configs/               # 配置管理
+│   ├── common/                # 通用模块（异常、上下文等）
+│   ├── core/                  # 核心框架（路径、环境、单例等）
+│   ├── migrations/            # Alembic 数据库迁移
+│   ├── utils/                 # 工具函数
+│   ├── examples/              # 示例代码（LangChain、MCP 等）
+│   ├── listeners/             # 消息监听器子模块
+│   └── tasks/                 # 定时任务子模块
+├── iam/                       # IAM 身份认证模块
+│   ├── controllers/           # API 控制器
+│   ├── services/              # 业务逻辑层
+│   ├── models/                # SQLAlchemy 数据库模型
+│   ├── schemas/               # Pydantic 校验模型
+│   ├── migrations/            # Alembic 数据库迁移
+│   ├── initializers/          # 初始化器（默认租户管理员等）
+│   └── middlewares/           # 中间件
 ├── framework/                 # Framework 基础设施模块
+│   ├── configs/               # 配置管理
+│   ├── cache/                 # Redis 缓存
+│   ├── database/              # 数据库组件
+│   ├── storage/               # 对象存储
+│   ├── queue/                 # 消息队列
+│   ├── pubsub/                # 发布订阅
+│   ├── lock/                  # 分布式锁
+│   ├── tenant/                # 租户模型
+│   └── utils/                 # 工具函数
 ├── application_web.py         # FastAPI 应用入口
 ├── application_task.py        # 任务调度器入口
 ├── application_listener.py    # 消息监听器入口
 └── run.py                     # Web 服务器启动入口
 ```
 
-## Demo 模块
+## 模块说明
 
-Demo 模块是业务演示模块，采用 MVC 三层架构。
+### Demo 模块
 
-### 目录结构
+Demo 模块是业务演示模块，采用 MVC 三层架构，提供知识库管理示例功能。
 
-```text
-demo/
-├── controllers/               # API 控制器
-├── services/                  # 业务逻辑层
-├── models/                    # SQLAlchemy 数据库模型
-├── schemas/                   # Pydantic 校验模型
-├── configs/                   # 配置管理
-├── common/                    # 通用模块（异常、上下文等）
-├── core/                      # 核心框架（路径、环境、单例等）
-├── db/                        # 数据库引擎配置
-├── migrations/                # Alembic 数据库迁移
-├── utils/                     # 工具函数
-├── examples/                  # 示例代码（LangChain、MCP 等）
-├── listeners/                 # 消息监听器子模块
-└── tasks/                     # 定时任务子模块
+### IAM 模块
 
-```
+IAM 模块是身份认证模块，提供租户管理、用户认证、权限控制等功能。
+
+### Framework 模块
+
+Framework 模块提供统一的基础设施组件，包括配置管理、缓存、存储、队列等。
+
+## Demo 模块详解
 
 ### MVC 编码模式
 
@@ -222,7 +243,7 @@ Framework 模块提供统一的基础设施组件。
 
 ```text
 framework/
-├── config/                    # 统一配置模块
+├── configs/                   # 统一配置模块
 ├── cache/                     # Redis 缓存模块
 ├── core/                      # 核心接口定义
 ├── common/                    # 通用组件
@@ -239,7 +260,7 @@ framework/
 
 | 组件 | 用途 |
 |------|------|
-| config | YAML 配置加载、环境变量覆盖 |
+| configs | YAML 配置加载、环境变量覆盖 |
 | cache | Redis 缓存操作封装 |
 | storage | 对象存储（MinIO、阿里云 OSS） |
 | lock | 分布式锁实现 |
@@ -302,10 +323,40 @@ async with lock_provider.acquire_context("resource_key", ttl=30) as lock:
         pass
 ```
 
+## IAM 模块
+
+IAM 模块提供身份认证和权限管理功能。
+
+### 目录结构
+
+```text
+iam/
+├── controllers/               # API 控制器
+│   ├── admin/                 # 管理后台接口
+│   └── console/               # 用户端接口
+├── services/                  # 业务逻辑层
+├── models/                    # 数据库模型
+├── schemas/                   # Pydantic 模型
+├── migrations/                # 数据库迁移
+├── initializers/              # 初始化器
+└── middlewares/               # 中间件
+```
+
+### 核心功能
+
+| 功能 | 说明 |
+|------|------|
+| 租户管理 | 多租户创建、配置、过期管理 |
+| 用户认证 | JWT 令牌、密码验证 |
+| 权限控制 | 基于角色的访问控制 |
+
 ## API 端点
 
 - **`/health`** - 健康检查
 - **`/api/v1/datasets`** - 知识库 CRUD 示例
+- **`/api/v1/tenants`** - 租户管理
+- **`/admin/v1/tenants`** - 管理后台租户接口
+- **`/console/v1/tenants`** - 用户端租户接口
 - **`/docs`** - Swagger API 文档
 - **`/redoc`** - ReDoc API 文档
 

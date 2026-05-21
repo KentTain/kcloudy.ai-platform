@@ -29,8 +29,27 @@ server/python/
 │   │   │   ├── versions/   # 迁移版本文件
 │   │   │   └── seeds/      # 数据初始化脚本
 │   │   └── ...
+│   ├── iam/                # IAM 身份认证模块
+│   │   ├── controllers/    # API 控制器
+│   │   ├── services/       # 业务逻辑层
+│   │   ├── models/         # 数据库模型
+│   │   ├── schemas/        # Pydantic 模型
+│   │   ├── migrations/     # 数据库迁移
+│   │   ├── initializers/   # 初始化器
+│   │   └── middlewares/    # 中间件
 │   ├── framework/          # 基础设施框架
-│   └── iam/                # IAM 租户及用户认证模块
+│   │   ├── configs/        # 配置管理
+│   │   ├── cache/          # Redis 缓存
+│   │   ├── database/       # 数据库组件
+│   │   ├── storage/        # 对象存储
+│   │   ├── queue/          # 消息队列
+│   │   ├── pubsub/         # 发布订阅
+│   │   ├── lock/           # 分布式锁
+│   │   └── tenant/         # 租户模型
+│   ├── application_web.py      # FastAPI 应用入口
+│   ├── application_task.py     # 任务调度器入口
+│   ├── application_listener.py # 消息监听器入口
+│   └── run.py                  # Web 服务器启动入口
 ├── tests/                  # 测试目录
 ├── config/                 # 配置目录（符号链接到 server/config/）
 ├── pyproject.toml          # 项目配置
@@ -41,10 +60,13 @@ server/python/
 
 ## 功能模块
 
-| 模块 | 说明 | 详细文档 |
-|------|------|----------|
-| demo | 业务演示模块：API 控制器、服务层、数据模型 | [src/CLAUDE.md](src/CLAUDE.md) |
-| framework | 基础设施：配置、缓存、存储、队列、锁、租户 | [src/CLAUDE.md](src/CLAUDE.md) |
+| 模块 | 说明 | 目录 |
+|------|------|------|
+| demo | 业务演示模块：知识库管理示例 | src/demo/ |
+| iam | 身份认证模块：租户、用户、权限管理 | src/iam/ |
+| framework | 基础设施：配置、缓存、存储、队列、锁、租户 | src/framework/ |
+
+详细文档：[src/CLAUDE.md](src/CLAUDE.md)
 
 ## 管理命令
 
