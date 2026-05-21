@@ -3,6 +3,6 @@
   "exclude": [".venv", "**/__pycache__", "**/.pytest_cache"],
   "venvPath": ".",
   "venv": ".venv",
-  "extraPaths": ["src/demo"],
+  "extraPaths": ["src"],
   "pythonVersion": "3.12"
 }

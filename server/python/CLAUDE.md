@@ -29,7 +29,8 @@ server/python/
 │   │   │   ├── versions/   # 迁移版本文件
 │   │   │   └── seeds/      # 数据初始化脚本
 │   │   └── ...
-│   └── framework/          # 基础设施框架
+│   ├── framework/          # 基础设施框架
+│   └── iam/                # IAM 租户及用户认证模块
 ├── tests/                  # 测试目录
 ├── config/                 # 配置目录（符号链接到 server/config/）
 ├── pyproject.toml          # 项目配置
@@ -152,6 +153,7 @@ uv run python manage.py seed --module tenant
 ### 添加新模块
 
 **步骤 1：创建迁移文件**
+
 ```bash
 uv run python manage.py db makemigrations -m "add user tables"
 ```

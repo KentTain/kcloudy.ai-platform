@@ -7,7 +7,11 @@
 ```text
 src/
 ├── demo/                      # Demo 业务模块
-└── framework/                 # Framework 基础设施模块
+├── framework/                 # Framework 基础设施模块
+├── application_web.py         # FastAPI 应用入口
+├── application_task.py        # 任务调度器入口
+├── application_listener.py    # 消息监听器入口
+└── run.py                     # Web 服务器启动入口
 ```
 
 ## Demo 模块
@@ -30,11 +34,8 @@ demo/
 ├── utils/                     # 工具函数
 ├── examples/                  # 示例代码（LangChain、MCP 等）
 ├── listeners/                 # 消息监听器子模块
-├── tasks/                     # 定时任务子模块
-├── application_web.py         # FastAPI 应用入口
-├── application_task.py        # 任务调度器入口
-├── application_listener.py    # 消息监听器入口
-└── run.py                     # Web 服务器启动入口
+└── tasks/                     # 定时任务子模块
+
 ```
 
 ### MVC 编码模式
