@@ -1,4 +1,4 @@
-# Demo 开发指南
+# Demo 模块开发指南
 
 ## 概述
 
@@ -8,172 +8,234 @@ Demo 模块是业务演示页面，作为路由的页面组件，提供健康检
 
 ```
 demo/
-├── api/           # API 客户端
-├── assets/        # 静态资源
-├── components/    # 业务组件
-│   └── ui/        # UI 基基础组件
-├── layouts/       # 布局组件
-├── pages/         # 页面组件
-├── router/        # 路由配置
-├── stores/        # Pinia 状态管理
-├── styles/        # 模块样式
-└── types/         # TypeScript 类型定义
+├── api/                       # API 客户端
+│   ├── health.ts              # 健康检查 API
+│   └── datasets.ts            # 知识库 API
+├── components/                # 业务组件
+├── pages/                     # 页面组件
+│   ├── HomePage.vue           # 首页
+│   ├── HealthPage.vue         # 健康检查页面
+│   └── DatasetsPage.vue       # 知识库列表页面
+├── router/                    # 路由配置
+│   └── index.ts               # Demo 模块路由
+├── stores/                    # 状态管理
+│   └── datasets.ts            # 知识库状态
+├── types/                     # 类型定义
+│   └── index.ts               # Demo 类型
+└── CLAUDE.md                  # 本文档
 ```
 
-## 快速开始
+## 页面组件
+
+### HomePage 首页
+
+展示平台介绍和功能特性。
+
+```vue
+<template>
+  <HomePage />
+</template>
+
+<script setup>
+import HomePage from "@/demo/pages/HomePage.vue";
+</script>
+```
+
+### HealthPage 健康检查
+
+调用后端 `/health` API 检查服务状态。
+
+```vue
+<template>
+  <HealthPage />
+</template>
+
+<script setup>
+import HealthPage from "@/demo/pages/HealthPage.vue";
+</script>
+```
+
+功能：
+- 显示后端健康状态
+- 显示时间戳
+- 支持刷新和重试
+
+### DatasetsPage 知识库列表
+
+展示知识库列表，支持 CRUD 操作。
+
+```vue
+<template>
+  <DatasetsPage />
+</template>
+
+<script setup>
+import DatasetsPage from "@/demo/pages/DatasetsPage.vue";
+</script>
+```
+
+功能：
+- 显示知识库列表
+- 新建知识库
+- 查看/删除知识库
+
+## API 封装
 
 ### 健康检查 API
 
 ```typescript
-import { apiClient } from '@/framework/api/client'
+import { getHealth } from "@/demo/api/health";
 
-// 检查后端健康状态
-const health = await apiClient.get('/health')
-console.log(health.status) // 'healthy'
+// 获取健康状态
+const status = await getHealth();
+// { status: "healthy", timestamp: "2025-01-01T00:00:00Z" }
 ```
 
-### 知识库管理
+### 知识库 API
 
 ```typescript
-import { useDatasetStore } from '@/demo/stores/datasets'
+import {
+  getDatasets,
+  getDataset,
+  createDataset,
+  updateDataset,
+  deleteDataset
+} from "@/demo/api/datasets";
 
-const store = useDatasetStore()
+// 获取列表
+const datasets = await getDatasets();
 
-// 获取知识库列表
-await store.fetchDatasets()
+// 获取详情
+const dataset = await getDataset("id");
 
-// 添加知识库
-await store.addDataset({ name: '新知识库' })
+// 创建
+const newDataset = await createDataset({ name: "知识库名称" });
 
-// 删除知识库
-await store.deleteDataset(id)
-```
+// 更新
+await updateDataset("id", { name: "新名称" });
 
-## 组件开发
-
-### 页面组件
-
-```vue
-<template>
-  <div class="page">
-    <h1>{{ title }}</h1>
-    <DatasetList :datasets="datasets" @delete="handleDelete" />
-  </div>
-</template>
-
-<script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { useDatasetStore } from '@/demo/stores/datasets'
-
-const store = useDatasetStore()
-const title = ref('知识库管理')
-
-const datasets = computed(() => store.datasets)
-
-onMounted(() => {
-  store.fetchDatasets()
-})
-
-const handleDelete = async (id: string) => {
-  await store.deleteDataset(id)
-}
-</script>
-```
-
-### 业务组件
-
-```vue
-<template>
-  <div class="dataset-list">
-    <div v-for="item in datasets" :key="item.id" class="dataset-item">
-      <span>{{ item.name }}</span>
-      <button @click="$emit('delete', item.id)">删除</button>
-    </div>
-  </div>
-</template>
-
-<script setup lang="ts">
-interface Dataset {
-  id: string
-  name: string
-}
-
-interface Props {
-  datasets: Dataset[]
-}
-
-defineProps<Props>()
-defineEmits<{
-  delete: [id: string]
-}>()
-</script>
+// 删除
+await deleteDataset("id");
 ```
 
 ## 状态管理
 
-### Pinia Store
+### DatasetsStore
 
 ```typescript
-import { defineStore } from 'pinia'
-import { apiClient } from '@/framework/api/client'
+import { useDatasetStore } from "@/demo/stores/datasets";
 
-interface Dataset {
-  id: string
-  name: string
-  createdAt: string
-}
+const store = useDatasetStore();
 
-export const useDatasetStore = defineStore('dataset', {
-  state: () => ({
-    datasets: [] as Dataset[],
-    loading: false,
-    error: null as Error | null
-  }),
+// 获取列表
+await store.fetchDatasets();
 
-  actions: {
-    async fetchDatasets() {
-      this.loading = true
-      try {
-        this.datasets = await apiClient.get('/api/v1/datasets')
-      } catch (e) {
-        this.error = e as Error
-      } finally {
-        this.loading = false
-      }
-    },
+// 访问数据
+const datasets = store.datasets;
+const loading = store.loading;
+const error = store.error;
 
-    async addDataset(data: { name: string }) {
-      const dataset = await apiClient.post('/api/v1/datasets', data)
-      this.datasets.push(dataset)
-    },
+// 添加知识库
+await store.addDataset({ name: "新知识库" });
 
-    async deleteDataset(id: string) {
-      await apiClient.delete(`/api/v1/datasets/${id}`)
-      this.datasets = this.datasets.filter(d => d.id !== id)
-    }
-  }
-})
+// 更新知识库
+await store.editDataset("id", { name: "新名称" });
+
+// 删除知识库
+await store.removeDataset("id");
 ```
 
-## API 端点
+## 路由配置
 
-| 端点               | 方法   | 说明         |
-|--------------------|--------|--------------|
-| /health            | GET    | 健康检查     |
-| /api/v1/datasets   | GET    | 获取知识库列表 |
-| /api/v1/datasets   | POST   | 创建知识库   |
-| /api/v1/datasets/:id | DELETE | 删除知识库 |
+Demo 模块路由在 `demo/router/index.ts` 中定义：
+
+```typescript
+export const demoRoutes: RouteRecordRaw[] = [
+  {
+    path: "/",
+    name: "Home",
+    component: () => import("@/demo/pages/HomePage.vue"),
+    meta: { title: "首页", icon: "home" },
+  },
+  {
+    path: "/health",
+    name: "Health",
+    component: () => import("@/demo/pages/HealthPage.vue"),
+    meta: { title: "健康检查", icon: "health" },
+  },
+  {
+    path: "/datasets",
+    name: "Datasets",
+    component: () => import("@/demo/pages/DatasetsPage.vue"),
+    meta: { title: "知识库", icon: "database" },
+  },
+];
+```
+
+路由元信息：
+- `title`: 页面标题，用于面包屑和 TagsView
+- `icon`: 菜单图标
+
+## 类型定义
+
+### HealthStatus
+
+```typescript
+interface HealthStatus {
+  status: string;
+  timestamp: string;
+}
+```
+
+### Dataset
+
+```typescript
+interface Dataset {
+  id: string;
+  name: string;
+  description?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+```
+
+### CreateDatasetParams
+
+```typescript
+interface CreateDatasetParams {
+  name: string;
+  description?: string;
+}
+```
+
+## 开发规范
+
+### 组件开发
+
+- 使用 `<script setup lang="ts">` 语法
+- Props 使用 `defineProps` + `withDefaults`
+- Emits 使用 `defineEmits`
+- 组合使用 Framework 提供的 UI 组件
+
+### API 调用
+
+- 使用 Framework 提供的 `apiClient`
+- 在 `api/` 目录下定义 API 函数
+- 返回类型明确标注
+
+### 状态管理
+
+- 使用 Pinia `defineStore`
+- 在 `stores/` 目录下创建 Store
+- 导出类型定义
 
 ## 测试
 
-所有测试位于 `tests/demo/` 目录：
+测试文件位于 `tests/demo/` 目录：
 
 ```bash
-# 运行所有测试
+# 运行 Demo 模块测试
 pnpm test:unit tests/demo/ --run
-
-# 运行组件测试
-pnpm test:unit tests/demo/components/ --run
 
 # 运行 Store 测试
 pnpm test:unit tests/demo/stores/ --run
@@ -181,7 +243,7 @@ pnpm test:unit tests/demo/stores/ --run
 
 ## 注意事项
 
-1. 页面组件通过路由懒加载
-2. Store 使用 Pinia defineStore
-3. API 调用统一使用 framework 的 apiClient
-4. 类型定义放在 types/ 目录
+1. Demo 模块使用 Framework 提供的布局和组件
+2. API 调用通过 Framework 的 `apiClient` 进行
+3. 新增页面需在 `router/index.ts` 添加路由配置
+4. 新增 Store 需在 `stores/` 目录创建文件

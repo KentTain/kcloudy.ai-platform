@@ -1,0 +1,10 @@
+/**
+ * 主样式入口文件
+ * 引入设计令牌和 Tailwind CSS
+ */
+
+/* 设计令牌 */
+@import "./tokens.css";
+
+/* Tailwind CSS 基础层 */
+@import "tailwindcss";
