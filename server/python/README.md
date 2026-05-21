@@ -53,15 +53,30 @@ vim server/config/application-local.yml
 
 ### 运行
 
+项目提供统一的管理脚本 `manage.py`：
+
 ```bash
 # 启动 Web 服务器
-uv run runserver
+uv run python manage.py runserver
 
 # 指定主机/端口
-uv run runserver --host 0.0.0.0 --port 8080
+uv run python manage.py runserver --host 0.0.0.0 --port 8080
 
 # 启动开发模式（热重载）
-uv run runserver --reload
+uv run python manage.py runserver --reload
+
+# 启动定时任务调度器
+uv run python manage.py runtask
+
+# 启动监听器服务
+uv run python manage.py runlistener
+```
+
+也可以使用简化命令：
+
+```bash
+uv run runserver
+uv run runserver --host 0.0.0.0 --port 8080
 ```
 
 ### 访问
@@ -90,32 +105,35 @@ uv run format-code --check-only
 
 ```bash
 # 查看迁移状态
-uv run python scripts/migrate_db.py --status
+uv run python manage.py db current
 
 # 执行迁移
-uv run python scripts/migrate_db.py
+uv run python manage.py db migrate
 
 # 预览迁移 SQL（不执行）
-uv run python scripts/migrate_db.py --dry-run
+uv run python manage.py db migrate --sql
 
 # 回退迁移
-uv run python scripts/migrate_db.py --downgrade
+uv run python manage.py db downgrade
+
+# 查看迁移历史
+uv run python manage.py db history
 
 # 创建新迁移
-alembic revision --autogenerate -m "描述"
+uv run python manage.py db makemigrations -m "描述"
 ```
 
 ### 数据初始化
 
 ```bash
 # 初始化所有模块的默认数据
-uv run python scripts/seed_data.py
+uv run python manage.py seed
 
 # 预览待初始化的数据（不写入）
-uv run python scripts/seed_data.py --dry-run
+uv run python manage.py seed --dry-run
 
 # 初始化指定模块
-uv run python scripts/seed_data.py --module tenant
+uv run python manage.py seed --module tenant
 ```
 
 ### 测试
@@ -168,27 +186,20 @@ uv run pytest -m "not slow"
 
 ```text
 server/python/
-├── src/demo/              # Demo 模块源码
-│   ├── controllers/       # API 控制器
-│   ├── services/          # 业务逻辑层
-│   ├── models/            # 数据库模型
-│   ├── schemas/           # Pydantic 模型
-│   ├── configs/           # 配置管理
-│   ├── common/            # 通用模块
-│   ├── core/              # 核心框架
-│   ├── utils/             # 工具函数
-│   ├── examples/          # 示例代码
-│   ├── migrations/        # 数据库迁移
-│   └── seeds/             # 数据数据初始化脚本
-├── tests/demo/            # Demo 模块测试
-│   ├── unit/              # 单元测试
-│   ├── examples/          # 示例测试
-│   ├── studies/           # 代码预研
-│   └── fixtures/          # 测试夹具
-├── config/                # 配置目录（引用共享配置）
-└── scripts/               # 开发脚本
-    ├── migrate_db.py      # 数据库迁移脚本
-    └── seed_data.py       # 数据初始化入口
+├── manage.py               # 统一管理脚本
+├── src/demo/               # Demo 模块源码
+│   ├── controllers/        # API 控制器
+│   ├── services/           # 业务逻辑层
+│   ├── models/             # 数据库模型
+│   ├── schemas/            # Pydantic 模型
+│   ├── configs/            # 配置管理
+│   ├── migrations/         # 数据库迁移
+│   └── seeds/              # 数据初始化脚本
+├── tests/demo/             # Demo 模块测试
+│   ├── unit/               # 单元测试
+│   ├── integration/        # 集成测试
+│   └── fixtures/           # 测试夹具
+└── config/                 # 配置目录（引用共享配置）
 ```
 
 ## License
