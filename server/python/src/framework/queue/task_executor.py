@@ -9,7 +9,7 @@ from loguru import logger
 
 from framework.queue.task_message import TaskMessage
 from framework.tenant.context import TenantContext, SimpleTenant
-from demo.services.tenant_service import TenantService
+from iam.services.tenant_service import TenantService
 
 _logger = logger.bind(name=__name__)
 

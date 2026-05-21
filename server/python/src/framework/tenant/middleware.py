@@ -13,7 +13,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import JSONResponse
 
 from framework.database.core.engine import async_session
-from demo.models.tenant import Tenant, TenantStatus
+from iam.models import Tenant, TenantStatus
 from framework.common.ctx import set_context, Context
 from framework.tenant.context import TenantContext, SimpleTenant
 from framework.tenant.exceptions import (
@@ -137,7 +137,7 @@ class TenantMiddleware(BaseHTTPMiddleware):
 
         如果请求中有用户信息，检查用户是否属于该租户。
         """
-        from demo.models.tenant import UserTenant
+        from iam.models import UserTenant
 
         user_id = self._get_user_id(request)
         if not user_id:

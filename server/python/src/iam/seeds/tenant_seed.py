@@ -11,7 +11,7 @@ from datetime import datetime, timedelta
 
 from sqlalchemy import select
 
-from demo.models.tenant import Tenant, TenantStatus
+from iam.models import Tenant, TenantStatus
 
 
 async def run(*, dry_run: bool = False) -> int:

@@ -5,9 +5,9 @@
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import ORJSONResponse
 
-from demo.schemas.console.tenant import UserTenantVo, CurrentTenantVo, SwitchTenantVo
-from demo.services.tenant_service import TenantService
-from demo.models.tenant import TenantStatus
+from iam.schemas.console.tenant import UserTenantVo, CurrentTenantVo, SwitchTenantVo
+from iam.services.tenant_service import TenantService
+from iam.models import TenantStatus
 from framework.tenant.context import TenantContext, get_tenant_id, get_current_tenant
 from framework.tenant.exceptions import TenantNotFoundError, TenantInactiveError
 

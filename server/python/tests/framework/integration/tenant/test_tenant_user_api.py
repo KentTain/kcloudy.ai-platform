@@ -25,7 +25,7 @@ class TestUserTenantAPI:
 
     def test_schema_validation(self):
         """测试 Schema 验证"""
-        from demo.schemas.console.tenant import UserTenantVo, CurrentTenantVo, SwitchTenantVo
+        from iam.schemas.console.tenant import UserTenantVo, CurrentTenantVo, SwitchTenantVo
 
         # 用户租户 VO
         vo = UserTenantVo(

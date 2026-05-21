@@ -26,7 +26,7 @@ def _register_modules() -> None:
     global SEED_MODULES
 
     try:
-        from demo.migrations.seeds import tenant_seed
+        from iam.seeds import tenant_seed
 
         SEED_MODULES["tenant"] = tenant_seed.run
     except ImportError:

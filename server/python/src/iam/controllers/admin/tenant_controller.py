@@ -6,9 +6,9 @@ from fastapi import APIRouter, HTTPException, Request, Depends
 from fastapi.responses import ORJSONResponse
 from sqlalchemy import func, select
 
-from demo.models.tenant import Tenant, UserTenant
+from iam.models import Tenant, UserTenant
 from framework.database.core.engine import async_session
-from demo.schemas.admin.tenant import (
+from iam.schemas.admin.tenant import (
     TenantCreateRequest,
     TenantUpdateRequest,
     TenantVo,
@@ -17,8 +17,8 @@ from demo.schemas.admin.tenant import (
     AdminLoginRequest,
     AdminLoginVo,
 )
-from demo.services.tenant_service import TenantService
-from demo.middlewares.admin_auth_middleware import get_current_admin, AdminAuthService
+from iam.services.tenant_service import TenantService
+from iam.middlewares.admin_auth_middleware import get_current_admin, AdminAuthService
 
 router = APIRouter()
 

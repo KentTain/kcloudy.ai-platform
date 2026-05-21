@@ -9,7 +9,7 @@
 
 import pytest
 
-from demo.middlewares.admin_auth_middleware import (
+from iam.middlewares.admin_auth_middleware import (
     hash_password,
     verify_password,
     generate_token,
@@ -57,7 +57,7 @@ class TestTenantAdminAPI:
 
     def test_schema_validation(self):
         """测试 Schema 验证"""
-        from demo.schemas.admin.tenant import TenantCreateRequest, TenantVo
+        from iam.schemas.admin.tenant import TenantCreateRequest, TenantVo
 
         # 创建请求
         req = TenantCreateRequest(
@@ -69,7 +69,7 @@ class TestTenantAdminAPI:
 
     def test_tenant_vo(self):
         """测试租户 VO"""
-        from demo.schemas.admin.tenant import TenantVo
+        from iam.schemas.admin.tenant import TenantVo
         from datetime import datetime
 
         vo = TenantVo(

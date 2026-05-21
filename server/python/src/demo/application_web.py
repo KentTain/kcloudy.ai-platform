@@ -71,11 +71,11 @@ def create_app() -> FastAPI:
     app.include_router(iam_router, prefix="/api/v1", tags=["IAM"])
 
     # 注册路由 - 管理后台
-    from demo.controllers.admin.tenant_controller import router as admin_tenant_router
+    from iam.controllers.admin.tenant_controller import router as admin_tenant_router
     app.include_router(admin_tenant_router, prefix="/admin/v1", tags=["Admin - Tenant"])
 
     # 注册路由 - 用户端租户
-    from demo.controllers.console.tenant_controller import router as console_tenant_router
+    from iam.controllers.console.tenant_controller import router as console_tenant_router
     app.include_router(console_tenant_router, prefix="/console/v1/tenants", tags=["Console - Tenant"])
 
     # 健康检查端点
