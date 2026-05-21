@@ -29,6 +29,8 @@ demo/
 ├── migrations/                # Alembic 数据库迁移
 ├── utils/                     # 工具函数
 ├── examples/                  # 示例代码（LangChain、MCP 等）
+├── listeners/                 # 消息监听器子模块
+├── tasks/                     # 定时任务子模块
 ├── application_web.py         # FastAPI 应用入口
 ├── application_task.py        # 任务调度器入口
 ├── application_listener.py    # 消息监听器入口
@@ -59,6 +61,157 @@ demo/
 
 - **ORM 基类**：继承 `BaseModel` + 所需的 Mixin
 - **字段声明**：统一使用 `Mapped[type] = mapped_column(...)` 声明式注解
+
+## Listeners 子模块
+
+Listeners 模块提供消息监听能力，支持 Pub/Sub（广播）和 Queue（竞争消费）两种模式。
+
+### 目录结构
+
+```text
+listeners/
+├── __init__.py
+├── setup.py                   # 生命周期管理
+└── services/
+    ├── pubsub/                # Pub/Sub 处理器
+    │   ├── constants.py       # 主题常量
+    │   └── heartbeat_handler.py
+    └── queue/                 # Queue 处理器
+        ├── constants.py       # 队列常量
+        └── dataset_notify_handler.py
+```
+
+### 开发模式
+
+**1. 创建处理器**
+
+Pub/Sub 处理器继承 `SingleTopicHandler`：
+
+```python
+from framework.pubsub.handler import SingleTopicHandler
+
+class MyHandler(SingleTopicHandler):
+    topic: str = "my:topic"  # 订阅的主题
+
+    async def handle(self, topic: str, message: dict) -> None:
+        # 处理消息
+        pass
+```
+
+Queue 处理器继承 `SingleQueueHandler`：
+
+```python
+from framework.queue.handler import SingleQueueHandler
+from framework.core.queue import Message
+
+class MyQueueHandler(SingleQueueHandler):
+    queue: str = "my:queue"  # 消费的队列
+    batch_size: int = 10
+
+    async def handle(self, queue: str, messages: list[Message]) -> None:
+        for message in messages:
+            # 处理消息
+            pass
+```
+
+**2. 定义常量**
+
+在 `constants.py` 中定义主题/队列名称，禁止硬编码字符串：
+
+```python
+# services/pubsub/constants.py
+MY_TOPIC = "my:topic"
+
+# services/queue/constants.py
+MY_QUEUE = "my:queue"
+```
+
+**3. 注册处理器**
+
+在 `setup.py` 中注册：
+
+```python
+async def setup_listeners(settings: Settings) -> None:
+    pubsub = get_pubsub_provider(settings.messaging)
+    queue = get_queue_provider(settings.messaging)
+
+    handler = MyHandler()
+    await pubsub.subscribe(MY_TOPIC, handler.handle)
+    await queue.create_consumer_group(MY_QUEUE, f"{MY_QUEUE}:group")
+```
+
+### 启动监听器
+
+```bash
+python manage.py runlistener
+```
+
+## Tasks 子模块
+
+Tasks 模块提供定时任务调度能力，支持本地任务（每实例运行）和集群任务（唯一执行）。
+
+### 目录结构
+
+```text
+tasks/
+├── __init__.py
+├── setup.py                   # 双调度器管理
+└── services/
+    ├── heartbeat_task.py      # 本地任务示例
+    └── queue_status_task.py   # 集群任务示例
+```
+
+### 开发模式
+
+**1. 创建任务函数**
+
+所有任务都是异步函数，必须捕获异常：
+
+```python
+from loguru import logger
+
+_logger = logger.bind(name=__name__)
+
+async def my_task() -> None:
+    try:
+        # 任务逻辑
+        _logger.info("任务执行")
+    except Exception:
+        _logger.exception("任务执行异常")
+```
+
+**2. 注册任务**
+
+在 `setup.py` 中声明式注册：
+
+```python
+# 本地任务: (func, task_id, trigger_args)
+local_tasks = [
+    (heartbeat_task, "demo_heartbeat", {"seconds": 60}),
+]
+
+# 集群任务: (func, task_id, trigger, trigger_args)
+cluster_tasks = [
+    (queue_status_task, "demo_queue_status", "interval", {"minutes": 5}),
+]
+```
+
+**3. 调度器说明**
+
+- **本地调度器**：MemoryJobStore，每个实例独立运行
+- **集群调度器**：RedisJobStore，集群中只有一个实例执行
+
+### 启动调度器
+
+```bash
+python manage.py runtask
+```
+
+### 添加新任务
+
+1. 在 `services/` 下创建任务文件
+2. 在 `setup.py` 中导入并添加到 `local_tasks` 或 `cluster_tasks`
+3. 编写单元测试和集成测试
 
 ## Framework 模块
 
