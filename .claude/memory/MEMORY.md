@@ -8,5 +8,3 @@
 - [测试目录分层规范](feedback-test-directory-structure.md) — fixtures/unit/integration 测试组织规范
 
 ## 项目状态
-
-- [多租户模块实现](project-tenant-module.md) — 数据隔离和租户管理功能
