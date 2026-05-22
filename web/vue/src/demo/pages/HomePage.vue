@@ -2,12 +2,12 @@
 /**
  * HomePage 首页
  */
-import AppCard from "@/framework/components/ui/AppCard.vue";
+import CommonCard from "@/components/ui/CommonCard.vue";
 </script>
 
 <template>
   <div class="home-page">
-    <AppCard title="欢迎使用 AI 助手平台">
+    <CommonCard title="欢迎使用 AI 助手平台">
       <p class="home-page__desc">
         这是一个基于 Vue 3 + TypeScript + Vite 构建的后台管理系统演示项目。
       </p>
@@ -29,7 +29,7 @@ import AppCard from "@/framework/components/ui/AppCard.vue";
           <p>动态路由 + v-permission 指令 + 接口拦截</p>
         </div>
       </div>
-    </AppCard>
+    </CommonCard>
   </div>
 </template>
 

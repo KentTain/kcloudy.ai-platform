@@ -5,9 +5,9 @@
 import { ref } from "vue";
 import { useRouter } from "vue-router";
 import { useUserStore } from "@/framework/stores";
-import AppButton from "@/framework/components/ui/AppButton.vue";
-import AppInput from "@/framework/components/ui/AppInput.vue";
-import AppCard from "@/framework/components/ui/AppCard.vue";
+import CommonButton from "@/components/ui/CommonButton.vue";
+import CommonInput from "@/components/ui/CommonInput.vue";
+import CommonCard from "@/components/ui/CommonCard.vue";
 
 const router = useRouter();
 const userStore = useUserStore();
@@ -50,22 +50,22 @@ const handleLogin = async () => {
 
 <template>
   <div class="login-page">
-    <AppCard class="login-page__card" title="AI 助手平台">
+    <CommonCard class="login-page__card" title="AI 助手平台">
       <form class="login-page__form" @submit.prevent="handleLogin">
         <div class="login-page__field">
           <label class="login-page__label">用户名</label>
-          <AppInput v-model="username" placeholder="请输入用户名" />
+          <CommonInput v-model="username" placeholder="请输入用户名" />
         </div>
         <div class="login-page__field">
           <label class="login-page__label">密码</label>
-          <AppInput v-model="password" type="password" placeholder="请输入密码" />
+          <CommonInput v-model="password" type="password" placeholder="请输入密码" />
         </div>
         <div v-if="error" class="login-page__error">{{ error }}</div>
-        <AppButton type="submit" :loading="loading" block>
+        <CommonButton type="submit" :loading="loading" block>
           登录
-        </AppButton>
+        </CommonButton>
       </form>
-    </AppCard>
+    </CommonCard>
   </div>
 </template>
 

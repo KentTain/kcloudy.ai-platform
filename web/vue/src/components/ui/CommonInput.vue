@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * AppInput 输入框组件
+ * CommonInput 输入框组件
  */
 import { computed, ref } from "vue";
 
@@ -34,12 +34,12 @@ const inputRef = ref<HTMLInputElement>();
 const isFocused = ref(false);
 
 const inputClasses = computed(() => [
-  "app-input",
-  `app-input--${props.size}`,
+  "common-input",
+  `common-input--${props.size}`,
   {
-    "app-input--focused": isFocused.value,
-    "app-input--disabled": props.disabled,
-    "app-input--error": props.error,
+    "common-input--focused": isFocused.value,
+    "common-input--disabled": props.disabled,
+    "common-input--error": props.error,
   },
 ]);
 
@@ -72,9 +72,9 @@ defineExpose({ focus, blur });
 </script>
 
 <template>
-  <div class="app-input-wrapper">
+  <div class="common-input-wrapper">
     <div :class="inputClasses">
-      <div v-if="$slots.prefix" class="app-input__prefix">
+      <div v-if="$slots.prefix" class="common-input__prefix">
         <slot name="prefix" />
       </div>
       <input
@@ -84,32 +84,32 @@ defineExpose({ focus, blur });
         :placeholder="placeholder"
         :disabled="disabled"
         :readonly="readonly"
-        class="app-input__inner"
+        class="common-input__inner"
         @input="handleInput"
         @focus="handleFocus"
         @blur="handleBlur"
       />
-      <div v-if="clearable && modelValue && !disabled" class="app-input__clear" @click="handleClear">
+      <div v-if="clearable && modelValue && !disabled" class="common-input__clear" @click="handleClear">
         <svg viewBox="0 0 24 24" width="16" height="16">
           <path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
         </svg>
       </div>
-      <div v-if="$slots.suffix" class="app-input__suffix">
+      <div v-if="$slots.suffix" class="common-input__suffix">
         <slot name="suffix" />
       </div>
     </div>
-    <div v-if="error" class="app-input__error">{{ error }}</div>
+    <div v-if="error" class="common-input__error">{{ error }}</div>
   </div>
 </template>
 
 <style scoped>
-.app-input-wrapper {
+.common-input-wrapper {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
 }
 
-.app-input {
+.common-input {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
@@ -119,50 +119,50 @@ defineExpose({ focus, blur });
   transition: all var(--transition-fast);
 }
 
-.app-input:hover:not(.app-input--disabled) {
+.common-input:hover:not(.common-input--disabled) {
   border-color: var(--color-primary);
 }
 
-.app-input--focused {
+.common-input--focused {
   border-color: var(--color-primary);
   box-shadow: 0 0 0 2px var(--color-border-primary);
 }
 
-.app-input--disabled {
+.common-input--disabled {
   background-color: var(--color-surface);
   cursor: not-allowed;
 }
 
-.app-input--disabled .app-input__inner {
+.common-input--disabled .common-input__inner {
   cursor: not-allowed;
   color: var(--color-text-disabled);
 }
 
-.app-input--error {
+.common-input--error {
   border-color: var(--color-danger);
 }
 
-.app-input--error.app-input--focused {
+.common-input--error.common-input--focused {
   box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2);
 }
 
 /* 尺寸 */
-.app-input--sm .app-input__inner {
+.common-input--sm .common-input__inner {
   padding: 0.375rem 0.75rem;
   font-size: 0.875rem;
 }
 
-.app-input--md .app-input__inner {
+.common-input--md .common-input__inner {
   padding: 0.5rem 0.75rem;
   font-size: 0.875rem;
 }
 
-.app-input--lg .app-input__inner {
+.common-input--lg .common-input__inner {
   padding: 0.75rem 1rem;
   font-size: 1rem;
 }
 
-.app-input__inner {
+.common-input__inner {
   flex: 1;
   border: none;
   outline: none;
@@ -171,19 +171,19 @@ defineExpose({ focus, blur });
   font-family: inherit;
 }
 
-.app-input__inner::placeholder {
+.common-input__inner::placeholder {
   color: var(--color-text-disabled);
 }
 
-.app-input__prefix,
-.app-input__suffix {
+.common-input__prefix,
+.common-input__suffix {
   display: flex;
   align-items: center;
   color: var(--color-text-muted);
   padding: 0 0.5rem;
 }
 
-.app-input__clear {
+.common-input__clear {
   display: flex;
   align-items: center;
   padding: 0 0.5rem;
@@ -192,11 +192,11 @@ defineExpose({ focus, blur });
   transition: color var(--transition-fast);
 }
 
-.app-input__clear:hover {
+.common-input__clear:hover {
   color: var(--color-text);
 }
 
-.app-input__error {
+.common-input__error {
   color: var(--color-danger);
   font-size: 0.75rem;
 }

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * AppModal 对话框组件
+ * CommonModal 对话框组件
  */
 import { computed, watch } from "vue";
 
@@ -47,23 +47,23 @@ watch(visible, (val) => {
 
 <template>
   <Teleport to="body">
-    <Transition name="app-modal">
-      <div v-if="visible" class="app-modal__mask" @click.self="handleMaskClick">
-        <div :class="['app-modal', `app-modal--${size}`]">
-          <div v-if="title || $slots.header || closable" class="app-modal__header">
+    <Transition name="common-modal">
+      <div v-if="visible" class="common-modal__mask" @click.self="handleMaskClick">
+        <div :class="['common-modal', `common-modal--${size}`]">
+          <div v-if="title || $slots.header || closable" class="common-modal__header">
             <slot name="header">
-              <h3 class="app-modal__title">{{ title }}</h3>
+              <h3 class="common-modal__title">{{ title }}</h3>
             </slot>
-            <button v-if="closable" class="app-modal__close" @click="close">
+            <button v-if="closable" class="common-modal__close" @click="close">
               <svg viewBox="0 0 24 24" width="20" height="20">
                 <path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
               </svg>
             </button>
           </div>
-          <div class="app-modal__body">
+          <div class="common-modal__body">
             <slot />
           </div>
-          <div v-if="$slots.footer" class="app-modal__footer">
+          <div v-if="$slots.footer" class="common-modal__footer">
             <slot name="footer" />
           </div>
         </div>
@@ -73,7 +73,7 @@ watch(visible, (val) => {
 </template>
 
 <style scoped>
-.app-modal__mask {
+.common-modal__mask {
   position: fixed;
   inset: 0;
   background-color: rgba(0, 0, 0, 0.5);
@@ -83,7 +83,7 @@ watch(visible, (val) => {
   z-index: 1000;
 }
 
-.app-modal {
+.common-modal {
   background-color: var(--color-surface-raised);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-lg);
@@ -93,23 +93,23 @@ watch(visible, (val) => {
 }
 
 /* 尺寸 */
-.app-modal--sm {
+.common-modal--sm {
   width: 400px;
 }
 
-.app-modal--md {
+.common-modal--md {
   width: 520px;
 }
 
-.app-modal--lg {
+.common-modal--lg {
   width: 680px;
 }
 
-.app-modal--xl {
+.common-modal--xl {
   width: 900px;
 }
 
-.app-modal__header {
+.common-modal__header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -117,14 +117,14 @@ watch(visible, (val) => {
   border-bottom: 1px solid var(--color-border);
 }
 
-.app-modal__title {
+.common-modal__title {
   margin: 0;
   font-size: 1rem;
   font-weight: 600;
   color: var(--color-text);
 }
 
-.app-modal__close {
+.common-modal__close {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -137,17 +137,17 @@ watch(visible, (val) => {
   transition: all var(--transition-fast);
 }
 
-.app-modal__close:hover {
+.common-modal__close:hover {
   color: var(--color-text);
   background-color: var(--color-surface);
 }
 
-.app-modal__body {
+.common-modal__body {
   padding: 1.5rem;
   overflow-y: auto;
 }
 
-.app-modal__footer {
+.common-modal__footer {
   padding: 1rem 1.5rem;
   border-top: 1px solid var(--color-border);
   display: flex;
@@ -156,23 +156,23 @@ watch(visible, (val) => {
 }
 
 /* 动画 */
-.app-modal-enter-active,
-.app-modal-leave-active {
+.common-modal-enter-active,
+.common-modal-leave-active {
   transition: opacity 0.2s ease;
 }
 
-.app-modal-enter-active .app-modal,
-.app-modal-leave-active .app-modal {
+.common-modal-enter-active .common-modal,
+.common-modal-leave-active .common-modal {
   transition: transform 0.2s ease;
 }
 
-.app-modal-enter-from,
-.app-modal-leave-to {
+.common-modal-enter-from,
+.common-modal-leave-to {
   opacity: 0;
 }
 
-.app-modal-enter-from .app-modal,
-.app-modal-leave-to .app-modal {
+.common-modal-enter-from .common-modal,
+.common-modal-leave-to .common-modal {
   transform: scale(0.95);
 }
 </style>

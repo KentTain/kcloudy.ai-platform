@@ -3,7 +3,7 @@
  * NotFoundPage 404 页面不存在
  */
 import { useRouter } from "vue-router";
-import AppButton from "@/framework/components/ui/AppButton.vue";
+import AppButton from "@/components/ui/CommonButton.vue";
 
 const router = useRouter();
 
@@ -18,8 +18,8 @@ const goHome = () => router.push("/");
       <h2 class="not-found-page__title">页面不存在</h2>
       <p class="not-found-page__desc">抱歉，您访问的页面不存在</p>
       <div class="not-found-page__actions">
-        <AppButton variant="outline" @click="goBack">返回上一页</AppButton>
-        <AppButton @click="goHome">返回首页</AppButton>
+        <CommonButton variant="outline" @click="goBack">返回上一页</CommonButton>
+        <CommonButton @click="goHome">返回首页</CommonButton>
       </div>
     </div>
   </div>

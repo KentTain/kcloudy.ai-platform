@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * AppTable 数据表格组件
+ * CommonTable 数据表格组件
  */
 import { computed } from "vue";
 
@@ -49,30 +49,30 @@ const handleSort = (column: Column) => {
 };
 
 const getAlignClass = (align?: "left" | "center" | "right") =>
-  align ? `app-table__cell--${align}` : "";
+  align ? `common-table__cell--${align}` : "";
 </script>
 
 <template>
-  <div class="app-table-wrapper">
-    <table :class="['app-table', { 'app-table--stripe': stripe, 'app-table--border': border }]">
-      <thead class="app-table__head">
+  <div class="common-table-wrapper">
+    <table :class="['common-table', { 'common-table--stripe': stripe, 'common-table--border': border }]">
+      <thead class="common-table__head">
         <tr>
           <th
             v-for="column in columns"
             :key="column.key"
             :style="{ width: column.width }"
-            :class="['app-table__cell', getAlignClass(column.align)]"
+            :class="['common-table__cell', getAlignClass(column.align)]"
           >
             <div
-              :class="['app-table__header', { 'app-table__header--sortable': column.sortable }]"
+              :class="['common-table__header', { 'common-table__header--sortable': column.sortable }]"
               @click="handleSort(column)"
             >
               <span>{{ column.title }}</span>
-              <span v-if="column.sortable" class="app-table__sort">
+              <span v-if="column.sortable" class="common-table__sort">
                 <svg
                   :class="[
-                    'app-table__sort-icon',
-                    { 'app-table__sort-icon--active': sortKey === column.key && sortOrder === 'asc' },
+                    'common-table__sort-icon',
+                    { 'common-table__sort-icon--active': sortKey === column.key && sortOrder === 'asc' },
                   ]"
                   viewBox="0 0 24 24"
                   width="12"
@@ -82,8 +82,8 @@ const getAlignClass = (align?: "left" | "center" | "right") =>
                 </svg>
                 <svg
                   :class="[
-                    'app-table__sort-icon',
-                    { 'app-table__sort-icon--active': sortKey === column.key && sortOrder === 'desc' },
+                    'common-table__sort-icon',
+                    { 'common-table__sort-icon--active': sortKey === column.key && sortOrder === 'desc' },
                   ]"
                   viewBox="0 0 24 24"
                   width="12"
@@ -96,22 +96,22 @@ const getAlignClass = (align?: "left" | "center" | "right") =>
           </th>
         </tr>
       </thead>
-      <tbody class="app-table__body">
+      <tbody class="common-table__body">
         <tr v-if="loading">
-          <td :colspan="columns.length" class="app-table__loading">
-            <span class="app-table__loading-text">加载中...</span>
+          <td :colspan="columns.length" class="common-table__loading">
+            <span class="common-table__loading-text">加载中...</span>
           </td>
         </tr>
         <tr v-else-if="data.length === 0">
-          <td :colspan="columns.length" class="app-table__empty">
+          <td :colspan="columns.length" class="common-table__empty">
             {{ emptyText }}
           </td>
         </tr>
-        <tr v-else v-for="(row, index) in data" :key="index" class="app-table__row">
+        <tr v-else v-for="(row, index) in data" :key="index" class="common-table__row">
           <td
             v-for="column in columns"
             :key="column.key"
-            :class="['app-table__cell', getAlignClass(column.align)]"
+            :class="['common-table__cell', getAlignClass(column.align)]"
           >
             <slot :name="column.key" :row="row" :value="row[column.key]">
               {{ row[column.key] }}
@@ -124,43 +124,43 @@ const getAlignClass = (align?: "left" | "center" | "right") =>
 </template>
 
 <style scoped>
-.app-table-wrapper {
+.common-table-wrapper {
   overflow-x: auto;
 }
 
-.app-table {
+.common-table {
   width: 100%;
   border-collapse: collapse;
   background-color: var(--color-surface-raised);
 }
 
-.app-table--border {
+.common-table--border {
   border: 1px solid var(--color-border);
 }
 
-.app-table--border .app-table__cell {
+.common-table--border .common-table__cell {
   border: 1px solid var(--color-border);
 }
 
-.app-table__head {
+.common-table__head {
   background-color: var(--color-surface);
 }
 
-.app-table__cell {
+.common-table__cell {
   padding: 0.75rem 1rem;
   text-align: left;
   border-bottom: 1px solid var(--color-border);
 }
 
-.app-table__cell--center {
+.common-table__cell--center {
   text-align: center;
 }
 
-.app-table__cell--right {
+.common-table__cell--right {
   text-align: right;
 }
 
-.app-table__header {
+.common-table__header {
   display: flex;
   align-items: center;
   gap: 0.25rem;
@@ -168,52 +168,52 @@ const getAlignClass = (align?: "left" | "center" | "right") =>
   color: var(--color-text);
 }
 
-.app-table__header--sortable {
+.common-table__header--sortable {
   cursor: pointer;
   user-select: none;
 }
 
-.app-table__header--sortable:hover {
+.common-table__header--sortable:hover {
   color: var(--color-primary);
 }
 
-.app-table__sort {
+.common-table__sort {
   display: flex;
   flex-direction: column;
   gap: -4px;
 }
 
-.app-table__sort-icon {
+.common-table__sort-icon {
   color: var(--color-text-disabled);
   transition: color var(--transition-fast);
 }
 
-.app-table__sort-icon--active {
+.common-table__sort-icon--active {
   color: var(--color-primary);
 }
 
-.app-table--stripe .app-table__row:nth-child(even) {
+.common-table--stripe .common-table__row:nth-child(even) {
   background-color: var(--color-surface);
 }
 
-.app-table__row:hover {
+.common-table__row:hover {
   background-color: var(--color-primary-subtle);
 }
 
-.app-table__loading,
-.app-table__empty {
+.common-table__loading,
+.common-table__empty {
   padding: 2rem;
   text-align: center;
   color: var(--color-text-muted);
 }
 
-.app-table__loading-text {
+.common-table__loading-text {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
 }
 
-.app-table__loading-text::before {
+.common-table__loading-text::before {
   content: "";
   width: 1rem;
   height: 1rem;

@@ -1,13 +1,13 @@
 import { describe, expect, it, vi } from "vitest";
 import { mount } from "@vue/test-utils";
-import AppSelect from "@/framework/components/ui/AppSelect.vue";
-import AppTable from "@/framework/components/ui/AppTable.vue";
+import CommonSelect from "@/components/ui/CommonSelect.vue";
+import CommonTable from "@/components/ui/CommonTable.vue";
 import AppForm from "@/framework/components/ui/AppForm.vue";
 import AppFormItem from "@/framework/components/ui/AppFormItem.vue";
-import AppInput from "@/framework/components/ui/AppInput.vue";
+import CommonInput from "@/components/ui/CommonInput.vue";
 
 describe("P1 Components", () => {
-  describe("AppSelect", () => {
+  describe("CommonSelect", () => {
     const options = [
       { label: "选项1", value: "1" },
       { label: "选项2", value: "2" },
@@ -15,67 +15,67 @@ describe("P1 Components", () => {
     ];
 
     it("renders correctly", () => {
-      const wrapper = mount(AppSelect, {
+      const wrapper = mount(CommonSelect, {
         props: { options },
       });
 
-      expect(wrapper.find(".app-select").exists()).toBe(true);
-      expect(wrapper.find(".app-select__placeholder").text()).toBe("请选择");
+      expect(wrapper.find(".common-select").exists()).toBe(true);
+      expect(wrapper.find(".common-select__placeholder").text()).toBe("请选择");
     });
 
     it("shows selected value", () => {
-      const wrapper = mount(AppSelect, {
+      const wrapper = mount(CommonSelect, {
         props: { options, modelValue: "1" },
       });
 
-      expect(wrapper.find(".app-select__value").text()).toBe("选项1");
+      expect(wrapper.find(".common-select__value").text()).toBe("选项1");
     });
 
     it("opens dropdown on click", async () => {
-      const wrapper = mount(AppSelect, {
+      const wrapper = mount(CommonSelect, {
         props: { options },
       });
 
-      await wrapper.find(".app-select__trigger").trigger("click");
+      await wrapper.find(".common-select__trigger").trigger("click");
 
-      expect(wrapper.find(".app-select__dropdown").exists()).toBe(true);
+      expect(wrapper.find(".common-select__dropdown").exists()).toBe(true);
     });
 
     it("selects option", async () => {
-      const wrapper = mount(AppSelect, {
+      const wrapper = mount(CommonSelect, {
         props: { options },
       });
 
-      await wrapper.find(".app-select__trigger").trigger("click");
-      await wrapper.findAll(".app-select__option")[0].trigger("click");
+      await wrapper.find(".common-select__trigger").trigger("click");
+      await wrapper.findAll(".common-select__option")[0].trigger("click");
 
       expect(wrapper.emitted("update:modelValue")).toBeTruthy();
       expect(wrapper.emitted("update:modelValue")![0]).toEqual(["1"]);
     });
 
     it("clears value", async () => {
-      const wrapper = mount(AppSelect, {
+      const wrapper = mount(CommonSelect, {
         props: { options, modelValue: "1", clearable: true },
       });
 
-      await wrapper.find(".app-select__clear").trigger("click");
+      await wrapper.find(".common-select__clear").trigger("click");
 
       expect(wrapper.emitted("update:modelValue")).toBeTruthy();
       expect(wrapper.emitted("update:modelValue")![0]).toEqual([null]);
     });
 
     it("does not open when disabled", async () => {
-      const wrapper = mount(AppSelect, {
+      const wrapper = mount(CommonSelect, {
         props: { options, disabled: true },
       });
 
-      await wrapper.find(".app-select__trigger").trigger("click");
+      await wrapper.find(".common-select__trigger").trigger("click");
 
-      expect(wrapper.find(".app-select__dropdown").exists()).toBe(false);
+      expect(wrapper.find(".common-select__dropdown").exists()).toBe(false);
     });
   });
 
-  describe("AppTable", () => {
+  describe("CommonTable", () => {
     const columns = [
       { key: "name", title: "名称" },
       { key: "age", title: "年龄", align: "center" as const },
@@ -88,74 +88,74 @@ describe("P1 Components", () => {
     ];
 
     it("renders correctly", () => {
-      const wrapper = mount(AppTable, {
+      const wrapper = mount(CommonTable, {
         props: { columns, data },
       });
 
-      expect(wrapper.find(".app-table").exists()).toBe(true);
+      expect(wrapper.find(".common-table").exists()).toBe(true);
     });
 
     it("renders columns", () => {
-      const wrapper = mount(AppTable, {
+      const wrapper = mount(CommonTable, {
         props: { columns, data },
       });
 
-      const headers = wrapper.findAll(".app-table__header span");
+      const headers = wrapper.findAll(".common-table__header span");
       expect(headers[0].text()).toBe("名称");
       expect(headers[1].text()).toBe("年龄");
       expect(headers[2].text()).toBe("操作");
     });
 
     it("renders data rows", () => {
-      const wrapper = mount(AppTable, {
+      const wrapper = mount(CommonTable, {
         props: { columns, data },
       });
 
-      const rows = wrapper.findAll(".app-table__row");
+      const rows = wrapper.findAll(".common-table__row");
       expect(rows).toHaveLength(2);
     });
 
     it("shows empty text when no data", () => {
-      const wrapper = mount(AppTable, {
+      const wrapper = mount(CommonTable, {
         props: { columns, data: [] },
       });
 
-      expect(wrapper.find(".app-table__empty").text()).toBe("暂无数据");
+      expect(wrapper.find(".common-table__empty").text()).toBe("暂无数据");
     });
 
     it("shows loading state", () => {
-      const wrapper = mount(AppTable, {
+      const wrapper = mount(CommonTable, {
         props: { columns, data: [], loading: true },
       });
 
-      expect(wrapper.find(".app-table__loading").exists()).toBe(true);
+      expect(wrapper.find(".common-table__loading").exists()).toBe(true);
     });
 
     it("emits sort event", async () => {
-      const wrapper = mount(AppTable, {
+      const wrapper = mount(CommonTable, {
         props: { columns, data },
       });
 
-      const sortableHeader = wrapper.findAll(".app-table__header--sortable")[0];
+      const sortableHeader = wrapper.findAll(".common-table__header--sortable")[0];
       await sortableHeader.trigger("click");
 
       expect(wrapper.emitted("sort")).toBeTruthy();
     });
 
     it("renders stripe rows", () => {
-      const wrapper = mount(AppTable, {
+      const wrapper = mount(CommonTable, {
         props: { columns, data, stripe: true },
       });
 
-      expect(wrapper.find(".app-table--stripe").exists()).toBe(true);
+      expect(wrapper.find(".common-table--stripe").exists()).toBe(true);
     });
 
     it("renders border", () => {
-      const wrapper = mount(AppTable, {
+      const wrapper = mount(CommonTable, {
         props: { columns, data, border: true },
       });
 
-      expect(wrapper.find(".app-table--border").exists()).toBe(true);
+      expect(wrapper.find(".common-table--border").exists()).toBe(true);
     });
   });
 

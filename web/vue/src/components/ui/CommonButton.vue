@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * AppButton 按钮组件
+ * CommonButton 按钮组件
  * 支持多种变体：primary、secondary、outline、ghost、danger
  */
 import { computed } from "vue";
@@ -32,21 +32,21 @@ const emit = defineEmits<{
 
 const buttonClasses = computed(() => {
   const classes = [
-    "app-button",
-    `app-button--${props.variant}`,
-    `app-button--${props.size}`,
+    "common-button",
+    `common-button--${props.variant}`,
+    `common-button--${props.size}`,
   ];
 
   if (props.disabled || props.loading) {
-    classes.push("app-button--disabled");
+    classes.push("common-button--disabled");
   }
 
   if (props.block) {
-    classes.push("app-button--block");
+    classes.push("common-button--block");
   }
 
   if (props.loading) {
-    classes.push("app-button--loading");
+    classes.push("common-button--loading");
   }
 
   return classes;
@@ -66,7 +66,7 @@ const handleClick = (event: MouseEvent) => {
     :type="type"
     @click="handleClick"
   >
-    <span v-if="loading" class="app-button__loading">
+    <span v-if="loading" class="common-button__loading">
       <svg class="animate-spin" viewBox="0 0 24 24">
         <circle
           cx="12"
@@ -83,14 +83,14 @@ const handleClick = (event: MouseEvent) => {
         />
       </svg>
     </span>
-    <span class="app-button__content">
+    <span class="common-button__content">
       <slot />
     </span>
   </button>
 </template>
 
 <style scoped>
-.app-button {
+.common-button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -103,104 +103,104 @@ const handleClick = (event: MouseEvent) => {
   outline: none;
 }
 
-.app-button:focus-visible {
+.common-button:focus-visible {
   box-shadow: 0 0 0 2px var(--color-primary-subtle);
 }
 
 /* 尺寸 */
-.app-button--sm {
+.common-button--sm {
   padding: 0.375rem 0.75rem;
   font-size: 0.875rem;
 }
 
-.app-button--md {
+.common-button--md {
   padding: 0.5rem 1rem;
   font-size: 0.875rem;
 }
 
-.app-button--lg {
+.common-button--lg {
   padding: 0.75rem 1.5rem;
   font-size: 1rem;
 }
 
 /* 变体 - 主色 */
-.app-button--primary {
+.common-button--primary {
   background-color: var(--color-primary);
   color: white;
 }
 
-.app-button--primary:hover:not(.app-button--disabled) {
+.common-button--primary:hover:not(.common-button--disabled) {
   background-color: var(--color-primary-hover);
 }
 
-.app-button--primary:active:not(.app-button--disabled) {
+.common-button--primary:active:not(.common-button--disabled) {
   background-color: var(--color-primary-active);
 }
 
 /* 变体 - 辅色 */
-.app-button--secondary {
+.common-button--secondary {
   background-color: var(--color-secondary);
   color: white;
 }
 
-.app-button--secondary:hover:not(.app-button--disabled) {
+.common-button--secondary:hover:not(.common-button--disabled) {
   background-color: var(--color-secondary-hover);
 }
 
 /* 变体 - 描边 */
-.app-button--outline {
+.common-button--outline {
   background-color: transparent;
   color: var(--color-primary);
   border-color: var(--color-primary);
 }
 
-.app-button--outline:hover:not(.app-button--disabled) {
+.common-button--outline:hover:not(.common-button--disabled) {
   background-color: var(--color-primary-subtle);
 }
 
 /* 变体 - 幽灵 */
-.app-button--ghost {
+.common-button--ghost {
   background-color: transparent;
   color: var(--color-text-muted);
 }
 
-.app-button--ghost:hover:not(.app-button--disabled) {
+.common-button--ghost:hover:not(.common-button--disabled) {
   color: var(--color-primary);
   background-color: var(--color-primary-subtle);
 }
 
 /* 变体 - 危险 */
-.app-button--danger {
+.common-button--danger {
   background-color: var(--color-danger);
   color: white;
 }
 
-.app-button--danger:hover:not(.app-button--disabled) {
+.common-button--danger:hover:not(.common-button--disabled) {
   background-color: #dc2626;
 }
 
 /* 禁用状态 */
-.app-button--disabled {
+.common-button--disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
 /* 块级 */
-.app-button--block {
+.common-button--block {
   display: flex;
   width: 100%;
 }
 
 /* 加载状态 */
-.app-button--loading .app-button__content {
+.common-button--loading .common-button__content {
   opacity: 0;
 }
 
-.app-button__loading {
+.common-button__loading {
   position: absolute;
 }
 
-.app-button__loading svg {
+.common-button__loading svg {
   width: 1em;
   height: 1em;
 }

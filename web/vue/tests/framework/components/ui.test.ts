@@ -1,30 +1,30 @@
 import { describe, expect, it } from "vitest";
 import { mount } from "@vue/test-utils";
-import AppButton from "@/framework/components/ui/AppButton.vue";
-import AppCard from "@/framework/components/ui/AppCard.vue";
-import AppLoading from "@/framework/components/ui/AppLoading.vue";
-import AppInput from "@/framework/components/ui/AppInput.vue";
+import CommonButton from "@/components/ui/CommonButton.vue";
+import CommonCard from "@/components/ui/CommonCard.vue";
+import CommonLoading from "@/components/ui/CommonLoading.vue";
+import CommonInput from "@/components/ui/CommonInput.vue";
 
 describe("P0 Components", () => {
-  describe("AppButton", () => {
+  describe("CommonButton", () => {
     it("renders correctly with default props", () => {
-      const wrapper = mount(AppButton, {
+      const wrapper = mount(CommonButton, {
         slots: { default: "Click me" },
       });
 
       expect(wrapper.text()).toContain("Click me");
-      expect(wrapper.find(".app-button--primary").exists()).toBe(true);
+      expect(wrapper.find(".common-button--primary").exists()).toBe(true);
     });
 
     it("renders with different variants", () => {
       const variants = ["primary", "secondary", "outline", "ghost", "danger"] as const;
 
       variants.forEach((variant) => {
-        const wrapper = mount(AppButton, {
+        const wrapper = mount(CommonButton, {
           props: { variant },
         });
 
-        expect(wrapper.find(`.app-button--${variant}`).exists()).toBe(true);
+        expect(wrapper.find(`.common-button--${variant}`).exists()).toBe(true);
       });
     });
 
@@ -32,16 +32,16 @@ describe("P0 Components", () => {
       const sizes = ["sm", "md", "lg"] as const;
 
       sizes.forEach((size) => {
-        const wrapper = mount(AppButton, {
+        const wrapper = mount(CommonButton, {
           props: { size },
         });
 
-        expect(wrapper.find(`.app-button--${size}`).exists()).toBe(true);
+        expect(wrapper.find(`.common-button--${size}`).exists()).toBe(true);
       });
     });
 
     it("emits click event", async () => {
-      const wrapper = mount(AppButton);
+      const wrapper = mount(CommonButton);
 
       await wrapper.trigger("click");
 
@@ -49,7 +49,7 @@ describe("P0 Components", () => {
     });
 
     it("does not emit click when disabled", async () => {
-      const wrapper = mount(AppButton, {
+      const wrapper = mount(CommonButton, {
         props: { disabled: true },
       });
 
@@ -59,7 +59,7 @@ describe("P0 Components", () => {
     });
 
     it("does not emit click when loading", async () => {
-      const wrapper = mount(AppButton, {
+      const wrapper = mount(CommonButton, {
         props: { loading: true },
       });
 
@@ -69,9 +69,9 @@ describe("P0 Components", () => {
     });
   });
 
-  describe("AppCard", () => {
+  describe("CommonCard", () => {
     it("renders correctly", () => {
-      const wrapper = mount(AppCard, {
+      const wrapper = mount(CommonCard, {
         slots: { default: "Card content" },
       });
 
@@ -79,7 +79,7 @@ describe("P0 Components", () => {
     });
 
     it("renders with title", () => {
-      const wrapper = mount(AppCard, {
+      const wrapper = mount(CommonCard, {
         props: { title: "Card Title" },
       });
 
@@ -87,7 +87,7 @@ describe("P0 Components", () => {
     });
 
     it("renders with header slot", () => {
-      const wrapper = mount(AppCard, {
+      const wrapper = mount(CommonCard, {
         slots: { header: "Custom Header" },
       });
 
@@ -95,7 +95,7 @@ describe("P0 Components", () => {
     });
 
     it("renders with footer slot", () => {
-      const wrapper = mount(AppCard, {
+      const wrapper = mount(CommonCard, {
         slots: { footer: "Custom Footer" },
       });
 
@@ -103,15 +103,15 @@ describe("P0 Components", () => {
     });
   });
 
-  describe("AppLoading", () => {
+  describe("CommonLoading", () => {
     it("renders correctly", () => {
-      const wrapper = mount(AppLoading);
+      const wrapper = mount(CommonLoading);
 
-      expect(wrapper.find(".app-loading").exists()).toBe(true);
+      expect(wrapper.find(".common-loading").exists()).toBe(true);
     });
 
     it("renders with text", () => {
-      const wrapper = mount(AppLoading, {
+      const wrapper = mount(CommonLoading, {
         props: { text: "Loading..." },
       });
 
@@ -122,25 +122,25 @@ describe("P0 Components", () => {
       const sizes = ["sm", "md", "lg"] as const;
 
       sizes.forEach((size) => {
-        const wrapper = mount(AppLoading, {
+        const wrapper = mount(CommonLoading, {
           props: { size },
         });
 
-        expect(wrapper.find(`.app-loading--${size}`).exists()).toBe(true);
+        expect(wrapper.find(`.common-loading--${size}`).exists()).toBe(true);
       });
     });
   });
 
-  describe("AppInput", () => {
+  describe("CommonInput", () => {
     it("renders correctly", () => {
-      const wrapper = mount(AppInput);
+      const wrapper = mount(CommonInput);
 
-      expect(wrapper.find(".app-input").exists()).toBe(true);
+      expect(wrapper.find(".common-input").exists()).toBe(true);
       expect(wrapper.find("input").exists()).toBe(true);
     });
 
     it("updates model value", async () => {
-      const wrapper = mount(AppInput, {
+      const wrapper = mount(CommonInput, {
         props: { modelValue: "" },
       });
 
@@ -152,16 +152,16 @@ describe("P0 Components", () => {
     });
 
     it("renders with error state", () => {
-      const wrapper = mount(AppInput, {
+      const wrapper = mount(CommonInput, {
         props: { error: "This field is required" },
       });
 
-      expect(wrapper.find(".app-input--error").exists()).toBe(true);
+      expect(wrapper.find(".common-input--error").exists()).toBe(true);
       expect(wrapper.text()).toContain("This field is required");
     });
 
     it("renders with placeholder", () => {
-      const wrapper = mount(AppInput, {
+      const wrapper = mount(CommonInput, {
         props: { placeholder: "Enter text" },
       });
 
@@ -172,11 +172,11 @@ describe("P0 Components", () => {
       const sizes = ["sm", "md", "lg"] as const;
 
       sizes.forEach((size) => {
-        const wrapper = mount(AppInput, {
+        const wrapper = mount(CommonInput, {
           props: { size },
         });
 
-        expect(wrapper.find(`.app-input--${size}`).exists()).toBe(true);
+        expect(wrapper.find(`.common-input--${size}`).exists()).toBe(true);
       });
     });
   });

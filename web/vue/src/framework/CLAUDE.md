@@ -10,13 +10,10 @@ Framework 模块是整体 UI 框架，提供统一的前端基础设施、路由
 framework/
 ├── api/                       # API 客户端
 │   └── client.ts              # Axios 封装
-├── components/                # 通用组件
-│   └── ui/                    # UI 基础组件
-│       ├── AppButton.vue      # 按钮组件
-│       ├── AppCard.vue        # 卡片组件
-│       ├── AppInput.vue       # 输入框组件
-│       ├── AppLoading.vue     # 加载组件
-│       └── AppModal.vue       # 弹窗组件
+├── components/                # 框架级组件
+│   └── ui/                    # UI 基础组件（模块组件）
+│       ├── AppForm.vue        # 表单框架（保留）
+│       └── AppFormItem.vue    # 表单项（保留）
 ├── directives/                # 自定义指令
 │   └── permission.ts          # 权限指令
 ├── layouts/                   # 布局组件
@@ -110,6 +107,7 @@ import AdminLayout from "@/framework/layouts/AdminLayout.vue";
 ```
 
 Props:
+
 - `variant`: 按钮变体 (primary/secondary/outline/ghost/danger)
 - `size`: 尺寸 (sm/md/lg)
 - `disabled`: 禁用
@@ -124,6 +122,7 @@ Props:
 ```
 
 Props:
+
 - `modelValue`: 绑定值
 - `type`: 输入类型
 - `placeholder`: 占位符
@@ -154,6 +153,7 @@ Props:
 ```
 
 Props:
+
 - `modelValue`: 显示状态
 - `title`: 标题
 - `size`: 尺寸 (sm/md/lg/xl)
@@ -222,6 +222,7 @@ store.hasPermission(["user:add", "user:edit"]);
 ### 路由守卫
 
 自动处理：
+
 - 未登录跳转登录页
 - 已登录访问登录页跳转首页
 - 白名单路由直接放行
@@ -239,6 +240,7 @@ store.hasPermission(["user:add", "user:edit"]);
 ### API 拦截
 
 API 客户端自动处理：
+
 - 401: 清除 token，跳转登录页
 - 403: 跳转 403 页面
 

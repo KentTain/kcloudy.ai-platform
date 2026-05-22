@@ -4,9 +4,9 @@
  */
 import { onMounted, ref } from "vue";
 import { getHealth } from "@/demo/api/health";
-import AppCard from "@/framework/components/ui/AppCard.vue";
-import AppButton from "@/framework/components/ui/AppButton.vue";
-import AppLoading from "@/framework/components/ui/AppLoading.vue";
+import CommonCard from "@/components/ui/CommonCard.vue";
+import CommonButton from "@/components/ui/CommonButton.vue";
+import CommonLoading from "@/components/ui/CommonLoading.vue";
 
 interface HealthStatus {
   status: string;
@@ -35,14 +35,14 @@ onMounted(fetchHealth);
 
 <template>
   <div class="health-page">
-    <AppCard title="健康检查">
+    <CommonCard title="健康检查">
       <div v-if="loading" class="health-page__loading">
-        <AppLoading text="检查中..." />
+        <CommonLoading text="检查中..." />
       </div>
 
       <div v-else-if="error" class="health-page__error">
         <p>{{ error }}</p>
-        <AppButton @click="fetchHealth">重试</AppButton>
+        <CommonButton @click="fetchHealth">重试</CommonButton>
       </div>
 
       <div v-else-if="healthStatus" class="health-page__status">
@@ -59,9 +59,9 @@ onMounted(fetchHealth);
       </div>
 
       <div class="health-page__actions">
-        <AppButton variant="outline" @click="fetchHealth">刷新</AppButton>
+        <CommonButton variant="outline" @click="fetchHealth">刷新</CommonButton>
       </div>
-    </AppCard>
+    </CommonCard>
   </div>
 </template>
 

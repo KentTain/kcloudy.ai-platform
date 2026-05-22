@@ -4,9 +4,9 @@
  */
 import { onMounted, ref, computed } from "vue";
 import { useDatasetStore } from "@/demo/stores/datasets";
-import AppCard from "@/framework/components/ui/AppCard.vue";
-import AppButton from "@/framework/components/ui/AppButton.vue";
-import AppLoading from "@/framework/components/ui/AppLoading.vue";
+import CommonCard from "@/components/ui/CommonCard.vue";
+import CommonButton from "@/components/ui/CommonButton.vue";
+import CommonLoading from "@/components/ui/CommonLoading.vue";
 
 const datasetStore = useDatasetStore();
 
@@ -21,21 +21,21 @@ onMounted(() => {
 
 <template>
   <div class="datasets-page">
-    <AppCard title="知识库列表">
+    <CommonCard title="知识库列表">
       <template #header>
         <div class="datasets-page__header">
           <h3>知识库列表</h3>
-          <AppButton size="sm">新建知识库</AppButton>
+          <CommonButton size="sm">新建知识库</CommonButton>
         </div>
       </template>
 
       <div v-if="loading" class="datasets-page__loading">
-        <AppLoading text="加载中..." />
+        <CommonLoading text="加载中..." />
       </div>
 
       <div v-else-if="error" class="datasets-page__error">
         <p>{{ error }}</p>
-        <AppButton @click="datasetStore.fetchDatasets">重试</AppButton>
+        <CommonButton @click="datasetStore.fetchDatasets">重试</CommonButton>
       </div>
 
       <div v-else-if="datasets.length === 0" class="datasets-page__empty">
@@ -49,12 +49,12 @@ onMounted(() => {
             <p class="datasets-page__item-desc">{{ item.description || "暂无描述" }}</p>
           </div>
           <div class="datasets-page__item-actions">
-            <AppButton size="sm" variant="outline">查看</AppButton>
-            <AppButton size="sm" variant="ghost">删除</AppButton>
+            <CommonButton size="sm" variant="outline">查看</CommonButton>
+            <CommonButton size="sm" variant="ghost">删除</CommonButton>
           </div>
         </div>
       </div>
-    </AppCard>
+    </CommonCard>
   </div>
 </template>
 
