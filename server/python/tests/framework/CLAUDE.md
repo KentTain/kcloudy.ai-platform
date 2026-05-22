@@ -1,174 +1,103 @@
-# Framework 模块测试
+# Framework 模块测试指南
 
-本文件为 Claude Code 在 Framework 模块测试目录中工作时提供指导。
+本文件为 Claude Code 在 `tests/framework/` 中编写和维护 framework 测试时提供指导。
 
-## 测试目录结构
+## 测试范围
 
-```
-tests/framework/
-├── conftest.py                    # 测试 fixtures 入口
-├── fixtures/                      # 测试夹具和数据
-│   ├── __init__.py
-│   ├── conftest.py                # 单元测试 fixtures
-│   ├── conftest_integration.py    # 集成测试专用 fixtures
-│   ├── helpers.py                 # 测试辅助函数
-│   └── README.md
-├── unit/                          # 单元测试
-│   ├── cache/
-│   │   ├── test_redis_util.py     # Redis 单元测试（mock）
-│   │   └── test_tenant_cache_manager.py # 租户缓存管理器测试
-│   ├── common/
-│   │   └── test_common.py         # 通用组件测试
-│   ├── configs/
-│   │   └── test_config.py         # 配置模块测试
-│   ├── core/
-│   │   └── test_core.py           # 核心接口测试
-│   ├── database/
-│   │   ├── test_database.py       # 数据库单元测试
-│   │   └── test_engine_pool.py    # 数据库引擎池测试
-│   ├── storage/
-│   │   └── test_tenant_storage_manager.py # 租户存储管理器测试
-│   ├── tenant/
-│   │   ├── test_tenant.py         # 租户模块测试
-│   │   └── test_context.py        # 租户上下文测试
-│   └── utils/
-│       ├── test_utils.py          # 工具函数测试
-│       └── test_crypto.py         # 加密工具测试
-└── integration/                   # 集成测试
-    ├── cache/
-    │   └── test_redis_integration.py  # Redis 集成测试
-    ├── database/
-    │   └── test_database_integration.py # PostgreSQL 集成测试
-    ├── lock/
-    │   └── test_lock_integration.py   # 分布式锁集成测试
-    ├── pubsub/
-    │   └── test_pubsub_integration.py # Redis 发布订阅集成测试
-    ├── queue/
-    │   └── test_queue_integration.py  # Redis Stream 队列集成测试
-    ├── storage/
-    │   └── test_storage_integration.py # MinIO 存储集成测试
-    └── tenant/
-        ├── test_tenant_context.py      # 租户上下文集成测试
-        ├── test_tenant_isolation.py    # 租户隔离测试
-        ├── test_tenant_admin_api.py    # 租户管理 API 测试
-        └── test_tenant_user_api.py     # 租户用户 API 测试
-```
+Framework 测试覆盖底层基础设施能力，包括配置、缓存、数据库、存储、队列、发布订阅、分布式锁、多租户上下文、租户资源隔离和通用工具。
 
-## 运行测试
+## 目录职责
 
-### 运行所有测试
+| 目录 | 职责 |
+| --- | --- |
+| `fixtures/` | 测试夹具、辅助函数和测试配置 |
+| `unit/` | 单元测试，使用 mock 或内存对象隔离外部依赖 |
+| `integration/` | 集成测试，验证 Redis、PostgreSQL、MinIO 等真实服务交互 |
+| `conftest.py` | framework 测试 fixture 入口 |
+
+## 运行命令
 
 ```bash
-# 运行所有 framework 测试
+# 全部 framework 测试
 uv run pytest tests/framework/ -v
 
-# 运行单元测试（排除集成测试）
+# 单元测试
 uv run pytest tests/framework/unit/ -v
 
-# 运行集成测试
+# 集成测试
 uv run pytest tests/framework/integration/ -v
 ```
 
-### 运行特定模块测试
+按组件运行：
 
 ```bash
-# Redis 缓存测试
 uv run pytest tests/framework/unit/cache/ tests/framework/integration/cache/ -v
-
-# 分布式锁测试
-uv run pytest tests/framework/integration/lock/ -v
-
-# 队列测试
-uv run pytest tests/framework/integration/queue/ -v
-
-# 发布订阅测试
-uv run pytest tests/framework/integration/pubsub/ -v
-
-# 存储测试
-uv run pytest tests/framework/integration/storage/ -v
-
-# 数据库测试
 uv run pytest tests/framework/unit/database/ tests/framework/integration/database/ -v
-
-# 租户模块测试
+uv run pytest tests/framework/integration/lock/ -v
+uv run pytest tests/framework/integration/pubsub/ -v
+uv run pytest tests/framework/integration/queue/ -v
+uv run pytest tests/framework/integration/storage/ -v
 uv run pytest tests/framework/unit/tenant/ tests/framework/integration/tenant/ -v
 ```
 
 ## 测试标记
 
 | 标记 | 说明 |
-|------|------|
+| --- | --- |
 | `@pytest.mark.unit` | 单元测试 |
-| `@pytest.mark.integration` | 集成测试（需要真实服务） |
+| `@pytest.mark.integration` | 集成测试，依赖真实服务或跨组件协作 |
 | `@pytest.mark.asyncio` | 异步测试 |
+| `@pytest.mark.slow` | 慢测试 |
 
-## 集成测试依赖服务
-
-集成测试需要以下外部服务：
+## 集成测试依赖
 
 | 服务 | 用途 | 配置位置 |
-|------|------|----------|
-| Redis | 缓存、锁、队列、发布订阅 | `config/application-local.yml` |
-| PostgreSQL | 数据库 | `config/application-local.yml` |
-| MinIO | 对象存储 | `config/application-local.yml` |
+| --- | --- | --- |
+| Redis | 缓存、锁、队列、发布订阅、租户缓存隔离 | `config/application-local.yml` |
+| PostgreSQL | 数据库、迁移、租户数据库隔离 | `config/application-local.yml` |
+| MinIO | 对象存储与租户存储隔离 | `config/application-local.yml` |
 
-### 服务不可用时的行为
+集成测试应在启动时检测外部服务可用性。服务不可用时跳过相关测试，不应让本地缺少外部服务导致测试套件整体失败。
 
-- 测试启动时检测服务可用性
-- 服务不可用时自动跳过相关测试
-- 不会因服务不可用而导致测试失败
+## Fixture 约定
 
-## 集成测试 Fixtures
-
-### 核心 fixtures
-
-| Fixture | 作用域 | 说明 |
-|---------|--------|------|
-| `integration_settings` | session | 加载配置 |
-| `redis_client` | session | Redis 客户端（RedisUtil） |
-| `redis_key_prefix` | function | 唯一键前缀 |
-| `postgres_engine` | session | PostgreSQL 引擎 |
-| `postgres_session` | function | PostgreSQL 会话 |
+| Fixture | 作用域 | 用途 |
+| --- | --- | --- |
+| `integration_settings` | session | 加载集成测试配置 |
+| `redis_client` | session | Redis 客户端或 RedisUtil 初始化 |
+| `redis_key_prefix` | function | 为每个用例生成唯一键前缀 |
+| `postgres_engine` | session | PostgreSQL 异步引擎 |
+| `postgres_session` | function | PostgreSQL 会话，测试后回滚 |
 | `minio_client` | session | MinIO 存储实例 |
-| `minio_test_bucket` | function | 测试存储桶名 |
+| `minio_test_bucket` | function | 唯一测试 Bucket，测试后清理 |
 
-### 服务可用性检测
+服务可用性 fixture 包括 `redis_available`、`postgres_available`、`minio_available`。
 
-| Fixture | 说明 |
-|---------|------|
-| `redis_available` | Redis 服务可用性 |
-| `postgres_available` | PostgreSQL 服务可用性 |
-| `minio_available` | MinIO 服务可用性 |
+## 数据隔离规则
 
-## 测试数据隔离
+- Redis 测试必须使用唯一 key 前缀并在测试后清理。
+- PostgreSQL 测试使用独立会话，优先通过事务回滚清理数据。
+- MinIO 测试使用唯一测试 Bucket 或对象前缀，测试后删除。
+- 多租户隔离测试需同时验证默认资源路径和租户专属资源路径。
+- 避免在生产环境运行集成测试。
 
-- Redis: 使用 `redis_key_prefix` 生成唯一键前缀
-- PostgreSQL: 使用独立会话，测试后回滚
-- MinIO: 使用唯一存储桶名，测试后清理
+## 覆盖重点
 
-## 注意事项
+| 组件 | 单元测试 | 集成测试 |
+| --- | --- | --- |
+| `cache` | RedisUtil、TenantCacheManager | Redis 行为验证 |
+| `database` | BaseModel、Mixin、EnginePool | PostgreSQL 会话与事务 |
+| `storage` | TenantStorageManager | MinIO 上传、下载、清理 |
+| `lock` | 工厂与接口 | Redis / SQLAlchemy 分布式锁 |
+| `queue` | Handler 与接口 | Redis Stream 消费 |
+| `pubsub` | Handler 与接口 | Redis Pub/Sub |
+| `tenant` | TenantContext、协议、模型 | 租户上下文与隔离 |
+| `utils` | crypto、jwt、session、json、time 等 | 按需补充 |
+| `configs` | 配置加载与环境变量覆盖 | 按需补充 |
 
-1. 集成测试运行时间较长，建议在 CI 中单独运行
-2. 大文件上传测试可能因网络问题超时，已标记为跳过
-3. 测试完成后会自动清理测试数据
-4. 避免在生产环境运行集成测试
+## 编写测试时注意
 
-## 测试覆盖
-
-| 模块 | 单元测试 | 集成测试 |
-|------|----------|----------|
-| cache | ✅ | ✅ |
-| tenant_cache_manager | ✅ | - |
-| lock | - | ✅ |
-| queue | - | ✅ |
-| pubsub | - | ✅ |
-| storage | - | ✅ |
-| tenant_storage_manager | ✅ | - |
-| database | ✅ | ✅ |
-| engine_pool | ✅ | - |
-| common | ✅ | - |
-| utils | ✅ | - |
-| crypto | ✅ | - |
-| core | ✅ | - |
-| configs | ✅ | - |
-| tenant | ✅ | ✅ |
+1. 单元测试不访问真实外部服务。
+2. 集成测试依赖真实服务时必须可跳过、可重复运行、可清理。
+3. 涉及加密、Token、Session 的测试要覆盖正常路径和异常路径。
+4. 涉及多租户隔离的测试要验证租户 A 与租户 B 数据不会串用。

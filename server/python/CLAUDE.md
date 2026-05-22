@@ -1,111 +1,83 @@
-# CLAUDE.md
+# Python 后端指南
 
-本文件为 Claude Code 在 Python 后端项目中工作时提供指导。
+本文件为 Claude Code 在 `server/python/` Python 后端项目中工作时提供指导。
 
-## 项目概述
+## 项目定位
 
-Python 后端使用 FastAPI + SQLAlchemy 2.0 构建，提供 AI 助手平台演示。项目采用基于 uv 的单包结构，支持 MVC 分层架构。
+Python 后端使用 FastAPI + SQLAlchemy 2.0 构建，是 InitProject 的 Python 技术栈实现。项目采用 uv 管理依赖，源码和测试按模块组织。
 
-**核心技术栈：**
+## 技术栈
 
-- 框架：FastAPI, SQLAlchemy 2.0, Alembic
-- AI框架：langchain 1.3.0, langgraph 1.2.0
-- 数据库：PostgreSQL (pgvector), Redis
-- 验证：Pydantic 2.10
-- 测试：pytest, pytest-asyncio, pytest-mock
+| 类别 | 技术 |
+| --- | --- |
+| Web 框架 | FastAPI |
+| ORM / 迁移 | SQLAlchemy 2.0、Alembic |
+| 配置 / 校验 | Pydantic 2.x、YAML 配置 |
+| AI 示例 | LangChain、LangGraph、MCP 示例 |
+| 数据服务 | PostgreSQL（含 pgvector）、Redis、MinIO |
+| 测试 | pytest、pytest-asyncio、pytest-mock |
+| 代码质量 | Ruff |
 
-## 项目结构
+## 关键目录
 
-```text
-server/python/
-├── manage.py               # 统一管理脚本
-├── src/                    # 源码目录
-│   ├── demo/               # Demo 业务模块
-│   │   ├── controllers/    # API 控制器
-│   │   ├── services/       # 业务逻辑层
-│   │   ├── models/         # 数据库模型
-│   │   ├── schemas/        # Pydantic 模型
-│   │   ├── migrations/     # 数据库迁移
-│   │   │   ├── versions/   # 迁移版本文件
-│   │   │   └── seeds/      # 数据初始化脚本
-│   │   └── ...
-│   ├── iam/                # IAM 身份认证模块
-│   │   ├── controllers/    # API 控制器
-│   │   ├── services/       # 业务逻辑层
-│   │   ├── models/         # 数据库模型
-│   │   ├── schemas/        # Pydantic 模型
-│   │   ├── migrations/     # 数据库迁移
-│   │   ├── initializers/   # 初始化器
-│   │   └── middlewares/    # 中间件
-│   ├── framework/          # 基础设施框架
-│   │   ├── configs/        # 配置管理
-│   │   ├── cache/          # Redis 缓存
-│   │   ├── database/       # 数据库组件
-│   │   ├── storage/        # 对象存储
-│   │   ├── queue/          # 消息队列
-│   │   ├── pubsub/         # 发布订阅
-│   │   ├── lock/           # 分布式锁
-│   │   └── tenant/         # 租户模型
-│   ├── application_web.py      # FastAPI 应用入口
-│   ├── application_task.py     # 任务调度器入口
-│   ├── application_listener.py # 消息监听器入口
-│   └── run.py                  # Web 服务器启动入口
-├── tests/                  # 测试目录
-├── config/                 # 配置目录（符号链接到 server/config/）
-├── pyproject.toml          # 项目配置
-├── alembic.ini             # Alembic 配置
-├── pytest.ini              # pytest 配置
-└── .ruff.toml              # Ruff 配置
-```
+| 路径 | 用途 | 详细文档 |
+| --- | --- | --- |
+| `src/` | 源码目录，按顶级模块组织 | [src/CLAUDE.md](src/CLAUDE.md) |
+| `src/framework/` | 基础设施模块 | [src/framework/CLAUDE.md](src/framework/CLAUDE.md) |
+| `src/iam/` | 身份认证与权限模块 | [src/iam/CLAUDE.md](src/iam/CLAUDE.md) |
+| `src/demo/` | AI 助手平台演示模块 | [src/CLAUDE.md](src/CLAUDE.md) |
+| `tests/` | 测试目录，按源码模块组织 | [tests/CLAUDE.md](tests/CLAUDE.md) |
+| `tests/framework/` | framework 测试 | [tests/framework/CLAUDE.md](tests/framework/CLAUDE.md) |
+| `tests/demo/` | demo 测试 | [tests/demo/CLAUDE.md](tests/demo/CLAUDE.md) |
+| `config/` | 指向 `server/config/` 的配置目录 | - |
+| `manage.py` | 统一管理脚本 | - |
+| `pyproject.toml` | 项目与依赖配置 | - |
+| `alembic.ini` | Alembic 配置 | - |
+| `pytest.ini` | pytest 配置 | - |
+| `.ruff.toml` | Ruff 配置 | - |
 
-## 功能模块
+## 模块边界
 
-| 模块 | 说明 | 目录 |
-|------|------|------|
-| demo | 业务演示模块：知识库管理示例 | src/demo/ |
-| iam | 身份认证模块：租户、用户、权限管理 | src/iam/ |
-| framework | 基础设施：配置、缓存、存储、队列、锁、租户 | src/framework/ |
+- 模块是顶级目录 `src/{module}/`，功能是模块内部子域。
+- 业务模块包括 `demo`、`iam`，可以依赖 `framework`。
+- `framework` 是底层基础设施模块，禁止依赖业务模块。
+- 可复用基础能力优先放入 `framework`；业务专属逻辑保留在业务模块内。
+- 测试目录与源码模块对齐：`tests/{module}/` 对应 `src/{module}/`。
 
-详细文档：[src/CLAUDE.md](src/CLAUDE.md)
+## 常用命令
 
-## 管理命令
-
-项目提供统一的管理脚本 `manage.py`，类似 Django 的 manage.py 风格。
+### 启动服务
 
 ```bash
 # 查看帮助
 uv run python manage.py --help
 
-# 启动 Web 服务器
+# 启动 Web 服务
 uv run python manage.py runserver
 
-# 指定主机/端口启动
-uv run python manage.py runserver --host 0.0.0.0 --port 8080
-
-# 开发模式（热重载）
+# 开发模式热重载
 uv run python manage.py runserver --reload
+
+# 指定主机和端口
+uv run python manage.py runserver --host 0.0.0.0 --port 8080
 
 # 启动定时任务调度器
 uv run python manage.py runtask
 
-# 启动监听器服务
+# 启动消息监听器
 uv run python manage.py runlistener
 ```
 
-## 数据库迁移
-
-项目采用模块化迁移架构，使用 `manage.py db` 子命令管理。
-
-### 迁移命令
+### 数据库迁移
 
 ```bash
-# 查看当前数据库版本
+# 当前数据库版本
 uv run python manage.py db current
 
 # 执行迁移
 uv run python manage.py db migrate
 
-# 预览迁移 SQL（不执行）
+# 预览迁移 SQL
 uv run python manage.py db migrate --sql
 
 # 回滚迁移
@@ -114,141 +86,69 @@ uv run python manage.py db downgrade
 # 查看迁移历史
 uv run python manage.py db history
 
-# 创建新迁移
+# 创建迁移
 uv run python manage.py db makemigrations -m "add user tables"
 ```
 
-### 指定数据库连接
-
-所有 `db` 命令支持 `-d/--database-url` 选项：
+所有 `db` 命令支持 `-d/--database-url` 指定连接：
 
 ```bash
 uv run python manage.py db -d "postgresql+asyncpg://user:pass@host:5432/dbname" migrate
 ```
 
-### 迁移文件规范
-
-迁移文件位于 `src/demo/migrations/versions/`，命名格式：`YYYYMMDD_NNN_description.py`
-
-```python
-"""add user tables
-
-Revision ID: user_001
-Revises: 001_tenant
-Create Date: 2026-05-21
-
-"""
-from alembic import op
-import sqlalchemy as sa
-
-revision = "user_001"
-down_revision = "001_tenant"
-branch_labels = None
-depends_on = None
-
-
-def upgrade() -> None:
-    op.create_table("users", ...)
-
-
-def downgrade() -> None:
-    op.drop_table("users")
-```
-
-## 数据初始化
-
-数据初始化脚本位于 `src/demo/migrations/seeds/`，支持幂等执行和 dry-run 预览。
-
-### 初始化命令
+### 数据初始化
 
 ```bash
-# 初始化所有模块的默认数据
+# 初始化所有模块默认数据
 uv run python manage.py seed
 
-# 预览待初始化的数据（不写入数据库）
+# dry-run 预览
 uv run python manage.py seed --dry-run
 
 # 初始化指定模块
-uv run python manage.py seed --module tenant
+uv run python manage.py seed --module iam
 ```
 
-### 添加新模块
-
-**步骤 1：创建迁移文件**
+### 运行测试
 
 ```bash
-uv run python manage.py db makemigrations -m "add user tables"
-```
+# 全部测试
+uv run pytest
 
-**步骤 2：创建种子脚本** `src/demo/migrations/seeds/user_seed.py`
+# 指定模块
+uv run pytest tests/demo/ -v
+uv run pytest tests/framework/ -v
 
-```python
-"""用户模块数据初始化"""
-
-from sqlalchemy import select
-from framework.database.core.engine import get_session
-from demo.models.user import User
-
-
-async def run(*, dry_run: bool = False) -> int:
-    """初始化用户数据"""
-    async with get_session() as session:
-        # 检查是否已存在
-        result = await session.execute(select(User).limit(1))
-        if result.scalar():
-            print("    用户数据已存在，跳过初始化")
-            return 0
-
-        if dry_run:
-            print("    [DRY-RUN] 将创建默认用户")
-            return 1
-
-        # 创建默认用户
-        user = User(username="admin", email="admin@example.com")
-        session.add(user)
-        await session.commit()
-
-        print("    已创建默认用户")
-        return 1
-```
-
-**步骤 3：注册模块** 在 `src/demo/migrations/seeds/__init__.py`
-
-```python
-from demo.migrations.seeds.user_seed import run as user_run
-
-SEED_MODULES["user"] = user_run
+# 跳过慢测试
+uv run pytest -m "not slow"
 ```
 
 ## 配置管理
 
-采用 Spring Boot 风格的分层配置，配置文件统一在 `server/config/` 目录。
+配置文件统一位于 `server/config/`，本目录下的 `config/` 为链接或映射入口。
 
 ```bash
-# 本地开发配置
 cp server/config/application-local.yml.example server/config/application-local.yml
 ```
 
-**环境选择：** 通过 `PYTHON_SERVICE_ENV` 环境变量指定，默认 `local`。
+环境通过 `PYTHON_SERVICE_ENV` 选择，默认 `local`。配置优先级遵循环境变量覆盖环境配置、环境配置覆盖基础配置。
 
-## 代码质量标准
+## 代码质量约定
 
-- **Linter/格式化**：Ruff
-- **行宽**：88 字符
-- **Python 版本**：3.12
-- **类型标注**：统一使用 `Mapped[...]` 声明式注解
-
-## 详细文档
-
-- **开发指南**：[src/CLAUDE.md](src/CLAUDE.md)
-- **测试指南**：[tests/CLAUDE.md](tests/CLAUDE.md)
+- Python 版本：3.12+。
+- 行宽：88 字符。
+- Linter / Formatter：Ruff。
+- ORM 字段：使用 SQLAlchemy 2.0 `Mapped[...]` / `mapped_column(...)`。
+- 异步测试：使用 `pytest.mark.asyncio`。
+- 新增或修改模块时同步检查对应测试和模块级文档。
 
 ## 环境要求
 
 - Python 3.12+
+- uv
 - PostgreSQL 14+
 - Redis 6+
-- uv (Python 包管理器)
+- MinIO（对象存储相关集成测试或功能需要）
 
 ## License
 

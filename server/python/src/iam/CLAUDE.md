@@ -1,149 +1,90 @@
 # IAM 模块开发指南
 
-## 概述
+本文件为 Claude Code 在 `src/iam/` 身份认证与权限模块中工作时提供指导。
 
-IAM（Identity and Access Management）模块提供身份认证和权限管理功能。
+## 模块定位
 
-## 模块结构
+IAM（Identity and Access Management）负责租户、用户、认证、角色、权限、组织架构、OAuth 连接和租户资源配置。它是业务模块，可以依赖 `framework`，但不应把 IAM 专属逻辑下沉到 framework。
 
-```
-iam/
-├── controllers/    # API 控制器
-│   ├── admin/      # 管理后台接口
-│   └── console/    # 用户端接口
-├── services/       # 业务逻辑层
-├── models/         # 数据库模型
-├── schemas/        # Pydantic 模型
-├── migrations/     # 数据库迁移
-├── initializers/   # 初始化器
-└── middlewares/    # 中间件
-```
+## 目录职责
 
-## 核心功能
+| 目录 | 职责 |
+| --- | --- |
+| `controllers/` | FastAPI 路由控制器，包含后台、控制台和通用接口 |
+| `services/` | 认证、租户、用户、部门、角色、权限、OAuth 等业务逻辑 |
+| `models/` | IAM 数据库模型与枚举 |
+| `schemas/` | 请求、响应、Token、登录、租户等 Pydantic 模型 |
+| `migrations/` | IAM 数据库迁移与种子数据 |
+| `middlewares/` | IAM 鉴权与租户上下文中间件 |
+| `initializers/` | 启动初始化逻辑（如存在） |
 
-| 功能 | 说明 |
-|------|------|
-| 租户管理 | 多租户创建、配置、过期管理 |
-| 用户认证 | JWT 令牌、密码验证 |
-| 权限控制 | 基于角色的访问控制 |
-| 资源配置 | 租户级数据库、存储、缓存物理隔离 |
-| 租户上下文 | 通过 X-Tenant-Id 解析当前租户并注入 TenantContext |
+## 核心能力
+
+| 能力 | 说明 |
+| --- | --- |
+| 租户管理 | 租户创建、配置、过期管理、租户管理员初始化 |
+| 用户认证 | 登录、密码验证、JWT 令牌、Token Schema |
+| 权限控制 | 基于角色的访问控制，管理角色与权限映射 |
+| 组织架构 | 部门、用户、用户租户关系管理 |
+| OAuth 集成 | 第三方 OAuth 连接与用户同步 |
+| 租户上下文 | 解析 `X-Tenant-Id`，注入当前租户上下文 |
+| 资源配置 | 租户级数据库、存储、缓存物理隔离配置 |
 
 ## 角色体系
 
-| 角色 | 职责 | 核心场景 |
-|------|------|----------|
-| 租户管理员 | 创建租户、管理租户级系统管理员 | 系统初始化时创建，负责租户开通 |
-| 系统管理员 | 管理本租户的组织架构、用户、角色、权限 | 租户内的管理操作 |
-| 普通用户 | 使用系统业务功能 | 日常登录、个人信息管理 |
+| 角色 | 职责 | 场景 |
+| --- | --- | --- |
+| 租户管理员 | 创建租户、管理租户级系统管理员 | 系统初始化与租户开通 |
+| 系统管理员 | 管理本租户组织、用户、角色、权限 | 租户内管理操作 |
+| 普通用户 | 使用业务功能与维护个人信息 | 日常登录和业务访问 |
+
+## 开发规则
+
+- Controller 只处理路由、参数校验、鉴权依赖和响应封装；业务逻辑放在 Service。
+- Service 负责事务边界、业务校验和跨模型协作；不要在 Controller 中直接拼装复杂查询。
+- Model 使用 framework 的数据库基类、Mixin 和 SQLAlchemy 2.0 声明式类型。
+- Schema 区分请求 DTO、响应 VO 和内部数据结构，避免把数据库模型直接暴露给 API。
+- IAM 需要向 framework 提供租户信息时，通过 `tenant_provider_impl` 等适配器实现 framework Protocol。
+- 新增 IAM 表必须添加迁移文件；涉及默认角色、权限、管理员时同步更新 seed。
 
 ## 启动初始化
 
-应用启动时会自动执行 IAM seed：默认租户、预定义角色权限、默认租户管理员。初始化异常会记录日志但不阻止应用启动。
+应用启动时会执行 IAM seed，初始化默认租户、预定义角色权限和默认租户管理员。初始化异常应记录日志，但不应阻止应用启动，除非该异常会导致后续认证链路不可用。
 
 ## 租户资源配置
 
-Tenant 模型支持以下资源配置字段：
+Tenant / TenantConfig 相关模型支持以下物理隔离配置：
 
-### 数据库配置
+| 类型 | 关键字段 | 说明 |
+| --- | --- | --- |
+| 数据库 | `db_type`、`db_host`、`db_port`、`db_name`、`db_username`、`db_password` | 配置 `db_name` 后启用租户独立数据库 |
+| 存储 | `storage_type`、`storage_bucket` | 配置 `storage_bucket` 后启用租户独立 Bucket |
+| 缓存 | `cache_db` | 配置 Redis DB 编号后启用租户独立 Redis DB |
+| 加密 | `encryption_key` | 租户密钥由主密钥加密保存 |
 
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| db_type | str | 数据库类型（postgresql/mysql/sqlite） |
-| db_host | str | 数据库主机 |
-| db_port | int | 数据库端口 |
-| db_name | str | 数据库名称（配置后启用物理隔离） |
-| db_username | str | 数据库用户名 |
-| db_password | str | 数据库密码（AES-256-GCM 加密存储） |
+`db_password` 和 `encryption_key` 等敏感字段必须加密保存，主密钥通过 `TENANT_ENCRYPTION_MASTER_KEY` 提供。
 
-### 存储配置
+## API 入口
 
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| storage_type | str | 存储类型（minio/aliyun/tencent） |
-| storage_bucket | str | 存储桶名称（配置后启用物理隔离） |
+| 前缀 | 用途 |
+| --- | --- |
+| `/admin/v1/tenants` | 管理后台租户 CRUD 与资源配置校验 |
+| `/console/v1/tenants` | 用户端租户接口 |
+| `/api/v1/auth` | 登录、刷新 Token 等认证接口 |
+| `/api/v1/users` | 用户管理 |
+| `/api/v1/departments` | 部门管理 |
+| `/api/v1/roles` | 角色管理 |
+| `/api/v1/permissions` | 权限管理 |
+| `/api/v1/oauth` | OAuth 连接与同步 |
 
-### 缓存配置
+以实际路由注册为准，修改接口时同步检查对应 Controller、Schema、Service 和测试。
 
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| cache_db | int | Redis DB 编号（0-15，配置后启用物理隔离） |
+## 测试
 
-### 加密密钥
+IAM 相关能力当前主要通过 framework 租户集成测试和 IAM 服务 / 控制器测试覆盖。新增认证、权限、租户资源配置逻辑时，应补充以下测试：
 
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| encryption_key | str | 租户加密密钥（主密钥加密存储） |
+- Service 单元测试：业务规则、异常路径、事务行为。
+- API 集成测试：鉴权、租户上下文、权限边界。
+- Seed / migration 验证：默认角色、权限、管理员与数据库结构一致。
 
-## 使用示例
-
-### 创建带物理隔离的租户
-
-```python
-from iam.services.tenant_service import TenantService
-
-tenant = await TenantService.create(
-    name="高安全租户",
-    code="secure_tenant",
-    # 数据库配置
-    db_type="postgresql",
-    db_host="db.example.com",
-    db_port=5432,
-    db_name="tenant_secure_db",
-    db_username="tenant_user",
-    db_password="secure_password",  # 自动加密存储
-    # 存储配置
-    storage_type="minio",
-    storage_bucket="tenant-secure-bucket",
-    # 缓存配置
-    cache_db=5,
-)
-```
-
-### 更新租户资源配置
-
-```python
-tenant = await TenantService.update(
-    tenant_id="tenant-001",
-    db_name="new_database",
-    db_password="new_password",  # 自动加密
-)
-```
-
-### 获取租户完整配置
-
-```python
-from iam.services.tenant_provider_impl import iam_tenant_provider
-
-tenant_info = await iam_tenant_provider.get_tenant("tenant-001")
-
-# 访问资源配置
-if tenant_info.database:
-    print(f"数据库: {tenant_info.database.database}")
-if tenant_info.storage:
-    print(f"存储桶: {tenant_info.storage.bucket}")
-if tenant_info.cache:
-    print(f"Redis DB: {tenant_info.cache.db}")
-```
-
-## 隔离模式
-
-| 模式 | 数据库 | 存储 | 缓存 |
-|------|--------|------|------|
-| 逻辑隔离 | 共享 DB + tenant_id 过滤 | 共享 Bucket + 路径前缀 | 共享 DB + Key 前缀 |
-| 物理隔离 | 独立 Database | 独立 Bucket | 独立 Redis DB |
-
-**切换方式**：配置 `db_name`、`storage_bucket`、`cache_db` 字段后自动启用物理隔离。
-
-## 安全注意事项
-
-1. **密码加密**：`db_password` 字段使用 AES-256-GCM 加密存储
-2. **密钥管理**：每个租户生成独立的 `encryption_key`，由主密钥加密保护
-3. **主密钥**：通过环境变量 `TENANT_ENCRYPTION_MASTER_KEY` 配置
-
-## API 端点
-
-- `/admin/v1/tenants` - 租户 CRUD
-- `/admin/v1/tenants/validate/database` - 验证数据库配置
-- `/admin/v1/tenants/validate/storage` - 验证存储配置
-- `/admin/v1/tenants/validate/cache` - 验证缓存配置
+通用测试命令和标记见 [../../tests/CLAUDE.md](../../tests/CLAUDE.md)。
