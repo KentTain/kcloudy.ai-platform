@@ -5,20 +5,10 @@ Dataset 示例模型
 from sqlalchemy import String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
-from demo.models import (
-    ActiveRecordMixin,
-    BaseModel,
-    TimestampMixin,
-    UUIDPrimaryKeyMixin,
-)
+from demo.models import ActiveRecordMixin, BaseModel
 
 
-class Dataset(
-    BaseModel,
-    UUIDPrimaryKeyMixin,
-    TimestampMixin,
-    ActiveRecordMixin,
-):
+class Dataset(BaseModel, ActiveRecordMixin):
     """知识库模型"""
 
     __tablename__ = "dataset"
