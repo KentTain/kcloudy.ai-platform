@@ -13,6 +13,7 @@ from loguru import logger
 from demo.common.exception_handler import register_exception_handlers
 from framework.common.time import ChinaTimeZone
 from framework.database.core.engine import setup_engine
+from framework.tenant.middleware import TenantMiddleware
 from framework.tenant.protocols import register_tenant_provider
 from iam.services.tenant_provider_impl import iam_tenant_provider
 from demo.configs import settings
@@ -41,14 +42,33 @@ async def lifespan(app: FastAPI):
     # 注册 TenantProvider
     register_tenant_provider(iam_tenant_provider)
 
-    # 初始化默认租户管理员
-    from iam.initializers.tenant_admin_initializer import init_tenant_admin
-    await init_tenant_admin()
+    # 自动执行 seed 初始化（异常不阻止应用启动）
+    await _run_seed_initialization()
 
     # 启动时的初始化逻辑
     yield
     # 关闭时的清理逻辑
     _logger.info("Demo 应用关闭")
+
+
+async def _run_seed_initialization():
+    """执行数据初始化种子脚本"""
+    from iam.migrations.seeds.tenant_seed import run as tenant_seed_run
+    from iam.migrations.seeds.iam_seed import run as iam_seed_run
+    from iam.migrations.seeds.admin_seed import run as admin_seed_run
+
+    seed_modules = [
+        ("租户", tenant_seed_run),
+        ("角色权限", iam_seed_run),
+        ("管理员", admin_seed_run),
+    ]
+
+    for name, seed_func in seed_modules:
+        try:
+            count = await seed_func(dry_run=False)
+            _logger.info(f"Seed 初始化完成 [{name}]: {count} 条记录")
+        except Exception:
+            _logger.exception(f"Seed 初始化失败 [{name}]，跳过该模块")
 
 
 def create_app() -> FastAPI:
@@ -70,6 +90,9 @@ def create_app() -> FastAPI:
     # 注册路由 - Dataset
     from demo.controllers import dataset
     app.include_router(dataset.router, prefix="/api/v1/datasets", tags=["Dataset"])
+
+    # 注册租户中间件（解析 X-Tenant-Id 并注入上下文）
+    app.add_middleware(TenantMiddleware)
 
     # 注册路由 - IAM
     from iam.controllers import router as iam_router

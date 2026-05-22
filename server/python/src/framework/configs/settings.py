@@ -165,6 +165,15 @@ class TenantSettings(BaseSettings):
     default_workspace_id: str = Field(
         default="", description="默认工作空间 ID"
     )
+    default_db_type: str | None = Field(default=None, description="默认租户数据库类型")
+    default_db_host: str | None = Field(default=None, description="默认租户数据库主机")
+    default_db_port: int | None = Field(default=None, description="默认租户数据库端口")
+    default_db_name: str | None = Field(default=None, description="默认租户数据库名")
+    default_db_username: str | None = Field(default=None, description="默认租户数据库用户名")
+    default_db_password: str | None = Field(default=None, description="默认租户数据库密码")
+    default_storage_type: str | None = Field(default=None, description="默认租户存储类型")
+    default_storage_bucket: str | None = Field(default=None, description="默认租户存储桶")
+    default_cache_db: int | None = Field(default=None, description="默认租户 Redis DB")
 
 
 class JWTSettings(BaseSettings):

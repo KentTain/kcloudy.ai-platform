@@ -9,7 +9,7 @@ from sqlalchemy import select
 
 from iam.models import TenantAdmin
 from framework.database.core.engine import async_session
-from iam.middlewares.admin_auth_middleware import hash_password
+from framework.utils.crypto import hash_password, verify_password
 
 _logger = logger.bind(name=__name__)
 

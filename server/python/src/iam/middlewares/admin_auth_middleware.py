@@ -6,7 +6,6 @@
 
 from datetime import datetime, timedelta
 from typing import TYPE_CHECKING, Callable
-import hashlib
 import secrets
 
 from fastapi import Request, HTTPException
@@ -18,6 +17,7 @@ from starlette.responses import JSONResponse
 from iam.models import TenantAdmin
 from framework.database.core.engine import async_session
 from framework.tenant.exceptions import TenantAdminAuthError
+from framework.utils.crypto import hash_password, verify_password
 from sqlalchemy import select
 
 if TYPE_CHECKING:
@@ -34,19 +34,9 @@ _admin_tokens: dict[str, dict] = {}
 TOKEN_EXPIRE_HOURS = 24
 
 
-def hash_password(password: str) -> str:
-    """密码哈希"""
-    return hashlib.sha256(password.encode()).hexdigest()
-
-
 def generate_token() -> str:
     """生成访问令牌"""
     return secrets.token_urlsafe(32)
-
-
-def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """验证密码"""
-    return hash_password(plain_password) == hashed_password
 
 
 class AdminAuthService:

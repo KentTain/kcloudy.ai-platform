@@ -6,9 +6,10 @@ from sqlalchemy import String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from demo.models import ActiveRecordMixin, BaseModel
+from framework.database.mixins.tenant import TenantMixin
 
 
-class Dataset(BaseModel, ActiveRecordMixin):
+class Dataset(BaseModel, ActiveRecordMixin, TenantMixin):
     """知识库模型"""
 
     __tablename__ = "dataset"
