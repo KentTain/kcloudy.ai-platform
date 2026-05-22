@@ -4,13 +4,17 @@ IAM 模块的 TenantProvider 实现
 本地部署时直接访问数据库获取租户信息。
 """
 
+from loguru import logger
 from sqlalchemy import select
 
 from framework.database.core.engine import async_session
 from framework.tenant.context import SimpleTenant
 from framework.tenant.protocols import TenantInfo, TenantProvider
-from iam.models import UserTenant
+from framework.utils.crypto import decrypt
+from iam.models import Tenant, UserTenant
 from iam.services.tenant_service import TenantService
+
+_logger = logger.bind(name=__name__)
 
 
 class IamTenantProvider(TenantProvider):
@@ -32,7 +36,7 @@ class IamTenantProvider(TenantProvider):
         """
         tenant = await TenantService.get_by_id(tenant_id)
         if tenant:
-            return SimpleTenant.from_model(tenant)
+            return self._build_tenant_info(tenant)
         return None
 
     async def validate_access(self, user_id: str, tenant_id: str) -> bool:
@@ -66,7 +70,39 @@ class IamTenantProvider(TenantProvider):
             list[TenantInfo]
         """
         tenants = await TenantService.get_user_tenants(user_id)
-        return [SimpleTenant.from_model(t) for t in tenants]
+        return [self._build_tenant_info(t) for t in tenants]
+
+    def _build_tenant_info(self, tenant: Tenant | SimpleTenant) -> SimpleTenant:
+        """
+        构建租户信息，包含资源配置
+
+        Args:
+            tenant: Tenant ORM 模型或缓存中的 SimpleTenant
+
+        Returns:
+            SimpleTenant
+        """
+        if isinstance(tenant, SimpleTenant):
+            return tenant
+
+        # 从模型创建基础信息
+        simple_tenant = SimpleTenant.from_model(tenant)
+
+        db_name = getattr(tenant, "db_name", None)
+        db_password = getattr(tenant, "db_password", None)
+        if isinstance(db_name, str) and db_name and isinstance(db_password, str) and db_password:
+            try:
+                decrypted_password = decrypt(db_password)
+                # 更新数据库配置中的密码
+                if simple_tenant.database:
+                    simple_tenant.database.password = decrypted_password
+            except Exception as e:
+                _logger.warning(
+                    f"解密租户 {tenant.id} 数据库密码失败: {e}，密码将保持为空"
+                )
+                # 解密失败，密码保持为空
+
+        return simple_tenant
 
 
 # 单例实例

@@ -5,7 +5,7 @@
 """
 
 from datetime import datetime
-from typing import Any
+from typing import Any, TypeAlias
 
 from loguru import logger
 from sqlalchemy import select, func, update, delete as sql_delete
@@ -20,15 +20,23 @@ from framework.tenant.exceptions import (
     TenantInactiveError,
     TenantExpiredError,
 )
+from framework.utils.crypto import (
+    generate_tenant_key,
+    encrypt,
+    decrypt,
+    get_master_key,
+)
 
 _logger = logger.bind(name=__name__)
+
+TenantRecord: TypeAlias = Tenant | SimpleTenant
 
 
 class TenantService:
     """租户服务"""
 
     @staticmethod
-    async def get_by_id(tenant_id: str, use_cache: bool = True) -> Tenant | None:
+    async def get_by_id(tenant_id: str, use_cache: bool = True) -> TenantRecord | None:
         """
         根据 ID 获取租户
 
@@ -37,19 +45,14 @@ class TenantService:
             use_cache: 是否使用缓存
 
         Returns:
-            Tenant | None
+            TenantRecord | None（缓存命中为 SimpleTenant，否则为 ORM Tenant）
         """
         # 尝试从缓存获取
         if use_cache:
             cached = await TenantCache.get(tenant_id)
             if cached:
-                # 需要从数据库获取完整信息
-                async with async_session() as session:
-                    stmt = select(Tenant).where(Tenant.id == tenant_id)
-                    result = await session.execute(stmt)
-                    tenant = result.scalar_one_or_none()
-                    return tenant
-
+                return cached
+        
         # 从数据库获取
         async with async_session() as session:
             stmt = select(Tenant).where(Tenant.id == tenant_id)
@@ -79,6 +82,16 @@ class TenantService:
         contact_phone: str | None = None,
         expired_at: datetime | None = None,
         settings: dict[str, Any] | None = None,
+        # 资源配置
+        db_type: str | None = None,
+        db_host: str | None = None,
+        db_port: int | None = None,
+        db_name: str | None = None,
+        db_username: str | None = None,
+        db_password: str | None = None,
+        storage_type: str | None = None,
+        storage_bucket: str | None = None,
+        cache_db: int | None = None,
     ) -> Tenant:
         """
         创建租户
@@ -91,10 +104,29 @@ class TenantService:
             contact_phone: 联系人电话
             expired_at: 过期时间
             settings: 扩展设置
+            db_type: 数据库类型
+            db_host: 数据库主机
+            db_port: 数据库端口
+            db_name: 数据库名称
+            db_username: 数据库用户名
+            db_password: 数据库密码（明文，会自动加密）
+            storage_type: 存储类型
+            storage_bucket: 存储桶名称
+            cache_db: Redis DB 编号
 
         Returns:
             Tenant
         """
+        # 生成租户加密密钥
+        tenant_key = generate_tenant_key()
+        # 用主密钥加密租户密钥
+        encrypted_tenant_key = encrypt(tenant_key)
+
+        # 加密数据库密码
+        encrypted_db_password = None
+        if db_password:
+            encrypted_db_password = encrypt(db_password)
+
         async with async_session() as session:
             tenant = Tenant(
                 name=name,
@@ -104,6 +136,20 @@ class TenantService:
                 contact_phone=contact_phone,
                 expired_at=expired_at,
                 settings=settings or {},
+                # 数据库配置
+                db_type=db_type,
+                db_host=db_host,
+                db_port=db_port,
+                db_name=db_name,
+                db_username=db_username,
+                db_password=encrypted_db_password,
+                # 存储配置
+                storage_type=storage_type,
+                storage_bucket=storage_bucket,
+                # 缓存配置
+                cache_db=cache_db,
+                # 加密密钥
+                encryption_key=encrypted_tenant_key,
             )
             session.add(tenant)
             await session.commit()
@@ -121,6 +167,16 @@ class TenantService:
         contact_phone: str | None = None,
         expired_at: datetime | None = None,
         settings: dict[str, Any] | None = None,
+        # 资源配置
+        db_type: str | None = None,
+        db_host: str | None = None,
+        db_port: int | None = None,
+        db_name: str | None = None,
+        db_username: str | None = None,
+        db_password: str | None = None,
+        storage_type: str | None = None,
+        storage_bucket: str | None = None,
+        cache_db: int | None = None,
     ) -> Tenant | None:
         """
         更新租户
@@ -152,6 +208,31 @@ class TenantService:
                 tenant.expired_at = expired_at
             if settings is not None:
                 tenant.settings = settings
+
+            # 更新数据库配置
+            if db_type is not None:
+                tenant.db_type = db_type
+            if db_host is not None:
+                tenant.db_host = db_host
+            if db_port is not None:
+                tenant.db_port = db_port
+            if db_name is not None:
+                tenant.db_name = db_name
+            if db_username is not None:
+                tenant.db_username = db_username
+            if db_password is not None:
+                # 加密数据库密码
+                tenant.db_password = encrypt(db_password) if db_password else None
+
+            # 更新存储配置
+            if storage_type is not None:
+                tenant.storage_type = storage_type
+            if storage_bucket is not None:
+                tenant.storage_bucket = storage_bucket
+
+            # 更新缓存配置
+            if cache_db is not None:
+                tenant.cache_db = cache_db
 
             await session.commit()
             await session.refresh(tenant)
@@ -228,7 +309,7 @@ class TenantService:
             return tenant
 
     @staticmethod
-    async def validate_tenant(tenant_id: str) -> Tenant:
+    async def validate_tenant(tenant_id: str) -> TenantRecord:
         """
         验证租户状态
 

@@ -23,7 +23,7 @@ class TenantDatabaseConfig:
     port: int = 5432
     database: str = ""
     username: str = ""
-    password: str = ""
+    password: str = ""  # 已解密的密码
 
 
 @dataclass
@@ -51,6 +51,13 @@ class TenantPubSubConfig:
 
     type: PubSubType = PubSubType.REDIS
     endpoint: str = ""
+
+
+@dataclass
+class TenantCacheConfig:
+    """租户缓存配置"""
+
+    db: int = 0  # Redis DB 编号 (0-15)
 
 
 # ============== TenantInfo Protocol ==============
@@ -126,6 +133,11 @@ class TenantInfo(Protocol):
     @property
     def pubsub(self) -> TenantPubSubConfig | None:
         """发布订阅配置（租户级隔离）"""
+        ...
+
+    @property
+    def cache(self) -> TenantCacheConfig | None:
+        """缓存配置（租户级隔离）"""
         ...
 
 

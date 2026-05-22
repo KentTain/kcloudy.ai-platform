@@ -7,7 +7,7 @@
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import DateTime, ForeignKey, Index, String, Text, func
+from sqlalchemy import DateTime, ForeignKey, Index, Integer, String, Text, func
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -43,6 +43,44 @@ class Tenant(BaseModel, ActiveRecordMixin):
     # 时间信息
     expired_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True, comment="过期时间"
+    )
+
+    # 数据库配置（物理隔离）
+    db_type: Mapped[str | None] = mapped_column(
+        String(20), nullable=True, comment="数据库类型"
+    )
+    db_host: Mapped[str | None] = mapped_column(
+        String(255), nullable=True, comment="数据库主机"
+    )
+    db_port: Mapped[int | None] = mapped_column(
+        Integer, nullable=True, comment="数据库端口"
+    )
+    db_name: Mapped[str | None] = mapped_column(
+        String(100), nullable=True, comment="数据库名称"
+    )
+    db_username: Mapped[str | None] = mapped_column(
+        String(100), nullable=True, comment="数据库用户名"
+    )
+    db_password: Mapped[str | None] = mapped_column(
+        Text, nullable=True, comment="数据库密码(加密)"
+    )
+
+    # 存储配置（物理隔离）
+    storage_type: Mapped[str | None] = mapped_column(
+        String(20), nullable=True, comment="存储类型"
+    )
+    storage_bucket: Mapped[str | None] = mapped_column(
+        String(100), nullable=True, comment="存储桶名称"
+    )
+
+    # 缓存配置（物理隔离）
+    cache_db: Mapped[int | None] = mapped_column(
+        Integer, nullable=True, comment="Redis DB 编号"
+    )
+
+    # 加密密钥
+    encryption_key: Mapped[str | None] = mapped_column(
+        Text, nullable=True, comment="租户加密密钥(主密钥加密)"
     )
 
     # 扩展设置

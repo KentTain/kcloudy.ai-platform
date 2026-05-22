@@ -15,7 +15,8 @@ tests/framework/
 │   └── README.md
 ├── unit/                          # 单元测试
 │   ├── cache/
-│   │   └── test_redis_util.py     # Redis 单元测试（mock）
+│   │   ├── test_redis_util.py     # Redis 单元测试（mock）
+│   │   └── test_tenant_cache_manager.py # 租户缓存管理器测试
 │   ├── common/
 │   │   └── test_common.py         # 通用组件测试
 │   ├── configs/
@@ -23,12 +24,16 @@ tests/framework/
 │   ├── core/
 │   │   └── test_core.py           # 核心接口测试
 │   ├── database/
-│   │   └── test_database.py       # 数据库单元测试
+│   │   ├── test_database.py       # 数据库单元测试
+│   │   └── test_engine_pool.py    # 数据库引擎池测试
+│   ├── storage/
+│   │   └── test_tenant_storage_manager.py # 租户存储管理器测试
 │   ├── tenant/
 │   │   ├── test_tenant.py         # 租户模块测试
 │   │   └── test_context.py        # 租户上下文测试
 │   └── utils/
-│       └── test_utils.py          # 工具函数测试
+│       ├── test_utils.py          # 工具函数测试
+│       └── test_crypto.py         # 加密工具测试
 └── integration/                   # 集成测试
     ├── cache/
     │   └── test_redis_integration.py  # Redis 集成测试
@@ -153,13 +158,17 @@ uv run pytest tests/framework/unit/tenant/ tests/framework/integration/tenant/ -
 | 模块 | 单元测试 | 集成测试 |
 |------|----------|----------|
 | cache | ✅ | ✅ |
+| tenant_cache_manager | ✅ | - |
 | lock | - | ✅ |
 | queue | - | ✅ |
 | pubsub | - | ✅ |
 | storage | - | ✅ |
+| tenant_storage_manager | ✅ | - |
 | database | ✅ | ✅ |
+| engine_pool | ✅ | - |
 | common | ✅ | - |
 | utils | ✅ | - |
+| crypto | ✅ | - |
 | core | ✅ | - |
 | configs | ✅ | - |
 | tenant | ✅ | ✅ |

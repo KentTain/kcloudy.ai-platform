@@ -6,9 +6,13 @@ from fastapi import APIRouter, HTTPException, Request, Depends
 from fastapi.responses import ORJSONResponse
 from sqlalchemy import func, select
 
-from iam.models import Tenant, UserTenant
 from framework.database.core.engine import async_session
+from iam.models import Tenant, UserTenant
 from iam.schemas.admin.tenant import (
+    CacheConfigVo,
+    DatabaseConfigVo,
+    ResourceValidateVo,
+    StorageConfigVo,
     TenantCreateRequest,
     TenantUpdateRequest,
     TenantVo,
@@ -26,6 +30,47 @@ router = APIRouter()
 def Success(data=None, msg: str = "success") -> dict:
     """成功响应"""
     return {"code": 200, "msg": msg, "data": data}
+
+
+def build_tenant_vo(tenant: Tenant) -> TenantVo:
+    """构建租户响应对象"""
+    database = None
+    if tenant.db_name:
+        database = DatabaseConfigVo(
+            db_type=tenant.db_type,
+            db_host=tenant.db_host,
+            db_port=tenant.db_port,
+            db_name=tenant.db_name,
+            db_username=tenant.db_username,
+        )
+
+    storage = None
+    if tenant.storage_bucket:
+        storage = StorageConfigVo(
+            storage_type=tenant.storage_type,
+            storage_bucket=tenant.storage_bucket,
+        )
+
+    cache = None
+    if tenant.cache_db is not None:
+        cache = CacheConfigVo(cache_db=tenant.cache_db)
+
+    return TenantVo(
+        id=tenant.id,
+        name=tenant.name,
+        code=tenant.code,
+        status=tenant.status,
+        contact_name=tenant.contact_name,
+        contact_email=tenant.contact_email,
+        contact_phone=tenant.contact_phone,
+        expired_at=tenant.expired_at,
+        settings=tenant.settings or {},
+        database=database,
+        storage=storage,
+        cache=cache,
+        created_at=tenant.created_at,
+        updated_at=tenant.updated_at,
+    )
 
 
 # ============== 认证 API ==============
@@ -65,6 +110,96 @@ async def admin_logout(request: Request, admin: dict = Depends(get_current_admin
     return ORJSONResponse(content=Success())
 
 
+@router.post("/tenants/validate/database")
+async def validate_database_config(
+    data: DatabaseConfigVo,
+    admin: dict = Depends(get_current_admin),
+) -> ORJSONResponse:
+    """验证数据库连接配置"""
+    if not data.db_name:
+        return ORJSONResponse(
+            content=Success(ResourceValidateVo(valid=True, message="使用默认数据库").model_dump())
+        )
+
+    if not all([data.db_type, data.db_host, data.db_port, data.db_username]):
+        return ORJSONResponse(
+            content=Success(ResourceValidateVo(valid=False, message="数据库配置不完整").model_dump())
+        )
+
+    driver = "postgresql+asyncpg"
+    if data.db_type == "mysql":
+        driver = "mysql+aiomysql"
+    elif data.db_type == "sqlite":
+        driver = "sqlite+aiosqlite"
+
+    # 验证接口不接收密码，无法真实连接，仅验证格式
+    if data.db_type not in ("postgresql", "mysql", "sqlite"):
+        return ORJSONResponse(
+            content=Success(ResourceValidateVo(valid=False, message="不支持的数据库类型").model_dump())
+        )
+
+    return ORJSONResponse(
+        content=Success(ResourceValidateVo(valid=True, message="数据库配置格式有效").model_dump())
+    )
+
+
+@router.post("/tenants/validate/storage")
+async def validate_storage_config(
+    data: StorageConfigVo,
+    admin: dict = Depends(get_current_admin),
+) -> ORJSONResponse:
+    """验证存储桶配置"""
+    if not data.storage_bucket:
+        return ORJSONResponse(
+            content=Success(ResourceValidateVo(valid=True, message="使用默认存储桶").model_dump())
+        )
+
+    if data.storage_type and data.storage_type not in ("minio", "aliyun", "tencent", "local"):
+        return ORJSONResponse(
+            content=Success(ResourceValidateVo(valid=False, message="不支持的存储类型").model_dump())
+        )
+
+    return ORJSONResponse(
+        content=Success(ResourceValidateVo(valid=True, message="存储配置格式有效").model_dump())
+    )
+
+
+@router.post("/tenants/validate/cache")
+async def validate_cache_config(
+    data: CacheConfigVo,
+    admin: dict = Depends(get_current_admin),
+) -> ORJSONResponse:
+    """验证 Redis DB 配置"""
+    if data.cache_db is None:
+        return ORJSONResponse(
+            content=Success(ResourceValidateVo(valid=True, message="使用默认 Redis DB").model_dump())
+        )
+
+    if data.cache_db < 0 or data.cache_db > 15:
+        return ORJSONResponse(
+            content=Success(ResourceValidateVo(valid=False, message="Redis DB 编号必须在 0-15 范围内").model_dump())
+        )
+
+    # 检查是否已被其他租户使用
+    async with async_session() as session:
+        stmt = select(Tenant).where(Tenant.cache_db == data.cache_db)
+        result = await session.execute(stmt)
+        existing = result.scalar_one_or_none()
+        if existing:
+            return ORJSONResponse(
+                content=Success(
+                    ResourceValidateVo(
+                        valid=False,
+                        message=f"Redis DB {data.cache_db} 已被租户 {existing.code} 使用",
+                    ).model_dump()
+                )
+            )
+
+    return ORJSONResponse(
+        content=Success(ResourceValidateVo(valid=True, message="缓存配置有效").model_dump())
+    )
+
+
 # ============== 租户管理 API ==============
 
 @router.get("/tenants")
@@ -98,7 +233,7 @@ async def list_tenants(
             "code": 200,
             "msg": "success",
             "data": TenantListVo(
-                items=[TenantVo.model_validate(t) for t in tenants],
+                items=[build_tenant_vo(t) for t in tenants],
                 total=total,
                 page=page,
                 page_size=page_size,
@@ -136,10 +271,19 @@ async def create_tenant(
         contact_phone=data.contact_phone,
         expired_at=data.expired_at,
         settings=data.settings,
+        db_type=data.database.db_type if data.database else None,
+        db_host=data.database.db_host if data.database else None,
+        db_port=data.database.db_port if data.database else None,
+        db_name=data.database.db_name if data.database else None,
+        db_username=data.database.db_username if data.database else None,
+        db_password=data.database.db_password if data.database else None,
+        storage_type=data.storage.storage_type if data.storage else None,
+        storage_bucket=data.storage.storage_bucket if data.storage else None,
+        cache_db=data.cache.cache_db if data.cache else None,
     )
 
     return ORJSONResponse(
-        content=Success(TenantVo.model_validate(tenant).model_dump())
+        content=Success(build_tenant_vo(tenant).model_dump())
     )
 
 
@@ -164,7 +308,7 @@ async def get_tenant(
         raise HTTPException(status_code=404, detail="租户不存在")
 
     return ORJSONResponse(
-        content=Success(TenantVo.model_validate(tenant).model_dump())
+        content=Success(build_tenant_vo(tenant).model_dump())
     )
 
 
@@ -189,13 +333,22 @@ async def update_tenant(
         contact_phone=data.contact_phone,
         expired_at=data.expired_at,
         settings=data.settings,
+        db_type=data.database.db_type if data.database else None,
+        db_host=data.database.db_host if data.database else None,
+        db_port=data.database.db_port if data.database else None,
+        db_name=data.database.db_name if data.database else None,
+        db_username=data.database.db_username if data.database else None,
+        db_password=data.database.db_password if data.database else None,
+        storage_type=data.storage.storage_type if data.storage else None,
+        storage_bucket=data.storage.storage_bucket if data.storage else None,
+        cache_db=data.cache.cache_db if data.cache else None,
     )
 
     if not tenant:
         raise HTTPException(status_code=404, detail="租户不存在")
 
     return ORJSONResponse(
-        content=Success(TenantVo.model_validate(tenant).model_dump())
+        content=Success(build_tenant_vo(tenant).model_dump())
     )
 
 
@@ -248,7 +401,7 @@ async def activate_tenant(
         raise HTTPException(status_code=404, detail="租户不存在")
 
     return ORJSONResponse(
-        content=Success(TenantVo.model_validate(tenant).model_dump())
+        content=Success(build_tenant_vo(tenant).model_dump())
     )
 
 
@@ -269,7 +422,7 @@ async def deactivate_tenant(
         raise HTTPException(status_code=404, detail="租户不存在")
 
     return ORJSONResponse(
-        content=Success(TenantVo.model_validate(tenant).model_dump())
+        content=Success(build_tenant_vo(tenant).model_dump())
     )
 
 

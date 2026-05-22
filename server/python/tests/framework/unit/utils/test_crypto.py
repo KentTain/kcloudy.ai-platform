@@ -1,169 +1,114 @@
 """
-crypto 模块单元测试
-
-测试 BCrypt 密码哈希和验证功能
+加密工具单元测试
 """
 
+import os
 import pytest
 
-
-class TestHashPassword:
-    """密码哈希测试"""
-
-    def test_hash_password_success(self):
-        """
-        场景：正常密码哈希
-        WHEN: 输入有效密码
-        THEN: 返回 BCrypt 哈希值
-        """
-        from framework.utils.crypto import hash_password
-
-        password = "MySecureP@ss123"
-        result = hash_password(password)
-
-        # BCrypt 哈希值以 $2b$ 开头，长度为 60
-        assert result.startswith("$2b$")
-        assert len(result) == 60
-
-    def test_hash_password_different_salt(self):
-        """
-        场景：相同密码生成不同哈希值
-        WHEN: 对同一密码哈希两次
-        THEN: 返回不同的哈希值（盐值不同）
-        """
-        from framework.utils.crypto import hash_password
-
-        password = "MySecureP@ss123"
-        hash1 = hash_password(password)
-        hash2 = hash_password(password)
-
-        # 相同密码应产生不同哈希（BCrypt 自带随机盐）
-        assert hash1 != hash2
-
-    def test_hash_password_empty(self):
-        """
-        场景：空密码
-        WHEN: 输入空字符串
-        THEN: 抛出 ValueError
-        """
-        from framework.utils.crypto import hash_password
-
-        with pytest.raises(ValueError, match="密码不能为空"):
-            hash_password("")
+from framework.utils.crypto import (
+    encrypt,
+    decrypt,
+    generate_tenant_key,
+    encrypt_with_tenant_key,
+    decrypt_with_tenant_key,
+    get_master_key,
+    CryptoError,
+)
 
 
-class TestVerifyPassword:
-    """密码验证测试"""
+class TestEncryptDecrypt:
+    """加密解密测试"""
 
-    def test_verify_password_success(self):
-        """
-        场景：密码验证成功
-        WHEN: 输入正确密码和哈希值
-        THEN: 返回 True
-        """
-        from framework.utils.crypto import hash_password, verify_password
+    def test_encrypt_decrypt_roundtrip(self):
+        """加密后解密应返回原文"""
+        plaintext = "my_secret_password"
+        encrypted = encrypt(plaintext)
+        decrypted = decrypt(encrypted)
 
-        password = "MySecureP@ss123"
-        hash_value = hash_password(password)
+        assert decrypted == plaintext
 
-        result = verify_password(password, hash_value)
-        assert result is True
+    def test_encrypt_returns_different_ciphertext(self):
+        """每次加密应返回不同的密文（因为随机 nonce）"""
+        plaintext = "same_password"
+        encrypted1 = encrypt(plaintext)
+        encrypted2 = encrypt(plaintext)
 
-    def test_verify_password_wrong_password(self):
-        """
-        场景：密码验证失败
-        WHEN: 输入错误密码
-        THEN: 返回 False
-        """
-        from framework.utils.crypto import hash_password, verify_password
+        assert encrypted1 != encrypted2
 
-        password = "MySecureP@ss123"
-        hash_value = hash_password(password)
+    def test_decrypt_invalid_format_raises(self):
+        """解密无效格式应抛出异常"""
+        with pytest.raises(CryptoError):
+            decrypt("invalid_format")
 
-        result = verify_password("WrongPassword", hash_value)
-        assert result is False
+    def test_decrypt_wrong_key_raises(self):
+        """使用错误密钥解密应失败"""
+        plaintext = "secret"
+        encrypted = encrypt(plaintext)
 
-    def test_verify_password_empty_password(self):
-        """
-        场景：空密码验证
-        WHEN: 输入空密码
-        THEN: 返回 False
-        """
-        from framework.utils.crypto import hash_password, verify_password
+        # 使用错误的密钥
+        wrong_key = b"0" * 32
+        with pytest.raises(CryptoError):
+            decrypt(encrypted, wrong_key)
 
-        password = "MySecureP@ss123"
-        hash_value = hash_password(password)
+    def test_encrypt_empty_string(self):
+        """加密空字符串返回空"""
+        assert encrypt("") == ""
 
-        result = verify_password("", hash_value)
-        assert result is False
-
-    def test_verify_password_invalid_hash(self):
-        """
-        场景：无效哈希值
-        WHEN: 哈希值格式错误
-        THEN: 返回 False
-        """
-        from framework.utils.crypto import verify_password
-
-        result = verify_password("password", "invalid_hash")
-        assert result is False
+    def test_decrypt_empty_string(self):
+        """解密空字符串返回空"""
+        assert decrypt("") == ""
 
 
-class TestPasswordStrength:
-    """密码强度校验测试"""
+class TestTenantKey:
+    """租户密钥测试"""
 
-    def test_validate_password_strength_valid(self):
-        """
-        场景：密码强度有效
-        WHEN: 密码符合强度要求（8-32位，含字母和数字）
-        THEN: 验证通过
-        """
-        from framework.utils.crypto import validate_password_strength
+    def test_generate_tenant_key_length(self):
+        """生成的租户密钥长度应为 64 个十六进制字符"""
+        key = generate_tenant_key()
+        assert len(key) == 64
 
-        result = validate_password_strength("Password123")
-        assert result is True
+    def test_generate_tenant_key_uniqueness(self):
+        """每次生成的租户密钥应不同"""
+        key1 = generate_tenant_key()
+        key2 = generate_tenant_key()
+        assert key1 != key2
 
-    def test_validate_password_strength_too_short(self):
-        """
-        场景：密码太短
-        WHEN: 密码长度小于 8 位
-        THEN: 抛出 ValueError
-        """
-        from framework.utils.crypto import validate_password_strength
 
-        with pytest.raises(ValueError, match="密码长度需 8-32 位"):
-            validate_password_strength("Pass1")
+class TestTenantKeyEncryptDecrypt:
+    """租户密钥加密解密测试"""
 
-    def test_validate_password_strength_too_long(self):
-        """
-        场景：密码太长
-        WHEN: 密码长度超过 32 位
-        THEN: 抛出 ValueError
-        """
-        from framework.utils.crypto import validate_password_strength
+    def test_encrypt_with_tenant_key(self):
+        """使用租户密钥加密解密"""
+        tenant_key = generate_tenant_key()
+        plaintext = "database_password"
+        encrypted = encrypt_with_tenant_key(plaintext, tenant_key)
+        decrypted = decrypt_with_tenant_key(encrypted, tenant_key)
 
-        long_password = "A" * 33 + "1"
-        with pytest.raises(ValueError, match="密码长度需 8-32 位"):
-            validate_password_strength(long_password)
+        assert decrypted == plaintext
 
-    def test_validate_password_strength_no_letter(self):
-        """
-        场景：密码不含字母
-        WHEN: 密码只含数字
-        THEN: 抛出 ValueError
-        """
-        from framework.utils.crypto import validate_password_strength
+    def test_encrypt_with_different_tenant_keys(self):
+        """不同租户密钥加密的密文不能互相解密"""
+        key1 = generate_tenant_key()
+        key2 = generate_tenant_key()
+        plaintext = "secret"
 
-        with pytest.raises(ValueError, match="密码必须包含字母和数字"):
-            validate_password_strength("12345678")
+        encrypted = encrypt_with_tenant_key(plaintext, key1)
 
-    def test_validate_password_strength_no_digit(self):
-        """
-        场景：密码不含数字
-        WHEN: 密码只含字母
-        THEN: 抛出 ValueError
-        """
-        from framework.utils.crypto import validate_password_strength
+        with pytest.raises(CryptoError):
+            decrypt_with_tenant_key(encrypted, key2)
 
-        with pytest.raises(ValueError, match="密码必须包含字母和数字"):
-            validate_password_strength("Password")
+
+class TestMasterKey:
+    """主密钥测试"""
+
+    def test_get_master_key_returns_bytes(self):
+        """主密钥应返回 32 字节"""
+        key = get_master_key()
+        assert isinstance(key, bytes)
+        assert len(key) == 32
+
+    def test_master_key_caching(self):
+        """主密钥应被缓存"""
+        key1 = get_master_key()
+        key2 = get_master_key()
+        assert key1 == key2

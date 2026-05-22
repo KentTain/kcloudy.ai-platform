@@ -10,12 +10,14 @@ from datetime import datetime
 from typing import Any
 
 from framework.tenant.protocols import (
+    TenantCacheConfig,
     TenantDatabaseConfig,
     TenantInfo,
     TenantQueueConfig,
     TenantPubSubConfig,
     TenantStorageConfig,
 )
+from framework.tenant.enums import DatabaseType, StorageType
 
 
 @dataclass
@@ -45,6 +47,7 @@ class SimpleTenant:
     storage: TenantStorageConfig | None = None
     queue: TenantQueueConfig | None = None
     pubsub: TenantPubSubConfig | None = None
+    cache: TenantCacheConfig | None = None
 
     @classmethod
     def from_model(cls, model: Any) -> "SimpleTenant":
@@ -54,6 +57,42 @@ class SimpleTenant:
         资源配置（database/storage/queue/pubsub）需要在业务层单独设置，
         或通过扩展 ORM 模型添加资源配置字段后在此处映射。
         """
+        # 提取数据库配置
+        db_config = None
+        db_name = getattr(model, "db_name", None)
+        if isinstance(db_name, str) and db_name:
+            db_type = DatabaseType.POSTGRESQL
+            model_db_type = getattr(model, "db_type", None)
+            if isinstance(model_db_type, str) and model_db_type:
+                db_type = DatabaseType(model_db_type)
+            db_config = TenantDatabaseConfig(
+                type=db_type,
+                host=getattr(model, "db_host", "") or "",
+                port=getattr(model, "db_port", 5432) or 5432,
+                database=db_name,
+                username=getattr(model, "db_username", "") or "",
+                password=getattr(model, "db_password", "") or "",  # 需要在调用方解密
+            )
+
+        # 提取存储配置
+        storage_config = None
+        storage_bucket = getattr(model, "storage_bucket", None)
+        if isinstance(storage_bucket, str) and storage_bucket:
+            storage_type = StorageType.MINIO
+            model_storage_type = getattr(model, "storage_type", None)
+            if isinstance(model_storage_type, str) and model_storage_type:
+                storage_type = StorageType(model_storage_type)
+            storage_config = TenantStorageConfig(
+                type=storage_type,
+                bucket=storage_bucket,
+            )
+
+        # 提取缓存配置
+        cache_config = None
+        cache_db = getattr(model, "cache_db", None)
+        if isinstance(cache_db, int):
+            cache_config = TenantCacheConfig(db=cache_db)
+
         return cls(
             id=model.id,
             name=model.name,
@@ -63,11 +102,9 @@ class SimpleTenant:
             contact_name=getattr(model, "contact_name", None),
             contact_email=getattr(model, "contact_email", None),
             contact_phone=getattr(model, "contact_phone", None),
-            # 资源配置：当前 ORM 模型暂未支持，待扩展
-            # database=_extract_database_config(model),
-            # storage=_extract_storage_config(model),
-            # queue=_extract_queue_config(model),
-            # pubsub=_extract_pubsub_config(model),
+            database=db_config,
+            storage=storage_config,
+            cache=cache_config,
         )
 
 
@@ -125,6 +162,42 @@ class TenantContext:
     def is_set() -> bool:
         """检查是否设置了租户上下文"""
         return _tenant_context.get() is not None
+
+    @staticmethod
+    def get_database_config() -> TenantDatabaseConfig | None:
+        """获取当前租户的数据库配置"""
+        tenant = _tenant_context.get()
+        return tenant.database if tenant else None
+
+    @staticmethod
+    def get_storage_config() -> TenantStorageConfig | None:
+        """获取当前租户的存储配置"""
+        tenant = _tenant_context.get()
+        return tenant.storage if tenant else None
+
+    @staticmethod
+    def get_cache_config() -> TenantCacheConfig | None:
+        """获取当前租户的缓存配置"""
+        tenant = _tenant_context.get()
+        return tenant.cache if tenant else None
+
+    @staticmethod
+    def has_physical_database() -> bool:
+        """检查当前租户是否配置了物理隔离数据库"""
+        config = TenantContext.get_database_config()
+        return config is not None and bool(config.database)
+
+    @staticmethod
+    def has_physical_storage() -> bool:
+        """检查当前租户是否配置了物理隔离存储桶"""
+        config = TenantContext.get_storage_config()
+        return config is not None and bool(config.bucket)
+
+    @staticmethod
+    def has_physical_cache() -> bool:
+        """检查当前租户是否配置了物理隔离缓存"""
+        config = TenantContext.get_cache_config()
+        return config is not None
 
 
 def get_current_tenant() -> SimpleTenant | None:

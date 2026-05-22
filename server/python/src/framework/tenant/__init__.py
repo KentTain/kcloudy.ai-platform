@@ -36,6 +36,7 @@ from framework.tenant.exceptions import (
 )
 from framework.tenant.middleware import TenantMiddleware
 from framework.tenant.protocols import (
+    TenantCacheConfig,
     TenantDatabaseConfig,
     TenantInfo,
     TenantProvider,
@@ -79,6 +80,7 @@ __all__ = [
     # Middleware
     "TenantMiddleware",
     # Protocols
+    "TenantCacheConfig",
     "TenantDatabaseConfig",
     "TenantInfo",
     "TenantProvider",

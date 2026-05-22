@@ -10,15 +10,19 @@ Framework 模块提供统一的基础设施组件，支持多技术栈（Python 
 framework/
 ├── config/         # 统一配置模块
 ├── cache/          # Redis 缓存模块
+│   └── tenant_cache_manager.py  # 租户缓存管理器
 ├── core/           # 核心接口定义
 ├── common/         # 通用组件
 ├── storage/        # 存储实现
+│   └── tenant_storage_manager.py # 租户存储管理器
 ├── queue/          # 队列实现
 ├── lock/           # 分布式锁
 ├── pubsub/         # 发布订阅
 ├── database/       # 数据库组件
+│   └── core/engine_pool.py       # 数据库引擎池
 ├── tenant/         # 租户模型
 └── utils/          # 工具函数
+    └── crypto.py   # AES-256-GCM 加密工具
 ```
 
 ## 快速开始
@@ -108,6 +112,90 @@ class User(BaseModel, TenantMixin, AuditMixin):
     username: Mapped[str] = mapped_column(String(64), nullable=False)
     email: Mapped[str] = mapped_column(String(128), nullable=False)
 ```
+
+### 多租户物理资源隔离
+
+Framework 提供三种资源管理器，支持租户级物理隔离：
+
+#### DatabaseEnginePool - 数据库连接池管理
+
+```python
+from framework.database.core.engine_pool import get_engine_pool, get_tenant_session
+from framework.tenant.protocols import TenantDatabaseConfig
+
+# 初始化默认引擎
+from framework.database.core.engine_pool import init_default_engine
+init_default_engine("postgresql+asyncpg://user:pass@localhost:5432/default_db")
+
+# 获取租户会话
+config = TenantDatabaseConfig(
+    host="localhost",
+    port=5432,
+    database="tenant_001_db",
+    username="user",
+    password="password",
+)
+async with get_tenant_session("tenant-001", config) as session:
+    # 使用租户独立数据库
+    result = await session.execute(select(User))
+```
+
+#### TenantStorageManager - 存储桶路由
+
+```python
+from framework.storage.tenant_storage_manager import get_storage_manager, init_storage_manager
+from framework.tenant.protocols import TenantStorageConfig
+
+# 初始化
+init_storage_manager(default_storage, "default-bucket")
+
+# 上传文件到租户独立存储桶
+config = TenantStorageConfig(bucket="tenant-001-bucket")
+url = await manager.upload("avatars/user.jpg", data, "tenant-001", config)
+
+# 下载文件
+data = await manager.download("avatars/user.jpg", "tenant-001", config)
+```
+
+#### TenantCacheManager - Redis DB 路由
+
+```python
+from framework.cache.tenant_cache_manager import get_cache_manager, init_cache_manager
+from framework.tenant.protocols import TenantCacheConfig
+
+# 初始化
+init_cache_manager(default_redis_client)
+
+# 使用租户独立 Redis DB
+config = TenantCacheConfig(db=3)
+client = await manager.get_client("tenant-001", config)
+await manager.set("key", "value", "tenant-001", config)
+```
+
+### 敏感信息加密
+
+```python
+from framework.utils.crypto import encrypt, decrypt, generate_tenant_key
+
+# 生成租户加密密钥
+tenant_key = generate_tenant_key()
+
+# 加密敏感信息（如数据库密码）
+encrypted = encrypt("my_database_password")
+
+# 解密
+decrypted = decrypt(encrypted)
+```
+
+#### 加密配置
+
+通过环境变量设置主密钥：
+
+```bash
+export TENANT_ENCRYPTION_MASTER_KEY="your_64_char_hex_key"
+```
+
+开发环境会自动生成临时密钥。
 
 ## 设计模式
 
