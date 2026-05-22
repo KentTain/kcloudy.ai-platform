@@ -13,6 +13,8 @@ from loguru import logger
 from demo.common.exception_handler import register_exception_handlers
 from framework.common.time import ChinaTimeZone
 from framework.database.core.engine import setup_engine
+from framework.tenant.protocols import register_tenant_provider
+from iam.services.tenant_provider_impl import iam_tenant_provider
 from demo.configs import settings
 
 _logger = logger.bind(name=__name__)
@@ -35,6 +37,9 @@ async def lifespan(app: FastAPI):
         pool_size=sqlalchemy_config.pool.size,
         max_overflow=sqlalchemy_config.pool.max_overflow,
     )
+
+    # 注册 TenantProvider
+    register_tenant_provider(iam_tenant_provider)
 
     # 初始化默认租户管理员
     from iam.initializers.tenant_admin_initializer import init_tenant_admin

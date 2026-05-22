@@ -5,46 +5,69 @@
 """
 
 from contextvars import ContextVar
-from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, Protocol
+from dataclasses import dataclass
+from datetime import datetime
+from typing import Any
 
-if TYPE_CHECKING:
-    pass
-
-
-class TenantInfo(Protocol):
-    """租户信息协议"""
-
-    @property
-    def id(self) -> str: ...
-
-    @property
-    def name(self) -> str: ...
-
-    @property
-    def code(self) -> str: ...
-
-    @property
-    def status(self) -> str: ...
+from framework.tenant.protocols import (
+    TenantDatabaseConfig,
+    TenantInfo,
+    TenantQueueConfig,
+    TenantPubSubConfig,
+    TenantStorageConfig,
+)
 
 
 @dataclass
 class SimpleTenant:
-    """简化的租户信息，用于上下文存储"""
+    """
+    简化的租户信息，用于上下文存储
 
+    实现 TenantInfo Protocol。
+    """
+
+    # 基础信息
     id: str
     name: str
     code: str
     status: str = "active"
 
+    # 时间信息（可选）
+    expired_at: datetime | None = None
+
+    # 联系人信息（可选）
+    contact_name: str | None = None
+    contact_email: str | None = None
+    contact_phone: str | None = None
+
+    # 资源配置（可选，支持租户级隔离）
+    database: TenantDatabaseConfig | None = None
+    storage: TenantStorageConfig | None = None
+    queue: TenantQueueConfig | None = None
+    pubsub: TenantPubSubConfig | None = None
+
     @classmethod
     def from_model(cls, model: Any) -> "SimpleTenant":
-        """从 ORM 模型创建"""
+        """从 ORM 模型创建
+
+        注意：当前仅提取基础信息和联系人字段。
+        资源配置（database/storage/queue/pubsub）需要在业务层单独设置，
+        或通过扩展 ORM 模型添加资源配置字段后在此处映射。
+        """
         return cls(
             id=model.id,
             name=model.name,
             code=model.code,
             status=model.status,
+            expired_at=getattr(model, "expired_at", None),
+            contact_name=getattr(model, "contact_name", None),
+            contact_email=getattr(model, "contact_email", None),
+            contact_phone=getattr(model, "contact_phone", None),
+            # 资源配置：当前 ORM 模型暂未支持，待扩展
+            # database=_extract_database_config(model),
+            # storage=_extract_storage_config(model),
+            # queue=_extract_queue_config(model),
+            # pubsub=_extract_pubsub_config(model),
         )
 
 

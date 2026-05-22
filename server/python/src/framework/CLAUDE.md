@@ -152,3 +152,41 @@ pytest tests/framework/cache -v
 2. 使用 Protocol 定义接口，支持类型检查
 3. 配置支持环境变量覆盖
 4. 仅支持单元测试，不做集成测试
+
+## 模块依赖规则
+
+**framework 模块是底层基础设施，禁止引用业务模块（demo、iam 等）。**
+
+```text
+✅ 正确的依赖方向：
+demo ──────▶ framework
+iam ───────▶ framework
+
+❌ 禁止的依赖方向：
+framework ──▶ demo
+framework ──▶ iam
+```
+
+### 依赖倒置解决方案
+
+如果 framework 需要业务模块的能力，使用以下方式：
+
+1. **定义 Protocol 接口**：在 framework 中定义抽象接口
+2. **业务模块实现 Protocol**：在 iam/demo 中实现接口
+3. **应用启动时注入实现**：通过全局注册机制注入
+
+示例：`framework/tenant/protocols.py` 的 `TenantProvider` 设计
+
+```python
+# framework/tenant/protocols.py
+class TenantProvider(Protocol):
+    async def get_tenant(self, tenant_id: str) -> TenantInfo | None: ...
+
+# iam/services/tenant_provider_impl.py
+class IamTenantProvider(TenantProvider):
+    async def get_tenant(self, tenant_id: str) -> TenantInfo | None:
+        # 具体实现...
+
+# application_web.py
+register_tenant_provider(iam_tenant_provider)
+```

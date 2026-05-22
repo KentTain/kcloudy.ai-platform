@@ -8,8 +8,8 @@ from typing import Any, Callable, Awaitable
 from loguru import logger
 
 from framework.queue.task_message import TaskMessage
-from framework.tenant.context import TenantContext, SimpleTenant
-from iam.services.tenant_service import TenantService
+from framework.tenant.context import TenantContext
+from framework.tenant.protocols import get_tenant_provider
 
 _logger = logger.bind(name=__name__)
 
@@ -92,9 +92,10 @@ class TenantTaskExecutor:
             tenant_id: 租户 ID
         """
         try:
-            tenant = await TenantService.get_by_id(tenant_id)
+            provider = get_tenant_provider()
+            tenant = await provider.get_tenant(tenant_id)
             if tenant:
-                TenantContext.set_current_tenant(SimpleTenant.from_model(tenant))
+                TenantContext.set_current_tenant(tenant)
             else:
                 _logger.warning(f"租户不存在，无法恢复上下文: {tenant_id}")
         except Exception as e:

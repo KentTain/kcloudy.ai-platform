@@ -35,7 +35,16 @@ from framework.tenant.exceptions import (
     TenantResolveError,
 )
 from framework.tenant.middleware import TenantMiddleware
-from framework.tenant.models import Tenant, TenantSetting
+from framework.tenant.protocols import (
+    TenantDatabaseConfig,
+    TenantInfo,
+    TenantProvider,
+    TenantPubSubConfig,
+    TenantQueueConfig,
+    TenantStorageConfig,
+    get_tenant_provider,
+    register_tenant_provider,
+)
 from framework.tenant.resolver import TenantResolver
 
 __all__ = [
@@ -69,9 +78,15 @@ __all__ = [
     "TenantResolveError",
     # Middleware
     "TenantMiddleware",
-    # Models
-    "Tenant",
-    "TenantSetting",
+    # Protocols
+    "TenantDatabaseConfig",
+    "TenantInfo",
+    "TenantProvider",
+    "TenantPubSubConfig",
+    "TenantQueueConfig",
+    "TenantStorageConfig",
+    "get_tenant_provider",
+    "register_tenant_provider",
     # Resolver
     "TenantResolver",
 ]

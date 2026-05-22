@@ -4,18 +4,15 @@
 自动解析租户标识、验证租户状态、注入租户上下文。
 """
 
-from datetime import datetime
 from typing import TYPE_CHECKING, Callable
+from datetime import datetime
 
 from loguru import logger
-from sqlalchemy import select
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import JSONResponse
 
-from framework.database.core.engine import async_session
-from iam.models import Tenant, TenantStatus
 from framework.common.ctx import set_context, Context
-from framework.tenant.context import TenantContext, SimpleTenant
+from framework.tenant.context import TenantContext
 from framework.tenant.exceptions import (
     TenantAccessDeniedError,
     TenantError,
@@ -24,6 +21,7 @@ from framework.tenant.exceptions import (
     TenantNotFoundError,
     TenantResolveError,
 )
+from framework.tenant.protocols import get_tenant_provider
 from framework.tenant.resolver import TenantResolver
 
 if TYPE_CHECKING:
@@ -105,52 +103,44 @@ class TenantMiddleware(BaseHTTPMiddleware):
 
     async def _load_and_validate_tenant(
         self, tenant_id: str, request: "Request"
-    ) -> Tenant:
+    ):
         """加载租户信息并验证状态"""
-        async with async_session() as session:
-            # 查询租户
-            stmt = select(Tenant).where(Tenant.id == tenant_id)
-            result = await session.execute(stmt)
-            tenant = result.scalar_one_or_none()
+        # 通过 TenantProvider 获取租户
+        provider = get_tenant_provider()
+        tenant = await provider.get_tenant(tenant_id)
 
-            # 验证租户存在
-            if not tenant:
-                raise TenantNotFoundError(tenant_id)
+        # 验证租户存在
+        if not tenant:
+            raise TenantNotFoundError(tenant_id)
 
-            # 验证租户状态
-            if tenant.status != TenantStatus.ACTIVE:
-                raise TenantInactiveError(tenant_id)
+        # 验证租户状态
+        if tenant.status != "active":
+            raise TenantInactiveError(tenant_id)
 
-            # 验证租户未过期
-            if tenant.expired_at and tenant.expired_at < datetime.now():
-                raise TenantExpiredError(tenant_id)
+        # 验证租户未过期
+        if tenant.expired_at and tenant.expired_at < datetime.now():
+            raise TenantExpiredError(tenant_id)
 
-            # 验证用户有权访问该租户（如果有用户信息）
-            await self._validate_tenant_access(tenant_id, request, session)
+        # 验证用户有权访问该租户（如果有用户信息）
+        await self._validate_tenant_access(tenant_id, request, provider)
 
-            return tenant
+        return tenant
 
     async def _validate_tenant_access(
-        self, tenant_id: str, request: "Request", session
+        self, tenant_id: str, request: "Request", provider
     ) -> None:
         """验证用户有权访问租户
 
         如果请求中有用户信息，检查用户是否属于该租户。
         """
-        from iam.models import UserTenant
-
         user_id = self._get_user_id(request)
         if not user_id:
             return
 
-        # 检查用户-租户关联
-        stmt = select(UserTenant).where(
-            UserTenant.user_id == user_id, UserTenant.tenant_id == tenant_id
-        )
-        result = await session.execute(stmt)
-        user_tenant = result.scalar_one_or_none()
+        # 通过 TenantProvider 验证访问权限
+        has_access = await provider.validate_access(user_id, tenant_id)
 
-        if not user_tenant:
+        if not has_access:
             raise TenantAccessDeniedError(tenant_id)
 
     def _get_user_id(self, request: "Request") -> str | None:
@@ -165,7 +155,7 @@ class TenantMiddleware(BaseHTTPMiddleware):
                 return user["user_id"]
         return None
 
-    def _inject_context(self, tenant: Tenant) -> None:
+    def _inject_context(self, tenant) -> None:
         """注入租户上下文"""
         # 设置租户上下文
         TenantContext.set_current_tenant(tenant)
@@ -195,5 +185,3 @@ class TenantMiddleware(BaseHTTPMiddleware):
             return 400
         else:
             return 500
-
-
