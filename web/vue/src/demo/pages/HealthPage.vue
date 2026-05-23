@@ -1,17 +1,11 @@
 <script setup lang="ts">
-/**
- * HealthPage 健康检查页面
- */
 import { onMounted, ref } from "vue";
-import { getHealth } from "@/demo/api/health";
-import CommonCard from "@/components/CommonCard.vue";
-import CommonButton from "@/components/CommonButton.vue";
-import CommonLoading from "@/components/CommonLoading.vue";
-
-interface HealthStatus {
-  status: string;
-  timestamp: string;
-}
+import { getHealth, type HealthStatus } from "@/demo/api/health";
+import AppPage from "@/framework/layouts/components/AppPage.vue";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const healthStatus = ref<HealthStatus | null>(null);
 const loading = ref(false);
@@ -34,83 +28,49 @@ onMounted(fetchHealth);
 </script>
 
 <template>
-  <div class="health-page">
-    <CommonCard title="健康检查">
-      <div v-if="loading" class="health-page__loading">
-        <CommonLoading text="检查中..." />
-      </div>
+  <AppPage title="健康检查" variant="list">
+    <div v-if="loading" class="flex flex-col gap-4">
+      <Card>
+        <CardHeader>
+          <Skeleton class="h-5 w-24" />
+        </CardHeader>
+        <CardContent class="flex flex-col gap-2">
+          <Skeleton class="h-4 w-40" />
+          <Skeleton class="h-4 w-64" />
+        </CardContent>
+      </Card>
+    </div>
 
-      <div v-else-if="error" class="health-page__error">
-        <p>{{ error }}</p>
-        <CommonButton @click="fetchHealth">重试</CommonButton>
-      </div>
+    <Card v-else-if="error">
+      <CardHeader>
+        <CardTitle>检查失败</CardTitle>
+      </CardHeader>
+      <CardContent class="flex flex-col gap-3">
+        <p class="text-destructive text-sm">{{ error }}</p>
+        <Button variant="outline" @click="fetchHealth">重试</Button>
+      </CardContent>
+    </Card>
 
-      <div v-else-if="healthStatus" class="health-page__status">
-        <div class="health-page__item">
-          <span class="health-page__label">状态</span>
-          <span :class="['health-page__value', 'health-page__value--success']">
+    <Card v-else-if="healthStatus">
+      <CardHeader>
+        <CardTitle>服务状态</CardTitle>
+      </CardHeader>
+      <CardContent class="flex flex-col gap-4">
+        <div class="flex items-center gap-3">
+          <span class="text-muted-foreground text-sm font-medium">状态</span>
+          <Badge :variant="healthStatus.status === 'healthy' ? 'success' : 'destructive'">
             {{ healthStatus.status }}
-          </span>
+          </Badge>
         </div>
-        <div class="health-page__item">
-          <span class="health-page__label">时间戳</span>
-          <span class="health-page__value">{{ healthStatus.timestamp }}</span>
+        <div class="flex items-center gap-3">
+          <span class="text-muted-foreground text-sm font-medium">时间戳</span>
+          <span class="font-mono text-sm">{{ healthStatus.timestamp }}</span>
         </div>
-      </div>
+      </CardContent>
+    </Card>
 
-      <div class="health-page__actions">
-        <CommonButton variant="outline" @click="fetchHealth">刷新</CommonButton>
-      </div>
-    </CommonCard>
-  </div>
+    <div v-if="!loading" class="mt-4">
+      <Button variant="outline" @click="fetchHealth">刷新</Button>
+    </div>
+  </AppPage>
 </template>
-
-<style scoped>
-.health-page__loading {
-  padding: 2rem;
-  text-align: center;
-}
-
-.health-page__error {
-  padding: 1rem;
-  text-align: center;
-  color: var(--color-danger);
-}
-
-.health-page__error p {
-  margin: 0 0 1rem;
-}
-
-.health-page__status {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.health-page__item {
-  display: flex;
-  gap: 1rem;
-  align-items: center;
-}
-
-.health-page__label {
-  font-weight: 500;
-  color: var(--color-text-muted);
-  min-width: 80px;
-}
-
-.health-page__value {
-  color: var(--color-text);
-  font-family: var(--font-mono);
-}
-
-.health-page__value--success {
-  color: var(--color-success);
-}
-
-.health-page__actions {
-  margin-top: 1.5rem;
-  padding-top: 1rem;
-  border-top: 1px solid var(--color-border);
-}
-</style>
