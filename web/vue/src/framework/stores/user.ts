@@ -2,6 +2,15 @@ import { defineStore } from "pinia";
 import { ref, computed } from "vue";
 
 /**
+ * 租户信息类型
+ */
+export interface TenantInfo {
+  id: string;
+  name: string;
+  code: string;
+}
+
+/**
  * 用户信息类型
  */
 export interface UserInfo {
@@ -12,6 +21,10 @@ export interface UserInfo {
   email?: string;
   roles: string[];
   permissions: string[];
+  tenantId?: string;
+  tenantName?: string;
+  tenantCode?: string;
+  tenants?: TenantInfo[];
 }
 
 /**
@@ -26,6 +39,19 @@ export const useUserStore = defineStore("user", () => {
 
   // 是否登录
   const isLoggedIn = computed(() => !!token.value);
+
+  // 当前租户
+  const currentTenant = computed<TenantInfo | null>(() => {
+    if (!userInfo.value?.tenantId) return null;
+    return {
+      id: userInfo.value.tenantId,
+      name: userInfo.value.tenantName || "",
+      code: userInfo.value.tenantCode || "",
+    };
+  });
+
+  // 租户列表
+  const tenants = computed<TenantInfo[]>(() => userInfo.value?.tenants || []);
 
   // 设置 Token
   const setToken = (newToken: string) => {
@@ -61,6 +87,8 @@ export const useUserStore = defineStore("user", () => {
     userInfo,
     token,
     isLoggedIn,
+    currentTenant,
+    tenants,
     setToken,
     setUserInfo,
     logout,

@@ -250,3 +250,25 @@ export interface SwitchTenantVo {
   refresh_token: string;
   expires_in: number;
 }
+
+// 登录历史类型
+export interface LoginHistory {
+  id: string;
+  user_id: string;
+  login_at: string;
+  ip_address: string;
+  user_agent?: string;
+  device_type?: "desktop" | "mobile" | "tablet";
+  browser?: string;
+  os?: string;
+  status: "success" | "failed";
+  location?: string;
+}
+
+// 登录历史查询参数
+export interface LoginHistoryQueryParams {
+  page?: number;
+  page_size?: number;
+  start_date?: string;
+  end_date?: string;
+}

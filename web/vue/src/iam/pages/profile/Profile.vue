@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
-import { changePassword, updateCurrentUser } from "@/iam/api/auth";
+import { onMounted, ref, watch } from "vue";
+import { changePassword, getLoginHistory, updateCurrentUser } from "@/iam/api/auth";
 import { useTenantStore } from "@/iam/stores/tenant";
 import { getErrorMessage, notifyError, notifySuccess } from "@/iam/utils/feedback";
 import { useUserStore } from "@/framework/stores";
+import type { LoginHistory } from "@/iam/types";
 
 const frameworkUserStore = useUserStore();
 const tenantStore = useTenantStore();
@@ -24,6 +25,14 @@ const passwordForm = ref({
 
 const loading = ref(false);
 const profileLoading = ref(false);
+
+// 登录历史状态
+const loginHistory = ref<LoginHistory[]>([]);
+const loginHistoryLoading = ref(false);
+const loginHistoryTotal = ref(0);
+const loginHistoryPage = ref(1);
+const loginHistoryPageSize = ref(20);
+const dateRange = ref<[string, string] | null>(null);
 
 const handleProfileSubmit = async () => {
   profileLoading.value = true;
@@ -86,6 +95,69 @@ const handleSwitchTenant = async (tenantId: string) => {
     notifyError(getErrorMessage(error, "租户切换失败"));
   }
 };
+
+// 加载登录历史
+const loadLoginHistory = async () => {
+  loginHistoryLoading.value = true;
+  try {
+    const params: Record<string, unknown> = {
+      page: loginHistoryPage.value,
+      page_size: loginHistoryPageSize.value,
+    };
+
+    if (dateRange.value && dateRange.value[0] && dateRange.value[1]) {
+      params.start_date = dateRange.value[0];
+      params.end_date = dateRange.value[1];
+    }
+
+    const response = await getLoginHistory(params);
+    loginHistory.value = response.data.items;
+    loginHistoryTotal.value = response.data.total;
+  } catch (error) {
+    notifyError(getErrorMessage(error, "获取登录历史失败"));
+  } finally {
+    loginHistoryLoading.value = false;
+  }
+};
+
+// 监听页码变化
+watch(loginHistoryPage, () => {
+  loadLoginHistory();
+});
+
+// 监听日期范围变化
+watch(dateRange, () => {
+  loginHistoryPage.value = 1;
+  loadLoginHistory();
+});
+
+// 格式化日期时间
+const formatDateTime = (dateStr: string) => {
+  if (!dateStr) return "-";
+  return new Date(dateStr).toLocaleString("zh-CN");
+};
+
+// 格式化设备类型
+const formatDeviceType = (type?: string) => {
+  const typeMap: Record<string, string> = {
+    desktop: "桌面端",
+    mobile: "移动端",
+    tablet: "平板",
+  };
+  return type ? typeMap[type] || type : "-";
+};
+
+// 格式化登录状态
+const formatLoginStatus = (status: string) => {
+  return status === "success" ? "成功" : "失败";
+};
+
+// 监听 Tab 切换，加载登录历史
+watch(activeTab, (newTab) => {
+  if (newTab === "login-history") {
+    loadLoginHistory();
+  }
+});
 
 onMounted(async () => {
   await tenantStore.fetchMyTenants();
@@ -218,6 +290,72 @@ onMounted(async () => {
                 </el-table-column>
               </el-table>
             </el-tab-pane>
+
+            <el-tab-pane label="登录历史" name="login-history">
+              <div class="login-history">
+                <div class="login-history__filter">
+                  <el-date-picker
+                    v-model="dateRange"
+                    type="daterange"
+                    range-separator="至"
+                    start-placeholder="开始日期"
+                    end-placeholder="结束日期"
+                    value-format="YYYY-MM-DD"
+                    clearable
+                  />
+                </div>
+
+                <el-table
+                  :data="loginHistory"
+                  stripe
+                  v-loading="loginHistoryLoading"
+                >
+                  <el-table-column label="登录时间" min-width="180">
+                    <template #default="{ row }">
+                      {{ formatDateTime(row.login_at) }}
+                    </template>
+                  </el-table-column>
+                  <el-table-column prop="ip_address" label="IP 地址" width="140" />
+                  <el-table-column label="设备类型" width="100">
+                    <template #default="{ row }">
+                      {{ formatDeviceType(row.device_type) }}
+                    </template>
+                  </el-table-column>
+                  <el-table-column prop="browser" label="浏览器" width="120">
+                    <template #default="{ row }">
+                      {{ row.browser || "-" }}
+                    </template>
+                  </el-table-column>
+                  <el-table-column prop="os" label="操作系统" width="120">
+                    <template #default="{ row }">
+                      {{ row.os || "-" }}
+                    </template>
+                  </el-table-column>
+                  <el-table-column label="状态" width="80">
+                    <template #default="{ row }">
+                      <el-tag :type="row.status === 'success' ? 'success' : 'danger'" size="small">
+                        {{ formatLoginStatus(row.status) }}
+                      </el-tag>
+                    </template>
+                  </el-table-column>
+                  <el-table-column prop="location" label="位置" min-width="120">
+                    <template #default="{ row }">
+                      {{ row.location || "-" }}
+                    </template>
+                  </el-table-column>
+                </el-table>
+
+                <div class="login-history__pagination">
+                  <el-pagination
+                    v-model:current-page="loginHistoryPage"
+                    v-model:page-size="loginHistoryPageSize"
+                    :page-sizes="[10, 20, 50, 100]"
+                    :total="loginHistoryTotal"
+                    layout="total, sizes, prev, pager, next, jumper"
+                  />
+                </div>
+              </div>
+            </el-tab-pane>
           </el-tabs>
         </el-card>
       </el-col>
@@ -266,5 +404,21 @@ onMounted(async () => {
 .password-form {
   max-width: 500px;
   margin-top: 16px;
+}
+
+.login-history {
+  margin-top: 16px;
+}
+
+.login-history__filter {
+  margin-bottom: 16px;
+  display: flex;
+  gap: 12px;
+}
+
+.login-history__pagination {
+  margin-top: 16px;
+  display: flex;
+  justify-content: flex-end;
 }
 </style>

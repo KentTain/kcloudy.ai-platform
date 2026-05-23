@@ -12,9 +12,53 @@ Vue 前端使用 Vue 3 + TypeScript + Vite 构建，提供 AI 助手平台演示
 - 构建：Vite 6.x
 - 路由：Vue Router 4.x
 - 状态管理：Pinia 3.x
+- UI 组件库：shadcn-vue
+- 无样式原语：Radix Vue
 - 样式：Tailwind CSS v4
 - 代码质量：Biome
 - 测试：Vitest, @vue/test-utils
+
+## UI 组件技术
+
+### shadcn-vue
+
+shadcn-vue 是基于 Radix Vue + Tailwind CSS 的组件库。与传统组件库不同，shadcn-vue 的组件代码会被复制到项目中，而非作为依赖安装。
+
+```bash
+# 添加组件
+npx shadcn-vue@latest add button
+npx shadcn-vue@latest add dialog
+npx shadcn-vue@latest add form
+```
+
+组件代码将被复制到 `src/components/ui/` 目录，可完全定制。
+
+### Radix Vue
+
+Radix Vue 提供无样式的可访问性原语组件，是 shadcn-vue 的底层依赖。
+
+```typescript
+// 当 shadcn-vue 没有需要的组件时，可直接使用 Radix Vue
+import { DropdownMenu } from 'radix-vue'
+```
+
+### 技术关系
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  shadcn-vue                                                 │
+│  ├── Button, Dialog, Form, Table...                         │
+│  ├── 基于 Radix Vue 原语                                    │
+│  └── Tailwind CSS 样式                                      │
+├─────────────────────────────────────────────────────────────┤
+│  Radix Vue                                                  │
+│  ├── 提供可访问性原语                                        │
+│  └── 无样式，由 shadcn-vue 封装                              │
+├─────────────────────────────────────────────────────────────┤
+│  Tailwind CSS v4                                            │
+│  └── 原子化 CSS，提供样式基础                                │
+└─────────────────────────────────────────────────────────────┘
+```
 
 ## 项目结构
 
@@ -22,6 +66,7 @@ Vue 前端使用 Vue 3 + TypeScript + Vite 构建，提供 AI 助手平台演示
 web/vue/
 ├── src/                       # 源码目录
 │   ├── components/            # 通用组件
+│   │   └── ui/                # shadcn-vue 组件
 │   ├── composables/           # 组合式函数 (Vue)
 │   ├── framework/             # Framework 前端UI框架模块
 │   ├── demo/                  # Demo 业务模块
@@ -41,12 +86,13 @@ web/vue/
 
 ## 功能模块
 
-| 模块     | 说明      | 详细文档      |
-|----|----|-----|
-| components | 通用组件  | [src/components/CLAUDE.md](src/components/CLAUDE.md) |
-| composables | 组合式函数 (Vue)  | [src/composables/CLAUDE.md](src/composables/CLAUDE.md) |
-| framework | 基础设施：前端UI框架、路由、状态管理  | [src/framework/CLAUDE.md](src/framework/CLAUDE.md) |
-| demo     | 业务演示模块：健康检查、知识库管理     | [src/demo/CLAUDE.md](src/demo/CLAUDE.md)         |
+| 模块 | 说明 | 详细文档 |
+|------|------|----------|
+| components/ui | shadcn-vue UI 组件 | 由 shadcn-vue CLI 管理 |
+| components | 通用组件 | [src/components/CLAUDE.md](src/components/CLAUDE.md) |
+| composables | 组合式函数 (Vue) | [src/composables/CLAUDE.md](src/composables/CLAUDE.md) |
+| framework | 基础设施：前端UI框架、路由、状态管理 | [src/framework/CLAUDE.md](src/framework/CLAUDE.md) |
+| demo | 业务演示模块：健康检查、知识库管理 | [src/demo/CLAUDE.md](src/demo/CLAUDE.md) |
 
 ## 开发命令
 

@@ -46,7 +46,9 @@ web/
 | **语言** | TypeScript 5.x | TypeScript 5.x | 相同 |
 | **路由** | Vue Router 4.x | TanStack Router | 都支持类型安全路由 |
 | **状态管理** | Pinia 3.x | Zustand | 相似的 store 模式 |
-| **样式** | Tailwind CSS v4 | Tailwind CSS v4 | 相同 |
+| **UI 组件库** | shadcn-vue | shadcn/ui | 统一的组件风格 |
+| **无样式原语** | Radix Vue | Radix UI | 可访问性原语 |
+| **样式方案** | Tailwind CSS v4 | Tailwind CSS v4 | 相同 |
 | **HTTP 客户端** | Axios | Axios | 相同 |
 | **测试框架** | Vitest | Vitest | 相同 |
 | **Lint/Format** | Biome | Biome | 相同 |
@@ -71,6 +73,8 @@ web/
 |------|------|
 | Vite 6.x | 开发服务器、构建工具 |
 | TypeScript 5.x | 类型系统 |
+| shadcn | UI 组件库 |
+| Radix | 无样式原语（可访问性） |
 | Tailwind CSS v4 | 样式框架 |
 | Axios | HTTP 客户端 |
 | Vitest | 测试框架 |

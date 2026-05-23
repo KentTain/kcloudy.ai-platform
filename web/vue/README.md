@@ -8,6 +8,8 @@ InitProject AI 助手平台前端应用（Vue 版本），基于 Vue 3 + TypeScr
 - **构建工具**: Vite 6.x
 - **路由**: Vue Router 4.x
 - **状态管理**: Pinia 3.x
+- **UI 组件库**: shadcn-vue
+- **无样式原语**: Radix Vue
 - **样式**: Tailwind CSS v4
 - **HTTP 客户端**: Axios
 - **代码质量**: Biome
@@ -54,6 +56,7 @@ web/vue/
 │   ├── demo/                  # Demo 业务模块
 │   ├── framework/             # Framework UI框架模块
 │   ├── components/            # 通用组件
+│   │   └── ui/                # shadcn-vue 组件
 │   ├── composables/           # 组合式函数
 │   ├── App.vue                # 根组件
 │   └── main.ts                # 应用入口

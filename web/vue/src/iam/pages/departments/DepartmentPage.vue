@@ -2,6 +2,7 @@
 import { computed, onMounted, ref } from "vue";
 import { addDepartmentUser, removeDepartmentUser } from "@/iam/api/department";
 import { useDepartmentStore } from "@/iam/stores/department";
+import DepartmentTree from "@/iam/components/DepartmentTree.vue";
 import type { CreateDepartmentParams, Department, UpdateDepartmentParams } from "@/iam/types";
 import { confirmAction, getErrorMessage, notifyError, notifySuccess } from "@/iam/utils/feedback";
 
@@ -58,9 +59,12 @@ const loadDepartmentUsers = async () => {
   }
 };
 
-const handleNodeClick = async (data: Department) => {
-  currentDepartmentId.value = data.id;
-  leaderId.value = data.leader_id || "";
+const handleNodeClick = async (node: { id: string; data?: Department }) => {
+  const dept = node.data;
+  if (!dept) return;
+
+  currentDepartmentId.value = node.id;
+  leaderId.value = dept.leader_id || "";
   addUserId.value = "";
   addUserAsLeader.value = false;
   await loadDepartmentUsers();
@@ -199,11 +203,11 @@ onMounted(() => {
             </div>
           </template>
 
-          <el-tree
-            :data="departmentStore.departmentTree"
-            :props="{ children: 'children', label: 'name' }"
-            node-key="id"
-            default-expand-all
+          <DepartmentTree
+            :departments="departmentStore.departmentTree"
+            :model-value="currentDepartmentId || ''"
+            mode="single"
+            :default-expand-level="99"
             @node-click="handleNodeClick"
           />
         </el-card>

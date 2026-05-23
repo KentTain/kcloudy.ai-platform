@@ -3,6 +3,7 @@ import { ref, onMounted, computed } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useRoleStore } from "@/iam/stores/role";
 import { usePermissionStore } from "@/iam/stores/permission";
+import PermissionTree from "@/iam/components/PermissionTree.vue";
 import type { CreateRoleParams, UpdateRoleParams } from "@/iam/types";
 
 const route = useRoute();
@@ -101,15 +102,12 @@ onMounted(async () => {
         </el-form-item>
 
         <el-form-item label="权限分配">
-          <el-checkbox-group v-model="selectedPermissions">
-            <el-checkbox
-              v-for="perm in permissionStore.permissions"
-              :key="perm.id"
-              :label="perm.id"
-            >
-              {{ perm.name }} ({{ perm.resource }}:{{ perm.action }})
-            </el-checkbox>
-          </el-checkbox-group>
+          <div class="permission-tree-container">
+            <PermissionTree
+              v-model="selectedPermissions"
+              :permissions="permissionStore.permissions"
+            />
+          </div>
         </el-form-item>
 
         <el-form-item>
@@ -130,5 +128,14 @@ onMounted(async () => {
 
 .role-form {
   max-width: 800px;
+}
+
+.permission-tree-container {
+  width: 100%;
+  max-height: 400px;
+  overflow: auto;
+  border: 1px solid var(--el-border-color);
+  border-radius: 4px;
+  padding: 12px;
 }
 </style>

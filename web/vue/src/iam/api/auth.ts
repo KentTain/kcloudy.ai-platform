@@ -1,6 +1,15 @@
 import { get, post, put } from "@/framework/api/client";
 import { resetUserPassword } from "./user";
-import type { ApiResponse, LoginRequest, LoginResponse, UpdateUserParams, User } from "../types";
+import type {
+  ApiResponse,
+  LoginHistory,
+  LoginHistoryQueryParams,
+  LoginRequest,
+  LoginResponse,
+  PageResult,
+  UpdateUserParams,
+  User,
+} from "../types";
 
 /**
  * 用户登录
@@ -45,3 +54,9 @@ export const changePassword = (old_password: string, new_password: string) =>
  * 重置密码（管理员）
  */
 export const resetPassword = resetUserPassword;
+
+/**
+ * 获取登录历史
+ */
+export const getLoginHistory = (params?: LoginHistoryQueryParams) =>
+  get<ApiResponse<PageResult<LoginHistory>>>("/v1/iam/auth/login-history", params as Record<string, unknown>);
