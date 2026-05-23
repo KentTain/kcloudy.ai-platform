@@ -44,6 +44,28 @@ class TestIAMImports:
         assert LoginRequest is not None
         assert UserVo is not None
 
+    def test_import_admin_user_management_schemas(self):
+        """测试管理员用户管理 Schema 导入"""
+        from iam.schemas.user import (
+            AdminPasswordResetRequest,
+            AdminPasswordResetVo,
+            AdminUserCreateRequest,
+            AdminUserUpdateRequest,
+            UserDepartmentAssignRequest,
+            UserRoleAssignRequest,
+            UserStatusUpdateRequest,
+        )
+        from iam.schemas.department import UserDepartmentRequest
+
+        assert AdminUserCreateRequest(username="admin", password="Password123").username == "admin"
+        assert AdminUserUpdateRequest(nickname="管理员").nickname == "管理员"
+        assert UserStatusUpdateRequest(status="active").status == "active"
+        assert UserRoleAssignRequest(role_ids=["role-1"]).role_ids == ["role-1"]
+        assert UserDepartmentAssignRequest(department_ids=["dept-1"]).department_ids == ["dept-1"]
+        assert AdminPasswordResetRequest(new_password=None).new_password is None
+        assert AdminPasswordResetVo(password="Tempabcd123").password == "Tempabcd123"
+        assert UserDepartmentRequest(user_id="user-1").user_id == "user-1"
+
     def test_import_services(self):
         """测试服务导入"""
         from iam.services import (
@@ -63,6 +85,35 @@ class TestIAMImports:
         from iam.controllers import router
 
         assert router is not None
+
+    def test_user_management_routes_registered(self):
+        """测试用户管理路由已注册"""
+        from iam.controllers.user_controller import router
+
+        routes = {(next(iter(route.methods)), route.path) for route in router.routes}
+
+        assert ("GET", "") in routes
+        assert ("POST", "") in routes
+        assert ("GET", "/{user_id}") in routes
+        assert ("PUT", "/{user_id}") in routes
+        assert ("DELETE", "/{user_id}") in routes
+        assert ("POST", "/{user_id}/enable") in routes
+        assert ("POST", "/{user_id}/disable") in routes
+        assert ("POST", "/{user_id}/lock") in routes
+        assert ("PUT", "/{user_id}/status") in routes
+        assert ("POST", "/{user_id}/reset-password") in routes
+        assert ("GET", "/{user_id}/roles") in routes
+        assert ("POST", "/{user_id}/roles") in routes
+        assert ("GET", "/{user_id}/departments") in routes
+        assert ("POST", "/{user_id}/departments") in routes
+
+    def test_department_user_remove_route_registered(self):
+        """测试部门用户移除路由已注册"""
+        from iam.controllers.department_controller import router
+
+        routes = {(next(iter(route.methods)), route.path) for route in router.routes}
+
+        assert ("DELETE", "/{department_id}/users/{user_id}") in routes
 
 
 class TestPasswordStrength:

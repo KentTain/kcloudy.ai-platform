@@ -59,7 +59,20 @@
       "Bash(python -c \"from iam.models import Tenant, TenantAdmin, UserTenant\")",
       "Bash(python -c \"from iam.services.tenant_service import TenantService\")",
       "Bash(python -c \"from iam.controllers.admin.tenant_controller import router\")",
-      "Bash(python)"
+      "Bash(python)",
+      "Bash(python -c \"import ast; ast.parse\\(open\\('server/python/src/application_web.py'\\).read\\(\\)\\)\")",
+      "Bash(python -c \"import ast; ast.parse\\(open\\('server/python/src/iam/middlewares/admin_auth_middleware.py'\\).read\\(\\)\\)\")",
+      "Bash(python -c \"import ast; ast.parse\\(open\\('server/python/src/demo/models/dataset.py'\\).read\\(\\)\\)\")",
+      "Bash(python -c \"from pathlib import Path; p=Path\\('server/python/src/application_web.py'\\); s=p.read_text\\(encoding='utf-8'\\); print\\('NUL', s.count\\(chr\\(0\\)\\)\\); import ast; ast.parse\\(s\\); print\\('ok'\\)\")",
+      "Bash(python -c \"from pathlib import Path; p=Path\\('server/python/src/iam/middlewares/admin_auth_middleware.py'\\); s=p.read_text\\(encoding='utf-8'\\); print\\('NUL', s.count\\(chr\\(0\\)\\)\\); import ast; ast.parse\\(s\\); print\\('ok'\\)\")",
+      "Bash(python -c \"from pathlib import Path; p=Path\\('server/python/src/demo/models/dataset.py'\\); s=p.read_text\\(encoding='utf-8'\\); print\\('NUL', s.count\\(chr\\(0\\)\\)\\); import ast; ast.parse\\(s\\); print\\('ok'\\)\")",
+      "Bash(python -c \"from src.application_web import app; print\\('OK'\\)\")",
+      "Bash(openspec archive *)",
+      "Bash(pnpm *)",
+      "Bash(openspec verify *)",
+      "Bash(git *)",
+      "Bash(python *)",
+      "Bash(openspec --help)"
     ]
   }
 }
