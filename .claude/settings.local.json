@@ -72,7 +72,13 @@
       "Bash(openspec verify *)",
       "Bash(git *)",
       "Bash(python *)",
-      "Bash(openspec --help)"
+      "Bash(openspec --help)",
+      "Bash(npm view *)",
+      "Bash(npx shadcn-vue@latest init --yes --defaults)",
+      "Bash(npx shadcn-vue@latest add button dialog input select table card --yes)",
+      "Bash(grep -q \"^2026-05-23-complete-iam-frontend-vue$\")",
+      "Bash(openspec validate *)",
+      "Bash(openspec change *)"
     ]
   }
 }
