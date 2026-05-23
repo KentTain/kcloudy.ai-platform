@@ -2,6 +2,9 @@ import type { RouteRecordRaw } from "vue-router";
 import { createRouter, createWebHistory } from "vue-router";
 import AdminLayout from "@/framework/layouts/AdminLayout.vue";
 
+// IAM 模块路由
+import { iamRoutes } from "@/iam/router";
+
 /**
  * 静态路由配置（无需权限验证）
  */
@@ -52,6 +55,8 @@ export const asyncRoutes: RouteRecordRaw[] = [
         component: () => import("@/demo/pages/DatasetsPage.vue"),
         meta: { title: "知识库", icon: "database", requiresAuth: true },
       },
+      // IAM 模块路由
+      ...iamRoutes,
     ],
   },
 ];

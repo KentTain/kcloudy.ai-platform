@@ -4,15 +4,15 @@
  */
 import { ref } from "vue";
 import { useRouter } from "vue-router";
-import { useUserStore } from "@/framework/stores";
+import { useAuthStore } from "@/iam/stores/auth";
 import CommonButton from "@/components/ui/CommonButton.vue";
 import CommonInput from "@/components/ui/CommonInput.vue";
 import CommonCard from "@/components/ui/CommonCard.vue";
 
 const router = useRouter();
-const userStore = useUserStore();
+const authStore = useAuthStore();
 
-const username = ref("");
+const username = ref(localStorage.getItem("last_login_account") || "");
 const password = ref("");
 const loading = ref(false);
 const error = ref("");
@@ -27,21 +27,16 @@ const handleLogin = async () => {
   error.value = "";
 
   try {
-    // Mock 登录
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-
-    userStore.setToken("mock-token");
-    userStore.setUserInfo({
-      id: "1",
-      username: username.value,
-      nickname: username.value,
-      roles: ["admin"],
-      permissions: ["*"],
+    await authStore.login({
+      account: username.value,
+      password: password.value,
     });
-
+    localStorage.setItem("last_login_account", username.value);
     router.push("/");
-  } catch {
-    error.value = "登录失败，请重试";
+  } catch (err: any) {
+    // 处理登录失败
+    const message = err?.response?.data?.msg || err?.message || "登录失败，请重试";
+    error.value = message;
   } finally {
     loading.value = false;
   }

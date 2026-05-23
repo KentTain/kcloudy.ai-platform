@@ -4,12 +4,15 @@
 提供用户注册、信息管理、密码管理等功能。
 """
 
+import secrets
+import string
+
 from datetime import datetime, timezone
 
 from loguru import logger
-from sqlalchemy import select
+from sqlalchemy import func, or_, select
 
-from iam.models import User, UserStatus
+from iam.models import User, UserDepartment, UserStatus
 from iam.schemas.user import UserVo
 from framework.database.core.engine import async_session
 from framework.utils.crypto import hash_password, verify_password, validate_password_strength
@@ -132,10 +135,20 @@ class UserService:
             if avatar is not None:
                 user.avatar = avatar
             if email is not None:
-                # TODO: 验证邮箱唯一性
+                # 检查邮箱唯一性
+                if email != user.email:
+                    stmt = select(User).where(User.email == email, User.id != user_id)
+                    result = await session.execute(stmt)
+                    if result.scalar_one_or_none():
+                        raise ValueError("邮箱已被其他用户使用")
                 user.email = email
             if phone is not None:
-                # TODO: 验证手机号唯一性
+                # 检查手机号唯一性
+                if phone != user.phone:
+                    stmt = select(User).where(User.phone == phone, User.id != user_id)
+                    result = await session.execute(stmt)
+                    if result.scalar_one_or_none():
+                        raise ValueError("手机号已被其他用户使用")
                 user.phone = phone
 
             await session.commit()
@@ -337,6 +350,255 @@ class UserService:
             users = list(result.scalars().all())
 
             return users, total
+
+    @staticmethod
+    async def create_user(
+        username: str,
+        password: str,
+        email: str | None = None,
+        phone: str | None = None,
+        nickname: str | None = None,
+    ) -> User:
+        """
+        管理员创建用户
+
+        Args:
+            username: 用户名
+            password: 密码
+            email: 邮箱
+            phone: 手机号
+            nickname: 昵称
+
+        Returns:
+            User
+
+        Raises:
+            ValueError: 创建失败
+        """
+        # 验证密码强度
+        validate_password_strength(password)
+
+        async with async_session() as session:
+            # 检查用户名是否已存在
+            stmt = select(User).where(User.username == username)
+            result = await session.execute(stmt)
+            if result.scalar_one_or_none():
+                raise ValueError("用户名已存在")
+
+            # 检查邮箱是否已存在
+            if email:
+                stmt = select(User).where(User.email == email)
+                result = await session.execute(stmt)
+                if result.scalar_one_or_none():
+                    raise ValueError("邮箱已被注册")
+
+            # 检查手机号是否已存在
+            if phone:
+                stmt = select(User).where(User.phone == phone)
+                result = await session.execute(stmt)
+                if result.scalar_one_or_none():
+                    raise ValueError("手机号已被注册")
+
+            # 创建用户
+            user = User(
+                username=username,
+                password_hash=hash_password(password),
+                email=email,
+                phone=phone,
+                nickname=nickname,
+                status=UserStatus.ACTIVE,
+                profile_completed=True,
+            )
+            session.add(user)
+            await session.commit()
+            await session.refresh(user)
+
+            _logger.info(f"管理员创建用户: {username}")
+            return user
+
+    @staticmethod
+    async def update_user(
+        user_id: str,
+        nickname: str | None = None,
+        avatar: str | None = None,
+        email: str | None = None,
+        phone: str | None = None,
+    ) -> User:
+        """
+        管理员更新用户信息（带唯一性校验）
+
+        Args:
+            user_id: 用户 ID
+            nickname: 昵称
+            avatar: 头像
+            email: 邮箱
+            phone: 手机号
+
+        Returns:
+            User
+        """
+        async with async_session() as session:
+            stmt = select(User).where(User.id == user_id)
+            result = await session.execute(stmt)
+            user = result.scalar_one_or_none()
+
+            if not user:
+                raise ValueError("用户不存在")
+
+            # 检查邮箱唯一性
+            if email is not None and email != user.email:
+                stmt = select(User).where(User.email == email, User.id != user_id)
+                result = await session.execute(stmt)
+                if result.scalar_one_or_none():
+                    raise ValueError("邮箱已被其他用户使用")
+                user.email = email
+
+            # 检查手机号唯一性
+            if phone is not None and phone != user.phone:
+                stmt = select(User).where(User.phone == phone, User.id != user_id)
+                result = await session.execute(stmt)
+                if result.scalar_one_or_none():
+                    raise ValueError("手机号已被其他用户使用")
+                user.phone = phone
+
+            if nickname is not None:
+                user.nickname = nickname
+            if avatar is not None:
+                user.avatar = avatar
+
+            await session.commit()
+            await session.refresh(user)
+
+            _logger.info(f"管理员更新用户信息: {user_id}")
+            return user
+
+    @staticmethod
+    async def set_status(user_id: str, status: str) -> User:
+        """
+        设置用户状态
+
+        Args:
+            user_id: 用户 ID
+            status: 目标状态 (active/inactive/locked)
+
+        Returns:
+            User
+        """
+        # 验证状态值
+        valid_statuses = [UserStatus.ACTIVE, UserStatus.INACTIVE, UserStatus.LOCKED]
+        if status not in valid_statuses:
+            raise ValueError(f"无效的状态值，必须是: {[s for s in valid_statuses]}")
+
+        async with async_session() as session:
+            stmt = select(User).where(User.id == user_id)
+            result = await session.execute(stmt)
+            user = result.scalar_one_or_none()
+
+            if not user:
+                raise ValueError("用户不存在")
+
+            user.status = status
+            await session.commit()
+            await session.refresh(user)
+
+            _logger.info(f"设置用户状态: {user_id} -> {status}")
+            return user
+
+    @staticmethod
+    async def soft_delete(user_id: str) -> bool:
+        """
+        软删除用户（设置状态为 inactive）
+
+        Args:
+            user_id: 用户 ID
+
+        Returns:
+            bool
+        """
+        async with async_session() as session:
+            stmt = select(User).where(User.id == user_id)
+            result = await session.execute(stmt)
+            user = result.scalar_one_or_none()
+
+            if not user:
+                raise ValueError("用户不存在")
+
+            user.status = UserStatus.INACTIVE
+            await session.commit()
+
+            _logger.info(f"软删除用户: {user_id}")
+            return True
+
+    @staticmethod
+    async def admin_reset_password(
+        user_id: str,
+        new_password: str | None = None,
+    ) -> str:
+        """
+        管理员重置用户密码
+
+        Args:
+            user_id: 用户 ID
+            new_password: 新密码，如果为空则生成随机密码
+
+        Returns:
+            str: 新密码（明文）
+        """
+        async with async_session() as session:
+            stmt = select(User).where(User.id == user_id)
+            result = await session.execute(stmt)
+            user = result.scalar_one_or_none()
+
+            if not user:
+                raise ValueError("用户不存在")
+
+            # 生成随机密码或使用提供的密码
+            if new_password:
+                validate_password_strength(new_password)
+                password = new_password
+            else:
+                # 生成 12 位随机密码
+                alphabet = string.ascii_letters + string.digits + "!@#$%^&*"
+                password = ''.join(secrets.choice(alphabet) for _ in range(12))
+
+            user.password_hash = hash_password(password)
+            await session.commit()
+
+            _logger.info(f"管理员重置用户密码: {user_id}")
+            return password
+
+    @staticmethod
+    async def get_user_departments(user_id: str) -> list[dict]:
+        """
+        获取用户所属部门列表
+
+        Args:
+            user_id: 用户 ID
+
+        Returns:
+            list[dict]
+        """
+        async with async_session() as session:
+            from iam.models import Department
+
+            stmt = (
+                select(Department, UserDepartment.is_leader)
+                .join(UserDepartment, Department.id == UserDepartment.department_id)
+                .where(UserDepartment.user_id == user_id)
+                .order_by(Department.sort_order, Department.created_at)
+            )
+            result = await session.execute(stmt)
+
+            departments = []
+            for row in result:
+                dept, is_leader = row
+                departments.append({
+                    "id": dept.id,
+                    "name": dept.name,
+                    "code": dept.code,
+                    "is_leader": is_leader,
+                })
+            return departments
 
 
 # 服务单例

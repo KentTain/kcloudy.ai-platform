@@ -140,13 +140,37 @@ async def add_user_to_department(department_id: str, data: UserDepartmentRequest
     try:
         await department_service.add_user(
             department_id=department_id,
-            user_id=data.department_id,  # TODO: 从 data 获取 user_id
+            user_id=data.user_id,
             is_leader=data.is_leader,
         )
         return ORJSONResponse(
             content={
                 "code": 200,
                 "msg": "添加成功",
+                "data": None,
+            }
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.delete("/{department_id}/users/{user_id}")
+async def remove_user_from_department(
+    department_id: str,
+    user_id: str,
+) -> ORJSONResponse:
+    """从部门移除用户"""
+    try:
+        removed = await department_service.remove_user(
+            department_id=department_id,
+            user_id=user_id,
+        )
+        if not removed:
+            raise HTTPException(status_code=404, detail="用户不在该部门中")
+        return ORJSONResponse(
+            content={
+                "code": 200,
+                "msg": "移除成功",
                 "data": None,
             }
         )

@@ -80,6 +80,55 @@ class PasswordResetRequest(BaseModel):
         return v
 
 
+class AdminUserCreateRequest(BaseModel):
+    """管理员创建用户请求"""
+
+    username: str = Field(..., min_length=3, max_length=50)
+    password: str = Field(..., min_length=8, max_length=32)
+    email: EmailStr | None = None
+    phone: str | None = None
+    nickname: str | None = Field(None, max_length=100)
+
+
+class AdminUserUpdateRequest(BaseModel):
+    """管理员更新用户请求"""
+
+    nickname: str | None = Field(None, max_length=100)
+    avatar: str | None = Field(None, max_length=500)
+    email: EmailStr | None = None
+    phone: str | None = None
+
+
+class UserStatusUpdateRequest(BaseModel):
+    """用户状态更新请求"""
+
+    status: str = Field(...)
+
+
+class UserRoleAssignRequest(BaseModel):
+    """用户角色分配请求"""
+
+    role_ids: list[str] = Field(default_factory=list)
+
+
+class UserDepartmentAssignRequest(BaseModel):
+    """用户部门分配请求"""
+
+    department_ids: list[str] = Field(default_factory=list)
+
+
+class AdminPasswordResetRequest(BaseModel):
+    """管理员重置密码请求"""
+
+    new_password: str | None = Field(None, min_length=8, max_length=32)
+
+
+class AdminPasswordResetVo(BaseModel):
+    """管理员重置密码响应"""
+
+    password: str
+
+
 class UserVo(BaseModel):
     """用户视图对象"""
 

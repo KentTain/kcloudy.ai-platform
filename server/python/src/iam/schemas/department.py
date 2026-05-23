@@ -56,7 +56,7 @@ class DepartmentTreeVo(BaseModel):
 class UserDepartmentRequest(BaseModel):
     """用户部门关联请求"""
 
-    department_id: str = Field(..., description="部门 ID")
+    user_id: str = Field(..., description="用户 ID")
     is_leader: bool = Field(default=False, description="是否部门负责人")
 
 

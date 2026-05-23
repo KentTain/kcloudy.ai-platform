@@ -60,6 +60,11 @@ export const createApiClient = (config?: AxiosRequestConfig): AxiosInstance => {
 export const apiClient = createApiClient();
 
 /**
+ * 无前缀 API 客户端，用于后端根路径注册的接口（如 /admin、/console）
+ */
+export const rawApiClient = createApiClient({ baseURL: "" });
+
+/**
  * GET 请求
  */
 export const get = <T>(url: string, config?: AxiosRequestConfig): Promise<T> =>
@@ -82,5 +87,20 @@ export const put = <T>(url: string, data?: unknown, config?: AxiosRequestConfig)
  */
 export const del = <T>(url: string, config?: AxiosRequestConfig): Promise<T> =>
   apiClient.delete(url, config);
+
+export const rawGet = <T>(url: string, config?: AxiosRequestConfig): Promise<T> =>
+  rawApiClient.get(url, config);
+
+export const rawPost = <T>(
+  url: string,
+  data?: unknown,
+  config?: AxiosRequestConfig
+): Promise<T> => rawApiClient.post(url, data, config);
+
+export const rawPut = <T>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T> =>
+  rawApiClient.put(url, data, config);
+
+export const rawDel = <T>(url: string, config?: AxiosRequestConfig): Promise<T> =>
+  rawApiClient.delete(url, config);
 
 export default apiClient;

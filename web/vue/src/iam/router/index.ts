@@ -1,0 +1,106 @@
+import type { RouteRecordRaw } from "vue-router";
+
+/**
+ * IAM 模块路由配置
+ *
+ * 这些路由将作为 AdminLayout 的子路由嵌套使用
+ */
+export const iamRoutes: RouteRecordRaw[] = [
+  // 用户管理
+  {
+    path: "users",
+    name: "UserManagement",
+    component: () => import("@/iam/pages/users/UserList.vue"),
+    meta: { title: "用户管理", icon: "user", requiresAuth: true },
+  },
+  {
+    path: "users/create",
+    name: "UserCreate",
+    component: () => import("@/iam/pages/users/UserForm.vue"),
+    meta: { title: "创建用户", hidden: true, requiresAuth: true },
+  },
+  {
+    path: "users/:id",
+    name: "UserDetail",
+    component: () => import("@/iam/pages/users/UserDetail.vue"),
+    meta: { title: "用户详情", hidden: true, requiresAuth: true },
+  },
+  {
+    path: "users/:id/edit",
+    name: "UserEdit",
+    component: () => import("@/iam/pages/users/UserForm.vue"),
+    meta: { title: "编辑用户", hidden: true, requiresAuth: true },
+  },
+
+  // 角色管理
+  {
+    path: "roles",
+    name: "RoleManagement",
+    component: () => import("@/iam/pages/roles/RoleList.vue"),
+    meta: { title: "角色管理", icon: "role", requiresAuth: true },
+  },
+  {
+    path: "roles/create",
+    name: "RoleCreate",
+    component: () => import("@/iam/pages/roles/RoleForm.vue"),
+    meta: { title: "创建角色", hidden: true, requiresAuth: true },
+  },
+  {
+    path: "roles/:id",
+    name: "RoleDetail",
+    component: () => import("@/iam/pages/roles/RoleForm.vue"),
+    meta: { title: "角色详情/编辑", hidden: true, requiresAuth: true },
+  },
+
+  // 权限管理
+  {
+    path: "permissions",
+    name: "PermissionManagement",
+    component: () => import("@/iam/pages/permissions/PermissionList.vue"),
+    meta: { title: "权限管理", icon: "lock", requiresAuth: true },
+  },
+
+  // 部门管理
+  {
+    path: "departments",
+    name: "DepartmentManagement",
+    component: () => import("@/iam/pages/departments/DepartmentPage.vue"),
+    meta: { title: "部门管理", icon: "department", requiresAuth: true },
+  },
+
+  // 租户管理（管理员）
+  {
+    path: "tenants",
+    name: "TenantManagement",
+    component: () => import("@/iam/pages/tenants/TenantList.vue"),
+    meta: { title: "租户管理", icon: "tenant", requiresAuth: true, roles: ["tenant_admin"] },
+  },
+  {
+    path: "tenants/create",
+    name: "TenantCreate",
+    component: () => import("@/iam/pages/tenants/TenantForm.vue"),
+    meta: { title: "创建租户", hidden: true, requiresAuth: true, roles: ["tenant_admin"] },
+  },
+  {
+    path: "tenants/:id",
+    name: "TenantDetail",
+    component: () => import("@/iam/pages/tenants/TenantDetail.vue"),
+    meta: { title: "租户详情", hidden: true, requiresAuth: true, roles: ["tenant_admin"] },
+  },
+  {
+    path: "tenants/:id/edit",
+    name: "TenantEdit",
+    component: () => import("@/iam/pages/tenants/TenantForm.vue"),
+    meta: { title: "编辑租户", hidden: true, requiresAuth: true, roles: ["tenant_admin"] },
+  },
+
+  // 个人中心
+  {
+    path: "profile",
+    name: "Profile",
+    component: () => import("@/iam/pages/profile/Profile.vue"),
+    meta: { title: "个人中心", icon: "user-circle", requiresAuth: true },
+  },
+];
+
+export default iamRoutes;
