@@ -124,7 +124,7 @@ const emit = defineEmits<{
 
 ```typescript
 // 在业务模块中引入
-import CommonButton from "@/components/ui/CommonButton.vue";
+import CommonButton from "@/components/CommonButton.vue";
 import EmptyState from "@/components/common/EmptyState.vue";
 ```
 
@@ -156,7 +156,7 @@ import EmptyState from "@/components/common/EmptyState.vue";
 迁移后的技术栈通用组件直接从 `src/components/ui/` 引入：
 
 ```typescript
-import CommonButton from "@/components/ui/CommonButton.vue";
+import CommonButton from "@/components/CommonButton.vue";
 ```
 
 ## 注意事项

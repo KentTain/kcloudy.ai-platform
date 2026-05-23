@@ -5,9 +5,9 @@
 import { ref } from "vue";
 import { useRouter } from "vue-router";
 import { useAuthStore } from "@/iam/stores/auth";
-import CommonButton from "@/components/ui/CommonButton.vue";
-import CommonInput from "@/components/ui/CommonInput.vue";
-import CommonCard from "@/components/ui/CommonCard.vue";
+import CommonButton from "@/components/CommonButton.vue";
+import CommonInput from "@/components/CommonInput.vue";
+import CommonCard from "@/components/CommonCard.vue";
 
 const router = useRouter();
 const authStore = useAuthStore();

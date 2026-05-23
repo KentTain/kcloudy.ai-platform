@@ -11,8 +11,8 @@ context: |
 
   # 技术栈
   后端：PostgreSQL (pgvector), Redis, MinIO
-  前端：Vue 3, TypeScript, Vite, Element Plus
-  AI：langchain 1.3.0（LLM 框架）, langgraph 1.2.0（工作流引擎）, MCP
+  前端：Vue 3, TypeScript, Vite, Shadcn, Radix, Tailwind CSS
+  AI：langchain 1.3.0（LLM 框架）, langgraph 1.2.0（工作流引擎）
 
   # 后端架构
   - 三层架构：Controller → Service → Model

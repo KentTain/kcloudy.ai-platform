@@ -3,7 +3,7 @@
  * ForbiddenPage 403 无权限页面
  */
 import { useRouter } from "vue-router";
-import AppButton from "@/components/ui/CommonButton.vue";
+import AppButton from "@/components/CommonButton.vue";
 
 const router = useRouter();
 

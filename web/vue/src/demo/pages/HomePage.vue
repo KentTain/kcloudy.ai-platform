@@ -2,7 +2,7 @@
 /**
  * HomePage 首页
  */
-import CommonCard from "@/components/ui/CommonCard.vue";
+import CommonCard from "@/components/CommonCard.vue";
 </script>
 
 <template>

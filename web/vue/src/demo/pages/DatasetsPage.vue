@@ -4,9 +4,9 @@
  */
 import { onMounted, ref, computed } from "vue";
 import { useDatasetStore } from "@/demo/stores/datasets";
-import CommonCard from "@/components/ui/CommonCard.vue";
-import CommonButton from "@/components/ui/CommonButton.vue";
-import CommonLoading from "@/components/ui/CommonLoading.vue";
+import CommonCard from "@/components/CommonCard.vue";
+import CommonButton from "@/components/CommonButton.vue";
+import CommonLoading from "@/components/CommonLoading.vue";
 
 const datasetStore = useDatasetStore();
 

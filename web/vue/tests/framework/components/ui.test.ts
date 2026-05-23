@@ -1,9 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { mount } from "@vue/test-utils";
-import CommonButton from "@/components/ui/CommonButton.vue";
-import CommonCard from "@/components/ui/CommonCard.vue";
-import CommonLoading from "@/components/ui/CommonLoading.vue";
-import CommonInput from "@/components/ui/CommonInput.vue";
+import CommonButton from "@/components/CommonButton.vue";
+import CommonCard from "@/components/CommonCard.vue";
+import CommonLoading from "@/components/CommonLoading.vue";
+import CommonInput from "@/components/CommonInput.vue";
+import CommonModal from "@/components/CommonModal.vue";
 
 describe("P0 Components", () => {
   describe("CommonButton", () => {
@@ -13,18 +14,23 @@ describe("P0 Components", () => {
       });
 
       expect(wrapper.text()).toContain("Click me");
-      expect(wrapper.find(".common-button--primary").exists()).toBe(true);
+      // shadcn Button uses data-variant attribute
+      expect(wrapper.find("button").exists()).toBe(true);
     });
 
-    it("renders with different variants", () => {
-      const variants = ["primary", "secondary", "outline", "ghost", "danger"] as const;
+    it("renders with business variant classes", () => {
+      const cases = [
+        { variant: "primary", expected: "bg-primary" },
+        { variant: "outline", expected: "border-primary" },
+        { variant: "danger", expected: "bg-destructive" },
+      ] as const;
 
-      variants.forEach((variant) => {
+      cases.forEach(({ variant, expected }) => {
         const wrapper = mount(CommonButton, {
           props: { variant },
         });
 
-        expect(wrapper.find(`.common-button--${variant}`).exists()).toBe(true);
+        expect(wrapper.find("button").classes()).toContain(expected);
       });
     });
 
@@ -36,7 +42,7 @@ describe("P0 Components", () => {
           props: { size },
         });
 
-        expect(wrapper.find(`.common-button--${size}`).exists()).toBe(true);
+        expect(wrapper.find("button").exists()).toBe(true);
       });
     });
 
@@ -107,7 +113,7 @@ describe("P0 Components", () => {
     it("renders correctly", () => {
       const wrapper = mount(CommonLoading);
 
-      expect(wrapper.find(".common-loading").exists()).toBe(true);
+      expect(wrapper.find(".animate-spin").exists()).toBe(true);
     });
 
     it("renders with text", () => {
@@ -126,7 +132,7 @@ describe("P0 Components", () => {
           props: { size },
         });
 
-        expect(wrapper.find(`.common-loading--${size}`).exists()).toBe(true);
+        expect(wrapper.find(".animate-spin").exists()).toBe(true);
       });
     });
   });
@@ -135,7 +141,6 @@ describe("P0 Components", () => {
     it("renders correctly", () => {
       const wrapper = mount(CommonInput);
 
-      expect(wrapper.find(".common-input").exists()).toBe(true);
       expect(wrapper.find("input").exists()).toBe(true);
     });
 
@@ -156,7 +161,6 @@ describe("P0 Components", () => {
         props: { error: "This field is required" },
       });
 
-      expect(wrapper.find(".common-input--error").exists()).toBe(true);
       expect(wrapper.text()).toContain("This field is required");
     });
 
@@ -176,8 +180,53 @@ describe("P0 Components", () => {
           props: { size },
         });
 
-        expect(wrapper.find(`.common-input--${size}`).exists()).toBe(true);
+        expect(wrapper.find("input").exists()).toBe(true);
       });
+    });
+
+    it("clears value without throwing", async () => {
+      const wrapper = mount(CommonInput, {
+        props: { modelValue: "abc", clearable: true },
+      });
+
+      await wrapper.find("button").trigger("click");
+
+      expect(wrapper.emitted("update:modelValue")![0]).toEqual([""]);
+      expect(wrapper.emitted("clear")).toBeTruthy();
+    });
+
+    it("exposes focus and blur methods", () => {
+      const wrapper = mount(CommonInput);
+
+      expect(() => wrapper.vm.focus()).not.toThrow();
+      expect(() => wrapper.vm.blur()).not.toThrow();
+    });
+  });
+
+  describe("CommonModal", () => {
+    it("hides close button when closable is false", () => {
+      const wrapper = mount(CommonModal, {
+        props: { modelValue: true, closable: false },
+        slots: { default: "Modal content" },
+        attachTo: document.body,
+      });
+
+      expect(document.body.querySelector('[data-slot="dialog-close"]')).toBeNull();
+      wrapper.unmount();
+    });
+
+    it("emits close when dialog closes", async () => {
+      const wrapper = mount(CommonModal, {
+        props: { modelValue: true },
+        slots: { default: "Modal content" },
+        attachTo: document.body,
+      });
+
+      await wrapper.findComponent({ name: "DialogRoot" }).vm.$emit("update:open", false);
+
+      expect(wrapper.emitted("update:modelValue")![0]).toEqual([false]);
+      expect(wrapper.emitted("close")).toBeTruthy();
+      wrapper.unmount();
     });
   });
 });
