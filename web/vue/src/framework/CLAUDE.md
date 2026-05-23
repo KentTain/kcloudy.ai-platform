@@ -22,7 +22,8 @@ framework/
 │       ├── AppSidebar.vue     # 侧边栏
 │       ├── AppNavbar.vue      # 顶部导航
 │       ├── AppTagsView.vue    # 标签页
-│       └── AppMain.vue        # 内容区
+│       ├── AppMain.vue        # 内容区
+│       └── AppPage.vue        # 页面骨架
 ├── pages/                     # 公共页面
 │   ├── LoginPage.vue          # 登录页
 │   ├── ForbiddenPage.vue      # 403 页
@@ -93,6 +94,46 @@ import AdminLayout from "@/framework/layouts/AdminLayout.vue";
 | 侧边栏折叠 | 64px |
 | 顶栏高度 | 60px |
 | TagsView 高度 | 32px |
+
+### AppPage
+
+页面骨架组件，统一所有业务页面的 title/eyebrow/description/actions 区域。
+
+```vue
+<AppPage
+  title="用户管理"
+  eyebrow="系统管理"
+  description="管理系统中所有用户账号。"
+  variant="list"
+>
+  <template #actions>
+    <Button>新建用户</Button>
+  </template>
+
+  页面主体内容
+</AppPage>
+```
+
+Props:
+
+- `title`: 页面主标题（必填）
+- `eyebrow`: 标题上方小字提示（可选）
+- `description`: 页面功能描述（可选）
+- `variant`: 页面变体（list/workbench/detail/governance，默认 list）
+
+Slots:
+
+- `actions`: 标题右侧操作按钮区
+- `default`: 页面主体内容
+
+页面变体说明：
+
+| variant | 背景 | 适用场景 |
+|---------|------|----------|
+| list | bg-background | 列表页（默认） |
+| workbench | bg-muted/20 | 工作台、沉浸式操作 |
+| detail | bg-background | 详情页 |
+| governance | bg-background | 系统管理页 |
 
 ## UI 组件
 
