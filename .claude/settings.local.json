@@ -78,7 +78,10 @@
       "Bash(npx shadcn-vue@latest add button dialog input select table card --yes)",
       "Bash(grep -q \"^2026-05-23-complete-iam-frontend-vue$\")",
       "Bash(openspec validate *)",
-      "Bash(openspec change *)"
+      "Bash(openspec change *)",
+      "Bash(npx shadcn-vue@latest add sidebar -y)",
+      "Bash(npx shadcn-vue@latest add avatar)",
+      "Bash(npx shadcn-vue@latest add separator)"
     ]
   }
 }

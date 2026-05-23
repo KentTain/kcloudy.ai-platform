@@ -1,34 +1,29 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createPinia, setActivePinia } from "pinia";
 import { useAppStore } from "@/framework/stores/app";
+
+// Mock window.innerWidth
+const mockInnerWidth = (width: number) => {
+  Object.defineProperty(window, "innerWidth", {
+    configurable: true,
+    get: () => width,
+  });
+};
 
 describe("useAppStore", () => {
   beforeEach(() => {
     setActivePinia(createPinia());
   });
 
-  it("setDevice mobile 时自动折叠侧边栏", () => {
+  it("device 返回正确的设备类型", () => {
+    mockInnerWidth(1024);
     const store = useAppStore();
-    store.setSidebarCollapsed(false);
-    store.setDevice("mobile");
-    expect(store.device).toBe("mobile");
-    expect(store.sidebarCollapsed).toBe(true);
-  });
-
-  it("setDevice desktop 时不强制折叠", () => {
-    const store = useAppStore();
-    store.setSidebarCollapsed(false);
-    store.setDevice("desktop");
     expect(store.device).toBe("desktop");
-    expect(store.sidebarCollapsed).toBe(false);
   });
 
-  it("toggleSidebar 切换折叠状态", () => {
+  it("device 在移动端视口返回 mobile", () => {
+    mockInnerWidth(500);
     const store = useAppStore();
-    expect(store.sidebarCollapsed).toBe(false);
-    store.toggleSidebar();
-    expect(store.sidebarCollapsed).toBe(true);
-    store.toggleSidebar();
-    expect(store.sidebarCollapsed).toBe(false);
+    expect(store.device).toBe("mobile");
   });
 });

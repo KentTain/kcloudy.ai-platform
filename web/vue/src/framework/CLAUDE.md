@@ -17,11 +17,10 @@ framework/
 ├── directives/                # 自定义指令
 │   └── permission.ts          # 权限指令
 ├── layouts/                   # 布局组件
-│   ├── AdminLayout.vue        # 壳布局
+│   ├── AdminLayout.vue        # 壳布局（使用 shadcn Sidebar）
 │   └── components/            # 布局子组件
-│       ├── AppSidebar.vue     # 侧边栏
+│       ├── AppNavMain.vue     # 分组侧边栏菜单
 │       ├── AppNavbar.vue      # 顶部导航
-│       ├── AppTagsView.vue    # 标签页
 │       ├── AppMain.vue        # 内容区
 │       └── AppPage.vue        # 页面骨架
 ├── pages/                     # 公共页面
@@ -32,7 +31,7 @@ framework/
 │   ├── index.ts               # 路由实例
 │   └── guards.ts              # 路由守卫
 ├── stores/                    # 状态管理
-│   ├── app.ts                 # 应用状态
+│   ├── app.ts                 # 应用状态（device computed）
 │   ├── user.ts                # 用户状态
 │   └── permission.ts          # 权限状态
 ├── styles/                    # 样式文件
@@ -90,10 +89,36 @@ import AdminLayout from "@/framework/layouts/AdminLayout.vue";
 
 | 组件 | 尺寸 |
 |------|------|
-| 侧边栏展开 | 240px |
-| 侧边栏折叠 | 64px |
-| 顶栏高度 | 60px |
-| TagsView 高度 | 32px |
+| 侧边栏展开 | --sidebar-width（约 240px） |
+| 侧边栏折叠 | --sidebar-width-icon（约 48-56px） |
+| Header 高度 | 56px（3.5rem） |
+
+### AppNavMain
+
+分组侧边栏菜单组件，支持分组标题、子菜单展开/折叠、路由导航。
+
+```typescript
+interface AppNavGroup {
+  title?: string;
+  items: Array<AppNavItem | AppNavSub>;
+}
+
+interface AppNavItem {
+  icon?: FunctionalComponent;
+  title: string;
+  url: string;
+}
+
+interface AppNavSub {
+  icon?: FunctionalComponent;
+  title: string;
+  items: AppNavSubItem[];
+}
+```
+
+Props:
+
+- `items`: 菜单分组数据（可选，默认使用内置菜单）
 
 ### AppPage
 
@@ -218,12 +243,13 @@ import { useAppStore } from "@/framework/stores";
 
 const store = useAppStore();
 
-// 切换侧边栏
-store.toggleSidebar();
-
-// 设置设备类型
-store.setDevice("mobile");
+// 获取设备类型（只读 computed，基于 window.innerWidth）
+if (store.device === "mobile") {
+  // 移动端逻辑
+}
 ```
+
+注：侧边栏状态由 shadcn Sidebar 组件内部管理，不再通过 AppStore 控制。
 
 ### UserStore
 

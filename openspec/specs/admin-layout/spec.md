@@ -2,107 +2,125 @@
 
 ## Purpose
 
-定义后台管理系统的整体布局架构，包括侧边栏、顶部导航、标签页和内容区的组合布局。
+定义后台管理系统的整体布局架构，基于 shadcn Sidebar 组件体系，包括侧边栏、顶部导航和内容区的组合布局。
 
 ## Requirements
 
 ### Requirement: AdminLayout 壳布局
 
-系统 SHALL 提供 AdminLayout 组件作为后台管理系统的整体布局容器。
+系统 SHALL 提供 AdminLayout 组件作为后台管理系统的整体布局容器，使用 shadcn Sidebar 组件体系。
 
 #### Scenario: 布局结构
 
 - **WHEN** 使用 AdminLayout 组件
 - **THEN** 系统 SHALL 包含以下子组件：
-  - AppSidebar - 侧边栏
-  - AppNavbar - 顶部导航
-  - AppTagsView - 标签页
-  - AppMain - 内容区
+  - SidebarProvider - Sidebar 状态提供者
+  - Sidebar - 侧边栏（collapsible="icon"）
+  - SidebarInset - 内容区容器
+  - Header - 顶部导航（在 SidebarInset 内）
+  - AppMain - 页面内容区
 
 #### Scenario: 响应式布局
 
-- **WHEN** 浏览器宽度小于 768px
-- **THEN** 系统 SHALL 自动折叠侧边栏
+- **WHEN** 浏览器宽度小于 md 断点
+- **THEN** 系统 SHALL 自动将 Sidebar 切换为 Sheet 模式（由 shadcn Sidebar 内置处理）
 
-### Requirement: AppSidebar 侧边栏
+#### Scenario: 容器高度
 
-系统 SHALL 提供可折叠的侧边栏组件。
+- **WHEN** AdminLayout 渲染完成
+- **THEN** 系统 SHALL 设置容器高度为 `h-svh overflow-hidden`（100svh，超出隐藏）
+
+### Requirement: Sidebar 侧边栏
+
+系统 SHALL 提供基于 shadcn Sidebar 的可折叠侧边栏组件。
+
+#### Scenario: icon 折叠模式
+
+- **WHEN** 侧边栏处于折叠状态
+- **THEN** 系统 SHALL 显示：
+  - 宽度自动收缩为 `--sidebar-width-icon`（约 48-56px）
+  - 仅显示菜单图标
+  - 悬停时显示 Tooltip 提示菜单名称
 
 #### Scenario: 展开状态
 
 - **WHEN** 侧边栏处于展开状态
 - **THEN** 系统 SHALL 显示：
-  - 宽度 240px
-  - 白色背景 `#FFFFFF`
-  - 右边框 `#E5E7EB`
-  - 菜单图标 + 文字
-
-#### Scenario: 折叠状态
-
-- **WHEN** 侧边栏处于折叠状态
-- **THEN** 系统 SHALL 显示：
-  - 宽度 64px
-  - 仅菜单图标
-  - 悬停时显示 Tooltip 提示菜单名称
+  - 宽度 `--sidebar-width`（约 240px）
+  - Logo 区域
+  - 分组菜单（AppNavMain）
+  - 用户信息区域
 
 #### Scenario: 菜单项选中态
 
 - **WHEN** 菜单项被选中
 - **THEN** 系统 SHALL 显示：
-  - 文字/图标颜色 `primary`
-  - 背景 `primary-subtle`
-  - 左侧 3px `primary` 指示条
+  - SidebarMenuButton 的 isActive 为 true
+  - 默认选中样式（背景高亮）
 
-### Requirement: AppNavbar 顶部导航
+#### Scenario: SidebarTrigger 控制
 
-系统 SHALL 提供 60px 高度的顶部导航组件。
+- **WHEN** 用户点击 SidebarTrigger
+- **THEN** 系统 SHALL 切换侧边栏展开/折叠状态
+
+### Requirement: AppNavMain 分组菜单
+
+系统 SHALL 提供 AppNavMain 组件用于渲染分组侧边栏菜单。
+
+#### Scenario: 渲染分组菜单
+
+- **WHEN** 使用 AppNavMain 组件并传入 items 数组
+- **THEN** 系统 SHALL 为每个分组渲染：
+  - SidebarGroup 容器
+  - SidebarGroupLabel（如果分组有 title）
+  - SidebarMenu 包含菜单项
+
+#### Scenario: 渲染子菜单
+
+- **WHEN** 菜单项为 AppNavSub 类型（有子菜单）
+- **THEN** 系统 SHALL 渲染：
+  - Collapsible 容器
+  - SidebarMenuButton 显示 icon 和 title
+  - 展开时显示 SidebarMenuSub 子菜单项
+  - ChevronRight 箭头指示展开状态
+
+#### Scenario: 导航交互
+
+- **WHEN** 用户点击菜单项
+- **THEN** 系统 SHALL 使用 router.push 导航到对应 url
+
+### Requirement: Header 顶部导航
+
+系统 SHALL 提供 56px（3.5rem）高度的顶部导航组件，位于 SidebarInset 内。
 
 #### Scenario: 默认功能
 
 - **WHEN** 顶部导航加载完成
 - **THEN** 系统 SHALL 显示：
-  - 左侧：折叠按钮、面包屑
-  - 右侧：全屏、消息、用户菜单
+  - 左侧：SidebarTrigger、Separator、Breadcrumb
 
-#### Scenario: 折叠按钮交互
+#### Scenario: 面包屑导航
 
-- **WHEN** 用户点击折叠按钮
-- **THEN** 系统 SHALL 切换侧边栏展开/折叠状态
+- **WHEN** 页面路由匹配到 meta.title
+- **THEN** 系统 SHALL 在 Breadcrumb 中显示路径层级
 
-#### Scenario: 用户菜单
+### Requirement: SidebarFooter 用户信息
 
-- **WHEN** 用户点击用户头像
-- **THEN** 系统 SHALL 显示下拉菜单：
-  - 个人中心
-  - 退出登录
+系统 SHALL 在 SidebarFooter 中提供用户信息区域和退出登录功能。
 
-### Requirement: AppTagsView 标签页
+#### Scenario: 用户信息显示
 
-系统 SHALL 提供页面标签页组件，支持多页面切换。
-
-#### Scenario: 标签页显示
-
-- **WHEN** 用户访问页面
-- **THEN** 系统 SHALL 在 TagsView 区域添加对应标签
-
-#### Scenario: 选中标签样式
-
-- **WHEN** 标签被选中
+- **WHEN** 侧边栏处于展开状态
 - **THEN** 系统 SHALL 显示：
-  - 文字颜色 `primary`
-  - 底部 2px `primary` 边框
+  - 用户头像（AvatarFallback）
+  - 用户昵称
+  - 用户邮箱
 
-#### Scenario: 未选中标签样式
+#### Scenario: 退出登录
 
-- **WHEN** 标签未被选中
-- **THEN** 系统 SHALL 显示：
-  - 文字颜色 `text-muted`
-  - 无底部边框
-
-#### Scenario: 关闭标签
-
-- **WHEN** 用户点击标签关闭按钮
-- **THEN** 系统 SHALL 关闭该标签并切换到相邻标签
+- **WHEN** 用户点击 SidebarFooter 中的用户菜单
+- **THEN** 系统 SHALL 显示 DropdownMenu：
+  - 退出登录选项
 
 ### Requirement: AppMain 内容区
 

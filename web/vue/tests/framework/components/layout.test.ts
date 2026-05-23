@@ -1,11 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { mount } from "@vue/test-utils";
 import { createPinia, setActivePinia } from "pinia";
-import AppSidebar from "@/framework/layouts/components/AppSidebar.vue";
+import { SidebarProvider, Sidebar } from "@/components/ui/sidebar";
 import AppNavbar from "@/framework/layouts/components/AppNavbar.vue";
 import AppMain from "@/framework/layouts/components/AppMain.vue";
-import AppTagsView from "@/framework/layouts/components/AppTagsView.vue";
-import { useTagsViewStore } from "@/framework/stores";
+import AppNavMain from "@/framework/layouts/components/AppNavMain.vue";
 
 // Mock vue-router
 vi.mock("vue-router", () => ({
@@ -24,28 +23,73 @@ describe("Layout Components", () => {
     setActivePinia(createPinia());
   });
 
-  describe("AppSidebar", () => {
+  describe("AppNavMain", () => {
     it("renders correctly", () => {
-      const wrapper = mount(AppSidebar, {
-        global: {
-          plugins: [createPinia()],
+      const wrapper = mount(
+        {
+          components: { SidebarProvider, Sidebar, AppNavMain },
+          template: `
+            <SidebarProvider>
+              <Sidebar>
+                <AppNavMain />
+              </Sidebar>
+            </SidebarProvider>
+          `,
         },
-      });
+        {
+          global: {
+            plugins: [createPinia()],
+          },
+        }
+      );
 
-      expect(wrapper.find(".app-sidebar").exists()).toBe(true);
-      expect(wrapper.text()).toContain("AI 助手平台");
+      expect(wrapper.find("[data-slot='sidebar-group']").exists()).toBe(true);
     });
 
     it("renders default menu items", () => {
-      const wrapper = mount(AppSidebar, {
-        global: {
-          plugins: [createPinia()],
+      const wrapper = mount(
+        {
+          components: { SidebarProvider, Sidebar, AppNavMain },
+          template: `
+            <SidebarProvider>
+              <Sidebar>
+                <AppNavMain />
+              </Sidebar>
+            </SidebarProvider>
+          `,
         },
-      });
+        {
+          global: {
+            plugins: [createPinia()],
+          },
+        }
+      );
 
       expect(wrapper.text()).toContain("首页");
       expect(wrapper.text()).toContain("健康检查");
       expect(wrapper.text()).toContain("知识库");
+    });
+
+    it("renders grouped menu items", () => {
+      const wrapper = mount(
+        {
+          components: { SidebarProvider, Sidebar, AppNavMain },
+          template: `
+            <SidebarProvider>
+              <Sidebar>
+                <AppNavMain />
+              </Sidebar>
+            </SidebarProvider>
+          `,
+        },
+        {
+          global: {
+            plugins: [createPinia()],
+          },
+        }
+      );
+
+      expect(wrapper.text()).toContain("系统管理");
     });
   });
 
@@ -54,20 +98,28 @@ describe("Layout Components", () => {
       const wrapper = mount(AppNavbar, {
         global: {
           plugins: [createPinia()],
+          stubs: {
+            SidebarTrigger: true,
+            Separator: true,
+          },
         },
       });
 
-      expect(wrapper.find(".app-navbar").exists()).toBe(true);
+      expect(wrapper.find("header").exists()).toBe(true);
     });
 
-    it("renders user avatar", () => {
+    it("renders breadcrumbs", () => {
       const wrapper = mount(AppNavbar, {
         global: {
           plugins: [createPinia()],
+          stubs: {
+            SidebarTrigger: true,
+            Separator: true,
+          },
         },
       });
 
-      expect(wrapper.find(".app-navbar__avatar").exists()).toBe(true);
+      expect(wrapper.text()).toContain("首页");
     });
   });
 
@@ -83,38 +135,6 @@ describe("Layout Components", () => {
       });
 
       expect(wrapper.find(".app-main").exists()).toBe(true);
-    });
-  });
-
-  describe("AppTagsView", () => {
-    it("renders correctly", () => {
-      const wrapper = mount(AppTagsView, {
-        global: {
-          plugins: [createPinia()],
-        },
-      });
-
-      expect(wrapper.find(".app-tagsview").exists()).toBe(true);
-    });
-
-    it("displays tags from store", () => {
-      const pinia = createPinia();
-      setActivePinia(pinia);
-
-      // 直接操作 store 添加标签
-      const tagsViewStore = useTagsViewStore();
-      tagsViewStore.addTag({
-        path: "/",
-        meta: { title: "首页" },
-      } as any);
-
-      const wrapper = mount(AppTagsView, {
-        global: {
-          plugins: [pinia],
-        },
-      });
-
-      expect(wrapper.text()).toContain("首页");
     });
   });
 });

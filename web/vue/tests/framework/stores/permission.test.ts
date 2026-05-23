@@ -1,6 +1,5 @@
 import { describe, expect, it, beforeEach, vi } from "vitest";
 import { setActivePinia, createPinia } from "pinia";
-import { useAppStore } from "@/framework/stores/app";
 import { useUserStore } from "@/framework/stores/user";
 import { usePermissionStore } from "@/framework/stores/permission";
 
@@ -27,33 +26,6 @@ describe("Permission System", () => {
   beforeEach(() => {
     setActivePinia(createPinia());
     localStorageMock.clear();
-  });
-
-  describe("AppStore", () => {
-    it("initializes with default state", () => {
-      const store = useAppStore();
-
-      expect(store.sidebarCollapsed).toBe(false);
-      expect(store.device).toBe("desktop");
-    });
-
-    it("toggles sidebar", () => {
-      const store = useAppStore();
-
-      store.toggleSidebar();
-      expect(store.sidebarCollapsed).toBe(true);
-
-      store.toggleSidebar();
-      expect(store.sidebarCollapsed).toBe(false);
-    });
-
-    it("sets device type", () => {
-      const store = useAppStore();
-
-      store.setDevice("mobile");
-      expect(store.device).toBe("mobile");
-      expect(store.sidebarCollapsed).toBe(true);
-    });
   });
 
   describe("UserStore", () => {
