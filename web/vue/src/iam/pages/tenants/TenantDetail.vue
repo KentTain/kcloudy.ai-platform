@@ -1,110 +1,109 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from "vue";
-import { useRoute, useRouter } from "vue-router";
-import { useTenantStore } from "@/iam/stores/tenant";
+import { ref, onMounted, computed } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { useTenantStore } from '@/iam/stores/tenant'
+import AppPage from '@/framework/layouts/components/AppPage.vue'
+import { Button } from '@/components/ui/button'
+import DescriptionList from '@/components/DescriptionList.vue'
+import type { DescriptionItem } from '@/components/DescriptionList.vue'
+import { Pencil, ShieldCheck, ShieldOff } from '@lucide/vue'
 
-const route = useRoute();
-const router = useRouter();
-const tenantStore = useTenantStore();
+const route = useRoute()
+const router = useRouter()
+const tenantStore = useTenantStore()
 
-const tenantId = computed(() => route.params.id as string);
-
-const loading = ref(false);
+const tenantId = computed(() => route.params.id as string)
+const loading = ref(false)
 
 const loadTenantDetail = async () => {
-  loading.value = true;
+  loading.value = true
   try {
-    await tenantStore.fetchTenant(tenantId.value);
+    await tenantStore.fetchTenant(tenantId.value)
   } finally {
-    loading.value = false;
+    loading.value = false
   }
-};
+}
 
 const handleEdit = () => {
-  router.push(`/tenants/${tenantId.value}/edit`);
-};
+  router.push(`/tenants/${tenantId.value}/edit`)
+}
 
 const handleBack = () => {
-  router.back();
-};
+  router.back()
+}
 
 const handleActivate = async () => {
-  await tenantStore.activate(tenantId.value);
-  await loadTenantDetail();
-  alert("激活成功");
-};
+  await tenantStore.activate(tenantId.value)
+  await loadTenantDetail()
+}
 
 const handleDeactivate = async () => {
-  await tenantStore.deactivate(tenantId.value);
-  await loadTenantDetail();
-  alert("停用成功");
-};
+  await tenantStore.deactivate(tenantId.value)
+  await loadTenantDetail()
+}
+
+const descriptionItems = computed<DescriptionItem[]>(() => {
+  const tenant = tenantStore.currentTenant
+  if (!tenant) return []
+
+  return [
+    { label: '租户名称', value: tenant.name },
+    { label: '租户编码', value: tenant.code },
+    { label: '联系人', value: tenant.contact_name },
+    { label: '联系人邮箱', value: tenant.contact_email },
+    { label: '联系人电话', value: tenant.contact_phone },
+    {
+      label: '状态',
+      value: tenant.status === 'active' ? '激活' : '停用',
+      type: 'badge',
+      badgeVariant: tenant.status === 'active' ? 'default' : 'secondary',
+    },
+    {
+      label: '过期时间',
+      value: tenant.expired_at ? new Date(tenant.expired_at).toLocaleString() : '永久',
+    },
+    { label: '创建时间', value: new Date(tenant.created_at).toLocaleString() },
+  ]
+})
 
 onMounted(() => {
-  loadTenantDetail();
-});
+  loadTenantDetail()
+})
 </script>
 
 <template>
-  <div class="tenant-detail-page" v-loading="loading">
-    <el-page-header @back="handleBack" content="租户详情">
-      <template #extra>
-        <el-button type="primary" @click="handleEdit">编辑</el-button>
-        <el-button
+  <AppPage title="租户详情" variant="detail">
+    <template #actions>
+      <div class="flex gap-2">
+        <Button variant="outline" @click="handleBack">返回</Button>
+        <Button @click="handleEdit">
+          <Pencil class="mr-1 h-4 w-4" />
+          编辑
+        </Button>
+        <Button
           v-if="tenantStore.currentTenant?.status === 'inactive'"
-          type="success"
+          variant="outline"
           @click="handleActivate"
         >
+          <ShieldCheck class="mr-1 h-4 w-4" />
           激活
-        </el-button>
-        <el-button
+        </Button>
+        <Button
           v-if="tenantStore.currentTenant?.status === 'active'"
+          variant="outline"
           @click="handleDeactivate"
         >
+          <ShieldOff class="mr-1 h-4 w-4" />
           停用
-        </el-button>
-      </template>
-    </el-page-header>
+        </Button>
+      </div>
+    </template>
 
-    <el-card shadow="never" class="detail-card">
-      <el-descriptions :column="2" border>
-        <el-descriptions-item label="租户名称">
-          {{ tenantStore.currentTenant?.name }}
-        </el-descriptions-item>
-        <el-descriptions-item label="租户编码">
-          {{ tenantStore.currentTenant?.code }}
-        </el-descriptions-item>
-        <el-descriptions-item label="联系人">
-          {{ tenantStore.currentTenant?.contact_name || "-" }}
-        </el-descriptions-item>
-        <el-descriptions-item label="联系人邮箱">
-          {{ tenantStore.currentTenant?.contact_email || "-" }}
-        </el-descriptions-item>
-        <el-descriptions-item label="联系人电话">
-          {{ tenantStore.currentTenant?.contact_phone || "-" }}
-        </el-descriptions-item>
-        <el-descriptions-item label="状态">
-          <el-tag :type="tenantStore.currentTenant?.status === 'active' ? 'success' : 'info'">
-            {{ tenantStore.currentTenant?.status === 'active' ? '激活' : '停用' }}
-          </el-tag>
-        </el-descriptions-item>
-        <el-descriptions-item label="过期时间">
-          {{ tenantStore.currentTenant?.expired_at ? new Date(tenantStore.currentTenant.expired_at).toLocaleString() : '永久' }}
-        </el-descriptions-item>
-        <el-descriptions-item label="创建时间">
-          {{ tenantStore.currentTenant?.created_at ? new Date(tenantStore.currentTenant.created_at).toLocaleString() : '-' }}
-        </el-descriptions-item>
-      </el-descriptions>
-    </el-card>
-  </div>
+    <div v-if="loading" class="flex flex-col gap-3">
+      <div v-for="n in 4" :key="n" class="h-5">
+        <div class="h-5 w-full bg-muted animate-pulse rounded" />
+      </div>
+    </div>
+    <DescriptionList v-else :items="descriptionItems" :columns="2" bordered />
+  </AppPage>
 </template>
-
-<style scoped>
-.tenant-detail-page {
-  padding: 16px;
-}
-
-.detail-card {
-  margin-top: 16px;
-}
-</style>

@@ -22,6 +22,7 @@
     "axios": "^1.9.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "date-fns": "^4.3.0",
     "pinia": "^3.0.3",
     "reka-ui": "^2.9.8",
     "shadcn-vue": "^2.7.3",

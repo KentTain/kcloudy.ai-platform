@@ -1,141 +1,129 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from "vue";
-import { useRoute, useRouter } from "vue-router";
-import { useRoleStore } from "@/iam/stores/role";
-import { usePermissionStore } from "@/iam/stores/permission";
-import PermissionTree from "@/iam/components/PermissionTree.vue";
-import type { CreateRoleParams, UpdateRoleParams } from "@/iam/types";
+import { ref, onMounted, computed } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { toTypedSchema } from '@vee-validate/zod'
+import { useForm } from 'vee-validate'
+import * as z from 'zod'
+import { useRoleStore } from '@/iam/stores/role'
+import { usePermissionStore } from '@/iam/stores/permission'
+import PermissionTree from '@/iam/components/PermissionTree.vue'
+import AppPage from '@/framework/layouts/components/AppPage.vue'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 
-const route = useRoute();
-const router = useRouter();
-const roleStore = useRoleStore();
-const permissionStore = usePermissionStore();
+const route = useRoute()
+const router = useRouter()
+const roleStore = useRoleStore()
+const permissionStore = usePermissionStore()
 
-const isEdit = computed(() => !!route.params.id);
-const roleId = computed(() => route.params.id as string);
+const isEdit = computed(() => !!route.params.id)
+const roleId = computed(() => route.params.id as string)
 
-const form = ref<CreateRoleParams & UpdateRoleParams>({
-  code: "",
-  name: "",
-  description: "",
-});
+const formSchema = toTypedSchema(z.object({
+  code: z.string().min(1, '请输入角色编码'),
+  name: z.string().min(1, '请输入角色名称'),
+  description: z.string().optional(),
+}))
 
-const formRules = {
-  code: [{ required: true, message: "请输入角色编码", trigger: "blur" }],
-  name: [{ required: true, message: "请输入角色名称", trigger: "blur" }],
-};
+const { handleSubmit, setValues } = useForm({
+  validationSchema: formSchema,
+})
 
-const selectedPermissions = ref<string[]>([]);
-const loading = ref(false);
-const formRef = ref();
+const selectedPermissions = ref<string[]>([])
+const loading = ref(false)
 
-const handleSubmit = async () => {
-  const valid = await formRef.value?.validate();
-  if (!valid) return;
-
-  loading.value = true;
+const onSubmit = handleSubmit(async (values) => {
+  loading.value = true
   try {
     if (isEdit.value) {
-      await roleStore.editRole(roleId.value, form.value);
-      await roleStore.updateRolePermissions(roleId.value, selectedPermissions.value);
+      await roleStore.editRole(roleId.value, values)
+      await roleStore.updateRolePermissions(roleId.value, selectedPermissions.value)
     } else {
-      const newRole = await roleStore.addRole(form.value);
+      const newRole = await roleStore.addRole(values)
       if (newRole) {
-        await roleStore.updateRolePermissions(newRole.id, selectedPermissions.value);
+        await roleStore.updateRolePermissions(newRole.id, selectedPermissions.value)
       }
     }
-    router.back();
+    router.back()
   } finally {
-    loading.value = false;
+    loading.value = false
   }
-};
+})
 
 const handleCancel = () => {
-  router.back();
-};
+  router.back()
+}
 
 onMounted(async () => {
-  // 加载所有权限
-  await permissionStore.fetchAllPermissions();
+  await permissionStore.fetchAllPermissions()
 
   if (isEdit.value) {
-    await roleStore.fetchRole(roleId.value);
-    await roleStore.fetchRolePermissions(roleId.value);
+    await roleStore.fetchRole(roleId.value)
+    await roleStore.fetchRolePermissions(roleId.value)
 
-    const role = roleStore.currentRole;
+    const role = roleStore.currentRole
     if (role) {
-      form.value = {
+      setValues({
         code: role.code,
         name: role.name,
-        description: role.description || "",
-      };
+        description: role.description || '',
+      })
     }
-    selectedPermissions.value = roleStore.currentRolePermissions.map(p => p.id);
+    selectedPermissions.value = roleStore.currentRolePermissions.map(p => p.id)
   }
-});
+})
 </script>
 
 <template>
-  <div class="role-form-page">
-    <el-card shadow="never">
-      <template #header>
-        <span>{{ isEdit ? "编辑角色" : "创建角色" }}</span>
-      </template>
+  <AppPage :title="isEdit ? '编辑角色' : '创建角色'" variant="detail">
+    <form @submit="onSubmit" class="max-w-[800px] flex flex-col gap-6">
+      <FormField v-slot="{ componentField }" name="code">
+        <FormItem>
+          <FormLabel>角色编码</FormLabel>
+          <FormControl>
+            <Input v-bind="componentField" :disabled="isEdit" />
+          </FormControl>
+          <FormMessage />
+        </FormItem>
+      </FormField>
 
-      <el-form
-        ref="formRef"
-        :model="form"
-        :rules="formRules"
-        label-width="100px"
-        class="role-form"
-      >
-        <el-form-item label="角色编码" prop="code">
-          <el-input v-model="form.code" :disabled="isEdit" />
-        </el-form-item>
+      <FormField v-slot="{ componentField }" name="name">
+        <FormItem>
+          <FormLabel>角色名称</FormLabel>
+          <FormControl>
+            <Input v-bind="componentField" />
+          </FormControl>
+          <FormMessage />
+        </FormItem>
+      </FormField>
 
-        <el-form-item label="角色名称" prop="name">
-          <el-input v-model="form.name" />
-        </el-form-item>
+      <FormField v-slot="{ componentField }" name="description">
+        <FormItem>
+          <FormLabel>描述</FormLabel>
+          <FormControl>
+            <Input v-bind="componentField" />
+          </FormControl>
+          <FormMessage />
+        </FormItem>
+      </FormField>
 
-        <el-form-item label="描述" prop="description">
-          <el-input v-model="form.description" type="textarea" :rows="3" />
-        </el-form-item>
+      <div class="flex flex-col gap-2">
+        <FormLabel>权限分配</FormLabel>
+        <div class="rounded-lg border p-3 max-h-[400px] overflow-auto">
+          <PermissionTree
+            v-model="selectedPermissions"
+            :permissions="permissionStore.permissions"
+          />
+        </div>
+      </div>
 
-        <el-form-item label="权限分配">
-          <div class="permission-tree-container">
-            <PermissionTree
-              v-model="selectedPermissions"
-              :permissions="permissionStore.permissions"
-            />
-          </div>
-        </el-form-item>
-
-        <el-form-item>
-          <el-button type="primary" :loading="loading" @click="handleSubmit">
-            {{ isEdit ? "保存" : "创建" }}
-          </el-button>
-          <el-button @click="handleCancel">取消</el-button>
-        </el-form-item>
-      </el-form>
-    </el-card>
-  </div>
+      <div class="flex gap-2">
+        <Button type="submit" :disabled="loading">
+          {{ isEdit ? '保存' : '创建' }}
+        </Button>
+        <Button variant="outline" @click="handleCancel">取消</Button>
+      </div>
+    </form>
+  </AppPage>
 </template>
-
-<style scoped>
-.role-form-page {
-  padding: 16px;
-}
-
-.role-form {
-  max-width: 800px;
-}
-
-.permission-tree-container {
-  width: 100%;
-  max-height: 400px;
-  overflow: auto;
-  border: 1px solid var(--el-border-color);
-  border-radius: 4px;
-  padding: 12px;
-}
-</style>

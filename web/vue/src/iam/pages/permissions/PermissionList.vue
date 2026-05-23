@@ -1,53 +1,74 @@
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
-import { usePermissionStore } from "@/iam/stores/permission";
+import { ref, onMounted } from 'vue'
+import { usePermissionStore } from '@/iam/stores/permission'
+import AppPage from '@/framework/layouts/components/AppPage.vue'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 
-const permissionStore = usePermissionStore();
+const permissionStore = usePermissionStore()
 
-const activeResource = ref("");
+const activeResource = ref('')
 
 const loadPermissions = async () => {
-  await permissionStore.fetchPermissionGroups();
-};
-
-const handleResourceChange = (resource: string) => {
-  activeResource.value = resource;
-};
+  await permissionStore.fetchPermissionGroups()
+  if (permissionStore.permissionGroups.length > 0 && !activeResource.value) {
+    activeResource.value = permissionStore.permissionGroups[0].resource
+  }
+}
 
 onMounted(() => {
-  loadPermissions();
-});
+  loadPermissions()
+})
 </script>
 
 <template>
-  <div class="permission-list-page">
-    <el-card shadow="never">
-      <template #header>
-        <span>权限管理</span>
-      </template>
-
-      <el-tabs v-model="activeResource" @tab-change="handleResourceChange">
-        <el-tab-pane
+  <AppPage title="权限管理" variant="list">
+    <Tabs v-model="activeResource">
+      <TabsList>
+        <TabsTrigger
           v-for="group in permissionStore.permissionGroups"
           :key="group.resource"
-          :label="group.resource"
-          :name="group.resource"
+          :value="group.resource"
         >
-          <el-table :data="group.permissions" stripe>
-            <el-table-column prop="code" label="权限编码" min-width="150" />
-            <el-table-column prop="name" label="权限名称" min-width="120" />
-            <el-table-column prop="resource" label="资源" min-width="100" />
-            <el-table-column prop="action" label="操作" min-width="80" />
-            <el-table-column prop="description" label="描述" min-width="200" />
-          </el-table>
-        </el-tab-pane>
-      </el-tabs>
-    </el-card>
-  </div>
-</template>
+          {{ group.resource }}
+        </TabsTrigger>
+      </TabsList>
 
-<style scoped>
-.permission-list-page {
-  padding: 16px;
-}
-</style>
+      <TabsContent
+        v-for="group in permissionStore.permissionGroups"
+        :key="group.resource"
+        :value="group.resource"
+      >
+        <div class="rounded-lg border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead class="w-[150px]">权限编码</TableHead>
+                <TableHead class="w-[120px]">权限名称</TableHead>
+                <TableHead class="w-[100px]">资源</TableHead>
+                <TableHead class="w-[80px]">操作</TableHead>
+                <TableHead class="w-[200px]">描述</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              <TableRow v-for="perm in group.permissions" :key="perm.id">
+                <TableCell class="font-medium">{{ perm.code }}</TableCell>
+                <TableCell>{{ perm.name }}</TableCell>
+                <TableCell>{{ perm.resource }}</TableCell>
+                <TableCell>{{ perm.action }}</TableCell>
+                <TableCell>{{ perm.description || '--' }}</TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
+        </div>
+      </TabsContent>
+    </Tabs>
+  </AppPage>
+</template>

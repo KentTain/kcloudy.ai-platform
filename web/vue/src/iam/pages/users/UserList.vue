@@ -1,185 +1,269 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from "vue";
-import { useRouter } from "vue-router";
-import { useUserStore } from "@/iam/stores/user";
-import { useUserStore as useFrameworkUserStore } from "@/framework/stores";
-import type { User } from "@/iam/types";
-import { confirmAction } from "@/iam/utils/feedback";
+import { ref, onMounted, computed } from 'vue'
+import { useRouter } from 'vue-router'
+import { useUserStore } from '@/iam/stores/user'
+import { useUserStore as useFrameworkUserStore } from '@/framework/stores'
+import type { User } from '@/iam/types'
+import { confirmAction } from '@/iam/utils/feedback'
+import AppPage from '@/framework/layouts/components/AppPage.vue'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Badge } from '@/components/ui/badge'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import { Skeleton } from '@/components/ui/skeleton'
+import Pagination from '@/components/Pagination.vue'
+import { Plus, Search, RotateCcw, Pencil, Trash2, Lock, ShieldOff, ShieldCheck } from '@lucide/vue'
 
-const router = useRouter();
-const userStore = useUserStore();
-const frameworkUserStore = useFrameworkUserStore();
+const router = useRouter()
+const userStore = useUserStore()
+const frameworkUserStore = useFrameworkUserStore()
 
 const searchForm = ref({
-  keyword: "",
-  status: "",
-});
+  keyword: '',
+  status: '',
+})
 
 const pagination = ref({
   page: 1,
-  page_size: 20,
-});
+  pageSize: 20,
+})
+
+const statusOptions = [
+  { label: '激活', value: 'active' },
+  { label: '停用', value: 'inactive' },
+  { label: '锁定', value: 'locked' },
+]
 
 const handleSearch = () => {
-  pagination.value.page = 1;
-  loadUsers();
-};
+  pagination.value.page = 1
+  loadUsers()
+}
+
+const handleReset = () => {
+  searchForm.value = { keyword: '', status: '' }
+  pagination.value.page = 1
+  loadUsers()
+}
 
 const loadUsers = async () => {
   await userStore.fetchUsers({
     page: pagination.value.page,
-    page_size: pagination.value.page_size,
+    page_size: pagination.value.pageSize,
     keyword: searchForm.value.keyword || undefined,
     status: searchForm.value.status || undefined,
-  });
-};
+  })
+}
 
 const handlePageChange = (page: number) => {
-  pagination.value.page = page;
-  loadUsers();
-};
+  pagination.value.page = page
+  loadUsers()
+}
 
-const handleSizeChange = (size: number) => {
-  pagination.value.page_size = size;
-  pagination.value.page = 1;
-  loadUsers();
-};
+const handlePageSizeChange = (pageSize: number) => {
+  pagination.value.pageSize = pageSize
+  pagination.value.page = 1
+  loadUsers()
+}
 
 const handleCreate = () => {
-  router.push("/users/create");
-};
+  router.push('/users/create')
+}
 
 const handleEdit = (row: User) => {
-  router.push(`/users/${row.id}/edit`);
-};
+  router.push(`/users/${row.id}/edit`)
+}
 
 const handleDelete = async (row: User) => {
-  if (!confirmAction(`确定要删除用户 "${row.username}" 吗？`)) return;
+  if (!confirmAction(`确定要删除用户 "${row.username}" 吗？`)) return
+  await userStore.removeUser(row.id)
+}
 
-  await userStore.removeUser(row.id);
-};
+const handleStatusChange = async (row: User, status: 'enable' | 'disable' | 'lock') => {
+  await userStore.changeUserStatus(row.id, status)
+}
 
-const handleStatusChange = async (row: User, status: "enable" | "disable" | "lock") => {
-  await userStore.changeUserStatus(row.id, status);
-};
+const canCreate = computed(() => frameworkUserStore.hasPermission('user:add'))
+const canEdit = computed(() => frameworkUserStore.hasPermission('user:edit'))
+const canDelete = computed(() => frameworkUserStore.hasPermission('user:delete'))
 
-// 检查权限
-const canCreate = computed(() => frameworkUserStore.hasPermission("user:add"));
-const canEdit = computed(() => frameworkUserStore.hasPermission("user:edit"));
-const canDelete = computed(() => frameworkUserStore.hasPermission("user:delete"));
+function getStatusBadgeVariant(status: string): 'default' | 'secondary' | 'destructive' | 'outline' {
+  if (status === 'active') return 'default'
+  if (status === 'locked') return 'destructive'
+  return 'secondary'
+}
+
+function getStatusLabel(status: string): string {
+  if (status === 'active') return '激活'
+  if (status === 'locked') return '锁定'
+  return '停用'
+}
+
+function formatDate(dateStr: string): string {
+  return new Date(dateStr).toLocaleString()
+}
 
 onMounted(() => {
-  loadUsers();
-});
+  loadUsers()
+})
 </script>
 
 <template>
-  <div class="user-list-page">
-    <!-- 搜索栏 -->
-    <el-card class="search-card" shadow="never">
-      <el-form :model="searchForm" inline>
-        <el-form-item label="关键字">
-          <el-input
-            v-model="searchForm.keyword"
-            placeholder="用户名/邮箱/手机号"
-            clearable
-            @keyup.enter="handleSearch"
-          />
-        </el-form-item>
-        <el-form-item label="状态">
-          <el-select v-model="searchForm.status" placeholder="全部" clearable>
-            <el-option label="激活" value="active" />
-            <el-option label="停用" value="inactive" />
-            <el-option label="锁定" value="locked" />
-          </el-select>
-        </el-form-item>
-        <el-form-item>
-          <el-button type="primary" @click="handleSearch">搜索</el-button>
-          <el-button @click="searchForm = { keyword: '', status: '' }">重置</el-button>
-        </el-form-item>
-      </el-form>
-    </el-card>
+  <AppPage title="用户管理" variant="list">
+    <template #actions>
+      <Button v-if="canCreate" @click="handleCreate">
+        <Plus class="mr-1 h-4 w-4" />
+        新建用户
+      </Button>
+    </template>
 
-    <!-- 操作栏 -->
-    <el-card class="table-card" shadow="never">
-      <template #header>
-        <div class="table-header">
-          <span>用户列表</span>
-          <el-button v-if="canCreate" type="primary" @click="handleCreate">
-            新建用户
-          </el-button>
-        </div>
-      </template>
-
-      <!-- 表格 -->
-      <el-table :data="userStore.users" v-loading="userStore.loading" stripe>
-        <el-table-column prop="username" label="用户名" min-width="120" />
-        <el-table-column prop="nickname" label="昵称" min-width="100" />
-        <el-table-column prop="email" label="邮箱" min-width="150" />
-        <el-table-column prop="phone" label="手机号" min-width="120" />
-        <el-table-column prop="status" label="状态" width="80">
-          <template #default="{ row }">
-            <el-tag :type="row.status === 'active' ? 'success' : row.status === 'locked' ? 'danger' : 'info'">
-              {{ row.status === 'active' ? '激活' : row.status === 'locked' ? '锁定' : '停用' }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="created_at" label="创建时间" width="180">
-          <template #default="{ row }">
-            {{ new Date(row.created_at).toLocaleString() }}
-          </template>
-        </el-table-column>
-        <el-table-column label="操作" width="200" fixed="right">
-          <template #default="{ row }">
-            <el-button v-if="canEdit" link type="primary" @click="handleEdit(row)">编辑</el-button>
-            <el-button v-if="canEdit && row.status === 'active'" link @click="handleStatusChange(row, 'disable')">
-              停用
-            </el-button>
-            <el-button v-if="canEdit && row.status === 'inactive'" link type="success" @click="handleStatusChange(row, 'enable')">
-              激活
-            </el-button>
-            <el-button v-if="canEdit && row.status !== 'locked'" link type="danger" @click="handleStatusChange(row, 'lock')">
-              锁定
-            </el-button>
-            <el-button v-if="canDelete" link type="danger" @click="handleDelete(row)">删除</el-button>
-          </template>
-        </el-table-column>
-      </el-table>
-
-      <!-- 分页 -->
-      <div class="pagination-wrap">
-        <el-pagination
-          v-model:current-page="pagination.page"
-          v-model:page-size="pagination.page_size"
-          :total="userStore.total"
-          :page-sizes="[10, 20, 50, 100]"
-          layout="total, sizes, prev, pager, next, jumper"
-          @current-change="handlePageChange"
-          @size-change="handleSizeChange"
+    <!-- 搜索筛选区 -->
+    <div class="flex flex-wrap items-end gap-3">
+      <div class="flex flex-col gap-1.5">
+        <span class="text-sm text-muted-foreground">关键字</span>
+        <Input
+          v-model="searchForm.keyword"
+          placeholder="用户名/邮箱/手机号"
+          class="w-[200px]"
+          @keyup.enter="handleSearch"
         />
       </div>
-    </el-card>
-  </div>
+      <div class="flex flex-col gap-1.5">
+        <span class="text-sm text-muted-foreground">状态</span>
+        <Select v-model="searchForm.status">
+          <SelectTrigger class="w-[120px]">
+            <SelectValue placeholder="全部" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="">全部</SelectItem>
+            <SelectItem v-for="opt in statusOptions" :key="opt.value" :value="opt.value">
+              {{ opt.label }}
+            </SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      <div class="flex gap-2">
+        <Button size="sm" @click="handleSearch">
+          <Search class="mr-1 h-4 w-4" />
+          搜索
+        </Button>
+        <Button variant="outline" size="sm" @click="handleReset">
+          <RotateCcw class="mr-1 h-4 w-4" />
+          重置
+        </Button>
+      </div>
+    </div>
+
+    <!-- 数据表格 -->
+    <div class="rounded-lg border">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead class="w-[120px]">用户名</TableHead>
+            <TableHead class="w-[100px]">昵称</TableHead>
+            <TableHead class="w-[150px]">邮箱</TableHead>
+            <TableHead class="w-[120px]">手机号</TableHead>
+            <TableHead class="w-[80px]">状态</TableHead>
+            <TableHead class="w-[180px]">创建时间</TableHead>
+            <TableHead class="w-[200px]">操作</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          <!-- 加载态 Skeleton -->
+          <TableRow v-if="userStore.loading">
+            <TableCell v-for="n in 7" :key="n">
+              <Skeleton class="h-5 w-full" />
+            </TableCell>
+          </TableRow>
+          <!-- 空数据 -->
+          <TableRow v-else-if="!userStore.users.length">
+            <TableCell colspan="7" class="h-24 text-center text-muted-foreground">
+              暂无数据
+            </TableCell>
+          </TableRow>
+          <!-- 数据行 -->
+          <TableRow v-else v-for="row in userStore.users" :key="row.id">
+            <TableCell class="font-medium">{{ row.username }}</TableCell>
+            <TableCell>{{ row.nickname || '--' }}</TableCell>
+            <TableCell>{{ row.email || '--' }}</TableCell>
+            <TableCell>{{ row.phone || '--' }}</TableCell>
+            <TableCell>
+              <Badge :variant="getStatusBadgeVariant(row.status)">
+                {{ getStatusLabel(row.status) }}
+              </Badge>
+            </TableCell>
+            <TableCell>{{ formatDate(row.created_at) }}</TableCell>
+            <TableCell>
+              <div class="flex items-center gap-1">
+                <Button v-if="canEdit" variant="ghost" size="sm" @click="handleEdit(row)">
+                  <Pencil class="mr-1 h-3.5 w-3.5" />
+                  编辑
+                </Button>
+                <Button
+                  v-if="canEdit && row.status === 'active'"
+                  variant="ghost"
+                  size="sm"
+                  @click="handleStatusChange(row, 'disable')"
+                >
+                  <ShieldOff class="mr-1 h-3.5 w-3.5" />
+                  停用
+                </Button>
+                <Button
+                  v-if="canEdit && row.status === 'inactive'"
+                  variant="ghost"
+                  size="sm"
+                  @click="handleStatusChange(row, 'enable')"
+                >
+                  <ShieldCheck class="mr-1 h-3.5 w-3.5" />
+                  激活
+                </Button>
+                <Button
+                  v-if="canEdit && row.status !== 'locked'"
+                  variant="ghost"
+                  size="sm"
+                  class="text-destructive hover:text-destructive"
+                  @click="handleStatusChange(row, 'lock')"
+                >
+                  <Lock class="mr-1 h-3.5 w-3.5" />
+                  锁定
+                </Button>
+                <Button
+                  v-if="canDelete"
+                  variant="ghost"
+                  size="sm"
+                  class="text-destructive hover:text-destructive"
+                  @click="handleDelete(row)"
+                >
+                  <Trash2 class="mr-1 h-3.5 w-3.5" />
+                  删除
+                </Button>
+              </div>
+            </TableCell>
+          </TableRow>
+        </TableBody>
+      </Table>
+    </div>
+
+    <!-- 分页 -->
+    <Pagination
+      :total="userStore.total"
+      :page="pagination.page"
+      :page-size="pagination.pageSize"
+      @update:page="handlePageChange"
+      @update:page-size="handlePageSizeChange"
+    />
+  </AppPage>
 </template>
-
-<style scoped>
-.user-list-page {
-  padding: 16px;
-}
-
-.search-card {
-  margin-bottom: 16px;
-}
-
-.table-card :deep(.table-header) {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.pagination-wrap {
-  margin-top: 16px;
-  display: flex;
-  justify-content: flex-end;
-}
-</style>

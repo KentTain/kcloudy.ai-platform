@@ -1,208 +1,109 @@
 <script setup lang="ts">
-/**
- * DepartmentTree 部门树组件
- * 用于展示组织架构的树形结构，支持节点选择、搜索过滤
- */
-import { computed, ref, watch } from "vue";
-import { createDebounce } from "@/framework/composables/useDebouncedSearch";
-import type { Department } from "@/iam/types";
+import { computed, ref, watch } from 'vue'
+import CheckboxTree from '@/components/CheckboxTree.vue'
+import type { TreeNode } from '@/components/CheckboxTree.vue'
+import type { Department } from '@/iam/types'
 
 interface Props {
-  departments: Department[];
-  modelValue: string | string[];
-  mode?: "single" | "multiple";
-  defaultExpandLevel?: number;
-  disabled?: boolean;
+  departments: Department[]
+  modelValue: string | string[]
+  mode?: 'single' | 'multiple'
+  defaultExpandLevel?: number
+  disabled?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  mode: "single",
-  defaultExpandLevel: 1,
+  mode: 'single',
+  defaultExpandLevel: 99,
   disabled: false,
-});
+})
 
 const emit = defineEmits<{
-  "update:modelValue": [value: string | string[]];
-  "node-click": [node: TreeNode];
-  "check-change": [nodes: TreeNode[]];
-}>();
-
-const filterText = ref("");
-const debouncedFilterText = ref("");
-
-// 防抖搜索优化
-const debounceFilter = createDebounce((value: string) => {
-  debouncedFilterText.value = value;
-}, 300);
-
-watch(filterText, (newVal) => {
-  debounceFilter(newVal);
-});
-
-interface TreeNode {
-  id: string;
-  label: string;
-  children?: TreeNode[];
-  data?: Department;
-}
-
-const transformToTreeData = (departments: Department[]): TreeNode[] => {
-  return departments.map((dept) => ({
-    id: dept.id,
-    label: dept.name,
-    children: dept.children ? transformToTreeData(dept.children) : undefined,
-    data: dept,
-  }));
-};
+  'update:modelValue': [value: string | string[]]
+  'node-click': [node: { id: string; data?: Department }]
+}>()
 
 const treeData = computed<TreeNode[]>(() => {
-  return transformToTreeData(props.departments);
-});
+  return props.departments.map(dept => ({
+    id: dept.id,
+    name: dept.name,
+    children: dept.children ? dept.children.map(child => ({
+      id: child.id,
+      name: child.name,
+      children: child.children?.length ? child.children.map(c => ({
+        id: c.id,
+        name: c.name,
+      })) : undefined,
+    })) : undefined,
+  }))
+})
 
-const filteredTreeData = computed<TreeNode[]>(() => {
-  if (!debouncedFilterText.value.trim()) {
-    return treeData.value;
-  }
+// 单选模式 - 使用数组形式绑定
+const selectedIdArray = ref<(string | number)[]>(
+  typeof props.modelValue === 'string' && props.modelValue ? [props.modelValue] : [],
+)
 
-  const keyword = debouncedFilterText.value.toLowerCase();
-
-  const filterNode = (nodes: TreeNode[]): TreeNode[] => {
-    const result: TreeNode[] = [];
-
-    nodes.forEach((node) => {
-      const labelMatch = node.label?.toLowerCase().includes(keyword);
-      const childrenMatch = node.children && filterNode(node.children).length > 0;
-
-      if (labelMatch) {
-        result.push(node);
-      } else if (childrenMatch) {
-        result.push({
-          ...node,
-          children: filterNode(node.children || []),
-        });
-      }
-    });
-
-    return result;
-  };
-
-  return filterNode(treeData.value);
-});
-
-const currentKey = ref<string | string[]>(
-  typeof props.modelValue === "string" ? props.modelValue : ""
-);
-const checkedKeys = ref<string[]>(
-  Array.isArray(props.modelValue) ? props.modelValue : []
-);
+// 多选模式
+const selectedIds = ref<(string | number)[]>(
+  Array.isArray(props.modelValue) ? props.modelValue : [],
+)
 
 watch(
   () => props.modelValue,
   (newVal) => {
-    if (props.mode === "single") {
-      currentKey.value = typeof newVal === "string" ? newVal : "";
+    if (props.mode === 'single') {
+      selectedIdArray.value = typeof newVal === 'string' && newVal ? [newVal] : []
     } else {
-      checkedKeys.value = Array.isArray(newVal) ? newVal : [];
+      selectedIds.value = Array.isArray(newVal) ? newVal : []
     }
+  },
+)
+
+// 单选时点击节点
+const handleNodeSelect = (value: (string | number)[]) => {
+  if (props.mode === 'single') {
+    const selected = value.length > 0 ? String(value[value.length - 1]) : ''
+    emit('update:modelValue', selected)
+    // 找到对应的 Department 数据
+    const dept = findDeptById(selected)
+    emit('node-click', { id: selected, data: dept })
+  } else {
+    emit('update:modelValue', value as string[])
   }
-);
+}
 
-const handleNodeClick = (data: TreeNode) => {
-  if (props.mode === "single") {
-    emit("update:modelValue", data.id);
-    emit("node-click", data);
-  }
-};
+function findDeptById(id: string): Department | undefined {
+  const flatDepts = flattenDepartments(props.departments)
+  return flatDepts.find(d => d.id === id)
+}
 
-const handleCheck = (_data: TreeNode, { checkedNodes }: { checkedNodes: TreeNode[] }) => {
-  if (props.mode === "multiple") {
-    const selectedIds = checkedNodes.map((node) => node.id);
-    emit("update:modelValue", selectedIds);
-    emit("check-change", checkedNodes);
-  }
-};
-
-const filterNode = (value: string, data: TreeNode): boolean => {
-  if (!value) return true;
-  return data.label?.toLowerCase().includes(value.toLowerCase()) || false;
-};
-
-defineExpose({
-  treeData,
-  filteredTreeData,
-  filterText,
-  debouncedFilterText,
-});
+function flattenDepartments(depts: Department[]): Department[] {
+  return depts.flatMap(d => [d, ...flattenDepartments(d.children || [])])
+}
 </script>
 
 <template>
-  <div class="department-tree">
-    <el-input
-      v-model="filterText"
-      placeholder="搜索部门名称"
-      clearable
-      class="department-tree__search"
-      :disabled="disabled"
-    >
-      <template #prefix>
-        <el-icon><Search /></el-icon>
-      </template>
-    </el-input>
+  <!-- 单选模式 -->
+  <CheckboxTree
+    v-if="mode === 'single'"
+    :data="treeData"
+    v-model="selectedIdArray"
+    :disabled="disabled"
+    :default-expand-level="defaultExpandLevel"
+    searchable
+    placeholder="搜索部门名称"
+    @update:model-value="handleNodeSelect"
+  />
 
-    <!-- 单选模式 -->
-    <el-tree
-      v-if="mode === 'single'"
-      ref="treeRef"
-      :data="filteredTreeData"
-      :props="{
-        children: 'children',
-        label: 'label',
-      }"
-      :current-node-key="currentKey"
-      node-key="id"
-      :default-expand-all="defaultExpandLevel >= 99"
-      :expand-on-click-node="false"
-      :filter-node-method="filterNode"
-      :disabled="disabled"
-      highlight-current
-      class="department-tree__content"
-      @node-click="handleNodeClick"
-    />
-
-    <!-- 多选模式 -->
-    <el-tree
-      v-else
-      ref="treeRef"
-      :data="filteredTreeData"
-      :props="{
-        children: 'children',
-        label: 'label',
-      }"
-      show-checkbox
-      :default-checked-keys="checkedKeys"
-      node-key="id"
-      :default-expand-all="defaultExpandLevel >= 99"
-      :filter-node-method="filterNode"
-      :disabled="disabled"
-      class="department-tree__content"
-      @check="handleCheck"
-    />
-  </div>
+  <!-- 多选模式 -->
+  <CheckboxTree
+    v-else
+    :data="treeData"
+    v-model="selectedIds"
+    :disabled="disabled"
+    :default-expand-level="defaultExpandLevel"
+    searchable
+    placeholder="搜索部门名称"
+    @update:model-value="handleNodeSelect"
+  />
 </template>
-
-<style scoped>
-.department-tree {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.department-tree__search {
-  flex-shrink: 0;
-}
-
-.department-tree__content {
-  flex: 1;
-  overflow: auto;
-}
-</style>

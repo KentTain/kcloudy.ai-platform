@@ -1,201 +1,256 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from "vue";
-import { useRouter } from "vue-router";
-import { useTenantStore } from "@/iam/stores/tenant";
-import { useUserStore } from "@/framework/stores";
-import type { Tenant } from "@/iam/types";
-import { confirmAction, notifySuccess } from "@/iam/utils/feedback";
+import { ref, onMounted, computed } from 'vue'
+import { useRouter } from 'vue-router'
+import { useTenantStore } from '@/iam/stores/tenant'
+import { useUserStore } from '@/framework/stores'
+import type { Tenant } from '@/iam/types'
+import { confirmAction, notifySuccess } from '@/iam/utils/feedback'
+import AppPage from '@/framework/layouts/components/AppPage.vue'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Badge } from '@/components/ui/badge'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import { Skeleton } from '@/components/ui/skeleton'
+import Pagination from '@/components/Pagination.vue'
+import { Plus, Search, RotateCcw, Pencil, Trash2, ShieldCheck, ShieldOff } from '@lucide/vue'
 
-const router = useRouter();
-const tenantStore = useTenantStore();
-const frameworkUserStore = useUserStore();
+const router = useRouter()
+const tenantStore = useTenantStore()
+const frameworkUserStore = useUserStore()
 
 const searchForm = ref({
-  keyword: "",
-  status: "",
-});
+  keyword: '',
+  status: '',
+})
 
 const pagination = ref({
   page: 1,
-  page_size: 20,
-});
+  pageSize: 20,
+})
+
+const statusOptions = [
+  { label: '激活', value: 'active' },
+  { label: '停用', value: 'inactive' },
+]
 
 const loadTenants = async () => {
   await tenantStore.fetchTenants({
     page: pagination.value.page,
-    page_size: pagination.value.page_size,
+    page_size: pagination.value.pageSize,
     keyword: searchForm.value.keyword || undefined,
     status: searchForm.value.status || undefined,
-  });
-};
+  })
+}
 
 const handleSearch = () => {
-  pagination.value.page = 1;
-  loadTenants();
-};
+  pagination.value.page = 1
+  loadTenants()
+}
+
+const handleReset = () => {
+  searchForm.value = { keyword: '', status: '' }
+  pagination.value.page = 1
+  loadTenants()
+}
+
+const handlePageChange = (page: number) => {
+  pagination.value.page = page
+  loadTenants()
+}
+
+const handlePageSizeChange = (pageSize: number) => {
+  pagination.value.pageSize = pageSize
+  pagination.value.page = 1
+  loadTenants()
+}
 
 const handleCreate = () => {
-  router.push("/tenants/create");
-};
+  router.push('/tenants/create')
+}
 
 const handleEdit = (row: Tenant) => {
-  router.push(`/tenants/${row.id}/edit`);
-};
+  router.push(`/tenants/${row.id}/edit`)
+}
+
+const handleDetail = (row: Tenant) => {
+  router.push(`/tenants/${row.id}`)
+}
 
 const handleDelete = async (row: Tenant) => {
-  if (!confirmAction(`确定要删除租户 "${row.name}" 吗？`)) return;
-
-  await tenantStore.removeTenant(row.id);
-  notifySuccess("删除成功");
-};
+  if (!confirmAction(`确定要删除租户 "${row.name}" 吗？`)) return
+  await tenantStore.removeTenant(row.id)
+  notifySuccess('删除成功')
+}
 
 const handleActivate = async (row: Tenant) => {
-  await tenantStore.activate(row.id);
-  notifySuccess("激活成功");
-};
+  await tenantStore.activate(row.id)
+  notifySuccess('激活成功')
+}
 
 const handleDeactivate = async (row: Tenant) => {
-  await tenantStore.deactivate(row.id);
-  notifySuccess("停用成功");
-};
+  await tenantStore.deactivate(row.id)
+  notifySuccess('停用成功')
+}
 
-const canCreate = computed(() => frameworkUserStore.hasRole("tenant_admin"));
-const canEdit = computed(() => frameworkUserStore.hasRole("tenant_admin"));
+const canCreate = computed(() => frameworkUserStore.hasRole('tenant_admin'))
+const canEdit = computed(() => frameworkUserStore.hasRole('tenant_admin'))
+
+function formatDate(dateStr?: string): string {
+  if (!dateStr) return '永久'
+  return new Date(dateStr).toLocaleDateString()
+}
 
 onMounted(() => {
-  loadTenants();
-});
+  loadTenants()
+})
 </script>
 
 <template>
-  <div class="tenant-list-page">
-    <el-card shadow="never">
-      <template #header>
-        <div class="table-header">
-          <span>租户管理</span>
-          <el-button v-if="canCreate" type="primary" @click="handleCreate">
-            新建租户
-          </el-button>
-        </div>
-      </template>
+  <AppPage title="租户管理" variant="list">
+    <template #actions>
+      <Button v-if="canCreate" @click="handleCreate">
+        <Plus class="mr-1 h-4 w-4" />
+        新建租户
+      </Button>
+    </template>
 
-      <el-form :model="searchForm" inline class="search-form">
-        <el-form-item label="关键字">
-          <el-input
-            v-model="searchForm.keyword"
-            placeholder="租户名称/编码"
-            clearable
-            @keyup.enter="handleSearch"
-          />
-        </el-form-item>
-        <el-form-item label="状态">
-          <el-select v-model="searchForm.status" placeholder="全部" clearable>
-            <el-option label="激活" value="active" />
-            <el-option label="停用" value="inactive" />
-          </el-select>
-        </el-form-item>
-        <el-form-item>
-          <el-button type="primary" @click="handleSearch">搜索</el-button>
-        </el-form-item>
-      </el-form>
-
-      <el-table
-        :data="tenantStore.tenants"
-        v-loading="tenantStore.loading"
-        stripe
-      >
-        <el-table-column prop="name" label="租户名称" min-width="120" />
-        <el-table-column prop="code" label="租户编码" min-width="120" />
-        <el-table-column prop="contact_name" label="联系人" min-width="100" />
-        <el-table-column
-          prop="contact_email"
-          label="联系人邮箱"
-          min-width="150"
-        />
-        <el-table-column prop="status" label="状态" width="80">
-          <template #default="{ row }">
-            <el-tag :type="row.status === 'active' ? 'success' : 'info'">
-              {{ row.status === "active" ? "激活" : "停用" }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="expired_at" label="过期时间" width="180">
-          <template #default="{ row }">
-            {{
-              row.expired_at
-                ? new Date(row.expired_at).toLocaleDateString()
-                : "永久"
-            }}
-          </template>
-        </el-table-column>
-        <el-table-column label="操作" width="180" fixed="right">
-          <template #default="{ row }">
-            <el-button
-              v-if="canEdit"
-              link
-              type="primary"
-              @click="handleEdit(row)"
-              >编辑</el-button
-            >
-            <el-button
-              v-if="canEdit && row.status === 'inactive'"
-              link
-              type="success"
-              @click="handleActivate(row)"
-            >
-              激活
-            </el-button>
-            <el-button
-              v-if="canEdit && row.status === 'active'"
-              link
-              @click="handleDeactivate(row)"
-            >
-              停用
-            </el-button>
-            <el-button
-              v-if="canEdit"
-              link
-              type="danger"
-              @click="handleDelete(row)"
-              >删除</el-button
-            >
-          </template>
-        </el-table-column>
-      </el-table>
-
-      <div class="pagination-wrap">
-        <el-pagination
-          v-model:current-page="pagination.page"
-          v-model:page-size="pagination.page_size"
-          :total="tenantStore.total"
-          :page-sizes="[10, 20, 50]"
-          layout="total, sizes, prev, pager, next"
-          @current-change="loadTenants"
-          @size-change="loadTenants"
+    <!-- 搜索筛选区 -->
+    <div class="flex flex-wrap items-end gap-3">
+      <div class="flex flex-col gap-1.5">
+        <span class="text-sm text-muted-foreground">关键字</span>
+        <Input
+          v-model="searchForm.keyword"
+          placeholder="租户名称/编码"
+          class="w-[200px]"
+          @keyup.enter="handleSearch"
         />
       </div>
-    </el-card>
-  </div>
+      <div class="flex flex-col gap-1.5">
+        <span class="text-sm text-muted-foreground">状态</span>
+        <Select v-model="searchForm.status">
+          <SelectTrigger class="w-[120px]">
+            <SelectValue placeholder="全部" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="">全部</SelectItem>
+            <SelectItem v-for="opt in statusOptions" :key="opt.value" :value="opt.value">
+              {{ opt.label }}
+            </SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      <div class="flex gap-2">
+        <Button size="sm" @click="handleSearch">
+          <Search class="mr-1 h-4 w-4" />
+          搜索
+        </Button>
+        <Button variant="outline" size="sm" @click="handleReset">
+          <RotateCcw class="mr-1 h-4 w-4" />
+          重置
+        </Button>
+      </div>
+    </div>
+
+    <!-- 数据表格 -->
+    <div class="rounded-lg border">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead class="w-[120px]">租户名称</TableHead>
+            <TableHead class="w-[120px]">租户编码</TableHead>
+            <TableHead class="w-[100px]">联系人</TableHead>
+            <TableHead class="w-[150px]">联系人邮箱</TableHead>
+            <TableHead class="w-[80px]">状态</TableHead>
+            <TableHead class="w-[180px]">过期时间</TableHead>
+            <TableHead class="w-[180px]">操作</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          <TableRow v-if="tenantStore.loading">
+            <TableCell v-for="n in 7" :key="n">
+              <Skeleton class="h-5 w-full" />
+            </TableCell>
+          </TableRow>
+          <TableRow v-else-if="!tenantStore.tenants.length">
+            <TableCell colspan="7" class="h-24 text-center text-muted-foreground">
+              暂无数据
+            </TableCell>
+          </TableRow>
+          <TableRow v-else v-for="row in tenantStore.tenants" :key="row.id">
+            <TableCell class="font-medium">{{ row.name }}</TableCell>
+            <TableCell>{{ row.code }}</TableCell>
+            <TableCell>{{ row.contact_name || '--' }}</TableCell>
+            <TableCell>{{ row.contact_email || '--' }}</TableCell>
+            <TableCell>
+              <Badge :variant="row.status === 'active' ? 'default' : 'secondary'">
+                {{ row.status === 'active' ? '激活' : '停用' }}
+              </Badge>
+            </TableCell>
+            <TableCell>{{ formatDate(row.expired_at) }}</TableCell>
+            <TableCell>
+              <div class="flex items-center gap-1">
+                <Button v-if="canEdit" variant="ghost" size="sm" @click="handleDetail(row)">
+                  详情
+                </Button>
+                <Button v-if="canEdit" variant="ghost" size="sm" @click="handleEdit(row)">
+                  <Pencil class="mr-1 h-3.5 w-3.5" />
+                  编辑
+                </Button>
+                <Button
+                  v-if="canEdit && row.status === 'inactive'"
+                  variant="ghost"
+                  size="sm"
+                  @click="handleActivate(row)"
+                >
+                  <ShieldCheck class="mr-1 h-3.5 w-3.5" />
+                  激活
+                </Button>
+                <Button
+                  v-if="canEdit && row.status === 'active'"
+                  variant="ghost"
+                  size="sm"
+                  @click="handleDeactivate(row)"
+                >
+                  <ShieldOff class="mr-1 h-3.5 w-3.5" />
+                  停用
+                </Button>
+                <Button
+                  v-if="canEdit"
+                  variant="ghost"
+                  size="sm"
+                  class="text-destructive hover:text-destructive"
+                  @click="handleDelete(row)"
+                >
+                  <Trash2 class="mr-1 h-3.5 w-3.5" />
+                  删除
+                </Button>
+              </div>
+            </TableCell>
+          </TableRow>
+        </TableBody>
+      </Table>
+    </div>
+
+    <Pagination
+      :total="tenantStore.total"
+      :page="pagination.page"
+      :page-size="pagination.pageSize"
+      @update:page="handlePageChange"
+      @update:page-size="handlePageSizeChange"
+    />
+  </AppPage>
 </template>
-
-<style scoped>
-.tenant-list-page {
-  padding: 16px;
-}
-
-.table-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.search-form {
-  margin-bottom: 16px;
-}
-
-.pagination-wrap {
-  margin-top: 16px;
-  display: flex;
-  justify-content: flex-end;
-}
-</style>
