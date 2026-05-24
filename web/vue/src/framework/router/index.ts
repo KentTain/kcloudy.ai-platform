@@ -55,6 +55,19 @@ export const asyncRoutes: RouteRecordRaw[] = [
         component: () => import("@/demo/pages/DatasetsPage.vue"),
         meta: { title: "知识库", icon: "database", requiresAuth: true },
       },
+      // 设置页面
+      {
+        path: "settings/account",
+        name: "AccountSettings",
+        component: () => import("@/framework/pages/AccountSettingsPage.vue"),
+        meta: { title: "账号设置", hidden: true, requiresAuth: true },
+      },
+      {
+        path: "settings/developer",
+        name: "DeveloperSettings",
+        component: () => import("@/framework/pages/DeveloperSettingsPage.vue"),
+        meta: { title: "开发者设置", hidden: true, requiresAuth: true },
+      },
       // IAM 模块路由
       ...iamRoutes,
     ],
