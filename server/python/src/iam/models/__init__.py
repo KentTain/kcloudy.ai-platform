@@ -15,6 +15,8 @@ from .enums import (
 from .oauth_connection import OAuthConnection
 from .permission import Permission, RolePermission, UserRole
 from .role import Role
+from .system_setting import SystemSetting
+from .system_setting_attribute import SystemSettingAttribute
 from .tenant import Tenant
 from .tenant_admin import TenantAdmin
 from .tenant_config import TenantConfig
@@ -44,4 +46,7 @@ __all__ = [
     "Permission",
     "UserRole",
     "RolePermission",
+    # 系统设置
+    "SystemSetting",
+    "SystemSettingAttribute",
 ]

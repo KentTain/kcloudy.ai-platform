@@ -101,10 +101,14 @@ def create_app() -> FastAPI:
     # 注册路由 - 管理后台
     from iam.controllers.admin.tenant_controller import router as admin_tenant_router
     app.include_router(admin_tenant_router, prefix="/admin/v1", tags=["Admin - Tenant"])
+    from iam.controllers.admin.system_setting_controller import router as admin_system_setting_router
+    app.include_router(admin_system_setting_router, prefix="/admin/v1/system-settings", tags=["Admin - SystemSetting"])
 
     # 注册路由 - 用户端租户
     from iam.controllers.console.tenant_controller import router as console_tenant_router
     app.include_router(console_tenant_router, prefix="/console/v1/tenants", tags=["Console - Tenant"])
+    from iam.controllers.console.system_setting_controller import router as console_system_setting_router
+    app.include_router(console_system_setting_router, prefix="/console/v1/system-settings", tags=["Console - SystemSetting"])
 
     # 健康检查端点
     @app.get("/health", tags=["Health"])

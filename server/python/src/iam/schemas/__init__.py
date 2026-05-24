@@ -2,6 +2,19 @@
 IAM 模块 Pydantic Schemas
 """
 
+from iam.schemas.admin.system_setting import (
+    SystemSettingAttributeCreate,
+    SystemSettingAttributeResponse,
+    SystemSettingCreate,
+    SystemSettingListVo,
+    SystemSettingResponse,
+    SystemSettingUpdate,
+)
+from iam.schemas.console.system_setting import (
+    ConsoleSystemSettingAttributeResponse,
+    ConsoleSystemSettingListVo,
+    ConsoleSystemSettingResponse,
+)
 from iam.schemas.department import (
     DepartmentCreateRequest,
     DepartmentTreeVo,
@@ -91,4 +104,15 @@ __all__ = [
     "OAuthCallbackRequest",
     "OAuthCompleteProfileRequest",
     "OAuthBindRequest",
+    # 系统设置 - Admin
+    "SystemSettingCreate",
+    "SystemSettingUpdate",
+    "SystemSettingResponse",
+    "SystemSettingListVo",
+    "SystemSettingAttributeCreate",
+    "SystemSettingAttributeResponse",
+    # 系统设置 - Console
+    "ConsoleSystemSettingResponse",
+    "ConsoleSystemSettingListVo",
+    "ConsoleSystemSettingAttributeResponse",
 ]
