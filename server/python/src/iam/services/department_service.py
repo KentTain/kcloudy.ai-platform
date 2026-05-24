@@ -1,12 +1,11 @@
 """
 部门管理服务
 
-提供部门 CRUD 和树形结构查询功能。
+使用 TreeNodeMixin 内置方法简化树字段维护逻辑。
 """
 
 from loguru import logger
 from sqlalchemy import func, select
-from sqlalchemy.orm import joinedload
 
 from iam.models import Department, User, UserDepartment
 from framework.database.core.engine import async_session
@@ -28,15 +27,17 @@ class DepartmentService:
     ) -> Department:
         """创建部门"""
         async with async_session() as session:
-            dept = Department(
-                tenant_id=tenant_id,
-                name=name,
-                parent_id=parent_id,
-                code=code,
-                sort_order=sort_order,
-                leader_id=leader_id,
-            )
-            session.add(dept)
+            source = {
+                "tenant_id": tenant_id,
+                "name": name,
+                "code": code,
+                "sort_order": sort_order,
+                "leader_id": leader_id,
+            }
+            if parent_id:
+                source["parent_id"] = parent_id
+
+            dept = await Department.create_node(session, source)
             await session.commit()
             await session.refresh(dept)
 
@@ -56,30 +57,28 @@ class DepartmentService:
         department_id: str,
         name: str | None = None,
         code: str | None = None,
+        parent_id: str | None = None,
         sort_order: int | None = None,
         leader_id: str | None = None,
         status: str | None = None,
     ) -> Department:
         """更新部门"""
         async with async_session() as session:
-            stmt = select(Department).where(Department.id == department_id)
-            result = await session.execute(stmt)
-            dept = result.scalar_one_or_none()
-
-            if not dept:
-                raise ValueError("部门不存在")
-
+            source = {}
             if name is not None:
-                dept.name = name
+                source["name"] = name
             if code is not None:
-                dept.code = code
+                source["code"] = code
+            if parent_id is not None:
+                source["parent_id"] = parent_id
             if sort_order is not None:
-                dept.sort_order = sort_order
+                source["sort_order"] = sort_order
             if leader_id is not None:
-                dept.leader_id = leader_id
+                source["leader_id"] = leader_id
             if status is not None:
-                dept.status = status
+                source["status"] = status
 
+            dept = await Department.update_node(session, department_id, source)
             await session.commit()
             await session.refresh(dept)
 
@@ -90,14 +89,6 @@ class DepartmentService:
     async def delete(department_id: str) -> bool:
         """删除部门"""
         async with async_session() as session:
-            # 检查是否有子部门
-            stmt = select(func.count(Department.id)).where(
-                Department.parent_id == department_id
-            )
-            result = await session.execute(stmt)
-            if result.scalar() > 0:
-                raise ValueError("存在子部门，无法删除")
-
             # 检查是否有用户
             stmt = select(func.count(UserDepartment.id)).where(
                 UserDepartment.department_id == department_id
@@ -106,14 +97,11 @@ class DepartmentService:
             if result.scalar() > 0:
                 raise ValueError("部门下存在用户，无法删除")
 
-            stmt = select(Department).where(Department.id == department_id)
-            result = await session.execute(stmt)
-            dept = result.scalar_one_or_none()
+            count = await Department.delete_node(session, department_id)
+            await session.commit()
 
-            if dept:
-                await session.delete(dept)
-                await session.commit()
-                _logger.info(f"删除部门: {department_id}")
+            if count > 0:
+                _logger.info(f"删除部门: {department_id}，影响 {count} 个节点")
                 return True
             return False
 
@@ -124,7 +112,7 @@ class DepartmentService:
             stmt = (
                 select(Department)
                 .where(Department.tenant_id == tenant_id)
-                .order_by(Department.sort_order, Department.created_at)
+                .order_by(Department.tree_sorts)
             )
             result = await session.execute(stmt)
             return list(result.scalars().all())
@@ -134,56 +122,22 @@ class DepartmentService:
         """
         获取部门树形结构
 
-        Args:
-            tenant_id: 租户 ID
-
-        Returns:
-            list[dict]: 树形结构的部门列表
+        使用 TreeNodeMixin 内置方法构建树。
         """
-        departments = await DepartmentService.list_by_tenant(tenant_id)
-
-        # 构建 ID -> 部门映射
-        dept_map = {d.id: d for d in departments}
-
-        # 构建树形结构
-        tree: list[dict] = []
-        for dept in departments:
-            node = {
-                "id": dept.id,
-                "name": dept.name,
-                "code": dept.code,
-                "sort_order": dept.sort_order,
-                "leader_id": dept.leader_id,
-                "status": dept.status,
-                "children": [],
-            }
-
-            if dept.parent_id and dept.parent_id in dept_map:
-                # 添加到父部门的 children
-                parent = dept_map[dept.parent_id]
-                if not hasattr(parent, "_children"):
-                    parent._children = []
-                parent._children.append(node)
-            else:
-                # 顶级部门
-                tree.append(node)
-
-        # 将 _children 移到 children
-        def move_children(nodes: list[dict]) -> None:
-            for node in nodes:
-                dept = dept_map.get(node["id"])
-                if dept and hasattr(dept, "_children"):
-                    node["children"] = dept._children
-                    move_children(node["children"])
-
-        move_children(tree)
-        return tree
+        async with async_session() as session:
+            stmt = (
+                select(Department)
+                .where(Department.tenant_id == tenant_id)
+                .order_by(Department.tree_sorts)
+            )
+            result = await session.execute(stmt)
+            nodes = result.scalars().all()
+            return Department.build_tree(nodes)
 
     @staticmethod
     async def add_user(department_id: str, user_id: str, is_leader: bool = False) -> UserDepartment:
         """添加用户到部门"""
         async with async_session() as session:
-            # 检查是否已存在
             stmt = select(UserDepartment).where(
                 UserDepartment.department_id == department_id,
                 UserDepartment.user_id == user_id,

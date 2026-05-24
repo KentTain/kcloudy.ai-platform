@@ -6,19 +6,22 @@ from sqlalchemy import ForeignKey, Index, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from framework.database import BaseModel
+from framework.database.mixins.tree import TreeNodeMixin
 from iam.models.enums import DepartmentStatus
 
 
-class Department(BaseModel):
+class Department(BaseModel, TreeNodeMixin):
     """部门模型"""
 
     __tablename__ = "departments"
 
-    tenant_id: Mapped[str] = mapped_column(
-        String(36), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, comment="租户ID"
-    )
+    # 覆盖 TreeNodeMixin 的 parent_id，使用 ForeignKey
     parent_id: Mapped[str | None] = mapped_column(
         String(36), ForeignKey("departments.id", ondelete="SET NULL"), nullable=True, comment="父部门ID"
+    )
+
+    tenant_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, comment="租户ID"
     )
     name: Mapped[str] = mapped_column(
         String(100), nullable=False, comment="部门名称"
@@ -41,6 +44,11 @@ class Department(BaseModel):
         Index("ix_departments_parent_id", "parent_id"),
         Index("ix_departments_leader_id", "leader_id"),
     )
+
+    @classmethod
+    def tree_name_field(cls) -> str:
+        """返回名称字段"""
+        return "name"
 
 
 class UserDepartment(BaseModel):

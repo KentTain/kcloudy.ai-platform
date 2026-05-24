@@ -46,3 +46,6 @@ export interface PageResult<T> {
   page: number;
   pageSize: number;
 }
+
+// 树节点类型
+export type { TreeNode, TreeNodeTree, TreeComponentNode, TreeAction } from './tree'

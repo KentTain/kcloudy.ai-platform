@@ -38,7 +38,10 @@ framework/
 │   ├── tokens.css             # 设计令牌
 │   └── main.css               # 样式入口
 ├── types/                     # 类型定义
-│   └── index.ts               # 公共类型
+│   ├── index.ts               # 公共类型
+│   └── tree.ts                # 树节点类型（TreeNode、TreeNodeTree、TreeComponentNode、TreeAction）
+├── utils/                     # 工具函数
+│   └── tree.ts                # 树工具函数（buildTree、flattenTree、findNodeById、getAncestors、sortByTreeSorts）
 └── CLAUDE.md                  # 本文档
 ```
 

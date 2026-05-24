@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import CommonCheckboxTree from '@/components/CommonCheckboxTree.vue'
-import type { TreeNode } from '@/components/CommonCheckboxTree.vue'
+import type { TreeComponentNode } from '@/framework/types/tree'
 import type { Permission } from '@/iam/types'
 
 interface Props {
@@ -18,8 +18,8 @@ const emit = defineEmits<{
   'update:modelValue': [value: string[]]
 }>()
 
-const treeData = computed<TreeNode[]>(() => {
-  const resourceMap = new Map<string, TreeNode>()
+const treeData = computed<TreeComponentNode[]>(() => {
+  const resourceMap = new Map<string, TreeComponentNode>()
 
   props.permissions.forEach(perm => {
     if (!resourceMap.has(perm.resource)) {

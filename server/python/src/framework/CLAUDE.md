@@ -20,8 +20,9 @@ framework ──X──▶ demo / iam
 | `configs/` | YAML 配置加载、环境变量覆盖、配置模型 |
 | `cache/` | Redis 工具与租户缓存管理 |
 | `common/` | 通用上下文、异常、响应、枚举 |
-| `core/` | 存储、队列、发布订阅、锁等 Protocol / 抽象接口 |
-| `database/` | SQLAlchemy 基础模型、Mixin、类型、事件、引擎池 |
+| `core/` | 存储、队列、发布订阅、锁等 Protocol / 抽象接口、树结构常量 |
+| `database/` | SQLAlchemy 基础模型、Mixin（含 TreeNodeMixin）、类型、事件、引擎池 |
+| `schemas/` | Pydantic VO 基类（含 TreeNodeVo、TreeNodeTreeVo） |
 | `lock/` | 分布式锁工厂与实现 |
 | `pubsub/` | 发布订阅工厂、Handler 与 Redis 实现 |
 | `queue/` | 队列工厂、Handler 与 Redis Stream 实现 |
@@ -94,6 +95,26 @@ class User(BaseModel, TenantMixin, AuditMixin):
     __tablename__ = "users"
 
     username: Mapped[str] = mapped_column(String(64), nullable=False)
+```
+
+### 树结构模型
+
+```python
+from framework.database import BaseModel, TreeNodeMixin
+
+class Department(BaseModel, TreeNodeMixin):
+    __tablename__ = "departments"
+
+    name: Mapped[str] = mapped_column(String(100), nullable=False)
+
+    @classmethod
+    def tree_name_field(cls) -> str:
+        return "name"
+
+# 使用 TreeNodeMixin 内置方法
+dept = await Department.create_node(session, {"name": "研发部"})
+child = await Department.create_node(session, {"name": "前端组", "parent_id": dept.id})
+tree = Department.build_tree(await Department.list_nodes(session))
 ```
 
 ### 依赖倒置

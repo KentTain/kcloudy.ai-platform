@@ -6,6 +6,8 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field
 
+from framework.schemas.tree import TreeNodeVo, TreeNodeTreeVo
+
 
 class DepartmentCreateRequest(BaseModel):
     """部门创建请求"""
@@ -22,17 +24,16 @@ class DepartmentUpdateRequest(BaseModel):
 
     name: str | None = Field(None, max_length=100, description="部门名称")
     code: str | None = Field(None, max_length=50, description="部门编码")
+    parent_id: str | None = Field(None, description="父部门 ID")
     sort_order: int | None = Field(None, ge=0, description="排序号")
     leader_id: str | None = Field(None, description="部门负责人 ID")
     status: str | None = Field(None, description="状态")
 
 
-class DepartmentVo(BaseModel):
+class DepartmentVo(TreeNodeVo):
     """部门视图对象"""
 
-    id: str
     tenant_id: str
-    parent_id: str | None
     name: str
     code: str | None
     sort_order: int
@@ -41,16 +42,15 @@ class DepartmentVo(BaseModel):
     created_at: datetime
 
 
-class DepartmentTreeVo(BaseModel):
+class DepartmentTreeVo(TreeNodeTreeVo):
     """部门树形视图对象"""
 
-    id: str
+    tenant_id: str
     name: str
     code: str | None
     sort_order: int
     leader_id: str | None
     status: str
-    children: list["DepartmentTreeVo"] = Field(default_factory=list)
 
 
 class UserDepartmentRequest(BaseModel):

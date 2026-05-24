@@ -28,6 +28,10 @@ components/
 │   ├── CommonModal.vue        # 弹窗
 │   ├── CommonSelect.vue       # 下拉选择
 │   └── CommonTable.vue        # 数据表格
+├── CommonCheckboxTree.vue     # 勾选树组件（基于 CommonTree）
+├── CommonTree.vue             # 基础展示树组件
+├── CommonTreeList.vue         # 列表树组件（带操作按钮）
+├── CommonSelectTree.vue       # 下拉选择树组件
 ├── common/                    # 通用业务组件（预留）
 │   ├── EmptyState.vue         # 空状态
 │   └── ErrorBoundary.vue      # 错误边界

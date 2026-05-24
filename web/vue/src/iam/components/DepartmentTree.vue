@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import CommonCheckboxTree from '@/components/CommonCheckboxTree.vue'
-import type { TreeNode } from '@/components/CommonCheckboxTree.vue'
+import type { TreeComponentNode } from '@/framework/types/tree'
 import type { Department } from '@/iam/types'
 
 interface Props {
@@ -23,7 +23,7 @@ const emit = defineEmits<{
   'node-click': [node: { id: string; data?: Department }]
 }>()
 
-const treeData = computed<TreeNode[]>(() => {
+const treeData = computed<TreeComponentNode[]>(() => {
   return props.departments.map(dept => ({
     id: dept.id,
     name: dept.name,

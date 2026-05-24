@@ -1,19 +1,15 @@
 <script setup lang="ts">
+import type { TreeComponentNode } from '@/framework/types/tree'
 import type { HTMLAttributes } from 'vue'
-import { computed, ref, watch } from 'vue'
+import { computed, ref } from 'vue'
 import { cn } from '@/lib/utils'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
-import { ChevronRight, ChevronDown, Search } from '@lucide/vue'
-
-export interface TreeNode {
-  id: string | number
-  name: string
-  children?: TreeNode[]
-}
+import { Search } from '@lucide/vue'
+import CommonTree from '@/components/CommonTree.vue'
 
 interface Props {
-  data: TreeNode[]
+  data: TreeComponentNode[]
   modelValue?: (string | number)[]
   disabled?: boolean
   defaultExpandLevel?: number
@@ -35,17 +31,16 @@ const emit = defineEmits<{
 }>()
 
 const searchQuery = ref('')
-const expandedKeys = ref<Set<string | number>>(new Set())
 
 // 判断节点是否为叶子节点
-function isLeaf(node: TreeNode): boolean {
+function isLeaf(node: TreeComponentNode): boolean {
   return !node.children?.length
 }
 
 // 获取节点的所有后代叶子节点 ID
-function getDescendantLeafIds(node: TreeNode): (string | number)[] {
+function getDescendantLeafIds(node: TreeComponentNode): (string | number)[] {
   const leafIds: (string | number)[] = []
-  function collect(n: TreeNode) {
+  function collect(n: TreeComponentNode) {
     if (isLeaf(n)) {
       leafIds.push(n.id)
     } else if (n.children) {
@@ -57,7 +52,7 @@ function getDescendantLeafIds(node: TreeNode): (string | number)[] {
 }
 
 // 计算节点的选中状态
-function getNodeCheckState(node: TreeNode): 'checked' | 'unchecked' | 'indeterminate' {
+function getNodeCheckState(node: TreeComponentNode): 'checked' | 'unchecked' | 'indeterminate' {
   if (isLeaf(node)) {
     return props.modelValue.includes(node.id) ? 'checked' : 'unchecked'
   }
@@ -73,7 +68,7 @@ function getNodeCheckState(node: TreeNode): 'checked' | 'unchecked' | 'indetermi
 }
 
 // 处理节点勾选
-function handleCheck(node: TreeNode) {
+function handleCheck(node: TreeComponentNode) {
   if (props.disabled) return
 
   const currentState = getNodeCheckState(node)
@@ -101,24 +96,15 @@ function handleCheck(node: TreeNode) {
   emit('update:modelValue', newSelectedIds)
 }
 
-// 切换节点展开状态
-function toggleExpand(nodeId: string | number) {
-  if (expandedKeys.value.has(nodeId)) {
-    expandedKeys.value.delete(nodeId)
-  } else {
-    expandedKeys.value.add(nodeId)
-  }
-}
-
-// 搜索过滤
-const filteredNodeIds = computed(() => {
-  if (!searchQuery.value.trim()) return null
+// 搜索过滤 - 计算可见节点
+const filteredData = computed(() => {
+  if (!searchQuery.value.trim()) return props.data
 
   const query = searchQuery.value.toLowerCase()
   const matchedIds = new Set<string | number>()
   const ancestorIds = new Set<string | number>()
 
-  function findMatches(nodes: TreeNode[], parentIds: (string | number)[] = []) {
+  function findMatches(nodes: TreeComponentNode[], parentIds: (string | number)[] = []) {
     for (const node of nodes) {
       if (node.name.toLowerCase().includes(query)) {
         matchedIds.add(node.id)
@@ -131,35 +117,22 @@ const filteredNodeIds = computed(() => {
   }
   findMatches(props.data)
 
-  return { matchedIds, ancestorIds }
+  function filterTree(nodes: TreeComponentNode[]): TreeComponentNode[] {
+    return nodes
+      .filter(node => matchedIds.has(node.id) || ancestorIds.has(node.id))
+      .map(node => ({
+        ...node,
+        children: node.children ? filterTree(node.children) : undefined,
+      }))
+  }
+
+  return filterTree(props.data)
 })
 
-// 判断节点是否应该显示
-function shouldShowNode(node: TreeNode): boolean {
-  if (!filteredNodeIds.value) return true
-  const { matchedIds, ancestorIds } = filteredNodeIds.value
-  return matchedIds.has(node.id) || ancestorIds.has(node.id)
-}
-
-// 初始化默认展开层级
-function initExpandedKeys(nodes: TreeNode[], level: number = 0) {
-  for (const node of nodes) {
-    if (level < props.defaultExpandLevel && node.children?.length) {
-      expandedKeys.value.add(node.id)
-      initExpandedKeys(node.children, level + 1)
-    }
-  }
-}
-
-watch(
-  () => props.data,
-  () => {
-    if (props.defaultExpandLevel > 0) {
-      initExpandedKeys(props.data)
-    }
-  },
-  { immediate: true }
-)
+const hasResults = computed(() => {
+  if (!searchQuery.value.trim()) return true
+  return filteredData.value.length > 0
+})
 </script>
 
 <template>
@@ -176,125 +149,39 @@ watch(
     </div>
 
     <!-- 树结构 -->
-    <div class="flex flex-col gap-1">
-      <template v-if="filteredNodeIds && filteredNodeIds.matchedIds.size === 0">
-        <div class="py-4 text-center text-sm text-muted-foreground">
-          无匹配结果
+    <CommonTree
+      v-if="hasResults"
+      :data="filteredData"
+      :default-expand-level="defaultExpandLevel"
+      :class="{ 'opacity-50 cursor-not-allowed': disabled }"
+    >
+      <template #node="{ node }">
+        <div
+          class="flex items-center gap-2"
+          :class="{ 'cursor-not-allowed': disabled }"
+          @click.stop="handleCheck(node as TreeComponentNode)"
+        >
+          <Checkbox
+            :checked="getNodeCheckState(node as TreeComponentNode) === 'checked'"
+            :indeterminate="getNodeCheckState(node as TreeComponentNode) === 'indeterminate'"
+            :disabled="disabled"
+          />
+          <span
+            class="text-sm"
+            :class="cn(
+              searchQuery && (node as TreeComponentNode).name.toLowerCase().includes(searchQuery.toLowerCase())
+                && 'text-primary font-medium'
+            )"
+          >
+            {{ (node as TreeComponentNode).name }}
+          </span>
         </div>
       </template>
-      <template v-else>
-        <CheckboxTreeNode
-          v-for="node in data"
-          :key="node.id"
-          :node="node"
-          :expanded-keys="expandedKeys"
-          :filtered-node-ids="filteredNodeIds"
-          :disabled="disabled"
-          :should-show-node="shouldShowNode"
-          :get-node-check-state="getNodeCheckState"
-          :is-leaf="isLeaf"
-          @toggle-expand="toggleExpand"
-          @check="handleCheck"
-        />
-      </template>
+    </CommonTree>
+
+    <!-- 无匹配结果 -->
+    <div v-else class="py-4 text-center text-sm text-muted-foreground">
+      无匹配结果
     </div>
   </div>
 </template>
-
-<script lang="ts">
-import { defineComponent, h, computed as hComputed } from 'vue'
-
-type TreeNodeLocal = {
-  id: string | number
-  name: string
-  children?: TreeNodeLocal[]
-}
-
-type FilterResult = {
-  matchedIds: Set<string | number>
-  ancestorIds: Set<string | number>
-} | null
-
-const CheckboxTreeNode = defineComponent({
-  name: 'CheckboxTreeNode',
-  props: {
-    node: { type: Object as () => TreeNodeLocal, required: true },
-    expandedKeys: { type: Object as () => Set<string | number>, required: true },
-    filteredNodeIds: { type: Object as () => FilterResult, default: null },
-    disabled: { type: Boolean, default: false },
-    level: { type: Number, default: 0 },
-    shouldShowNode: { type: Function, required: true },
-    getNodeCheckState: { type: Function, required: true },
-    isLeaf: { type: Function, required: true },
-  },
-  emits: ['toggleExpand', 'check'],
-  setup(props, { emit }) {
-    const isExpanded = hComputed(() => props.expandedKeys.has(props.node.id))
-    const checkState = hComputed(() => props.getNodeCheckState(props.node))
-    const hasChildren = hComputed(() => !!props.node.children?.length)
-
-    function handleToggleExpand() {
-      emit('toggleExpand', props.node.id)
-    }
-
-    function handleCheck() {
-      emit('check', props.node)
-    }
-
-    return () => {
-      if (!props.shouldShowNode(props.node)) return h('div')
-
-      const childrenVNodes = hasChildren.value && isExpanded.value
-        ? props.node.children!.map((child: TreeNodeLocal): ReturnType<typeof h> =>
-            h(CheckboxTreeNode as any, {
-              key: child.id,
-              node: child,
-              expandedKeys: props.expandedKeys,
-              filteredNodeIds: props.filteredNodeIds,
-              disabled: props.disabled,
-              level: props.level + 1,
-              shouldShowNode: props.shouldShowNode,
-              getNodeCheckState: props.getNodeCheckState,
-              isLeaf: props.isLeaf,
-              onToggleExpand: (id: string | number) => emit('toggleExpand', id),
-              onCheck: (node: TreeNodeLocal) => emit('check', node),
-            })
-          )
-        : null
-
-      return h('div', { class: 'flex flex-col' }, [
-        h('div', {
-          class: cn(
-            'flex items-center gap-2 rounded-md px-2 py-1.5 hover:bg-muted/50',
-            props.disabled && 'cursor-not-allowed opacity-50'
-          ),
-          style: { paddingLeft: `${props.level * 20 + 8}px` },
-        }, [
-          hasChildren.value
-            ? h('button', {
-                type: 'button',
-                class: 'flex h-4 w-4 items-center justify-center rounded hover:bg-muted',
-                onClick: handleToggleExpand,
-              }, [
-                h(isExpanded.value ? ChevronDown : ChevronRight, { class: 'h-3 w-3' }),
-              ])
-            : h('span', { class: 'h-4 w-4' }),
-          h(Checkbox, {
-            checked: checkState.value === 'checked',
-            indeterminate: checkState.value === 'indeterminate',
-            disabled: props.disabled,
-            onUpdateChecked: handleCheck,
-          }),
-          h('span', {
-            class: cn(
-              'text-sm',
-              props.filteredNodeIds?.matchedIds.has(props.node.id) && 'text-primary font-medium'
-            ),
-          }, props.node.name),
-        ]),
-        childrenVNodes,
-      ])
-    }
-  },
-})
-</script>
