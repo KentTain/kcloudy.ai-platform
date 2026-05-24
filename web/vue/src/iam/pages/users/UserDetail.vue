@@ -16,8 +16,8 @@ import { getErrorMessage, notifyError, notifySuccess } from '@/iam/utils/feedbac
 import AppPage from '@/framework/layouts/components/AppPage.vue'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import DescriptionList from '@/components/DescriptionList.vue'
-import type { DescriptionItem } from '@/components/DescriptionList.vue'
+import CommonDescriptionList from '@/components/CommonDescriptionList.vue'
+import type { DescriptionItem } from '@/components/CommonDescriptionList.vue'
 import {
   Select,
   SelectContent,
@@ -160,7 +160,7 @@ onMounted(() => {
     <div v-if="loading" class="flex flex-col gap-3">
       <div v-for="n in 6" :key="n" class="h-5 w-full bg-muted animate-pulse rounded" />
     </div>
-    <DescriptionList v-else :items="userDescriptionItems" :columns="2" bordered />
+    <CommonDescriptionList v-else :items="userDescriptionItems" :columns="2" bordered />
 
     <!-- 当前角色 -->
     <div v-if="!loading" class="flex flex-col gap-2">

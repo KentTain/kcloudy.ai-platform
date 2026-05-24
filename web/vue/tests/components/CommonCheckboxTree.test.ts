@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
-import CheckboxTree from '@/components/CheckboxTree.vue'
+import CommonCheckboxTree from '@/components/CommonCheckboxTree.vue'
 
-describe('CheckboxTree', () => {
+describe('CommonCheckboxTree', () => {
   const sampleTree = [
     {
       id: '1',
@@ -24,7 +24,7 @@ describe('CheckboxTree', () => {
 
   describe('基本渲染', () => {
     it('渲染树形结构', () => {
-      const wrapper = mount(CheckboxTree, {
+      const wrapper = mount(CommonCheckboxTree, {
         props: { data: sampleTree },
       })
       expect(wrapper.text()).toContain('根节点1')
@@ -32,7 +32,7 @@ describe('CheckboxTree', () => {
     })
 
     it('展开子节点', async () => {
-      const wrapper = mount(CheckboxTree, {
+      const wrapper = mount(CommonCheckboxTree, {
         props: { data: sampleTree, defaultExpandLevel: 1 },
       })
       // 默认展开到第1层，应该能看到子节点
@@ -41,14 +41,14 @@ describe('CheckboxTree', () => {
     })
 
     it('搜索框渲染', () => {
-      const wrapper = mount(CheckboxTree, {
+      const wrapper = mount(CommonCheckboxTree, {
         props: { data: sampleTree, searchable: true },
       })
       expect(wrapper.find('input').exists()).toBe(true)
     })
 
     it('禁用搜索框', () => {
-      const wrapper = mount(CheckboxTree, {
+      const wrapper = mount(CommonCheckboxTree, {
         props: { data: sampleTree, searchable: true, disabled: true },
       })
       expect(wrapper.find('input').attributes('disabled')).toBeDefined()
@@ -57,7 +57,7 @@ describe('CheckboxTree', () => {
 
   describe('勾选功能', () => {
     it('勾选叶子节点触发 update:modelValue', async () => {
-      const wrapper = mount(CheckboxTree, {
+      const wrapper = mount(CommonCheckboxTree, {
         props: { data: sampleTree, defaultExpandLevel: 1 },
       })
       const checkboxes = wrapper.findAllComponents({ name: 'Checkbox' })
@@ -66,7 +66,7 @@ describe('CheckboxTree', () => {
     })
 
     it('父节点显示半选状态', async () => {
-      const wrapper = mount(CheckboxTree, {
+      const wrapper = mount(CommonCheckboxTree, {
         props: {
           data: sampleTree,
           modelValue: ['1-1'], // 只选中一个子节点
@@ -78,7 +78,7 @@ describe('CheckboxTree', () => {
     })
 
     it('勾选父节点自动勾选所有子节点', async () => {
-      const wrapper = mount(CheckboxTree, {
+      const wrapper = mount(CommonCheckboxTree, {
         props: {
           data: sampleTree,
           modelValue: [],
@@ -93,7 +93,7 @@ describe('CheckboxTree', () => {
 
   describe('搜索过滤', () => {
     it('搜索匹配节点', async () => {
-      const wrapper = mount(CheckboxTree, {
+      const wrapper = mount(CommonCheckboxTree, {
         props: { data: sampleTree, searchable: true, defaultExpandLevel: 1 },
       })
       const input = wrapper.find('input')
@@ -103,7 +103,7 @@ describe('CheckboxTree', () => {
     })
 
     it('搜索无匹配显示空状态', async () => {
-      const wrapper = mount(CheckboxTree, {
+      const wrapper = mount(CommonCheckboxTree, {
         props: { data: sampleTree, searchable: true, defaultExpandLevel: 1 },
       })
       const input = wrapper.find('input')
@@ -114,7 +114,7 @@ describe('CheckboxTree', () => {
 
   describe('禁用状态', () => {
     it('禁用时禁止勾选操作', () => {
-      const wrapper = mount(CheckboxTree, {
+      const wrapper = mount(CommonCheckboxTree, {
         props: { data: sampleTree, disabled: true, defaultExpandLevel: 1 },
       })
       // 检查禁用状态
@@ -124,14 +124,14 @@ describe('CheckboxTree', () => {
 
   describe('默认展开层级', () => {
     it('defaultExpandLevel=0 不展开任何节点', () => {
-      const wrapper = mount(CheckboxTree, {
+      const wrapper = mount(CommonCheckboxTree, {
         props: { data: sampleTree, defaultExpandLevel: 0 },
       })
       // 不展开时不显示子节点
     })
 
     it('defaultExpandLevel=1 展开第一层', () => {
-      const wrapper = mount(CheckboxTree, {
+      const wrapper = mount(CommonCheckboxTree, {
         props: { data: sampleTree, defaultExpandLevel: 1 },
       })
       expect(wrapper.text()).toContain('子节点1-1')

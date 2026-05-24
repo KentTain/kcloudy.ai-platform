@@ -25,7 +25,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Skeleton } from '@/components/ui/skeleton'
-import Pagination from '@/components/Pagination.vue'
+import CommonPagination from '@/components/CommonPagination.vue'
 import { Plus, Search, RotateCcw, Pencil, Trash2, ShieldCheck, ShieldOff } from '@lucide/vue'
 
 const router = useRouter()
@@ -245,7 +245,7 @@ onMounted(() => {
       </Table>
     </div>
 
-    <Pagination
+    <CommonPagination
       :total="tenantStore.total"
       :page="pagination.page"
       :page-size="pagination.pageSize"

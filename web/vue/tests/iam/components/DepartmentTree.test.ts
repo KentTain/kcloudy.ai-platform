@@ -56,7 +56,7 @@ describe('DepartmentTree', () => {
       const wrapper = mount(DepartmentTree, {
         props: { departments: mockDepartments, modelValue: '' },
       })
-      expect(wrapper.findComponent({ name: 'CheckboxTree' }).exists()).toBe(true)
+      expect(wrapper.findComponent({ name: 'CommonCheckboxTree' }).exists()).toBe(true)
     })
   })
 
@@ -110,7 +110,7 @@ describe('DepartmentTree', () => {
       const wrapper = mount(DepartmentTree, {
         props: { departments: mockDepartments, modelValue: '' },
       })
-      const checkboxTree = wrapper.findComponent({ name: 'CheckboxTree' })
+      const checkboxTree = wrapper.findComponent({ name: 'CommonCheckboxTree' })
       expect(checkboxTree.exists()).toBe(true)
       expect(checkboxTree.props('searchable')).toBe(true)
     })

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import CheckboxTree from '@/components/CheckboxTree.vue'
-import type { TreeNode } from '@/components/CheckboxTree.vue'
+import CommonCheckboxTree from '@/components/CommonCheckboxTree.vue'
+import type { TreeNode } from '@/components/CommonCheckboxTree.vue'
 import type { Permission } from '@/iam/types'
 
 interface Props {
@@ -57,7 +57,7 @@ const handleUpdate = (value: (string | number)[]) => {
 </script>
 
 <template>
-  <CheckboxTree
+  <CommonCheckboxTree
     :data="treeData"
     v-model="selectedIds"
     :disabled="disabled"

@@ -10,7 +10,7 @@ import AppPage from '@/framework/layouts/components/AppPage.vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
-import DateInput from '@/components/DateInput.vue'
+import CommonDateInput from '@/components/CommonDateInput.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -131,7 +131,7 @@ onMounted(async () => {
 
       <div class="flex flex-col gap-2">
         <FormLabel>过期时间</FormLabel>
-        <DateInput
+        <CommonDateInput
           v-model="expiredAt"
           type="single"
           placeholder="选择过期时间（不选则永久）"
