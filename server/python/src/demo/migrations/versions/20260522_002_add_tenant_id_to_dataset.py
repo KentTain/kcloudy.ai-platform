@@ -11,7 +11,7 @@ from alembic import op
 import sqlalchemy as sa
 
 revision: str = "demo_002_tenant_dataset"
-down_revision: Union[str, None] = None
+down_revision: Union[str, None] = "demo_001_create_dataset"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
@@ -21,7 +21,7 @@ def upgrade() -> None:
         "dataset",
         sa.Column(
             "tenant_id",
-            sa.String(32),
+            sa.String(36),
             nullable=False,
             server_default="00000000-0000-0000-0000-000000000000",
             comment="租户ID",

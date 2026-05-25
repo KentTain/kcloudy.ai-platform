@@ -22,6 +22,28 @@ from framework.tenant.context import (
     set_current_tenant,
     get_tenant_id,
 )
+from framework.tenant.middleware import TenantMiddleware
+
+
+class TestTenantMiddleware:
+    """TenantMiddleware 测试"""
+
+    def test_root_path_skips_tenant_resolution(self):
+        """
+        场景：访问根路径
+        WHEN: 检查是否跳过租户校验
+        THEN: 根路径不要求 X-Tenant-Id
+        """
+
+        class MockURL:
+            path = "/"
+
+        class MockRequest:
+            url = MockURL()
+
+        middleware = TenantMiddleware(app=lambda scope, receive, send: None)
+
+        assert middleware._should_skip(MockRequest()) is True
 
 
 class TestTenantEnums:

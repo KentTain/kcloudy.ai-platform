@@ -277,12 +277,13 @@ _config_dir: Path | None = None
 _settings: Settings | None = None
 
 
-def init_settings(config_dir: Path | str) -> Settings:
+def init_settings(config_dir: Path | str, parser_class: type[Any] | None = None) -> Settings:
     """
     初始化全局配置
 
     Args:
         config_dir: 配置文件目录
+        parser_class: 配置解析器类
 
     Returns:
         Settings: 配置实例
@@ -291,8 +292,11 @@ def init_settings(config_dir: Path | str) -> Settings:
 
     _config_dir = Path(config_dir) if isinstance(config_dir, str) else config_dir
 
-    from framework.configs.yaml import YamlParser
-    parser = YamlParser(config_dir=_config_dir, base_config_file="application.yml")
+    if parser_class is None:
+        from framework.configs.yaml import YamlParser
+        parser_class = YamlParser
+
+    parser = parser_class(config_dir=_config_dir, base_config_file="application.yml")
     _settings = Settings.from_dict(parser.config_content or {})
 
     return _settings
@@ -316,8 +320,4 @@ def get_settings() -> Settings:
     return _settings
 
 
-# 为了向后兼容，提供 settings 属性访问
-@property
-def settings() -> Settings:
-    """获取配置实例"""
-    return get_settings()
+settings = get_settings

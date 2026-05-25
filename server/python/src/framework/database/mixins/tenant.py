@@ -18,7 +18,7 @@ class TenantMixin:
     __abstract__ = True
 
     tenant_id: Mapped[str] = mapped_column(
-        String(32),
+        String(36),
         nullable=False,
         index=True,
         comment="租户ID"

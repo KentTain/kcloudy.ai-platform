@@ -23,7 +23,7 @@ def upgrade() -> None:
     op.create_table(
         "system_settings",
         sa.Column("id", sa.String(36), primary_key=True, comment="ID"),
-        sa.Column("tenant_id", sa.String(32), nullable=False, comment="租户ID"),
+        sa.Column("tenant_id", sa.String(36), nullable=False, comment="租户ID"),
         sa.Column("code", sa.String(20), nullable=False, comment="设置编号"),
         sa.Column("name", sa.String(256), nullable=False, comment="名称"),
         sa.Column("display_name", sa.String(512), nullable=True, comment="显示名称"),
@@ -45,7 +45,7 @@ def upgrade() -> None:
     op.create_table(
         "system_setting_attributes",
         sa.Column("id", sa.String(36), primary_key=True, comment="ID"),
-        sa.Column("tenant_id", sa.String(32), nullable=False, comment="租户ID"),
+        sa.Column("tenant_id", sa.String(36), nullable=False, comment="租户ID"),
         sa.Column("setting_id", sa.String(36), sa.ForeignKey("system_settings.id", ondelete="CASCADE"), nullable=False, comment="配置Id"),
         sa.Column("data_type", sa.String(20), nullable=False, server_default="string", comment="属性数据类型"),
         sa.Column("name", sa.String(256), nullable=False, comment="属性值名称"),

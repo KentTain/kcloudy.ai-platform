@@ -96,6 +96,8 @@ class TenantMiddleware(BaseHTTPMiddleware):
     def _should_skip(self, request: "Request") -> bool:
         """检查是否跳过租户验证"""
         path = request.url.path
+        if path == "/":
+            return True
         for skip_path in self.skip_paths:
             if path.startswith(skip_path):
                 return True
@@ -165,7 +167,7 @@ class TenantMiddleware(BaseHTTPMiddleware):
         ctx.tenant_id = tenant.id
         set_context(ctx)
 
-    def _error_response(self, error: TenantError, status_code: int = None) -> JSONResponse:
+    def _error_response(self, error: TenantError, status_code: int | None = None) -> JSONResponse:
         """生成错误响应"""
         code = status_code or self._get_error_status_code(error)
         return JSONResponse(

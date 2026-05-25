@@ -69,13 +69,21 @@ def import_all_models():
 
 def get_alembic_config(database_url: str | None = None):
     """获取 Alembic 配置"""
-    from alembic import command
     from alembic.config import Config
 
     from demo.configs import settings
 
-    config = Config()
-    config.config_file_name = str(Path(__file__).parent / "alembic.ini")
+    config_file = Path(__file__).parent / "alembic.ini"
+    config = Config(str(config_file))
+    config.set_main_option(
+        "version_locations",
+        " ".join(
+            [
+                str(Path(__file__).parent / "src" / "demo" / "migrations" / "versions"),
+                str(Path(__file__).parent / "src" / "iam" / "migrations" / "versions"),
+            ]
+        ),
+    )
 
     if database_url:
         connection_url = database_url
@@ -111,9 +119,10 @@ def runserver(host, port, reload):
 
     server_host = host or settings.server.host
     server_port = port or settings.server.port
+    display_host = "127.0.0.1" if server_host == "0.0.0.0" else server_host
 
-    click.echo(f"  地址: http://{server_host}:{server_port}")
-    click.echo(f"  文档: http://{server_host}:{server_port}/docs")
+    click.echo(f"  地址: http://{display_host}:{server_port}")
+    click.echo(f"  文档: http://{display_host}:{server_port}/docs")
 
     uvicorn.run(
         "application_web:app",
@@ -187,7 +196,7 @@ def makemigrations(ctx, message):
 
 
 @db.command()
-@click.option("--revision", default="head", help="要迁移到的版本，默认为最新版本")
+@click.option("--revision", default="heads", help="要迁移到的版本，默认为所有最新版本")
 @click.option("--sql", is_flag=True, help="显示SQL语句而不执行迁移")
 @click.option("--yes", "-y", is_flag=True, help="跳过确认直接执行迁移")
 @click.pass_context

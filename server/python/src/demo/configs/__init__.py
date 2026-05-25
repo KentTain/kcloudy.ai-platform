@@ -5,14 +5,12 @@
 """
 
 from framework.configs.base import BaseSettings
-from framework.configs.settings import Settings
+from framework.configs.settings import Settings, init_settings
 from demo.configs.yaml import YamlParser
 from demo.core.common.path import CONFIG_FOLDER
 
-# 使用 demo 的 YamlParser 初始化配置（支持 PYTHON_SERVICE_ENV）
-_parser = YamlParser(config_dir=CONFIG_FOLDER, base_config_file="application.yml")
-settings = Settings.from_dict(_parser.config_content or {})
-config = _parser
+settings = init_settings(CONFIG_FOLDER, parser_class=YamlParser)
+config = YamlParser(config_dir=CONFIG_FOLDER, base_config_file="application.yml")
 
 __all__ = [
     "BaseSettings",
