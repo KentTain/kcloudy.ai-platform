@@ -4,7 +4,7 @@
 提供租户隔离字段混入类。
 """
 
-from sqlalchemy import String, Index
+from sqlalchemy import String
 from sqlalchemy.orm import Mapped, mapped_column
 
 
@@ -22,10 +22,6 @@ class TenantMixin:
         nullable=False,
         index=True,
         comment="租户ID"
-    )
-
-    __table_args__ = (
-        Index("ix_tenant_id", "tenant_id"),
     )
 
 
