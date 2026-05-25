@@ -7,7 +7,7 @@
 from sqlalchemy import ForeignKey, Index, String
 from sqlalchemy.orm import Mapped, mapped_column
 
-from framework.database import BaseModel
+from iam.models import BaseModel
 
 
 class UserTenant(BaseModel):

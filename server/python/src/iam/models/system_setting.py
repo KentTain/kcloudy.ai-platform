@@ -9,7 +9,8 @@ from typing import TYPE_CHECKING
 from sqlalchemy import Index, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from framework.database import BaseModel, PropertyMixin, TenantMixin
+from iam.models import BaseModel
+from framework.database import PropertyMixin, TenantMixin
 from framework.database.mixins.active_record import ActiveRecordMixin
 
 if TYPE_CHECKING:

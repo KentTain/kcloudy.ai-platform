@@ -11,7 +11,7 @@ from sqlalchemy import DateTime, ForeignKey, Index, Integer, String, Text, func
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
-from framework.database import BaseModel
+from iam.models import BaseModel
 from framework.database.mixins.active_record import ActiveRecordMixin
 from iam.models.enums import TenantStatus
 

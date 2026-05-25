@@ -1,5 +1,7 @@
 """
 Alembic 环境配置 - IAM 模块
+
+配置独立的迁移版本表在 iam schema 下。
 """
 
 import asyncio
@@ -17,11 +19,11 @@ src_path = Path(__file__).parent.parent.parent.parent
 if str(src_path) not in sys.path:
     sys.path.insert(0, str(src_path))
 
-from iam.models import BaseModel
+from iam.models import Base
 
 config = context.config
 
-# 从 demo 配置中获取数据库 URL
+# 从配置中获取数据库 URL
 try:
     from demo.configs import settings
 
@@ -34,7 +36,11 @@ except Exception as e:
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-target_metadata = BaseModel.metadata
+# IAM 模块的 metadata
+target_metadata = Base.metadata
+
+# 模块 schema 名称
+MODULE_SCHEMA = "iam"
 
 
 def run_migrations_offline() -> None:
@@ -45,6 +51,8 @@ def run_migrations_offline() -> None:
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
+        # 版本表在 iam schema
+        version_table_schema=MODULE_SCHEMA,
     )
 
     with context.begin_transaction():
@@ -52,7 +60,12 @@ def run_migrations_offline() -> None:
 
 
 def do_run_migrations(connection: Connection) -> None:
-    context.configure(connection=connection, target_metadata=target_metadata)
+    context.configure(
+        connection=connection,
+        target_metadata=target_metadata,
+        # 版本表在 iam schema
+        version_table_schema=MODULE_SCHEMA,
+    )
 
     with context.begin_transaction():
         context.run_migrations()

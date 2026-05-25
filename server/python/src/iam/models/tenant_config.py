@@ -10,7 +10,7 @@ from sqlalchemy import ForeignKey, Index, String, Text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
-from framework.database import BaseModel
+from iam.models import BaseModel
 
 
 class TenantConfig(BaseModel):

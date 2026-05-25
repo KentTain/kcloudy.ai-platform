@@ -5,7 +5,7 @@
 from sqlalchemy import ForeignKey, Index, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
 
-from framework.database import BaseModel
+from iam.models import BaseModel
 from framework.database.mixins.tree import TreeNodeMixin
 from iam.models.enums import DepartmentStatus
 

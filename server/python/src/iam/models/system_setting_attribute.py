@@ -9,7 +9,8 @@ from typing import TYPE_CHECKING
 from sqlalchemy import ForeignKey, Index, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from framework.database import BaseModel, PropertyAttributeMixin, TenantMixin
+from iam.models import BaseModel
+from framework.database import PropertyAttributeMixin, TenantMixin
 
 if TYPE_CHECKING:
     from iam.models.system_setting import SystemSetting

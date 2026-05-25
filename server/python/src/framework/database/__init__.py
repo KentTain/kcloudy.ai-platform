@@ -5,6 +5,10 @@
 """
 
 from framework.database.core.base import Base, BaseModel
+from framework.database.core.module_base import (
+    create_base_model,
+    create_module_base,
+)
 from framework.database.core.engine import (
     EngineManager,
     get_engine,
@@ -30,6 +34,9 @@ __all__ = [
     # Base
     "Base",
     "BaseModel",
+    # Module Base Factory
+    "create_module_base",
+    "create_base_model",
     # Engine
     "EngineManager",
     "get_engine",

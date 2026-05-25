@@ -5,7 +5,7 @@
 from sqlalchemy import Boolean, ForeignKey, Index, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
-from framework.database import BaseModel
+from iam.models import BaseModel
 
 
 class Permission(BaseModel):

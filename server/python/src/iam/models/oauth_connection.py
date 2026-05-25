@@ -7,7 +7,7 @@ from datetime import datetime
 from sqlalchemy import DateTime, ForeignKey, Index, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
-from framework.database import BaseModel
+from iam.models import BaseModel
 
 
 class OAuthConnection(BaseModel):
