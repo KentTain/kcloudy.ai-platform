@@ -1,12 +1,14 @@
 # Demo Backend
 
-Demo AI 助手平台后端服务，基于 FastAPI 构建。
+Demo AI 助手平台后端服务，基于 FastAPI 构建的**模块化单体架构**。
 
 ## 功能特点
 
 ### 核心能力
 
 - **基于 FastAPI 的 Web 服务**：高性能异步 Web 框架
+- **模块化单体架构**：模块级 Schema 隔离，支持独立部署
+- **模块动态加载**：通过 `module.py` 声明，支持按需加载
 - **基于 LangChain / LangGraph**：AI 智能体框架
 - **统一返回结构**：RESTful API 设计，统一的 JSON 消息体格式
 - **完善的错误处理**：全局异常处理和自动错误追踪
@@ -14,6 +16,7 @@ Demo AI 助手平台后端服务，基于 FastAPI 构建。
 ### 数据与存储
 
 - **数据库集成**：SQLAlchemy 2.0 + Alembic + PostgreSQL（pgvector）
+- **模块级 Schema 隔离**：每个模块拥有独立的 PostgreSQL schema
 - **缓存支持**：Redis 用于高性能缓存
 - **分层配置**：基于 YAML 的多环境配置系统
 
@@ -53,8 +56,11 @@ vim server/config/application-local.yml
 项目提供统一的管理脚本 `manage.py`：
 
 ```bash
-# 启动 Web 服务器
+# 启动 Web 服务（加载所有模块）
 uv run python manage.py runserver
+
+# 启动 Web 服务（按需加载模块）
+uv run python manage.py runserver --module iam,demo
 
 # 指定主机/端口
 uv run python manage.py runserver --host 0.0.0.0 --port 8080
@@ -62,11 +68,11 @@ uv run python manage.py runserver --host 0.0.0.0 --port 8080
 # 启动开发模式（热重载）
 uv run python manage.py runserver --reload
 
-# 启动定时任务调度器
-uv run python manage.py runtask
+# 启动定时任务调度器（指定模块）
+uv run python manage.py runtask --module demo
 
-# 启动监听器服务
-uv run python manage.py runlistener
+# 启动监听器服务（指定模块）
+uv run python manage.py runlistener --module demo
 ```
 
 ### 访问
@@ -91,26 +97,33 @@ uv run format-code --check-only
 
 ### 数据库迁移
 
-项目采用模块化迁移架构，支持多业务模块独立迁移和数据初始化。
+项目采用模块化迁移架构，每个模块拥有独立的 PostgreSQL schema 和迁移版本表。
 
 ```bash
-# 查看迁移状态
+# 查看所有模块迁移状态
 uv run python manage.py db current
 
-# 执行迁移
-uv run python manage.py db migrate
+# 执行指定模块迁移
+uv run python manage.py db migrate --module iam
+
+# 执行所有模块迁移
+uv run python manage.py db migrate --all
 
 # 预览迁移 SQL（不执行）
-uv run python manage.py db migrate --sql
+uv run python manage.py db migrate --sql --module iam
 
-# 回退迁移
-uv run python manage.py db downgrade
+# 回退指定模块迁移
+uv run python manage.py db downgrade --module iam
 
 # 查看迁移历史
-uv run python manage.py db history
+uv run python manage.py db history --module iam
 
 # 创建新迁移
-uv run python manage.py db makemigrations -m "描述"
+uv run python manage.py db makemigrations --module iam -m "描述"
+
+# 重建模块 Schema（危险操作）
+uv run python manage.py db rebuild --module iam
+uv run python manage.py db rebuild --all
 ```
 
 ### 数据初始化
@@ -140,19 +153,87 @@ uv run pytest -m "not slow"
 
 ## 模块架构
 
-项目采用多模块架构，每个模块是 `src/` 目录下的顶级子目录：
+项目采用**模块化单体架构**，支持从单体到微服务的平滑过渡：
 
-| 模块 | 说明 |
+### 架构特性
+
+| 特性 | 说明 |
 | --- | --- |
-| demo | 业务演示模块：知识库管理示例 |
-| iam | 身份认证模块：租户、用户、权限管理 |
-| framework | 基础设施模块：配置、缓存、存储、队列等 |
+| Schema 隔离 | 每个模块拥有独立的 PostgreSQL schema（如 `iam.users`） |
+| 独立迁移 | 每个模块拥有独立的 `alembic_version` 表 |
+| 动态加载 | 通过 `module.py` 声明，支持 `--module` 参数按需加载 |
+| 独立部署 | 每个模块可通过 `app.py` 提供独立应用工厂 |
 
-每个业务模块采用 Controller → Service → Model 三层架构：
+### 模块列表
 
-- **Controller**：HTTP 路由和参数解析
-- **Service**：业务逻辑和事务管理
-- **Model**：ORM 模型和数据库操作
+| 模块 | Schema | 说明 |
+| --- | --- | --- |
+| demo | `demo` | 业务演示模块：知识库管理示例 |
+| iam | `iam` | 身份认证模块：租户、用户、权限管理 |
+| framework | - | 基础设施模块：配置、缓存、存储、队列等 |
+
+### 模块结构
+
+每个业务模块包含：
+
+| 文件/目录 | 说明 |
+| --- | --- |
+| `module.py` | 模块声明，实现 `ModuleDescriptor` 协议 |
+| `app.py` | 独立应用工厂，支持单模块部署 |
+| `models/` | 数据库模型（使用 `create_module_base(schema)`） |
+| `migrations/` | 数据库迁移（配置 `version_table_schema`） |
+| `controllers/` | API 控制器 |
+| `services/` | 业务逻辑层 |
+
+### 开发新模块
+
+```bash
+# 1. 创建模块目录
+mkdir -p src/my_module/{models,controllers,services,schemas,migrations/versions}
+
+# 2. 创建 models/__init__.py
+cat > src/my_module/models/__init__.py << 'EOF'
+from framework.database import create_module_base, create_base_model
+
+Base = create_module_base("my_module")
+BaseModel = create_base_model(Base)
+EOF
+
+# 3. 创建 module.py
+cat > src/my_module/module.py << 'EOF'
+class MyModule:
+    @property
+    def name(self) -> str:
+        return "my_module"
+
+    @property
+    def schema(self) -> str:
+        return "my_module"
+
+    @property
+    def dependencies(self) -> list[str]:
+        return []
+
+    def get_base(self) -> type:
+        from my_module.models import Base
+        return Base
+
+    def get_routers(self) -> list[tuple]:
+        return []
+
+    def get_seeds(self) -> dict:
+        return {}
+
+    def get_task_setup(self) -> tuple | None:
+        return None
+
+    def get_listener_setup(self) -> tuple | None:
+        return None
+EOF
+
+# 4. 创建 migrations/env.py
+# 参考 iam/migrations/env.py 或 demo/migrations/env.py
+```
 
 ## 技术栈
 
@@ -171,37 +252,43 @@ server/python/
 ├── manage.py                   # 统一管理脚本
 ├── src/                        # 源码目录
 │   ├── demo/                   # Demo 业务模块
+│   │   ├── module.py           # 模块声明
+│   │   ├── app.py              # 独立应用工厂
 │   │   ├── controllers/        # API 控制器
 │   │   ├── services/           # 业务逻辑层
-│   │   ├── models/             # 数据库模型
+│   │   ├── models/             # 数据库模型（demo schema）
 │   │   ├── schemas/            # Pydantic 模型
 │   │   ├── migrations/         # 数据库迁移
 │   │   ├── listeners/          # 消息监听器
 │   │   └── tasks/              # 定时任务
 │   ├── iam/                    # IAM 身份认证模块
+│   │   ├── module.py           # 模块声明
+│   │   ├── app.py              # 独立应用工厂
 │   │   ├── controllers/        # API 控制器
 │   │   ├── services/           # 业务逻辑层
-│   │   ├── models/             # 数据库模型
+│   │   ├── models/             # 数据库模型（iam schema）
 │   │   ├── schemas/            # Pydantic 模型
 │   │   ├── migrations/         # 数据库迁移
 │   │   ├── initializers/       # 初始化器
 │   │   └── middlewares/        # 中间件
 │   ├── framework/              # 基础设施模块
+│   │   ├── module/             # 模块系统（动态加载、注册中心）
 │   │   ├── configs/            # 配置管理
 │   │   ├── cache/              # Redis 缓存
-│   │   ├── database/           # 数据库组件
+│   │   ├── database/           # 数据库组件（含 module_base.py）
 │   │   ├── storage/            # 对象存储
 │   │   ├── queue/              # 消息队列
 │   │   ├── pubsub/             # 发布订阅
 │   │   ├── lock/               # 分布式锁
 │   │   └── tenant/             # 租户模型
-│   ├── application_web.py      # FastAPI 应用入口
+│   ├── application_web.py      # FastAPI 应用入口（动态模块装配）
 │   ├── application_task.py     # 任务调度器入口
 │   ├── application_listener.py # 消息监听器入口
 │   └── run.py                  # Web 服务器启动入口
 ├── tests/                      # 测试目录
-│   ├── demo/                   # Demo 模块测试
 │   ├── framework/              # Framework 模块测试
+│   │   └── unit/module/        # 模块系统单元测试
+│   ├── iam/                    # IAM 模块测试
 │   └── README.md               # 测试说明
 └── config/                     # 配置目录（引用共享配置）
 ```

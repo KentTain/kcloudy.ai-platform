@@ -4,7 +4,13 @@
 
 ## 项目定位
 
-Python 后端使用 FastAPI + SQLAlchemy 2.0 构建，是 InitProject 的 Python 技术栈实现。项目采用 uv 管理依赖，源码和测试按模块组织。
+Python 后端使用 FastAPI + SQLAlchemy 2.0 构建，是 InitProject 的 Python 技术栈实现。项目采用 **模块化单体架构**，支持模块独立部署。
+
+## 架构特性
+
+- **模块级 Schema 隔离**：每个业务模块拥有独立的 PostgreSQL schema
+- **模块动态加载**：通过 `module.py` 声明模块信息，支持按需加载
+- **模块独立部署**：每个模块可通过 `app.py` 提供独立应用工厂
 
 ## 技术栈
 
@@ -24,6 +30,7 @@ Python 后端使用 FastAPI + SQLAlchemy 2.0 构建，是 InitProject 的 Python
 | --- | --- | --- |
 | `src/` | 源码目录，按顶级模块组织 | [src/CLAUDE.md](src/CLAUDE.md) |
 | `src/framework/` | 基础设施模块 | [src/framework/CLAUDE.md](src/framework/CLAUDE.md) |
+| `src/framework/module/` | 模块系统（动态加载、注册中心） | [src/framework/module/CLAUDE.md](src/framework/module/CLAUDE.md) |
 | `src/iam/` | 身份认证与权限模块 | [src/iam/CLAUDE.md](src/iam/CLAUDE.md) |
 | `src/demo/` | AI 助手平台演示模块 | [src/CLAUDE.md](src/CLAUDE.md) |
 | `tests/` | 测试目录，按源码模块组织 | [tests/CLAUDE.md](tests/CLAUDE.md) |
@@ -32,7 +39,6 @@ Python 后端使用 FastAPI + SQLAlchemy 2.0 构建，是 InitProject 的 Python
 | `config/` | 指向 `server/config/` 的配置目录 | - |
 | `manage.py` | 统一管理脚本 | - |
 | `pyproject.toml` | 项目与依赖配置 | - |
-| `alembic.ini` | Alembic 配置 | - |
 | `pytest.ini` | pytest 配置 | - |
 | `.ruff.toml` | Ruff 配置 | - |
 
@@ -44,6 +50,17 @@ Python 后端使用 FastAPI + SQLAlchemy 2.0 构建，是 InitProject 的 Python
 - 可复用基础能力优先放入 `framework`；业务专属逻辑保留在业务模块内。
 - 测试目录与源码模块对齐：`tests/{module}/` 对应 `src/{module}/`。
 
+## 模块结构
+
+每个业务模块包含以下关键文件：
+
+| 文件 | 用途 |
+| --- | --- |
+| `module.py` | 模块声明，实现 `ModuleDescriptor` 协议 |
+| `app.py` | 独立应用工厂，支持单模块部署 |
+| `models/__init__.py` | 使用 `create_module_base(schema)` 创建模块 Base |
+| `migrations/env.py` | 配置 `version_table_schema` |
+
 ## 常用命令
 
 ### 启动服务
@@ -52,8 +69,11 @@ Python 后端使用 FastAPI + SQLAlchemy 2.0 构建，是 InitProject 的 Python
 # 查看帮助
 uv run python manage.py --help
 
-# 启动 Web 服务
+# 启动 Web 服务（加载所有模块）
 uv run python manage.py runserver
+
+# 启动 Web 服务（按需加载模块）
+uv run python manage.py runserver --module iam,demo
 
 # 开发模式热重载
 uv run python manage.py runserver --reload
@@ -61,39 +81,49 @@ uv run python manage.py runserver --reload
 # 指定主机和端口
 uv run python manage.py runserver --host 0.0.0.0 --port 8080
 
-# 启动定时任务调度器
+# 启动定时任务调度器（所有模块）
 uv run python manage.py runtask
 
-# 启动消息监听器
-uv run python manage.py runlistener
+# 启动定时任务调度器（指定模块）
+uv run python manage.py runtask --module demo
+
+# 启动消息监听器（指定模块）
+uv run python manage.py runlistener --module demo
 ```
 
 ### 数据库迁移
 
 ```bash
-# 当前数据库版本
+# 查看所有模块数据库版本
 uv run python manage.py db current
 
-# 执行迁移
-uv run python manage.py db migrate
+# 执行指定模块迁移
+uv run python manage.py db migrate --module iam
+
+# 执行所有模块迁移
+uv run python manage.py db migrate --all
 
 # 预览迁移 SQL
 uv run python manage.py db migrate --sql
 
-# 回滚迁移
-uv run python manage.py db downgrade
+# 回滚指定模块迁移
+uv run python manage.py db downgrade --module iam
 
 # 查看迁移历史
-uv run python manage.py db history
+uv run python manage.py db history --module iam
 
 # 创建迁移
-uv run python manage.py db makemigrations -m "add user tables"
+uv run python manage.py db makemigrations --module iam -m "add oauth"
+
+# 重建模块 Schema（危险操作）
+uv run python manage.py db rebuild --module iam
+uv run python manage.py db rebuild --all
 ```
 
 所有 `db` 命令支持 `-d/--database-url` 指定连接：
 
 ```bash
-uv run python manage.py db -d "postgresql+asyncpg://user:pass@host:5432/dbname" migrate
+uv run python manage.py db -d "postgresql+asyncpg://user:pass@host:5432/dbname" migrate --module iam
 ```
 
 ### 数据初始化
@@ -139,6 +169,7 @@ cp server/config/application-local.yml.example server/config/application-local.y
 - 行宽：88 字符。
 - Linter / Formatter：Ruff。
 - ORM 字段：使用 SQLAlchemy 2.0 `Mapped[...]` / `mapped_column(...)`。
+- 模块模型：使用 `create_module_base(schema)` 创建模块级 Base。
 - 异步测试：使用 `pytest.mark.asyncio`。
 - 新增或修改模块时同步检查对应测试和模块级文档。
 
