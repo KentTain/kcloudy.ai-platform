@@ -40,7 +40,11 @@
       "Bash(rustup toolchain *)",
       "Bash(uv pip *)",
       "Bash(uv add *)",
-      "Bash([ -f \"openspec/specs/$cap/spec.md\" ])"
+      "Bash([ -f \"openspec/specs/$cap/spec.md\" ])",
+      "mcp__codegraph__codegraph_*",
+      "mcp__codegraph__codegraph_node",
+      "mcp__codegraph__codegraph_files",
+      "mcp__codegraph__codegraph_context"
     ]
   }
 }
