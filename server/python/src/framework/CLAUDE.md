@@ -23,6 +23,7 @@ framework ──X──▶ demo / iam
 | `core/` | 存储、队列、发布订阅、锁等 Protocol / 抽象接口、树结构常量 |
 | `database/` | SQLAlchemy 基础模型、Mixin（含 TreeNodeMixin）、类型、事件、引擎池 |
 | `schemas/` | Pydantic VO 基类（含 TreeNodeVo、TreeNodeTreeVo） |
+| `module/` | 模块动态加载的抽象接口定义、注册及动态扫描与发现 [module/CLAUDE.md](module/CLAUDE.md) |
 | `lock/` | 分布式锁工厂与实现 |
 | `pubsub/` | 发布订阅工厂、Handler 与 Redis 实现 |
 | `queue/` | 队列工厂、Handler 与 Redis Stream 实现 |
@@ -61,6 +62,10 @@ from framework.configs import get_settings, init_settings
 settings = init_settings("path/to/config")
 print(settings.server.port)
 ```
+
+# 模块动态加载
+
+将关联文档：[module/CLAUDE.md](module/CLAUDE.md)
 
 ### Redis 缓存
 

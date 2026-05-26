@@ -68,32 +68,6 @@ export const iamRoutes: RouteRecordRaw[] = [
     meta: { title: "部门管理", icon: "department", requiresAuth: true },
   },
 
-  // 租户管理（管理员）
-  {
-    path: "tenants",
-    name: "TenantManagement",
-    component: () => import("@/iam/pages/tenants/TenantList.vue"),
-    meta: { title: "租户管理", icon: "tenant", requiresAuth: true, roles: ["tenant_admin"] },
-  },
-  {
-    path: "tenants/create",
-    name: "TenantCreate",
-    component: () => import("@/iam/pages/tenants/TenantForm.vue"),
-    meta: { title: "创建租户", hidden: true, requiresAuth: true, roles: ["tenant_admin"] },
-  },
-  {
-    path: "tenants/:id",
-    name: "TenantDetail",
-    component: () => import("@/iam/pages/tenants/TenantDetail.vue"),
-    meta: { title: "租户详情", hidden: true, requiresAuth: true, roles: ["tenant_admin"] },
-  },
-  {
-    path: "tenants/:id/edit",
-    name: "TenantEdit",
-    component: () => import("@/iam/pages/tenants/TenantForm.vue"),
-    meta: { title: "编辑租户", hidden: true, requiresAuth: true, roles: ["tenant_admin"] },
-  },
-
   // 个人中心
   {
     path: "profile",

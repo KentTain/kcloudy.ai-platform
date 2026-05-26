@@ -3,4 +3,3 @@ export { useUserStore } from "./user";
 export { useRoleStore } from "./role";
 export { usePermissionStore } from "./permission";
 export { useDepartmentStore } from "./department";
-export { useTenantStore } from "./tenant";

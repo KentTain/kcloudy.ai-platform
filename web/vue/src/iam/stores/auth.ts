@@ -8,7 +8,7 @@ import {
   logout as logoutApi,
   refreshToken as refreshTokenApi,
 } from "../api/auth";
-import { getErrorMessage, notifyError, notifySuccess } from "../utils/feedback";
+import { getErrorMessage, notifyError, notifySuccess } from "@/framework/utils/feedback";
 import type { LoginRequest, LoginResponse, User } from "../types";
 
 /**

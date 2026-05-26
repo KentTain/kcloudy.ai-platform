@@ -4,6 +4,8 @@ import AdminLayout from "@/framework/layouts/AdminLayout.vue";
 
 // IAM 模块路由
 import { iamRoutes } from "@/iam/router";
+// Tenant 模块路由
+import { tenantRoutes } from "@/tenant/router";
 
 /**
  * 静态路由配置（无需权限验证）
@@ -70,6 +72,8 @@ export const asyncRoutes: RouteRecordRaw[] = [
       },
       // IAM 模块路由
       ...iamRoutes,
+      // Tenant 模块路由
+      ...tenantRoutes,
     ],
   },
 ];

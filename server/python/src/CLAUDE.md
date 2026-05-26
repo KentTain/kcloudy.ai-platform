@@ -19,6 +19,7 @@
 | `demo/` | AI 助手平台业务演示模块 | `demo` | 暂无模块级 CLAUDE.md，参考本文件通用规则 |
 | `framework/` | 底层基础设施模块 | - | [framework/CLAUDE.md](framework/CLAUDE.md) |
 | `framework/module/` | 模块系统（动态加载、注册中心） | - | [framework/module/CLAUDE.md](framework/module/CLAUDE.md) |
+| `tenant/` | 租户管理模块 | `tenant` | [tenant/CLAUDE.md](tenant/CLAUDE.md) |
 | `iam/` | 身份认证与权限模块 | `iam` | [iam/CLAUDE.md](iam/CLAUDE.md) |
 
 入口文件：
@@ -162,8 +163,11 @@ Demo 模块除常规 MVC 目录外，还包含：
 | --- | --- |
 | `/health` | 健康检查 |
 | `/api/v1/datasets` | Demo 知识库 CRUD 示例 |
-| `/admin/v1/tenants` | IAM 管理后台租户接口 |
-| `/console/v1/tenants` | IAM 用户端租户接口 |
+| `/admin/v1/tenants` | Tenant 模块租户管理接口 |
+| `/console/v1/tenants` | Tenant 模块用户端租户接口 |
+| `/inner/v1/tenants` | Tenant 模块内部接口 |
+| `/inner/v1/users` | IAM 模块用户内部接口 |
+| `/inner/v1/departments` | IAM 模块部门内部接口 |
 | `/docs` | Swagger API 文档 |
 | `/redoc` | ReDoc API 文档 |
 

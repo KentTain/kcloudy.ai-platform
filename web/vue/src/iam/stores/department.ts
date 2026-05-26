@@ -10,7 +10,7 @@ import {
   setDepartmentLeader,
   updateDepartment,
 } from "../api/department";
-import { getErrorMessage, notifyError, notifySuccess } from "../utils/feedback";
+import { getErrorMessage, notifyError, notifySuccess } from "@/framework/utils/feedback";
 import type { CreateDepartmentParams, Department, DepartmentUser, UpdateDepartmentParams } from "../types";
 
 export const useDepartmentStore = defineStore("iam-department", () => {

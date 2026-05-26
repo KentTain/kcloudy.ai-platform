@@ -10,7 +10,7 @@ import {
   lockUser,
   updateUser,
 } from "../api/user";
-import { getErrorMessage, notifyError, notifySuccess } from "../utils/feedback";
+import { getErrorMessage, notifyError, notifySuccess } from "@/framework/utils/feedback";
 import type { CreateUserParams, UpdateUserParams, User, UserQueryParams } from "../types";
 
 export const useUserStore = defineStore("iam-user", () => {

@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { changePassword, getLoginHistory, updateCurrentUser } from '@/iam/api/auth'
-import { useTenantStore } from '@/iam/stores/tenant'
-import { getErrorMessage, notifyError, notifySuccess } from '@/iam/utils/feedback'
+import { useTenantStore } from '@/tenant/stores/tenant'
+import { getErrorMessage, notifyError, notifySuccess } from '@/framework/utils/feedback'
 import { useUserStore } from '@/framework/stores'
 import type { LoginHistory } from '@/iam/types'
 import AppPage from '@/framework/layouts/components/AppPage.vue'

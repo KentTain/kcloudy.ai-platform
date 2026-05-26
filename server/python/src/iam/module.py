@@ -22,8 +22,8 @@ class IAMModule:
 
     @property
     def dependencies(self) -> list[str]:
-        # IAM 是基础模块，无依赖
-        return []
+        # IAM 依赖 Tenant 模块
+        return ["tenant"]
 
     def get_base(self) -> type:
         return Base
@@ -35,17 +35,17 @@ class IAMModule:
         格式: [(router, prefix, tags), ...]
         """
         from iam.controllers import router as iam_router
-        from iam.controllers.admin.tenant_controller import router as admin_tenant_router
         from iam.controllers.admin.system_setting_controller import router as admin_system_setting_router
-        from iam.controllers.console.tenant_controller import router as console_tenant_router
         from iam.controllers.console.system_setting_controller import router as console_system_setting_router
+        from iam.controllers.inner.user_controller import router as inner_user_router
+        from iam.controllers.inner.department_controller import router as inner_department_router
 
         return [
             (iam_router, "/api/v1", ["IAM"]),
-            (admin_tenant_router, "/admin/v1", ["Admin - Tenant"]),
             (admin_system_setting_router, "/admin/v1/system-settings", ["Admin - SystemSetting"]),
-            (console_tenant_router, "/console/v1/tenants", ["Console - Tenant"]),
             (console_system_setting_router, "/console/v1/system-settings", ["Console - SystemSetting"]),
+            (inner_user_router, "/inner/v1", ["Inner - User"]),
+            (inner_department_router, "/inner/v1", ["Inner - Department"]),
         ]
 
     def get_middlewares(self) -> list[type]:
@@ -70,12 +70,10 @@ class IAMModule:
 
         格式: {seed_name: seed_func}
         """
-        from iam.migrations.seeds.tenant_seed import run as tenant_seed_run
         from iam.migrations.seeds.iam_seed import run as iam_seed_run
         from iam.migrations.seeds.admin_seed import run as admin_seed_run
 
         return {
-            "tenant": tenant_seed_run,
             "iam": iam_seed_run,
             "admin": admin_seed_run,
         }

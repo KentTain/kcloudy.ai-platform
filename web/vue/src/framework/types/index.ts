@@ -21,7 +21,9 @@ export interface RouteMeta {
 }
 
 /**
- * API 响应类型
+ * 统一 API 响应类型
+ *
+ * 与后端 `framework.common.responses.ApiResponse` 对齐
  */
 export interface ApiResponse<T = unknown> {
   code: number;
@@ -34,17 +36,19 @@ export interface ApiResponse<T = unknown> {
  */
 export interface PageParams {
   page: number;
-  pageSize: number;
+  page_size: number;
 }
 
 /**
  * 分页响应数据
+ *
+ * 与后端 `TenantListVo` 等分页响应格式对齐
  */
 export interface PageResult<T> {
-  list: T[];
+  items: T[];
   total: number;
   page: number;
-  pageSize: number;
+  page_size: number;
 }
 
 // 树节点类型

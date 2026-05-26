@@ -3,6 +3,8 @@ IAM 模块数据模型
 
 包含身份与访问管理相关的所有模型。
 所有模型归属于 iam PostgreSQL schema。
+
+注意：Tenant、TenantConfig、TenantAdmin 已迁移到 tenant 模块
 """
 
 from framework.database import create_module_base, create_base_model
@@ -25,9 +27,6 @@ from .permission import Permission, RolePermission, UserRole
 from .role import Role
 from .system_setting import SystemSetting
 from .system_setting_attribute import SystemSettingAttribute
-from .tenant import Tenant
-from .tenant_admin import TenantAdmin
-from .tenant_config import TenantConfig
 from .user import User
 from .user_tenant import UserTenant
 
@@ -40,15 +39,11 @@ __all__ = [
     "OAuthProvider",
     "RoleCode",
     "DepartmentStatus",
-    "TenantStatus",
-    # 租户相关
-    "Tenant",
-    "TenantConfig",
-    "TenantAdmin",
-    "UserTenant",
+    "TenantStatus",  # 保留，用于 IAM 模块验证租户状态
     # 用户相关
     "User",
     "OAuthConnection",
+    "UserTenant",  # 用户-租户关联，保留在 IAM 模块
     # 组织架构
     "Department",
     "UserDepartment",

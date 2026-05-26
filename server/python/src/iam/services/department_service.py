@@ -53,6 +53,16 @@ class DepartmentService:
             return result.scalar_one_or_none()
 
     @staticmethod
+    async def get_by_ids(department_ids: list[str]) -> list[Department]:
+        """批量获取部门"""
+        if not department_ids:
+            return []
+        async with async_session() as session:
+            stmt = select(Department).where(Department.id.in_(department_ids))
+            result = await session.execute(stmt)
+            return list(result.scalars().all())
+
+    @staticmethod
     async def update(
         department_id: str,
         name: str | None = None,

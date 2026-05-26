@@ -12,7 +12,7 @@ import {
 } from '@/iam/api/user'
 import { useUserStore } from '@/iam/stores/user'
 import type { Department, Role } from '@/iam/types'
-import { getErrorMessage, notifyError, notifySuccess } from '@/iam/utils/feedback'
+import { getErrorMessage, notifyError, notifySuccess } from '@/framework/utils/feedback'
 import AppPage from '@/framework/layouts/components/AppPage.vue'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'

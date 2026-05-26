@@ -223,6 +223,21 @@ class IAMSettings(BaseSettings):
     oauth: OAuthSettings = Field(default_factory=OAuthSettings, description="OAuth 配置")
 
 
+class InnerApiSettings(BaseSettings):
+    """内部接口配置"""
+
+    # 模块调用模式：monolith（单体直接调用）/ microservice（HTTP 调用）
+    mode: str = Field(default="monolith", description="调用模式: monolith/microservice")
+
+    # 各模块 inner 接口地址（microservice 模式下使用）
+    tenant_url: str = Field(default="", description="Tenant 模块 inner 接口地址")
+    iam_url: str = Field(default="", description="IAM 模块 inner 接口地址")
+
+    # HTTP 客户端配置
+    timeout: float = Field(default=30.0, description="请求超时时间（秒）")
+    retry_count: int = Field(default=3, description="重试次数")
+
+
 # ==============================================================================
 # 主配置类
 # ==============================================================================
@@ -261,6 +276,11 @@ class Settings(BaseSettings):
     )
     iam: IAMSettings = Field(
         default_factory=IAMSettings, description="IAM 配置"
+    )
+
+    # 内部接口配置
+    inner_api: InnerApiSettings = Field(
+        default_factory=InnerApiSettings, description="内部接口配置"
     )
 
     # 日志配置

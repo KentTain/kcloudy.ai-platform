@@ -6,7 +6,6 @@
  * - 角色管理
  * - 权限管理
  * - 部门管理
- * - 租户管理
  */
 
 // 导出所有类型
@@ -15,7 +14,6 @@ export type {
   Role,
   Permission,
   Department,
-  Tenant,
   LoginRequest,
   LoginResponse,
   ApiResponse,
@@ -30,9 +28,6 @@ export type {
   CreateDepartmentParams,
   UpdateDepartmentParams,
   DepartmentQueryParams,
-  CreateTenantParams,
-  UpdateTenantParams,
-  TenantQueryParams,
 } from "./types";
 
 // 导出认证 API
@@ -79,16 +74,4 @@ export {
   createDepartment,
   updateDepartment,
   deleteDepartment,
-} from "./api";
-
-// 导出租户管理 API
-export {
-  getTenants,
-  getTenant,
-  createTenant,
-  updateTenant,
-  deleteTenant,
-  getCurrentTenant,
-  switchTenant,
-  getMyTenants,
 } from "./api";

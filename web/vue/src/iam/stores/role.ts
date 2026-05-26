@@ -9,7 +9,7 @@ import {
   getRoles,
   updateRole,
 } from "../api/role";
-import { getErrorMessage, notifyError, notifySuccess } from "../utils/feedback";
+import { getErrorMessage, notifyError, notifySuccess } from "@/framework/utils/feedback";
 import type { CreateRoleParams, Permission, Role, UpdateRoleParams } from "../types";
 
 export const useRoleStore = defineStore("iam-role", () => {

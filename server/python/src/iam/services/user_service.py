@@ -102,6 +102,16 @@ class UserService:
             return result.scalar_one_or_none()
 
     @staticmethod
+    async def get_by_ids(user_ids: list[str]) -> list[User]:
+        """批量获取用户"""
+        if not user_ids:
+            return []
+        async with async_session() as session:
+            stmt = select(User).where(User.id.in_(user_ids))
+            result = await session.execute(stmt)
+            return list(result.scalars().all())
+
+    @staticmethod
     async def update_profile(
         user_id: str,
         nickname: str | None = None,
