@@ -69,6 +69,8 @@ web/vue/
 │   │   └── ui/                # shadcn-vue 组件
 │   ├── composables/           # 组合式函数 (Vue)
 │   ├── framework/             # Framework 前端UI框架模块
+│   ├── tenant/                # Tenant 租户管理模块
+│   ├── iam/                   # IAM 身份认证与权限模块
 │   ├── demo/                  # Demo 业务模块
 │   ├── App.vue                # 根组件
 │   └── main.ts                # 应用入口
@@ -92,6 +94,8 @@ web/vue/
 | components | 通用组件 | [src/components/CLAUDE.md](src/components/CLAUDE.md) |
 | composables | 组合式函数 (Vue) | [src/composables/CLAUDE.md](src/composables/CLAUDE.md) |
 | framework | 基础设施：前端UI框架、路由、状态管理 | [src/framework/CLAUDE.md](src/framework/CLAUDE.md) |
+| tenant | 租户管理模块：租户创建、切换、配置 | [src/tenant/CLAUDE.md](src/tenant/CLAUDE.md) |
+| iam | 身份认证与权限模块：用户、角色、权限管理 | [src/iam/CLAUDE.md](src/iam/CLAUDE.md) |
 | demo | 业务演示模块：健康检查、知识库管理 | [src/demo/CLAUDE.md](src/demo/CLAUDE.md) |
 
 ## 开发命令

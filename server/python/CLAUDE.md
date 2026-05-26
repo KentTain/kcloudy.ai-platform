@@ -31,6 +31,7 @@ Python 后端使用 FastAPI + SQLAlchemy 2.0 构建，是 InitProject 的 Python
 | `src/` | 源码目录，按顶级模块组织 | [src/CLAUDE.md](src/CLAUDE.md) |
 | `src/framework/` | 基础设施模块 | [src/framework/CLAUDE.md](src/framework/CLAUDE.md) |
 | `src/framework/module/` | 模块系统（动态加载、注册中心） | [src/framework/module/CLAUDE.md](src/framework/module/CLAUDE.md) |
+| `src/tenant/` | 租户管理模块 | [src/tenant/CLAUDE.md](src/tenant/CLAUDE.md) |
 | `src/iam/` | 身份认证与权限模块 | [src/iam/CLAUDE.md](src/iam/CLAUDE.md) |
 | `src/demo/` | AI 助手平台演示模块 | [src/CLAUDE.md](src/CLAUDE.md) |
 | `tests/` | 测试目录，按源码模块组织 | [tests/CLAUDE.md](tests/CLAUDE.md) |
@@ -45,7 +46,7 @@ Python 后端使用 FastAPI + SQLAlchemy 2.0 构建，是 InitProject 的 Python
 ## 模块边界
 
 - 模块是顶级目录 `src/{module}/`，功能是模块内部子域。
-- 业务模块包括 `demo`、`iam`，可以依赖 `framework`。
+- 业务模块包括 `demo`、`tenant`、`iam`，可以依赖 `framework`。
 - `framework` 是底层基础设施模块，禁止依赖业务模块。
 - 可复用基础能力优先放入 `framework`；业务专属逻辑保留在业务模块内。
 - 测试目录与源码模块对齐：`tests/{module}/` 对应 `src/{module}/`。

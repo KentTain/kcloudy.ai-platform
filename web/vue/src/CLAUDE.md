@@ -9,6 +9,8 @@ src/
 ├── components/                # 通用组件
 ├── composables/               # 组合式函数 (Vue)
 ├── demo/                      # Demo 业务模块
+├── tenant/                    # Tenant 租户管理模块
+├── iam/                       # IAM 身份认证与权限模块
 └── framework/                 # Framework UI框架模块
 ```
 
@@ -19,6 +21,8 @@ src/
 | components | 业务无关的通用组件，可在任意模块使用 | [components/CLAUDE.md](components/CLAUDE.md) |
 | composables | Vue 3 组合式函数，封装可复用的响应式逻辑 | [composables/CLAUDE.md](composables/CLAUDE.md) |
 | demo | 业务演示模块：健康检查、知识库管理 | [demo/CLAUDE.md](demo/CLAUDE.md) |
+| tenant | 租户管理模块：租户创建、切换、配置 | [tenant/CLAUDE.md](tenant/CLAUDE.md) |
+| iam | 身份认证与权限模块：用户、角色、权限管理 | [iam/CLAUDE.md](iam/CLAUDE.md) |
 | framework | 基础设施：UI框架、路由、状态管理、AppPage 页面骨架、树类型与工具 | [framework/CLAUDE.md](framework/CLAUDE.md) |
 
 ## 树结构支持
