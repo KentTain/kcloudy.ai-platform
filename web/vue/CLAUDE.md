@@ -1,4 +1,4 @@
-# CLAUDE.md
+﻿# CLAUDE.md
 
 本文件为 Claude Code 在 Vue 前端项目中工作时提供指导。
 
@@ -91,8 +91,6 @@ web/vue/
 | 模块 | 说明 | 详细文档 |
 |------|------|----------|
 | components/ui | shadcn-vue UI 组件 | 由 shadcn-vue CLI 管理 |
-| components | 通用组件 | [src/components/CLAUDE.md](src/components/CLAUDE.md) |
-| composables | 组合式函数 (Vue) | [src/composables/CLAUDE.md](src/composables/CLAUDE.md) |
 | framework | 基础设施：前端UI框架、路由、状态管理 | [src/framework/CLAUDE.md](src/framework/CLAUDE.md) |
 | tenant | 租户管理模块：租户创建、切换、配置 | [src/tenant/CLAUDE.md](src/tenant/CLAUDE.md) |
 | iam | 身份认证与权限模块：用户、角色、权限管理 | [src/iam/CLAUDE.md](src/iam/CLAUDE.md) |

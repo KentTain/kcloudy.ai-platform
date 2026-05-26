@@ -1,4 +1,4 @@
-# Framework 开发指南
+﻿# Framework 开发指南
 
 本文件为 Claude Code 在 `src/framework/` 基础设施模块中工作时提供指导。
 
@@ -23,7 +23,7 @@ framework ──X──▶ demo / iam
 | `core/` | 存储、队列、发布订阅、锁等 Protocol / 抽象接口、树结构常量 |
 | `database/` | SQLAlchemy 基础模型、Mixin（含 TreeNodeMixin）、类型、事件、引擎池 |
 | `schemas/` | Pydantic VO 基类（含 TreeNodeVo、TreeNodeTreeVo） |
-| `module/` | 模块动态加载的抽象接口定义、注册及动态扫描与发现 [module/CLAUDE.md](module/CLAUDE.md) |
+| `module/` | 模块动态加载系统：`ModuleDescriptor` Protocol、`ModuleRegistry` 注册中心、模块扫描与依赖解析 |
 | `lock/` | 分布式锁工厂与实现 |
 | `pubsub/` | 发布订阅工厂、Handler 与 Redis 实现 |
 | `queue/` | 队列工厂、Handler 与 Redis Stream 实现 |
@@ -52,7 +52,7 @@ Framework 支持按租户切换物理资源：
 
 未配置租户专属资源时，使用默认资源和逻辑隔离策略。
 
-## 典型用法
+## 核心组件用法
 
 ### 配置加载
 
@@ -63,9 +63,22 @@ settings = init_settings("path/to/config")
 print(settings.server.port)
 ```
 
-# 模块动态加载
+### 模块系统
 
-将关联文档：[module/CLAUDE.md](module/CLAUDE.md)
+```python
+from framework.module import get_registry, load_modules
+from pathlib import Path
+
+# 加载模块
+modules = load_modules(Path("src"), module_names=["iam", "demo"])
+
+# 使用注册中心
+registry = get_registry()
+module = registry.get_module("iam")
+all_modules = registry.get_all_modules()
+```
+
+模块必须实现 `ModuleDescriptor` Protocol，声明 `name`、`schema`、`dependencies`、`get_base()`、`get_routers()` 等接口。
 
 ### Redis 缓存
 
