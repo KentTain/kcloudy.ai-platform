@@ -4,21 +4,21 @@
 为管理后台提供独立的超级管理员认证体系。
 """
 
+import secrets
 from datetime import datetime, timedelta
 from typing import TYPE_CHECKING, Callable
-import secrets
 
-from fastapi import Request, HTTPException
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi import HTTPException, Request
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from loguru import logger
+from sqlalchemy import select
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import JSONResponse
 
-from iam.models import TenantAdmin
 from framework.database.core.engine import async_session
 from framework.tenant.exceptions import TenantAdminAuthError
 from framework.utils.crypto import hash_password, verify_password
-from sqlalchemy import select
+from tenant.models import TenantAdmin
 
 if TYPE_CHECKING:
     from starlette.types import ASGIApp
@@ -53,8 +53,7 @@ class AdminAuthService:
         """
         async with async_session() as session:
             stmt = select(TenantAdmin).where(
-                TenantAdmin.username == username,
-                TenantAdmin.is_active == True
+                TenantAdmin.username == username, TenantAdmin.is_active == True
             )
             result = await session.execute(stmt)
             admin = result.scalar_one_or_none()
@@ -71,7 +70,7 @@ class AdminAuthService:
                 "admin_id": admin.id,
                 "username": admin.username,
                 "is_default": admin.is_default,
-                "expires_at": datetime.now() + timedelta(hours=TOKEN_EXPIRE_HOURS)
+                "expires_at": datetime.now() + timedelta(hours=TOKEN_EXPIRE_HOURS),
             }
 
             return token, admin

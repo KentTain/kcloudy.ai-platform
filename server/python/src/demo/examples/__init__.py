@@ -8,18 +8,25 @@ AI 智能体应用实战示例模块
 - MCP 工具集成
 
 用于 Day 3 讲义：AI 智能体应用实战
+
+注意：此模块需要安装 langchain 依赖组：
+    uv sync --group langchain
 """
 
-from demo.examples import (
-    custom_tools,
-    langgraph_workflows,
-    mcp_tools,
-    prompt_engineering,
-)
+try:
+    from demo.examples import (
+        custom_tools,
+        langgraph_workflows,
+        mcp_tools,
+        prompt_engineering,
+    )
 
-__all__ = [
-    "prompt_engineering",
-    "custom_tools",
-    "langgraph_workflows",
-    "mcp_tools",
-]
+    __all__ = [
+        "prompt_engineering",
+        "custom_tools",
+        "langgraph_workflows",
+        "mcp_tools",
+    ]
+except ImportError:
+    # langchain 可选依赖未安装时，优雅降级
+    __all__ = []

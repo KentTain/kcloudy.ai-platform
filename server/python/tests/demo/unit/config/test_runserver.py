@@ -1,9 +1,9 @@
-"""Runserver command tests"""
+﻿"""Runserver command tests"""
 
 from alembic.script import ScriptDirectory
 from click.testing import CliRunner
 
-from manage import cli, get_alembic_config
+from manage import cli
 
 
 class TestRunserverCommand:
@@ -24,37 +24,49 @@ class TestRunserverCommand:
 class TestMigrateCommand:
     """Migrate 命令测试"""
 
-    def test_migrate_defaults_to_heads(self):
+    def test_migrate_supports_module_option(self):
         """
-        场景：存在多个迁移 head
-        WHEN: 查看 migrate 命令的 revision 默认值
-        THEN: 默认值为 heads
+        场景：模块化单体架构下，migrate 命令按模块独立迁移
+        WHEN: 查看 migrate 命令的参数
+        THEN: 支持 --module 和 --all 参数选择目标模块
         """
         db_group = cli.commands["db"]  # type: ignore[index]
         migrate_cmd = db_group.commands["migrate"]  # type: ignore[index]
-        revision_param = next(p for p in migrate_cmd.params if p.name == "revision")
-        assert revision_param.default == "heads"
+        param_names = {p.name for p in migrate_cmd.params}
+        assert "module" in param_names
+        assert "all_modules" in param_names
 
 
 class TestAlembicConfig:
-    """Alembic 配置测试"""
+    """Alembic 配置测试（模块化单体架构）"""
 
-    def test_alembic_config_includes_iam_migrations(self):
-        """
-        场景：检查迁移配置
-        WHEN: 加载 Alembic 配置
-        THEN: 同时包含 demo 和 iam 两个迁移目录
-        """
-        config = get_alembic_config()
+    def test_module_alembic_config_demo(self):
+        """Demo 模块的 Alembic 配置应正确设置"""
+        from manage import get_module_alembic_config, load_all_modules
 
-        version_locations = config.get_main_option("version_locations")
-        assert version_locations is not None, "version_locations 未配置"
+        modules = load_all_modules()
+        demo_module = next((m for m in modules if m.name == "demo"), None)
+        assert demo_module is not None, "未找到 demo 模块"
 
-        normalized_locations = version_locations.replace("\\", "/")
-        assert "src/demo/migrations/versions" in normalized_locations
-        assert "src/iam/migrations/versions" in normalized_locations
+        config = get_module_alembic_config(demo_module)
+        assert config.get_main_option("script_location").replace("\\", "/").endswith("demo/migrations")
+        assert "demo/migrations/versions" in config.get_main_option("version_locations").replace("\\", "/")
+
+        revisions = {revision.revision for revision in ScriptDirectory.from_config(config).walk_revisions()}
+        assert "demo_001_create_dataset" in revisions
+        assert "demo_002_tenant_dataset" in revisions
+
+    def test_module_alembic_config_iam(self):
+        """IAM 模块的 Alembic 配置应正确设置"""
+        from manage import get_module_alembic_config, load_all_modules
+
+        modules = load_all_modules()
+        iam_module = next((m for m in modules if m.name == "iam"), None)
+        assert iam_module is not None, "未找到 iam 模块"
+
+        config = get_module_alembic_config(iam_module)
+        assert config.get_main_option("script_location").replace("\\", "/").endswith("iam/migrations")
+        assert "iam/migrations/versions" in config.get_main_option("version_locations").replace("\\", "/")
 
         revisions = {revision.revision for revision in ScriptDirectory.from_config(config).walk_revisions()}
         assert "001_tenant" in revisions
-        assert "demo_002_tenant_dataset" in revisions
-        assert "demo_001_create_dataset" in revisions
