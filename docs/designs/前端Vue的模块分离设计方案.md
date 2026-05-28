@@ -1004,6 +1004,24 @@ demo/
    - 修改 vite.config.ts
    - 创建 Dockerfile
 
+8. 状态管理约定
+   - 命名规则：`use{模块}{功能}Store`，如 `useDemoExampleStore`、`useIamUserStore`
+   - 模块自治：各模块管理自己的状态持久化策略
+   - 跨模块通信：通过事件总线（见 4. 模块间通信机制）
+
+9. 组件分层约定
+   - 通用组件：`src/components/` - 业务无关的 UI 组件
+   - 模块私有组件：模块内的 `components/` 目录
+   - 组件共享：模块组件如需共享，迁移至 `src/components/`
+
+10. API 层约定
+
+- framework 提供 Axios 实例和拦截器
+- 模块定义自己的端点：`/api/{module}/*`
+- 端点前缀由模块自己管理
+- 模块私有夹具：`{module}/tests/fixtures/`
+- 全局夹具：`tests/fixtures/`（仅限跨模块测试使用）
+
 ### 9.3 测试验证
 
 1. 单元测试：
