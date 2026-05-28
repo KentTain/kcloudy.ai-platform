@@ -1,7 +1,9 @@
-import type { RouteRecordRaw } from "vue-router";
+﻿import type { RouteRecordRaw } from "vue-router";
 import { createRouter, createWebHistory } from "vue-router";
 import AdminLayout from "@/framework/layouts/AdminLayout.vue";
 
+// Demo 模块路由
+import { demoRoutes } from "@/demo/router";
 // IAM 模块路由
 import { iamRoutes } from "@/iam/router";
 // Tenant 模块路由
@@ -39,24 +41,6 @@ export const asyncRoutes: RouteRecordRaw[] = [
     path: "/",
     component: AdminLayout,
     children: [
-      {
-        path: "",
-        name: "Home",
-        component: () => import("@/demo/pages/HomePage.vue"),
-        meta: { title: "首页", icon: "home", requiresAuth: true },
-      },
-      {
-        path: "health",
-        name: "Health",
-        component: () => import("@/demo/pages/HealthPage.vue"),
-        meta: { title: "健康检查", icon: "health", requiresAuth: true },
-      },
-      {
-        path: "datasets",
-        name: "Datasets",
-        component: () => import("@/demo/pages/DatasetsPage.vue"),
-        meta: { title: "知识库", icon: "database", requiresAuth: true },
-      },
       // 设置页面
       {
         path: "settings/account",
@@ -70,6 +54,8 @@ export const asyncRoutes: RouteRecordRaw[] = [
         component: () => import("@/framework/pages/DeveloperSettingsPage.vue"),
         meta: { title: "开发者设置", hidden: true, requiresAuth: true },
       },
+      // Demo 模块路由
+      ...demoRoutes,
       // IAM 模块路由
       ...iamRoutes,
       // Tenant 模块路由
