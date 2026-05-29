@@ -126,6 +126,72 @@ uv run python manage.py db rebuild --all
 uv run python manage.py db -d "postgresql+asyncpg://user:pass@host:5432/dbname" migrate --module iam
 ```
 
+### 跨 Schema 外键处理
+
+本项目采用模块级 Schema 隔离，跨 Schema 外键需要特殊处理：
+
+**1. 迁移前确保 Schema 存在**
+
+在 `migrations/env.py` 中，迁移上下文配置前确保 schema 已创建：
+
+```python
+async with connectable.connect() as connection:
+    # 确保 schema 存在
+    from sqlalchemy import text
+    await connection.execute(text(f"CREATE SCHEMA IF NOT EXISTS {MODULE_SCHEMA}"))
+    await connection.commit()
+
+    await connection.run_sync(do_run_migrations)
+```
+
+**2. 模型外键需指定完整 Schema**
+
+外键引用其他 schema 的表时，必须使用 `{schema}.{table}.{column}` 格式：
+
+```python
+# 错误：缺少 schema 前缀，会导致事务回滚
+tenant_id: Mapped[str] = mapped_column(
+    String(36), ForeignKey("tenants.id", ondelete="CASCADE")
+)
+
+# 正确：指定完整的 schema.table.column
+tenant_id: Mapped[str] = mapped_column(
+    String(36), ForeignKey("tenant.tenants.id", ondelete="CASCADE")
+)
+```
+
+**3. 迁移脚本单独创建跨 Schema 外键**
+
+Alembic 自动生成的外键会因 schema 缺失导致每次迁移重复删建。需要手动创建：
+
+```python
+# 关键：必须指定 source_schema 和 referent_schema
+op.create_foreign_key(
+    constraint_name="fk_roles_tenant_id",
+    source_table="roles",
+    referent_table="tenants",
+    local_cols=["tenant_id"],
+    remote_cols=["id"],
+    source_schema=MODULE_SCHEMA,       # 本表 schema
+    referent_schema="tenant",          # 关联表 schema（关键！）
+    ondelete="CASCADE"
+)
+```
+
+**4. 种子数据使用原生 SQL 绕过 ORM 验证**
+
+跨 schema 外键在 ORM 层可能验证失败，种子数据可使用原生 SQL：
+
+```python
+await session.execute(
+    text("""
+        INSERT INTO iam.roles (id, tenant_id, code, name, description, is_system, created_at, updated_at)
+        VALUES (:id, NULL, :code, :name, :description, true, now(), now())
+    """),
+    {"id": role_id, "code": role_code, "name": role_data["name"], "description": role_data["description"]}
+)
+```
+
 ### 数据初始化
 
 ```bash

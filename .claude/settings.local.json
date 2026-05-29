@@ -45,7 +45,22 @@
       "mcp__codegraph__codegraph_files",
       "mcp__codegraph__codegraph_context",
       "mcp__codegraph__codegraph_status",
-      "mcp__codegraph__codegraph_search"
+      "mcp__codegraph__codegraph_search",
+      "Bash(openspec-cn list *)",
+      "Bash(openspec-cn new *)",
+      "Bash(openspec-cn status *)",
+      "Bash(openspec-cn instructions *)",
+      "mcp__codegraph__codegraph_explore",
+      "Bash(PYTHONIOENCODING=utf-8 uv run *)",
+      "Bash(D:)",
+      "Bash(openspec-cn sync *)",
+      "Bash(openspec-cn sync-specs *)",
+      "Bash(docker-compose ps *)",
+      "Bash(docker-compose build *)",
+      "Bash(node scripts/generate-modules-config.ts demo iam)",
+      "Bash(node scripts/generate-modules-config.ts demo iam tenant)",
+      "Bash(docker info *)",
+      "Bash(docker pull *)"
     ]
   }
 }

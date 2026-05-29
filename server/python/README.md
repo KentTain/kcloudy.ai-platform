@@ -293,6 +293,86 @@ server/python/
 └── config/                     # 配置目录（引用共享配置）
 ```
 
+## 常见问题
+
+### 数据库迁移
+
+#### 问题 1：迁移失败 - schema 不存在
+
+**现象**：首次运行迁移时报错 `schema "iam" does not exist`
+
+**原因**：Alembic 在创建 `alembic_version` 表前，目标 schema 尚不存在
+
+**解决**：在 `migrations/env.py` 的迁移上下文配置前确保 schema 存在：
+
+```python
+async with connectable.connect() as connection:
+    from sqlalchemy import text
+    await connection.execute(text(f"CREATE SCHEMA IF NOT EXISTS {MODULE_SCHEMA}"))
+    await connection.commit()
+    await connection.run_sync(do_run_migrations)
+```
+
+参考：`src/iam/migrations/env.py`
+
+#### 问题 2：模型创建失败导致事务回滚
+
+**现象**：创建模型时报外键约束错误
+
+**原因**：跨 schema 外键未指定完整的 `schema.table.column` 格式
+
+**解决**：在模型定义中指定完整 schema：
+
+```python
+# 错误
+ForeignKey("tenants.id", ondelete="CASCADE")
+
+# 正确
+ForeignKey("tenant.tenants.id", ondelete="CASCADE")
+```
+
+参考：`src/iam/models/role.py`
+
+#### 问题 3：种子数据初始化失败
+
+**现象**：执行 `seed` 命令时报外键验证错误
+
+**原因**：SQLAlchemy ORM 对跨 schema 外键验证可能失败
+
+**解决**：使用原生 SQL 插入数据：
+
+```python
+await session.execute(
+    text("INSERT INTO iam.roles (...) VALUES (...)"),
+    {...}
+)
+```
+
+参考：`src/iam/migrations/seeds/iam_seed.py`
+
+#### 问题 4：每次迁移重复删建外键
+
+**现象**：每次运行迁移都会删除并重建相同的外键
+
+**原因**：Alembic 自动生成的外键未指定 `referent_schema`
+
+**解决**：在迁移脚本中手动创建跨 schema 外键：
+
+```python
+op.create_foreign_key(
+    constraint_name="fk_roles_tenant_id",
+    source_table="roles",
+    referent_table="tenants",
+    local_cols=["tenant_id"],
+    remote_cols=["id"],
+    source_schema="iam",
+    referent_schema="tenant",  # 关键！
+    ondelete="CASCADE"
+)
+```
+
+参考：`src/iam/migrations/versions/001_iam_tables.py`
+
 ## License
 
 Copyright © 2025 Moles. All Rights Reserved.
