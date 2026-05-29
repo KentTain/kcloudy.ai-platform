@@ -7,8 +7,8 @@ services:
   # ============================================
   backend-platform-api:
     build:
-      context: ../server/python
-      dockerfile: Dockerfile
+      context: ../server
+      dockerfile: python/Dockerfile
       args:
         BUILD_MODULES: demo,iam,tenant
         APP_ROLE: web
@@ -37,8 +37,8 @@ services:
 
   backend-platform-task:
     build:
-      context: ../server/python
-      dockerfile: Dockerfile
+      context: ../server
+      dockerfile: python/Dockerfile
       args:
         BUILD_MODULES: demo,iam,tenant
         APP_ROLE: task
@@ -65,8 +65,8 @@ services:
 
   backend-platform-listener:
     build:
-      context: ../server/python
-      dockerfile: Dockerfile
+      context: ../server
+      dockerfile: python/Dockerfile
       args:
         BUILD_MODULES: demo,iam,tenant
         APP_ROLE: listener
@@ -96,8 +96,8 @@ services:
   # ============================================
   backend-demo-api:
     build:
-      context: ../server/python
-      dockerfile: Dockerfile
+      context: ../server
+      dockerfile: python/Dockerfile
       args:
         BUILD_MODULES: demo
         APP_ROLE: web
@@ -128,8 +128,8 @@ services:
 
   backend-demo-task:
     build:
-      context: ../server/python
-      dockerfile: Dockerfile
+      context: ../server
+      dockerfile: python/Dockerfile
       args:
         BUILD_MODULES: demo
         APP_ROLE: task
@@ -152,8 +152,8 @@ services:
 
   backend-demo-listener:
     build:
-      context: ../server/python
-      dockerfile: Dockerfile
+      context: ../server
+      dockerfile: python/Dockerfile
       args:
         BUILD_MODULES: demo
         APP_ROLE: listener
@@ -176,8 +176,8 @@ services:
 
   backend-iam-api:
     build:
-      context: ../server/python
-      dockerfile: Dockerfile
+      context: ../server
+      dockerfile: python/Dockerfile
       args:
         BUILD_MODULES: iam
         APP_ROLE: web
@@ -208,8 +208,8 @@ services:
 
   backend-tenant-api:
     build:
-      context: ../server/python
-      dockerfile: Dockerfile
+      context: ../server
+      dockerfile: python/Dockerfile
       args:
         BUILD_MODULES: tenant
         APP_ROLE: web

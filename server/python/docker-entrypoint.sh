@@ -13,18 +13,21 @@ echo "  Role: ${ROLE}"
 echo "  Host: ${HOST}"
 echo "  Port: ${PORT}"
 
+# Activate virtual environment
+source /app/.venv/bin/activate
+
 case "${ROLE}" in
   web)
     echo "Running Web API server..."
-    exec uv run uvicorn application_web:app --host ${HOST} --port ${PORT}
+    exec uvicorn application_web:app --host ${HOST} --port ${PORT}
     ;;
   task)
     echo "Running Task scheduler..."
-    exec uv run runtask
+    exec runtask
     ;;
   listener)
     echo "Running Message listener..."
-    exec uv run runlistener
+    exec runlistener
     ;;
   *)
     echo "Error: Unknown APP_ROLE '${APP_ROLE}'. Must be one of: web, task, listener"

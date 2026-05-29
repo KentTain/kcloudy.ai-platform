@@ -2,6 +2,7 @@
 路径常量
 """
 
+import os
 from pathlib import Path
 
 # 从 demo/core/common/path.py 开始计算
@@ -29,5 +30,21 @@ WORKSPACE_ROOT_DIR = SERVER_ROOT_DIR
 # 日志目录 (logs/)
 LOGS_DIR = PROJECT_ROOT_DIR / "logs"
 
-# 配置目录 - 引用 server/config/
-CONFIG_FOLDER = SERVER_ROOT_DIR / "config"
+# 配置目录
+# 优先级：
+#   1. 环境变量 APP_CONFIG_DIR（容器/生产环境推荐）
+#   2. PROJECT_ROOT_DIR / "config"（容器内打包路径，Docker 镜像默认位置）
+#   3. SERVER_ROOT_DIR / "config"（本地开发，monorepo 共享 server/config/）
+def _resolve_config_folder() -> Path:
+    env_dir = os.environ.get("APP_CONFIG_DIR")
+    if env_dir:
+        return Path(env_dir)
+
+    packaged = PROJECT_ROOT_DIR / "config"
+    if packaged.exists():
+        return packaged
+
+    return SERVER_ROOT_DIR / "config"
+
+
+CONFIG_FOLDER = _resolve_config_folder()
