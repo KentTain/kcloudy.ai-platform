@@ -197,6 +197,31 @@ framework ──X──▶ demo / iam / tenant
 - `framework/types/tree.ts`：TreeNode、TreeNodeTree、TreeComponentNode、TreeAction 接口
 - `framework/utils/tree.ts`：buildTree、flattenTree、findNodeById、getAncestors、sortByTreeSorts 函数
 
+## 事件系统
+
+前端提供基于发布-订阅模式的 EventBus，用于跨模块通信：
+
+```typescript
+import { getEventBus, ModuleEvents } from "@/framework/events";
+
+const eventBus = getEventBus();
+
+// 订阅事件（返回取消订阅函数）
+const unsubscribe = eventBus.on(ModuleEvents.USER_LOGGED_IN, (user) => {
+  console.log("User logged in:", user);
+});
+
+// 发布事件
+eventBus.emit(ModuleEvents.TENANT_CHANGED, { id: "001", name: "新租户" });
+
+// 取消订阅
+unsubscribe();
+```
+
+预定义事件：`USER_LOGGED_IN`、`USER_LOGGED_OUT`、`TENANT_CHANGED`、`MODULE_LOADED`、`MODULE_ERROR`、`DATA_REFRESH_REQUESTED`
+
+详细说明见 [framework/CLAUDE.md](framework/CLAUDE.md#事件系统)。
+
 ## 测试
 
 测试文件位于 `tests/` 目录，详见 [tests/CLAUDE.md](../tests/CLAUDE.md)。

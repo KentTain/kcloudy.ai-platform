@@ -176,6 +176,98 @@ for (const route of moduleRoutes) {
 }
 ```
 
+## 事件系统
+
+Framework 提供基于发布-订阅模式的 EventBus，用于跨模块通信。
+
+### EventBus API
+
+```typescript
+import { getEventBus, ModuleEvents } from "@/framework/events";
+
+const eventBus = getEventBus();
+
+// 订阅事件，返回取消订阅函数
+const unsubscribe = eventBus.on("event:name", (payload) => {
+  console.log("Received:", payload);
+});
+
+// 发布事件
+eventBus.emit("event:name", { data: "value" });
+
+// 取消订阅
+unsubscribe();
+// 或
+eventBus.off("event:name", handler);
+```
+
+### 预定义事件
+
+| 事件常量 | 事件名 | 说明 | Payload 类型 |
+|----------|--------|------|--------------|
+| `USER_LOGGED_IN` | `user:logged-in` | 用户登录成功 | `{ id, name, email }` |
+| `USER_LOGGED_OUT` | `user:logged-out` | 用户登出 | `null` |
+| `TENANT_CHANGED` | `tenant:changed` | 租户切换 | `{ id, name }` |
+| `MODULE_LOADED` | `module:loaded` | 模块加载完成 | `{ name }` |
+| `MODULE_ERROR` | `module:error` | 模块加载错误 | `{ name, error }` |
+| `DATA_REFRESH_REQUESTED` | `data:refresh-requested` | 数据刷新请求 | `{ source }` |
+
+### 使用示例
+
+```vue
+<script setup lang="ts">
+import { onMounted, onUnmounted } from "vue";
+import { getEventBus, ModuleEvents } from "@/framework/events";
+
+const eventBus = getEventBus();
+
+// 定义事件处理器
+function handleUserLogin(user) {
+  console.log("User logged in:", user);
+}
+
+onMounted(() => {
+  // 订阅事件
+  const unsubscribes = [
+    eventBus.on(ModuleEvents.USER_LOGGED_IN, handleUserLogin),
+    eventBus.on(ModuleEvents.TENANT_CHANGED, (tenant) => {
+      console.log("Tenant changed:", tenant);
+    }),
+  ];
+
+  // 组件卸载时取消订阅
+  onUnmounted(() => {
+    unsubscribes.forEach((unsubscribe) => unsubscribe());
+  });
+});
+</script>
+```
+
+### 自定义事件
+
+模块可以定义自己的事件名称：
+
+```typescript
+// 发布自定义事件
+eventBus.emit("demo:custom-event", { message: "Hello" });
+
+// 订阅自定义事件
+eventBus.on("demo:custom-event", (payload) => {
+  console.log(payload.message);
+});
+```
+
+### 最佳实践
+
+1. **事件命名**：使用 `{模块}:{动作}` 格式，如 `demo:data-updated`、`iam:role-changed`
+2. **取消订阅**：在组件 `onUnmounted` 时取消订阅，避免内存泄漏
+3. **类型安全**：为自定义事件定义 Payload 类型
+4. **适度使用**：优先使用 Pinia Store 共享状态，EventBus 用于一次性事件通知
+
+### 示例页面
+
+Demo 模块提供了完整的 EventBus 使用示例：`/demo/event-bus`
+
 ## 设计令牌
 
 ### 颜色系统

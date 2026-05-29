@@ -22,6 +22,12 @@ export const demoRoutes: RouteRecordRaw[] = [
     component: () => import("@/demo/pages/DatasetsPage.vue"),
     meta: { title: "知识库", icon: "database", requiresAuth: true },
   },
+  {
+    path: "demo/event-bus",
+    name: "EventBusDemo",
+    component: () => import("@/demo/pages/EventBusDemoPage.vue"),
+    meta: { title: "EventBus 示例", icon: "bell", requiresAuth: true },
+  },
 ];
 
 export default demoRoutes;
