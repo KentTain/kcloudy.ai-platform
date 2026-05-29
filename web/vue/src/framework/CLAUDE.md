@@ -2,7 +2,18 @@
 
 ## 概述
 
-Framework 模块是整体 UI 框架，提供统一的前端基础设施、路由定义及各模块交互。
+Framework 模块是整体 UI 框架，提供统一的前端基础设施、模块系统、路由定义及各模块交互。
+
+## 模块定位
+
+Framework 是 Vue 前端的底层基础设施模块，提供路由、状态管理、布局、权限、API 客户端和模块系统等能力。
+
+**依赖边界：** framework 禁止引用业务模块（如 `demo`、`iam`、`tenant`）。业务模块可以依赖 framework；framework 如需业务能力，必须通过 Protocol、注册器或启动期注入实现依赖倒置。
+
+```text
+demo / iam / tenant ──▶ framework
+framework ──X──▶ demo / iam / tenant
+```
 
 ## 模块结构
 
@@ -16,6 +27,8 @@ framework/
 │       └── AppFormItem.vue    # 表单项（保留）
 ├── directives/                # 自定义指令
 │   └── permission.ts          # 权限指令
+├── events/                    # 事件系统
+│   └── index.ts               # EventBus、ModuleEvents
 ├── layouts/                   # 布局组件
 │   ├── AdminLayout.vue        # 壳布局（使用 shadcn Sidebar）
 │   └── components/            # 布局子组件
@@ -23,6 +36,11 @@ framework/
 │       ├── AppNavbar.vue      # 顶部导航
 │       ├── AppMain.vue        # 内容区
 │       └── AppPage.vue        # 页面骨架
+├── module/                    # 模块系统
+│   ├── types.ts               # ModuleDescriptor、MenuItem 类型定义
+│   ├── registry.ts            # ModuleRegistry 注册中心
+│   ├── setup.ts               # setupFramework 初始化函数
+│   └── index.ts               # 模块系统入口
 ├── pages/                     # 公共页面
 │   ├── LoginPage.vue          # 登录页
 │   ├── ForbiddenPage.vue      # 403 页
@@ -33,7 +51,9 @@ framework/
 ├── stores/                    # 状态管理
 │   ├── app.ts                 # 应用状态（device computed）
 │   ├── user.ts                # 用户状态
-│   └── permission.ts          # 权限状态
+│   ├── menu.ts                # 菜单状态
+│   ├── permission.ts          # 权限状态
+│   └── index.ts               # Store 聚合导出
 ├── styles/                    # 样式文件
 │   ├── tokens.css             # 设计令牌
 │   └── main.css               # 样式入口
@@ -43,6 +63,117 @@ framework/
 ├── utils/                     # 工具函数
 │   └── tree.ts                # 树工具函数（buildTree、flattenTree、findNodeById、getAncestors、sortByTreeSorts）
 └── CLAUDE.md                  # 本文档
+```
+
+## 目录职责
+
+| 目录 | 职责 |
+|------|------|
+| `api/` | Axios 封装、请求拦截、响应处理、错误处理 |
+| `components/` | 框架级 UI 组件（AppForm、AppFormItem 等） |
+| `directives/` | Vue 自定义指令（权限指令 v-permission） |
+| `events/` | EventBus 事件总线、模块事件定义 |
+| `layouts/` | 布局组件（AdminLayout、AppNavMain、AppPage 等） |
+| `module/` | 模块动态加载系统：`ModuleDescriptor` 类型、`ModuleRegistry` 注册中心、`setupFramework` 初始化 |
+| `pages/` | 公共页面（登录、403、404、设置页） |
+| `router/` | 路由实例创建、静态路由配置、路由守卫 |
+| `stores/` | Pinia Store（应用状态、用户状态、权限状态、菜单状态） |
+| `styles/` | 设计令牌、CSS 变量、Tailwind 配置 |
+| `types/` | TypeScript 类型定义（公共类型、树类型） |
+| `utils/` | 工具函数（树工具、通用工具） |
+
+## 开发规则
+
+- 抽象能力优先定义在 `types/`，具体实现放在对应组件目录。
+- 模块系统通过 `ModuleDescriptor` 协议定义，业务模块实现协议后注册到 `ModuleRegistry`。
+- 路由守卫自动处理登录验证、权限检查，业务模块无需重复实现。
+- API 客户端统一处理 token 注入、错误拦截、响应转换，业务模块通过 `apiClient` 调用。
+- 跨模块状态通过 Pinia Store 共享，EventBus 用于模块间事件通信。
+
+## 模块系统
+
+Framework 提供前端模块系统，支持模块声明、注册、依赖验证和路由动态加载。
+
+### 核心组件
+
+| 组件 | 文件 | 职责 |
+|------|------|------|
+| `ModuleDescriptor` | `module/types.ts` | 模块描述符协议，定义模块的标准结构 |
+| `ModuleRegistry` | `module/registry.ts` | 模块注册中心，管理模块注册、查询和路由收集 |
+| `setupFramework` | `module/setup.ts` | 框架初始化函数，注册模块并配置路由 |
+| `EventBus` | `events/index.ts` | 事件总线，用于模块间通信 |
+
+### ModuleDescriptor 协议
+
+每个业务模块必须实现 `ModuleDescriptor` 协议：
+
+```typescript
+interface ModuleDescriptor {
+  name: string;                              // 模块名称，小写字母、数字、连字符
+  version: string;                           // 模块版本，遵循 semver
+  getRoutes: () => RouteRecordRaw[];         // 返回路由配置（必需）
+  dependencies?: string[];                   // 依赖的其他模块名称
+  icon?: string;                             // 模块图标标识
+  getMenuItems?: () => MenuItem[];           // 返回菜单项
+  getStores?: () => Record<string, unknown>; // 返回 Store 对象
+  setup?: (app: App, pinia: Pinia) => void | Promise<void>; // 模块初始化函数
+}
+```
+
+### 模块注册流程
+
+```typescript
+import { setupFramework, getModuleRegistry, getEventBus } from "@/framework/module";
+import { demoModule } from "@/demo";
+import { iamModule } from "@/iam";
+import { tenantModule } from "@/tenant";
+
+// 在应用入口初始化框架
+await setupFramework({
+  app,
+  router,
+  pinia,
+  modules: [tenantModule, iamModule, demoModule],
+});
+
+// 获取模块注册中心
+const registry = getModuleRegistry();
+const module = registry.getModule("iam");
+const allRoutes = registry.getRoutes();
+
+// 获取事件总线
+const eventBus = getEventBus();
+eventBus.on(ModuleEvents.MODULE_LOADED, ({ name }) => {
+  console.log(`Module loaded: ${name}`);
+});
+```
+
+### 模块依赖验证
+
+注册模块时，`ModuleRegistry` 自动验证依赖关系：
+
+```typescript
+// 假设 iam 模块依赖 tenant 模块
+const iamModule: ModuleDescriptor = {
+  name: "iam",
+  dependencies: ["tenant"], // 依赖 tenant 模块
+  // ...
+};
+
+// 如果 tenant 未注册，将抛出错误：
+// Module 'iam' depends on 'tenant' which is not registered
+```
+
+### 路由动态注册
+
+`setupFramework` 收集所有模块路由并动态注册到 Vue Router：
+
+```typescript
+// 模块路由将添加到 AdminLayout 父路由下
+const moduleRoutes = registry.getRoutes();
+for (const route of moduleRoutes) {
+  router.addRoute(rootRoute.name, route);
+}
 ```
 
 ## 设计令牌
@@ -332,6 +463,53 @@ pnpm test:unit tests/framework/components/ --run
 
 # 运行 Store 测试
 pnpm test:unit tests/framework/stores/ --run
+
+# 运行模块系统测试
+pnpm test:unit tests/framework/module/ --run
+```
+
+## 依赖倒置
+
+当 framework 需要业务能力时，通过 Protocol 或注册器实现依赖倒置：
+
+```typescript
+// 定义抽象接口
+interface AuthProvider {
+  getToken(): string | null;
+  getCurrentUser(): User | null;
+  hasPermission(permission: string): boolean;
+}
+
+// framework 使用抽象接口
+class ApiClient {
+  constructor(private authProvider: AuthProvider) {}
+
+  request(config: AxiosRequestConfig) {
+    const token = this.authProvider.getToken();
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return axios.request(config);
+  }
+}
+
+// 业务模块实现接口
+class IamAuthProvider implements AuthProvider {
+  getToken() {
+    return useUserStore().token;
+  }
+
+  getCurrentUser() {
+    return useUserStore().userInfo;
+  }
+
+  hasPermission(permission: string) {
+    return usePermissionStore().hasPermission(permission);
+  }
+}
+
+// 应用启动时注入实现
+const apiClient = new ApiClient(new IamAuthProvider());
 ```
 
 ## 注意事项
@@ -340,3 +518,5 @@ pnpm test:unit tests/framework/stores/ --run
 2. 所有 API 请求通过 `apiClient` 进行
 3. 路由配置支持懒加载
 4. 组件使用 Tailwind CSS 和 CSS 变量混合样式
+5. 新增模块需要在应用入口注册到 `setupFramework`
+6. 模块间通信使用 EventBus 或 Pinia Store，避免直接导入其他模块内部实现

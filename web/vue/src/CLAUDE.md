@@ -17,6 +17,119 @@ src/
 └── lib/                       # 工具库
 ```
 
+## 架构特性
+
+- **模块级路由隔离**：每个业务模块拥有独立的路由配置（`router/index.ts`）
+- **模块动态加载**：通过 `ModuleDescriptor` 描述符声明模块信息，支持按需加载
+- **模块依赖管理**：模块可声明依赖关系，注册时自动验证依赖是否满足
+
+## 模块结构规范
+
+每个业务模块应包含以下关键文件：
+
+```
+src/{module}/
+├── index.ts              # 模块入口，导出 ModuleDescriptor
+├── router/
+│   └── index.ts          # 模块路由配置（必需）
+├── api/                  # API 函数
+├── types/                # TypeScript 类型定义
+├── pages/                # 页面组件
+├── components/           # 模块专用组件
+└── stores/               # Pinia 状态管理
+```
+
+### 模块描述符 (index.ts)
+
+每个模块必须定义 `ModuleDescriptor`，实现模块声明：
+
+```typescript
+import type { ModuleDescriptor } from "@/framework/module/types";
+import { moduleRoutes } from "./router";
+
+export const myModule: ModuleDescriptor = {
+  name: "my_module",           // 模块名称，小写字母、数字、连字符
+  version: "1.0.0",            // 模块版本，遵循 semver
+  getRoutes: () => moduleRoutes, // 返回路由配置（必需）
+  dependencies: [],            // 依赖的其他模块名称
+  icon: "module-icon",         // 模块图标标识
+  getMenuItems: () => [...],   // 返回菜单项
+  getStores: () => ({...}),    // 返回 Store 对象
+  setup: async (app, pinia) => {
+    // 模块初始化逻辑
+  },
+};
+
+export * from "./api";
+export * from "./types";
+```
+
+### 模块路由配置 (router/index.ts)
+
+```typescript
+import type { RouteRecordRaw } from "vue-router";
+
+export const moduleRoutes: RouteRecordRaw[] = [
+  {
+    path: "resources",
+    name: "ResourceList",
+    component: () => import("@/module/pages/ResourceList.vue"),
+    meta: {
+      title: "资源管理",
+      icon: "database",
+      requiresAuth: true,
+      roles: ["admin"]
+    },
+  },
+];
+
+export default moduleRoutes;
+```
+
+路由元信息说明：
+
+| 属性 | 类型 | 说明 |
+|------|------|------|
+| `title` | string | 页面标题，用于面包屑和 TagsView |
+| `icon` | string | 菜单图标标识 |
+| `hidden` | boolean | 是否隐藏菜单项 |
+| `requiresAuth` | boolean | 是否需要登录 |
+| `roles` | string[] | 允许访问的角色列表 |
+
+### 模块状态管理 (stores/)
+
+```typescript
+// stores/index.ts
+import { useResourceStore } from "./resource";
+
+export const useModuleStores = () => ({
+  resource: useResourceStore(),
+});
+```
+
+## 开发约定
+
+- 新模块放在 `src/{module}/`，不要放在 `src/core/`、`src/common/` 等跨模块目录；可复用基础能力应进入 `framework/`。
+- **必须** 在新模块中创建 `index.ts` 导出 `ModuleDescriptor`。
+- **必须** 在模块 `router/index.ts` 中定义模块路由，使用 `meta` 标注权限和标题。
+- 业务模块可以依赖 framework；framework 禁止依赖业务模块。
+- 跨模块数据引用通过 API 调用或 Pinia Store 共享，不直接导入其他模块内部实现。
+- 模块路由、Store、类型应与模块代码同目录维护。
+- API 函数使用 `@/framework/api/client` 的封装方法，不直接使用 axios。
+- Store 使用 Pinia 的 `defineStore` 和 Composition API。
+- 页面组件使用 `AppPage` 组件作为页面骨架。
+
+## 模块边界与依赖
+
+```
+demo / iam / tenant ──▶ framework
+framework ──X──▶ demo / iam / tenant
+```
+
+- **依赖方向**：业务模块可以依赖 framework；framework 禁止依赖业务模块。
+- **跨模块通信**：通过 Pinia Store、EventBus 或 API 调用，不直接导入其他模块内部实现。
+- **共享组件**：跨模块共享的组件放入 `components/`，模块专用组件保留在 `{模块}/components/`。
+
 ## 功能模块
 
 | 模块 | 说明 | 详细文档 |
