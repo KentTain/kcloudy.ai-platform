@@ -3,7 +3,7 @@ import type { Router } from "vue-router";
 import type { Pinia } from "pinia";
 import type { ModuleDescriptor } from "./types";
 import { ModuleRegistry } from "./registry";
-import { EventBus, ModuleEvents } from "@/framework/events";
+import { EventBus, ModuleEvents, getEventBus } from "@/framework/events";
 
 /**
  * 框架设置选项
@@ -21,11 +21,6 @@ export interface SetupFrameworkOptions {
 let globalRegistry: ModuleRegistry | null = null;
 
 /**
- * 全局事件总线实例
- */
-let globalEventBus: EventBus | null = null;
-
-/**
  * 获取全局模块注册中心
  */
 export function getModuleRegistry(): ModuleRegistry {
@@ -35,15 +30,8 @@ export function getModuleRegistry(): ModuleRegistry {
   return globalRegistry;
 }
 
-/**
- * 获取全局事件总线
- */
-export function getEventBus(): EventBus {
-  if (!globalEventBus) {
-    globalEventBus = new EventBus();
-  }
-  return globalEventBus;
-}
+// Re-export getEventBus from events module
+export { getEventBus } from "@/framework/events";
 
 /**
  * 设置框架
@@ -54,7 +42,7 @@ export async function setupFramework(options: SetupFrameworkOptions): Promise<vo
 
   // 初始化全局实例
   globalRegistry = new ModuleRegistry();
-  globalEventBus = new EventBus();
+  const eventBus = getEventBus();
 
   // 注册所有模块
   for (const module of modules) {
@@ -67,10 +55,10 @@ export async function setupFramework(options: SetupFrameworkOptions): Promise<vo
       }
 
       // 发出模块加载完成事件
-      globalEventBus.emit(ModuleEvents.MODULE_LOADED, { name: module.name });
+      eventBus.emit(ModuleEvents.MODULE_LOADED, { name: module.name });
     } catch (error) {
       console.error(`[setupFramework] Failed to register module '${module.name}':`, error);
-      globalEventBus.emit(ModuleEvents.MODULE_ERROR, {
+      eventBus.emit(ModuleEvents.MODULE_ERROR, {
         name: module.name,
         error,
       });

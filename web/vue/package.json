@@ -6,6 +6,11 @@
   "scripts": {
     "dev": "vite --host 0.0.0.0",
     "build": "vite build",
+    "build:platform": "node scripts/generate-modules-config.ts demo iam tenant && vite build",
+    "build:demo": "node scripts/generate-modules-config.ts demo && vite build",
+    "build:iam": "node scripts/generate-modules-config.ts iam && vite build",
+    "build:tenant": "node scripts/generate-modules-config.ts tenant && vite build",
+    "generate:modules": "node scripts/generate-modules-config.ts",
     "preview": "vite preview",
     "type-check": "vue-tsc --noEmit",
     "lint": "biome lint --unsafe",

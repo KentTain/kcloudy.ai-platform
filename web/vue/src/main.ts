@@ -5,14 +5,27 @@ import router from "./framework/router";
 import { setupRouterGuards } from "./framework/router/guards";
 import { setupPermissionDirective } from "./framework/directives/permission";
 import { setupFramework } from "./framework/module";
+import { ENABLED_MODULES } from "./config/modules";
 
-// 导入模块描述符
+// Import module descriptors (conditionally based on config)
 import { demoModule } from "./demo";
 import { iamModule } from "./iam";
 import { tenantModule } from "./tenant";
 
-// 导入样式
+// Import styles
 import "./framework/styles/main.css";
+
+// Build modules array based on ENABLED_MODULES config
+const modules = [];
+if (ENABLED_MODULES.includes("demo")) {
+  modules.push(demoModule);
+}
+if (ENABLED_MODULES.includes("iam")) {
+  modules.push(iamModule);
+}
+if (ENABLED_MODULES.includes("tenant")) {
+  modules.push(tenantModule);
+}
 
 // 创建应用实例
 const app = createApp(App);
@@ -38,7 +51,7 @@ setupFramework({
   app,
   router,
   pinia,
-  modules: [demoModule, iamModule, tenantModule],
+  modules,
 })
   .then(() => {
     // 挂载应用

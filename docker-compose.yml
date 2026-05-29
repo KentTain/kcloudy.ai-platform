@@ -1,0 +1,187 @@
+# Docker Compose for Multi-Module Vue Frontend Deployment
+# Supports platform version (all modules) and standalone module deployments
+
+version: "3.8"
+
+services:
+  # Platform version - includes all modules (demo, iam, tenant)
+  platform-app:
+    build:
+      context: ./web/vue
+      dockerfile: Dockerfile
+      args:
+        BUILD_MODULES: demo,iam,tenant
+    image: init-project-platform:${VERSION:-latest}
+    container_name: init-project-platform
+    restart: unless-stopped
+    ports:
+      - "${PLATFORM_PORT:-3000}:80"
+    environment:
+      - MODULE_BASE_PATH=/
+      - VITE_API_BASE_URL=${VITE_API_BASE_URL:-/api}
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - init-project-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # Demo module standalone
+  demo-app:
+    build:
+      context: ./web/vue
+      dockerfile: Dockerfile
+      args:
+        BUILD_MODULES: demo
+    image: init-project-demo:${VERSION:-latest}
+    container_name: init-project-demo
+    restart: unless-stopped
+    ports:
+      - "${DEMO_PORT:-3001}:80"
+    environment:
+      - MODULE_BASE_PATH=/
+      - VITE_API_BASE_URL=${VITE_API_BASE_URL:-/api}
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - init-project-network
+    profiles:
+      - standalone
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # IAM module standalone
+  iam-app:
+    build:
+      context: ./web/vue
+      dockerfile: Dockerfile
+      args:
+        BUILD_MODULES: iam
+    image: init-project-iam:${VERSION:-latest}
+    container_name: init-project-iam
+    restart: unless-stopped
+    ports:
+      - "${IAM_PORT:-3002}:80"
+    environment:
+      - MODULE_BASE_PATH=/
+      - VITE_API_BASE_URL=${VITE_API_BASE_URL:-/api}
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - init-project-network
+    profiles:
+      - standalone
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Tenant module standalone
+  tenant-app:
+    build:
+      context: ./web/vue
+      dockerfile: Dockerfile
+      args:
+        BUILD_MODULES: tenant
+    image: init-project-tenant:${VERSION:-latest}
+    container_name: init-project-tenant
+    restart: unless-stopped
+    ports:
+      - "${TENANT_PORT:-3003}:80"
+    environment:
+      - MODULE_BASE_PATH=/
+      - VITE_API_BASE_URL=${VITE_API_BASE_URL:-/api}
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - init-project-network
+    profiles:
+      - standalone
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Backend service (placeholder - configure as needed)
+  backend:
+    image: ${BACKEND_IMAGE:-init-project-backend:latest}
+    container_name: init-project-backend
+    restart: unless-stopped
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+    environment:
+      - DATABASE_URL=${DATABASE_URL:-postgresql://postgres:postgres@postgres:5432/init_project}
+      - REDIS_URL=${REDIS_URL:-redis://:redis123@redis:6379}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - init-project-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # PostgreSQL database
+  postgres:
+    image: postgres:17-alpine
+    container_name: init-project-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-init_project}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - init-project-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis cache
+  redis:
+    image: redis:7-alpine
+    container_name: init-project-redis
+    restart: unless-stopped
+    command: redis-server --save 60 1 --loglevel warning --requirepass ${REDIS_PASSWORD:-redis123}
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - init-project-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-redis123}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+networks:
+  init-project-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:

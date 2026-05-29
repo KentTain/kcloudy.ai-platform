@@ -1,7 +1,7 @@
 /**
  * 事件处理器类型
  */
-type EventHandler = (payload?: unknown) => void;
+export type EventHandler = (payload?: unknown) => void;
 
 /**
  * 预定义模块事件常量
@@ -68,4 +68,20 @@ export class EventBus {
 
     handlers.delete(handler);
   }
+}
+
+/**
+ * 全局事件总线实例
+ */
+let globalEventBus: EventBus | null = null;
+
+/**
+ * 获取全局事件总线实例
+ * @returns EventBus 实例
+ */
+export function getEventBus(): EventBus {
+  if (!globalEventBus) {
+    globalEventBus = new EventBus();
+  }
+  return globalEventBus;
 }

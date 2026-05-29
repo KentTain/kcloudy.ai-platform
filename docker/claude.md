@@ -26,6 +26,57 @@ docker/
         └── openclaw.conf   # OpenClaw Gateway
 ```
 
+## 多模块部署
+
+项目根目录的 `docker-compose.yml` 支持多模块部署：
+
+### 部署模式
+
+| 模式 | 服务名 | 端口 | 模块 |
+|------|--------|------|------|
+| 平台版 | platform-app | 3000 | demo, iam, tenant |
+| Demo 独立版 | demo-app | 3001 | demo |
+| IAM 独立版 | iam-app | 3002 | iam |
+| Tenant 独立版 | tenant-app | 3003 | tenant |
+
+### 启动命令
+
+```bash
+# 启动平台版（默认）
+docker-compose up -d
+
+# 启动独立模块版（使用 standalone profile）
+docker-compose --profile standalone up -d demo-app
+docker-compose --profile standalone up -d iam-app
+docker-compose --profile standalone up -d tenant-app
+
+# 启动所有服务（包括独立模块）
+docker-compose --profile standalone up -d
+```
+
+### 构建参数
+
+构建时可通过 `BUILD_MODULES` 参数指定要打包的模块：
+
+```bash
+# 构建平台版
+docker-compose build --build-arg BUILD_MODULES=demo,iam,tenant platform-app
+
+# 构建 Demo 模块独立版
+docker-compose build --build-arg BUILD_MODULES=demo demo-app
+```
+
+### 环境变量
+
+| 变量 | 默认值 | 说明 |
+|------|--------|------|
+| VERSION | latest | 镜像版本标签 |
+| PLATFORM_PORT | 3000 | 平台版端口 |
+| DEMO_PORT | 3001 | Demo 模块端口 |
+| IAM_PORT | 3002 | IAM 模块端口 |
+| TENANT_PORT | 3003 | Tenant 模块端口 |
+| VITE_API_BASE_URL | /api | API 基础路径 |
+
 ## 工作规范
 
 ### 修改 Nginx 配置

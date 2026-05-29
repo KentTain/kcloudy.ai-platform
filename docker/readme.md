@@ -7,7 +7,7 @@
 ```text
 docker/
 ├── .env                    # 环境变量配置（敏感信息，已忽略）
-├── docker-compose.yml      # Docker Compose 编排文件
+├── docker-compose.yml      # Docker Compose 编排文件（基础设施服务）
 ├── readme.md               # 本文档
 ├── claude.md               # Claude Code 指导文档
 └── nginx/                  # Nginx 配置文件
@@ -21,6 +21,84 @@ docker/
         ├── openclaw.conf      # OpenClaw 网关
         └── infrastructure.conf # 基础设施服务代理配置
 ```
+
+## 多模块部署
+
+项目支持多模块独立部署，配置文件位于项目根目录的 `docker-compose.yml`。
+
+### 部署架构
+
+```
+部署模式：
+├── 平台版 (platform.example.com:3000)
+│   └── 包含所有模块 (demo, iam, tenant)
+│
+└── 独立模块版
+    ├── demo.example.com:3001 → Demo 模块
+    ├── iam.example.com:3002 → IAM 模块
+    └── tenant.example.com:3003 → Tenant 模块
+```
+
+### 快速开始
+
+```bash
+# 1. 复制环境变量模板
+cp web/vue/.env.docker .env
+
+# 2. 启动平台版（包含所有模块）
+docker-compose up -d
+
+# 3. 查看日志
+docker-compose logs -f platform-app
+```
+
+### 独立模块部署
+
+```bash
+# 启动 Demo 模块独立部署
+docker-compose --profile standalone up -d demo-app
+
+# 启动 IAM 模块独立部署
+docker-compose --profile standalone up -d iam-app
+
+# 启动 Tenant 模块独立部署
+docker-compose --profile standalone up -d tenant-app
+
+# 启动所有独立模块
+docker-compose --profile standalone up -d
+```
+
+### 构建命令
+
+```bash
+# 构建平台版镜像
+docker-compose build platform-app
+
+# 构建指定模块镜像
+docker-compose build demo-app
+
+# 使用自定义模块组合构建
+docker build \
+  --build-arg BUILD_MODULES=demo,iam \
+  -t init-project-custom \
+  ./web/vue
+```
+
+### 环境变量
+
+| 变量 | 默认值 | 说明 |
+|------|--------|------|
+| VERSION | latest | 镜像版本标签 |
+| PLATFORM_PORT | 3000 | 平台版端口 |
+| DEMO_PORT | 3001 | Demo 模块端口 |
+| IAM_PORT | 3002 | IAM 模块端口 |
+| TENANT_PORT | 3003 | Tenant 模块端口 |
+| BACKEND_PORT | 8000 | 后端服务端口 |
+| POSTGRES_DB | init_project | PostgreSQL 数据库名 |
+| POSTGRES_USER | postgres | PostgreSQL 用户名 |
+| POSTGRES_PASSWORD | postgres | PostgreSQL 密码 |
+| REDIS_PASSWORD | redis123 | Redis 密码 |
+| VITE_API_BASE_URL | /api | API 基础路径 |
 
 ## 服务组件
 
