@@ -179,6 +179,72 @@ docker-compose restart <service>
 docker-compose up -d --build --force-recreate <service>
 ```
 
+
+## 后端多模块构建
+
+后端支持与前端相同的多模块构建策略，通过 `BUILD_MODULES` 和 `APP_ROLE` 参数控制。
+
+### 后端构建参数
+
+| 参数 | 默认值 | 说明 |
+|------|--------|------|
+| BUILD_MODULES | demo,iam,tenant | 要打包的模块列表 |
+| APP_ROLE | web | 应用角色（web/task/listener） |
+
+### 后端构建命令
+
+```bash
+# 构建平台版 Web API
+docker-compose build backend-platform-api
+
+# 构建平台版 Task Scheduler
+docker-compose build backend-platform-task
+
+# 构建平台版 Message Listener
+docker-compose build backend-platform-listener
+
+# 构建 Demo 模块独立版
+docker-compose build backend-demo-api backend-demo-task backend-demo-listener
+
+# 构建 IAM 模块独立版
+docker-compose build backend-iam-api
+
+# 构建 Tenant 模块独立版
+docker-compose build backend-tenant-api
+```
+
+### 自定义构建
+
+```bash
+# 使用自定义模块组合构建
+docker build \
+  --build-arg BUILD_MODULES=demo,iam \
+  --build-arg APP_ROLE=web \
+  -t init-project-backend-custom \
+  ./server/python
+```
+
+### 后端服务角色
+
+| 角色 | 说明 | 健康检查 |
+|------|------|----------|
+| web | Web API 服务 | HTTP /health 端点 |
+| task | 定时任务调度器 | 进程存活检查 |
+| listener | 消息监听器 | 进程存活检查 |
+
+### 后端启动顺序
+
+```bash
+# 1. 启动基础设施
+docker-compose up -d postgres redis
+
+# 2. 等待健康检查通过
+docker-compose ps
+
+# 3. 启动后端服务
+docker-compose up -d backend-platform-api backend-platform-task backend-platform-listener
+```
+
 ## 注意事项
 
 - 不要提交 `.env` 文件到版本控制

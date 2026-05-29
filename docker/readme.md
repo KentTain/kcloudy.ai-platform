@@ -244,6 +244,127 @@ Nginx 配置支持以下子域名代理：
 3. SSL 证书需要放置在正确的位置
 4. 数据卷映射需要确保宿主机目录存在并有正确权限
 
+
+## 后端多模块部署
+
+后端支持与前端相同的多模块部署策略，支持平台版和独立模块版。
+
+### 后端服务矩阵
+
+**平台版服务（默认启动）：**
+
+| 服务名 | 角色 | 端口 | 说明 |
+|--------|------|------|------|
+| backend-platform-api | web | 8000 | Web API 服务 |
+| backend-platform-task | task | - | 定时任务调度器 |
+| backend-platform-listener | listener | - | 消息监听器 |
+
+**独立模块版服务（profile: standalone）：**
+
+| 服务名 | 模块 | 角色 | 端口 |
+|--------|------|------|------|
+| backend-demo-api | demo | web | 8010 |
+| backend-demo-task | demo | task | - |
+| backend-demo-listener | demo | listener | - |
+| backend-iam-api | iam | web | 8020 |
+| backend-tenant-api | tenant | web | 8030 |
+
+### 后端启动命令
+
+```bash
+# 启动平台版（包含所有模块的三个角色）
+docker-compose up -d backend-platform-api backend-platform-task backend-platform-listener
+
+# 启动 Demo 模块独立部署
+docker-compose --profile standalone up -d backend-demo-api backend-demo-task backend-demo-listener
+
+# 启动 IAM 模块独立部署（仅 API）
+docker-compose --profile standalone up -d backend-iam-api
+
+# 启动 Tenant 模块独立部署（仅 API）
+docker-compose --profile standalone up -d backend-tenant-api
+```
+
+### 后端构建命令
+
+```bash
+# 构建平台版 Web API 镜像
+docker-compose build backend-platform-api
+
+# 构建平台版 Task Scheduler 镜像
+docker-compose build backend-platform-task
+
+# 构建 Demo 模块独立镜像
+docker-compose build backend-demo-api
+
+# 使用自定义参数构建
+docker build \
+  --build-arg BUILD_MODULES=demo,iam \
+  --build-arg APP_ROLE=web \
+  -t init-project-backend-custom \
+  ./server/python
+```
+
+### 后端环境变量
+
+| 变量 | 默认值 | 说明 |
+|------|--------|------|
+| DATABASE_URL | postgresql://postgres:postgres@postgres:5432/init_project | 数据库连接 |
+| REDIS_URL | redis://:redis123@redis:6379 | Redis 连接 |
+| APP_ROLE | web | 应用角色（web/task/listener） |
+| BACKEND_PORT | 8000 | 平台版后端端口 |
+| BACKEND_DEMO_PORT | 8010 | Demo 模块端口 |
+| BACKEND_IAM_PORT | 8020 | IAM 模块端口 |
+| BACKEND_TENANT_PORT | 8030 | Tenant 模块端口 |
+
+### 角色说明
+
+- **web**: Web API 服务，提供 RESTful API，监听 HTTP 请求
+- **task**: 定时任务调度器，执行后台定时任务
+- **listener**: 消息监听器，处理异步消息和事件
+
+### 健康检查
+
+- **Web 角色**: HTTP `/health` 端点检查
+- **Task/Listener 角色**: 进程存活检查（pgrep）
+
+## 完整部署示例
+
+### 平台版部署（推荐）
+
+```bash
+# 1. 复制环境变量模板
+cp server/python/.env.docker .env
+
+# 2. 启动基础设施
+docker-compose up -d postgres redis
+
+# 3. 等待基础设施就绪
+docker-compose ps
+
+# 4. 启动前端和后端
+docker-compose up -d platform-app backend-platform-api backend-platform-task backend-platform-listener
+
+# 5. 查看服务状态
+docker-compose ps
+
+# 6. 访问应用
+# 前端: http://localhost:3000
+# 后端 API: http://localhost:8000/docs
+```
+
+### 独立模块部署
+
+```bash
+# 启动 Demo 模块完整栈
+docker-compose --profile standalone up -d \
+  demo-app backend-demo-api backend-demo-task backend-demo-listener
+
+# 访问 Demo 模块
+# 前端: http://localhost:3010
+# 后端 API: http://localhost:8010/docs
+```
+
 ## License
 
 Copyright © 2025 Moles. All Rights Reserved.
