@@ -6,7 +6,7 @@
 
 `docker/` 目录包含项目的容器化部署配置，主要包括：
 
-- Docker Compose 服务编排
+- Docker Compose 服务编排（拆分为基础设施、后端、前端三个文件）
 - Nginx 反向代理配置
 - 环境变量管理
 
@@ -14,68 +14,55 @@
 
 ```text
 docker/
-├── .env                    # 环境变量（敏感，不提交）
-├── docker-compose.yml      # 服务编排
+├── .env                              # 环境变量（敏感，不提交）
+├── docker-compose.infrastructure.yml # 基础设施服务
+├── docker-compose.backend.yml        # 后端服务
+├── docker-compose.frontend.yml       # 前端服务
 └── nginx/
-    ├── nginx.conf          # 主配置
-    ├── proxy_params        # 通用代理参数
-    └── conf.d/             # 站点配置
-        ├── default.conf    # 默认 HTTPS 服务器
-        ├── custom.conf     # K8s 集群代理
-        ├── cc-hub.conf     # Claude Code Hub
-        └── openclaw.conf   # OpenClaw Gateway
+    ├── nginx.conf                    # 主配置
+    ├── mime.types                    # MIME 类型定义
+    ├── proxy_params                  # 通用代理参数
+    ├── snippets/                     # 公共配置片段
+    │   ├── ssl.conf                  # SSL 公共配置
+    │   └── error-pages.conf          # 错误页面配置
+    └── conf.d/                       # 站点配置目录
+        ├── 00-default.conf           # 默认服务器配置
+        ├── 10-init-project.conf      # InitProject 应用网关
+        ├── 20-infrastructure.conf    # 基础设施服务代理
+        ├── 30-ai-services.conf       # AI 服务网关
+        ├── 40-k8s-master.conf        # K8s Master 服务代理
+        ├── 50-k8s-work01.conf        # K8s Work01 服务代理
+        └── 60-k8s-work02.conf        # K8s Work02 服务代理
 ```
 
-## 多模块部署
+## 部署模式
 
-项目根目录的 `docker-compose.yml` 支持多模块部署：
-
-### 部署模式
-
-| 模式 | 服务名 | 端口 | 模块 |
-|------|--------|------|------|
-| 平台版 | platform-app | 3000 | demo, iam, tenant |
-| Demo 独立版 | demo-app | 3001 | demo |
-| IAM 独立版 | iam-app | 3002 | iam |
-| Tenant 独立版 | tenant-app | 3003 | tenant |
-
-### 启动命令
+### 平台版（默认）
 
 ```bash
-# 启动平台版（默认）
-docker-compose up -d
-
-# 启动独立模块版（使用 standalone profile）
-docker-compose --profile standalone up -d demo-app
-docker-compose --profile standalone up -d iam-app
-docker-compose --profile standalone up -d tenant-app
-
-# 启动所有服务（包括独立模块）
-docker-compose --profile standalone up -d
+docker compose \
+  -f docker-compose.infrastructure.yml \
+  -f docker-compose.backend.yml \
+  -f docker-compose.frontend.yml \
+  up -d
 ```
 
-### 构建参数
-
-构建时可通过 `BUILD_MODULES` 参数指定要打包的模块：
+### 独立模块版
 
 ```bash
-# 构建平台版
-docker-compose build --build-arg BUILD_MODULES=demo,iam,tenant platform-app
-
-# 构建 Demo 模块独立版
-docker-compose build --build-arg BUILD_MODULES=demo demo-app
+docker compose \
+  -f docker-compose.infrastructure.yml \
+  -f docker-compose.backend.yml \
+  -f docker-compose.frontend.yml \
+  --profile standalone \
+  up -d
 ```
 
-### 环境变量
+### 仅基础设施
 
-| 变量 | 默认值 | 说明 |
-|------|--------|------|
-| VERSION | latest | 镜像版本标签 |
-| PLATFORM_PORT | 3000 | 平台版端口 |
-| DEMO_PORT | 3001 | Demo 模块端口 |
-| IAM_PORT | 3002 | IAM 模块端口 |
-| TENANT_PORT | 3003 | Tenant 模块端口 |
-| VITE_API_BASE_URL | /api | API 基础路径 |
+```bash
+docker compose -f docker-compose.infrastructure.yml up -d
+```
 
 ## 工作规范
 
@@ -83,47 +70,17 @@ docker-compose build --build-arg BUILD_MODULES=demo demo-app
 
 1. 修改配置文件后，验证语法：
    ```bash
-   docker exec mynginx nginx -t
+   docker exec kcloudy-nginx nginx -t
    ```
 
 2. 重载配置（无需重启）：
    ```bash
-   docker exec mynginx nginx -s reload
+   docker exec kcloudy-nginx nginx -s reload
    ```
-
-### 修改 Docker Compose
-
-1. 修改 `docker-compose.yml` 后，重新创建服务：
-   ```bash
-   docker-compose up -d --force-recreate <service>
-   ```
-
-2. 添加新服务时，确保：
-   - 加入 `alon-network` 网络
-   - 配置健康检查（数据库类服务）
-   - 使用 `.env` 变量管理敏感信息
-
-### 环境变量管理
-
-- 所有密码、令牌等敏感信息放在 `.env` 文件
-- 使用 `${VAR:-default}` 语法提供默认值
-- 新增变量时更新 `.env.example` 模板
-
-## 服务依赖关系
-
-```text
-claude-app (Claude Code Hub)
-├── depends_on: postgres (healthy)
-└── depends_on: redis (healthy)
-
-其他服务无强制依赖，可独立启动。
-```
-
-## Nginx 配置模式
 
 ### 添加新站点代理
 
-在 `nginx/conf.d/` 创建新配置文件：
+在 `nginx/conf.d/` 创建新配置文件，使用数字前缀控制加载顺序：
 
 ```nginx
 # HTTP 重定向
@@ -138,9 +95,7 @@ server {
     listen 443 ssl http2;
     server_name example.kcloudy.com;
 
-    ssl_certificate /etc/nginx/certs/fullchain.pem;
-    ssl_certificate_key /etc/nginx/certs/privkey.pem;
-    # ... SSL 配置 ...
+    include /etc/nginx/snippets/ssl.conf;
 
     location / {
         proxy_pass http://target:port;
@@ -149,100 +104,64 @@ server {
 }
 ```
 
-### SSL 配置标准
+### 修改 Docker Compose
 
-所有 HTTPS 站点应包含：
+1. 修改后重新创建服务：
+   ```bash
+   docker compose \
+     -f docker-compose.infrastructure.yml \
+     -f docker-compose.backend.yml \
+     -f docker-compose.frontend.yml \
+     up -d --force-recreate <service>
+   ```
 
-- TLS 1.2/1.3 协议
-- 现代加密套件
-- HSTS 头
-- 会话缓存配置
+2. 添加新服务时，确保：
+   - 加入 `kcloudy-network` 网络
+   - 配置健康检查（数据库类服务）
+   - 使用 `.env` 变量管理敏感信息
 
-参考 `proxy_params` 和现有配置文件。
+### 环境变量管理
+
+- 所有密码、令牌等敏感信息放在 `.env` 文件
+- 使用 `${VAR:-default}` 语法提供默认值
+- 新增变量时更新 `.env.example` 模板
+
+## 服务依赖关系
+
+```text
+claude-code-hub
+├── depends_on: postgres (healthy)
+└── depends_on: redis (healthy)
+
+后端服务
+├── depends_on: postgres (healthy)
+└── depends_on: redis (healthy)
+
+前端服务
+└── depends_on: 后端服务 (healthy)
+```
 
 ## 常用操作
 
 ```bash
 # 查看服务状态
-docker-compose ps
+docker compose -f docker-compose.infrastructure.yml ps
 
 # 查看特定服务日志
-docker-compose logs -f nginx
+docker compose -f docker-compose.infrastructure.yml logs -f nginx
 
 # 进入容器调试
-docker exec -it <container> sh
+docker exec -it kcloudy-nginx sh
 
 # 重启单个服务
-docker-compose restart <service>
+docker compose -f docker-compose.infrastructure.yml restart nginx
 
 # 完全重建服务
-docker-compose up -d --build --force-recreate <service>
-```
-
-
-## 后端多模块构建
-
-后端支持与前端相同的多模块构建策略，通过 `BUILD_MODULES` 和 `APP_ROLE` 参数控制。
-
-### 后端构建参数
-
-| 参数 | 默认值 | 说明 |
-|------|--------|------|
-| BUILD_MODULES | demo,iam,tenant | 要打包的模块列表 |
-| APP_ROLE | web | 应用角色（web/task/listener） |
-
-### 后端构建命令
-
-```bash
-# 构建平台版 Web API
-docker-compose build backend-platform-api
-
-# 构建平台版 Task Scheduler
-docker-compose build backend-platform-task
-
-# 构建平台版 Message Listener
-docker-compose build backend-platform-listener
-
-# 构建 Demo 模块独立版
-docker-compose build backend-demo-api backend-demo-task backend-demo-listener
-
-# 构建 IAM 模块独立版
-docker-compose build backend-iam-api
-
-# 构建 Tenant 模块独立版
-docker-compose build backend-tenant-api
-```
-
-### 自定义构建
-
-```bash
-# 使用自定义模块组合构建
-docker build \
-  --build-arg BUILD_MODULES=demo,iam \
-  --build-arg APP_ROLE=web \
-  -t init-project-backend-custom \
-  ./server/python
-```
-
-### 后端服务角色
-
-| 角色 | 说明 | 健康检查 |
-|------|------|----------|
-| web | Web API 服务 | HTTP /health 端点 |
-| task | 定时任务调度器 | 进程存活检查 |
-| listener | 消息监听器 | 进程存活检查 |
-
-### 后端启动顺序
-
-```bash
-# 1. 启动基础设施
-docker-compose up -d postgres redis
-
-# 2. 等待健康检查通过
-docker-compose ps
-
-# 3. 启动后端服务
-docker-compose up -d backend-platform-api backend-platform-task backend-platform-listener
+docker compose \
+  -f docker-compose.infrastructure.yml \
+  -f docker-compose.backend.yml \
+  -f docker-compose.frontend.yml \
+  up -d --build --force-recreate <service>
 ```
 
 ## 注意事项
