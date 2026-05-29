@@ -23,6 +23,15 @@ async def run_task(module_names: list[str] | None = None) -> None:
     Args:
         module_names: 要加载的模块名列表，None 表示加载全部
     """
+    # 如果未指定模块，尝试从配置文件读取
+    if module_names is None:
+        try:
+            from config.modules import ENABLED_MODULES
+            module_names = ENABLED_MODULES
+            _logger.info(f"Loaded modules from config: {ENABLED_MODULES}")
+        except ImportError:
+            _logger.info("No modules config found, loading all modules")
+
     # 加载模块
     src_path = Path(__file__).parent
     modules = load_modules(src_path, module_names)

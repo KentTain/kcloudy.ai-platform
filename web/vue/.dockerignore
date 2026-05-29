@@ -1,0 +1,12 @@
+node_modules
+dist
+.vite
+*.log
+.git
+.vscode
+.idea
+coverage
+*.tmp
+*.swp
+.DS_Store
+tests

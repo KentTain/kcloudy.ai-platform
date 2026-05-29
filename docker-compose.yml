@@ -1,10 +1,14 @@
-# Docker Compose for Multi-Module Vue Frontend Deployment
+﻿# Docker Compose for Multi-Module Frontend & Backend Deployment
 # Supports platform version (all modules) and standalone module deployments
 
 version: "3.8"
 
 services:
-  # Platform version - includes all modules (demo, iam, tenant)
+  # ============================================
+  # Platform Version - All Modules
+  # ============================================
+  
+  # Frontend - Platform version (all modules)
   platform-app:
     build:
       context: ./web/vue
@@ -20,7 +24,7 @@ services:
       - MODULE_BASE_PATH=/
       - VITE_API_BASE_URL=${VITE_API_BASE_URL:-/api}
     depends_on:
-      backend:
+      backend-platform-api:
         condition: service_healthy
     networks:
       - init-project-network
@@ -31,100 +35,23 @@ services:
       retries: 3
       start_period: 10s
 
-  # Demo module standalone
-  demo-app:
+  # Backend - Platform API (Web role)
+  backend-platform-api:
     build:
-      context: ./web/vue
+      context: ./server/python
       dockerfile: Dockerfile
       args:
-        BUILD_MODULES: demo
-    image: init-project-demo:${VERSION:-latest}
-    container_name: init-project-demo
-    restart: unless-stopped
-    ports:
-      - "${DEMO_PORT:-3001}:80"
-    environment:
-      - MODULE_BASE_PATH=/
-      - VITE_API_BASE_URL=${VITE_API_BASE_URL:-/api}
-    depends_on:
-      backend:
-        condition: service_healthy
-    networks:
-      - init-project-network
-    profiles:
-      - standalone
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
-  # IAM module standalone
-  iam-app:
-    build:
-      context: ./web/vue
-      dockerfile: Dockerfile
-      args:
-        BUILD_MODULES: iam
-    image: init-project-iam:${VERSION:-latest}
-    container_name: init-project-iam
-    restart: unless-stopped
-    ports:
-      - "${IAM_PORT:-3002}:80"
-    environment:
-      - MODULE_BASE_PATH=/
-      - VITE_API_BASE_URL=${VITE_API_BASE_URL:-/api}
-    depends_on:
-      backend:
-        condition: service_healthy
-    networks:
-      - init-project-network
-    profiles:
-      - standalone
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
-  # Tenant module standalone
-  tenant-app:
-    build:
-      context: ./web/vue
-      dockerfile: Dockerfile
-      args:
-        BUILD_MODULES: tenant
-    image: init-project-tenant:${VERSION:-latest}
-    container_name: init-project-tenant
-    restart: unless-stopped
-    ports:
-      - "${TENANT_PORT:-3003}:80"
-    environment:
-      - MODULE_BASE_PATH=/
-      - VITE_API_BASE_URL=${VITE_API_BASE_URL:-/api}
-    depends_on:
-      backend:
-        condition: service_healthy
-    networks:
-      - init-project-network
-    profiles:
-      - standalone
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
-  # Backend service (placeholder - configure as needed)
-  backend:
-    image: ${BACKEND_IMAGE:-init-project-backend:latest}
-    container_name: init-project-backend
+        BUILD_MODULES: demo,iam,tenant
+        APP_ROLE: web
+    image: init-project-backend-platform:${VERSION:-latest}
+    container_name: init-project-backend-platform-api
     restart: unless-stopped
     ports:
       - "${BACKEND_PORT:-8000}:8000"
     environment:
       - DATABASE_URL=${DATABASE_URL:-postgresql://postgres:postgres@postgres:5432/init_project}
       - REDIS_URL=${REDIS_URL:-redis://:redis123@redis:6379}
+      - APP_ROLE=web
     depends_on:
       postgres:
         condition: service_healthy
@@ -139,6 +66,300 @@ services:
       retries: 3
       start_period: 30s
 
+  # Backend - Platform Task Scheduler
+  backend-platform-task:
+    build:
+      context: ./server/python
+      dockerfile: Dockerfile
+      args:
+        BUILD_MODULES: demo,iam,tenant
+        APP_ROLE: task
+    image: init-project-backend-platform:${VERSION:-latest}
+    container_name: init-project-backend-platform-task
+    restart: unless-stopped
+    environment:
+      - DATABASE_URL=${DATABASE_URL:-postgresql://postgres:postgres@postgres:5432/init_project}
+      - REDIS_URL=${REDIS_URL:-redis://:redis123@redis:6379}
+      - APP_ROLE=task
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - init-project-network
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep -f 'application_task' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # Backend - Platform Message Listener
+  backend-platform-listener:
+    build:
+      context: ./server/python
+      dockerfile: Dockerfile
+      args:
+        BUILD_MODULES: demo,iam,tenant
+        APP_ROLE: listener
+    image: init-project-backend-platform:${VERSION:-latest}
+    container_name: init-project-backend-platform-listener
+    restart: unless-stopped
+    environment:
+      - DATABASE_URL=${DATABASE_URL:-postgresql://postgres:postgres@postgres:5432/init_project}
+      - REDIS_URL=${REDIS_URL:-redis://:redis123@redis:6379}
+      - APP_ROLE=listener
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - init-project-network
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep -f 'application_listener' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # ============================================
+  # Standalone Modules (with profile: standalone)
+  # ============================================
+  
+  # Demo Module - Standalone
+  demo-app:
+    build:
+      context: ./web/vue
+      dockerfile: Dockerfile
+      args:
+        BUILD_MODULES: demo
+    image: init-project-demo:${VERSION:-latest}
+    container_name: init-project-demo
+    restart: unless-stopped
+    ports:
+      - "${DEMO_PORT:-3010}:80"
+    environment:
+      - MODULE_BASE_PATH=/
+      - VITE_API_BASE_URL=${VITE_API_BASE_URL:-/api}
+    depends_on:
+      backend-demo-api:
+        condition: service_healthy
+    networks:
+      - init-project-network
+    profiles:
+      - standalone
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  backend-demo-api:
+    build:
+      context: ./server/python
+      dockerfile: Dockerfile
+      args:
+        BUILD_MODULES: demo
+        APP_ROLE: web
+    image: init-project-backend-demo:${VERSION:-latest}
+    container_name: init-project-backend-demo-api
+    restart: unless-stopped
+    ports:
+      - "${BACKEND_DEMO_PORT:-8010}:8000"
+    environment:
+      - DATABASE_URL=${DATABASE_URL:-postgresql://postgres:postgres@postgres:5432/init_project}
+      - REDIS_URL=${REDIS_URL:-redis://:redis123@redis:6379}
+      - APP_ROLE=web
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - init-project-network
+    profiles:
+      - standalone
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  backend-demo-task:
+    build:
+      context: ./server/python
+      dockerfile: Dockerfile
+      args:
+        BUILD_MODULES: demo
+        APP_ROLE: task
+    image: init-project-backend-demo:${VERSION:-latest}
+    container_name: init-project-backend-demo-task
+    restart: unless-stopped
+    environment:
+      - DATABASE_URL=${DATABASE_URL:-postgresql://postgres:postgres@postgres:5432/init_project}
+      - REDIS_URL=${REDIS_URL:-redis://:redis123@redis:6379}
+      - APP_ROLE=task
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - init-project-network
+    profiles:
+      - standalone
+
+  backend-demo-listener:
+    build:
+      context: ./server/python
+      dockerfile: Dockerfile
+      args:
+        BUILD_MODULES: demo
+        APP_ROLE: listener
+    image: init-project-backend-demo:${VERSION:-latest}
+    container_name: init-project-backend-demo-listener
+    restart: unless-stopped
+    environment:
+      - DATABASE_URL=${DATABASE_URL:-postgresql://postgres:postgres@postgres:5432/init_project}
+      - REDIS_URL=${REDIS_URL:-redis://:redis123@redis:6379}
+      - APP_ROLE=listener
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - init-project-network
+    profiles:
+      - standalone
+
+  # IAM Module - Standalone
+  iam-app:
+    build:
+      context: ./web/vue
+      dockerfile: Dockerfile
+      args:
+        BUILD_MODULES: iam
+    image: init-project-iam:${VERSION:-latest}
+    container_name: init-project-iam
+    restart: unless-stopped
+    ports:
+      - "${IAM_PORT:-3020}:80"
+    environment:
+      - MODULE_BASE_PATH=/
+      - VITE_API_BASE_URL=${VITE_API_BASE_URL:-/api}
+    depends_on:
+      backend-iam-api:
+        condition: service_healthy
+    networks:
+      - init-project-network
+    profiles:
+      - standalone
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  backend-iam-api:
+    build:
+      context: ./server/python
+      dockerfile: Dockerfile
+      args:
+        BUILD_MODULES: iam
+        APP_ROLE: web
+    image: init-project-backend-iam:${VERSION:-latest}
+    container_name: init-project-backend-iam-api
+    restart: unless-stopped
+    ports:
+      - "${BACKEND_IAM_PORT:-8020}:8000"
+    environment:
+      - DATABASE_URL=${DATABASE_URL:-postgresql://postgres:postgres@postgres:5432/init_project}
+      - REDIS_URL=${REDIS_URL:-redis://:redis123@redis:6379}
+      - APP_ROLE=web
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - init-project-network
+    profiles:
+      - standalone
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # Tenant Module - Standalone
+  tenant-app:
+    build:
+      context: ./web/vue
+      dockerfile: Dockerfile
+      args:
+        BUILD_MODULES: tenant
+    image: init-project-tenant:${VERSION:-latest}
+    container_name: init-project-tenant
+    restart: unless-stopped
+    ports:
+      - "${TENANT_PORT:-3030}:80"
+    environment:
+      - MODULE_BASE_PATH=/
+      - VITE_API_BASE_URL=${VITE_API_BASE_URL:-/api}
+    depends_on:
+      backend-tenant-api:
+        condition: service_healthy
+    networks:
+      - init-project-network
+    profiles:
+      - standalone
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  backend-tenant-api:
+    build:
+      context: ./server/python
+      dockerfile: Dockerfile
+      args:
+        BUILD_MODULES: tenant
+        APP_ROLE: web
+    image: init-project-backend-tenant:${VERSION:-latest}
+    container_name: init-project-backend-tenant-api
+    restart: unless-stopped
+    ports:
+      - "${BACKEND_TENANT_PORT:-8030}:8000"
+    environment:
+      - DATABASE_URL=${DATABASE_URL:-postgresql://postgres:postgres@postgres:5432/init_project}
+      - REDIS_URL=${REDIS_URL:-redis://:redis123@redis:6379}
+      - APP_ROLE=web
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - init-project-network
+    profiles:
+      - standalone
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # ============================================
+  # Infrastructure Services
+  # ============================================
+  
   # PostgreSQL database
   postgres:
     image: postgres:17-alpine
