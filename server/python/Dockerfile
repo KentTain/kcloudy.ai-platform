@@ -15,7 +15,8 @@ WORKDIR /app
 COPY pyproject.toml uv.lock* ./
 
 # Install dependencies (uv is already installed in the base image)
-RUN uv sync --frozen --no-dev --index-url https://mirrors.aliyun.com/pypi/simple/
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --frozen --no-dev --index-url https://mirrors.aliyun.com/pypi/simple/
 
 # Copy source code
 COPY src/ ./src/

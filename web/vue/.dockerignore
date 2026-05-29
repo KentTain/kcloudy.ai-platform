@@ -1,11 +1,14 @@
 node_modules
 dist
 .vite
+.pnpm-store
+coverage
 *.log
+.env
+.env.*
 .git
 .vscode
 .idea
-coverage
 *.tmp
 *.swp
 .DS_Store
