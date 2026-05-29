@@ -5,7 +5,7 @@
  * Enabled modules for this build
  * Used by main.ts to selectively load modules
  */
-export const ENABLED_MODULES = ["tenant"] as const;
+export const ENABLED_MODULES = ["demo","iam","tenant"] as const;
 
 /**
  * Type for enabled module names
