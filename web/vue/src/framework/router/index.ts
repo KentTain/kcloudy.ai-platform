@@ -2,13 +2,6 @@
 import { createRouter, createWebHistory } from "vue-router";
 import AdminLayout from "@/framework/layouts/AdminLayout.vue";
 
-// Demo 模块路由
-import { demoRoutes } from "@/demo/router";
-// IAM 模块路由
-import { iamRoutes } from "@/iam/router";
-// Tenant 模块路由
-import { tenantRoutes } from "@/tenant/router";
-
 /**
  * 静态路由配置（无需权限验证）
  */
@@ -35,6 +28,7 @@ export const constantRoutes: RouteRecordRaw[] = [
 
 /**
  * 异步路由配置（需要权限验证）
+ * 业务模块路由通过 setupFramework 动态注册
  */
 export const asyncRoutes: RouteRecordRaw[] = [
   {
@@ -54,12 +48,7 @@ export const asyncRoutes: RouteRecordRaw[] = [
         component: () => import("@/framework/pages/DeveloperSettingsPage.vue"),
         meta: { title: "开发者设置", hidden: true, requiresAuth: true },
       },
-      // Demo 模块路由
-      ...demoRoutes,
-      // IAM 模块路由
-      ...iamRoutes,
-      // Tenant 模块路由
-      ...tenantRoutes,
+      // 业务模块路由由 setupFramework 动态注册
     ],
   },
 ];

@@ -8,6 +8,19 @@
  * - 部门管理
  */
 
+import type { ModuleDescriptor } from "@/framework/module/types";
+import { iamRoutes } from "./router";
+
+/**
+ * IAM 模块描述符
+ */
+export const iamModule: ModuleDescriptor = {
+  name: "iam",
+  version: "1.0.0",
+  getRoutes: () => iamRoutes,
+  icon: "user",
+};
+
 // 导出所有类型
 export type {
   User,

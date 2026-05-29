@@ -4,7 +4,12 @@ import App from "./App.vue";
 import router from "./framework/router";
 import { setupRouterGuards } from "./framework/router/guards";
 import { setupPermissionDirective } from "./framework/directives/permission";
-import { demoRoutes } from "./demo/router";
+import { setupFramework } from "./framework/module";
+
+// 导入模块描述符
+import { demoModule } from "./demo";
+import { iamModule } from "./iam";
+import { tenantModule } from "./tenant";
 
 // 导入样式
 import "./framework/styles/main.css";
@@ -16,18 +21,29 @@ const app = createApp(App);
 const pinia = createPinia();
 app.use(pinia);
 
-// 路由
+// 路由守卫
 setupRouterGuards(router);
 
-// 注册 Demo 路由
-demoRoutes.forEach((route) => {
-  router.addRoute(route);
-});
+// 注册异步路由
+import { asyncRoutes } from "./framework/router";
+asyncRoutes.forEach((route) => router.addRoute(route));
 
 app.use(router);
 
 // 权限指令
 setupPermissionDirective(app);
 
-// 挂载应用
-app.mount("#app");
+// 设置框架并注册模块
+setupFramework({
+  app,
+  router,
+  pinia,
+  modules: [demoModule, iamModule, tenantModule],
+})
+  .then(() => {
+    // 挂载应用
+    app.mount("#app");
+  })
+  .catch((error) => {
+    console.error("Failed to setup framework:", error);
+  });
