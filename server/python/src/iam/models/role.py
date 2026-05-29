@@ -14,7 +14,7 @@ class Role(BaseModel):
     __tablename__ = "roles"
 
     tenant_id: Mapped[str | None] = mapped_column(
-        String(36), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=True, comment="租户ID（NULL 表示全局角色）"
+        String(36), ForeignKey("tenant.tenants.id", ondelete="CASCADE"), nullable=True, comment="租户ID（NULL 表示全局角色）"
     )
     code: Mapped[str] = mapped_column(
         String(50), nullable=False, comment="角色编码"

@@ -46,6 +46,13 @@ def _register_modules() -> None:
     except ImportError:
         pass
 
+    try:
+        from iam.migrations.seeds import menu_seed
+
+        SEED_MODULES["menu"] = menu_seed.run
+    except ImportError:
+        pass
+
 
 # 模块加载时注册
 _register_modules()

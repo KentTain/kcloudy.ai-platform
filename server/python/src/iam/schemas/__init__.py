@@ -29,6 +29,10 @@ from iam.schemas.login import (
     LogoutRequest,
     LogoutResponse,
 )
+from iam.schemas.menu import (
+    MenuListResponse,
+    MenuTreeNode,
+)
 from iam.schemas.oauth import (
     OAuthAuthorizeResponse,
     OAuthBindRequest,
@@ -69,6 +73,9 @@ __all__ = [
     "LoginResponse",
     "LogoutRequest",
     "LogoutResponse",
+    # 菜单
+    "MenuTreeNode",
+    "MenuListResponse",
     # Token
     "TokenRefreshRequest",
     "TokenRefreshResponse",

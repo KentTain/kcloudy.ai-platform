@@ -21,7 +21,7 @@ class Department(BaseModel, TreeNodeMixin):
     )
 
     tenant_id: Mapped[str] = mapped_column(
-        String(36), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, comment="租户ID"
+        String(36), ForeignKey("tenant.tenants.id", ondelete="CASCADE"), nullable=False, comment="租户ID"
     )
     name: Mapped[str] = mapped_column(
         String(100), nullable=False, comment="部门名称"

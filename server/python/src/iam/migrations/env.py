@@ -25,8 +25,9 @@ config = context.config
 
 # 从配置中获取数据库 URL
 try:
-    from demo.configs import settings
+    from framework.configs import get_settings
 
+    settings = get_settings()
     db_url = settings.sqlalchemy.url
     config.set_main_option("sqlalchemy.url", db_url)
 except Exception as e:
@@ -80,6 +81,11 @@ async def run_async_migrations() -> None:
     )
 
     async with connectable.connect() as connection:
+        # 确保 schema 存在
+        from sqlalchemy import text
+        await connection.execute(text(f"CREATE SCHEMA IF NOT EXISTS {MODULE_SCHEMA}"))
+        await connection.commit()
+
         await connection.run_sync(do_run_migrations)
 
     await connectable.dispose()

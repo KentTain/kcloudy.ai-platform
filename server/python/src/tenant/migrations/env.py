@@ -81,6 +81,11 @@ async def run_async_migrations() -> None:
     )
 
     async with connectable.connect() as connection:
+        # 确保 schema 存在
+        from sqlalchemy import text
+        await connection.execute(text(f"CREATE SCHEMA IF NOT EXISTS {MODULE_SCHEMA}"))
+        await connection.commit()
+
         await connection.run_sync(do_run_migrations)
 
     await connectable.dispose()

@@ -22,6 +22,7 @@ from .enums import (
     TenantStatus,
     UserStatus,
 )
+from .menu import Menu, MenuPermission
 from .oauth_connection import OAuthConnection
 from .permission import Permission, RolePermission, UserRole
 from .role import Role
@@ -52,6 +53,9 @@ __all__ = [
     "Permission",
     "UserRole",
     "RolePermission",
+    # 菜单
+    "Menu",
+    "MenuPermission",
     # 系统设置
     "SystemSetting",
     "SystemSettingAttribute",

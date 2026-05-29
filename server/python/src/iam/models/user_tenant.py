@@ -19,7 +19,7 @@ class UserTenant(BaseModel):
         String(36), nullable=False, comment="用户ID"
     )
     tenant_id: Mapped[str] = mapped_column(
-        String(36), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, comment="租户ID"
+        String(36), ForeignKey("tenant.tenants.id", ondelete="CASCADE"), nullable=False, comment="租户ID"
     )
     is_default: Mapped[bool] = mapped_column(
         default=False, nullable=False, comment="是否默认租户"

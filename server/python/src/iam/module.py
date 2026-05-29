@@ -72,10 +72,12 @@ class IAMModule:
         """
         from iam.migrations.seeds.iam_seed import run as iam_seed_run
         from iam.migrations.seeds.admin_seed import run as admin_seed_run
+        from iam.migrations.seeds.menu_seed import run as menu_seed_run
 
         return {
             "iam": iam_seed_run,
             "admin": admin_seed_run,
+            "menu": menu_seed_run,
         }
 
     def get_task_setup(self) -> tuple | None:

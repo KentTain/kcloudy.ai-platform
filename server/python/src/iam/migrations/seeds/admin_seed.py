@@ -10,7 +10,7 @@ import uuid
 
 from sqlalchemy import select
 
-from iam.models import TenantAdmin
+from tenant.models import TenantAdmin
 
 
 async def run(*, dry_run: bool = False) -> int:
