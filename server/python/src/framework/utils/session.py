@@ -1,4 +1,4 @@
-"""
+﻿"""
 会话管理工具模块
 
 提供基于 Redis 的用户会话管理功能，包括会话创建、查询、删除和 Token 黑名单。
@@ -15,6 +15,15 @@ from framework.cache.redis_util import RedisUtil
 
 # 默认会话 TTL（7 天）
 DEFAULT_SESSION_TTL_DAYS = 7
+
+# 内存会话存储（当 Redis 不可用时使用）
+_memory_sessions: dict[str, dict[str, Any]] = {}
+_memory_blacklist: dict[str, float] = {}
+
+
+def _is_redis_available() -> bool:
+    """检查 Redis 是否可用"""
+    return RedisUtil._client is not None
 
 
 def get_session_key(session_id: str, key_prefix: str = "") -> str:
@@ -80,12 +89,16 @@ async def create_session(
         "created_at": datetime.now(timezone.utc).isoformat(),
     }
 
-    # 计算 TTL
-    ttl_seconds = int((ttl or timedelta(days=DEFAULT_SESSION_TTL_DAYS)).total_seconds())
+    if _is_redis_available():
+        # 计算 TTL
+        ttl_seconds = int((ttl or timedelta(days=DEFAULT_SESSION_TTL_DAYS)).total_seconds())
 
-    # 存储到 Redis
-    key = get_session_key(session_id, key_prefix)
-    await RedisUtil.set(key, json.dumps(session_data), ttl=ttl_seconds)
+        # 存储到 Redis
+        key = get_session_key(session_id, key_prefix)
+        await RedisUtil.set(key, json.dumps(session_data), ttl=ttl_seconds)
+    else:
+        # 存储到内存
+        _memory_sessions[session_id] = session_data
 
     return session_id
 
@@ -102,18 +115,16 @@ async def get_session(
         key_prefix: Redis Key 前缀
 
     Returns:
-        会话数据，不存在则返回 None
+        会话数据字典，不存在则返回 None
     """
-    key = get_session_key(session_id, key_prefix)
-    data = await RedisUtil.get(key)
-
-    if data is None:
+    if _is_redis_available():
+        key = get_session_key(session_id, key_prefix)
+        data = await RedisUtil.get(key)
+        if data:
+            return json.loads(data)
         return None
-
-    try:
-        return json.loads(data)
-    except json.JSONDecodeError:
-        return None
+    else:
+        return _memory_sessions.get(session_id)
 
 
 async def delete_session(session_id: str, key_prefix: str = "") -> None:
@@ -124,53 +135,27 @@ async def delete_session(session_id: str, key_prefix: str = "") -> None:
         session_id: 会话 ID
         key_prefix: Redis Key 前缀
     """
-    key = get_session_key(session_id, key_prefix)
-    await RedisUtil.delete(key)
+    if _is_redis_available():
+        key = get_session_key(session_id, key_prefix)
+        await RedisUtil.delete(key)
+    else:
+        _memory_sessions.pop(session_id, None)
 
 
-async def update_session_version(session_id: str, key_prefix: str = "") -> int:
+async def add_to_blacklist(jti: str, ttl_seconds: int, key_prefix: str = "") -> None:
     """
-    更新会话版本号。
-
-    用于权限变更时使 Token 中的版本号失效。
-
-    Args:
-        session_id: 会话 ID
-        key_prefix: Redis Key 前缀
-
-    Returns:
-        更新后的版本号
-    """
-    session = await get_session(session_id, key_prefix)
-    if session is None:
-        return 0
-
-    # 增加版本号
-    session["version"] = session.get("version", 1) + 1
-
-    # 获取剩余 TTL
-    key = get_session_key(session_id, key_prefix)
-    # 更新会话数据（保持原 TTL）
-    await RedisUtil.set(key, json.dumps(session))
-
-    return session["version"]
-
-
-async def add_to_blacklist(
-    jti: str,
-    ttl_seconds: int,
-    key_prefix: str = "",
-) -> None:
-    """
-    将 Token 添加到黑名单。
+    将 Token 加入黑名单。
 
     Args:
         jti: Token 的 JTI（JWT ID）
-        ttl_seconds: 黑名单过期时间（秒），应与 Token 剩余有效期相同
+        ttl_seconds: 黑名单过期时间（秒）
         key_prefix: Redis Key 前缀
     """
-    key = get_blacklist_key(jti, key_prefix)
-    await RedisUtil.set(key, "1", ttl=ttl_seconds)
+    if _is_redis_available():
+        key = get_blacklist_key(jti, key_prefix)
+        await RedisUtil.set(key, "1", ttl=ttl_seconds)
+    else:
+        _memory_blacklist[jti] = datetime.now(timezone.utc).timestamp() + ttl_seconds
 
 
 async def is_blacklisted(jti: str, key_prefix: str = "") -> bool:
@@ -182,7 +167,17 @@ async def is_blacklisted(jti: str, key_prefix: str = "") -> bool:
         key_prefix: Redis Key 前缀
 
     Returns:
-        Token 是否在黑名单中
+        是否在黑名单中
     """
-    key = get_blacklist_key(jti, key_prefix)
-    return await RedisUtil.exists(key)
+    if _is_redis_available():
+        key = get_blacklist_key(jti, key_prefix)
+        return await RedisUtil.get(key) is not None
+    else:
+        expire_time = _memory_blacklist.get(jti)
+        if expire_time is None:
+            return False
+        # 检查是否过期
+        if datetime.now(timezone.utc).timestamp() > expire_time:
+            del _memory_blacklist[jti]
+            return False
+        return True

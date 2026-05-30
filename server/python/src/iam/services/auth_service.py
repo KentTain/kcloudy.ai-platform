@@ -37,6 +37,20 @@ LOGIN_RATE_LIMIT_WINDOW = 60  # 60 秒
 LOGIN_RATE_LIMIT_MAX_ATTEMPTS = 5
 
 
+def _is_redis_available() -> bool:
+    """检查 Redis 是否可用"""
+    return RedisUtil._client is not None
+
+
+def _get_settings():
+    """获取设置对象"""
+    try:
+        from demo.configs import settings
+    except ImportError:
+        from configs import settings
+    return settings
+
+
 class AuthService:
     """用户认证服务"""
 
@@ -56,8 +70,8 @@ class AuthService:
         Raises:
             ValueError: 登录失败
         """
-        # 检查登录限流
-        if ip:
+        # 检查登录限流（仅当 Redis 可用时）
+        if ip and _is_redis_available():
             rate_key = f"{LOGIN_RATE_LIMIT_PREFIX}{ip}"
             attempts = await RedisUtil.get(rate_key)
             if attempts and int(attempts) >= LOGIN_RATE_LIMIT_MAX_ATTEMPTS:
@@ -77,14 +91,14 @@ class AuthService:
 
         # 验证用户存在性和密码
         if not user or not user.password_hash:
-            # 记录失败尝试
-            if ip:
+            # 记录失败尝试（仅当 Redis 可用时）
+            if ip and _is_redis_available():
                 await AuthService._record_failed_attempt(ip)
             raise ValueError("用户名或密码错误")
 
         # 验证密码
         if not verify_password(password, user.password_hash):
-            if ip:
+            if ip and _is_redis_available():
                 await AuthService._record_failed_attempt(ip)
             raise ValueError("用户名或密码错误")
 
@@ -139,8 +153,8 @@ class AuthService:
             user.last_login_ip = ip
             await session.commit()
 
-        # 清除登录限流记录
-        if ip:
+        # 清除登录限流记录（仅当 Redis 可用时）
+        if ip and _is_redis_available():
             rate_key = f"{LOGIN_RATE_LIMIT_PREFIX}{ip}"
             await RedisUtil.delete(rate_key)
 
@@ -177,8 +191,8 @@ class AuthService:
         if session_id:
             await delete_session(session_id)
 
-        # 将 Token 加入黑名单
-        if jti:
+        # 将 Token 加入黑名单（仅当 Redis 可用时）
+        if jti and _is_redis_available():
             await add_to_blacklist(jti, ttl_seconds=7200)  # 2 小时
 
         _logger.info(f"用户登出: session_id={session_id}")
@@ -212,13 +226,14 @@ class AuthService:
         if not session_data:
             raise ValueError("登录已过期，请重新登录")
 
-        # 检查 Refresh Token 是否在黑名单
+        # 检查 Refresh Token 是否在黑名单（仅当 Redis 可用时）
         jti = payload.get("jti") or session_id
-        if await is_blacklisted(jti):
+        if _is_redis_available() and await is_blacklisted(jti):
             raise ValueError("登录已过期，请重新登录")
 
-        # 将旧的 Refresh Token 加入黑名单
-        await add_to_blacklist(jti, ttl_seconds=604800)  # 7 天
+        # 将旧的 Refresh Token 加入黑名单（仅当 Redis 可用时）
+        if _is_redis_available():
+            await add_to_blacklist(jti, ttl_seconds=604800)  # 7 天
 
         # 生成新的 Token
         new_payload = {
@@ -259,9 +274,9 @@ class AuthService:
         if not payload:
             return None
 
-        # 检查黑名单
+        # 检查黑名单（仅当 Redis 可用时）
         jti = payload.get("jti") or payload.get("session_id")
-        if jti and await is_blacklisted(jti):
+        if jti and _is_redis_available() and await is_blacklisted(jti):
             return None
 
         # 检查会话版本
@@ -287,6 +302,8 @@ class AuthService:
     @staticmethod
     async def _record_failed_attempt(ip: str) -> None:
         """记录登录失败尝试"""
+        if not _is_redis_available():
+            return
         rate_key = f"{LOGIN_RATE_LIMIT_PREFIX}{ip}"
         attempts = await RedisUtil.get(rate_key)
         if attempts:
@@ -297,7 +314,7 @@ class AuthService:
     @staticmethod
     def _get_jwt_secret() -> str:
         """获取 JWT 密钥"""
-        from configs import settings
+        settings = _get_settings()
         return settings.iam.jwt.secret_key
 
 
