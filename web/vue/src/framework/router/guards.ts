@@ -4,7 +4,7 @@ import { useAdminAuthStore } from "@/tenant/stores/adminAuth";
 import { asyncRoutes } from "./index";
 
 // 白名单路由
-const whiteList = ["/login", "/admin/login", "/403", "/404"];
+const whiteList = ["/login", "/admin/login", "/403", "/404", "/preview/layout"];
 
 /**
  * 设置路由守卫
