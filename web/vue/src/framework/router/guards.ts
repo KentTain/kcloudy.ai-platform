@@ -4,7 +4,7 @@ import { useAdminAuthStore } from "@/tenant/stores/adminAuth";
 import { asyncRoutes } from "./index";
 
 // 白名单路由
-const whiteList = ["/login", "/admin/login", "/403", "/404", "/preview/layout"];
+const whiteList = ["/login", "/admin/login", "/403", "/404"];
 
 /**
  * 设置路由守卫
@@ -21,6 +21,12 @@ export const setupRouterGuards = (router: Router) => {
 
     // 白名单路由直接放行
     if (whiteList.includes(to.path)) {
+      next();
+      return;
+    }
+
+    // 预览页面直接放行（无需登录）
+    if (to.path.startsWith("/preview")) {
       next();
       return;
     }
