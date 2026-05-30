@@ -85,6 +85,9 @@ async def run(*, dry_run: bool = False) -> int:
             is_email_verified=True,
         )
         session.add(user)
+        
+        # 立即 flush 确保用户被写入数据库
+        await session.flush()
 
         # 创建用户-租户关联
         user_tenant_id = str(uuid.uuid4())
