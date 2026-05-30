@@ -9,20 +9,10 @@
 </template>
 
 <style>
-/* 全局样式重置 */
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
+/* Tailwind v4 已在 @layer base 中提供重置样式，此处无需重复定义 */
 
 html,
-body {
-  height: 100%;
-}
-
+body,
 #app {
   height: 100%;
 }

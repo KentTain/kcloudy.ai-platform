@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 /**
  * AppTenantSwitcher 租户切换器组件
  * 显示当前租户 logo 和名称，支持切换租户
@@ -11,8 +11,10 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useSidebar } from "@/components/ui/sidebar";
 import { useUserStore } from "@/framework/stores/user";
 
+const { state } = useSidebar();
 const userStore = useUserStore();
 
 const currentTenant = computed(() => userStore.currentTenant);
@@ -31,14 +33,15 @@ function switchTenant(tenantId: string) {
 
 <template>
   <div class="px-3 py-3">
-    <DropdownMenu>
+    <!-- 展开状态：完整显示 -->
+    <DropdownMenu v-if="state === 'expanded'">
       <DropdownMenuTrigger as-child>
         <button
           type="button"
           class="flex w-full items-center gap-2.5 rounded-[10px] bg-muted/50 px-2.5 py-2.5 text-left transition-colors hover:bg-muted"
         >
           <div
-            class="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary/80 text-primary-foreground text-sm font-bold shadow-sm"
+            class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary/80 text-primary-foreground text-sm font-bold shadow-sm"
           >
             {{ tenantInitial }}
           </div>
@@ -65,5 +68,18 @@ function switchTenant(tenantId: string) {
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
+
+    <!-- 收缩状态：仅显示 logo（放大一号） -->
+    <div
+      v-else
+      class="flex justify-center"
+    >
+      <div
+        class="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary/80 text-primary-foreground text-base font-bold shadow-sm cursor-pointer hover:shadow-md transition-shadow"
+        :title="currentTenant?.name || '选择租户'"
+      >
+        {{ tenantInitial }}
+      </div>
+    </div>
   </div>
 </template>
