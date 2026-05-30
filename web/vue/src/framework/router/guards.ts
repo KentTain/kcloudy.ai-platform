@@ -1,9 +1,10 @@
-import type { Router } from "vue-router";
+﻿import type { Router } from "vue-router";
 import { useUserStore, usePermissionStore } from "@/framework/stores";
+import { useAdminAuthStore } from "@/tenant/stores/adminAuth";
 import { asyncRoutes } from "./index";
 
 // 白名单路由
-const whiteList = ["/login", "/403", "/404"];
+const whiteList = ["/login", "/admin/login", "/403", "/404"];
 
 /**
  * 设置路由守卫
@@ -12,9 +13,11 @@ export const setupRouterGuards = (router: Router) => {
   router.beforeEach(async (to, _from, next) => {
     const userStore = useUserStore();
     const permissionStore = usePermissionStore();
+    const adminAuthStore = useAdminAuthStore();
 
     // 设置页面标题
-    document.title = to.meta?.title ? `${to.meta.title} - AI 助手平台` : "AI 助手平台";
+    const title = to.meta?.title;
+    document.title = title ? title + " - AI 助手平台" : "AI 助手平台";
 
     // 白名单路由直接放行
     if (whiteList.includes(to.path)) {
@@ -22,9 +25,21 @@ export const setupRouterGuards = (router: Router) => {
       return;
     }
 
+    // 管理后台路由（排除登录页）
+    if (to.meta?.requiresAdminAuth || (to.path.startsWith("/admin") && to.path !== "/admin/login")) {
+      // 未登录跳转管理后台登录页
+      if (!adminAuthStore.isLoggedIn && !adminAuthStore.checkAuth()) {
+        next("/admin/login?redirect=" + to.path);
+        return;
+      }
+      next();
+      return;
+    }
+
+    // 普通用户路由处理
     // 未登录跳转登录页
     if (!userStore.isLoggedIn) {
-      next(`/login?redirect=${to.path}`);
+      next("/login?redirect=" + to.path);
       return;
     }
 
@@ -55,7 +70,7 @@ export const setupRouterGuards = (router: Router) => {
       console.error("Failed to setup routes:", error);
       // 路由生成失败，清除登录状态并跳转登录页
       userStore.logout();
-      next(`/login?redirect=${to.path}`);
+      next("/login?redirect=" + to.path);
     }
   });
 };

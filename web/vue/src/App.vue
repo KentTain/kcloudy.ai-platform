@@ -1,12 +1,11 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 /**
  * App 根组件
  */
-import AdminLayout from "@/framework/layouts/AdminLayout.vue";
 </script>
 
 <template>
-  <AdminLayout />
+  <router-view />
 </template>
 
 <style>

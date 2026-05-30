@@ -1,0 +1,21 @@
+﻿import { rawGet, rawPost } from "@/framework/api/client";
+import type { ApiResponse } from "@/framework/types";
+import type { AdminLoginRequest, AdminLoginResponse, AdminInfo } from "../types/admin";
+
+/**
+ * 管理员登录
+ */
+export const adminLogin = (data: AdminLoginRequest) =>
+  rawPost<ApiResponse<AdminLoginResponse>>("/admin/v1/auth/login", data);
+
+/**
+ * 管理员登出
+ */
+export const adminLogout = () =>
+  rawPost<ApiResponse<void>>("/admin/v1/auth/logout");
+
+/**
+ * 获取当前管理员信息
+ */
+export const getCurrentAdmin = () =>
+  rawGet<ApiResponse<AdminInfo>>("/admin/v1/admin/me");

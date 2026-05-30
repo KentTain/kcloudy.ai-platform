@@ -1,9 +1,16 @@
-/**
+﻿/**
  * Tenant 模块类型定义
  */
 
 // 从 framework 导入统一类型并重新导出
 export type { ApiResponse, PageResult } from "@/framework/types";
+
+// 导出管理员类型
+export type {
+  AdminLoginRequest,
+  AdminLoginResponse,
+  AdminInfo,
+} from "./admin";
 
 // 租户实体
 export interface Tenant {

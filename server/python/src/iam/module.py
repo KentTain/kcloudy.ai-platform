@@ -1,4 +1,4 @@
-"""
+﻿"""
 IAM 模块声明
 
 定义 IAM 模块的注册信息，包括路由、中间件、生命周期钩子和 Seed 数据。
@@ -71,11 +71,13 @@ class IAMModule:
         格式: {seed_name: seed_func}
         """
         from iam.migrations.seeds.iam_seed import run as iam_seed_run
+        from iam.migrations.seeds.user_seed import run as user_seed_run
         from iam.migrations.seeds.admin_seed import run as admin_seed_run
         from iam.migrations.seeds.menu_seed import run as menu_seed_run
 
         return {
             "iam": iam_seed_run,
+            "user": user_seed_run,
             "admin": admin_seed_run,
             "menu": menu_seed_run,
         }

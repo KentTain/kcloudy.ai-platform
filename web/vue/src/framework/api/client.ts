@@ -1,4 +1,4 @@
-import axios, { type AxiosInstance, type AxiosRequestConfig, type AxiosResponse } from "axios";
+﻿import axios, { type AxiosInstance, type AxiosRequestConfig, type AxiosResponse } from "axios";
 
 /**
  * API 客户端配置
@@ -20,10 +20,14 @@ export const createApiClient = (config?: AxiosRequestConfig): AxiosInstance => {
   // 请求拦截器
   instance.interceptors.request.use(
     (config) => {
-      // 添加认证 token
-      const token = localStorage.getItem("token");
+      // 根据请求路径判断使用哪个 token
+      const isAdminRequest = config.url?.startsWith("/admin");
+      const token = isAdminRequest
+        ? localStorage.getItem("admin_token")
+        : localStorage.getItem("token");
+
       if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
+        config.headers.Authorization = "Bearer " + token;
       }
       return config;
     },
@@ -34,12 +38,20 @@ export const createApiClient = (config?: AxiosRequestConfig): AxiosInstance => {
   instance.interceptors.response.use(
     (response: AxiosResponse) => response.data,
     (error) => {
-      const { response } = error;
+      const { response, config } = error;
+
+      // 判断是否为管理后台请求
+      const isAdminRequest = config?.url?.startsWith("/admin");
 
       // 401 未登录
       if (response?.status === 401) {
-        localStorage.removeItem("token");
-        window.location.href = "/login";
+        if (isAdminRequest) {
+          localStorage.removeItem("admin_token");
+          window.location.href = "/admin/login";
+        } else {
+          localStorage.removeItem("token");
+          window.location.href = "/login";
+        }
       }
 
       // 403 无权限

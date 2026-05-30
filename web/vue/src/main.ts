@@ -1,4 +1,4 @@
-import { createApp } from "vue";
+﻿import { createApp } from "vue";
 import { createPinia } from "pinia";
 import App from "./App.vue";
 import router from "./framework/router";
@@ -11,6 +11,9 @@ import { ENABLED_MODULES } from "./config/modules";
 import { demoModule } from "./demo";
 import { iamModule } from "./iam";
 import { tenantModule } from "./tenant";
+
+// Import admin routes
+import { adminRoutes } from "./tenant/router";
 
 // Import styles
 import "./framework/styles/main.css";
@@ -40,6 +43,9 @@ setupRouterGuards(router);
 // 注册异步路由
 import { asyncRoutes } from "./framework/router";
 asyncRoutes.forEach((route) => router.addRoute(route));
+
+// 注册管理后台路由
+adminRoutes.forEach((route) => router.addRoute(route));
 
 app.use(router);
 

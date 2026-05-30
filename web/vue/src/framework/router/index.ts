@@ -33,6 +33,7 @@ export const constantRoutes: RouteRecordRaw[] = [
 export const asyncRoutes: RouteRecordRaw[] = [
   {
     path: "/",
+    name: "Root",
     component: AdminLayout,
     children: [
       // 设置页面

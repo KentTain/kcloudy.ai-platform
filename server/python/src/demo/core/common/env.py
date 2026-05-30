@@ -1,5 +1,7 @@
 """
 环境变量管理
+
+支持的环境：local（本地/Docker 开发）、dev（开发环境）、prod（生产环境）
 """
 
 import getopt

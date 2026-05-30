@@ -1,4 +1,4 @@
-"""
+﻿"""
 数据初始化模块
 
 每个业务模块的种子脚本放在此目录下，支持幂等执行和 dry-run 预览。
@@ -29,6 +29,13 @@ def _register_modules() -> None:
         from iam.migrations.seeds import tenant_seed
 
         SEED_MODULES["tenant"] = tenant_seed.run
+    except ImportError:
+        pass
+
+    try:
+        from iam.migrations.seeds import user_seed
+
+        SEED_MODULES["user"] = user_seed.run
     except ImportError:
         pass
 
