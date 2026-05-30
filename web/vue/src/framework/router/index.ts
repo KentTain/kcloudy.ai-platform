@@ -13,6 +13,12 @@ export const constantRoutes: RouteRecordRaw[] = [
     meta: { title: "登录", hidden: true },
   },
   {
+    path: "/preview/layout",
+    name: "PreviewLayout",
+    component: () => import("@/framework/pages/PreviewLayoutPage.vue"),
+    meta: { title: "布局预览", hidden: true, requiresAuth: false },
+  },
+  {
     path: "/403",
     name: "Forbidden",
     component: () => import("@/framework/pages/ForbiddenPage.vue"),
