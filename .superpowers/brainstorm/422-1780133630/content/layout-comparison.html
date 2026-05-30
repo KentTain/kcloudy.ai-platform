@@ -1,0 +1,163 @@
+<h2>AdminLayout 布局重设计</h2>
+<p class="subtitle">当前布局 vs 改进方案对比</p>
+
+<div class="split">
+  <!-- 当前布局 -->
+  <div class="mockup">
+    <div class="mockup-header">当前布局</div>
+    <div class="mockup-body" style="background: #f5f7fa;">
+      <!-- 顶部导航 -->
+      <div style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: #fff; border-bottom: 1px solid #e5e7eb; height: 48px;">
+        <div style="width: 20px; color: #666;">☰</div>
+        <div style="width: 1px; height: 20px; background: #e5e7eb;"></div>
+        <div style="display: flex; gap: 4px; font-size: 11px; color: #666;">
+          <span>首页</span>
+          <span>/</span>
+          <span style="color: #1677ff;">知识库</span>
+        </div>
+        <div style="margin-left: auto; display: flex; gap: 4px;">
+          <div style="padding: 4px 8px; border: 1px solid #e5e7eb; border-radius: 4px; font-size: 10px; color: #999;">🔍 搜索...</div>
+          <div style="width: 24px; height: 24px; background: #f5f5f5; border-radius: 4px;"></div>
+          <div style="width: 24px; height: 24px; background: #f5f5f5; border-radius: 4px;"></div>
+        </div>
+      </div>
+
+      <div style="display: flex; height: calc(100% - 48px);">
+        <!-- 侧边栏 -->
+        <div style="width: 200px; background: #fff; border-right: 1px solid #e5e7eb; padding: 8px 0;">
+          <div style="padding: 8px 12px; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid #f0f0f0;">
+            <div style="width: 28px; height: 28px; background: #1677ff; color: #fff; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: bold;">AI</div>
+            <span style="font-size: 12px; font-weight: 500;">AI 助手平台</span>
+          </div>
+          <div style="padding: 8px;">
+            <div style="padding: 6px 8px; font-size: 11px; color: #1677ff; background: #e8f3ff; border-radius: 4px; margin-bottom: 2px;">🏠 首页</div>
+            <div style="padding: 6px 8px; font-size: 11px; color: #333; border-radius: 4px;">💓 健康检查</div>
+            <div style="padding: 6px 8px; font-size: 11px; color: #333; border-radius: 4px;">📚 知识库</div>
+          </div>
+          <div style="padding: 8px; font-size: 10px; color: #999; text-transform: uppercase;">系统管理</div>
+          <div style="padding: 8px;">
+            <div style="padding: 6px 8px; font-size: 11px; color: #333; border-radius: 4px;">⚙️ IAM ▶</div>
+          </div>
+        </div>
+
+        <!-- 内容区 -->
+        <div style="flex: 1; padding: 12px;">
+          <div style="background: #fff; border-radius: 6px; padding: 12px; border: 1px solid #e5e7eb;">
+            <div style="font-size: 14px; font-weight: 500; margin-bottom: 8px;">知识库管理</div>
+            <div style="font-size: 11px; color: #666;">管理系统的知识库资源...</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 改进方案 -->
+  <div class="mockup">
+    <div class="mockup-header">改进方案</div>
+    <div class="mockup-body" style="background: #f8fafc;">
+      <!-- 顶部导航 - 更精致的阴影和层级 -->
+      <div style="display: flex; align-items: center; gap: 12px; padding: 0 16px; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.06); height: 56px;">
+        <div style="width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; color: #64748b; cursor: pointer;">☰</div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <div style="width: 32px; height: 32px; background: linear-gradient(135deg, #1677ff 0%, #0958d9 100%); color: #fff; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; box-shadow: 0 2px 4px rgba(22,119,255,0.3);">AI</div>
+          <span style="font-size: 14px; font-weight: 600; color: #1e293b;">AI 助手平台</span>
+        </div>
+        <div style="flex: 1;"></div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <div style="padding: 6px 12px; background: #f1f5f9; border-radius: 8px; font-size: 12px; color: #64748b; display: flex; align-items: center; gap: 6px;">
+            <span>🔍</span>
+            <span>搜索</span>
+            <span style="background: #e2e8f0; padding: 2px 4px; border-radius: 4px; font-size: 10px;">⌘K</span>
+          </div>
+          <div style="width: 32px; height: 32px; background: #f1f5f9; border-radius: 8px; display: flex; align-items: center; justify-content: center;">🔔</div>
+          <div style="width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #ff5722 0%, #e64a19 100%); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 12px; font-weight: 500;">王</div>
+        </div>
+      </div>
+
+      <div style="display: flex; height: calc(100% - 56px);">
+        <!-- 侧边栏 - 更柔和的背景和间距 -->
+        <div style="width: 220px; background: #fff; border-right: 1px solid #e2e8f0; padding: 16px 12px;">
+          <div style="margin-bottom: 16px;">
+            <div style="padding: 10px 12px; font-size: 12px; color: #1677ff; background: linear-gradient(135deg, #e8f3ff 0%, #d4e8ff 100%); border-radius: 8px; font-weight: 500; display: flex; align-items: center; gap: 8px; box-shadow: 0 1px 2px rgba(22,119,255,0.1);">
+              <span>🏠</span> 首页
+            </div>
+            <div style="padding: 10px 12px; font-size: 12px; color: #475569; border-radius: 8px; margin-top: 4px; display: flex; align-items: center; gap: 8px;">💓 健康检查</div>
+            <div style="padding: 10px 12px; font-size: 12px; color: #475569; border-radius: 8px; margin-top: 4px; display: flex; align-items: center; gap: 8px;">📚 知识库</div>
+          </div>
+
+          <div style="padding: 8px 12px; font-size: 10px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">系统管理</div>
+          <div style="margin-top: 8px;">
+            <div style="padding: 10px 12px; font-size: 12px; color: #475569; border-radius: 8px; display: flex; align-items: center; justify-content: space-between;">
+              <span style="display: flex; align-items: center; gap: 8px;">⚙️ IAM</span>
+              <span style="color: #94a3b8;">▼</span>
+            </div>
+            <div style="margin-left: 20px; margin-top: 4px;">
+              <div style="padding: 8px 12px; font-size: 11px; color: #64748b; border-radius: 6px;">用户管理</div>
+              <div style="padding: 8px 12px; font-size: 11px; color: #64748b; border-radius: 6px;">角色管理</div>
+              <div style="padding: 8px 12px; font-size: 11px; color: #64748b; border-radius: 6px;">部门管理</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 内容区 - 更好的卡片设计 -->
+        <div style="flex: 1; padding: 20px; overflow: auto;">
+          <!-- 页面标题区 -->
+          <div style="margin-bottom: 20px;">
+            <div style="font-size: 10px; color: #1677ff; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">知识管理</div>
+            <div style="font-size: 20px; font-weight: 600; color: #1e293b; margin-bottom: 4px;">知识库管理</div>
+            <div style="font-size: 13px; color: #64748b;">管理系统的知识库资源，支持文档上传、向量化处理和智能检索</div>
+          </div>
+
+          <!-- 操作栏 -->
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <div style="display: flex; gap: 8px;">
+              <div style="padding: 8px 16px; background: linear-gradient(135deg, #1677ff 0%, #0958d9 100%); color: #fff; border-radius: 8px; font-size: 12px; font-weight: 500; box-shadow: 0 2px 4px rgba(22,119,255,0.3);">+ 新建知识库</div>
+              <div style="padding: 8px 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 12px; color: #64748b; background: #fff;">筛选</div>
+            </div>
+            <div style="padding: 6px 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 12px; color: #94a3b8; background: #fff;">🔍 搜索知识库...</div>
+          </div>
+
+          <!-- 卡片网格 -->
+          <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px;">
+            <div style="background: #fff; border-radius: 12px; padding: 16px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
+              <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+                <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #fff;">📚</div>
+                <div>
+                  <div style="font-size: 14px; font-weight: 600; color: #1e293b;">产品文档库</div>
+                  <div style="font-size: 11px; color: #94a3b8;">128 个文档</div>
+                </div>
+              </div>
+              <div style="font-size: 12px; color: #64748b; line-height: 1.5;">存储产品相关的技术文档、API 规格和使用指南...</div>
+            </div>
+            <div style="background: #fff; border-radius: 12px; padding: 16px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
+              <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+                <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #fff;">📚</div>
+                <div>
+                  <div style="font-size: 14px; font-weight: 600; color: #1e293b;">FAQ 知识库</div>
+                  <div style="font-size: 11px; color: #94a3b8;">256 个文档</div>
+                </div>
+              </div>
+              <div style="font-size: 12px; color: #64748b; line-height: 1.5;">常见问题解答和客户支持知识库...</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section" style="margin-top: 20px;">
+  <h3>主要改进点</h3>
+  <div class="pros-cons">
+    <div class="pros">
+      <h4>✅ 改进内容</h4>
+      <ul>
+        <li><strong>视觉层级</strong>：更清晰的标题、副标题层级</li>
+        <li><strong>间距节奏</strong>：统一 8px 基础间距单位</li>
+        <li><strong>色彩层次</strong>：渐变主色、柔和的阴影</li>
+        <li><strong>卡片设计</strong>：圆角更大、阴影更柔和</li>
+        <li><strong>交互反馈</strong>：选中态更明显</li>
+      </ul>
+    </div>
+  </div>
+</div>

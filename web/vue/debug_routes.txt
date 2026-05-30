@@ -1,0 +1,2 @@
+﻿// 调试脚本 - 在浏览器控制台运行
+console.log('Routes:', router.getRoutes().map(r => r.path));

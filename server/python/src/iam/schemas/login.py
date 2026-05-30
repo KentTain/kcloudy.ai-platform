@@ -1,4 +1,4 @@
-"""
+﻿"""
 登录相关 Pydantic Schemas
 """
 
@@ -31,6 +31,9 @@ class LoginResponse(BaseModel):
     token_type: str = Field(default="Bearer", description="Token 类型")
     need_complete_profile: bool | None = Field(
         None, description="是否需要补全信息（OAuth 用户）"
+    )
+    tenant_id: str | None = Field(
+        None, description="默认租户 ID"
     )
 
 

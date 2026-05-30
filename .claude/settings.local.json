@@ -60,7 +60,13 @@
       "Bash(node scripts/generate-modules-config.ts demo iam)",
       "Bash(node scripts/generate-modules-config.ts demo iam tenant)",
       "Bash(docker info *)",
-      "Bash(docker pull *)"
+      "Bash(docker pull *)",
+      "Bash(docker exec kcloudy-postgres *)",
+      "Bash(docker exec *)",
+      "Bash(docker network *)",
+      "Bash(docker volume *)",
+      "Bash(docker restart *)",
+      "Bash(bash \"C:\\\\Users\\\\tianc\\\\.claude\\\\skills\\\\brainstorming\\\\scripts\\\\start-server.sh\" --project-dir \"D:\\\\Project\\\\ai\\\\kcloudy.init_project\")"
     ]
   }
 }

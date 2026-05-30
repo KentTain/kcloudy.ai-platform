@@ -1,4 +1,4 @@
-"""
+﻿"""
 租户中间件
 
 自动解析租户标识、验证租户状态、注入租户上下文。
@@ -37,6 +37,10 @@ SKIP_PATHS = [
     "/redoc",
     "/openapi.json",
     "/admin/",  # 管理后台不经过租户中间件
+    "/api/v1/iam/auth/login",  # 登录接口
+    "/api/v1/iam/auth/register",  # 注册接口
+    "/api/v1/iam/auth/token/refresh",  # Token 刷新
+    "/api/v1/iam/oauth/",  # OAuth 相关
 ]
 
 
@@ -98,6 +102,7 @@ class TenantMiddleware(BaseHTTPMiddleware):
         path = request.url.path
         if path == "/":
             return True
+
         for skip_path in self.skip_paths:
             if path.startswith(skip_path):
                 return True
@@ -109,81 +114,56 @@ class TenantMiddleware(BaseHTTPMiddleware):
         """加载租户信息并验证状态"""
         # 通过 TenantProvider 获取租户
         provider = get_tenant_provider()
-        tenant = await provider.get_tenant(tenant_id)
+        if not provider:
+            raise TenantError("TenantProvider 未注册")
 
-        # 验证租户存在
+        tenant = await provider.get_tenant_by_id(tenant_id)
         if not tenant:
-            raise TenantNotFoundError(tenant_id)
+            raise TenantNotFoundError(f"租户不存在: {tenant_id}")
 
         # 验证租户状态
-        if tenant.status != "active":
-            raise TenantInactiveError(tenant_id)
-
-        # 验证租户未过期
-        if tenant.expired_at and tenant.expired_at < datetime.now():
-            raise TenantExpiredError(tenant_id)
-
-        # 验证用户有权访问该租户（如果有用户信息）
-        await self._validate_tenant_access(tenant_id, request, provider)
+        self._validate_tenant_access(tenant, request, provider)
 
         return tenant
 
-    async def _validate_tenant_access(
-        self, tenant_id: str, request: "Request", provider
+    def _validate_tenant_access(
+        self, tenant, request: "Request", provider
     ) -> None:
-        """验证用户有权访问租户
+        """验证租户访问权限"""
+        # 检查租户状态
+        if tenant.status != "active":
+            raise TenantInactiveError(f"租户已停用: {tenant.name}")
 
-        如果请求中有用户信息，检查用户是否属于该租户。
-        """
-        user_id = self._get_user_id(request)
-        if not user_id:
-            return
-
-        # 通过 TenantProvider 验证访问权限
-        has_access = await provider.validate_access(user_id, tenant_id)
-
-        if not has_access:
-            raise TenantAccessDeniedError(tenant_id)
-
-    def _get_user_id(self, request: "Request") -> str | None:
-        """获取当前用户 ID"""
-        user = getattr(request.state, "user", None)
-        if user:
-            if hasattr(user, "id"):
-                return user.id
-            if isinstance(user, dict) and "id" in user:
-                return user["id"]
-            if isinstance(user, dict) and "user_id" in user:
-                return user["user_id"]
-        return None
+        # 检查过期时间
+        if tenant.expired_at and tenant.expired_at < datetime.now():
+            raise TenantExpiredError(f"租户已过期: {tenant.name}")
 
     def _inject_context(self, tenant) -> None:
         """注入租户上下文"""
-        # 设置租户上下文
-        TenantContext.set_current_tenant(tenant)
+        TenantContext.set_tenant(tenant)
+        # 同时设置通用上下文
+        set_context(Context(tenant_id=tenant.id))
 
-        # 同时设置通用上下文（供数据库事件监听器使用）
-        ctx = Context()
-        ctx.tenant_id = tenant.id
-        set_context(ctx)
-
-    def _error_response(self, error: TenantError, status_code: int | None = None) -> JSONResponse:
+    def _error_response(
+        self, error: TenantError, status_code: int | None = None
+    ) -> JSONResponse:
         """生成错误响应"""
-        code = status_code or self._get_error_status_code(error)
+        status_code = status_code or self._get_error_status_code(error)
         return JSONResponse(
-            status_code=code,
-            content={"code": code, "message": error.message, "data": None},
+            status_code=status_code,
+            content={
+                "code": status_code,
+                "message": str(error),
+                "data": None,
+            },
         )
 
     def _get_error_status_code(self, error: TenantError) -> int:
-        """根据异常类型获取 HTTP 状态码"""
+        """获取错误状态码"""
         if isinstance(error, TenantNotFoundError):
             return 404
-        elif isinstance(
-            error, (TenantInactiveError, TenantExpiredError, TenantAccessDeniedError)
-        ):
+        if isinstance(error, TenantAccessDeniedError):
             return 403
-        elif isinstance(error, TenantResolveError):
-            return 400
-        else:
-            return 500
+        if isinstance(error, TenantInactiveError | TenantExpiredError):
+            return 403
+        return 400

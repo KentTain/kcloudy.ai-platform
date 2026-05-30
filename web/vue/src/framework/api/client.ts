@@ -22,13 +22,19 @@ export const createApiClient = (config?: AxiosRequestConfig): AxiosInstance => {
     (config) => {
       // 根据请求路径判断使用哪个 token
       const isAdminRequest = config.url?.startsWith("/admin");
-      const token = isAdminRequest
-        ? localStorage.getItem("admin_token")
-        : localStorage.getItem("token");
+      const tokenKey = isAdminRequest ? "admin_token" : "token";
+      const token = localStorage.getItem(tokenKey);
 
       if (token) {
         config.headers.Authorization = "Bearer " + token;
       }
+
+      // 添加租户 ID 请求头
+      const tenantId = localStorage.getItem("tenant_id");
+      if (tenantId && !isAdminRequest) {
+        config.headers["X-Tenant-Id"] = tenantId;
+      }
+
       return config;
     },
     (error) => Promise.reject(error)
@@ -47,9 +53,12 @@ export const createApiClient = (config?: AxiosRequestConfig): AxiosInstance => {
       if (response?.status === 401) {
         if (isAdminRequest) {
           localStorage.removeItem("admin_token");
+          localStorage.removeItem("admin_info");
           window.location.href = "/admin/login";
         } else {
           localStorage.removeItem("token");
+          localStorage.removeItem("refresh_token");
+          localStorage.removeItem("tenant_id");
           window.location.href = "/login";
         }
       }

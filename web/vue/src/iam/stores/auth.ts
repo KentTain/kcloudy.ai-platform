@@ -1,4 +1,4 @@
-import { defineStore } from "pinia";
+﻿import { defineStore } from "pinia";
 import { computed, ref } from "vue";
 import { useUserStore } from "@/framework/stores";
 import type { UserInfo } from "@/framework/stores/user";
@@ -69,13 +69,19 @@ export const useAuthStore = defineStore("iam-auth", () => {
     loading.value = true;
     try {
       const response = await loginApi(data);
-      const { access_token, refresh_token } = response.data;
+      const { access_token, refresh_token, tenant_id } = response.data;
       const expires_at = getExpiresAt(access_token, response.data);
 
       // 保存 token
       localStorage.setItem("token", access_token);
       localStorage.setItem("refresh_token", refresh_token);
       localStorage.setItem("token_expires_at", String(expires_at));
+      
+      // 保存租户 ID
+      if (tenant_id) {
+        localStorage.setItem("tenant_id", tenant_id);
+      }
+      
       userStore.setToken(access_token);
 
       try {
@@ -98,55 +104,61 @@ export const useAuthStore = defineStore("iam-auth", () => {
   };
 
   const logout = async () => {
-    loading.value = true;
     try {
       await logoutApi();
-    } catch (error: any) {
-      notifyError(getErrorMessage(error, "登出失败"));
-      console.error("logout error:", error);
+    } catch {
+      // ignore
     } finally {
-      userStore.logout();
+      // 清理本地存储
       localStorage.removeItem("token");
       localStorage.removeItem("refresh_token");
       localStorage.removeItem("token_expires_at");
-      loading.value = false;
+      localStorage.removeItem("tenant_id");
+      userStore.clear();
     }
   };
 
-  const refreshToken = async () => {
+  const refresh = async () => {
     const refresh_token = localStorage.getItem("refresh_token");
     if (!refresh_token) {
       throw new Error("No refresh token");
     }
 
-    try {
-      const response = await refreshTokenApi(refresh_token);
-      const { access_token, refresh_token: new_refresh_token, expires_in } = response.data;
+    const response = await refreshTokenApi(refresh_token);
+    const { access_token, refresh_token: new_refresh_token } = response.data;
 
-      localStorage.setItem("token", access_token);
-      localStorage.setItem("refresh_token", new_refresh_token);
-      localStorage.setItem("token_expires_at", String(Date.now() + expires_in * 1000));
-      userStore.setToken(access_token);
+    localStorage.setItem("token", access_token);
+    localStorage.setItem("refresh_token", new_refresh_token);
+    userStore.setToken(access_token);
 
-      return response.data;
-    } catch (error: any) {
-      notifyError(getErrorMessage(error, "刷新令牌失败"));
-      console.error("refreshToken error:", error);
-      throw error;
-    }
+    return response.data;
   };
 
-  const isTokenExpired = computed(() => {
-    const expires_at = localStorage.getItem("token_expires_at");
-    if (!expires_at) return true;
-    return Date.now() > Number.parseInt(expires_at, 10);
-  });
+  const checkAuth = (): boolean => {
+    const token = localStorage.getItem("token");
+    const expiresAt = localStorage.getItem("token_expires_at");
+
+    if (!token) {
+      return false;
+    }
+
+    if (expiresAt && Date.now() > parseInt(expiresAt, 10)) {
+      localStorage.removeItem("token");
+      localStorage.removeItem("refresh_token");
+      localStorage.removeItem("token_expires_at");
+      localStorage.removeItem("tenant_id");
+      return false;
+    }
+
+    userStore.setToken(token);
+    return true;
+  };
 
   return {
     loading,
     login,
     logout,
-    refreshToken,
-    isTokenExpired,
+    refresh,
+    checkAuth,
   };
 });

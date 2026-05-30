@@ -1,6 +1,6 @@
-/**
+﻿/**
  * IAM 模块类型定义
- */
+ """
 
 // 从 framework 导入统一类型并重新导出
 export type { ApiResponse, PageResult } from "@/framework/types";
@@ -82,6 +82,7 @@ export interface LoginResponse {
   expires_in: number;
   token_type: string;
   need_complete_profile?: boolean;
+  tenant_id?: string;
 }
 
 // 用户相关类型
