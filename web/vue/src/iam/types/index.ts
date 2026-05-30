@@ -1,6 +1,6 @@
 ﻿/**
  * IAM 模块类型定义
- """
+ */
 
 // 从 framework 导入统一类型并重新导出
 export type { ApiResponse, PageResult } from "@/framework/types";

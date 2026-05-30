@@ -5,7 +5,7 @@
  */
 import { computed } from "vue";
 import { useRouter } from "vue-router";
-import { Moon, Sun, User, Settings, LogOut, HelpCircle, ClipboardList } from "@lucide/vue";
+import { Moon, Sun, User, LogOut, HelpCircle, ClipboardList } from "@lucide/vue";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,20 +17,16 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useUserStore } from "@/framework/stores/user";
 import { useColorMode } from "@/framework/composables/useColorMode";
-import { useNotificationStore } from "@/framework/stores/notification";
 import AppNotificationPanel from "./AppNotificationPanel.vue";
 
 const router = useRouter();
 const userStore = useUserStore();
 const { toggleTheme } = useColorMode();
-const notificationStore = useNotificationStore();
 
 const avatarUrl = computed(() => userStore.userInfo?.avatar || "");
 const nickname = computed(() => userStore.userInfo?.nickname || "用户");
 const email = computed(() => userStore.userInfo?.email || "");
 const initials = computed(() => nickname.value.charAt(0).toUpperCase());
-
-const hasUnreadNotification = computed(() => notificationStore.hasUnread);
 
 // 待办数量（模拟）
 const todoCount = computed(() => 3);

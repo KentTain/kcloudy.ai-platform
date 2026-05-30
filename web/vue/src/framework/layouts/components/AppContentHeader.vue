@@ -4,7 +4,7 @@
  * 包含收缩按钮、面包屑、水平导航
  */
 import { computed } from "vue";
-import { useRoute, useRouter } from "vue-router";
+import { useRoute } from "vue-router";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -17,7 +17,6 @@ import {
 } from "@/components/ui/breadcrumb";
 
 const route = useRoute();
-const router = useRouter();
 
 const breadcrumbs = computed(() => {
   const matched = route.matched.filter((item) => item.meta?.title);

@@ -1,37 +1,55 @@
 <script setup lang="ts">
 /**
  * AdminLayout 后台管理布局组件
+ * 左右结构：左侧侧边栏，右侧上下结构（顶部导航 + 内容区）
  */
-import { SidebarProvider, Sidebar, SidebarInset, SidebarHeader, SidebarContent, SidebarFooter } from "@/components/ui/sidebar";
+import { onMounted } from "vue";
+import { SidebarProvider, Sidebar, SidebarInset, SidebarContent } from "@/components/ui/sidebar";
+import AppTenantSwitcher from "./components/AppTenantSwitcher.vue";
 import AppNavMain from "./components/AppNavMain.vue";
-import AppNavbar from "./components/AppNavbar.vue";
+import AppSearchBox from "./components/AppSearchBox.vue";
+import AppHeaderRight from "./components/AppHeaderRight.vue";
+import AppContentHeader from "./components/AppContentHeader.vue";
 import AppMain from "./components/AppMain.vue";
-import AppSidebarFooter from "./components/AppSidebarFooter.vue";
-import CommandPalette from "@/framework/components/CommandPalette.vue";
+import { useNotificationStore } from "@/framework/stores/notification";
+
+const notificationStore = useNotificationStore();
+
+onMounted(() => {
+  // 初始化模拟通知数据
+  notificationStore.initMockData();
+});
 </script>
 
 <template>
   <SidebarProvider class="h-svh overflow-hidden">
-    <Sidebar collapsible="icon" variant="inset">
-      <SidebarHeader>
-        <div class="flex items-center gap-2 px-2 py-1">
-          <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold">
-            AI
-          </div>
-          <span class="font-semibold text-sm group-data-[collapsible=icon]:hidden">AI 助手平台</span>
-        </div>
-      </SidebarHeader>
+    <!-- 左侧：侧边栏 -->
+    <Sidebar collapsible="icon" variant="sidebar" class="border-r">
+      <!-- 租户切换器 -->
+      <AppTenantSwitcher />
+
+      <!-- 菜单导航 -->
       <SidebarContent>
         <AppNavMain />
       </SidebarContent>
-      <SidebarFooter>
-        <AppSidebarFooter />
-      </SidebarFooter>
     </Sidebar>
-    <SidebarInset>
-      <AppNavbar />
-      <AppMain />
+
+    <!-- 右侧：上下结构 -->
+    <SidebarInset class="flex flex-col">
+      <!-- 上半部分：顶部导航栏 -->
+      <header class="flex items-center gap-4 px-5 h-14 bg-background border-b shrink-0">
+        <AppSearchBox />
+        <AppHeaderRight />
+      </header>
+
+      <!-- 下半部分：内容区 -->
+      <div class="flex-1 flex flex-col overflow-hidden">
+        <!-- 内容页导航栏 -->
+        <AppContentHeader />
+
+        <!-- 内容页 -->
+        <AppMain />
+      </div>
     </SidebarInset>
   </SidebarProvider>
-  <CommandPalette />
 </template>
