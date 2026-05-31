@@ -1,5 +1,21 @@
 {
   "files.eol": "\n",
+  // Claude Code MCP Servers
+  "claude-code.mcpServers": {
+    "codegraph": {
+      "type": "stdio",
+      "command": "codegraph",
+      "args": ["serve", "--mcp"]
+    }
+  },
+  // OpenAI Codex MCP Servers
+  "codex.mcpServers": {
+    "codegraph": {
+      "type": "stdio",
+      "command": "codegraph",
+      "args": ["serve", "--mcp"]
+    }
+  },
   // 解释器位置
   "python.defaultInterpreterPath": "${workspaceFolder}/server/python/.venv",
   // 指定需要Cursorpyright排除分析的目录或文件路径
@@ -172,13 +188,14 @@
   },
   "explorer.fileNesting.enabled": true,
   "explorer.fileNesting.patterns": {
-    ".gitignore": ".*ignore",
+    ".gitignore": ".*ignore, .gitattributes",
+    ".mcp.json": ".mcp*",
     "Dockerfile": "Dockerfile-*, .dockerignore, docker-entrypoint.sh, nginx.conf, .env.docker, index.html",
-    "README.md": "README*",
     "pyproject.toml": "uv.lock, pyrightconfig.json, pytest.ini, alembic.ini, .pre-commit-config.yaml, .ruff.toml, .cz.toml",
-    "package.json": "package-lock.json, pnpm*, .yarnrc*, yarn*, .eslint*, eslint*, .oxlint*, oxlint*, .oxfmt*, .prettier*, prettier*, .editorconfig, biome.jsonc, , tsconfig*, env.d.ts, typed-router.d.ts, components.json",
+    "package.json": "package-lock.json, pnpm*, yarn*, .eslint*, .oxlint*, oxlint*, .oxfmt*, .prettier*, prettier*, .editorconfig, biome.jsonc, , tsconfig*, env.d.ts, typed-router.d.ts, components.json",
     "vite.config.*": "jsconfig*, vitest.config.*, cypress.config.*, playwright.config.*",
     "Cargo.toml": "rust-toolchain.toml, rustfmt.toml, .nextest.toml",
+    "README.md": "README*",
     "AI编程及智能体开发教案大纲.md": "Day*.md"
   },
   "python.languageServer": "None"
