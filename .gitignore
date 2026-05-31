@@ -70,3 +70,9 @@ docs/Excalidraw
 # 本地配置（含敏感信息，不提交）
 **/application-local.yml
 **/application-prod.yml
+
+# skill
+.benchmarks
+.codegraph
+.superpowers
+.codegraph
