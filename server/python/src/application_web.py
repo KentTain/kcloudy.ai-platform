@@ -18,37 +18,53 @@ from framework.database.core.engine import setup_engine
 from framework.module import load_modules, get_registry, ModuleDescriptor
 from framework.tenant.middleware import TenantMiddleware
 from framework.tenant.protocols import register_tenant_provider
+from framework.utils.startup_timer import StartupTimer
 from demo.configs import settings
 
 _logger = logger.bind(name=__name__)
 
 APP_NAME = "Demo API"
-start_time = time.time()
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """应用生命周期管理"""
+    timer: StartupTimer = app.state.startup_timer
     _logger.info(
         f"\nDemo 应用开始启动... ({datetime.now(tz=ChinaTimeZone).strftime('%Y-%m-%d %H:%M:%S')})"
     )
 
-    # 初始化数据库引擎
-    sqlalchemy_config = settings.sqlalchemy
-    setup_engine(
-        database_url=sqlalchemy_config.url,
-        echo=sqlalchemy_config.echo,
-        pool_size=sqlalchemy_config.pool.size,
-        max_overflow=sqlalchemy_config.pool.max_overflow,
+    with timer.phase("基础组件初始化") as phase:
+        # 初始化数据库引擎
+        sqlalchemy_config = settings.sqlalchemy
+        setup_engine(
+            database_url=sqlalchemy_config.url,
+            echo=sqlalchemy_config.echo,
+            pool_size=sqlalchemy_config.pool.size,
+            max_overflow=sqlalchemy_config.pool.max_overflow,
+        )
+        phase.details["数据库引擎"] = "已初始化"
+
+        # 注册 TenantProvider
+        provider = _get_tenant_provider()
+        if provider:
+            register_tenant_provider(provider)
+            phase.details["TenantProvider"] = "已注册"
+        else:
+            phase.details["TenantProvider"] = "不可用"
+
+    with timer.phase("数据初始化"):
+        # 自动执行各模块 seed 初始化（异常不阻止应用启动）
+        await _run_seed_initialization()
+
+    registry = get_registry()
+    modules = [module.name for module in registry.get_all_modules()]
+    server_config = settings.server
+    timer.print_summary(
+        modules=modules,
+        address=f"http://{server_config.host}:{server_config.port}",
+        docs_path="/docs",
     )
-
-    # 注册 TenantProvider
-    provider = _get_tenant_provider()
-    if provider:
-        register_tenant_provider(provider)
-
-    # 自动执行各模块 seed 初始化（异常不阻止应用启动）
-    await _run_seed_initialization()
 
     yield
 
@@ -89,6 +105,11 @@ def create_app(module_names: list[str] | None = None) -> FastAPI:
     Returns:
         FastAPI 应用实例
     """
+    timer = StartupTimer(app_name=APP_NAME)
+
+    with timer.phase("配置加载"):
+        pass
+
     # 如果未指定模块，尝试从配置文件读取
     if module_names is None:
         try:
@@ -98,9 +119,11 @@ def create_app(module_names: list[str] | None = None) -> FastAPI:
         except ImportError:
             _logger.info("No modules config found, loading all modules")
 
-    # 加载模块
-    src_path = Path(__file__).parent
-    modules = load_modules(src_path, module_names)
+    with timer.phase("模块加载与路由注册") as phase:
+        # 加载模块
+        src_path = Path(__file__).parent
+        modules = load_modules(src_path, module_names)
+        phase.details["模块数量"] = str(len(modules))
 
     _logger.info(f"已加载模块: {[m.name for m in modules]}")
 
@@ -114,6 +137,7 @@ def create_app(module_names: list[str] | None = None) -> FastAPI:
         default_response_class=ORJSONResponse,
         lifespan=lifespan,
     )
+    app.state.startup_timer = timer
 
     # 注册异常处理器
     from demo.common.exception_handler import register_exception_handlers
