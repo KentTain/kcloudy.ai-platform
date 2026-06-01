@@ -2,19 +2,28 @@
 /**
  * AppTenantSwitcher 租户切换器组件
  * 显示当前租户 logo 和名称，支持切换租户
+ * 参照 shadcn team-switcher 实现
  */
 import { computed } from "vue";
-import { ChevronsUpDown } from "@lucide/vue";
+import { ChevronsUpDown, Plus, Building2 } from "@lucide/vue";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuShortcut,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useSidebar } from "@/components/ui/sidebar";
+import {
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  useSidebar,
+} from "@/components/ui/sidebar";
 import { useUserStore } from "@/framework/stores/user";
 
-const { state } = useSidebar();
+const { isMobile } = useSidebar();
 const userStore = useUserStore();
 
 const currentTenant = computed(() => userStore.currentTenant);
@@ -32,54 +41,59 @@ function switchTenant(tenantId: string) {
 </script>
 
 <template>
-  <div class="px-3 py-3">
-    <!-- 展开状态：完整显示 -->
-    <DropdownMenu v-if="state === 'expanded'">
-      <DropdownMenuTrigger as-child>
-        <button
-          type="button"
-          class="flex w-full items-center gap-2.5 rounded-[10px] bg-muted/50 px-2.5 py-2.5 text-left transition-colors hover:bg-muted"
-        >
-          <div
-            class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary/80 text-primary-foreground text-sm font-bold shadow-sm"
+  <SidebarMenu>
+    <SidebarMenuItem>
+      <DropdownMenu>
+        <DropdownMenuTrigger as-child>
+          <SidebarMenuButton
+            size="lg"
+            class="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
           >
-            {{ tenantInitial }}
-          </div>
-          <div class="flex-1 min-w-0">
-            <div class="text-[13px] font-semibold text-foreground truncate">
-              {{ currentTenant?.name || "选择租户" }}
+            <div class="flex aspect-square size-8 items-center justify-center rounded-lg bg-secondary text-secondary-foreground">
+              <Building2 v-if="!currentTenant" class="size-4" />
+              <span v-else class="text-sm font-bold">{{ tenantInitial }}</span>
             </div>
-            <div class="text-[11px] text-muted-foreground">企业版</div>
-          </div>
-          <ChevronsUpDown class="size-4 text-muted-foreground shrink-0" />
-        </button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" class="w-[200px]">
-        <DropdownMenuItem
-          v-for="tenant in tenants"
-          :key="tenant.id"
-          :class="tenant.id === currentTenant?.id ? 'bg-accent' : ''"
-          @click="switchTenant(tenant.id)"
+            <div class="grid flex-1 text-left text-sm leading-tight">
+              <span class="truncate font-medium">{{ currentTenant?.name || "选择租户" }}</span>
+              <span class="truncate text-xs">企业版</span>
+            </div>
+            <ChevronsUpDown class="ml-auto" />
+          </SidebarMenuButton>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent
+          class="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
+          align="start"
+          :side="isMobile ? 'bottom' : 'right'"
+          :side-offset="4"
         >
-          {{ tenant.name }}
-        </DropdownMenuItem>
-        <DropdownMenuItem v-if="tenants.length === 0" disabled>
-          暂无其他租户
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
-
-    <!-- 收缩状态：仅显示 logo（放大一号） -->
-    <div
-      v-else
-      class="flex justify-center"
-    >
-      <div
-        class="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary/80 text-primary-foreground text-base font-bold shadow-sm cursor-pointer hover:shadow-md transition-shadow"
-        :title="currentTenant?.name || '选择租户'"
-      >
-        {{ tenantInitial }}
-      </div>
-    </div>
-  </div>
+          <DropdownMenuLabel class="text-xs text-muted-foreground">
+            租户列表
+          </DropdownMenuLabel>
+          <DropdownMenuItem
+            v-for="(tenant, index) in tenants"
+            :key="tenant.id"
+            :class="tenant.id === currentTenant?.id ? 'bg-accent' : ''"
+            class="gap-2 p-2"
+            @click="switchTenant(tenant.id)"
+          >
+            <div class="flex size-6 items-center justify-center rounded-md border">
+              <span class="text-xs font-medium">{{ tenant.name.charAt(0).toUpperCase() }}</span>
+            </div>
+            {{ tenant.name }}
+            <DropdownMenuShortcut>{{ '' }}{{ index + 1 }}</DropdownMenuShortcut>
+          </DropdownMenuItem>
+          <DropdownMenuItem v-if="tenants.length === 0" disabled>
+            暂无其他租户
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem class="gap-2 p-2">
+            <div class="flex size-6 items-center justify-center rounded-md border bg-transparent">
+              <Plus class="size-4" />
+            </div>
+            <div class="font-medium text-muted-foreground">添加租户</div>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </SidebarMenuItem>
+  </SidebarMenu>
 </template>

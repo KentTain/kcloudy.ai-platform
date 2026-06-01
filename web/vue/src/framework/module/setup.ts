@@ -40,6 +40,8 @@ export { getEventBus } from "@/framework/events";
 export async function setupFramework(options: SetupFrameworkOptions): Promise<void> {
   const { app, router, pinia, modules } = options;
 
+  console.log("[setupFramework] Starting with modules:", modules.map(m => m.name));
+
   // 初始化全局实例
   globalRegistry = new ModuleRegistry();
   const eventBus = getEventBus();
@@ -68,6 +70,7 @@ export async function setupFramework(options: SetupFrameworkOptions): Promise<vo
 
   // 收集并注册路由
   const moduleRoutes = globalRegistry.getRoutes();
+  console.log("[setupFramework] Module routes to register:", moduleRoutes.map(r => r.path));
   registerRoutes(router, moduleRoutes);
 }
 
@@ -76,26 +79,27 @@ export async function setupFramework(options: SetupFrameworkOptions): Promise<vo
  */
 function registerRoutes(router: Router, routes: ReturnType<ModuleDescriptor["getRoutes"]>): void {
   // 找到 AdminLayout 父路由（path: '/'）
-  const rootRoute = router
-    .getRoutes()
-    .find((r) => r.path === "/" && r.children?.length);
+  // 注意：刚添加的路由 children 可能是空数组，不能用 .length 判断
+  const allRoutes = router.getRoutes();
+  console.log("[registerRoutes] All routes before registration:", allRoutes.map(r => ({ name: r.name, path: r.path, hasChildren: !!r.children?.length })));
+
+  const rootRoute = allRoutes.find((r) => r.path === "/" && r.name === "Root");
+
+  console.log("[registerRoutes] Found rootRoute:", rootRoute ? { name: rootRoute.name, path: rootRoute.path } : null);
 
   if (rootRoute) {
     // 将模块路由添加到 rootRoute 的 children
     for (const route of routes) {
+      console.log("[registerRoutes] Adding route to Root:", route.path, "as child of", rootRoute.name);
       router.addRoute(rootRoute.name!, route);
     }
   } else {
     // 如果没有找到 rootRoute，直接添加到根路由
+    console.log("[registerRoutes] No Root found, adding routes directly");
     for (const route of routes) {
       router.addRoute(route);
     }
   }
 
-  if (import.meta.env?.DEV) {
-    console.log(
-      "[setupFramework] Registered routes:",
-      routes.map((r) => r.path)
-    );
-  }
+  console.log("[registerRoutes] All routes after registration:", router.getRoutes().map(r => ({ name: r.name, path: r.path })));
 }
