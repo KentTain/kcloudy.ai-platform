@@ -400,10 +400,10 @@ async def delete_tenant(
     THEN 返回 HTTP 400 错误，消息为 "租户下存在用户，无法删除"
     """
     # 检查租户下是否有用户
-    # TODO: 通过 inner 接口调用 IAM 模块
-    from iam.services.user_service import UserService
+    from framework.clients.iam_client import get_iam_client
 
-    user_ids = await UserService.get_user_ids_by_tenant_id(tenant_id)
+    iam_client = get_iam_client()
+    user_ids = await iam_client.get_tenant_user_ids(tenant_id)
     if len(user_ids) > 0:
         raise HTTPException(status_code=400, detail="租户下存在用户，无法删除")
 
@@ -469,10 +469,10 @@ async def get_tenant_stats(
         raise HTTPException(status_code=404, detail="租户不存在")
 
     # 统计用户数
-    # TODO: 通过 inner 接口调用 IAM 模块
-    from iam.services.user_service import UserService
+    from framework.clients.iam_client import get_iam_client
 
-    user_ids = await UserService.get_user_ids_by_tenant_id(tenant_id)
+    iam_client = get_iam_client()
+    user_ids = await iam_client.get_tenant_user_ids(tenant_id)
     user_count = len(user_ids)
 
     stats = TenantStatsVo(
