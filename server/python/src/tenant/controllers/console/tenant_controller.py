@@ -32,27 +32,31 @@ async def list_user_tenants(user_id: str = "test_user") -> ORJSONResponse:
     THEN 返回空列表
     """
 
-    # 获取用户可用租户列表
-    # TODO: 通过 inner 接口调用 IAM 模块
-    from iam.services.user_service import UserService
+    from framework.clients.iam_client import get_iam_client
 
-    tenant_ids = await UserService.get_user_tenant_ids(user_id)
-    if not tenant_ids:
+    iam_client = get_iam_client()
+    user_tenants = await iam_client.get_user_tenants(user_id)
+    if not user_tenants:
         return ORJSONResponse(content=Success([]))
 
+    # 构建租户 ID 到用户租户信息的映射
+    user_tenant_map = {ut.tenant_id: ut for ut in user_tenants}
+
     # 批量获取租户信息
+    tenant_ids = list(user_tenant_map.keys())
     tenants = await TenantService.get_tenants_batch(tenant_ids)
 
     items = []
     for tenant in tenants:
+        ut = user_tenant_map.get(tenant.id)
         items.append(
             UserTenantVo(
                 id=tenant.id,
                 name=tenant.name,
                 code=tenant.code,
                 status=tenant.status,
-                role="member",  # TODO: 从 UserTenant 获取实际角色
-                is_default=False,  # TODO: 从 UserTenant 获取
+                role=ut.role if ut else "member",
+                is_default=ut.is_default if ut else False,
             )
         )
 
@@ -127,11 +131,12 @@ async def switch_tenant(
         raise HTTPException(status_code=403, detail="租户已停用")
 
     # 验证用户访问权限
-    # TODO: 通过 inner 接口调用 IAM 模块
-    from iam.services.user_service import UserService
+    from framework.clients.iam_client import get_iam_client
 
-    user_tenant_ids = await UserService.get_user_tenant_ids(user_id)
-    if tenant_id not in user_tenant_ids:
+    iam_client = get_iam_client()
+    user_tenants = await iam_client.get_user_tenants(user_id)
+    tenant_ids = [ut.tenant_id for ut in user_tenants]
+    if tenant_id not in tenant_ids:
         raise HTTPException(status_code=403, detail="无权访问该租户")
 
     # 设置新的租户上下文（实际应用中应该返回新的 Token）
