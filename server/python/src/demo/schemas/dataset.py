@@ -4,7 +4,7 @@ Dataset Pydantic Schemas
 
 from datetime import datetime
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class DatasetCreate(BaseModel):
@@ -25,6 +25,8 @@ class DatasetUpdate(BaseModel):
 
 class DatasetVo(BaseModel):
     """知识库视图对象"""
+
+    model_config = ConfigDict(from_attributes=True)
 
     id: str
     name: str

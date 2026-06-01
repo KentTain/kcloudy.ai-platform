@@ -4,7 +4,7 @@
 
 from datetime import datetime
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class RoleCreateRequest(BaseModel):
@@ -31,6 +31,8 @@ class RolePermissionRequest(BaseModel):
 class RoleVo(BaseModel):
     """角色视图对象"""
 
+    model_config = ConfigDict(from_attributes=True)
+
     id: str
     tenant_id: str | None
     code: str
@@ -49,6 +51,8 @@ class RoleListVo(BaseModel):
 
 class RoleWithPermissionsVo(BaseModel):
     """角色及其权限视图对象"""
+
+    model_config = ConfigDict(from_attributes=True)
 
     id: str
     tenant_id: str | None
