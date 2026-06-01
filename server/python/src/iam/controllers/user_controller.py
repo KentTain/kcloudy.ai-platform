@@ -1,13 +1,14 @@
-"""
+﻿"""
 用户控制器
 
 提供用户注册、信息管理、密码管理等接口。
 """
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Request, Depends
 from fastapi.responses import ORJSONResponse
 from sqlalchemy import select
 
+from iam.dependencies import get_current_user_id, get_optional_user_id
 from iam.models import UserDepartment
 from iam.schemas.user import (
     AdminPasswordResetRequest,
@@ -33,12 +34,6 @@ from framework.tenant.context import get_tenant_id
 router = APIRouter()
 
 
-def _get_current_user_id(request: Request) -> str | None:
-    """从请求中获取当前用户 ID"""
-    # TODO: 从认证中间件获取
-    return request.state.user_id if hasattr(request.state, "user_id") else None
-
-
 # ==================== 用户端接口 ====================
 
 
@@ -49,6 +44,8 @@ async def register(data: UserRegisterRequest) -> ORJSONResponse:
 
     创建新用户账号并自动登录。
     """
+    from iam.services import auth_service
+
     # 从上下文获取租户 ID
     tenant_id = get_tenant_id()
     if not tenant_id:
@@ -63,14 +60,22 @@ async def register(data: UserRegisterRequest) -> ORJSONResponse:
             phone=data.phone,
         )
 
-        # 自动登录
-        # TODO: 生成 Token
+        # 自动登录，生成 Token
+        login_result = await auth_service.login(
+            account=data.username,
+            password=data.password,
+        )
 
         return ORJSONResponse(
             content={
                 "code": 200,
                 "msg": "注册成功",
-                "data": UserVo.model_validate(user).model_dump(),
+                "data": {
+                    "user": UserVo.model_validate(user).model_dump(),
+                    "access_token": login_result.access_token,
+                    "refresh_token": login_result.refresh_token,
+                    "expires_in": login_result.expires_in,
+                },
             }
         )
     except ValueError as e:
@@ -78,16 +83,12 @@ async def register(data: UserRegisterRequest) -> ORJSONResponse:
 
 
 @router.get("/me")
-async def get_current_user(request: Request) -> ORJSONResponse:
+async def get_current_user(user_id: str = Depends(get_current_user_id)) -> ORJSONResponse:
     """
     获取当前用户信息
 
     返回当前登录用户的详细信息。
     """
-    user_id = _get_current_user_id(request)
-    if not user_id:
-        raise HTTPException(status_code=401, detail="未登录")
-
     user = await user_service.get_by_id(user_id)
     if not user:
         raise HTTPException(status_code=404, detail="用户不存在")
@@ -102,16 +103,15 @@ async def get_current_user(request: Request) -> ORJSONResponse:
 
 
 @router.put("/me")
-async def update_current_user(request: Request, data: UserUpdateRequest) -> ORJSONResponse:
+async def update_current_user(
+    data: UserUpdateRequest,
+    user_id: str = Depends(get_current_user_id),
+) -> ORJSONResponse:
     """
     修改当前用户信息
 
     更新昵称、头像、邮箱、手机号等。
     """
-    user_id = _get_current_user_id(request)
-    if not user_id:
-        raise HTTPException(status_code=401, detail="未登录")
-
     try:
         user = await user_service.update_profile(
             user_id=user_id,
@@ -132,16 +132,15 @@ async def update_current_user(request: Request, data: UserUpdateRequest) -> ORJS
 
 
 @router.put("/password")
-async def change_password(request: Request, data: PasswordChangeRequest) -> ORJSONResponse:
+async def change_password(
+    data: PasswordChangeRequest,
+    user_id: str = Depends(get_current_user_id),
+) -> ORJSONResponse:
     """
     修改密码
 
     验证原密码后设置新密码。
     """
-    user_id = _get_current_user_id(request)
-    if not user_id:
-        raise HTTPException(status_code=401, detail="未登录")
-
     try:
         await user_service.change_password(
             user_id=user_id,
@@ -151,7 +150,7 @@ async def change_password(request: Request, data: PasswordChangeRequest) -> ORJS
         return ORJSONResponse(
             content={
                 "code": 200,
-                "msg": "密码修改成功",
+                "msg": "密码修改成功，请重新登录",
                 "data": None,
             }
         )

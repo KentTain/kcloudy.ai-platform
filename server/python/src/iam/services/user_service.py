@@ -17,6 +17,7 @@ from framework.utils.crypto import (
     validate_password_strength,
     verify_password,
 )
+from framework.utils.session import delete_user_sessions
 from iam.models import User, UserDepartment, UserStatus, UserTenant
 from iam.schemas.user import UserVo
 
@@ -217,10 +218,11 @@ class UserService:
             user.password_hash = hash_password(new_password)
             await session.commit()
 
-            # TODO: 使所有会话失效，强制重新登录
+        # 使所有会话失效，强制重新登录
+        deleted_count = await delete_user_sessions(user_id)
+        _logger.info(f"修改密码成功: {user_id}, 已清除 {deleted_count} 个会话")
 
-            _logger.info(f"修改密码成功: {user_id}")
-            return True
+        return True
 
     @staticmethod
     async def reset_password(
@@ -267,8 +269,11 @@ class UserService:
             user.password_hash = hash_password(new_password)
             await session.commit()
 
-            _logger.info(f"重置密码成功: {user.username}")
-            return True
+        # 使所有会话失效
+        await delete_user_sessions(user.id)
+
+        _logger.info(f"重置密码成功: {user.username}")
+        return True
 
     @staticmethod
     async def complete_profile(
@@ -601,8 +606,11 @@ class UserService:
             user.password_hash = hash_password(password)
             await session.commit()
 
-            _logger.info(f"管理员重置用户密码: {user_id}")
-            return password
+        # 使所有会话失效
+        await delete_user_sessions(user_id)
+
+        _logger.info(f"管理员重置用户密码: {user_id}")
+        return password
 
     @staticmethod
     async def get_user_departments(user_id: str) -> list[dict]:

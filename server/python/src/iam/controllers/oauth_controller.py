@@ -1,14 +1,16 @@
-"""
+﻿"""
 OAuth 控制器
 
 提供第三方 OAuth2 登录接口。
 """
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Depends
 from fastapi.responses import ORJSONResponse, RedirectResponse
 
+from iam.dependencies import get_current_user_id
 from iam.schemas.oauth import OAuthCompleteProfileRequest
 from iam.services import auth_service, oauth_service, user_service
+from framework.utils.jwt import generate_access_token, generate_refresh_token
 
 router = APIRouter()
 
@@ -47,8 +49,29 @@ async def oauth_callback(provider: str, code: str, state: str) -> ORJSONResponse
             state=state,
         )
 
-        # 生成 Token
-        # TODO: 调用 auth_service 生成 Token
+        # 创建会话并生成 Token
+        from framework.utils.session import create_session
+        
+        session_id = await create_session(
+            user_id=user.id,
+            tenant_id=None,
+            ip=None,
+        )
+
+        payload = {
+            "user_id": user.id,
+            "session_id": session_id,
+            "version": 1,
+            "roles": [],
+            "permissions": [],
+        }
+
+        jwt_secret = auth_service._get_jwt_secret()
+        access_token = generate_access_token(payload, jwt_secret)
+        refresh_token = generate_refresh_token(
+            {"user_id": user.id, "session_id": session_id},
+            jwt_secret,
+        )
 
         return ORJSONResponse(
             content={
@@ -59,6 +82,9 @@ async def oauth_callback(provider: str, code: str, state: str) -> ORJSONResponse
                     "username": user.username,
                     "nickname": user.nickname,
                     "need_complete_profile": not user.profile_completed,
+                    "access_token": access_token,
+                    "refresh_token": refresh_token,
+                    "expires_in": 7200,
                 },
             }
         )
@@ -67,15 +93,15 @@ async def oauth_callback(provider: str, code: str, state: str) -> ORJSONResponse
 
 
 @router.post("/complete-profile")
-async def complete_oauth_profile(request: Request, data: OAuthCompleteProfileRequest) -> ORJSONResponse:
+async def complete_oauth_profile(
+    data: OAuthCompleteProfileRequest,
+    user_id: str = Depends(get_current_user_id),
+) -> ORJSONResponse:
     """
     OAuth 用户补全信息
 
     为 OAuth 登录用户设置密码和其他信息。
     """
-    # TODO: 从请求中获取用户 ID
-    user_id = "mock_user_id"
-
     try:
         user = await user_service.complete_profile(
             user_id=user_id,

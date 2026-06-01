@@ -1,4 +1,4 @@
-"""
+﻿"""
 部门控制器
 
 提供部门管理接口。
@@ -13,13 +13,15 @@ from iam.schemas.department import (
     UserDepartmentRequest,
 )
 from iam.services import department_service
+from framework.tenant.context import get_tenant_id
 
 router = APIRouter()
 
 
 @router.get("")
-async def list_departments(tenant_id: str) -> ORJSONResponse:
+async def list_departments() -> ORJSONResponse:
     """获取部门列表"""
+    tenant_id = get_tenant_id()
     departments = await department_service.list_by_tenant(tenant_id)
     return ORJSONResponse(
         content={
@@ -42,8 +44,9 @@ async def list_departments(tenant_id: str) -> ORJSONResponse:
 
 
 @router.get("/tree")
-async def get_department_tree(tenant_id: str) -> ORJSONResponse:
+async def get_department_tree() -> ORJSONResponse:
     """获取部门树形结构"""
+    tenant_id = get_tenant_id()
     tree = await department_service.get_tree(tenant_id)
     return ORJSONResponse(
         content={
@@ -57,9 +60,9 @@ async def get_department_tree(tenant_id: str) -> ORJSONResponse:
 @router.post("")
 async def create_department(data: DepartmentCreateRequest) -> ORJSONResponse:
     """创建部门"""
-    # tenant_id 从上下文获取，这里暂时用参数
+    tenant_id = get_tenant_id()
     dept = await department_service.create(
-        tenant_id="default",  # TODO: 从上下文获取
+        tenant_id=tenant_id,
         name=data.name,
         parent_id=data.parent_id,
         code=data.code,

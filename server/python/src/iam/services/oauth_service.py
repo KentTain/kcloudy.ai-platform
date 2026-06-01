@@ -1,4 +1,4 @@
-"""
+﻿"""
 OAuth 服务
 
 提供第三方 OAuth2 登录功能。
@@ -205,9 +205,105 @@ class OAuthService:
 
     @staticmethod
     async def bind_oauth(user_id: str, provider: str, code: str) -> OAuthConnection:
-        """绑定 OAuth 账号"""
-        # TODO: 实现绑定逻辑
-        raise NotImplementedError("绑定功能待实现")
+        """
+        绑定 OAuth 账号
+
+        Args:
+            user_id: 用户 ID
+            provider: OAuth 提供商
+            code: 授权码
+
+        Returns:
+            OAuthConnection: OAuth 关联对象
+
+        Raises:
+            ValueError: 绑定失败
+        """
+        # 获取 access_token 和 openid
+        # TODO: 实际调用 OAuth API
+        openid = f"mock_openid_{code}"
+        access_token = f"mock_token_{code}"
+
+        async with async_session() as session:
+            # 检查是否已绑定
+            stmt = select(OAuthConnection).where(
+                OAuthConnection.provider == provider,
+                OAuthConnection.provider_user_id == openid,
+            )
+            result = await session.execute(stmt)
+            existing_conn = result.scalar_one_or_none()
+
+            if existing_conn:
+                if existing_conn.user_id == user_id:
+                    raise ValueError("该账号已绑定到当前用户")
+                else:
+                    raise ValueError("该账号已被其他用户绑定")
+
+            # 检查用户是否已绑定该类型的 OAuth
+            stmt = select(OAuthConnection).where(
+                OAuthConnection.user_id == user_id,
+                OAuthConnection.provider == provider,
+            )
+            result = await session.execute(stmt)
+            if result.scalar_one_or_none():
+                raise ValueError(f"您已绑定过 {provider} 账号")
+
+            # 创建绑定
+            conn = OAuthConnection(
+                user_id=user_id,
+                provider=provider,
+                provider_user_id=openid,
+                access_token=access_token,
+            )
+            session.add(conn)
+            await session.commit()
+
+            _logger.info(f"用户 {user_id} 绑定 {provider} 账号成功")
+            return conn
+
+    @staticmethod
+    async def unbind_oauth(user_id: str, provider: str) -> bool:
+        """
+        解绑 OAuth 账号
+
+        Args:
+            user_id: 用户 ID
+            provider: OAuth 提供商
+
+        Returns:
+            bool: 是否成功
+
+        Raises:
+            ValueError: 解绑失败
+        """
+        async with async_session() as session:
+            # 检查用户是否设置了密码
+            stmt = select(User).where(User.id == user_id)
+            result = await session.execute(stmt)
+            user = result.scalar_one_or_none()
+
+            if not user:
+                raise ValueError("用户不存在")
+
+            if not user.password_hash:
+                raise ValueError("请先设置密码后再解绑")
+
+            # 删除绑定
+            stmt = select(OAuthConnection).where(
+                OAuthConnection.user_id == user_id,
+                OAuthConnection.provider == provider,
+            )
+            result = await session.execute(stmt)
+            conn = result.scalar_one_or_none()
+
+            if not conn:
+                raise ValueError("未绑定该类型账号")
+
+            await session.delete(conn)
+            await session.commit()
+
+            _logger.info(f"用户 {user_id} 解绑 {provider} 账号成功")
+            return True
 
     @staticmethod
     async def get_user_oauth_connections(user_id: str) -> list[OAuthConnection]:

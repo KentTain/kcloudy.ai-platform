@@ -142,6 +142,47 @@ async def delete_session(session_id: str, key_prefix: str = "") -> None:
         _memory_sessions.pop(session_id, None)
 
 
+async def delete_user_sessions(user_id: str, key_prefix: str = "") -> int:
+    """
+    删除用户所有会话。
+
+    Args:
+        user_id: 用户 ID
+        key_prefix: Redis Key 前缀
+
+    Returns:
+        int: 删除的会话数量
+    """
+    deleted_count = 0
+
+    if _is_redis_available():
+        # 查找所有会话 key
+        pattern = f"{key_prefix}session:*"
+        keys = await RedisUtil.keys(pattern)
+
+        for key in keys:
+            data = await RedisUtil.get(key)
+            if data:
+                try:
+                    session_data = json.loads(data)
+                    if session_data.get("user_id") == user_id:
+                        await RedisUtil.delete(key)
+                        deleted_count += 1
+                except json.JSONDecodeError:
+                    continue
+    else:
+        # 从内存中删除
+        sessions_to_delete = [
+            sid for sid, data in _memory_sessions.items()
+            if data.get("user_id") == user_id
+        ]
+        for sid in sessions_to_delete:
+            del _memory_sessions[sid]
+            deleted_count += 1
+
+    return deleted_count
+
+
 async def add_to_blacklist(jti: str, ttl_seconds: int, key_prefix: str = "") -> None:
     """
     将 Token 加入黑名单。
