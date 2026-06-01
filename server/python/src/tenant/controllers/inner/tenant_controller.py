@@ -210,13 +210,11 @@ async def validate_tenant_access(
         )
 
     # 检查用户是否属于该租户
-    # TODO: 通过 inner 接口调用 IAM 模块
-    from iam.services.user_service import UserService
+    from framework.clients.iam_client import get_iam_client
 
-    tenant_ids = await UserService.get_user_tenant_ids(user_id)
-    if not tenant_ids:
-        valid = False
-
+    iam_client = get_iam_client()
+    user_tenants = await iam_client.get_user_tenants(user_id)
+    tenant_ids = [ut.tenant_id for ut in user_tenants]
     valid = tenant_id in tenant_ids
 
     return ORJSONResponse(
