@@ -21,11 +21,10 @@ class TestIAMImports:
             Department,
             UserDepartment,
             OAuthConnection,
-            Tenant,
-            TenantAdmin,
-            TenantConfig,
             UserTenant,
         )
+        # Tenant 相关模型已迁移到 tenant 模块
+        from tenant.models import Tenant, TenantAdmin, TenantConfig
 
         assert User is not None
         assert Role is not None

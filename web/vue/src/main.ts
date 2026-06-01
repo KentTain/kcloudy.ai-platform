@@ -14,6 +14,7 @@ import { tenantModule } from "./tenant";
 
 // Import admin routes
 import { adminRoutes } from "./tenant/router";
+import { notFoundRoute } from "./framework/router";
 
 // Import styles
 import "./framework/styles/main.css";
@@ -78,20 +79,15 @@ setupFramework({
     console.log("[main.ts] setupFramework completed");
     console.log("[main.ts] After setupFramework, router has:", router.getRoutes().map(r => ({ name: r.name, path: r.path })));
 
+    // 最后注册 404 路由（确保它是最后一个匹配的路由）
+    router.addRoute(notFoundRoute);
+    console.log("[main.ts] 404 route registered");
+
     // 等待路由准备好
     await router.isReady();
 
     console.log("[main.ts] Router ready, current route:", router.currentRoute.value.path, router.currentRoute.value.name);
     console.log("[main.ts] Current route matched:", router.currentRoute.value.matched.map(m => m.path));
-
-    // 重新匹配当前路由（处理直接访问动态路由的情况）
-    const currentRoute = router.currentRoute.value;
-    if (currentRoute.name === "NotFound" || currentRoute.matched.length === 0) {
-      console.log("[main.ts] Route is NotFound or unmatched, attempting to rematch...");
-      // 使用 replace 重新匹配当前路径
-      await router.replace(currentRoute.fullPath);
-      console.log("[main.ts] After rematch, current route:", router.currentRoute.value.path, router.currentRoute.value.name);
-    }
 
     // 挂载应用
     app.mount("#app");

@@ -16,15 +16,13 @@ class Department(BaseModel, TreeNodeMixin, TenantMixin):
 
     __tablename__ = "departments"
 
-    # 覆盖 TreeNodeMixin 的 parent_id，使用 ForeignKey
+    # 覆盖 TreeNodeMixin 的 parent_id，使用 ForeignKey（模块内引用）
     parent_id: Mapped[str | None] = mapped_column(
         String(36), ForeignKey("departments.id", ondelete="SET NULL"), nullable=True, comment="父部门ID"
     )
 
-    # 覆盖 TenantMixin 的 tenant_id，添加外键约束
-    tenant_id: Mapped[str] = mapped_column(
-        String(36), ForeignKey("tenant.tenants.id", ondelete="CASCADE"), nullable=False, comment="租户ID"
-    )
+    # 继承 TenantMixin 的 tenant_id，不添加外键约束
+    # 跨模块外键在数据库层通过迁移脚本创建，ORM 层不定义以避免 MetaData 解析问题
 
     name: Mapped[str] = mapped_column(
         String(100), nullable=False, comment="部门名称"

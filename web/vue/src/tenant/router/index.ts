@@ -3,6 +3,7 @@ import AdminConsoleLayout from "@/tenant/layouts/AdminConsoleLayout.vue";
 
 /**
  * Tenant 模块路由配置 - 管理后台
+ * 注意：路由名称使用 Admin 前缀，避免与 tenantRoutes 冲突
  */
 export const adminRoutes: RouteRecordRaw[] = [
   {
@@ -23,25 +24,25 @@ export const adminRoutes: RouteRecordRaw[] = [
       },
       {
         path: "tenants",
-        name: "TenantManagement",
+        name: "AdminTenantManagement",
         component: () => import("@/tenant/pages/tenants/TenantList.vue"),
         meta: { title: "租户管理", requiresAdminAuth: true },
       },
       {
         path: "tenants/create",
-        name: "TenantCreate",
+        name: "AdminTenantCreate",
         component: () => import("@/tenant/pages/tenants/TenantForm.vue"),
         meta: { title: "创建租户", hidden: true, requiresAdminAuth: true },
       },
       {
         path: "tenants/:id",
-        name: "TenantDetail",
+        name: "AdminTenantDetail",
         component: () => import("@/tenant/pages/tenants/TenantDetail.vue"),
         meta: { title: "租户详情", hidden: true, requiresAdminAuth: true },
       },
       {
         path: "tenants/:id/edit",
-        name: "TenantEdit",
+        name: "AdminTenantEdit",
         component: () => import("@/tenant/pages/tenants/TenantForm.vue"),
         meta: { title: "编辑租户", hidden: true, requiresAdminAuth: true },
       },

@@ -32,12 +32,7 @@ export const constantRoutes: RouteRecordRaw[] = [
     component: () => import("@/framework/pages/ForbiddenPage.vue"),
     meta: { title: "无权限", hidden: true },
   },
-  {
-    path: "/:pathMatch(.*)*",
-    name: "NotFound",
-    component: () => import("@/framework/pages/NotFoundPage.vue"),
-    meta: { title: "页面不存在", hidden: true },
-  },
+  // 404 路由移到 notFoundRoutes，在所有动态路由注册后再注册
 ];
 
 /**
@@ -67,6 +62,16 @@ export const asyncRoutes: RouteRecordRaw[] = [
     ],
   },
 ];
+
+/**
+ * 404 路由（需要在所有动态路由注册后注册）
+ */
+export const notFoundRoute: RouteRecordRaw = {
+  path: "/:pathMatch(.*)*",
+  name: "NotFound",
+  component: () => import("@/framework/pages/NotFoundPage.vue"),
+  meta: { title: "页面不存在", hidden: true },
+};
 
 /**
  * 创建路由实例

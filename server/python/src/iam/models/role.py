@@ -2,7 +2,7 @@
 角色模型
 """
 
-from sqlalchemy import Boolean, ForeignKey, Index, String, Text
+from sqlalchemy import Boolean, Index, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from iam.models import BaseModel
@@ -13,8 +13,10 @@ class Role(BaseModel):
 
     __tablename__ = "roles"
 
+    # 租户 ID（NULL 表示全局角色）
+    # 跨模块外键在数据库层通过迁移脚本创建，ORM 层不定义以避免 MetaData 解析问题
     tenant_id: Mapped[str | None] = mapped_column(
-        String(36), ForeignKey("tenant.tenants.id", ondelete="CASCADE"), nullable=True, comment="租户ID（NULL 表示全局角色）"
+        String(36), nullable=True, comment="租户ID（NULL 表示全局角色）"
     )
     code: Mapped[str] = mapped_column(
         String(50), nullable=False, comment="角色编码"

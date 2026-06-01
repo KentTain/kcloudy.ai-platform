@@ -1,13 +1,15 @@
 """
-IAM 模块 TenantProvider 实现的单元测试
+Tenant 模块 TenantProvider 实现的单元测试
+
+注意：TenantProvider 已迁移到 tenant 模块
 """
 
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
 
-class TestIamTenantProvider:
-    """IamTenantProvider 单元测试"""
+class TestTenantProvider:
+    """TenantProvider 单元测试"""
 
     @pytest.mark.asyncio
     async def test_get_tenant_existing(self):
@@ -16,7 +18,7 @@ class TestIamTenantProvider:
         WHEN: 调用 get_tenant 传入存在的 tenant_id
         THEN: 返回 TenantInfo
         """
-        from iam.services.tenant_provider_impl import IamTenantProvider
+        from tenant.services.tenant_provider_impl import tenant_provider_impl
 
         # Mock TenantService.get_by_id
         mock_tenant = MagicMock()
@@ -29,12 +31,11 @@ class TestIamTenantProvider:
         mock_tenant.contact_phone = "1234567890"
 
         with patch(
-            "iam.services.tenant_provider_impl.TenantService.get_by_id",
+            "tenant.services.tenant_provider_impl.TenantService.get_by_id",
             new_callable=AsyncMock,
             return_value=mock_tenant,
         ):
-            provider = IamTenantProvider()
-            result = await provider.get_tenant("tenant-123")
+            result = await tenant_provider_impl.get_tenant("tenant-123")
 
             assert result is not None
             assert result.id == "tenant-123"
@@ -49,15 +50,14 @@ class TestIamTenantProvider:
         WHEN: 调用 get_tenant 传入不存在的 tenant_id
         THEN: 返回 None
         """
-        from iam.services.tenant_provider_impl import IamTenantProvider
+        from tenant.services.tenant_provider_impl import tenant_provider_impl
 
         with patch(
-            "iam.services.tenant_provider_impl.TenantService.get_by_id",
+            "tenant.services.tenant_provider_impl.TenantService.get_by_id",
             new_callable=AsyncMock,
             return_value=None,
         ):
-            provider = IamTenantProvider()
-            result = await provider.get_tenant("nonexistent-id")
+            result = await tenant_provider_impl.get_tenant("nonexistent-id")
 
             assert result is None
 
@@ -68,23 +68,20 @@ class TestIamTenantProvider:
         WHEN: 用户属于该租户
         THEN: 返回 True
         """
-        from iam.services.tenant_provider_impl import IamTenantProvider
+        from tenant.services.tenant_provider_impl import tenant_provider_impl
 
-        # Mock 数据库查询返回 UserTenant 关联
+        # Mock IamClient.get_user_tenants
         mock_user_tenant = MagicMock()
+        mock_user_tenant.tenant_id = "tenant-123"
 
         with patch(
-            "iam.services.tenant_provider_impl.async_session"
-        ) as mock_session_ctx:
-            mock_session = AsyncMock()
-            mock_result = MagicMock()
-            mock_result.scalar_one_or_none.return_value = mock_user_tenant
-            mock_session.execute.return_value = mock_result
-            mock_session_ctx.return_value.__aenter__.return_value = mock_session
-            mock_session_ctx.return_value.__aexit__.return_value = None
+            "tenant.services.tenant_provider_impl.get_iam_client"
+        ) as mock_get_client:
+            mock_client = AsyncMock()
+            mock_client.get_user_tenants.return_value = [mock_user_tenant]
+            mock_get_client.return_value = mock_client
 
-            provider = IamTenantProvider()
-            result = await provider.validate_access("user-123", "tenant-123")
+            result = await tenant_provider_impl.validate_access("user-123", "tenant-123")
 
             assert result is True
 
@@ -95,20 +92,16 @@ class TestIamTenantProvider:
         WHEN: 用户不属于该租户
         THEN: 返回 False
         """
-        from iam.services.tenant_provider_impl import IamTenantProvider
+        from tenant.services.tenant_provider_impl import tenant_provider_impl
 
         with patch(
-            "iam.services.tenant_provider_impl.async_session"
-        ) as mock_session_ctx:
-            mock_session = AsyncMock()
-            mock_result = MagicMock()
-            mock_result.scalar_one_or_none.return_value = None
-            mock_session.execute.return_value = mock_result
-            mock_session_ctx.return_value.__aenter__.return_value = mock_session
-            mock_session_ctx.return_value.__aexit__.return_value = None
+            "tenant.services.tenant_provider_impl.get_iam_client"
+        ) as mock_get_client:
+            mock_client = AsyncMock()
+            mock_client.get_user_tenants.return_value = []
+            mock_get_client.return_value = mock_client
 
-            provider = IamTenantProvider()
-            result = await provider.validate_access("user-123", "tenant-123")
+            result = await tenant_provider_impl.validate_access("user-123", "tenant-123")
 
             assert result is False
 
@@ -119,9 +112,15 @@ class TestIamTenantProvider:
         WHEN: 调用 get_user_tenants
         THEN: 返回租户列表
         """
-        from iam.services.tenant_provider_impl import IamTenantProvider
+        from tenant.services.tenant_provider_impl import tenant_provider_impl
 
-        # Mock TenantService.get_user_tenants
+        # Mock IamClient.get_user_tenants
+        mock_user_tenant1 = MagicMock()
+        mock_user_tenant1.tenant_id = "tenant-1"
+        mock_user_tenant2 = MagicMock()
+        mock_user_tenant2.tenant_id = "tenant-2"
+
+        # Mock TenantService.get_tenants_batch
         mock_tenant1 = MagicMock()
         mock_tenant1.id = "tenant-1"
         mock_tenant1.name = "Tenant 1"
@@ -141,13 +140,19 @@ class TestIamTenantProvider:
         mock_tenant2.contact_phone = None
 
         with patch(
-            "iam.services.tenant_provider_impl.TenantService.get_user_tenants",
-            new_callable=AsyncMock,
-            return_value=[mock_tenant1, mock_tenant2],
-        ):
-            provider = IamTenantProvider()
-            result = await provider.get_user_tenants("user-123")
+            "tenant.services.tenant_provider_impl.get_iam_client"
+        ) as mock_get_client:
+            mock_client = AsyncMock()
+            mock_client.get_user_tenants.return_value = [mock_user_tenant1, mock_user_tenant2]
+            mock_get_client.return_value = mock_client
 
-            assert len(result) == 2
-            assert result[0].id == "tenant-1"
-            assert result[1].id == "tenant-2"
+            with patch(
+                "tenant.services.tenant_provider_impl.TenantService.get_tenants_batch",
+                new_callable=AsyncMock,
+                return_value=[mock_tenant1, mock_tenant2],
+            ):
+                result = await tenant_provider_impl.get_user_tenants("user-123")
+
+                assert len(result) == 2
+                assert result[0].id == "tenant-1"
+                assert result[1].id == "tenant-2"

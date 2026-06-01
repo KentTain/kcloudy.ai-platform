@@ -46,7 +46,9 @@ class TenantModule:
 
     def get_middlewares(self) -> list[type]:
         """返回中间件列表"""
-        return []
+        from tenant.middlewares.admin_auth_middleware import AdminAuthMiddleware
+
+        return [AdminAuthMiddleware]
 
     def get_lifespan_hooks(self) -> list[Callable]:
         """返回生命周期钩子"""
