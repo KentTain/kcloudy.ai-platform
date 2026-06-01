@@ -29,6 +29,13 @@ class DepartmentInfo(BaseModel):
     parent_id: str | None = Field(None, description="父部门ID")
 
 
+class UserTenantInfo(BaseModel):
+    """用户-租户关联信息"""
+    tenant_id: str = Field(..., description="租户ID")
+    role: str = Field(..., description="角色")
+    is_default: bool = Field(..., description="是否默认租户")
+
+
 class IamClient:
     """
     IAM 模块客户端
@@ -209,6 +216,75 @@ class IamClient:
                     )
                     for d in departments
                 ]
+
+    async def get_user_tenants(self, user_id: str) -> list[UserTenantInfo]:
+        """
+        获取用户租户列表
+
+        Args:
+            user_id: 用户 ID
+
+        Returns:
+            list[UserTenantInfo]
+        """
+        if self._http_client:
+            # 微服务模式
+            data = await self._http_client.get(
+                f"/inner/v1/users/{user_id}/tenants",
+            )
+            if data and isinstance(data, dict) and "tenants" in data:
+                return [UserTenantInfo.model_validate(t) for t in data["tenants"]]
+            return []
+        else:
+            # 单体模式
+            from iam.models import UserTenant
+            from framework.database.core.engine import async_session
+            from sqlalchemy import select
+
+            async with async_session() as session:
+                stmt = select(UserTenant).where(UserTenant.user_id == user_id)
+                result = await session.execute(stmt)
+                user_tenants = result.scalars().all()
+
+                return [
+                    UserTenantInfo(
+                        tenant_id=ut.tenant_id,
+                        role=ut.role,
+                        is_default=ut.is_default,
+                    )
+                    for ut in user_tenants
+                ]
+
+    async def get_tenant_user_ids(self, tenant_id: str) -> list[str]:
+        """
+        获取租户下的用户 ID 列表
+
+        Args:
+            tenant_id: 租户 ID
+
+        Returns:
+            list[str]
+        """
+        if self._http_client:
+            # 微服务模式
+            data = await self._http_client.get(
+                f"/inner/v1/tenants/{tenant_id}/users",
+            )
+            if data and isinstance(data, dict) and "user_ids" in data:
+                return data["user_ids"]
+            return []
+        else:
+            # 单体模式
+            from iam.models import UserTenant
+            from framework.database.core.engine import async_session
+            from sqlalchemy import select
+
+            async with async_session() as session:
+                stmt = select(UserTenant.user_id).where(
+                    UserTenant.tenant_id == tenant_id
+                )
+                result = await session.execute(stmt)
+                return [row[0] for row in result.all()]
 
     async def health_check(self) -> bool:
         """
