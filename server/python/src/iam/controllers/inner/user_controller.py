@@ -65,6 +65,25 @@ class DepartmentTreeResponse(BaseModel):
     children: list["DepartmentTreeResponse"] = Field(default_factory=list, description="子部门")
 
 
+class UserTenantInfo(BaseModel):
+    """用户-租户关联信息"""
+    tenant_id: str = Field(..., description="租户ID")
+    role: str = Field(..., description="角色")
+    is_default: bool = Field(..., description="是否默认租户")
+
+
+class UserTenantsResponse(BaseModel):
+    """用户租户列表响应"""
+    user_id: str = Field(..., description="用户ID")
+    tenants: list[UserTenantInfo] = Field(default_factory=list, description="租户列表")
+
+
+class TenantUsersResponse(BaseModel):
+    """租户用户列表响应"""
+    tenant_id: str = Field(..., description="租户ID")
+    user_ids: list[str] = Field(default_factory=list, description="用户ID列表")
+
+
 def build_user_info(user: User, tenant_id: str | None = None) -> UserInfoResponse:
     """构建用户信息响应"""
     return UserInfoResponse(
@@ -209,3 +228,52 @@ async def get_user_departments(user_id: str) -> ORJSONResponse:
                 ).model_dump()
             )
         )
+
+
+@router.get("/users/{user_id}/tenants")
+async def get_user_tenants(user_id: str) -> ORJSONResponse:
+    """
+    获取用户租户列表
+
+    场景：获取用户租户列表
+    WHEN 请求 GET /inner/v1/users/{user_id}/tenants
+    THEN 返回用户所属的租户列表，包含 role 和 is_default
+    """
+    tenants = await UserService.get_user_tenants_detail(user_id)
+
+    return ORJSONResponse(
+        content=Success(
+            UserTenantsResponse(
+                user_id=user_id,
+                tenants=[
+                    UserTenantInfo(
+                        tenant_id=t["tenant_id"],
+                        role=t["role"],
+                        is_default=t["is_default"],
+                    )
+                    for t in tenants
+                ],
+            ).model_dump()
+        )
+    )
+
+
+@router.get("/tenants/{tenant_id}/users")
+async def get_tenant_users(tenant_id: str) -> ORJSONResponse:
+    """
+    获取租户下的用户 ID 列表
+
+    场景：获取租户用户列表
+    WHEN 请求 GET /inner/v1/tenants/{tenant_id}/users
+    THEN 返回该租户下所有用户的 ID 列表
+    """
+    user_ids = await UserService.get_user_ids_by_tenant_id(tenant_id)
+
+    return ORJSONResponse(
+        content=Success(
+            TenantUsersResponse(
+                tenant_id=tenant_id,
+                user_ids=user_ids,
+            ).model_dump()
+        )
+    )
