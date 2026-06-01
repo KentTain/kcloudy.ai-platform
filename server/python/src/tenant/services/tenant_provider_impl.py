@@ -53,18 +53,15 @@ class TenantProviderImpl(TenantProvider):
         Returns:
             bool
         """
+        # 验证用户是否有权访问租户
         # TODO: 通过 inner 接口调用 IAM 模块
-        # 暂时直接访问 iam.user_tenants 表
-        from iam.models import UserTenant
+        from iam.services.user_service import UserService
 
-        async with async_session() as session:
-            stmt = select(UserTenant).where(
-                UserTenant.user_id == user_id,
-                UserTenant.tenant_id == tenant_id,
-            )
-            result = await session.execute(stmt)
-            user_tenant = result.scalar_one_or_none()
-            return user_tenant is not None
+        tenant_ids = await UserService.get_user_tenant_ids(user_id)
+        if not tenant_ids:
+            return False
+
+        return tenant_id in tenant_ids
 
     async def get_user_tenants(self, user_id: str) -> list[TenantInfo]:
         """
@@ -79,19 +76,17 @@ class TenantProviderImpl(TenantProvider):
         Returns:
             list[TenantInfo]
         """
+        # 获取用户所属的租户列表
         # TODO: 通过 inner 接口调用 IAM 模块
-        # 暂时直接访问 iam.user_tenants 表
-        from iam.models import UserTenant
+        from iam.services.user_service import UserService
 
-        async with async_session() as session:
-            stmt = (
-                select(Tenant)
-                .join(UserTenant, Tenant.id == UserTenant.tenant_id)
-                .where(UserTenant.user_id == user_id)
-            )
-            result = await session.execute(stmt)
-            tenants = list(result.scalars().all())
-            return [self._build_tenant_info(t) for t in tenants]
+        tenant_ids = await UserService.get_user_tenant_ids(user_id)
+        if not tenant_ids:
+            return []
+
+        # 批量获取租户信息
+        tenants = await TenantService.get_tenants_batch(tenant_ids)
+        return [self._build_tenant_info(t) for t in tenants]
 
     def _build_tenant_info(self, tenant: Tenant | SimpleTenant) -> SimpleTenant:
         """
@@ -111,7 +106,12 @@ class TenantProviderImpl(TenantProvider):
 
         db_name = getattr(tenant, "db_name", None)
         db_password = getattr(tenant, "db_password", None)
-        if isinstance(db_name, str) and db_name and isinstance(db_password, str) and db_password:
+        if (
+            isinstance(db_name, str)
+            and db_name
+            and isinstance(db_password, str)
+            and db_password
+        ):
             try:
                 decrypted_password = decrypt(db_password)
                 # 更新数据库配置中的密码

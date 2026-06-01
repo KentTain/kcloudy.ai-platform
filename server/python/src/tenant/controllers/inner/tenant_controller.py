@@ -4,10 +4,11 @@ Tenant 模块内部接口控制器
 提供模块间内部调用接口，不对外暴露。
 """
 
+from typing import Any
+
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import ORJSONResponse
 from pydantic import BaseModel, Field
-from typing import Any
 
 from tenant.models import Tenant, TenantStatus
 from tenant.services.tenant_service import TenantService
@@ -22,6 +23,7 @@ def Success(data: Any = None, msg: str = "success") -> dict:
 
 class TenantInfoResponse(BaseModel):
     """租户信息响应"""
+
     id: str = Field(..., description="租户ID")
     name: str = Field(..., description="租户名称")
     code: str = Field(..., description="租户编码")
@@ -46,17 +48,21 @@ class TenantInfoResponse(BaseModel):
 
 class BatchTenantsRequest(BaseModel):
     """批量获取租户请求"""
+
     tenant_ids: list[str] = Field(..., description="租户ID列表")
 
 
 class ValidateAccessResponse(BaseModel):
     """验证访问权限响应"""
+
     valid: bool = Field(..., description="是否有权访问")
     tenant_id: str = Field(..., description="租户ID")
     user_id: str = Field(..., description="用户ID")
 
 
-def build_tenant_info(tenant: Tenant, include_secrets: bool = False) -> TenantInfoResponse:
+def build_tenant_info(
+    tenant: Tenant, include_secrets: bool = False
+) -> TenantInfoResponse:
     """构建租户信息响应"""
     from framework.utils.crypto import decrypt
 
@@ -157,7 +163,13 @@ async def get_tenants_batch(data: BatchTenantsRequest) -> ORJSONResponse:
     tenants = await TenantService.get_tenants_batch(data.tenant_ids)
 
     return ORJSONResponse(
-        content=Success([build_tenant_info(t, include_secrets=True).model_dump() for t in tenants if t])
+        content=Success(
+            [
+                build_tenant_info(t, include_secrets=True).model_dump()
+                for t in tenants
+                if t
+            ]
+        )
     )
 
 
@@ -199,20 +211,13 @@ async def validate_tenant_access(
 
     # 检查用户是否属于该租户
     # TODO: 通过 inner 接口调用 IAM 模块
-    # 暂时直接访问 iam.user_tenants 表
-    from iam.models import UserTenant
-    from framework.database.core.engine import async_session
-    from sqlalchemy import select
+    from iam.services.user_service import UserService
 
-    async with async_session() as session:
-        stmt = select(UserTenant).where(
-            UserTenant.user_id == user_id,
-            UserTenant.tenant_id == tenant_id,
-        )
-        result = await session.execute(stmt)
-        user_tenant = result.scalar_one_or_none()
+    tenant_ids = await UserService.get_user_tenant_ids(user_id)
+    if not tenant_ids:
+        valid = False
 
-        valid = user_tenant is not None
+    valid = tenant_id in tenant_ids
 
     return ORJSONResponse(
         content=Success(

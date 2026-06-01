@@ -1,4 +1,4 @@
-"""
+﻿"""
 用户管理服务
 
 提供用户注册、信息管理、密码管理等功能。
@@ -6,16 +6,19 @@
 
 import secrets
 import string
-
 from datetime import datetime, timezone
 
 from loguru import logger
 from sqlalchemy import func, or_, select
 
-from iam.models import User, UserDepartment, UserStatus
-from iam.schemas.user import UserVo
 from framework.database.core.engine import async_session
-from framework.utils.crypto import hash_password, verify_password, validate_password_strength
+from framework.utils.crypto import (
+    hash_password,
+    validate_password_strength,
+    verify_password,
+)
+from iam.models import User, UserDepartment, UserStatus, UserTenant
+from iam.schemas.user import UserVo
 
 _logger = logger.bind(name=__name__)
 
@@ -52,21 +55,27 @@ class UserService:
 
         async with async_session() as session:
             # 检查用户名是否已存在（同租户内）
-            stmt = select(User).where(User.username == username, User.tenant_id == tenant_id)
+            stmt = select(User).where(
+                User.username == username, User.tenant_id == tenant_id
+            )
             result = await session.execute(stmt)
             if result.scalar_one_or_none():
                 raise ValueError("用户名已存在")
 
             # 检查邮箱是否已存在（同租户内）
             if email:
-                stmt = select(User).where(User.email == email, User.tenant_id == tenant_id)
+                stmt = select(User).where(
+                    User.email == email, User.tenant_id == tenant_id
+                )
                 result = await session.execute(stmt)
                 if result.scalar_one_or_none():
                     raise ValueError("邮箱已被注册")
 
             # 检查手机号是否已存在（同租户内）
             if phone:
-                stmt = select(User).where(User.phone == phone, User.tenant_id == tenant_id)
+                stmt = select(User).where(
+                    User.phone == phone, User.tenant_id == tenant_id
+                )
                 result = await session.execute(stmt)
                 if result.scalar_one_or_none():
                     raise ValueError("手机号已被注册")
@@ -199,7 +208,9 @@ class UserService:
                 raise ValueError("用户不存在")
 
             # 验证原密码
-            if not user.password_hash or not verify_password(old_password, user.password_hash):
+            if not user.password_hash or not verify_password(
+                old_password, user.password_hash
+            ):
                 raise ValueError("原密码错误")
 
             # 更新密码
@@ -399,21 +410,27 @@ class UserService:
 
         async with async_session() as session:
             # 检查用户名是否已存在（同租户内）
-            stmt = select(User).where(User.username == username, User.tenant_id == tenant_id)
+            stmt = select(User).where(
+                User.username == username, User.tenant_id == tenant_id
+            )
             result = await session.execute(stmt)
             if result.scalar_one_or_none():
                 raise ValueError("用户名已存在")
 
             # 检查邮箱是否已存在（同租户内）
             if email:
-                stmt = select(User).where(User.email == email, User.tenant_id == tenant_id)
+                stmt = select(User).where(
+                    User.email == email, User.tenant_id == tenant_id
+                )
                 result = await session.execute(stmt)
                 if result.scalar_one_or_none():
                     raise ValueError("邮箱已被注册")
 
             # 检查手机号是否已存在（同租户内）
             if phone:
-                stmt = select(User).where(User.phone == phone, User.tenant_id == tenant_id)
+                stmt = select(User).where(
+                    User.phone == phone, User.tenant_id == tenant_id
+                )
                 result = await session.execute(stmt)
                 if result.scalar_one_or_none():
                     raise ValueError("手机号已被注册")
@@ -579,7 +596,7 @@ class UserService:
             else:
                 # 生成 12 位随机密码
                 alphabet = string.ascii_letters + string.digits + "!@#$%^&*"
-                password = ''.join(secrets.choice(alphabet) for _ in range(12))
+                password = "".join(secrets.choice(alphabet) for _ in range(12))
 
             user.password_hash = hash_password(password)
             await session.commit()
@@ -612,13 +629,47 @@ class UserService:
             departments = []
             for row in result:
                 dept, is_leader = row
-                departments.append({
-                    "id": dept.id,
-                    "name": dept.name,
-                    "code": dept.code,
-                    "is_leader": is_leader,
-                })
+                departments.append(
+                    {
+                        "id": dept.id,
+                        "name": dept.name,
+                        "code": dept.code,
+                        "is_leader": is_leader,
+                    }
+                )
             return departments
+
+    @staticmethod
+    async def get_user_tenant_ids(user_id: str) -> list[str]:
+        """
+        获取用户所属租户 ID 列表
+
+        Args:
+            user_id: 用户 ID
+
+        Returns:
+            list[str]: 租户 ID 列表
+        """
+        async with async_session() as session:
+            stmt = select(UserTenant.tenant_id).where(UserTenant.user_id == user_id)
+            result = await session.execute(stmt)
+            return [row[0] for row in result.all()]
+
+    @staticmethod
+    async def get_user_ids_by_tenant_id(tenant_id: str) -> list[str]:
+        """
+        根据用户 ID 获取租户 ID 列表
+
+        Args:
+            user_ids: 用户 ID 列表
+
+        Returns:
+            dict[str, list[str]]: 用户 ID 到租户 ID 列表的映射
+        """
+        async with async_session() as session:
+            stmt = select(UserTenant.user_id).where(UserTenant.tenant_id == tenant_id)
+            result = await session.execute(stmt)
+            return [row[0] for row in result.all()]
 
 
 # 服务单例

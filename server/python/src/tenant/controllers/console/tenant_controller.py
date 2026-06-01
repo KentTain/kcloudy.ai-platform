@@ -5,10 +5,10 @@
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import ORJSONResponse
 
-from tenant.schemas.console.tenant import UserTenantVo, CurrentTenantVo, SwitchTenantVo
-from tenant.services.tenant_service import TenantService
-from tenant.models import TenantStatus
 from framework.tenant.context import TenantContext, get_tenant_id
+from tenant.models import TenantStatus
+from tenant.schemas.console.tenant import CurrentTenantVo, SwitchTenantVo, UserTenantVo
+from tenant.services.tenant_service import TenantService
 
 router = APIRouter()
 
@@ -31,11 +31,17 @@ async def list_user_tenants(user_id: str = "test_user") -> ORJSONResponse:
     WHEN 用户不属于任何租户时请求 GET /console/v1/tenants
     THEN 返回空列表
     """
-    # TODO: 通过 inner 接口调用 IAM 模块获取用户的租户列表
-    # 暂时直接调用 IAM 模块
-    from iam.services.tenant_service import TenantService as IamTenantService
 
-    tenants = await IamTenantService.get_user_tenants(user_id)
+    # 获取用户可用租户列表
+    # TODO: 通过 inner 接口调用 IAM 模块
+    from iam.services.user_service import UserService
+
+    tenant_ids = await UserService.get_user_tenant_ids(user_id)
+    if not tenant_ids:
+        return ORJSONResponse(content=Success([]))
+
+    # 批量获取租户信息
+    tenants = await TenantService.get_tenants_batch(tenant_ids)
 
     items = []
     for tenant in tenants:
@@ -120,10 +126,13 @@ async def switch_tenant(
     if tenant.status != TenantStatus.ACTIVE:
         raise HTTPException(status_code=403, detail="租户已停用")
 
-    # TODO: 通过 inner 接口调用 IAM 模块验证用户访问权限
-    # user_tenants = await TenantService.get_user_tenants(user_id)
-    # if tenant_id not in [t.id for t in user_tenants]:
-    #     raise HTTPException(status_code=403, detail="无权访问该租户")
+    # 验证用户访问权限
+    # TODO: 通过 inner 接口调用 IAM 模块
+    from iam.services.user_service import UserService
+
+    user_tenant_ids = await UserService.get_user_tenant_ids(user_id)
+    if tenant_id not in user_tenant_ids:
+        raise HTTPException(status_code=403, detail="无权访问该租户")
 
     # 设置新的租户上下文（实际应用中应该返回新的 Token）
     TenantContext.set_current_tenant(tenant)

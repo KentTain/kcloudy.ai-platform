@@ -2,27 +2,27 @@
 管理后台租户控制器
 """
 
-from fastapi import APIRouter, HTTPException, Request, Depends
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import ORJSONResponse
 from sqlalchemy import func, select
 
 from framework.database.core.engine import async_session
+from tenant.middlewares.admin_auth_middleware import AdminAuthService, get_current_admin
 from tenant.models import Tenant
 from tenant.schemas.admin.tenant import (
+    AdminLoginRequest,
+    AdminLoginVo,
     CacheConfigVo,
     DatabaseConfigVo,
     ResourceValidateVo,
     StorageConfigVo,
     TenantCreateRequest,
-    TenantUpdateRequest,
-    TenantVo,
     TenantListVo,
     TenantStatsVo,
-    AdminLoginRequest,
-    AdminLoginVo,
+    TenantUpdateRequest,
+    TenantVo,
 )
 from tenant.services.tenant_service import TenantService
-from tenant.middlewares.admin_auth_middleware import get_current_admin, AdminAuthService
 
 router = APIRouter()
 
@@ -75,6 +75,7 @@ def build_tenant_vo(tenant: Tenant) -> TenantVo:
 
 # ============== 认证 API ==============
 
+
 @router.post("/auth/login")
 async def admin_login(data: AdminLoginRequest) -> ORJSONResponse:
     """
@@ -101,10 +102,16 @@ async def admin_login(data: AdminLoginRequest) -> ORJSONResponse:
 
 
 @router.post("/auth/logout")
-async def admin_logout(request: Request, admin: dict = Depends(get_current_admin)) -> ORJSONResponse:
+async def admin_logout(
+    request: Request, admin: dict = Depends(get_current_admin)
+) -> ORJSONResponse:
     """管理员登出"""
     auth_header = request.headers.get("Authorization", "")
-    token = auth_header.replace("Bearer ", "") if auth_header.startswith("Bearer ") else None
+    token = (
+        auth_header.replace("Bearer ", "")
+        if auth_header.startswith("Bearer ")
+        else None
+    )
     if token:
         AdminAuthService.logout(token)
     return ORJSONResponse(content=Success())
@@ -118,12 +125,16 @@ async def validate_database_config(
     """验证数据库连接配置"""
     if not data.db_name:
         return ORJSONResponse(
-            content=Success(ResourceValidateVo(valid=True, message="使用默认数据库").model_dump())
+            content=Success(
+                ResourceValidateVo(valid=True, message="使用默认数据库").model_dump()
+            )
         )
 
     if not all([data.db_type, data.db_host, data.db_port, data.db_username]):
         return ORJSONResponse(
-            content=Success(ResourceValidateVo(valid=False, message="数据库配置不完整").model_dump())
+            content=Success(
+                ResourceValidateVo(valid=False, message="数据库配置不完整").model_dump()
+            )
         )
 
     driver = "postgresql+asyncpg"
@@ -135,11 +146,17 @@ async def validate_database_config(
     # 验证接口不接收密码，无法真实连接，仅验证格式
     if data.db_type not in ("postgresql", "mysql", "sqlite"):
         return ORJSONResponse(
-            content=Success(ResourceValidateVo(valid=False, message="不支持的数据库类型").model_dump())
+            content=Success(
+                ResourceValidateVo(
+                    valid=False, message="不支持的数据库类型"
+                ).model_dump()
+            )
         )
 
     return ORJSONResponse(
-        content=Success(ResourceValidateVo(valid=True, message="数据库配置格式有效").model_dump())
+        content=Success(
+            ResourceValidateVo(valid=True, message="数据库配置格式有效").model_dump()
+        )
     )
 
 
@@ -151,16 +168,27 @@ async def validate_storage_config(
     """验证存储桶配置"""
     if not data.storage_bucket:
         return ORJSONResponse(
-            content=Success(ResourceValidateVo(valid=True, message="使用默认存储桶").model_dump())
+            content=Success(
+                ResourceValidateVo(valid=True, message="使用默认存储桶").model_dump()
+            )
         )
 
-    if data.storage_type and data.storage_type not in ("minio", "aliyun", "tencent", "local"):
+    if data.storage_type and data.storage_type not in (
+        "minio",
+        "aliyun",
+        "tencent",
+        "local",
+    ):
         return ORJSONResponse(
-            content=Success(ResourceValidateVo(valid=False, message="不支持的存储类型").model_dump())
+            content=Success(
+                ResourceValidateVo(valid=False, message="不支持的存储类型").model_dump()
+            )
         )
 
     return ORJSONResponse(
-        content=Success(ResourceValidateVo(valid=True, message="存储配置格式有效").model_dump())
+        content=Success(
+            ResourceValidateVo(valid=True, message="存储配置格式有效").model_dump()
+        )
     )
 
 
@@ -172,12 +200,18 @@ async def validate_cache_config(
     """验证 Redis DB 配置"""
     if data.cache_db is None:
         return ORJSONResponse(
-            content=Success(ResourceValidateVo(valid=True, message="使用默认 Redis DB").model_dump())
+            content=Success(
+                ResourceValidateVo(valid=True, message="使用默认 Redis DB").model_dump()
+            )
         )
 
     if data.cache_db < 0 or data.cache_db > 15:
         return ORJSONResponse(
-            content=Success(ResourceValidateVo(valid=False, message="Redis DB 编号必须在 0-15 范围内").model_dump())
+            content=Success(
+                ResourceValidateVo(
+                    valid=False, message="Redis DB 编号必须在 0-15 范围内"
+                ).model_dump()
+            )
         )
 
     # 检查是否已被其他租户使用
@@ -196,11 +230,14 @@ async def validate_cache_config(
             )
 
     return ORJSONResponse(
-        content=Success(ResourceValidateVo(valid=True, message="缓存配置有效").model_dump())
+        content=Success(
+            ResourceValidateVo(valid=True, message="缓存配置有效").model_dump()
+        )
     )
 
 
 # ============== 租户管理 API ==============
+
 
 @router.get("/tenants")
 async def list_tenants(
@@ -282,9 +319,7 @@ async def create_tenant(
         cache_db=data.cache.cache_db if data.cache else None,
     )
 
-    return ORJSONResponse(
-        content=Success(build_tenant_vo(tenant).model_dump())
-    )
+    return ORJSONResponse(content=Success(build_tenant_vo(tenant).model_dump()))
 
 
 @router.get("/tenants/{tenant_id}")
@@ -307,9 +342,7 @@ async def get_tenant(
     if not tenant:
         raise HTTPException(status_code=404, detail="租户不存在")
 
-    return ORJSONResponse(
-        content=Success(build_tenant_vo(tenant).model_dump())
-    )
+    return ORJSONResponse(content=Success(build_tenant_vo(tenant).model_dump()))
 
 
 @router.put("/tenants/{tenant_id}")
@@ -347,9 +380,7 @@ async def update_tenant(
     if not tenant:
         raise HTTPException(status_code=404, detail="租户不存在")
 
-    return ORJSONResponse(
-        content=Success(build_tenant_vo(tenant).model_dump())
-    )
+    return ORJSONResponse(content=Success(build_tenant_vo(tenant).model_dump()))
 
 
 @router.delete("/tenants/{tenant_id}")
@@ -370,15 +401,11 @@ async def delete_tenant(
     """
     # 检查租户下是否有用户
     # TODO: 通过 inner 接口调用 IAM 模块
-    from iam.models import UserTenant
+    from iam.services.user_service import UserService
 
-    async with async_session() as session:
-        stmt = select(func.count(UserTenant.id)).where(UserTenant.tenant_id == tenant_id)
-        result = await session.execute(stmt)
-        user_count = result.scalar() or 0
-
-        if user_count > 0:
-            raise HTTPException(status_code=400, detail="租户下存在用户，无法删除")
+    user_ids = await UserService.get_user_ids_by_tenant_id(tenant_id)
+    if len(user_ids) > 0:
+        raise HTTPException(status_code=400, detail="租户下存在用户，无法删除")
 
     success = await TenantService.delete(tenant_id)
     if not success:
@@ -403,9 +430,7 @@ async def activate_tenant(
     if not tenant:
         raise HTTPException(status_code=404, detail="租户不存在")
 
-    return ORJSONResponse(
-        content=Success(build_tenant_vo(tenant).model_dump())
-    )
+    return ORJSONResponse(content=Success(build_tenant_vo(tenant).model_dump()))
 
 
 @router.post("/tenants/{tenant_id}/deactivate")
@@ -424,9 +449,7 @@ async def deactivate_tenant(
     if not tenant:
         raise HTTPException(status_code=404, detail="租户不存在")
 
-    return ORJSONResponse(
-        content=Success(build_tenant_vo(tenant).model_dump())
-    )
+    return ORJSONResponse(content=Success(build_tenant_vo(tenant).model_dump()))
 
 
 @router.get("/tenants/{tenant_id}/stats")
@@ -447,18 +470,16 @@ async def get_tenant_stats(
 
     # 统计用户数
     # TODO: 通过 inner 接口调用 IAM 模块
-    from iam.models import UserTenant
+    from iam.services.user_service import UserService
 
-    async with async_session() as session:
-        stmt = select(func.count(UserTenant.id)).where(UserTenant.tenant_id == tenant_id)
-        result = await session.execute(stmt)
-        user_count = result.scalar() or 0
+    user_ids = await UserService.get_user_ids_by_tenant_id(tenant_id)
+    user_count = len(user_ids)
 
     stats = TenantStatsVo(
         tenant_id=tenant_id,
         user_count=user_count,
         storage_usage=0,  # TODO: 实现存储用量统计
-        active_users=0,   # TODO: 实现活跃用户统计
+        active_users=0,  # TODO: 实现活跃用户统计
     )
 
     return ORJSONResponse(content=Success(stats.model_dump()))
