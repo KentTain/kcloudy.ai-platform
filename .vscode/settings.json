@@ -193,7 +193,7 @@
     "Dockerfile": "Dockerfile-*, .dockerignore, docker-entrypoint.sh, nginx.conf, .env.docker, index.html",
     "pyproject.toml": "uv.lock, pyrightconfig.json, pytest.ini, alembic.ini, .pre-commit-config.yaml, .ruff.toml, .cz.toml",
     "package.json": "package-lock.json, pnpm*, yarn*, .eslint*, .oxlint*, oxlint*, .oxfmt*, .prettier*, prettier*, .editorconfig, biome.jsonc, , tsconfig*, env.d.ts, typed-router.d.ts, components.json",
-    "vite.config.*": "jsconfig*, vitest.config.*, cypress.config.*, playwright.config.*",
+    "vite.config.*": "jsconfig*, vitest.config.*, cypress.config.*, playwright.config.*, .env.*",
     "Cargo.toml": "rust-toolchain.toml, rustfmt.toml, .nextest.toml",
     "README.md": "README*",
     "AI编程及智能体开发教案大纲.md": "Day*.md"
