@@ -43,9 +43,6 @@ class TenantProviderImpl(TenantProvider):
         """
         验证用户是否有权访问租户
 
-        注意：此方法需要访问 IAM 模块的 UserTenant 表。
-        在内部接口实现后，将通过 inner 接口调用。
-
         Args:
             user_id: 用户 ID
             tenant_id: 租户 ID
@@ -53,22 +50,19 @@ class TenantProviderImpl(TenantProvider):
         Returns:
             bool
         """
-        # 验证用户是否有权访问租户
-        # TODO: 通过 inner 接口调用 IAM 模块
-        from iam.services.user_service import UserService
+        from framework.clients.iam_client import get_iam_client
 
-        tenant_ids = await UserService.get_user_tenant_ids(user_id)
-        if not tenant_ids:
+        iam_client = get_iam_client()
+        user_tenants = await iam_client.get_user_tenants(user_id)
+        if not user_tenants:
             return False
 
+        tenant_ids = [ut.tenant_id for ut in user_tenants]
         return tenant_id in tenant_ids
 
     async def get_user_tenants(self, user_id: str) -> list[TenantInfo]:
         """
         获取用户所属的租户列表
-
-        注意：此方法需要访问 IAM 模块的 UserTenant 表。
-        在内部接口实现后，将通过 inner 接口调用。
 
         Args:
             user_id: 用户 ID
@@ -76,15 +70,15 @@ class TenantProviderImpl(TenantProvider):
         Returns:
             list[TenantInfo]
         """
-        # 获取用户所属的租户列表
-        # TODO: 通过 inner 接口调用 IAM 模块
-        from iam.services.user_service import UserService
+        from framework.clients.iam_client import get_iam_client
 
-        tenant_ids = await UserService.get_user_tenant_ids(user_id)
-        if not tenant_ids:
+        iam_client = get_iam_client()
+        user_tenants = await iam_client.get_user_tenants(user_id)
+        if not user_tenants:
             return []
 
         # 批量获取租户信息
+        tenant_ids = [ut.tenant_id for ut in user_tenants]
         tenants = await TenantService.get_tenants_batch(tenant_ids)
         return [self._build_tenant_info(t) for t in tenants]
 
