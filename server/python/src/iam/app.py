@@ -16,13 +16,14 @@ from framework.common.time import ChinaTimeZone
 from framework.database.core.engine import setup_engine
 from framework.tenant.middleware import TenantMiddleware
 from framework.tenant.protocols import register_tenant_provider
-from iam.services.tenant_provider_impl import iam_tenant_provider
+from tenant.services.tenant_provider_impl import tenant_provider_impl
 
 # 尝试导入 demo 配置，如果不存在则使用默认配置
 try:
     from demo.configs import settings
 except ImportError:
     from framework.configs import get_settings
+
     settings = get_settings()
 
 _logger = logger.bind(name=__name__)
@@ -48,7 +49,7 @@ async def lifespan(app: FastAPI):
     )
 
     # 注册 TenantProvider
-    register_tenant_provider(iam_tenant_provider)
+    register_tenant_provider(tenant_provider_impl)
 
     # 自动执行 seed 初始化（异常不阻止应用启动）
     await _run_seed_initialization()
@@ -60,12 +61,10 @@ async def lifespan(app: FastAPI):
 
 async def _run_seed_initialization():
     """执行数据初始化种子脚本"""
-    from iam.migrations.seeds.tenant_seed import run as tenant_seed_run
-    from iam.migrations.seeds.iam_seed import run as iam_seed_run
     from iam.migrations.seeds.admin_seed import run as admin_seed_run
+    from iam.migrations.seeds.iam_seed import run as iam_seed_run
 
     seed_modules = [
-        ("租户", tenant_seed_run),
         ("角色权限", iam_seed_run),
         ("管理员", admin_seed_run),
     ]
@@ -96,19 +95,30 @@ def create_app() -> FastAPI:
 
     # 注册 IAM 路由
     from iam.controllers import router as iam_router
+
     app.include_router(iam_router, prefix="/api/v1", tags=["IAM"])
 
     # 注册管理后台路由
-    from iam.controllers.admin.tenant_controller import router as admin_tenant_router
-    app.include_router(admin_tenant_router, prefix="/admin/v1", tags=["Admin - Tenant"])
-    from iam.controllers.admin.system_setting_controller import router as admin_system_setting_router
-    app.include_router(admin_system_setting_router, prefix="/admin/v1/system-settings", tags=["Admin - SystemSetting"])
+    from iam.controllers.admin.system_setting_controller import (
+        router as admin_system_setting_router,
+    )
+
+    app.include_router(
+        admin_system_setting_router,
+        prefix="/admin/v1/system-settings",
+        tags=["Admin - SystemSetting"],
+    )
 
     # 注册用户端路由
-    from iam.controllers.console.tenant_controller import router as console_tenant_router
-    app.include_router(console_tenant_router, prefix="/console/v1/tenants", tags=["Console - Tenant"])
-    from iam.controllers.console.system_setting_controller import router as console_system_setting_router
-    app.include_router(console_system_setting_router, prefix="/console/v1/system-settings", tags=["Console - SystemSetting"])
+    from iam.controllers.console.system_setting_controller import (
+        router as console_system_setting_router,
+    )
+
+    app.include_router(
+        console_system_setting_router,
+        prefix="/console/v1/system-settings",
+        tags=["Console - SystemSetting"],
+    )
 
     # 健康检查端点
     @app.get("/health", tags=["Health"])

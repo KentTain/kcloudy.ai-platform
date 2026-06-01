@@ -117,7 +117,7 @@ class TenantMiddleware(BaseHTTPMiddleware):
         if not provider:
             raise TenantError("TenantProvider 未注册")
 
-        tenant = await provider.get_tenant_by_id(tenant_id)
+        tenant = await provider.get_tenant(tenant_id)
         if not tenant:
             raise TenantNotFoundError(f"租户不存在: {tenant_id}")
 

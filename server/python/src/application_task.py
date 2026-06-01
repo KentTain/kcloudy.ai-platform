@@ -11,7 +11,8 @@ from pathlib import Path
 import click
 from loguru import logger
 
-from framework.module import load_modules, get_registry, ModuleDescriptor
+from framework.module import ModuleDescriptor, get_registry, load_modules
+from framework.tenant.protocols import register_tenant_provider
 
 _logger = logger.bind(name=__name__)
 
@@ -27,6 +28,7 @@ async def run_task(module_names: list[str] | None = None) -> None:
     if module_names is None:
         try:
             from config.modules import ENABLED_MODULES
+
             module_names = ENABLED_MODULES
             _logger.info(f"Loaded modules from config: {ENABLED_MODULES}")
         except ImportError:
@@ -42,14 +44,13 @@ async def run_task(module_names: list[str] | None = None) -> None:
     stop = loop.create_future()
 
     for sig in (signal.SIGINT, signal.SIGTERM):
-        loop.add_signal_handler(
-            sig, lambda: stop.set_result(None)
-        )
+        loop.add_signal_handler(sig, lambda: stop.set_result(None))
 
     # 初始化数据库引擎
     try:
         from demo.configs import settings
         from framework.database.core.engine import setup_engine
+
         sqlalchemy_config = settings.sqlalchemy
         setup_engine(
             database_url=sqlalchemy_config.url,
@@ -61,12 +62,9 @@ async def run_task(module_names: list[str] | None = None) -> None:
         _logger.exception("数据库引擎初始化失败")
 
     # 注册 TenantProvider
-    try:
-        from framework.tenant.protocols import register_tenant_provider
-        from iam.services.tenant_provider_impl import iam_tenant_provider
-        register_tenant_provider(iam_tenant_provider)
-    except ImportError:
-        _logger.warning("IAM TenantProvider 不可用")
+    provider = _get_tenant_provider()
+    if provider:
+        register_tenant_provider(provider)
 
     # 收集所有模块的任务调度器
     setup_funcs = []
@@ -93,6 +91,17 @@ async def run_task(module_names: list[str] | None = None) -> None:
             except Exception:
                 _logger.exception("任务调度器清理失败")
         _logger.info("所有任务调度器已停止")
+
+
+def _get_tenant_provider():
+    """获取 TenantProvider 实现"""
+    try:
+        from tenant.services.tenant_provider_impl import tenant_provider_impl
+
+        return tenant_provider_impl
+    except ImportError:
+        _logger.warning("TenantProvider 不可用")
+        return None
 
 
 @click.command()

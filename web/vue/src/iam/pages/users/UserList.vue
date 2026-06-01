@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/iam/stores/user'
@@ -46,6 +46,11 @@ const statusOptions = [
   { label: '激活', value: 'active' },
   { label: '停用', value: 'inactive' },
   { label: '锁定', value: 'locked' },
+]
+
+const allStatusOptions = [
+  { label: '全部', value: 'all' },
+  ...statusOptions,
 ]
 
 const handleSearch = () => {
@@ -148,8 +153,8 @@ onMounted(() => {
             <SelectValue placeholder="全部" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">全部</SelectItem>
-            <SelectItem v-for="opt in statusOptions" :key="opt.value" :value="opt.value">
+            
+            <SelectItem v-for="opt in allStatusOptions" :key="opt.value" :value="opt.value">
               {{ opt.label }}
             </SelectItem>
           </SelectContent>

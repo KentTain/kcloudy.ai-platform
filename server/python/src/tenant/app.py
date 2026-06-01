@@ -7,7 +7,7 @@ Tenant 模块独立应用工厂
 from fastapi import FastAPI
 
 from framework.configs import get_settings
-from framework.tenant.protocols import TenantProvider
+from framework.tenant.protocols import TenantProvider, register_tenant_provider
 from tenant.module import TenantModule
 from tenant.services.tenant_provider_impl import TenantProviderImpl
 
@@ -34,7 +34,7 @@ def create_app() -> FastAPI:
         app.include_router(router, prefix=prefix, tags=tags)
 
     # 注册 TenantProvider
-    TenantProvider.register(TenantProviderImpl())
+    register_tenant_provider(TenantProviderImpl())
 
     @app.get("/health")
     async def health():

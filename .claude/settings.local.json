@@ -67,7 +67,20 @@
       "Bash(docker volume *)",
       "Bash(docker restart *)",
       "Bash(bash \"C:\\\\Users\\\\tianc\\\\.claude\\\\skills\\\\brainstorming\\\\scripts\\\\start-server.sh\" --project-dir \"D:\\\\Project\\\\ai\\\\kcloudy.init_project\")",
-      "Bash(xxd)"
+      "Bash(xxd)",
+      "Bash(node ~/.claude/skills/browser/browser/scripts/start.js --profile)",
+      "Bash(node *)",
+      "Bash(pkill -f \"uvicorn\")",
+      "Bash(pkill -f \"manage.py runserver\")",
+      "Bash(netstat -ano)",
+      "Bash(taskkill //F //PID 25268)",
+      "Bash(taskkill //F //PID 34260)",
+      "Bash(taskkill //F //PID 21392)",
+      "Bash(taskkill //F //T //PID 34260)",
+      "Bash(tasklist *)"
     ]
-  }
+  },
+  "enabledMcpjsonServers": [
+    "codegraph"
+  ]
 }

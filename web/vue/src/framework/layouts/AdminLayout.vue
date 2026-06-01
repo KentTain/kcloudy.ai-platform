@@ -1,10 +1,10 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 /**
  * AdminLayout 后台管理布局组件
  * 左右结构：左侧侧边栏，右侧上下结构（顶部导航 + 内容区）
  */
 import { onMounted } from "vue";
-import { SidebarProvider, Sidebar, SidebarInset, SidebarContent } from "@/components/ui/sidebar";
+import { SidebarProvider, Sidebar, SidebarInset, SidebarContent, SidebarHeader } from "@/components/ui/sidebar";
 import AppTenantSwitcher from "./components/AppTenantSwitcher.vue";
 import AppNavMain from "./components/AppNavMain.vue";
 import AppSearchBox from "./components/AppSearchBox.vue";
@@ -26,7 +26,9 @@ onMounted(() => {
     <!-- 左侧：侧边栏 -->
     <Sidebar collapsible="icon" variant="sidebar" class="border-r">
       <!-- 租户切换器 -->
-      <AppTenantSwitcher />
+      <SidebarHeader>
+        <AppTenantSwitcher />
+      </SidebarHeader>
 
       <!-- 菜单导航 -->
       <SidebarContent>

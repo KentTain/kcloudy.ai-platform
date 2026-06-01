@@ -1,4 +1,4 @@
-"""
+﻿"""
 FastAPI Web 应用工厂
 
 通过动态模块扫描与装配创建应用，替代硬编码 import。
@@ -43,7 +43,9 @@ async def lifespan(app: FastAPI):
     )
 
     # 注册 TenantProvider
-    register_tenant_provider(_get_tenant_provider())
+    provider = _get_tenant_provider()
+    if provider:
+        register_tenant_provider(provider)
 
     # 自动执行各模块 seed 初始化（异常不阻止应用启动）
     await _run_seed_initialization()
@@ -56,10 +58,10 @@ async def lifespan(app: FastAPI):
 def _get_tenant_provider():
     """获取 TenantProvider 实现"""
     try:
-        from iam.services.tenant_provider_impl import iam_tenant_provider
-        return iam_tenant_provider
+        from tenant.services.tenant_provider_impl import tenant_provider_impl
+        return tenant_provider_impl
     except ImportError:
-        _logger.warning("IAM TenantProvider 不可用")
+        _logger.warning("TenantProvider 不可用")
         return None
 
 
