@@ -671,6 +671,31 @@ class UserService:
             result = await session.execute(stmt)
             return [row[0] for row in result.all()]
 
+    @staticmethod
+    async def get_user_tenants_detail(user_id: str) -> list[dict]:
+        """
+        获取用户所属租户详细信息列表
+
+        Args:
+            user_id: 用户 ID
+
+        Returns:
+            list[dict]: 包含 tenant_id、role、is_default 的字典列表
+        """
+        async with async_session() as session:
+            stmt = select(UserTenant).where(UserTenant.user_id == user_id)
+            result = await session.execute(stmt)
+            user_tenants = result.scalars().all()
+
+            return [
+                {
+                    "tenant_id": ut.tenant_id,
+                    "role": ut.role,
+                    "is_default": ut.is_default,
+                }
+                for ut in user_tenants
+            ]
+
 
 # 服务单例
 user_service = UserService()
