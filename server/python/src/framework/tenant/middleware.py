@@ -1,17 +1,17 @@
-﻿"""
+"""
 租户中间件
 
 自动解析租户标识、验证租户状态、注入租户上下文。
 """
 
+from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Callable
-from datetime import datetime
 
 from loguru import logger
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import JSONResponse
 
-from framework.common.ctx import set_context, Context
+from framework.common.ctx import Context, set_context
 from framework.tenant.context import TenantContext
 from framework.tenant.exceptions import (
     TenantAccessDeniedError,
@@ -73,7 +73,9 @@ class TenantMiddleware(BaseHTTPMiddleware):
             # 如果没有解析到租户标识，返回错误
             if not tenant_id:
                 return self._error_response(
-                    TenantResolveError("无法解析租户标识，请在请求头中提供 X-Tenant-Id"),
+                    TenantResolveError(
+                        "无法解析租户标识，请在请求头中提供 X-Tenant-Id"
+                    ),
                     400,
                 )
 
@@ -108,9 +110,7 @@ class TenantMiddleware(BaseHTTPMiddleware):
                 return True
         return False
 
-    async def _load_and_validate_tenant(
-        self, tenant_id: str, request: "Request"
-    ):
+    async def _load_and_validate_tenant(self, tenant_id: str, request: "Request"):
         """加载租户信息并验证状态"""
         # 通过 TenantProvider 获取租户
         provider = get_tenant_provider()
@@ -126,21 +126,19 @@ class TenantMiddleware(BaseHTTPMiddleware):
 
         return tenant
 
-    def _validate_tenant_access(
-        self, tenant, request: "Request", provider
-    ) -> None:
+    def _validate_tenant_access(self, tenant, request: "Request", provider) -> None:
         """验证租户访问权限"""
         # 检查租户状态
         if tenant.status != "active":
             raise TenantInactiveError(f"租户已停用: {tenant.name}")
 
         # 检查过期时间
-        if tenant.expired_at and tenant.expired_at < datetime.now():
+        if tenant.expired_at and tenant.expired_at < datetime.now(timezone.utc):
             raise TenantExpiredError(f"租户已过期: {tenant.name}")
 
     def _inject_context(self, tenant) -> None:
         """注入租户上下文"""
-        TenantContext.set_tenant(tenant)
+        TenantContext.set_current_tenant(tenant)
         # 同时设置通用上下文
         set_context(Context(tenant_id=tenant.id))
 

@@ -4,7 +4,7 @@
 
 from datetime import datetime
 
-from pydantic import BaseModel, EmailStr, Field, field_validator
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
 
 class UserRegisterRequest(BaseModel):
@@ -131,6 +131,8 @@ class AdminPasswordResetVo(BaseModel):
 
 class UserVo(BaseModel):
     """用户视图对象"""
+
+    model_config = ConfigDict(from_attributes=True)
 
     id: str
     username: str
