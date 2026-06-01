@@ -16,6 +16,7 @@ class PhaseInfo:
     name: str
     duration: float = 0.0
     details: dict[str, str] = field(default_factory=dict)
+    order: int | None = None
 
 
 class StartupTimer:
@@ -27,9 +28,9 @@ class StartupTimer:
         self.phases: list[PhaseInfo] = []
 
     @contextmanager
-    def phase(self, name: str) -> Iterator[PhaseInfo]:
+    def phase(self, name: str, order: int | None = None) -> Iterator[PhaseInfo]:
         """阶段计时上下文管理器"""
-        phase_info = PhaseInfo(name=name)
+        phase_info = PhaseInfo(name=name, order=order)
         phase_start = time()
         try:
             yield phase_info
@@ -52,7 +53,11 @@ class StartupTimer:
         print(f"总启动耗时: {total_duration:.3f} 秒")
         print("启动阶段耗时:")
 
-        for i, phase in enumerate(self.phases, 1):
+        ordered_phases = sorted(
+            enumerate(self.phases),
+            key=lambda item: item[1].order if item[1].order is not None else item[0],
+        )
+        for i, (_, phase) in enumerate(ordered_phases, 1):
             print(f"  阶段{i} ({phase.name}): {phase.duration:.3f}秒")
             if phase.details:
                 for key, value in phase.details.items():

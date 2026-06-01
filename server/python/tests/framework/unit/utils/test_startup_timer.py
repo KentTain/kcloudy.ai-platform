@@ -117,6 +117,30 @@ class TestStartupTimer:
         assert "http://127.0.0.1:8000" in output
         assert "http://127.0.0.1:8000/docs" in output
 
+    def test_print_summary_orders_phases_by_order(self):
+        """测试摘要按 order 输出阶段"""
+        from contextlib import redirect_stdout
+        from io import StringIO
+        from framework.utils.startup_timer import StartupTimer
+
+        timer = StartupTimer(app_name="Demo API")
+        with timer.phase("配置加载", order=1):
+            pass
+        with timer.phase("模块加载与路由注册", order=3):
+            pass
+        with timer.phase("基础组件初始化", order=2):
+            pass
+
+        captured_output = StringIO()
+        with redirect_stdout(captured_output):
+            timer.print_summary()
+
+        output = captured_output.getvalue()
+        config_index = output.index("阶段1 (配置加载)")
+        base_index = output.index("阶段2 (基础组件初始化)")
+        module_index = output.index("阶段3 (模块加载与路由注册)")
+        assert config_index < base_index < module_index
+
     def test_print_summary_without_modules(self):
         """测试无模块时的摘要输出"""
         from framework.utils.startup_timer import StartupTimer

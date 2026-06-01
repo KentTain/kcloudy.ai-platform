@@ -34,7 +34,7 @@ async def lifespan(app: FastAPI):
         f"\nDemo 应用开始启动... ({datetime.now(tz=ChinaTimeZone).strftime('%Y-%m-%d %H:%M:%S')})"
     )
 
-    with timer.phase("基础组件初始化") as phase:
+    with timer.phase("基础组件初始化", order=2) as phase:
         # 初始化数据库引擎
         sqlalchemy_config = settings.sqlalchemy
         setup_engine(
@@ -53,7 +53,7 @@ async def lifespan(app: FastAPI):
         else:
             phase.details["TenantProvider"] = "不可用"
 
-    with timer.phase("数据初始化"):
+    with timer.phase("数据初始化", order=4):
         # 自动执行各模块 seed 初始化（异常不阻止应用启动）
         await _run_seed_initialization()
 
@@ -107,7 +107,7 @@ def create_app(module_names: list[str] | None = None) -> FastAPI:
     """
     timer = StartupTimer(app_name=APP_NAME)
 
-    with timer.phase("配置加载"):
+    with timer.phase("配置加载", order=1):
         pass
 
     # 如果未指定模块，尝试从配置文件读取
@@ -119,7 +119,7 @@ def create_app(module_names: list[str] | None = None) -> FastAPI:
         except ImportError:
             _logger.info("No modules config found, loading all modules")
 
-    with timer.phase("模块加载与路由注册") as phase:
+    with timer.phase("模块加载与路由注册", order=3) as phase:
         # 加载模块
         src_path = Path(__file__).parent
         modules = load_modules(src_path, module_names)
