@@ -4,6 +4,7 @@ session 模块单元测试
 测试 Redis 会话管理功能（使用 mock）
 """
 
+import json
 from datetime import timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -24,19 +25,22 @@ class TestCreateSession:
 
         # 创建 AsyncMock
         mock_set = AsyncMock(return_value=True)
+        # Mock _client 使 _is_redis_available() 返回 True
+        mock_client = MagicMock()
 
-        with patch.object(session_module.RedisUtil, "set", mock_set):
-            session_id = await session_module.create_session(
-                user_id="user-123",
-                tenant_id="tenant-456",
-                device_info="Chrome/Windows",
-                ip="192.168.1.1",
-            )
+        with patch.object(session_module.RedisUtil, "_client", mock_client):
+            with patch.object(session_module.RedisUtil, "set", mock_set):
+                session_id = await session_module.create_session(
+                    user_id="user-123",
+                    tenant_id="tenant-456",
+                    device_info="Chrome/Windows",
+                    ip="192.168.1.1",
+                )
 
-            assert session_id is not None
-            assert len(session_id) > 10
-            # 验证 set 被调用
-            mock_set.assert_called_once()
+                assert session_id is not None
+                assert len(session_id) > 10
+                # 验证 set 被调用
+                mock_set.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_create_session_with_ttl(self):
@@ -48,20 +52,42 @@ class TestCreateSession:
         from framework.utils import session as session_module
 
         mock_set = AsyncMock(return_value=True)
+        mock_client = MagicMock()
 
-        with patch.object(session_module.RedisUtil, "set", mock_set):
+        with patch.object(session_module.RedisUtil, "_client", mock_client):
+            with patch.object(session_module.RedisUtil, "set", mock_set):
+                session_id = await session_module.create_session(
+                    user_id="user-123",
+                    tenant_id="tenant-456",
+                    ttl=timedelta(days=7),
+                )
+
+                assert session_id is not None
+                # 验证 TTL 被传递
+                call_args = mock_set.call_args
+                assert call_args is not None
+                # 第三个参数是 ttl
+                assert "ttl" in call_args.kwargs or len(call_args.args) >= 3
+
+    @pytest.mark.asyncio
+    async def test_create_session_fallback_to_memory(self):
+        """
+        场景：Redis 不可用时降级到内存
+        WHEN: _client 为 None
+        THEN: 使用内存存储
+        """
+        from framework.utils import session as session_module
+
+        # 不 mock _client，保持 None
+        with patch.object(session_module.RedisUtil, "_client", None):
             session_id = await session_module.create_session(
                 user_id="user-123",
                 tenant_id="tenant-456",
-                ttl=timedelta(days=7),
             )
 
             assert session_id is not None
-            # 验证 TTL 被传递
-            call_args = mock_set.call_args
-            assert call_args is not None
-            # 第三个参数是 ttl
-            assert "ttl" in call_args.kwargs or len(call_args.args) >= 3
+            # 验证内存存储有数据
+            assert session_id in session_module._memory_sessions
 
 
 class TestGetSession:
@@ -76,17 +102,21 @@ class TestGetSession:
         """
         from framework.utils import session as session_module
 
-        session_data = (
-            '{"user_id": "user-123", "tenant_id": "tenant-456", "version": 1}'
-        )
+        session_data = json.dumps({
+            "user_id": "user-123",
+            "tenant_id": "tenant-456",
+            "version": 1
+        })
         mock_get = AsyncMock(return_value=session_data)
+        mock_client = MagicMock()
 
-        with patch.object(session_module.RedisUtil, "get", mock_get):
-            session = await session_module.get_session("session-123")
+        with patch.object(session_module.RedisUtil, "_client", mock_client):
+            with patch.object(session_module.RedisUtil, "get", mock_get):
+                session = await session_module.get_session("session-123")
 
-            assert session is not None
-            assert session["user_id"] == "user-123"
-            assert session["tenant_id"] == "tenant-456"
+                assert session is not None
+                assert session["user_id"] == "user-123"
+                assert session["tenant_id"] == "tenant-456"
 
     @pytest.mark.asyncio
     async def test_get_session_not_found(self):
@@ -98,11 +128,35 @@ class TestGetSession:
         from framework.utils import session as session_module
 
         mock_get = AsyncMock(return_value=None)
+        mock_client = MagicMock()
 
-        with patch.object(session_module.RedisUtil, "get", mock_get):
-            session = await session_module.get_session("nonexistent-session")
+        with patch.object(session_module.RedisUtil, "_client", mock_client):
+            with patch.object(session_module.RedisUtil, "get", mock_get):
+                session = await session_module.get_session("nonexistent-session")
 
-            assert session is None
+                assert session is None
+
+    @pytest.mark.asyncio
+    async def test_get_session_from_memory(self):
+        """
+        场景：从内存获取会话
+        WHEN: Redis 不可用
+        THEN: 从内存存储获取
+        """
+        from framework.utils import session as session_module
+
+        # 清空内存存储
+        session_module._memory_sessions.clear()
+        session_module._memory_sessions["test-session"] = {
+            "user_id": "user-mem",
+            "tenant_id": "tenant-mem",
+        }
+
+        with patch.object(session_module.RedisUtil, "_client", None):
+            session = await session_module.get_session("test-session")
+
+            assert session is not None
+            assert session["user_id"] == "user-mem"
 
 
 class TestDeleteSession:
@@ -118,11 +172,29 @@ class TestDeleteSession:
         from framework.utils import session as session_module
 
         mock_delete = AsyncMock(return_value=1)
+        mock_client = MagicMock()
 
-        with patch.object(session_module.RedisUtil, "delete", mock_delete):
-            await session_module.delete_session("session-123")
+        with patch.object(session_module.RedisUtil, "_client", mock_client):
+            with patch.object(session_module.RedisUtil, "delete", mock_delete):
+                await session_module.delete_session("session-123")
 
-            mock_delete.assert_called_once()
+                mock_delete.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_delete_session_from_memory(self):
+        """
+        场景：从内存删除会话
+        WHEN: Redis 不可用
+        THEN: 从内存存储删除
+        """
+        from framework.utils import session as session_module
+
+        session_module._memory_sessions["del-session"] = {"user_id": "test"}
+
+        with patch.object(session_module.RedisUtil, "_client", None):
+            await session_module.delete_session("del-session")
+
+            assert "del-session" not in session_module._memory_sessions
 
 
 class TestTokenBlacklist:
@@ -138,11 +210,13 @@ class TestTokenBlacklist:
         from framework.utils import session as session_module
 
         mock_set = AsyncMock(return_value=True)
+        mock_client = MagicMock()
 
-        with patch.object(session_module.RedisUtil, "set", mock_set):
-            await session_module.add_to_blacklist("token-jti-123", ttl_seconds=3600)
+        with patch.object(session_module.RedisUtil, "_client", mock_client):
+            with patch.object(session_module.RedisUtil, "set", mock_set):
+                await session_module.add_to_blacklist("token-jti-123", ttl_seconds=3600)
 
-            mock_set.assert_called_once()
+                mock_set.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_is_blacklisted_true(self):
@@ -153,12 +227,15 @@ class TestTokenBlacklist:
         """
         from framework.utils import session as session_module
 
-        mock_exists = AsyncMock(return_value=True)
+        # is_blacklisted 使用 get 而非 exists
+        mock_get = AsyncMock(return_value="1")
+        mock_client = MagicMock()
 
-        with patch.object(session_module.RedisUtil, "exists", mock_exists):
-            result = await session_module.is_blacklisted("token-jti-123")
+        with patch.object(session_module.RedisUtil, "_client", mock_client):
+            with patch.object(session_module.RedisUtil, "get", mock_get):
+                result = await session_module.is_blacklisted("token-jti-123")
 
-            assert result is True
+                assert result is True
 
     @pytest.mark.asyncio
     async def test_is_blacklisted_false(self):
@@ -169,38 +246,28 @@ class TestTokenBlacklist:
         """
         from framework.utils import session as session_module
 
-        mock_exists = AsyncMock(return_value=False)
+        mock_get = AsyncMock(return_value=None)
+        mock_client = MagicMock()
 
-        with patch.object(session_module.RedisUtil, "exists", mock_exists):
-            result = await session_module.is_blacklisted("not-blacklisted-token")
+        with patch.object(session_module.RedisUtil, "_client", mock_client):
+            with patch.object(session_module.RedisUtil, "get", mock_get):
+                result = await session_module.is_blacklisted("not-blacklisted-token")
 
-            assert result is False
-
-
-class TestUpdateSessionVersion:
-    """更新会话版本测试"""
+                assert result is False
 
     @pytest.mark.asyncio
-    async def test_update_version(self):
+    async def test_add_to_blacklist_memory(self):
         """
-        场景：更新会话版本
-        WHEN: 调用 update_session_version
-        THEN: 版本号增加
+        场景：内存模式下添加黑名单
+        WHEN: Redis 不可用
+        THEN: 存储到内存
         """
         from framework.utils import session as session_module
 
-        session_data = (
-            '{"user_id": "user-123", "tenant_id": "tenant-456", "version": 1}'
-        )
-        mock_get = AsyncMock(return_value=session_data)
-        mock_set = AsyncMock(return_value=True)
+        with patch.object(session_module.RedisUtil, "_client", None):
+            await session_module.add_to_blacklist("mem-jti", ttl_seconds=3600)
 
-        with patch.object(session_module.RedisUtil, "get", mock_get):
-            with patch.object(session_module.RedisUtil, "set", mock_set):
-                await session_module.update_session_version("session-123")
-
-                # 验证 set 被调用来更新会话
-                mock_set.assert_called_once()
+            assert "mem-jti" in session_module._memory_blacklist
 
 
 class TestSessionKeyFormat:

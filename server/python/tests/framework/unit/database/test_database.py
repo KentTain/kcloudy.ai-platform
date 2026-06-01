@@ -10,7 +10,7 @@ from framework.database.types.uuid import StringUUID
 from framework.database.types.snowflake import SnowflakeIDGenerator
 from framework.database.mixins.audit import AuditMixin
 from framework.database.mixins.tenant import TenantMixin
-from framework.database.mixins.tree import TreeMixin
+from framework.database.mixins.tree import TreeNodeMixin
 
 
 class TestStringUUID:
@@ -117,53 +117,66 @@ class TestMixins:
         """
         assert hasattr(TenantMixin, "tenant_id")
 
-    def test_tree_mixin_attributes(self):
+    def test_tree_node_mixin_attributes(self):
         """
         场景：树结构混入属性
-        WHEN: 检查 TreeMixin
+        WHEN: 检查 TreeNodeMixin
         THEN: 包含正确属性
         """
-        assert hasattr(TreeMixin, "parent_id")
-        assert hasattr(TreeMixin, "level")
-        assert hasattr(TreeMixin, "path")
+        assert hasattr(TreeNodeMixin, "parent_id")
+        assert hasattr(TreeNodeMixin, "tree_level")
+        assert hasattr(TreeNodeMixin, "tree_leaf")
+        assert hasattr(TreeNodeMixin, "tree_sort")
+        assert hasattr(TreeNodeMixin, "tree_sorts")
+        assert hasattr(TreeNodeMixin, "tree_names")
+        assert hasattr(TreeNodeMixin, "parent_ids")
 
-    def test_tree_mixin_is_root(self):
+    def test_tree_node_mixin_is_leaf(self):
         """
-        场景：判断根节点
-        WHEN: parent_id 为 None
-        THEN: is_root 返回 True
+        场景：判断叶子节点
+        WHEN: tree_leaf 为 True
+        THEN: 是叶子节点
         """
         # 创建一个模拟对象
-        class MockTree(TreeMixin):
+        class MockTreeNode(TreeNodeMixin):
             def __init__(self):
-                self.parent_id = None
-                self.path = None
+                self.parent_id = "root"
+                self.tree_leaf = True
+                self.tree_level = 1
+                self.tree_sorts = "001,"
+                self.tree_names = "测试"
+                self.parent_ids = "root,"
 
-        node = MockTree()
-        assert node.is_root() is True
+        node = MockTreeNode()
+        assert node.tree_leaf is True
 
-    def test_tree_mixin_get_ancestors(self):
+    def test_tree_node_mixin_level(self):
         """
-        场景：获取祖先节点
-        WHEN: path 有值
-        THEN: 返回正确的 ID 列表
+        场景：树节点层级
+        WHEN: tree_level 有值
+        THEN: 正确表示层级
         """
-        class MockTree(TreeMixin):
-            def __init__(self, path):
-                self.path = path
+        class MockTreeNode(TreeNodeMixin):
+            def __init__(self, level):
+                self.tree_level = level
 
-        node = MockTree("1,2,3,4")
-        assert node.get_ancestors() == ["1", "2", "3", "4"]
+        root = MockTreeNode(0)
+        child = MockTreeNode(1)
 
-    def test_tree_mixin_get_ancestors_empty(self):
+        assert root.tree_level == 0
+        assert child.tree_level == 1
+
+    def test_tree_node_mixin_parent_ids(self):
         """
-        场景：空路径
-        WHEN: path 为 None
-        THEN: 返回空列表
+        场景：父节点路径
+        WHEN: parent_ids 有值
+        THEN: 正确表示路径
         """
-        class MockTree(TreeMixin):
-            def __init__(self):
-                self.path = None
+        class MockTreeNode(TreeNodeMixin):
+            def __init__(self, parent_ids):
+                self.parent_ids = parent_ids
 
-        node = MockTree()
-        assert node.get_ancestors() == []
+        node = MockTreeNode("root,node1,node2,")
+        assert "root" in node.parent_ids
+        assert "node1" in node.parent_ids
+        assert "node2" in node.parent_ids

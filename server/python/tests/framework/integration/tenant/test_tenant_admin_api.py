@@ -26,7 +26,8 @@ class TestAdminAuth:
         hashed = hash_password(password)
 
         assert hashed != password
-        assert len(hashed) == 64  # SHA256 输出长度
+        assert len(hashed) == 60  # bcrypt 输出长度
+        assert hashed.startswith("$2b$")  # bcrypt 格式
 
     def test_password_verify(self):
         """测试密码验证"""
@@ -57,7 +58,7 @@ class TestTenantAdminAPI:
 
     def test_schema_validation(self):
         """测试 Schema 验证"""
-        from iam.schemas.admin.tenant import TenantCreateRequest, TenantVo
+        from tenant.schemas.admin.tenant import TenantCreateRequest
 
         # 创建请求
         req = TenantCreateRequest(
@@ -69,7 +70,7 @@ class TestTenantAdminAPI:
 
     def test_tenant_vo(self):
         """测试租户 VO"""
-        from iam.schemas.admin.tenant import TenantVo
+        from tenant.schemas.admin.tenant import TenantVo
         from datetime import datetime
 
         vo = TenantVo(
