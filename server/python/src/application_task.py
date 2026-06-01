@@ -38,19 +38,7 @@ async def run_task(module_names: list[str] | None = None) -> None:
             except ImportError:
                 _logger.info("No modules config found, loading all modules")
 
-    # 阶段2: 模块加载 (order=3)
-    with timer.phase("模块加载", order=3):
-        src_path = Path(__file__).parent
-        modules = load_modules(src_path, module_names)
-        _logger.info(f"已加载模块: {[m.name for m in modules]}")
-
-    loop = asyncio.get_running_loop()
-    stop = loop.create_future()
-
-    for sig in (signal.SIGINT, signal.SIGTERM):
-        loop.add_signal_handler(sig, lambda: stop.set_result(None))
-
-    # 阶段3: 基础组件初始化 (order=2)
+    # 阶段2: 基础组件初始化 (order=2)
     with timer.phase("基础组件初始化", order=2) as phase:
         try:
             from demo.configs import settings
@@ -71,6 +59,18 @@ async def run_task(module_names: list[str] | None = None) -> None:
         if provider:
             register_tenant_provider(provider)
             phase.details["TenantProvider"] = "已注册"
+
+    # 阶段3: 模块加载 (order=3)
+    with timer.phase("模块加载", order=3):
+        src_path = Path(__file__).parent
+        modules = load_modules(src_path, module_names)
+        _logger.info(f"已加载模块: {[m.name for m in modules]}")
+
+    loop = asyncio.get_running_loop()
+    stop = loop.create_future()
+
+    for sig in (signal.SIGINT, signal.SIGTERM):
+        loop.add_signal_handler(sig, lambda: stop.set_result(None))
 
     # 阶段4: 任务调度器启动 (order=4)
     with timer.phase("任务调度器启动", order=4) as phase:
