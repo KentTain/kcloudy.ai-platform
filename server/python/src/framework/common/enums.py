@@ -3,6 +3,32 @@
 """
 
 from enum import Enum
+from typing import TypedDict
+
+
+class EnumMemberData(TypedDict):
+    """枚举成员数据结构"""
+
+    name: str
+    value: str
+    label: str
+
+
+class EnumBase(Enum):
+    """枚举基类，提供通用的枚举功能"""
+
+    @classmethod
+    def get_enum_list(cls) -> list[EnumMemberData]:
+        """获取枚举成员列表"""
+        return [
+            EnumMemberData(name=member.name, value=member.value, label=member.label)
+            for member in cls
+        ]
+
+    @property
+    def label(self) -> str:
+        """获取枚举成员的显示标签"""
+        return self.name
 
 
 class ErrorCode(str, Enum):

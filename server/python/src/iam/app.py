@@ -18,14 +18,6 @@ from framework.tenant.middleware import TenantMiddleware
 from framework.tenant.protocols import register_tenant_provider
 from tenant.services.tenant_provider_impl import tenant_provider_impl
 
-# 尝试导入 demo 配置，如果不存在则使用默认配置
-try:
-    from demo.configs import settings
-except ImportError:
-    from framework.configs import get_settings
-
-    settings = get_settings()
-
 _logger = logger.bind(name=__name__)
 
 APP_NAME = "IAM API"
@@ -40,6 +32,9 @@ async def lifespan(app: FastAPI):
     )
 
     # 初始化数据库引擎
+    from framework.configs import get_settings
+
+    settings = get_settings()
     sqlalchemy_config = settings.sqlalchemy
     setup_engine(
         database_url=sqlalchemy_config.url,

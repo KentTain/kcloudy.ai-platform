@@ -44,11 +44,9 @@ def _is_redis_available() -> bool:
 
 def _get_settings():
     """获取设置对象"""
-    try:
-        from demo.configs import settings
-    except ImportError:
-        from configs import settings
-    return settings
+    from framework.configs import get_settings
+
+    return get_settings()
 
 
 class AuthService:

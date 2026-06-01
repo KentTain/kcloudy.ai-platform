@@ -6,6 +6,7 @@
 
 from framework.configs.helpers import deep_merge_dict
 from framework.utils.tree_util import TreeUtil
-from demo.utils.enum_util import EnumDataUtils, EnumMemberData
+from framework.common.enums import EnumMemberData
+from demo.utils.enum_util import EnumDataUtils
 
 __all__ = ["deep_merge_dict", "EnumDataUtils", "EnumMemberData", "TreeUtil"]

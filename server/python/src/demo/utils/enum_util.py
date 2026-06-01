@@ -4,15 +4,8 @@
 
 import threading
 from copy import deepcopy
-from typing import TypedDict
 
-
-class EnumMemberData(TypedDict):
-    """枚举成员数据结构"""
-
-    name: str  # 枚举成员的名称
-    value: str  # 枚举成员的值
-    label: str  # 枚举成员的显示标签
+from framework.common.enums import EnumMemberData
 
 
 class EnumDataUtils:
