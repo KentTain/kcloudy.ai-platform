@@ -17,19 +17,20 @@ framework ──X──▶ demo / iam
 
 | 目录 | 职责 |
 | --- | --- |
+| `cache/` | Redis 工具、租户缓存管理、租户 Redis 工具 |
+| `clients/` | 内部 HTTP 客户端、租户客户端、IAM 客户端 |
+| `common/` | 通用上下文、异常、响应、枚举、单例、异常处理器 |
 | `configs/` | YAML 配置加载、环境变量覆盖、配置模型 |
-| `cache/` | Redis 工具与租户缓存管理 |
-| `common/` | 通用上下文、异常、响应、枚举 |
 | `core/` | 存储、队列、发布订阅、锁等 Protocol / 抽象接口、树结构常量 |
-| `database/` | SQLAlchemy 基础模型、Mixin（含 TreeNodeMixin）、类型、事件、引擎池 |
-| `schemas/` | Pydantic VO 基类（含 TreeNodeVo、TreeNodeTreeVo） |
-| `module/` | 模块动态加载系统：`ModuleDescriptor` Protocol、`ModuleRegistry` 注册中心、模块扫描与依赖解析 |
+| `database/` | SQLAlchemy 基础模型、Mixin、类型、事件、拦截器、引擎池 |
 | `lock/` | 分布式锁工厂与实现 |
+| `module/` | 模块动态加载系统：`ModuleDescriptor` Protocol、`ModuleRegistry` 注册中心、模块扫描与依赖解析 |
 | `pubsub/` | 发布订阅工厂、Handler 与 Redis 实现 |
-| `queue/` | 队列工厂、Handler 与 Redis Stream 实现 |
-| `storage/` | 对象存储工厂与 MinIO、阿里云 OSS、腾讯云实现 |
-| `tenant/` | 租户模型、上下文与资源隔离协议 |
-| `utils/` | 加密、JWT、Session、字符串、时间、JSON、树形结构等工具 |
+| `queue/` | 队列工厂、Handler、Redis Stream 实现、任务队列、任务执行器 |
+| `schemas/` | Pydantic VO 基类（含 TreeNodeVo、TreeNodeTreeVo） |
+| `storage/` | 对象存储工厂、MinIO/OSS/腾讯云实现、租户存储管理 |
+| `tenant/` | 租户模型、上下文、中间件、解析器、缓存、枚举、异常、Protocol |
+| `utils/` | 加密、JWT、Session、字符串、时间、JSON、树形结构、启动计时器等工具 |
 
 ## 开发规则
 
@@ -46,9 +47,9 @@ Framework 支持按租户切换物理资源：
 
 | 资源 | 管理入口 | 隔离方式 |
 | --- | --- | --- |
-| 数据库 | `framework.database.core.engine_pool` | 租户独立 Database / Engine / Session |
-| 存储 | `framework.storage.tenant_storage_manager` | 租户独立 Bucket |
-| 缓存 | `framework.cache.tenant_cache_manager` | 租户独立 Redis DB |
+| 数据库 | `framework.database.core.engine_pool.DatabaseEnginePool` | 租户独立 Database / Engine / Session |
+| 存储 | `framework.storage.tenant_storage_manager.TenantStorageManager` | 租户独立 Bucket |
+| 缓存 | `framework.cache.tenant_cache_manager.TenantCacheManager` | 租户独立 Redis DB |
 
 未配置租户专属资源时，使用默认资源和逻辑隔离策略。
 
@@ -90,6 +91,21 @@ await RedisUtil.set("key", "value", ttl=60)
 value = await RedisUtil.get("key")
 ```
 
+### 租户缓存管理
+
+```python
+from framework.cache.tenant_cache_manager import init_cache_manager, get_cache_manager
+
+# 初始化租户缓存管理器
+cache_manager = init_cache_manager(default_redis_client)
+
+# 注册租户独立 Redis DB
+cache_manager.register_tenant_db("tenant_001", db=1)
+
+# 获取租户 Redis 客户端
+tenant_client = cache_manager.get_client("tenant_001")
+```
+
 ### 分布式锁
 
 ```python
@@ -115,6 +131,25 @@ class User(BaseModel, TenantMixin, AuditMixin):
     username: Mapped[str] = mapped_column(String(64), nullable=False)
 ```
 
+### 数据库引擎池
+
+```python
+from framework.database.core.engine_pool import DatabaseEnginePool
+
+# 创建引擎池
+engine_pool = DatabaseEnginePool(max_engines=50, idle_timeout=1800)
+
+# 初始化默认引擎
+await engine_pool.init_default_engine(database_url)
+
+# 获取租户引擎
+engine = await engine_pool.get_engine(tenant_id, tenant_db_config)
+
+# 获取会话
+async with engine_pool.session(tenant_id) as session:
+    ...
+```
+
 ### 树结构模型
 
 ```python
@@ -135,6 +170,82 @@ child = await Department.create_node(session, {"name": "前端组", "parent_id":
 tree = Department.build_tree(await Department.list_nodes(session))
 ```
 
+### 任务队列
+
+```python
+from framework.queue.task_queue import enqueue_task
+
+# 入队任务（自动携带租户上下文）
+task_id = await enqueue_task("send_email", {"to": "user@example.com"})
+
+# 注册任务处理器
+from framework.queue.task_executor import register_task_handler
+
+async def send_email_handler(payload: dict) -> None:
+    # 处理发送邮件逻辑
+    ...
+
+register_task_handler("send_email", send_email_handler)
+```
+
+### 内部 HTTP 客户端
+
+```python
+from framework.clients import InnerHttpClient
+
+# 创建客户端
+client = InnerHttpClient(
+    base_url="http://localhost:8000",
+    service_name="iam",
+    timeout=30.0
+)
+
+# 调用内部服务
+response = await client.get("/inner/v1/users/123")
+users = await client.get_list("/inner/v1/users", UserVo)
+```
+
+### 租户存储管理
+
+```python
+from framework.storage.tenant_storage_manager import init_storage_manager, get_storage_manager
+
+# 初始化存储管理器
+storage_manager = init_storage_manager(default_storage, default_bucket)
+
+# 注册租户存储桶
+storage_manager.register_bucket("tenant_001", "tenant-001-bucket")
+
+# 使用租户存储
+from framework.storage.tenant_storage import tenant_storage_upload, tenant_storage_download
+
+await tenant_storage_upload("my-bucket", "file.txt", file_data)
+content = await tenant_storage_download("my-bucket", "file.txt")
+```
+
+### 租户上下文
+
+```python
+from framework.tenant import (
+    TenantContext,
+    get_tenant_id,
+    get_tenant_code,
+    set_current_tenant,
+    clear_tenant_context,
+)
+
+# 设置当前租户
+tenant_info = SimpleTenant(id="tenant_001", code="T001", name="测试租户")
+set_current_tenant(tenant_info)
+
+# 获取租户信息
+tenant_id = get_tenant_id()
+tenant_code = get_tenant_code()
+
+# 清理上下文
+clear_tenant_context()
+```
+
 ### 依赖倒置
 
 ```python
@@ -145,6 +256,28 @@ class TenantProvider(Protocol):
 ```
 
 业务模块实现 Protocol，应用启动时注册实现，framework 只依赖抽象。
+
+### 启动计时器
+
+```python
+from framework.utils.startup_timer import StartupTimer
+
+timer = StartupTimer("应用名称")
+
+with timer.phase("数据库初始化", order=1):
+    # 初始化数据库
+    ...
+
+with timer.phase("模块加载", order=2):
+    # 加载模块
+    ...
+
+timer.print_summary(
+    modules=["iam", "demo"],
+    address="http://localhost:8000",
+    docs_path="/docs"
+)
+```
 
 ## 测试
 

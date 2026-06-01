@@ -4,18 +4,24 @@
 
 from datetime import datetime
 
-from sqlalchemy import DateTime, Index, String
+from sqlalchemy import DateTime, ForeignKey, Index, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from iam.models import BaseModel
 from framework.database.mixins.active_record import ActiveRecordMixin
+from framework.database.mixins.tenant import TenantMixin
 from iam.models.enums import UserStatus
 
 
-class User(BaseModel, ActiveRecordMixin):
+class User(BaseModel, ActiveRecordMixin, TenantMixin):
     """用户模型"""
 
     __tablename__ = "users"
+
+    # 覆盖 TenantMixin 的 tenant_id，添加外键约束
+    tenant_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("tenant.tenants.id", ondelete="CASCADE"), nullable=False, comment="租户ID"
+    )
 
     username: Mapped[str] = mapped_column(
         String(50), unique=True, nullable=False, comment="用户名"
@@ -55,6 +61,7 @@ class User(BaseModel, ActiveRecordMixin):
     )
 
     __table_args__ = (
+        Index("ix_users_tenant_id", "tenant_id"),
         Index("ix_users_username", "username"),
         Index("ix_users_email", "email"),
         Index("ix_users_phone", "phone"),

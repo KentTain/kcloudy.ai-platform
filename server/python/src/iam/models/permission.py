@@ -6,6 +6,7 @@ from sqlalchemy import Boolean, ForeignKey, Index, String, Text, UniqueConstrain
 from sqlalchemy.orm import Mapped, mapped_column
 
 from iam.models import BaseModel
+from framework.database.mixins.tenant import TenantMixin
 
 
 class Permission(BaseModel):
@@ -35,7 +36,7 @@ class Permission(BaseModel):
     )
 
 
-class UserRole(BaseModel):
+class UserRole(BaseModel, TenantMixin):
     """用户-角色关联模型"""
 
     __tablename__ = "user_roles"
@@ -48,13 +49,14 @@ class UserRole(BaseModel):
     )
 
     __table_args__ = (
+        Index("ix_user_roles_tenant_id", "tenant_id"),
         Index("ix_user_roles_user_id", "user_id"),
         Index("ix_user_roles_role_id", "role_id"),
         UniqueConstraint("user_id", "role_id", name="uq_user_roles_user_role"),
     )
 
 
-class RolePermission(BaseModel):
+class RolePermission(BaseModel, TenantMixin):
     """角色-权限关联模型"""
 
     __tablename__ = "role_permissions"
@@ -67,6 +69,7 @@ class RolePermission(BaseModel):
     )
 
     __table_args__ = (
+        Index("ix_role_permissions_tenant_id", "tenant_id"),
         Index("ix_role_permissions_role_id", "role_id"),
         Index("ix_role_permissions_permission_id", "permission_id"),
         UniqueConstraint("role_id", "permission_id", name="uq_role_permissions_role_permission"),

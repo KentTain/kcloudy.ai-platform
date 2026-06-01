@@ -6,11 +6,12 @@ from sqlalchemy import ForeignKey, Index, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from iam.models import BaseModel
+from framework.database.mixins.tenant import TenantMixin
 from framework.database.mixins.tree import TreeNodeMixin
 from iam.models.enums import DepartmentStatus
 
 
-class Department(BaseModel, TreeNodeMixin):
+class Department(BaseModel, TreeNodeMixin, TenantMixin):
     """部门模型"""
 
     __tablename__ = "departments"
@@ -20,9 +21,11 @@ class Department(BaseModel, TreeNodeMixin):
         String(36), ForeignKey("departments.id", ondelete="SET NULL"), nullable=True, comment="父部门ID"
     )
 
+    # 覆盖 TenantMixin 的 tenant_id，添加外键约束
     tenant_id: Mapped[str] = mapped_column(
         String(36), ForeignKey("tenant.tenants.id", ondelete="CASCADE"), nullable=False, comment="租户ID"
     )
+
     name: Mapped[str] = mapped_column(
         String(100), nullable=False, comment="部门名称"
     )
@@ -51,7 +54,7 @@ class Department(BaseModel, TreeNodeMixin):
         return "name"
 
 
-class UserDepartment(BaseModel):
+class UserDepartment(BaseModel, TenantMixin):
     """用户-部门关联模型"""
 
     __tablename__ = "user_departments"
@@ -67,6 +70,7 @@ class UserDepartment(BaseModel):
     )
 
     __table_args__ = (
+        Index("ix_user_departments_tenant_id", "tenant_id"),
         Index("ix_user_departments_user_id", "user_id"),
         Index("ix_user_departments_department_id", "department_id"),
     )
