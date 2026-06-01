@@ -2,9 +2,10 @@
 
 /**
  * API 客户端配置
+ * baseURL 优先使用环境变量 VITE_API_BASE_URL，默认 /api
  */
 const defaultConfig: AxiosRequestConfig = {
-  baseURL: "/api",
+  baseURL: import.meta.env.VITE_API_BASE_URL || "/api",
   timeout: 10000,
   headers: {
     "Content-Type": "application/json",
