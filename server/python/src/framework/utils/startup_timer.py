@@ -25,19 +25,17 @@ class StartupTimer:
         self.app_name = app_name
         self.start_time = time()
         self.phases: list[PhaseInfo] = []
-        self._current_phase: PhaseInfo | None = None
 
     @contextmanager
     def phase(self, name: str) -> Iterator[PhaseInfo]:
         """阶段计时上下文管理器"""
-        self._current_phase = PhaseInfo(name=name)
+        phase_info = PhaseInfo(name=name)
         phase_start = time()
         try:
-            yield self._current_phase
+            yield phase_info
         finally:
-            self._current_phase.duration = time() - phase_start
-            self.phases.append(self._current_phase)
-            self._current_phase = None
+            phase_info.duration = time() - phase_start
+            self.phases.append(phase_info)
 
     def print_summary(
         self,

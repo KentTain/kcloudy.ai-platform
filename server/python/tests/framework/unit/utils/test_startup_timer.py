@@ -154,3 +154,16 @@ class TestStartupTimer:
 
         assert len(timer.phases) == 1
         assert timer.phases[0].name == "失败阶段"
+
+    def test_nested_phases(self):
+        """测试嵌套阶段"""
+        from framework.utils.startup_timer import StartupTimer
+
+        timer = StartupTimer()
+
+        with timer.phase("外层"):
+            with timer.phase("内层"):
+                pass
+
+        assert len(timer.phases) == 2
+        assert [p.name for p in timer.phases] == ["内层", "外层"]
