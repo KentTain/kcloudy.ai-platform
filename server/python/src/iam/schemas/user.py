@@ -135,6 +135,7 @@ class UserVo(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: str
+    tenant_id: str
     username: str
     email: str | None
     phone: str | None

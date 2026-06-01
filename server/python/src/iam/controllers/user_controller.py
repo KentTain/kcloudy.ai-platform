@@ -28,6 +28,7 @@ from iam.schemas.user import (
 from iam.services import department_service, user_role_service, user_service
 from iam.services.role_service import user_role_service as user_roles_service
 from framework.database.core.engine import async_session
+from framework.tenant.context import get_tenant_id
 
 router = APIRouter()
 
@@ -48,10 +49,16 @@ async def register(data: UserRegisterRequest) -> ORJSONResponse:
 
     创建新用户账号并自动登录。
     """
+    # 从上下文获取租户 ID
+    tenant_id = get_tenant_id()
+    if not tenant_id:
+        raise HTTPException(status_code=400, detail="缺少租户上下文")
+
     try:
         user = await user_service.register(
             username=data.username,
             password=data.password,
+            tenant_id=tenant_id,
             email=data.email,
             phone=data.phone,
         )
@@ -209,7 +216,11 @@ async def list_users(
 
     支持分页、关键词搜索、状态过滤。
     """
+    # 从上下文获取租户 ID
+    tenant_id = get_tenant_id()
+
     users, total = await user_service.list_users(
+        tenant_id=tenant_id,
         page=page,
         page_size=page_size,
         keyword=keyword,
@@ -234,10 +245,16 @@ async def create_user(data: AdminUserCreateRequest) -> ORJSONResponse:
 
     创建新用户账号。
     """
+    # 从上下文获取租户 ID
+    tenant_id = get_tenant_id()
+    if not tenant_id:
+        raise HTTPException(status_code=400, detail="缺少租户上下文")
+
     try:
         user = await user_service.create_user(
             username=data.username,
             password=data.password,
+            tenant_id=tenant_id,
             email=data.email,
             phone=data.phone,
             nickname=data.nickname,

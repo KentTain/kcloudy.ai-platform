@@ -146,8 +146,29 @@ class DepartmentService:
 
     @staticmethod
     async def add_user(department_id: str, user_id: str, is_leader: bool = False) -> UserDepartment:
-        """添加用户到部门"""
+        """
+        添加用户到部门
+
+        自动从部门推导 tenant_id 用于关联表。
+
+        Args:
+            department_id: 部门 ID
+            user_id: 用户 ID
+            is_leader: 是否部门负责人
+
+        Returns:
+            UserDepartment
+        """
         async with async_session() as session:
+            # 获取部门的 tenant_id
+            stmt = select(Department).where(Department.id == department_id)
+            result = await session.execute(stmt)
+            dept = result.scalar_one_or_none()
+            if not dept:
+                raise ValueError("部门不存在")
+
+            tenant_id = dept.tenant_id
+
             stmt = select(UserDepartment).where(
                 UserDepartment.department_id == department_id,
                 UserDepartment.user_id == user_id,
@@ -160,6 +181,7 @@ class DepartmentService:
                 department_id=department_id,
                 user_id=user_id,
                 is_leader=is_leader,
+                tenant_id=tenant_id,
             )
             session.add(ud)
             await session.commit()

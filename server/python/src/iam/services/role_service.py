@@ -155,8 +155,26 @@ class RoleService:
 
     @staticmethod
     async def assign_permissions(role_id: str, permission_ids: list[str]) -> None:
-        """为角色分配权限"""
+        """
+        为角色分配权限
+
+        自动从角色推导 tenant_id 用于关联表。
+
+        Args:
+            role_id: 角色 ID
+            permission_ids: 权限 ID 列表
+        """
         async with async_session() as session:
+            # 获取角色的 tenant_id
+            stmt = select(Role).where(Role.id == role_id)
+            result = await session.execute(stmt)
+            role = result.scalar_one_or_none()
+            if not role:
+                raise ValueError("角色不存在")
+
+            # 使用角色的 tenant_id（全局角色则 tenant_id 为 None）
+            actual_tenant_id = role.tenant_id
+
             # 删除现有权限
             stmt = select(RolePermission).where(RolePermission.role_id == role_id)
             result = await session.execute(stmt)
@@ -165,7 +183,11 @@ class RoleService:
 
             # 添加新权限
             for perm_id in permission_ids:
-                rp = RolePermission(role_id=role_id, permission_id=perm_id)
+                rp = RolePermission(
+                    role_id=role_id,
+                    permission_id=perm_id,
+                    tenant_id=actual_tenant_id,
+                )
                 session.add(rp)
 
             await session.commit()
@@ -189,8 +211,27 @@ class UserRoleService:
 
     @staticmethod
     async def assign_roles(user_id: str, role_ids: list[str]) -> None:
-        """为用户分配角色"""
+        """
+        为用户分配角色
+
+        自动从用户推导 tenant_id 用于关联表。
+
+        Args:
+            user_id: 用户 ID
+            role_ids: 角色 ID 列表
+        """
         async with async_session() as session:
+            # 获取用户的 tenant_id
+            from iam.models import User
+            stmt = select(User).where(User.id == user_id)
+            result = await session.execute(stmt)
+            user = result.scalar_one_or_none()
+            if not user:
+                raise ValueError("用户不存在")
+
+            # 使用用户的 tenant_id
+            tenant_id = user.tenant_id
+
             # 删除现有角色
             stmt = select(UserRole).where(UserRole.user_id == user_id)
             result = await session.execute(stmt)
@@ -199,7 +240,7 @@ class UserRoleService:
 
             # 添加新角色
             for role_id in role_ids:
-                ur = UserRole(user_id=user_id, role_id=role_id)
+                ur = UserRole(user_id=user_id, role_id=role_id, tenant_id=tenant_id)
                 session.add(ur)
 
             await session.commit()

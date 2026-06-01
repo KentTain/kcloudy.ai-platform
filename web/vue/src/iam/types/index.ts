@@ -8,6 +8,7 @@ export type { ApiResponse, PageResult } from "@/framework/types";
 // 用户类型
 export interface User {
   id: string;
+  tenant_id: string;
   username: string;
   email?: string;
   phone?: string;

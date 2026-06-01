@@ -27,6 +27,7 @@ class UserService:
     async def register(
         username: str,
         password: str,
+        tenant_id: str,
         email: str | None = None,
         phone: str | None = None,
     ) -> User:
@@ -36,6 +37,7 @@ class UserService:
         Args:
             username: 用户名
             password: 密码
+            tenant_id: 租户 ID
             email: 邮箱
             phone: 手机号
 
@@ -49,22 +51,22 @@ class UserService:
         validate_password_strength(password)
 
         async with async_session() as session:
-            # 检查用户名是否已存在
-            stmt = select(User).where(User.username == username)
+            # 检查用户名是否已存在（同租户内）
+            stmt = select(User).where(User.username == username, User.tenant_id == tenant_id)
             result = await session.execute(stmt)
             if result.scalar_one_or_none():
                 raise ValueError("用户名已存在")
 
-            # 检查邮箱是否已存在
+            # 检查邮箱是否已存在（同租户内）
             if email:
-                stmt = select(User).where(User.email == email)
+                stmt = select(User).where(User.email == email, User.tenant_id == tenant_id)
                 result = await session.execute(stmt)
                 if result.scalar_one_or_none():
                     raise ValueError("邮箱已被注册")
 
-            # 检查手机号是否已存在
+            # 检查手机号是否已存在（同租户内）
             if phone:
-                stmt = select(User).where(User.phone == phone)
+                stmt = select(User).where(User.phone == phone, User.tenant_id == tenant_id)
                 result = await session.execute(stmt)
                 if result.scalar_one_or_none():
                     raise ValueError("手机号已被注册")
@@ -73,6 +75,7 @@ class UserService:
             user = User(
                 username=username,
                 password_hash=hash_password(password),
+                tenant_id=tenant_id,
                 email=email,
                 phone=phone,
                 status=UserStatus.ACTIVE,
@@ -309,6 +312,7 @@ class UserService:
 
     @staticmethod
     async def list_users(
+        tenant_id: str | None = None,
         page: int = 1,
         page_size: int = 20,
         keyword: str | None = None,
@@ -318,6 +322,7 @@ class UserService:
         获取用户列表
 
         Args:
+            tenant_id: 租户 ID（可选，不传则查所有租户）
             page: 页码
             page_size: 每页数量
             keyword: 搜索关键词
@@ -331,6 +336,8 @@ class UserService:
         async with async_session() as session:
             # 构建查询条件
             conditions = []
+            if tenant_id:
+                conditions.append(User.tenant_id == tenant_id)
             if keyword:
                 conditions.append(
                     or_(
@@ -365,6 +372,7 @@ class UserService:
     async def create_user(
         username: str,
         password: str,
+        tenant_id: str,
         email: str | None = None,
         phone: str | None = None,
         nickname: str | None = None,
@@ -375,6 +383,7 @@ class UserService:
         Args:
             username: 用户名
             password: 密码
+            tenant_id: 租户 ID
             email: 邮箱
             phone: 手机号
             nickname: 昵称
@@ -389,22 +398,22 @@ class UserService:
         validate_password_strength(password)
 
         async with async_session() as session:
-            # 检查用户名是否已存在
-            stmt = select(User).where(User.username == username)
+            # 检查用户名是否已存在（同租户内）
+            stmt = select(User).where(User.username == username, User.tenant_id == tenant_id)
             result = await session.execute(stmt)
             if result.scalar_one_or_none():
                 raise ValueError("用户名已存在")
 
-            # 检查邮箱是否已存在
+            # 检查邮箱是否已存在（同租户内）
             if email:
-                stmt = select(User).where(User.email == email)
+                stmt = select(User).where(User.email == email, User.tenant_id == tenant_id)
                 result = await session.execute(stmt)
                 if result.scalar_one_or_none():
                     raise ValueError("邮箱已被注册")
 
-            # 检查手机号是否已存在
+            # 检查手机号是否已存在（同租户内）
             if phone:
-                stmt = select(User).where(User.phone == phone)
+                stmt = select(User).where(User.phone == phone, User.tenant_id == tenant_id)
                 result = await session.execute(stmt)
                 if result.scalar_one_or_none():
                     raise ValueError("手机号已被注册")
@@ -413,6 +422,7 @@ class UserService:
             user = User(
                 username=username,
                 password_hash=hash_password(password),
+                tenant_id=tenant_id,
                 email=email,
                 phone=phone,
                 nickname=nickname,
