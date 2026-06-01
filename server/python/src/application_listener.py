@@ -14,6 +14,7 @@ from loguru import logger
 from framework.module import ModuleDescriptor, get_registry, load_modules
 from framework.tenant.protocols import register_tenant_provider
 from framework.utils.startup_timer import StartupTimer
+from framework.utils.log_util import write_info, write_warning
 
 _logger = logger.bind(name=__name__)
 
@@ -61,7 +62,7 @@ async def run_listener(module_names: list[str] | None = None) -> None:
     with timer.phase("模块加载", order=3):
         src_path = Path(__file__).parent
         modules = load_modules(src_path, module_names)
-        _logger.info(f"已加载模块: {[m.name for m in modules]}")
+        write_info(f"已加载模块: {[m.name for m in modules]}")
 
     loop = asyncio.get_running_loop()
     stop = loop.create_future()
@@ -93,7 +94,7 @@ async def run_listener(module_names: list[str] | None = None) -> None:
         for setup_func, module_name in setup_funcs:
             try:
                 await setup_func(settings_obj)
-                _logger.info(f"监听器已启动 [{module_name}]")
+                write_info(f"监听器已启动 [{module_name}]")
                 started_count += 1
             except Exception:
                 _logger.exception(f"监听器启动失败 [{module_name}]")
@@ -116,7 +117,7 @@ async def run_listener(module_names: list[str] | None = None) -> None:
                 await cleanup_func()
             except Exception:
                 _logger.exception(f"监听器清理失败 [{module_name}]")
-        _logger.info("所有监听器已停止")
+        write_info("所有监听器已停止")
 
 
 def _get_tenant_provider():
@@ -126,7 +127,7 @@ def _get_tenant_provider():
 
         return tenant_provider_impl
     except ImportError:
-        _logger.warning("TenantProvider 不可用")
+        write_warning("TenantProvider 不可用")
         return None
 
 

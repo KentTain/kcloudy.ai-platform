@@ -1,4 +1,4 @@
-﻿"""
+"""
 FastAPI Web 应用工厂
 
 通过动态模块扫描与装配创建应用，替代硬编码 import。
@@ -6,7 +6,6 @@ FastAPI Web 应用工厂
 
 import time
 from contextlib import asynccontextmanager
-from datetime import datetime
 from pathlib import Path
 
 from fastapi import FastAPI
@@ -19,6 +18,7 @@ from framework.module import load_modules, get_registry, ModuleDescriptor
 from framework.tenant.middleware import TenantMiddleware
 from framework.tenant.protocols import register_tenant_provider
 from framework.utils.startup_timer import StartupTimer
+from framework.utils.log_util import write_info, write_success, write_warning
 from demo.configs import settings
 
 _logger = logger.bind(name=__name__)
@@ -30,8 +30,9 @@ APP_NAME = "Demo API"
 async def lifespan(app: FastAPI):
     """应用生命周期管理"""
     timer: StartupTimer = app.state.startup_timer
-    _logger.info(
-        f"\nDemo 应用开始启动... ({datetime.now(tz=ChinaTimeZone).strftime('%Y-%m-%d %H:%M:%S')})"
+    from datetime import datetime
+    write_info(
+        f"Demo 应用开始启动... ({datetime.now(tz=ChinaTimeZone).strftime('%Y-%m-%d %H:%M:%S')})"
     )
 
     with timer.phase("基础组件初始化", order=2) as phase:
@@ -68,7 +69,7 @@ async def lifespan(app: FastAPI):
 
     yield
 
-    _logger.info("Demo 应用关闭")
+    write_info("Demo 应用关闭")
 
 
 def _get_tenant_provider():
@@ -77,7 +78,7 @@ def _get_tenant_provider():
         from tenant.services.tenant_provider_impl import tenant_provider_impl
         return tenant_provider_impl
     except ImportError:
-        _logger.warning("TenantProvider 不可用")
+        write_warning("TenantProvider 不可用")
         return None
 
 
@@ -90,7 +91,7 @@ async def _run_seed_initialization():
         for seed_name, seed_func in seeds.items():
             try:
                 count = await seed_func(dry_run=False)
-                _logger.info(f"Seed 初始化完成 [{module.name}/{seed_name}]: {count} 条记录")
+                write_success(f"Seed 初始化完成 [{module.name}/{seed_name}]: {count} 条记录")
             except Exception:
                 _logger.exception(f"Seed 初始化失败 [{module.name}/{seed_name}]，跳过该模块")
 
@@ -125,7 +126,7 @@ def create_app(module_names: list[str] | None = None) -> FastAPI:
         modules = load_modules(src_path, module_names)
         phase.details["模块数量"] = str(len(modules))
 
-    _logger.info(f"已加载模块: {[m.name for m in modules]}")
+    write_info(f"已加载模块: {[m.name for m in modules]}")
 
     app = FastAPI(
         title=APP_NAME,

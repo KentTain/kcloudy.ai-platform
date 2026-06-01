@@ -4,9 +4,15 @@ from __future__ import annotations
 
 from contextlib import contextmanager
 from dataclasses import dataclass, field
-from datetime import datetime
 from time import time
 from typing import Iterator
+
+from framework.utils.log_util import (
+    Color,
+    write_empty_line,
+    write_separator,
+    format_timestamp,
+)
 
 
 @dataclass
@@ -48,35 +54,38 @@ class StartupTimer:
         """打印启动完成摘要"""
         total_duration = time() - self.start_time
 
-        print("\n" + "=" * 60)
-        print(f"{self.app_name} 启动完成！")
-        print(f"总启动耗时: {total_duration:.3f} 秒")
-        print("启动阶段耗时:")
+        write_empty_line()
+        write_separator()
+        print(f"{Color.GREEN}{self.app_name} 启动完成！{Color.RESET}")
+        print(f"{Color.CYAN}总启动耗时:{Color.RESET} {total_duration:.3f} 秒")
+        print(f"{Color.CYAN}启动阶段耗时:{Color.RESET}")
 
         ordered_phases = sorted(
             enumerate(self.phases),
             key=lambda item: item[1].order if item[1].order is not None else item[0],
         )
         for i, (_, phase) in enumerate(ordered_phases, 1):
-            print(f"  阶段{i} ({phase.name}): {phase.duration:.3f}秒")
+            print(f"  {Color.WHITE}阶段{i} ({phase.name}):{Color.RESET} {phase.duration:.3f}秒")
             if phase.details:
                 for key, value in phase.details.items():
                     print(f"    - {key}: {value}")
 
-        print(f"完成时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        print(f"{Color.CYAN}完成时间:{Color.RESET} {format_timestamp()}")
 
         if modules:
-            print(f"🔌 已加载模块: {len(modules)} 个")
+            print(f"{Color.CYAN}🔌 已加载模块:{Color.RESET} {len(modules)} 个")
             for name in modules:
                 print(f"   - {name}")
 
         if extra_info:
             for key, value in extra_info.items():
-                print(f"{key}: {value}")
+                print(f"{Color.CYAN}{key}:{Color.RESET} {value}")
 
         if address:
-            print(f"\n访问地址: {address}")
+            print()
+            print(f"{Color.GREEN}访问地址:{Color.RESET} {address}")
             if docs_path:
-                print(f"API 文档: {address}{docs_path}")
+                print(f"{Color.GREEN}API 文档:{Color.RESET} {address}{docs_path}")
 
-        print("=" * 60 + "\n")
+        write_separator()
+        write_empty_line()
