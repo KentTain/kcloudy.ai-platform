@@ -75,7 +75,7 @@ class TestTenantProvider:
         mock_user_tenant.tenant_id = "tenant-123"
 
         with patch(
-            "tenant.services.tenant_provider_impl.get_iam_client"
+            "framework.clients.iam_client.get_iam_client"
         ) as mock_get_client:
             mock_client = AsyncMock()
             mock_client.get_user_tenants.return_value = [mock_user_tenant]
@@ -95,7 +95,7 @@ class TestTenantProvider:
         from tenant.services.tenant_provider_impl import tenant_provider_impl
 
         with patch(
-            "tenant.services.tenant_provider_impl.get_iam_client"
+            "framework.clients.iam_client.get_iam_client"
         ) as mock_get_client:
             mock_client = AsyncMock()
             mock_client.get_user_tenants.return_value = []
@@ -140,7 +140,7 @@ class TestTenantProvider:
         mock_tenant2.contact_phone = None
 
         with patch(
-            "tenant.services.tenant_provider_impl.get_iam_client"
+            "framework.clients.iam_client.get_iam_client"
         ) as mock_get_client:
             mock_client = AsyncMock()
             mock_client.get_user_tenants.return_value = [mock_user_tenant1, mock_user_tenant2]
