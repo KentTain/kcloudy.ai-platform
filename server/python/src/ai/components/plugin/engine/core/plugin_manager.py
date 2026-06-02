@@ -22,7 +22,7 @@ import yaml
 from sqlalchemy import and_, select
 
 from framework.configs.settings import settings
-from alon.components.oss.base import oss_provider
+from framework.storage import get_storage_provider
 from ai.components.plugin.engine.core.communication.protocol import PluginError
 from ai.components.plugin.engine.core.helper import (
     PluginConfig,
@@ -278,16 +278,15 @@ class TenantPluginManager:
             # 构建OSS路径 - 包含版本号避免覆盖
             oss_path = f"{self.oss_base_path}/{plugin_id}/{version}/plugin.zip"
 
-            # 上传到OSS
-            success, internal_url, external_url = await asyncio.to_thread(
-                oss_provider.upload,
-                bucket_name=self.oss_bucket_name,
-                object_name=oss_path,
-                file=plugin_package,
-            )
+            # 获取存储提供者
+            storage = get_storage_provider(settings.oss)
 
-            if not success:
-                raise ValueError("OSS上传失败")
+            # 上传到OSS
+            await storage.upload(
+                bucket=self.oss_bucket_name,
+                name=oss_path,
+                data=plugin_package,
+            )
 
             self.logger.info(f"插件包已上传到OSS: {oss_path}")
             return oss_path
@@ -302,33 +301,17 @@ class TenantPluginManager:
             # 构建OSS路径 - 包含版本号
             oss_path = f"{self.oss_base_path}/{plugin_id}/{version}/plugin.zip"
 
-            # 创建临时文件用于OSS下载
-            with tempfile.NamedTemporaryFile(delete=False) as temp_file:
-                temp_path = temp_file.name
+            # 获取存储提供者
+            storage = get_storage_provider(settings.oss)
 
-            try:
-                # 从OSS下载到临时文件
-                success = await asyncio.to_thread(
-                    oss_provider.download,
-                    bucket_name=self.oss_bucket_name,
-                    object_name=oss_path,
-                    filepath=temp_path,
-                )
+            # 从OSS下载
+            plugin_data = await storage.download(
+                bucket=self.oss_bucket_name,
+                name=oss_path,
+            )
 
-                if not success:
-                    raise ValueError("OSS下载失败")
-
-                # 读取临时文件内容
-                with open(temp_path, "rb") as f:
-                    plugin_data = f.read()
-
-                self.logger.info(f"插件包已从OSS下载: {oss_path}")
-                return plugin_data
-
-            finally:
-                # 清理临时文件
-                if os.path.exists(temp_path):
-                    os.unlink(temp_path)
+            self.logger.info(f"插件包已从OSS下载: {oss_path}")
+            return plugin_data
 
         except Exception as e:
             self.logger.exception(f"从OSS下载插件包失败: {plugin_id}@{version}")
@@ -357,20 +340,18 @@ class TenantPluginManager:
                 # 构建OSS路径：plugins/{tenant_id}/{plugin_id}/{version}/assets/{relative_path}
                 oss_path = f"{self.oss_base_path}/{plugin_id}/{version}/assets/{asset.filename}"
 
+                # 获取存储提供者
+                storage = get_storage_provider(settings.oss)
+
                 # 上传到OSS
-                success, internal_url, external_url = await asyncio.to_thread(
-                    oss_provider.upload,
-                    bucket_name=self.oss_bucket_name,
-                    object_name=oss_path,
-                    file=asset.data,
+                await storage.upload(
+                    bucket=self.oss_bucket_name,
+                    name=oss_path,
+                    data=asset.data,
                 )
 
-                if success:
-                    uploaded_files[asset.filename] = oss_path
-                    self.logger.debug(f"资源文件已上传: {asset.filename} -> {oss_path}")
-                else:
-                    failed_files.append(asset.filename)
-                    self.logger.warning(f"资源文件上传失败: {asset.filename}")
+                uploaded_files[asset.filename] = oss_path
+                self.logger.debug(f"资源文件已上传: {asset.filename} -> {oss_path}")
 
             except Exception as e:
                 failed_files.append(asset.filename)
@@ -394,34 +375,17 @@ class TenantPluginManager:
             # 构建OSS路径
             oss_path = f"{self.oss_base_path}/{plugin_id}/{version}/assets/{asset_path}"
 
-            # 创建临时文件用于OSS下载
-            with tempfile.NamedTemporaryFile(delete=False) as temp_file:
-                temp_path = temp_file.name
+            # 获取存储提供者
+            storage = get_storage_provider(settings.oss)
 
-            try:
-                # 从OSS下载到临时文件
-                success = await asyncio.to_thread(
-                    oss_provider.download,
-                    bucket_name=self.oss_bucket_name,
-                    object_name=oss_path,
-                    filepath=temp_path,
-                )
+            # 从OSS下载
+            content = await storage.download(
+                bucket=self.oss_bucket_name,
+                name=oss_path,
+            )
 
-                if not success:
-                    self.logger.warning(f"从OSS下载资源文件失败: {oss_path}")
-                    return None
-
-                # 读取临时文件内容
-                with open(temp_path, "rb") as f:
-                    content = f.read()
-
-                self.logger.debug(f"从OSS下载资源文件成功: {oss_path}")
-                return content
-
-            finally:
-                # 清理临时文件
-                if os.path.exists(temp_path):
-                    os.unlink(temp_path)
+            self.logger.debug(f"从OSS下载资源文件成功: {oss_path}")
+            return content
 
         except Exception as e:
             self.logger.exception(
@@ -795,10 +759,10 @@ class TenantPluginManager:
             # 4. 删除OSS中的插件包
             if oss_path:
                 try:
-                    success = await asyncio.to_thread(
-                        oss_provider.delete,
-                        bucket_name=self.oss_bucket_name,
-                        object_name=oss_path,
+                    storage = get_storage_provider(settings.oss)
+                    success = await storage.delete(
+                        bucket=self.oss_bucket_name,
+                        name=oss_path,
                     )
                     if success:
                         rollback_steps.append(f"删除OSS文件: {oss_path}")
