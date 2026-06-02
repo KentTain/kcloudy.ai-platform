@@ -489,13 +489,17 @@ dependencies = [
     { name = "bcrypt" },
     { name = "click" },
     { name = "cos-python-sdk-v5" },
+    { name = "docstring-parser" },
+    { name = "dpkt" },
     { name = "fastapi", extra = ["standard"] },
+    { name = "gevent" },
     { name = "loguru" },
     { name = "minio" },
     { name = "nanoid" },
     { name = "orjson" },
     { name = "oss2" },
     { name = "pgvector" },
+    { name = "psutil" },
     { name = "pydantic" },
     { name = "pydantic-settings" },
     { name = "pyjwt" },
@@ -504,6 +508,8 @@ dependencies = [
     { name = "redis", extra = ["hiredis"] },
     { name = "sqlalchemy", extra = ["asyncio"] },
     { name = "uvicorn", extra = ["standard"] },
+    { name = "werkzeug" },
+    { name = "yarl" },
 ]
 
 [package.dev-dependencies]
@@ -537,13 +543,17 @@ requires-dist = [
     { name = "bcrypt", specifier = "==4.2.1" },
     { name = "click", specifier = "==8.2.1" },
     { name = "cos-python-sdk-v5", specifier = "==1.9.32" },
+    { name = "docstring-parser", specifier = "~=0.16.0" },
+    { name = "dpkt", specifier = ">=1.9.0" },
     { name = "fastapi", extras = ["standard"], specifier = "==0.115.12" },
+    { name = "gevent", specifier = ">=24.0.0" },
     { name = "loguru", specifier = "==0.7.3" },
     { name = "minio", specifier = "==7.2.15" },
     { name = "nanoid", specifier = "==2.0.0" },
     { name = "orjson", specifier = "==3.10.15" },
     { name = "oss2", specifier = "==2.19.1" },
     { name = "pgvector", specifier = "==0.4.0" },
+    { name = "psutil", specifier = "~=7.0.0" },
     { name = "pydantic", specifier = "==2.10.5" },
     { name = "pydantic-settings", specifier = "==2.10.1" },
     { name = "pyjwt", specifier = "==2.10.1" },
@@ -552,6 +562,8 @@ requires-dist = [
     { name = "redis", extras = ["hiredis"], specifier = "==5.2.1" },
     { name = "sqlalchemy", extras = ["asyncio"], specifier = "==2.0.40" },
     { name = "uvicorn", extras = ["standard"], specifier = "==0.34.3" },
+    { name = "werkzeug", specifier = "~=3.1.3" },
+    { name = "yarl", specifier = ">=1.9.4,<2.0" },
 ]
 
 [package.metadata.requires-dev]
@@ -613,6 +625,24 @@ source = { registry = "https://mirrors.huaweicloud.com/repository/pypi/simple" }
 sdist = { url = "https://mirrors.huaweicloud.com/repository/pypi/packages/b5/4a/263763cb2ba3816dd94b08ad3a33d5fdae34ecb856678773cc40a3605829/dnspython-2.7.0.tar.gz", hash = "sha256:ce9c432eda0dc91cf618a5cedf1a4e142651196bbcd2c80e89ed5a907e5cfaf1" }
 wheels = [
     { url = "https://mirrors.huaweicloud.com/repository/pypi/packages/68/1b/e0a87d256e40e8c888847551b20a017a6b98139178505dc7ffb96f04e954/dnspython-2.7.0-py3-none-any.whl", hash = "sha256:b4c34b7d10b51bcc3a5071e7b8dee77939f1e878477eeecc965e9835f63c6c86" },
+]
+
+[[package]]
+name = "docstring-parser"
+version = "0.16"
+source = { registry = "https://mirrors.huaweicloud.com/repository/pypi/simple" }
+sdist = { url = "https://mirrors.huaweicloud.com/repository/pypi/packages/08/12/9c22a58c0b1e29271051222d8906257616da84135af9ed167c9e28f85cb3/docstring_parser-0.16.tar.gz", hash = "sha256:538beabd0af1e2db0146b6bd3caa526c35a34d61af9fd2887f3a8a27a739aa6e" }
+wheels = [
+    { url = "https://mirrors.huaweicloud.com/repository/pypi/packages/d5/7c/e9fcff7623954d86bdc17782036cbf715ecab1bec4847c008557affe1ca8/docstring_parser-0.16-py3-none-any.whl", hash = "sha256:bf0a1387354d3691d102edef7ec124f219ef639982d096e26e3b60aeffa90637" },
+]
+
+[[package]]
+name = "dpkt"
+version = "1.9.8"
+source = { registry = "https://mirrors.huaweicloud.com/repository/pypi/simple" }
+sdist = { url = "https://mirrors.huaweicloud.com/repository/pypi/packages/c9/7d/52f17a794db52a66e46ebb0c7549bf2f035ed61d5a920ba4aaa127dd038e/dpkt-1.9.8.tar.gz", hash = "sha256:43f8686e455da5052835fd1eda2689d51de3670aac9799b1b00cfd203927ee45" }
+wheels = [
+    { url = "https://mirrors.huaweicloud.com/repository/pypi/packages/11/79/479e2194c9096b92aecdf33634ae948d2be306c6011673e98ee1917f32c2/dpkt-1.9.8-py3-none-any.whl", hash = "sha256:4da4d111d7bf67575b571f5c678c71bddd2d8a01a3d57d489faf0a92c748fbfd" },
 ]
 
 [[package]]
@@ -703,6 +733,29 @@ wheels = [
     { url = "https://mirrors.huaweicloud.com/repository/pypi/packages/b8/af/38e51a553dd66eb064cdf193841f16f077585d4d28394c2fa6235cb41765/frozenlist-1.8.0-cp312-cp312-win_amd64.whl", hash = "sha256:34187385b08f866104f0c0617404c8eb08165ab1272e884abc89c112e9c00746" },
     { url = "https://mirrors.huaweicloud.com/repository/pypi/packages/a7/06/1dc65480ab147339fecc70797e9c2f69d9cea9cf38934ce08df070fdb9cb/frozenlist-1.8.0-cp312-cp312-win_arm64.whl", hash = "sha256:fe3c58d2f5db5fbd18c2987cba06d51b0529f52bc3a6cdc33d3f4eab725104bd" },
     { url = "https://mirrors.huaweicloud.com/repository/pypi/packages/9a/9a/e35b4a917281c0b8419d4207f4334c8e8c5dbf4f3f5f9ada73958d937dcc/frozenlist-1.8.0-py3-none-any.whl", hash = "sha256:0c18a16eab41e82c295618a77502e17b195883241c563b00f0aa5106fc4eaa0d" },
+]
+
+[[package]]
+name = "gevent"
+version = "26.5.0"
+source = { registry = "https://mirrors.huaweicloud.com/repository/pypi/simple" }
+dependencies = [
+    { name = "cffi", marker = "platform_python_implementation == 'CPython' and sys_platform == 'win32'" },
+    { name = "greenlet", marker = "platform_python_implementation == 'CPython'" },
+    { name = "zope-event" },
+    { name = "zope-interface" },
+]
+sdist = { url = "https://mirrors.huaweicloud.com/repository/pypi/packages/c4/cb/98aa3a299e2fc4a2372b5d124863e02965b64579ffc29fe54d0641e65b2f/gevent-26.5.0.tar.gz", hash = "sha256:1655eb04c1e20d71b2aa4a3c7528162dd58ff6cc46a037af1f01f534c80fefba" }
+wheels = [
+    { url = "https://mirrors.huaweicloud.com/repository/pypi/packages/37/0b/1a530b2db55c97cc0cf44116201f538f3033c04c1d2aca143979b412f4be/gevent-26.5.0-cp312-cp312-macosx_11_0_universal2.whl", hash = "sha256:e80ad2a8a1e8bdaa5605e3bf4929e0cebf9ea7b8237c83362f7257698bb14280" },
+    { url = "https://mirrors.huaweicloud.com/repository/pypi/packages/b9/df/32fe851ed5f68493f354e09b19bdebae0de1185be4db0b2988e71e737fd3/gevent-26.5.0-cp312-cp312-manylinux_2_28_aarch64.whl", hash = "sha256:fe42c037253580a3386fce275f8a2a845e540f5a729916934a732f13d42e72cc" },
+    { url = "https://mirrors.huaweicloud.com/repository/pypi/packages/e5/9a/21332674f9a10e8cdf13b41b52e9d663647a1c6e1dc3c62b07c0aeefd360/gevent-26.5.0-cp312-cp312-manylinux_2_28_ppc64le.whl", hash = "sha256:9f463c7d6f69d13b6fe8e3b832a6175a6e95328a940f38495d25496d1ae8ad88" },
+    { url = "https://mirrors.huaweicloud.com/repository/pypi/packages/9f/b1/5f8a4196113cf7f3fdd987b483f7e6b10c28ea3930c4727e31ba8cce51b6/gevent-26.5.0-cp312-cp312-manylinux_2_28_s390x.whl", hash = "sha256:96d5e96b1b14a4c1023dcfcc114533217f13febc3b6169254f23fc18d19fee29" },
+    { url = "https://mirrors.huaweicloud.com/repository/pypi/packages/4e/69/1559b1f6b5107a9118fccd300240879bd581b6d87b03d568d0d155ea702c/gevent-26.5.0-cp312-cp312-manylinux_2_28_x86_64.whl", hash = "sha256:bccff69c462e3650a0fd1d4e9cfc8b6effe15f3e9b1cad20a7bb5ce14b057efd" },
+    { url = "https://mirrors.huaweicloud.com/repository/pypi/packages/e4/32/602c499d54472f64e5cdf6013aeab5ce6aa6fed005387e8b4f2d22f5dc8d/gevent-26.5.0-cp312-cp312-musllinux_1_2_aarch64.whl", hash = "sha256:f519139354d5ca7625df9ddb1b2ffada885c14abc5b4dbae3682e967ddf79669" },
+    { url = "https://mirrors.huaweicloud.com/repository/pypi/packages/f9/3c/2fe77ee6e3d381b3c50c0b7d6c4c08c08b8ff5e8c0d9dd51a3b426d61eec/gevent-26.5.0-cp312-cp312-musllinux_1_2_x86_64.whl", hash = "sha256:0bf57df54f1c66273bf3601c2a1e41b12138fe848933718369663bc54f177ca2" },
+    { url = "https://mirrors.huaweicloud.com/repository/pypi/packages/22/d5/4620797bbd9c88f4541188efc138b0d615f9834db540da36a2249ee929c5/gevent-26.5.0-cp312-cp312-win_amd64.whl", hash = "sha256:e49ce0de007dfd7412edbc2b5d41cce33b049bb1b7086f50be5a09e601bde603" },
+    { url = "https://mirrors.huaweicloud.com/repository/pypi/packages/cb/83/ac3477dfc0f9fd80c88110102c73cefc35dcded2b248544f45a8fa5412df/gevent-26.5.0-cp312-cp312-win_arm64.whl", hash = "sha256:5c5ff29495a2eed2a244de8150f21893d6c1b15d8b4b5719ab4bbfa06db1e28f" },
 ]
 
 [[package]]
@@ -1522,6 +1575,21 @@ wheels = [
 ]
 
 [[package]]
+name = "psutil"
+version = "7.0.0"
+source = { registry = "https://mirrors.huaweicloud.com/repository/pypi/simple" }
+sdist = { url = "https://mirrors.huaweicloud.com/repository/pypi/packages/2a/80/336820c1ad9286a4ded7e845b2eccfcb27851ab8ac6abece774a6ff4d3de/psutil-7.0.0.tar.gz", hash = "sha256:7be9c3eba38beccb6495ea33afd982a44074b78f28c434a1f51cc07fd315c456" }
+wheels = [
+    { url = "https://mirrors.huaweicloud.com/repository/pypi/packages/ed/e6/2d26234410f8b8abdbf891c9da62bee396583f713fb9f3325a4760875d22/psutil-7.0.0-cp36-abi3-macosx_10_9_x86_64.whl", hash = "sha256:101d71dc322e3cffd7cea0650b09b3d08b8e7c4109dd6809fe452dfd00e58b25" },
+    { url = "https://mirrors.huaweicloud.com/repository/pypi/packages/04/8b/30f930733afe425e3cbfc0e1468a30a18942350c1a8816acfade80c005c4/psutil-7.0.0-cp36-abi3-macosx_11_0_arm64.whl", hash = "sha256:39db632f6bb862eeccf56660871433e111b6ea58f2caea825571951d4b6aa3da" },
+    { url = "https://mirrors.huaweicloud.com/repository/pypi/packages/2a/ed/d362e84620dd22876b55389248e522338ed1bf134a5edd3b8231d7207f6d/psutil-7.0.0-cp36-abi3-manylinux_2_12_i686.manylinux2010_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:1fcee592b4c6f146991ca55919ea3d1f8926497a713ed7faaf8225e174581e91" },
+    { url = "https://mirrors.huaweicloud.com/repository/pypi/packages/bf/b9/b0eb3f3cbcb734d930fdf839431606844a825b23eaf9a6ab371edac8162c/psutil-7.0.0-cp36-abi3-manylinux_2_12_x86_64.manylinux2010_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:4b1388a4f6875d7e2aff5c4ca1cc16c545ed41dd8bb596cefea80111db353a34" },
+    { url = "https://mirrors.huaweicloud.com/repository/pypi/packages/eb/a2/709e0fe2f093556c17fbafda93ac032257242cabcc7ff3369e2cb76a97aa/psutil-7.0.0-cp36-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:a5f098451abc2828f7dc6b58d44b532b22f2088f4999a937557b603ce72b1993" },
+    { url = "https://mirrors.huaweicloud.com/repository/pypi/packages/50/e6/eecf58810b9d12e6427369784efe814a1eec0f492084ce8eb8f4d89d6d61/psutil-7.0.0-cp37-abi3-win32.whl", hash = "sha256:ba3fcef7523064a6c9da440fc4d6bd07da93ac726b5733c29027d7dc95b39d99" },
+    { url = "https://mirrors.huaweicloud.com/repository/pypi/packages/50/1b/6921afe68c74868b4c9fa424dad3be35b095e16687989ebbb50ce4fceb7c/psutil-7.0.0-cp37-abi3-win_amd64.whl", hash = "sha256:4cf3d4eb1aa9b348dec30105c55cd9b7d4629285735a102beb4441e38db90553" },
+]
+
+[[package]]
 name = "py-cpuinfo"
 version = "9.0.0"
 source = { registry = "https://mirrors.huaweicloud.com/repository/pypi/simple" }
@@ -2299,6 +2367,18 @@ wheels = [
 ]
 
 [[package]]
+name = "werkzeug"
+version = "3.1.8"
+source = { registry = "https://mirrors.huaweicloud.com/repository/pypi/simple" }
+dependencies = [
+    { name = "markupsafe" },
+]
+sdist = { url = "https://mirrors.huaweicloud.com/repository/pypi/packages/dd/b2/381be8cfdee792dd117872481b6e378f85c957dd7c5bca38897b08f765fd/werkzeug-3.1.8.tar.gz", hash = "sha256:9bad61a4268dac112f1c5cd4630a56ede601b6ed420300677a869083d70a4c44" }
+wheels = [
+    { url = "https://mirrors.huaweicloud.com/repository/pypi/packages/93/8c/2e650f2afeb7ee576912636c23ddb621c91ac6a98e66dc8d29c3c69446e1/werkzeug-3.1.8-py3-none-any.whl", hash = "sha256:63a77fb8892bf28ebc3178683445222aa500e48ebad5ec77b0ad80f8726b1f50" },
+]
+
+[[package]]
 name = "win32-setctime"
 version = "1.2.0"
 source = { registry = "https://mirrors.huaweicloud.com/repository/pypi/simple" }
@@ -2393,6 +2473,30 @@ wheels = [
     { url = "https://mirrors.huaweicloud.com/repository/pypi/packages/f5/be/25216a49daeeb7af2bec0db22d5e7df08ed1d7c9f65d78b14f3b74fd72fc/yarl-1.23.0-cp312-cp312-win_amd64.whl", hash = "sha256:f69f57305656a4852f2a7203efc661d8c042e6cc67f7acd97d8667fb448a426e" },
     { url = "https://mirrors.huaweicloud.com/repository/pypi/packages/d2/35/aeab955d6c425b227d5b7247eafb24f2653fedc32f95373a001af5dfeb9e/yarl-1.23.0-cp312-cp312-win_arm64.whl", hash = "sha256:6e87a6e8735b44816e7db0b2fbc9686932df473c826b0d9743148432e10bb9b9" },
     { url = "https://mirrors.huaweicloud.com/repository/pypi/packages/69/68/c8739671f5699c7dc470580a4f821ef37c32c4cb0b047ce223a7f115757f/yarl-1.23.0-py3-none-any.whl", hash = "sha256:a2df6afe50dea8ae15fa34c9f824a3ee958d785fd5d089063d960bae1daa0a3f" },
+]
+
+[[package]]
+name = "zope-event"
+version = "6.2"
+source = { registry = "https://mirrors.huaweicloud.com/repository/pypi/simple" }
+sdist = { url = "https://mirrors.huaweicloud.com/repository/pypi/packages/93/41/faa10af34d48d9cd6fa0249a1162943ad84a9590bd1a06939981e6640416/zope_event-6.2.tar.gz", hash = "sha256:b97d5d6327067ee6b9dfcbdf606ade9ade70991e19c162e808ea39e5fcf0f8d3" }
+wheels = [
+    { url = "https://mirrors.huaweicloud.com/repository/pypi/packages/9e/33/848922889e946d4befc415c219fe516af75c49555d8e736e183bfd30db42/zope_event-6.2-py3-none-any.whl", hash = "sha256:5e755153ac4faf64c10a4b6dd3307680166a3edf65b38df22df592610f8fa874" },
+]
+
+[[package]]
+name = "zope-interface"
+version = "8.5"
+source = { registry = "https://mirrors.huaweicloud.com/repository/pypi/simple" }
+sdist = { url = "https://mirrors.huaweicloud.com/repository/pypi/packages/08/dc/50550cfcbb2ea3cbca5f1d7ed05c8aa840f831a0f2d63aec0a953f7c590e/zope_interface-8.5.tar.gz", hash = "sha256:7a3ba1c5877f0f3e3906b02ddf793abed2becc2948116414ce0e1dd820b68d6d" }
+wheels = [
+    { url = "https://mirrors.huaweicloud.com/repository/pypi/packages/97/cc/b84123a948f3162a34623e188922827cd845244fdd043ed20f8d02228caa/zope_interface-8.5-cp312-cp312-macosx_10_9_x86_64.whl", hash = "sha256:8e6ee90c2e6de7c37058d5fa41f123c8b13a312db8d1e0fb5840d7f4bcdff9c9" },
+    { url = "https://mirrors.huaweicloud.com/repository/pypi/packages/4e/78/cbceec44f1b27208a76c1a688c131302685852406a23df5aab68324109cc/zope_interface-8.5-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:c1adc90d3576b3b4c4de4953e6002c37bef28b78d7fa54c1bbfd0c50f022fe7c" },
+    { url = "https://mirrors.huaweicloud.com/repository/pypi/packages/e1/c3/005032195ff3b210c139b7c560ed5c534e844b0907d8e44d2b3d8919305e/zope_interface-8.5-cp312-cp312-manylinux1_i686.manylinux2014_i686.manylinux_2_17_i686.manylinux_2_5_i686.whl", hash = "sha256:e6347b8d8d12c5eca6502450a92be30079b7acfade2c4f693efa0deb8871b06e" },
+    { url = "https://mirrors.huaweicloud.com/repository/pypi/packages/c5/66/1036543d6a66bc04c19df3cf650f3ad938a002ab0a443c24e23e8de5e8b9/zope_interface-8.5-cp312-cp312-manylinux1_x86_64.manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_5_x86_64.whl", hash = "sha256:5e970dabea777a24b0b0bbf9dae3ab75ce8b2d8e948edf4875627034b21f3560" },
+    { url = "https://mirrors.huaweicloud.com/repository/pypi/packages/30/4c/8b56259558cace4414e753ca6740396a1f59d4a95ddb55b4658600408670/zope_interface-8.5-cp312-cp312-manylinux2014_aarch64.manylinux_2_17_aarch64.whl", hash = "sha256:f0b48ccadaa9839e09ff81e969703cecb3f402c813bfe8b958652e699bea69f5" },
+    { url = "https://mirrors.huaweicloud.com/repository/pypi/packages/f9/ea/649908c83aa8fdb7faf2ddca4d3cf6fb8f2157121267dc56e8f72681e26c/zope_interface-8.5-cp312-cp312-win_amd64.whl", hash = "sha256:e0e311f1277468c08fd59a2b41f71b43d25dff639789d364747acd1705c0df6e" },
+    { url = "https://mirrors.huaweicloud.com/repository/pypi/packages/9f/97/da13037b4c563e4df32eedbc819f8c00b754af494f68211e3dffd48d52da/zope_interface-8.5-cp312-cp312-win_arm64.whl", hash = "sha256:652b73107a04159ec6c020db6c1543d4f1e8f4d069bd2aac88a947820923517b" },
 ]
 
 [[package]]

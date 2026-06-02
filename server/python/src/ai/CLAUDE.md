@@ -88,6 +88,86 @@ AI 模块提供以下内部接口供其他模块调用：
 
 以实际路由注册为准，修改接口时同步检查对应 Controller、Schema、Service 和测试。
 
+## 插件系统架构
+
+AI 模块包含完整的插件系统实现，支持 Dify 风格的插件运行时管理。
+
+### 核心组件
+
+| 组件 | 路径 | 职责 |
+| --- | --- | --- |
+| PluginManager | `components/plugin/engine/core/plugin_manager.py` | 插件生命周期管理 |
+| PluginDaemon | `components/plugin/engine/core/` | 插件守护进程 |
+| Runtime | `components/plugin/engine/core/runtime/` | 插件运行时（Local/Process/Docker） |
+| SessionManager | `components/plugin/engine/core/session/` | 插件会话管理 |
+| Security | `components/plugin/engine/core/security/` | 插件安全沙箱 |
+| Monitoring | `components/plugin/engine/core/monitoring/` | 插件监控与日志 |
+| Communication | `components/plugin/engine/core/communication/` | 插件通信协议 |
+| Warmup | `components/plugin/engine/core/warmup/` | 插件预热机制 |
+
+### 插件客户端
+
+| 客户端 | 路径 | 职责 |
+| --- | --- | --- |
+| ModelClient | `components/plugin/client/model_client.py` | 模型调用客户端 |
+| ToolClient | `components/plugin/client/tool_client.py` | 工具调用客户端 |
+| StreamPrinter | `components/plugin/client/stream_printer.py` | 流式响应处理 |
+
+### 插件类型
+
+支持以下插件类型：
+
+- **Model**: 大语言模型插件
+- **Tool**: 工具插件
+- **Agent**: Agent 策略插件
+
+### 数据库表
+
+| 表名 | 说明 | 租户隔离 |
+| --- | --- | --- |
+| `ai.plugins` | 插件全局注册表 | 否 |
+| `ai.plugin_declarations` | 插件声明缓存 | 否 |
+| `ai.plugin_installations` | 插件安装实例 | 是 |
+| `ai.plugin_install_tasks` | 批量安装任务 | 是 |
+| `ai.plugin_credentials` | 插件凭证 | 是 |
+
+### API 端点
+
+| 端点 | 方法 | 说明 |
+| --- | --- | --- |
+| `/admin/v1/plugins` | GET | 插件列表 |
+| `/admin/v1/plugins/{plugin_id}` | GET | 获取插件详情 |
+| `/admin/v1/plugins/install` | POST | 安装插件 |
+| `/admin/v1/plugins/{plugin_id}/uninstall` | POST | 卸载插件 |
+| `/admin/v1/plugins/{plugin_id}/start` | POST | 启动插件 |
+| `/admin/v1/plugins/{plugin_id}/stop` | POST | 停止插件 |
+| `/console/v1/plugins` | GET | 用户端插件列表 |
+| `/inner/v1/plugins/{plugin_id}` | GET | 内部插件接口 |
+
+### 插件开发
+
+开发插件使用 `ai_plugin` SDK（`src/ai_plugin/`）：
+
+```python
+from ai_plugin import Plugin
+
+plugin = Plugin()
+
+@plugin.tool()
+def my_tool(query: str) -> str:
+    """工具描述"""
+    return f"处理结果: {query}"
+
+if __name__ == "__main__":
+    plugin.run()
+```
+
+### 扩展阅读
+
+- 插件引擎设计: `components/plugin/engine/`
+- 插件客户端使用: `components/plugin/client/`
+- 插件命令行工具: `components/plugin/commands/`
+
 ## 测试
 
 AI 相关能力当前主要通过 framework 租户集成测试和 AI 服务 / 控制器测试覆盖。新增模型、插件、工具逻辑时，应补充以下测试：

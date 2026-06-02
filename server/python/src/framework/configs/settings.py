@@ -238,6 +238,82 @@ class InnerApiSettings(BaseSettings):
     retry_count: int = Field(default=3, description="重试次数")
 
 
+class PluginSettings(BaseSettings):
+    """插件系统配置"""
+
+    # 基础配置
+    plugin_base_dir: str = Field(
+        default="", description="插件工作目录基路径，为空则使用默认路径"
+    )
+    invocation_mode: str = Field(
+        default="local", description="调用模式: local/remote"
+    )
+    remote_plugin_base_url: str = Field(
+        default="http://localhost:8080", description="远程插件服务地址"
+    )
+    remote_plugin_dispatch_path: str = Field(
+        default="/api/v1/inner/plugin", description="远程插件调度路径"
+    )
+    expose_plugin_endpoints: bool = Field(
+        default=True, description="是否暴露插件端点"
+    )
+
+    # Python 环境
+    python_version: str = Field(default="3.12", description="插件 Python 版本")
+    uv_path: str | None = Field(default=None, description="uv 可执行文件路径")
+    uv_python_install_mirror: str = Field(
+        default="https://registry.npmmirror.com/-/binary/python-build-standalone/",
+        description="Python 安装镜像",
+    )
+    pip_index_url: str = Field(
+        default="https://mirrors.aliyun.com/pypi/simple/",
+        description="pip 索引 URL",
+    )
+    pip_trusted_host: str | None = Field(
+        default=None, description="pip 受信主机"
+    )
+    allow_system_packages: bool = Field(
+        default=False, description="是否允许使用系统包"
+    )
+
+    # uv 配置
+    uv_verbose: bool = Field(default=False, description="uv 详细输出")
+    uv_cache_dir: str | None = Field(default=None, description="uv 缓存目录")
+    uv_http_timeout: int = Field(default=300, description="uv HTTP 超时（秒）")
+    uv_concurrent_downloads: int = Field(default=5, description="uv 并发下载数")
+    uv_retry_attempts: int = Field(default=3, description="uv 重试次数")
+    uv_venv_timeout: int = Field(default=180, description="uv 虚拟环境创建超时（秒）")
+
+    # 插件运行时
+    plugin_dependency_timeout: int = Field(
+        default=180, description="插件依赖安装超时（秒）"
+    )
+    enable_precompile: bool = Field(
+        default=False, description="是否启用预编译"
+    )
+    strict_security_mode: bool = Field(
+        default=False, description="是否启用严格安全模式"
+    )
+
+    # 自动冻结
+    plugin_freeze_threshold_seconds: int = Field(
+        default=1800, description="插件自动冻结阈值（秒），超过此时间未访问则自动停止"
+    )
+
+    # 插件预热
+    enable_plugin_warmup: bool = Field(
+        default=False, description="是否启用插件预热"
+    )
+    plugin_warmup_list: list[str] = Field(
+        default_factory=list, description="启动时预热的插件列表"
+    )
+
+    # 代理配置
+    http_proxy: str | None = Field(default=None, description="HTTP 代理")
+    https_proxy: str | None = Field(default=None, description="HTTPS 代理")
+    no_proxy: str | None = Field(default=None, description="不使用代理的地址")
+
+
 # ==============================================================================
 # 主配置类
 # ==============================================================================
@@ -281,6 +357,11 @@ class Settings(BaseSettings):
     # 内部接口配置
     inner_api: InnerApiSettings = Field(
         default_factory=InnerApiSettings, description="内部接口配置"
+    )
+
+    # 插件系统配置
+    plugin: PluginSettings = Field(
+        default_factory=PluginSettings, description="插件系统配置"
     )
 
     # 日志配置

@@ -1,0 +1,99 @@
+import re
+
+
+class GenericProviderID:
+    """
+    通用提供者ID类
+
+    解析和管理插件提供者的标识符，格式为：组织/插件名/提供者名
+    """
+
+    organization: str  # 组织名
+    plugin_name: str  # 插件名
+    provider_name: str  # 提供者名
+    is_hardcoded: bool  # 是否为硬编码提供者
+
+    def to_string(self) -> str:
+        """转换为字符串格式"""
+        return str(self)
+
+    def __str__(self) -> str:
+        """字符串表示"""
+        return f"{self.organization}/{self.plugin_name}/{self.provider_name}"
+
+    def __init__(self, value: str, is_hardcoded: bool = False) -> None:
+        """
+        初始化提供者ID
+
+        :param value: 提供者ID字符串
+        :param is_hardcoded: 是否为硬编码提供者
+        :raises ValueError: 当提供者ID格式不正确时
+        """
+        if not value:
+            raise ValueError("插件未找到，请添加插件")
+        # 检查该值是否是具有指定格式的有效插件 ID: $organization/$plugin_name/$provider_name
+        if not re.match(r"^[a-z0-9_-]+\/[a-z0-9_-]+\/[a-z0-9_-]+$", value):
+            raise ValueError(f"无效的插件ID {value}")
+
+        self.organization, self.plugin_name, self.provider_name = value.split("/")
+        self.is_hardcoded = is_hardcoded
+
+    def is_langgenius(self) -> bool:
+        """
+        检查是否为LangGenius组织
+
+        :return: 是否为LangGenius组织
+        """
+        return self.organization == "langgenius"
+
+    @property
+    def plugin_id(self) -> str:
+        """
+        获取插件ID
+
+        :return: 插件ID（组织/插件名）
+        """
+        return f"{self.organization}/{self.plugin_name}"
+
+
+class ModelProviderID(GenericProviderID):
+    """
+    模型提供者ID类
+
+    专门用于处理模型提供者的ID，包含特殊的兼容性处理
+    """
+
+    def __init__(self, value: str, is_hardcoded: bool = False) -> None:
+        """
+        初始化模型提供者ID
+
+        包含对Google模型的特殊处理（映射到Gemini插件）
+
+        :param value: 提供者ID字符串
+        :param is_hardcoded: 是否为硬编码提供者
+        """
+        super().__init__(value, is_hardcoded)
+        if self.organization == "langgenius" and self.provider_name == "google":
+            self.plugin_name = "gemini"
+
+
+class ToolProviderID(GenericProviderID):
+    """
+    工具提供者ID类
+
+    专门用于处理工具提供者的ID，包含特殊的兼容性处理
+    """
+
+    def __init__(self, value: str, is_hardcoded: bool = False) -> None:
+        """
+        初始化工具提供者ID
+
+        包含对特定工具提供者的插件名映射处理
+
+        :param value: 提供者ID字符串
+        :param is_hardcoded: 是否为硬编码提供者
+        """
+        super().__init__(value, is_hardcoded)
+        if self.organization == "langgenius":
+            if self.provider_name in ["jina", "siliconflow", "stepfun", "gitee_ai"]:
+                self.plugin_name = f"{self.provider_name}_tool"
