@@ -76,3 +76,5 @@ docs/Excalidraw
 .codegraph
 .superpowers
 .worktrees
+# Claude AI assistant
+.claude/settings.local.json
