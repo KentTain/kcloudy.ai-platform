@@ -77,7 +77,11 @@
       "Bash(taskkill //F //PID 34260)",
       "Bash(taskkill //F //PID 21392)",
       "Bash(taskkill //F //T //PID 34260)",
-      "Bash(tasklist *)"
+      "Bash(tasklist *)",
+      "mcp__codegraph__codegraph_callees",
+      "Bash(npx openspec-cn *)",
+      "Bash(ls -d .worktrees)",
+      "Bash(ls -d worktrees)"
     ]
   },
   "enabledMcpjsonServers": [
