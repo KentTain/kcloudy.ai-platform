@@ -96,3 +96,48 @@ def json_loads_loose(text: str) -> Any:
     # 注意：这种替换可能会破坏字符串中包含的单引号
 
     return json_loads(text)
+
+
+def orjson_default(obj: Any) -> Any:
+    """
+    orjson 默认序列化函数
+
+    - 优先调用对象的 __json__()（如 File 已实现），用于自定义序列化
+    - 兼容 Pydantic BaseModel：使用 model_dump() 输出
+    - 兼容 Enum：输出其 value
+    - 兼容 set：转换为 list
+    - 兼容 bytes/bytearray/memoryview：按 utf-8 解码
+    """
+    import enum
+
+    # 对象自定义的 __json__ 钩子
+    json_method = getattr(obj, "__json__", None)
+    if callable(json_method):
+        return json_method()
+
+    # Pydantic BaseModel
+    if hasattr(obj, "model_dump") and callable(getattr(obj, "model_dump")):
+        return obj.model_dump()
+    if hasattr(obj, "dict") and callable(getattr(obj, "dict")):
+        return obj.dict()
+
+    # Enum
+    if isinstance(obj, enum.Enum):
+        return obj.value
+
+    # 集合类型
+    if isinstance(obj, set):
+        return list(obj)
+
+    # 二进制
+    if isinstance(obj, (bytes, bytearray, memoryview)):
+        try:
+            return bytes(obj).decode("utf-8")
+        except Exception:
+            # 不可解码则返回 base64 字符串，避免报错
+            import base64
+
+            return base64.b64encode(bytes(obj)).decode("ascii")
+
+    # 其它不支持的类型
+    raise TypeError(f"Type not serializable: {type(obj)!r}")

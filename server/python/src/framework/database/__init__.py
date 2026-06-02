@@ -29,6 +29,7 @@ from framework.database.mixins.timestamp import TimestampMixin
 from framework.database.mixins.tree import TreeMixin, TreeNodeMixin, TreeNodeEventType
 from framework.database.mixins.uuid_primary_key import UUIDPrimaryKeyMixin
 from framework.database.types.uuid import StringUUID
+from framework.database.pagination import Pagination
 
 __all__ = [
     # Base
@@ -56,6 +57,8 @@ __all__ = [
     "UUIDPrimaryKeyMixin",
     # Types
     "StringUUID",
+    # Pagination
+    "Pagination",
     # Enums
     "AttributeDataType",
     "TreeNodeEventType",

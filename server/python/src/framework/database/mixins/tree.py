@@ -4,21 +4,26 @@
 提供完整的树结构字段和 CRUD 方法。
 """
 
+from collections.abc import Callable, Sequence
+from datetime import UTC, datetime
 from enum import Enum
-from typing import Any, Self, Sequence
-from sqlalchemy import String, Integer, Boolean, select, or_, delete
+from typing import Any, ClassVar, Self
+
+from sqlalchemy import Boolean, Integer, String, and_, func, select, update
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Mapped, mapped_column
 
 from framework.core.constants import (
     DEFAULT_SORT,
+    DEFAULT_TREE_ROOT_ID,
     TREE_SORTS_LENGTH,
     TREE_SORTS_PADSTR,
-    DEFAULT_TREE_ROOT_ID,
 )
 
 
 class TreeNodeEventType(str, Enum):
     """树节点事件类型"""
+
     CREATED = "created"
     UPDATED = "updated"
     DELETED = "deleted"
@@ -42,59 +47,126 @@ class TreeNodeMixin:
 
     __abstract__ = True
 
+    # ==================== 字段名常量 ====================
+
+    __parent_id_name__: ClassVar[str] = "parent_id"
+    __tree_leaf_name__: ClassVar[str] = "tree_leaf"
+    __tree_level_name__: ClassVar[str] = "tree_level"
+    __tree_sort_name__: ClassVar[str] = "tree_sort"
+    __tree_sorts_name__: ClassVar[str] = "tree_sorts"
+    __tree_names_name__: ClassVar[str] = "tree_names"
+    __parent_ids_name__: ClassVar[str] = "parent_ids"
+    __tree_name_separator__: ClassVar[str] = "/"
+
     # ==================== 字段定义 ====================
 
     parent_id: Mapped[str] = mapped_column(
+        __parent_id_name__,
         String(36),
         nullable=False,
         default=DEFAULT_TREE_ROOT_ID,
         index=True,
-        comment="父节点ID"
+        comment="父节点ID",
     )
 
     tree_leaf: Mapped[bool] = mapped_column(
+        __tree_leaf_name__,
         Boolean,
         nullable=False,
         default=True,
-        comment="是否为叶子节点"
+        comment="是否为叶子节点",
     )
 
     tree_level: Mapped[int] = mapped_column(
+        __tree_level_name__,
         Integer,
         nullable=False,
         default=0,
-        comment="树层级"
+        index=True,
+        comment="树层级",
     )
 
     tree_sort: Mapped[int] = mapped_column(
+        __tree_sort_name__,
         Integer,
         nullable=False,
         default=0,
-        comment="排序号"
+        index=True,
+        comment="排序号",
     )
 
     tree_sorts: Mapped[str] = mapped_column(
+        __tree_sorts_name__,
         String(512),
         nullable=False,
         default="",
-        comment="排序路径"
+        comment="排序路径",
     )
 
     tree_names: Mapped[str] = mapped_column(
+        __tree_names_name__,
         String(512),
         nullable=False,
         default="",
-        comment="名称路径"
+        comment="名称路径",
     )
 
     parent_ids: Mapped[str] = mapped_column(
-        String(512),
+        __parent_ids_name__,
+        String(1024),
         nullable=False,
         default=f"{DEFAULT_TREE_ROOT_ID},",
-        comment="父ID路径"
+        comment="父ID路径",
     )
 
-    # ==================== 类方法 ====================
+    # ==================== 辅助方法 ====================
+
+    @classmethod
+    def get_root_id(cls) -> str:
+        """
+        获取根节点ID
+
+        Returns:
+            str: 根节点ID
+        """
+        return DEFAULT_TREE_ROOT_ID
+
+    @classmethod
+    def normalize_parent_id(cls, parent_id: str | None) -> str:
+        """
+        标准化父节点ID
+
+        Args:
+            parent_id: 父节点ID，None 或空字符串表示根节点
+
+        Returns:
+            str: 标准化后的父节点ID
+        """
+        if not parent_id:
+            return cls.get_root_id()
+        return str(parent_id)
+
+    @classmethod
+    def is_root_parent(cls, parent_id: str | None) -> bool:
+        """
+        判断父节点ID是否表示根节点
+
+        Args:
+            parent_id: 父节点ID
+
+        Returns:
+            bool: 是否为根节点父ID
+        """
+        return cls.normalize_parent_id(parent_id) == cls.get_root_id()
+
+    def is_root_node(self) -> bool:
+        """
+        判断当前节点是否为根层节点
+
+        Returns:
+            bool: 当前节点是否挂在默认根节点下
+        """
+        return type(self).is_root_parent(self.parent_id)
 
     @classmethod
     def tree_name_field(cls) -> str:
@@ -102,83 +174,210 @@ class TreeNodeMixin:
         return "name"
 
     @classmethod
+    def tree_name_separator(cls) -> str:
+        """
+        获取树名称路径分隔符
+
+        Returns:
+            str: 名称路径分隔符
+        """
+        return cls.__tree_name_separator__
+
+    def get_tree_name_value(self) -> str:
+        """
+        获取当前节点名称字段的值
+
+        Returns:
+            str: 当前节点名称字段值
+        """
+        value = getattr(self, type(self).tree_name_field(), "")
+        return "" if value is None else str(value)
+
+    def get_tree_name(self) -> str:
+        """
+        获取可写入名称路径的节点名称
+
+        Returns:
+            str: 已转义路径分隔符的节点名称
+        """
+        return type(self).normalize_tree_name(self.get_tree_name_value())
+
+    @classmethod
+    def normalize_tree_name(cls, name: object) -> str:
+        """
+        标准化节点名称，避免名称自身破坏 tree_names 路径
+
+        Args:
+            name: 节点名称
+
+        Returns:
+            str: 标准化后的节点名称
+        """
+        return str(name or "").replace(cls.tree_name_separator(), "_")
+
+    @classmethod
+    def join_tree_names(cls, parent_tree_names: str | None, tree_name: object) -> str:
+        """
+        拼接父节点名称路径与当前节点名称
+
+        Args:
+            parent_tree_names: 父节点名称路径
+            tree_name: 当前节点名称
+
+        Returns:
+            str: 当前节点完整名称路径
+        """
+        current_name = cls.normalize_tree_name(tree_name)
+        if not parent_tree_names:
+            return current_name
+        parent_tree_names = parent_tree_names.rstrip(cls.tree_name_separator())
+        return f"{parent_tree_names}{cls.tree_name_separator()}{current_name}"
+
+    @classmethod
+    def calculate_tree_level(cls, parent_ids: str | None) -> int | None:
+        """
+        根据父节点ID路径计算树层级
+
+        根层节点的 parent_ids 通常为 DEFAULT_TREE_ROOT_ID,，层级为 0。
+
+        Args:
+            parent_ids: 父节点ID路径
+
+        Returns:
+            int | None: 树层级；parent_ids 为 None 时返回 None
+        """
+        if parent_ids is None:
+            return None
+
+        ids = [parent_id for parent_id in parent_ids.split(",") if parent_id]
+        if not ids:
+            return 0
+        return max(len(ids) - 1, 0)
+
+    @classmethod
     def _format_sort(cls, sort: int) -> str:
         """格式化排序号"""
-        return str(sort).zfill(TREE_SORTS_LENGTH) + ","
+        tree_sort_str = str(sort or 0)
+        return f"{tree_sort_str.rjust(TREE_SORTS_LENGTH, TREE_SORTS_PADSTR)},"
 
     @classmethod
-    async def _get_next_sort(
-        cls,
-        session,
-        parent_id: str | None = None
-    ) -> int:
-        """获取下一个排序号"""
-        parent_id = parent_id or DEFAULT_TREE_ROOT_ID
-        stmt = select(cls.tree_sort).where(cls.parent_id == parent_id).order_by(cls.tree_sort.desc()).limit(1)
-        result = await session.execute(stmt)
-        max_sort = result.scalar_one_or_none()
-        return (max_sort or 0) + DEFAULT_SORT
+    def build_root_parent_ids(cls) -> str:
+        """
+        构建根层节点的父级路径
+
+        Returns:
+            str: 根层节点 parent_ids
+        """
+        return f"{cls.get_root_id()},"
 
     @classmethod
-    async def _refresh_parent_leaf_status(
-        cls,
-        session,
-        parent_id: str
-    ) -> None:
-        """刷新父节点的叶子状态"""
-        if parent_id == DEFAULT_TREE_ROOT_ID:
-            return
+    def build_child_parent_ids(cls, parent: "TreeNodeMixin") -> str:
+        """
+        根据父节点构建子节点的父级路径
 
-        stmt = select(cls).where(cls.id == parent_id)
-        result = await session.execute(stmt)
-        parent = result.scalar_one_or_none()
+        Args:
+            parent: 父节点
 
-        if parent:
-            child_stmt = select(cls).where(cls.parent_id == parent_id).limit(1)
-            child_result = await session.execute(child_stmt)
-            has_children = child_result.scalar_one_or_none() is not None
-            parent.tree_leaf = not has_children
+        Returns:
+            str: 子节点 parent_ids
+        """
+        return f"{parent.parent_ids}{parent.id},"
+
+    def apply_root_tree_fields(self) -> None:
+        """按根层节点规则填充当前节点树字段"""
+        self.parent_id = type(self).get_root_id()
+        self.tree_level = 0
+        self.tree_leaf = True
+        self.parent_ids = type(self).build_root_parent_ids()
+        self.tree_sorts = type(self)._format_sort(self.tree_sort)
+        self.tree_names = self.get_tree_name()
+
+    def apply_child_tree_fields(self, parent: "TreeNodeMixin") -> None:
+        """
+        按子节点规则填充当前节点树字段
+
+        Args:
+            parent: 父节点
+        """
+        self.parent_id = str(parent.id)
+        self.tree_level = parent.tree_level + 1
+        self.tree_leaf = True
+        self.parent_ids = type(self).build_child_parent_ids(parent)
+        self.tree_sorts = f"{parent.tree_sorts}{type(self)._format_sort(self.tree_sort)}"
+        self.tree_names = type(self).join_tree_names(parent.tree_names, self.get_tree_name())
+
+    def descendant_parent_ids_prefix(self) -> str:
+        """
+        获取后代节点 parent_ids 查询前缀
+
+        Returns:
+            str: 可用于 parent_ids LIKE \'<prefix>%\' 的前缀
+        """
+        return f"{self.parent_ids}{self.id},"
+
+    # ==================== 内部方法 ====================
 
     @classmethod
-    async def _update_descendants_tree_names(
+    def _node_source_to_dict(
         cls,
-        session,
-        node_id: str,
-        new_tree_names: str
-    ) -> None:
-        """更新子孙节点的 tree_names"""
-        stmt = select(cls).where(cls.parent_ids.contains(f"{node_id},"))
-        result = await session.execute(stmt)
-        descendants = result.scalars().all()
+        source: dict | Any,
+        update_data: dict | None = None,
+        exclude_unset: bool = False,
+    ) -> dict[str, Any]:
+        """将字典、Pydantic 对象或普通对象转换为树节点数据。"""
+        if isinstance(source, dict):
+            data = source.copy()
+        elif hasattr(source, "model_dump"):
+            data = source.model_dump(exclude_unset=exclude_unset)
+        else:
+            data = {}
+            for column in cls.__table__.columns:
+                if hasattr(source, column.name):
+                    data[column.name] = getattr(source, column.name)
 
-        for descendant in descendants:
-            # 替换 tree_names 前缀
-            old_prefix = descendant.tree_names.rsplit("/", 1)[0] if "/" in descendant.tree_names else ""
-            if old_prefix:
-                descendant.tree_names = descendant.tree_names.replace(old_prefix, new_tree_names, 1)
+        if update_data:
+            data.update(update_data)
+
+        return data
 
     @classmethod
-    async def _is_descendant(
+    def _node_primary_key_column(cls):
+        pk_columns = cls.__table__.primary_key
+        if not pk_columns:
+            raise AttributeError("模型没有主键")
+        return next(iter(pk_columns))
+
+    @classmethod
+    def _node_primary_key_value(cls, obj: "TreeNodeMixin") -> Any:
+        pk_column = cls._node_primary_key_column()
+        return getattr(obj, pk_column.name)
+
+    @classmethod
+    def _node_not_deleted_condition(cls):
+        """检查模型是否支持软删除"""
+        if hasattr(cls, "deleted_at"):
+            return getattr(cls, "deleted_at").is_(None)
+        return None
+
+    @classmethod
+    def _node_conditions(
         cls,
-        session,
-        node_id: str,
-        target_id: str
-    ) -> bool:
-        """检查 target_id 是否是 node_id 的子孙节点"""
-        stmt = select(cls).where(cls.id == target_id)
-        result = await session.execute(stmt)
-        target = result.scalar_one_or_none()
-
-        if not target:
-            return False
-
-        return f"{node_id}," in target.parent_ids
+        extra_conditions: list | None = None,
+        include_deleted: bool = False,
+    ) -> list:
+        """构建查询条件"""
+        conditions = list(extra_conditions or [])
+        if not include_deleted:
+            not_deleted_condition = cls._node_not_deleted_condition()
+            if not_deleted_condition is not None:
+                conditions.append(not_deleted_condition)
+        return conditions
 
     @classmethod
     async def _publish_node_event(
         cls,
         event_type: TreeNodeEventType,
-        data: Any
+        data: Any,
     ) -> None:
         """
         发布树节点事件
@@ -193,383 +392,391 @@ class TreeNodeMixin:
         if publisher:
             await publisher(event_type, data)
 
+    @classmethod
+    async def _get_next_sort(
+        cls,
+        session: AsyncSession,
+        parent_id: str,
+        extra_conditions: list | None = None,
+    ) -> int:
+        """获取下一个排序号"""
+        conditions = [
+            cls.parent_id == parent_id,
+            *cls._node_conditions(extra_conditions),
+        ]
+        result = await session.execute(
+            select(func.max(cls.tree_sort)).where(and_(*conditions))
+        )
+        max_sort = result.scalar()
+        return (max_sort or 0) + DEFAULT_SORT
+
+    @classmethod
+    async def _refresh_parent_leaf_status(
+        cls,
+        session: AsyncSession,
+        parent_id: str,
+        extra_conditions: list | None = None,
+    ) -> None:
+        """刷新父节点的叶子状态"""
+        parent_id = cls.normalize_parent_id(parent_id)
+        if cls.is_root_parent(parent_id):
+            return
+
+        conditions = [
+            cls.parent_id == parent_id,
+            *cls._node_conditions(extra_conditions),
+        ]
+        result = await session.execute(
+            select(func.count()).select_from(cls).where(and_(*conditions))
+        )
+        child_count = result.scalar() or 0
+
+        # 获取父节点
+        node = await cls.one_node(session, parent_id, extra_conditions)
+        if node:
+            node.tree_leaf = child_count == 0
+
+    @classmethod
+    async def one_node(
+        cls,
+        session: AsyncSession,
+        id: Any,
+        extra_conditions: list | None = None,
+        include_deleted: bool = False,
+    ) -> Self | None:
+        """
+        根据主键获取未删除树节点。
+
+        Args:
+            session: 数据库会话
+            id: 节点主键
+            extra_conditions: 额外业务边界，例如 tenant_id/workspace_id
+            include_deleted: 是否包含软删除节点
+        """
+        pk_column = cls._node_primary_key_column()
+        conditions = [
+            getattr(cls, pk_column.name) == id,
+            *cls._node_conditions(extra_conditions, include_deleted),
+        ]
+        result = await session.execute(select(cls).where(and_(*conditions)))
+        return result.scalar_one_or_none()
+
+    @classmethod
+    async def _node_parent(
+        cls,
+        session: AsyncSession,
+        parent_id: str | None,
+        extra_conditions: list | None = None,
+    ) -> Self | None:
+        """获取父节点"""
+        parent_id = cls.normalize_parent_id(parent_id)
+        if cls.is_root_parent(parent_id):
+            return None
+
+        parent = await cls.one_node(session, parent_id, extra_conditions)
+        if parent is None:
+            raise ValueError(f"父节点 {parent_id} 不存在")
+        return parent
+
     # ==================== CRUD 方法 ====================
 
     @classmethod
     async def create_node(
         cls,
-        session,
-        source: dict[str, Any]
+        session: AsyncSession,
+        source: dict | Any,
+        update_data: dict | None = None,
+        extra_conditions: list | None = None,
     ) -> Self:
         """
-        创建树节点
+        创建树节点，并自动维护 tree_* 与 parent_ids 字段。
 
-        自动维护树字段：
-        - tree_level, tree_sorts, tree_names, parent_ids
-        - 父节点的 tree_leaf 状态
+        事务由调用方控制；本方法只执行 flush。
 
         Args:
             session: 数据库会话
             source: 节点属性字典
+            update_data: 额外更新数据
+            extra_conditions: 额外业务边界条件
 
         Returns:
             创建的节点
         """
-        parent_id = source.get("parent_id", DEFAULT_TREE_ROOT_ID)
-        if not parent_id:
-            parent_id = DEFAULT_TREE_ROOT_ID
+        data = cls._node_source_to_dict(source, update_data)
+        parent_id = cls.normalize_parent_id(data.get("parent_id"))
+        data["parent_id"] = parent_id
 
-        # 获取或计算排序号
-        tree_sort = source.get("tree_sort")
-        if tree_sort is None:
-            tree_sort = await cls._get_next_sort(session, parent_id)
+        if not data.get("tree_sort"):
+            data["tree_sort"] = await cls._get_next_sort(
+                session, parent_id, extra_conditions
+            )
 
-        # 获取名称
-        name = source.get(cls.tree_name_field(), "")
+        obj = cls()
+        for key, value in data.items():
+            if hasattr(obj, key):
+                setattr(obj, key, value)
 
-        # 计算树字段
-        if parent_id == DEFAULT_TREE_ROOT_ID:
-            # 根节点
-            tree_level = 0
-            parent_ids = f"{DEFAULT_TREE_ROOT_ID},"
-            tree_sorts = cls._format_sort(tree_sort)
-            tree_names = name
+        parent = await cls._node_parent(session, parent_id, extra_conditions)
+        if parent is None:
+            obj.apply_root_tree_fields()
         else:
-            # 子节点：获取父节点信息
-            stmt = select(cls).where(cls.id == parent_id)
-            result = await session.execute(stmt)
-            parent = result.scalar_one_or_none()
-
-            if not parent:
-                raise ValueError(f"父节点不存在: {parent_id}")
-
-            tree_level = parent.tree_level + 1
-            parent_ids = f"{parent.parent_ids}{parent.id},"
-            tree_sorts = f"{parent.tree_sorts}{cls._format_sort(tree_sort)}"
-            tree_names = f"{parent.tree_names}/{name}"
-
-            # 更新父节点的叶子状态
+            obj.apply_child_tree_fields(parent)
             parent.tree_leaf = False
 
-        # 创建节点
-        # 从 source 中移除已处理的字段，避免重复传递
-        node_data = {k: v for k, v in source.items() if k not in ["parent_id", "tree_sort", "tree_leaf", "tree_level", "tree_sorts", "tree_names", "parent_ids"]}
-        instance = cls(
-            **node_data,
-            parent_id=parent_id,
-            tree_leaf=True,
-            tree_level=tree_level,
-            tree_sort=tree_sort,
-            tree_sorts=tree_sorts,
-            tree_names=tree_names,
-            parent_ids=parent_ids,
-        )
-
-        session.add(instance)
+        session.add(obj)
         await session.flush()
-
-        # 发布创建事件
-        await cls._publish_node_event(TreeNodeEventType.CREATED, instance.to_dict() if hasattr(instance, "to_dict") else {"id": instance.id})
-
-        return instance
+        await cls._publish_node_event(TreeNodeEventType.CREATED, obj)
+        return obj
 
     @classmethod
     async def update_node(
         cls,
-        session,
-        id: str,
-        source: dict[str, Any]
+        session: AsyncSession,
+        id: Any,
+        source: dict | Any,
+        update_data: dict | None = None,
+        extra_conditions: list | None = None,
     ) -> Self:
         """
-        更新树节点
+        更新树节点，并在名称、排序或父节点变化时级联刷新子孙节点路径。
 
-        支持：
-        - 更新名称（级联更新子孙节点的 tree_names）
-        - 移动节点（级联更新子孙节点的树字段）
-        - 阻止循环引用
+        事务由调用方控制；本方法只执行 flush。
 
         Args:
             session: 数据库会话
             id: 节点ID
             source: 更新属性字典
+            update_data: 额外更新数据
+            extra_conditions: 额外业务边界条件
 
         Returns:
             更新后的节点
         """
-        # 获取节点
-        stmt = select(cls).where(cls.id == id)
-        result = await session.execute(stmt)
-        node = result.scalar_one_or_none()
-
-        if not node:
+        node = await cls.one_node(session, id, extra_conditions)
+        if node is None:
             raise ValueError(f"节点不存在: {id}")
 
+        pk_value = cls._node_primary_key_value(node)
         old_parent_id = node.parent_id
-        new_parent_id = source.get("parent_id", old_parent_id)
-        name_field = cls.tree_name_field()
-        new_name = source.get(name_field)
+        old_parent_ids = node.parent_ids
+        old_tree_sorts = node.tree_sorts
+        old_tree_names = node.tree_names
+        old_tree_level = node.tree_level
+        old_tree_leaf = node.tree_leaf
+        old_descendant_prefix = node.descendant_parent_ids_prefix()
 
-        # 检查是否需要移动
-        if new_parent_id != old_parent_id:
-            # 阻止循环引用
-            if await cls._is_descendant(session, id, new_parent_id):
-                raise ValueError("不能将节点移动到其子孙节点下")
+        data = cls._node_source_to_dict(source, update_data, exclude_unset=True)
+        data.pop(cls._node_primary_key_column().name, None)
+        data.pop("tree_leaf", None)
+        new_parent_id = cls.normalize_parent_id(data.get("parent_id", old_parent_id))
 
-            # 更新父节点和树字段
-            if new_parent_id == DEFAULT_TREE_ROOT_ID:
-                # 移动到根节点
-                node.parent_id = DEFAULT_TREE_ROOT_ID
-                node.tree_level = 0
-                node.parent_ids = f"{DEFAULT_TREE_ROOT_ID},"
-                node.tree_sorts = cls._format_sort(node.tree_sort)
-                if new_name:
-                    node.tree_names = new_name
-                elif name_field in source:
-                    pass
-                else:
-                    node.tree_names = getattr(node, name_field)
-            else:
-                # 移动到新父节点
-                stmt = select(cls).where(cls.id == new_parent_id)
-                result = await session.execute(stmt)
-                new_parent = result.scalar_one_or_none()
+        if str(new_parent_id) == str(pk_value):
+            raise ValueError("父节点不能设置为当前节点")
 
-                if not new_parent:
-                    raise ValueError(f"父节点不存在: {new_parent_id}")
-
-                node.parent_id = new_parent_id
-                node.tree_level = new_parent.tree_level + 1
-                node.parent_ids = f"{new_parent.parent_ids}{new_parent.id},"
-                node.tree_sorts = f"{new_parent.tree_sorts}{cls._format_sort(node.tree_sort)}"
-                node.tree_names = f"{new_parent.tree_names}/{getattr(node, name_field)}"
-
-                # 更新新父节点的叶子状态
-                new_parent.tree_leaf = False
-
-            # 刷新原父节点的叶子状态
-            if old_parent_id != DEFAULT_TREE_ROOT_ID:
-                await cls._refresh_parent_leaf_status(session, old_parent_id)
-
-            # 级联更新子孙节点
-            await cls._update_descendants_tree_fields(session, id)
-
-        # 更新名称
-        elif new_name and new_name != getattr(node, name_field):
-            setattr(node, name_field, new_name)
-            # 更新 tree_names
-            old_tree_names = node.tree_names
-            if node.tree_level == 0:
-                node.tree_names = new_name
-            else:
-                parent_prefix = old_tree_names.rsplit("/", 1)[0]
-                node.tree_names = f"{parent_prefix}/{new_name}"
-
-            # 级联更新子孙节点的 tree_names
-            await cls._update_descendants_tree_names(session, id, node.tree_names)
-
-        # 更新其他字段
-        for key, value in source.items():
-            if key not in ["parent_id", name_field] and hasattr(node, key):
+        for key, value in data.items():
+            if hasattr(node, key):
                 setattr(node, key, value)
 
+        node.parent_id = new_parent_id
+        parent = await cls._node_parent(session, new_parent_id, extra_conditions)
+
+        if parent is not None:
+            parent_pk_value = cls._node_primary_key_value(parent)
+            if str(parent_pk_value) == str(pk_value):
+                raise ValueError("父节点不能设置为当前节点")
+            if parent.parent_ids.startswith(old_descendant_prefix):
+                raise ValueError("父节点不能设置为当前节点的子孙节点")
+
+        if not node.tree_sort:
+            node.tree_sort = await cls._get_next_sort(
+                session, new_parent_id, extra_conditions
+            )
+
+        if parent is None:
+            node.apply_root_tree_fields()
+        else:
+            node.apply_child_tree_fields(parent)
+            parent.tree_leaf = False
+
+        node.tree_leaf = old_tree_leaf
+        new_descendant_prefix = node.descendant_parent_ids_prefix()
+        level_delta = node.tree_level - old_tree_level
+
+        path_changed = (
+            old_parent_ids != node.parent_ids
+            or old_tree_sorts != node.tree_sorts
+            or old_tree_names != node.tree_names
+        )
+        if path_changed:
+            conditions = [
+                cls.parent_ids.like(f"{old_descendant_prefix}%"),
+                *cls._node_conditions(extra_conditions),
+            ]
+            await session.execute(
+                update(cls)
+                .where(and_(*conditions))
+                .values(
+                    parent_ids=func.replace(
+                        cls.parent_ids,
+                        old_descendant_prefix,
+                        new_descendant_prefix,
+                    ),
+                    tree_sorts=func.replace(
+                        cls.tree_sorts,
+                        old_tree_sorts,
+                        node.tree_sorts,
+                    ),
+                    tree_names=func.replace(
+                        cls.tree_names,
+                        old_tree_names,
+                        node.tree_names,
+                    ),
+                    tree_level=cls.tree_level + level_delta,
+                )
+            )
+
+        if old_parent_id != new_parent_id:
+            await cls._refresh_parent_leaf_status(
+                session, old_parent_id, extra_conditions
+            )
+
         await session.flush()
-
-        # 发布更新事件
-        await cls._publish_node_event(TreeNodeEventType.UPDATED, node.to_dict() if hasattr(node, "to_dict") else {"id": node.id})
-
+        await cls._publish_node_event(TreeNodeEventType.UPDATED, node)
         return node
-
-    @classmethod
-    async def _update_descendants_tree_fields(
-        cls,
-        session,
-        node_id: str
-    ) -> None:
-        """
-        级联更新子孙节点的树字段
-
-        当节点移动后，需要递归更新其所有子孙节点的：
-        - tree_level
-        - tree_sorts
-        - tree_names
-        - parent_ids
-        """
-        # 获取已移动的节点
-        stmt = select(cls).where(cls.id == node_id)
-        result = await session.execute(stmt)
-        moved_node = result.scalar_one_or_none()
-
-        if not moved_node:
-            return
-
-        # 递归更新子孙节点
-        async def update_children(parent: Any) -> None:
-            stmt = select(cls).where(cls.parent_id == parent.id)
-            result = await session.execute(stmt)
-            children = result.scalars().all()
-
-            for child in children:
-                # 更新子节点的树字段
-                child.tree_level = parent.tree_level + 1
-                child.parent_ids = f"{parent.parent_ids}{parent.id},"
-                child.tree_sorts = f"{parent.tree_sorts}{cls._format_sort(child.tree_sort)}"
-                child.tree_names = f"{parent.tree_names}/{getattr(child, cls.tree_name_field())}"
-
-                # 递归更新孙子节点
-                await update_children(child)
-
-        await update_children(moved_node)
 
     @classmethod
     async def delete_node(
         cls,
-        session,
-        id: str
+        session: AsyncSession,
+        id: Any,
+        extra_conditions: list | None = None,
     ) -> int:
         """
-        删除树节点
+        删除树节点及全部子孙节点。
 
-        - 叶子节点：直接删除（或软删除）
-        - 非叶子节点：级联删除所有子孙节点
-        - 支持软删除：如果模型有 deleted_at 字段，执行软删除
+        如果模型有 deleted_at 字段则执行软删除，否则执行物理删除。
 
         Args:
             session: 数据库会话
             id: 节点ID
+            extra_conditions: 额外业务边界条件
 
         Returns:
             删除的节点数量
         """
-        from datetime import datetime
-
-        # 获取节点
-        stmt = select(cls).where(cls.id == id)
-        result = await session.execute(stmt)
-        node = result.scalar_one_or_none()
-
-        if not node:
+        node = await cls.one_node(session, id, extra_conditions)
+        if node is None:
             return 0
 
-        parent_id = node.parent_id
-        count = 0
-        supports_soft_delete = hasattr(cls, "deleted_at")
+        old_parent_id = node.parent_id
+        descendant_prefix = node.descendant_parent_ids_prefix()
+        descendant_conditions = [
+            cls.parent_ids.like(f"{descendant_prefix}%"),
+            *cls._node_conditions(extra_conditions),
+        ]
 
-        # 检查是否有子节点
-        if node.tree_leaf:
-            # 叶子节点：直接删除（或软删除）
-            if supports_soft_delete:
-                node.deleted_at = datetime.utcnow()
-            else:
-                await session.delete(node)
-            count = 1
+        affected_rows = 1
+        if hasattr(cls, "deleted_at"):
+            # 软删除
+            now = datetime.now(UTC).replace(tzinfo=None)
+            result = await session.execute(
+                update(cls).where(and_(*descendant_conditions)).values(deleted_at=now)
+            )
+            affected_rows += result.rowcount or 0
+
+            node.deleted_at = now
+            await session.flush()
         else:
-            # 非叶子节点：级联删除
-            # 查找所有子孙节点
-            stmt = select(cls).where(cls.parent_ids.contains(f"{id},"))
-            result = await session.execute(stmt)
-            descendants = result.scalars().all()
-
-            # 删除（或软删除）子孙节点
+            # 物理删除
+            result = await session.execute(
+                select(cls)
+                .where(and_(*descendant_conditions))
+                .order_by(cls.tree_level.desc())
+            )
+            descendants = list(result.scalars().all())
+            affected_rows += len(descendants)
             for descendant in descendants:
-                if supports_soft_delete:
-                    descendant.deleted_at = datetime.utcnow()
-                else:
-                    await session.delete(descendant)
-                count += 1
+                await session.delete(descendant)
+            await session.delete(node)
+            await session.flush()
 
-            # 删除（或软删除）自身
-            if supports_soft_delete:
-                node.deleted_at = datetime.utcnow()
-            else:
-                await session.delete(node)
-            count += 1
-
-        # 刷新父节点的叶子状态
-        if parent_id != DEFAULT_TREE_ROOT_ID:
-            await cls._refresh_parent_leaf_status(session, parent_id)
-
+        await cls._refresh_parent_leaf_status(session, old_parent_id, extra_conditions)
         await session.flush()
-
-        # 发布删除事件
-        await cls._publish_node_event(TreeNodeEventType.DELETED, {"id": id, "count": count})
-
-        return count
+        await cls._publish_node_event(TreeNodeEventType.DELETED, {"id": id, "count": affected_rows})
+        return affected_rows
 
     @classmethod
     async def list_nodes(
         cls,
-        session,
-        fuzzy_fields: dict[str, str] | None = None
+        session: AsyncSession,
+        extra_conditions: list | None = None,
+        fuzzy_fields: dict[str, str] | None = None,
+        include_deleted: bool = False,
     ) -> Sequence[Self]:
         """
-        查询树节点列表
+        按 tree_sorts 获取树节点平铺列表。
 
         Args:
             session: 数据库会话
-            fuzzy_fields: 模糊查询字段 {字段名: 关键词}
+            extra_conditions: 额外业务边界条件
+            fuzzy_fields: 模糊查询字段
+            include_deleted: 是否包含软删除节点
 
         Returns:
             按 tree_sorts 排序的节点列表
         """
-        stmt = select(cls)
-
-        # 模糊查询
+        conditions = cls._node_conditions(extra_conditions, include_deleted)
         if fuzzy_fields:
-            conditions = []
-            for field, keyword in fuzzy_fields.items():
-                if hasattr(cls, field):
-                    conditions.append(getattr(cls, field).contains(keyword))
-            if conditions:
-                stmt = stmt.where(or_(*conditions))
+            for field, value in fuzzy_fields.items():
+                if value and hasattr(cls, field):
+                    conditions.append(getattr(cls, field).like(f"%{value}%"))
 
-        # 按 tree_sorts 排序
-        stmt = stmt.order_by(cls.tree_sorts)
+        statement = select(cls).order_by(cls.tree_sorts)
+        if conditions:
+            statement = statement.where(and_(*conditions))
 
-        result = await session.execute(stmt)
+        result = await session.execute(statement)
         return result.scalars().all()
 
     @classmethod
     def build_tree(
         cls,
-        nodes: Sequence[Self],
-        parent_id: str | None = None
-    ) -> list[dict[str, Any]]:
+        nodes: Sequence[Any],
+        parent_id: str | None = None,
+        transform_func: Callable[[Any], Any] | None = None,
+    ) -> list[Any]:
         """
-        构建树结构
+        将平铺树节点列表组装成 children 树。
 
         Args:
             nodes: 平铺节点列表
             parent_id: 指定父节点ID，构建子树
+            transform_func: 节点转换函数
 
         Returns:
             树形结构列表
         """
-        parent_id = parent_id or DEFAULT_TREE_ROOT_ID
-
-        # 将节点转换为字典
-        def node_to_dict(node):
-            if hasattr(node, "to_dict"):
-                return node.to_dict()
-            return {c.name: getattr(node, c.name) for c in node.__table__.columns}
-
-        # 按父节点分组
-        children_map: dict[str, list[dict[str, Any]]] = {}
+        normalized_parent_id = cls.normalize_parent_id(parent_id)
+        tree = []
         for node in nodes:
-            pid = node.parent_id
-            if pid not in children_map:
-                children_map[pid] = []
-            children_map[pid].append(node_to_dict(node))
+            if isinstance(node, dict):
+                node_parent_id = cls.normalize_parent_id(node.get("parent_id"))
+                node_id = str(node.get("id", ""))
+            else:
+                node_parent_id = cls.normalize_parent_id(node.parent_id)
+                node_id = str(node.id)
 
-        # 递归构建树
-        def build_children(pid: str) -> list[dict[str, Any]]:
-            tree = []
-            for node_dict in children_map.get(pid, []):
-                node_id = node_dict["id"]
-                node_dict["children"] = build_children(node_id)
-                tree.append(node_dict)
-            return tree
+            if node_parent_id != normalized_parent_id:
+                continue
 
-        return build_children(parent_id)
+            children = cls.build_tree(nodes, node_id, transform_func)
+            target_node = transform_func(node) if transform_func else node
+            if isinstance(target_node, dict):
+                target_node["children"] = children
+            else:
+                target_node.children = children
+            tree.append(target_node)
+        return tree
 
 
 # 向后兼容别名
