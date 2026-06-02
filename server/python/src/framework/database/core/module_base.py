@@ -1,15 +1,17 @@
-"""
+﻿"""
 模块级 Base 工厂函数
 
 为每个模块创建带 schema 的 DeclarativeBase 和 BaseModel。
 """
 
-from datetime import datetime
 from typing import Any
 
-from sqlalchemy import String, DateTime, func, MetaData
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from sqlalchemy import MetaData
+from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.ext.asyncio import AsyncAttrs
+
+from framework.database.mixins.timestamp import TimestampMixin
+from framework.database.mixins.uuid_primary_key import UUIDPrimaryKeyMixin
 
 
 def create_module_base(schema: str) -> type[DeclarativeBase]:
@@ -51,27 +53,8 @@ def create_base_model(module_base: type) -> type:
         ...     __tablename__ = "users"
         ...     username: Mapped[str] = mapped_column(String(64))
     """
-    class BaseModel(module_base):
+    class ModuleBaseModel(module_base, UUIDPrimaryKeyMixin, TimestampMixin):
         __abstract__ = True
-
-        id: Mapped[str] = mapped_column(
-            String(36),
-            primary_key=True,
-            comment="ID"
-        )
-
-        created_at: Mapped[datetime] = mapped_column(
-            DateTime,
-            server_default=func.now(),
-            comment="创建时间"
-        )
-
-        updated_at: Mapped[datetime] = mapped_column(
-            DateTime,
-            server_default=func.now(),
-            onupdate=func.now(),
-            comment="更新时间"
-        )
 
         def to_dict(self) -> dict[str, Any]:
             """转换为字典"""
@@ -80,4 +63,4 @@ def create_base_model(module_base: type) -> type:
                 for column in self.__table__.columns
             }
 
-    return BaseModel
+    return ModuleBaseModel
