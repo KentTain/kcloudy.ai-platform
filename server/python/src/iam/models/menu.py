@@ -16,9 +16,11 @@ class Menu(BaseModel, TreeNodeMixin):
 
     __tablename__ = "menus"
 
-    # 覆盖 TreeNodeMixin 的 parent_id，使用 ForeignKey
+    # 覆盖 TreeNodeMixin 的 parent_id
+    # 注意：不添加外键约束，因为顶级节点的 parent_id 为虚拟根节点 "root"（不存在于数据库）
+    # 树结构的父子关系通过 parent_ids 字段维护，应用层保证一致性
     parent_id: Mapped[str | None] = mapped_column(
-        String(36), ForeignKey("menus.id", ondelete="SET NULL"), nullable=True, comment="父菜单ID"
+        String(36), nullable=True, index=True, comment="父菜单ID"
     )
 
     module: Mapped[str] = mapped_column(
