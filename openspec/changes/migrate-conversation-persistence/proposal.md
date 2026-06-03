@@ -41,12 +41,12 @@ ai/models/
 ├── message.py                    # Message 模型
 └── enums.py                      # ConversationStatus, MessageStatus
 
-ai/services/memory_task/
+ai/listeners/services/pubsub/memory_task/
 ├── __init__.py
-├── constants.py                  # TASK_TYPE_GENERATE_LLM
+├── constants.py                  # ACTIVE_ASYNCIO_TASKS / TASK_TYPE_GENERATE_LLM
+├── cancel_asyncio_task.py        # CancelAsyncioTaskHandler (PubSub 订阅)
 ├── helpers.py                    # stop_task_by_id
-├── cleanup.py                    # cleanup_task_after_timeout
-└── cancel_asyncio_task.py        # asyncio 任务取消逻辑
+└── cleanup.py                    # cleanup_task_after_timeout
 
 ai/migrations/
 └── versions/

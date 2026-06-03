@@ -4,7 +4,11 @@
 
 - [ ] 1.1 创建 `ai/models/__init__.py`，使用 `create_module_base("ai")`
 - [ ] 1.2 创建 `ai/services/__init__.py`
-- [ ] 1.3 创建 `ai/services/memory_task/__init__.py`
+- [ ] 1.3 创建 `ai/listeners/__init__.py`
+- [ ] 1.4 创建 `ai/listeners/services/__init__.py`
+- [ ] 1.5 创建 `ai/listeners/services/pubsub/__init__.py`
+- [ ] 1.6 创建 `ai/listeners/services/pubsub/constants.py`（任务停止通道常量）
+- [ ] 1.7 创建 `ai/listeners/services/pubsub/memory_task/__init__.py`
 
 ## 2. 枚举定义
 
@@ -45,12 +49,12 @@
 
 ## 6. 任务管控服务实现
 
-- [ ] 6.1 创建 `ai/services/memory_task/constants.py`，定义任务类型常量
-- [ ] 6.2 创建 `ai/services/memory_task/cancel_asyncio_task.py`
-- [ ] 6.3 实现 asyncio 任务取消逻辑
-- [ ] 6.4 创建 `ai/services/memory_task/helpers.py`
+- [ ] 6.1 创建 `ai/listeners/services/pubsub/memory_task/constants.py`，定义任务类型常量
+- [ ] 6.2 创建 `ai/listeners/services/pubsub/memory_task/cancel_asyncio_task.py`
+- [ ] 6.3 实现 CancelAsyncioTaskHandler(SingleTopicHandler)，订阅任务停止通道
+- [ ] 6.4 创建 `ai/listeners/services/pubsub/memory_task/helpers.py`
 - [ ] 6.5 实现 `stop_task_by_id()` 函数，使用 PubSub 发布停止信号
-- [ ] 6.6 创建 `ai/services/memory_task/cleanup.py`
+- [ ] 6.6 创建 `ai/listeners/services/pubsub/memory_task/cleanup.py`
 - [ ] 6.7 实现 `cleanup_task_after_timeout()` 函数
 - [ ] 6.8 实现活跃任务跟踪（ACTIVE_CLEANUP_TASKS）
 
@@ -79,6 +83,6 @@
 ## 10. 文档与收尾
 
 - [ ] 10.1 创建 `ai/models/CLAUDE.md` 模块文档
-- [ ] 10.2 创建 `ai/services/memory_task/CLAUDE.md` 模块文档
+- [ ] 10.2 创建 `ai/listeners/services/pubsub/memory_task/CLAUDE.md` 模块文档
 - [ ] 10.3 运行完整测试套件验证
 - [ ] 10.4 代码审查和清理

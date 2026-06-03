@@ -42,11 +42,11 @@ ALON_ROOT=D:\Project\ai\Alon\packages\platform
 
 | 目标路径 | Alon 源路径 |
 |----------|-------------|
-| `src/ai/services/memory_task/__init__.py` | `{ALON_ROOT}/src/alon/listeners/services/pubsub/memory_task/__init__.py` |
-| `src/ai/services/memory_task/constants.py` | `{ALON_ROOT}/src/alon/listeners/services/pubsub/memory_task/constants.py` |
-| `src/ai/services/memory_task/helpers.py` | `{ALON_ROOT}/src/alon/listeners/services/pubsub/memory_task/helpers.py` |
-| `src/ai/services/memory_task/cleanup.py` | `{ALON_ROOT}/src/alon/listeners/services/pubsub/memory_task/cleanup.py` |
-| `src/ai/services/memory_task/cancel_asyncio_task.py` | `{ALON_ROOT}/src/alon/listeners/services/pubsub/memory_task/cancel_asyncio_task.py` |
+| `src/ai/listeners/services/pubsub/memory_task/__init__.py` | `{ALON_ROOT}/src/alon/listeners/services/pubsub/memory_task/__init__.py` |
+| `src/ai/listeners/services/pubsub/memory_task/constants.py` | `{ALON_ROOT}/src/alon/listeners/services/pubsub/memory_task/constants.py` |
+| `src/ai/listeners/services/pubsub/memory_task/helpers.py` | `{ALON_ROOT}/src/alon/listeners/services/pubsub/memory_task/helpers.py` |
+| `src/ai/listeners/services/pubsub/memory_task/cleanup.py` | `{ALON_ROOT}/src/alon/listeners/services/pubsub/memory_task/cleanup.py` |
+| `src/ai/listeners/services/pubsub/memory_task/cancel_asyncio_task.py` | `{ALON_ROOT}/src/alon/listeners/services/pubsub/memory_task/cancel_asyncio_task.py` |
 
 ## 导入路径替换规则
 
@@ -149,10 +149,10 @@ from framework.configs.settings import settings
 1. `models/enums.py` - 状态枚举定义
 2. `models/conversation.py` - 会话模型
 3. `models/message.py` - 消息模型
-4. `services/memory_task/constants.py` - 任务类型常量
-5. `services/memory_task/cancel_asyncio_task.py` - asyncio 取消逻辑
-6. `services/memory_task/helpers.py` - 任务停止函数
-7. `services/memory_task/cleanup.py` - 超时清理函数
+4. `services/memory_task/constants.py` → `listeners/services/pubsub/memory_task/constants.py` - 任务类型常量
+5. `services/memory_task/cancel_asyncio_task.py` → `listeners/services/pubsub/memory_task/cancel_asyncio_task.py` - PubSub 订阅处理器
+6. `services/memory_task/helpers.py` → `listeners/services/pubsub/memory_task/helpers.py` - 任务停止函数
+7. `services/memory_task/cleanup.py` → `listeners/services/pubsub/memory_task/cleanup.py` - 超时清理函数
 
 ### 第二优先级（数据库迁移）
 

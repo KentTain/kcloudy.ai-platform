@@ -22,7 +22,7 @@ LLM 对话接口需要持久化会话和消息数据，支持：
 缺失组件：
 ├── ai/models/conversation.py     # 会话模型 ← 本次迁移
 ├── ai/models/message.py          # 消息模型 ← 本次迁移
-└── ai/services/memory_task/      # 任务管控 ← 本次迁移
+└── ai/listeners/services/pubsub/memory_task/      # 任务管控 ← 本次迁移
 ```
 
 ### 约束
@@ -194,9 +194,9 @@ pending → stopped (被停止)
 
 ### 阶段 2：任务管控服务（约 2-3 小时）
 
-1. 创建 `ai/services/memory_task/` 目录
+1. 创建 `ai/listeners/services/pubsub/memory_task/` 目录
 2. 迁移 `constants.py` 任务类型常量
-3. 迁移 `cancel_asyncio_task.py` asyncio 任务取消逻辑
+3. 迁移 `cancel_asyncio_task.py` PubSub 订阅处理器
 4. 迁移 `helpers.py` stop_task_by_id
 5. 迁移 `cleanup.py` cleanup_task_after_timeout
 6. 适配 `framework/pubsub/` 组件
@@ -210,5 +210,5 @@ pending → stopped (被停止)
 
 ### 回滚策略
 
-- 删除 `ai/models/` 和 `ai/services/memory_task/` 目录
+- 删除 `ai/models/` 和 `ai/listeners/services/pubsub/memory_task/` 目录
 - 执行 Alembic downgrade 回滚数据库迁移
