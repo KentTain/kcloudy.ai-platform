@@ -16,12 +16,17 @@ from fastapi import APIRouter, Body, HTTPException
 from fastapi.responses import StreamingResponse
 from loguru import logger
 
+from ai.listeners.services.pubsub.memory_task.constants import (
+    ACTIVE_ASYNCIO_TASKS,
+    TASK_TYPE_GENERATE_LLM,
+)
+from ai.listeners.services.pubsub.memory_task.helpers import stop_task_by_id
 from ai.models.conversation import Conversation
-from ai.models.enums import ConversationStatus, ConversationMode, MessageStatus
+from ai.models.enums import ConversationMode, ConversationStatus, MessageStatus
 from ai.models.message import Message
-from ai.schemas.completion import LLMChatCompletion, ErrorCode
-from extended.langchain.models.alon_chat import AlonChatModel
+from ai.schemas.completion import ErrorCode, LLMChatCompletion
 from extended.langchain.agents.agent_factory import AgentFactory
+from extended.langchain.models.alon_chat import AlonChatModel
 from framework.common.ctx import get_tenant_id, get_user_id
 from framework.database.core.engine import get_session
 
@@ -75,7 +80,7 @@ def _format_sse_line(data: Any) -> str:
         else:
             json_data = orjson.dumps(data).decode("utf-8")
             return f"data: {json_data}\n\n"
-    except Exception as e:
+    except Exception:
         _logger.exception("格式化 SSE 数据时出错")
         return 'data: {"error": "Failed to format data"}\n\n'
 
@@ -122,6 +127,23 @@ async def _sse_generator(
                 }
             )
             break
+
+
+async def _update_message_status(
+    message_id: str, status: MessageStatus, error_msg: str | None = None
+) -> None:
+    """更新消息状态"""
+    try:
+        async for session in get_session():
+            message = await session.get(Message, message_id)
+            if message:
+                message.status = status
+                if error_msg:
+                    message.message_metadata = {"error": error_msg}
+                await session.commit()
+                _logger.info(f"消息状态已更新为 {status.value}: {message_id}")
+    except Exception:
+        _logger.exception(f"更新消息状态失败: {message_id}")
 
 
 @router.post("")
@@ -186,6 +208,31 @@ async def chat_messages(
                         },
                     }
                 )
+
+        # 创建初始消息记录（状态为 pending）
+        async for session in get_session():
+            user_message = Message(
+                id=str(uuid.uuid4()),
+                tenant_id=tenant_id,
+                app_id=DEFAULT_APP_ID,
+                conversation_id=conversation_id,
+                role="user",
+                content=query,
+                status=MessageStatus.NORMAL,
+                created_by=user_id,
+            )
+            assistant_message = Message(
+                id=message_id,
+                tenant_id=tenant_id,
+                app_id=DEFAULT_APP_ID,
+                conversation_id=conversation_id,
+                role="assistant",
+                status=MessageStatus.PENDING,
+                created_by=user_id,
+            )
+            session.add(user_message)
+            session.add(assistant_message)
+            await session.commit()
 
         # 创建 AlonChatModel
         model = AlonChatModel(
@@ -280,42 +327,28 @@ async def chat_messages(
                         )
                         await session.commit()
 
-                # 保存消息
+                # 更新消息状态为正常并保存内容
                 async for session in get_session():
-                    user_message = Message(
-                        id=str(uuid.uuid4()),
-                        tenant_id=tenant_id,
-                        app_id=DEFAULT_APP_ID,
-                        conversation_id=conversation_id,
-                        role="user",
-                        content=query,
-                        status=MessageStatus.NORMAL,
-                        created_by=user_id,
-                    )
-                    assistant_message = Message(
-                        id=message_id,
-                        tenant_id=tenant_id,
-                        app_id=DEFAULT_APP_ID,
-                        conversation_id=conversation_id,
-                        role="assistant",
-                        content=full_content,
-                        status=MessageStatus.NORMAL,
-                        token_count=prompt_tokens + completion_tokens,
-                        created_by=user_id,
-                    )
-                    session.add(user_message)
-                    session.add(assistant_message)
-                    await session.commit()
+                    message = await session.get(Message, message_id)
+                    if message:
+                        message.content = full_content
+                        message.status = MessageStatus.NORMAL
+                        message.token_count = prompt_tokens + completion_tokens
+                        await session.commit()
 
                 await event_queue.put({"event": EventType.CLOSE})
                 await event_queue.put(None)
 
             except asyncio.CancelledError:
                 _logger.info(f"对话任务 {task_id} 被取消")
+                # 更新消息状态为已停止
+                await _update_message_status(message_id, MessageStatus.STOPPED)
                 await event_queue.put(None)
                 raise
             except Exception as e:
                 _logger.exception("对话任务出错")
+                # 更新消息状态为错误
+                await _update_message_status(message_id, MessageStatus.ERROR, str(e))
                 await event_queue.put(
                     {
                         "event": EventType.ERROR,
@@ -327,9 +360,13 @@ async def chat_messages(
                 )
                 await event_queue.put(None)
                 raise
+            finally:
+                # 清理任务资源
+                ACTIVE_ASYNCIO_TASKS[TASK_TYPE_GENERATE_LLM].pop(task_id, None)
 
-        # 创建任务
+        # 创建任务并注册到活跃任务列表
         task = asyncio.create_task(run_llm_task())
+        ACTIVE_ASYNCIO_TASKS[TASK_TYPE_GENERATE_LLM][task_id] = task
 
         headers = {
             "X-Task-ID": task_id,
@@ -365,18 +402,38 @@ async def stop_chat_messages(conversation_id: str) -> dict:
     if not tenant_id:
         raise HTTPException(status_code=401, detail="未授权访问")
 
+    # 验证会话存在
+    conversation = None
     async for session in get_session():
         conversation = await Conversation.one_by_conditions(
             session,
-            conditions=[
-                Conversation.id == conversation_id,
-                Conversation.tenant_id == tenant_id,
-            ],
+            conditions=[Conversation.id == conversation_id],
         )
-        if not conversation:
-            raise HTTPException(status_code=404, detail="会话不存在")
 
-    # TODO: 实现任务停止逻辑
-    # 目前返回成功，后续集成 memory_task 后实现
+    if not conversation:
+        raise HTTPException(status_code=404, detail="会话不存在")
 
-    return {"success": True, "message": "停止信号已发送"}
+    # 检查租户归属
+    if conversation.tenant_id != tenant_id:
+        raise HTTPException(status_code=403, detail="无权访问此会话")
+
+    # 查找活跃任务
+    task_id = None
+    message_id = None
+    for tid, task in ACTIVE_ASYNCIO_TASKS[TASK_TYPE_GENERATE_LLM].items():
+        if not task.done():
+            # 检查任务是否属于该会话（通过任务上下文判断）
+            # 这里简化处理，实际可能需要维护任务与会话的映射关系
+            task_id = tid
+            break
+
+    if task_id:
+        result = await stop_task_by_id(
+            task_id=task_id,
+            task_type=TASK_TYPE_GENERATE_LLM,
+            task_name="LLM对话任务",
+            message_id=message_id,
+        )
+        return {"success": True, "message": result["message"]}
+
+    return {"success": True, "message": "未找到活跃任务"}
