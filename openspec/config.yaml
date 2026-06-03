@@ -5,7 +5,7 @@ context: |
   所有产物必须用简体中文撰写。
 
   # 项目概述
-  项目名称：Demo - 最小化 AI 助手平台
+  项目名称：AiPlatform - 最小化 AI 助手平台
   项目类型：演示 AI 平台
   仓库结构：uv workspace monorepo
 
