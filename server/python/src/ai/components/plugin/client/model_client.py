@@ -8,7 +8,7 @@ from collections.abc import AsyncGenerator
 
 from loguru import logger
 
-from alon.components.model.entities.plugin_entities import PluginModelProviderEntity
+from ai.components.model.entities.plugin_entities import PluginModelProviderEntity
 from ai.components.plugin.client.base import BasePluginClient
 from ai.components.plugin.client.stream_printer import StreamPrinter
 from ai_plugin.sdk.entities.model import AIModelEntity, ModelType

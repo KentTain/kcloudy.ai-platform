@@ -1,6 +1,12 @@
 import re
 
 
+class ProviderIDFormatError(ValueError):
+    """Provider ID 格式错误异常"""
+
+    pass
+
+
 class GenericProviderID:
     """
     通用提供者ID类
@@ -27,13 +33,13 @@ class GenericProviderID:
 
         :param value: 提供者ID字符串
         :param is_hardcoded: 是否为硬编码提供者
-        :raises ValueError: 当提供者ID格式不正确时
+        :raises ProviderIDFormatError: 当提供者ID格式不正确时
         """
         if not value:
-            raise ValueError("插件未找到，请添加插件")
+            raise ProviderIDFormatError("插件未找到，请添加插件")
         # 检查该值是否是具有指定格式的有效插件 ID: $organization/$plugin_name/$provider_name
         if not re.match(r"^[a-z0-9_-]+\/[a-z0-9_-]+\/[a-z0-9_-]+$", value):
-            raise ValueError(f"无效的插件ID {value}")
+            raise ProviderIDFormatError(f"无效的插件ID {value}")
 
         self.organization, self.plugin_name, self.provider_name = value.split("/")
         self.is_hardcoded = is_hardcoded
@@ -61,6 +67,10 @@ class ModelProviderID(GenericProviderID):
     模型提供者ID类
 
     专门用于处理模型提供者的ID，包含特殊的兼容性处理
+
+    支持两种格式：
+    1. 完整格式：organization/plugin_name/provider_name
+    2. 简化格式：plugin_id/provider_name（自动转换为 langgenius/plugin_id/provider_name）
     """
 
     def __init__(self, value: str, is_hardcoded: bool = False) -> None:
@@ -71,8 +81,17 @@ class ModelProviderID(GenericProviderID):
 
         :param value: 提供者ID字符串
         :param is_hardcoded: 是否为硬编码提供者
+        :raises ProviderIDFormatError: 当提供者ID格式不正确时
         """
+        # 处理简化格式：plugin_id/provider_name
+        if "/" in value and value.count("/") == 1:
+            # 简化格式，转换为完整格式
+            plugin_id, provider_name = value.split("/")
+            value = f"langgenius/{plugin_id}/{provider_name}"
+
         super().__init__(value, is_hardcoded)
+
+        # Google模型映射到Gemini插件
         if self.organization == "langgenius" and self.provider_name == "google":
             self.plugin_name = "gemini"
 
@@ -82,6 +101,10 @@ class ToolProviderID(GenericProviderID):
     工具提供者ID类
 
     专门用于处理工具提供者的ID，包含特殊的兼容性处理
+
+    支持两种格式：
+    1. 完整格式：organization/plugin_name/provider_name
+    2. 简化格式：plugin_id/provider_name（自动转换为 langgenius/plugin_id/provider_name）
     """
 
     def __init__(self, value: str, is_hardcoded: bool = False) -> None:
@@ -92,8 +115,16 @@ class ToolProviderID(GenericProviderID):
 
         :param value: 提供者ID字符串
         :param is_hardcoded: 是否为硬编码提供者
+        :raises ProviderIDFormatError: 当提供者ID格式不正确时
         """
+        # 处理简化格式：plugin_id/provider_name
+        if "/" in value and value.count("/") == 1:
+            plugin_id, provider_name = value.split("/")
+            value = f"langgenius/{plugin_id}/{provider_name}"
+
         super().__init__(value, is_hardcoded)
+
+        # 特定工具提供者的插件名映射
         if self.organization == "langgenius":
             if self.provider_name in ["jina", "siliconflow", "stepfun", "gitee_ai"]:
                 self.plugin_name = f"{self.provider_name}_tool"
