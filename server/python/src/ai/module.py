@@ -37,6 +37,7 @@ class AIModule:
         from ai.controllers.admin.plugin import router as admin_plugin_router
         from ai.controllers.console.plugin import router as console_plugin_router
         from ai.controllers.inner.plugin import router as inner_plugin_router
+        from ai.controllers.v1.chat.llm import router as chat_llm_router
 
         return [
             # Admin API - 插件管理
@@ -45,6 +46,8 @@ class AIModule:
             (console_plugin_router, "/console/v1/plugins", ["Console - Plugin"]),
             # Inner API - 内部接口
             (inner_plugin_router, "/inner/v1", ["Inner - Plugin"]),
+            # V1 API - LLM 对话接口
+            (chat_llm_router, "/api/v1", ["LLM对话"]),
         ]
 
     def get_middlewares(self) -> list[type]:
@@ -78,4 +81,5 @@ class AIModule:
     def get_listener_setup(self) -> tuple | None:
         """返回监听器配置"""
         from ai.listeners.setup import setup_listeners, cleanup_listeners
+
         return (setup_listeners, cleanup_listeners)
