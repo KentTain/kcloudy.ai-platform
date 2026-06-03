@@ -32,28 +32,33 @@ class PluginMetrics(BaseModel):
     )
 
 
-# TODO: 任务 5 和 8 完成后，解除 PluginInfo 类的注释
-# class PluginInfo(BaseModel):
-#     """插件信息"""
-#
-#     # 基本信息
-#     id: str | None = Field(default=None, description="插件ID")
-#     name: str | None = Field(default=None, description="插件名称")
-#     version: str | None = Field(default=None, description="插件版本")
-#
-#     config: PluginConfig = Field(..., description="插件配置")
-#     status: PluginStatus | None = Field(default=None, description="插件状态")
-#     pid: int | None = Field(default=None, description="进程ID")
-#     port: int | None = Field(default=None, description="监听端口")
-#     work_dir: Path | None = Field(default=None, description="工作目录")
-#     log_file: Path | None = Field(default=None, description="日志文件")
-#     metrics: PluginMetrics | None = Field(default=None, description="性能指标")
-#     error_message: str | None = Field(default=None, description="错误信息")
-#
-#     # 时间戳
-#     installed_at: datetime | None = Field(default=None, description="安装时间")
-#     started_at: datetime | None = Field(default=None, description="启动时间")
-#     stopped_at: datetime | None = Field(default=None, description="停止时间")
+class PluginInfo(BaseModel):
+    """
+    插件信息（临时简化版本）
+
+    TODO: 任务 5 和 8 完成后，使用完整版本替换
+    """
+
+    # 基本信息
+    id: str | None = Field(default=None, description="插件ID")
+    name: str | None = Field(default=None, description="插件名称")
+    version: str | None = Field(default=None, description="插件版本")
+
+    # 运行时信息
+    pid: int | None = Field(default=None, description="进程ID")
+    port: int | None = Field(default=None, description="监听端口")
+    work_dir: Path | None = Field(default=None, description="工作目录")
+    log_file: Path | None = Field(default=None, description="日志文件")
+    metrics: PluginMetrics | None = Field(default=None, description="性能指标")
+    error_message: str | None = Field(default=None, description="错误信息")
+
+    # 状态（使用字符串代替枚举）
+    status: str | None = Field(default=None, description="插件状态")
+
+    # 时间戳
+    installed_at: datetime | None = Field(default=None, description="安装时间")
+    started_at: datetime | None = Field(default=None, description="启动时间")
+    stopped_at: datetime | None = Field(default=None, description="停止时间")
 
 
 class PluginEvent(BaseModel):

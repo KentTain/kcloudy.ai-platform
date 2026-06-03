@@ -47,7 +47,8 @@ from ai.components.plugin.engine.models.plugin import PluginInfo
 from ai.components.plugin.engine.models.request import InstallRequest
 from ai.components.plugin.engine.utils.logger import get_logger
 from framework.database.core.engine import async_session
-from ai.components.plugin.engine.models.enums import PluginInstallation, PluginStatus, RuntimeType, SourceType
+from ai.models.plugin import PluginInstallation
+from ai.components.plugin.engine.models.enums import PluginStatus, RuntimeType, SourceType
 from ai.components.plugin.engine.models.enums import PluginType as DBPluginType
 from ai_plugin.server.core.entities.plugin.setup import PluginAsset
 

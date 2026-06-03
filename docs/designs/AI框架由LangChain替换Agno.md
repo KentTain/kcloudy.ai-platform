@@ -76,7 +76,7 @@ from agno.models.base import Model
 
 @dataclass
 class Alon(Model):
-    \"\"\"继承 agno.Model，实现 ainvoke / ainvoke_stream\"\"\"
+    """继承 agno.Model，实现 ainvoke / ainvoke_stream"""
 
     async def ainvoke(self, messages, assistant_message, ...):
         llm_service = self._get_platform_models().llm
@@ -109,18 +109,18 @@ from <newpkg>_plugin.sdk.entities.model.message import (
 )
 
 class AlonChatModel(BaseChatModel):
-    \"\"\"
+    """
     LangChain 自定义 ChatModel，桥接到平台 LLMService
 
     用法：
         model = AlonChatModel(
-            model=\"gpt-4\",
-            provider=\"plugin_id/openai\",
-            tenant_id=\"xxx\",
+            model="gpt-4",
+            provider="plugin_id/openai",
+            tenant_id="xxx",
             temperature=0.7,
         )
-        response = await model.ainvoke([HumanMessage(content=\"你好\")])
-    \"\"\"
+        response = await model.ainvoke([HumanMessage(content="你好")])
+    """
     
     model: str
     provider: str
@@ -130,25 +130,25 @@ class AlonChatModel(BaseChatModel):
     
     @property
     def _llm_type(self) -> str:
-        return \"alon-chat-model\"
+        return "alon-chat-model"
     
     @property
     def _identifying_params(self) -> dict:
         return {
-            \"model\": self.model,
-            \"provider\": self.provider,
-            \"tenant_id\": self.tenant_id,
+            "model": self.model,
+            "provider": self.provider,
+            "tenant_id": self.tenant_id,
         }
     
     def _convert_messages(self, messages: List[BaseMessage]) -> List[PromptMessage]:
-        \"\"\"将 LangChain BaseMessage 转换为平台 PromptMessage\"\"\"
+        """将 LangChain BaseMessage 转换为平台 PromptMessage"""
         result = []
         for msg in messages:
-            if msg.type == \"human\":
+            if msg.type == "human":
                 result.append(UserPromptMessage(content=msg.content))
-            elif msg.type == \"ai\":
+            elif msg.type == "ai":
                 result.append(AssistantPromptMessage(content=msg.content))
-            elif msg.type == \"system\":
+            elif msg.type == "system":
                 result.append(SystemPromptMessage(content=msg.content))
             # 可扩展处理 tool、function 等类型
         return result
@@ -160,8 +160,8 @@ class AlonChatModel(BaseChatModel):
         run_manager: Optional[Any] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        \"\"\"同步调用（LangChain 要求实现，这里抛出异常）\"\"\"
-        raise NotImplementedError(\"请使用异步方法 ainvoke\")
+        """同步调用（LangChain 要求实现，这里抛出异常）"""
+        raise NotImplementedError("请使用异步方法 ainvoke")
     
     async def _agenerate(
         self,
@@ -170,7 +170,7 @@ class AlonChatModel(BaseChatModel):
         run_manager: Optional[Any] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        \"\"\"异步非流式调用\"\"\"
+        """异步非流式调用"""
         llm_service = LLMService(self.tenant_id)
         
         prompt_messages = self._convert_messages(messages)
@@ -179,25 +179,25 @@ class AlonChatModel(BaseChatModel):
             prompt_messages=prompt_messages,
             model=self.model,
             provider=self.provider,
-            model_parameters={**self.model_parameters, \"stop\": stop},
+            model_parameters={**self.model_parameters, "stop": stop},
             user=self.user_id,
         )
         
         # 将 LLMResult 转换为 ChatResult
-        ai_message = AIMessage(content=result.message.content or \"\")
+        ai_message = AIMessage(content=result.message.content or "")
         
         return ChatResult(
             generations=[
                 ChatGeneration(
                     message=ai_message,
                     generation_info={
-                        \"prompt_tokens\": result.usage.prompt_tokens,
-                        \"completion_tokens\": result.usage.completion_tokens,
-                        \"total_tokens\": result.usage.total_tokens,
+                        "prompt_tokens": result.usage.prompt_tokens,
+                        "completion_tokens": result.usage.completion_tokens,
+                        "total_tokens": result.usage.total_tokens,
                     },
                 )
             ],
-            llm_output={\"model\": self.model},
+            llm_output={"model": self.model},
         )
     
     async def _astream(
@@ -207,7 +207,7 @@ class AlonChatModel(BaseChatModel):
         run_manager: Optional[Any] = None,
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
-        \"\"\"异步流式调用\"\"\"
+        """异步流式调用"""
         llm_service = LLMService(self.tenant_id)
         
         prompt_messages = self._convert_messages(messages)
@@ -216,7 +216,7 @@ class AlonChatModel(BaseChatModel):
             prompt_messages=prompt_messages,
             model=self.model,
             provider=self.provider,
-            model_parameters={**self.model_parameters, \"stop\": stop},
+            model_parameters={**self.model_parameters, "stop": stop},
             user=self.user_id,
         ):
             # chunk 是 LLMResultChunk
@@ -224,8 +224,8 @@ class AlonChatModel(BaseChatModel):
                 yield ChatGenerationChunk(
                     message=AIMessageChunk(content=chunk.message.content),
                     generation_info={
-                        \"prompt_tokens\": chunk.usage.prompt_tokens if chunk.usage else 0,
-                        \"completion_tokens\": chunk.usage.completion_tokens if chunk.usage else 0,
+                        "prompt_tokens": chunk.usage.prompt_tokens if chunk.usage else 0,
+                        "completion_tokens": chunk.usage.completion_tokens if chunk.usage else 0,
                     },
                 )
 ```
@@ -234,11 +234,11 @@ class AlonChatModel(BaseChatModel):
 
 | 对比项 | agno.Model | LangChain BaseChatModel |
 |--------|-----------|------------------------|
-| 消息类型 | gno.models.message.Message | langchain_core.messages.BaseMessage |
+| 消息类型 | agno.models.message.Message | langchain_core.messages.BaseMessage |
 | 流式返回 | ModelResponse | ChatGenerationChunk |
 | 非流式返回 | ModelResponse | ChatResult |
-| 方法签名 | invoke(messages, assistant_message, ...) | _agenerate(messages, stop, ...) |
-| 流式方法 | invoke_stream(messages, ...) | _astream(messages, ...) |
+| 方法签名 | ainvoke(messages, assistant_message, ...) | _agenerate(messages, stop, ...) |
+| 流式方法 | ainvoke_stream(messages, ...) | _astream(messages, ...) |
 
 ---
 
@@ -280,10 +280,10 @@ from langchain.memory import ConversationBufferMemory
 # 1. 创建 Prompt
 
 prompt = ChatPromptTemplate.from_messages([
-    (\"system\", \"你是一个有帮助的 AI 助手。\"),
-    MessagesPlaceholder(variable_name=\"chat_history\"),
-    (\"human\", \"{input}\"),
-    MessagesPlaceholder(variable_name=\"agent_scratchpad\"),  # 工具调用中间步骤
+    ("system", "你是一个有帮助的 AI 助手。"),
+    MessagesPlaceholder(variable_name="chat_history"),
+    ("human", "{input}"),
+    MessagesPlaceholder(variable_name="agent_scratchpad"),  # 工具调用中间步骤
 ])
 
 # 2. 创建 Agent
@@ -297,7 +297,7 @@ agent = create_tool_calling_agent(
 # 3. 创建 Memory
 
 memory = ConversationBufferMemory(
-    memory_key=\"chat_history\",
+    memory_key="chat_history",
     return_messages=True,
 )
 
@@ -313,14 +313,14 @@ agent_executor = AgentExecutor(
 
 # 5. 执行（非流式）
 
-result = await agent_executor.ainvoke({\"input\": query})
-print(result[\"output\"])
+result = await agent_executor.ainvoke({"input": query})
+print(result["output"])
 
 # 6. 执行（流式）
 
-async for event in agent_executor.astream_events({\"input\": query}, version=\"v2\"):
-    if event[\"event\"] == \"on_chat_model_stream\":
-        chunk = event[\"data\"][\"chunk\"]
+async for event in agent_executor.astream_events({"input": query}, version="v2"):
+    if event["event"] == "on_chat_model_stream":
+        chunk = event["data"]["chunk"]
         yield chunk.content
 ```
 
@@ -338,7 +338,7 @@ from langgraph.managed import IsLastStep
 # 1. 定义状态
 
 class AgentState(TypedDict):
-    messages: Annotated[list, \"对话消息列表\"]
+    messages: Annotated[list, "对话消息列表"]
     is_last_step: IsLastStep
 
 # 2. 创建工具节点
@@ -348,30 +348,30 @@ tool_node = ToolNode(tools)
 # 3. 创建模型调用节点
 
 async def call_model(state: AgentState):
-    response = await model.ainvoke(state[\"messages\"])
-    return {\"messages\": [response]}
+    response = await model.ainvoke(state["messages"])
+    return {"messages": [response]}
 
 # 4. 构建图
 
 workflow = StateGraph(AgentState)
-workflow.add_node(\"agent\", call_model)
-workflow.add_node(\"tools\", tool_node)
-workflow.set_entry_point(\"agent\")
+workflow.add_node("agent", call_model)
+workflow.add_node("tools", tool_node)
+workflow.set_entry_point("agent")
 
 # 5. 添加条件边
 
 def should_continue(state: AgentState):
-    messages = state[\"messages\"]
+    messages = state["messages"]
     last_message = messages[-1]
     if last_message.tool_calls:
-        return \"tools\"
-    return \"end\"
+        return "tools"
+    return "end"
 
-workflow.add_conditional_edges(\"agent\", should_continue, {
-    \"tools\": \"tools\",
-    \"end\": \"__end__\",
+workflow.add_conditional_edges("agent", should_continue, {
+    "tools": "tools",
+    "end": "__end__",
 })
-workflow.add_edge(\"tools\", \"agent\")
+workflow.add_edge("tools", "agent")
 
 # 6. 配置持久化（PostgreSQL）
 
@@ -383,14 +383,14 @@ app = workflow.compile(checkpointer=checkpointer)
 
 # 8. 执行（流式）
 
-config = {\"configurable\": {\"thread_id\": conversation_id}}
+config = {"configurable": {"thread_id": conversation_id}}
 async for event in app.astream_events(
-    {\"messages\": [HumanMessage(content=query)]},
+    {"messages": [HumanMessage(content=query)]},
     config=config,
-    version=\"v2\",
+    version="v2",
 ):
-    if event[\"event\"] == \"on_chat_model_stream\":
-        yield event[\"data\"][\"chunk\"].content
+    if event["event"] == "on_chat_model_stream":
+        yield event["data"]["chunk"].content
 ```
 
 #### agno Agent → LangChain 对照表
@@ -434,13 +434,13 @@ from langchain_community.chat_message_histories import PostgresChatMessageHistor
 # 方案 A：简单 Buffer Memory
 
 history = PostgresChatMessageHistory(
-    connection_string=\"postgresql://...\",
+    connection_string="postgresql://...",
     session_id=conversation_id,
 )
 
 memory = ConversationBufferMemory(
     chat_memory=history,
-    memory_key=\"chat_history\",
+    memory_key="chat_history",
     return_messages=True,
 )
 
@@ -451,15 +451,15 @@ from langchain.memory import ConversationSummaryMemory
 memory = ConversationSummaryMemory(
     llm=model,
     chat_memory=history,
-    memory_key=\"chat_history\",
+    memory_key="chat_history",
     return_messages=True,
-    human_prefix=\"用户\",
-    ai_prefix=\"助手\",
+    human_prefix="用户",
+    ai_prefix="助手",
 )
 
 # 使用
 
-memory.save_context({\"input\": query}, {\"output\": response})
+memory.save_context({"input": query}, {"output": response})
 history_messages = memory.load_memory_variables({})
 ```
 
@@ -475,7 +475,7 @@ agno 的 CompressionManager 用于压缩工具调用结果，LangChain 无直接
 from langchain_core.messages import ToolMessage
 
 def compress_tool_results(messages: list, limit: int = 3) -> list:
-    \"\"\"压缩工具调用结果，只保留最近 N 条\"\"\"
+    """压缩工具调用结果，只保留最近 N 条"""
     compressed = []
     tool_messages_count = 0
 
@@ -503,9 +503,9 @@ from agno.run.agent import RunEvent, RunOutputEvent
 
 async for response in agent.arun(input=query):
     if response.event == RunEvent.run_content:
-        yield {\"event\": \"message\", \"data\": {\"content\": response.content}}
+        yield {"event": "message", "data": {"content": response.content}}
     elif response.event == RunEvent.tool_call_started:
-        yield {\"event\": \"search_keywords\", \"data\": {...}}
+        yield {"event": "search_keywords", "data": {...}}
     elif response.event == RunEvent.run_completed:
         # 提取 metrics
 ```
@@ -517,51 +517,51 @@ from langchain_core.callbacks import AsyncCallbackHandler
 from langchain_core.outputs import LLMResult
 
 class StreamingCallbackHandler(AsyncCallbackHandler):
-    \"\"\"自定义回调处理器，用于 SSE 事件转换\"\"\"
+    """自定义回调处理器，用于 SSE 事件转换"""
 
     def __init__(self, event_queue: asyncio.Queue):
         self.event_queue = event_queue
     
     async def on_llm_start(self, serialized, prompts, **kwargs):
         await self.event_queue.put({
-            \"event\": \"llm_start\",
-            \"data\": {\"prompts\": prompts},
+            "event": "llm_start",
+            "data": {"prompts": prompts},
         })
     
     async def on_llm_new_token(self, token: str, **kwargs):
         await self.event_queue.put({
-            \"event\": \"message\",
-            \"data\": {\"content\": token},
+            "event": "message",
+            "data": {"content": token},
         })
     
     async def on_llm_end(self, response: LLMResult, **kwargs):
-        usage = response.llm_output.get(\"token_usage\", {})
+        usage = response.llm_output.get("token_usage", {})
         await self.event_queue.put({
-            \"event\": \"finish\",
-            \"data\": {
-                \"prompt_tokens\": usage.get(\"prompt_tokens\", 0),
-                \"completion_tokens\": usage.get(\"completion_tokens\", 0),
+            "event": "finish",
+            "data": {
+                "prompt_tokens": usage.get("prompt_tokens", 0),
+                "completion_tokens": usage.get("completion_tokens", 0),
             },
         })
     
     async def on_tool_start(self, serialized, input_str, **kwargs):
         await self.event_queue.put({
-            \"event\": \"tool_start\",
-            \"data\": {\"tool\": serialized.get(\"name\"), \"input\": input_str},
+            "event": "tool_start",
+            "data": {"tool": serialized.get("name"), "input": input_str},
         })
     
     async def on_tool_end(self, output, **kwargs):
         await self.event_queue.put({
-            \"event\": \"tool_end\",
-            \"data\": {\"output\": output},
+            "event": "tool_end",
+            "data": {"output": output},
         })
 
 # 使用
 
 callback = StreamingCallbackHandler(event_queue)
 async for event in agent_executor.astream_events(
-    {\"input\": query},
-    version=\"v2\",
+    {"input": query},
+    version="v2",
     callbacks=[callback],
 ):
     pass  # 事件由 callback 处理
@@ -588,7 +588,7 @@ from langchain_postgres import PGChatMessageHistory
 # 方案 A：langchain-community
 
 history = PostgresChatMessageHistory(
-    connection_string=\"postgresql://user:pass@host:port/db\",
+    connection_string="postgresql://user:pass@host:port/db",
     session_id=conversation_id,
 )
 
@@ -597,7 +597,7 @@ history = PostgresChatMessageHistory(
 from langchain_postgres import PostgresChatMessageHistory as AsyncPGHistory
 
 history = AsyncPGHistory(
-    async_connection_string=\"postgresql://user:pass@host:port/db\",
+    async_connection_string="postgresql://user:pass@host:port/db",
     session_id=conversation_id,
 )
 
@@ -631,10 +631,10 @@ from langchain.tools import Tool
 # 方案 A：使用 BingSearch（需要 Bing API Key）
 
 from langchain_community.utilities import BingSearchAPIWrapper
-search = BingSearchAPIWrapper(bing_subscription_key=\"...\", bing_search_url=\"...\")
+search = BingSearchAPIWrapper(bing_subscription_key="...", bing_search_url="...")
 search_tool = Tool(
-    name=\"bing_search\",
-    description=\"搜索互联网获取信息\",
+    name="bing_search",
+    description="搜索互联网获取信息",
     func=search.run,
 )
 
@@ -644,12 +644,12 @@ import requests
 from langchain.tools import BaseTool
 
 class BaiduSearchTool(BaseTool):
-    name = \"baidu_search\"
-    description = \"使用百度搜索互联网信息\"
+    name = "baidu_search"
+    description = "使用百度搜索互联网信息"
 
     def _run(self, query: str) -> str:
         # 调用百度搜索 API 或爬虫
-        response = requests.get(f\"https://www.baidu.com/s?wd={query}\")
+        response = requests.get(f"https://www.baidu.com/s?wd={query}")
         # 解析结果...
         return result
     
@@ -683,13 +683,13 @@ from langchain_core.messages import HumanMessage
 from langchain.memory import ConversationBufferMemory
 from langchain_community.chat_message_histories import PostgresChatMessageHistory
 
-router = APIRouter(prefix=\"/apps/llm\", tags=[\"LLM对话\"])
+router = APIRouter(prefix="/apps/llm", tags=["LLM对话"])
 
-@router.post(\"/chat-messages\")
+@router.post("/chat-messages")
 async def chat_messages(
     chat_completion_in: LLMChatCompletion = Body(...),
 ) -> StreamingResponse:
-    \"\"\"LLM 对话接口（LangChain 版本）\"\"\"
+    """LLM 对话接口（LangChain 版本）"""
 
     tenant_id = str(CTX_TENANT_ID.get())
     user_id = str(CTX_USER_ID.get())
@@ -713,7 +713,7 @@ async def chat_messages(
     # 3. 创建 Memory
     memory = ConversationBufferMemory(
         chat_memory=history,
-        memory_key=\"chat_history\",
+        memory_key="chat_history",
         return_messages=True,
     )
     
@@ -728,10 +728,10 @@ async def chat_messages(
     from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
     
     prompt = ChatPromptTemplate.from_messages([
-        (\"system\", \"你是一个有帮助的 AI 助手。\"),
-        MessagesPlaceholder(variable_name=\"chat_history\"),
-        (\"human\", \"{input}\"),
-        MessagesPlaceholder(variable_name=\"agent_scratchpad\"),
+        ("system", "你是一个有帮助的 AI 助手。"),
+        MessagesPlaceholder(variable_name="chat_history"),
+        ("human", "{input}"),
+        MessagesPlaceholder(variable_name="agent_scratchpad"),
     ])
     
     agent = create_tool_calling_agent(model, tools, prompt)
@@ -746,20 +746,20 @@ async def chat_messages(
     event_queue = asyncio.Queue()
     
     async def stream_generator():
-        full_content = \"\"
+        full_content = ""
         async for event in agent_executor.astream_events(
-            {\"input\": chat_completion_in.query},
-            version=\"v2\",
+            {"input": chat_completion_in.query},
+            version="v2",
         ):
-            if event[\"event\"] == \"on_chat_model_stream\":
-                chunk = event[\"data\"][\"chunk\"]
+            if event["event"] == "on_chat_model_stream":
+                chunk = event["data"]["chunk"]
                 content = chunk.content
                 full_content += content
-                yield f\"data: {{```"event```": ```"message```", ```"data```": {{```"content```": ```"{content}```"}}}}\\n\\n\"
+                yield f"data: {{\"event\": \"message\", \"data\": {{\"content\": \"{content}\"}}}}\n\n"
             
-            elif event[\"event\"] == \"on_chain_end\":
+            elif event["event"] == "on_chain_end":
                 # 流结束
-                yield f\"data: {{```"event```": ```"finish```", ```"data```": {{}}}}\\n\\n\"
+                yield f'data: {{"event": "finish", "data": {{}}}}\n\n'
         
         # 7. 保存消息到数据库
         await history.aadd_user_message(chat_completion_in.query)
@@ -767,7 +767,7 @@ async def chat_messages(
     
     return StreamingResponse(
         stream_generator(),
-        media_type=\"text/event-stream\",
+        media_type="text/event-stream",
     )
 ```
 

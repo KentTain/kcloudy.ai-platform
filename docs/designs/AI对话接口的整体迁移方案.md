@@ -133,13 +133,13 @@ alon/
 #### 测试 contextvars
 
 from alon.common.ctx import CTX_TENANT_ID, CTX_USER_ID
-CTX_TENANT_ID.set(\"test-tenant\")
-assert CTX_TENANT_ID.get() == \"test-tenant\"
+CTX_TENANT_ID.set("test-tenant")
+assert CTX_TENANT_ID.get() == "test-tenant"
 
 #### 测试 settings
 
 from alon.configs.settings import settings
-assert hasattr(settings, \"workflow\")
+assert hasattr(settings, "workflow")
 ```
 
 ---
@@ -178,8 +178,8 @@ alon_plugin/
 from alon_plugin.sdk.entities.model.llm import LLMResult, LLMResultChunk
 from alon_plugin.sdk.entities.model.message import UserPromptMessage
 
-msg = UserPromptMessage(content=\"test\")
-assert msg.role.value == \"user\"
+msg = UserPromptMessage(content="test")
+assert msg.role.value == "user"
 ```
 
 ---
@@ -283,9 +283,9 @@ alon/services/
 ```python
 from alon.components.model.services.llm_service import LLMService
 
-llm_service = LLMService(tenant_id=\"test-tenant\")
+llm_service = LLMService(tenant_id="test-tenant")
 
-#### async for chunk in llm_service.stream(prompt_messages=[...], model=\"gpt-4\", provider=\"xxx/openai\")
+#### async for chunk in llm_service.stream(prompt_messages=[...], model="gpt-4", provider="xxx/openai")
 
 #### print(chunk)
 
@@ -300,7 +300,7 @@ llm_service = LLMService(tenant_id=\"test-tenant\")
 #### 前置条件
 
 ```bash
-uv add \"agno[openai]==2.5.9\"
+uv add "agno[openai]==2.5.9"
 ```
 
 **⚠️ 版本必须锁定**：agno 升级可能改变 Model / Agent 接口签名
@@ -365,11 +365,11 @@ from <newpkg>.configs.settings import settings
 from extended.agno.models.alon import Alon
 
 model = Alon(
-    id=\"gpt-4\",
-    tenant_id=\"test-tenant\",
-    user=\"test-user\",
-    provider=\"<plugin_id>/openai\",
-    parameters={\"temperature\": 0.7},
+    id="gpt-4",
+    tenant_id="test-tenant",
+    user="test-user",
+    provider="<plugin_id>/openai",
+    parameters={"temperature": 0.7},
 )
 
 #### 测试非流式调用
@@ -418,10 +418,10 @@ import asyncio
 from alon.listeners.services.pubsub.memory_task import cleanup_task_after_timeout
 
 async def test_cleanup():
-    task_id = \"test-task-123\"
+    task_id = "test-task-123"
     # 启动一个长时间任务
     # 调用 cleanup_task_after_timeout 验证超时取消逻辑
-    await cleanup_task_after_timeout(task_id, \"llm\", \"LLM任务\", lambda: 10)
+    await cleanup_task_after_timeout(task_id, "llm", "LLM任务", lambda: 10)
 
 asyncio.run(test_cleanup())
 ```
@@ -461,7 +461,7 @@ alon/migrations/
 #### 改造要点
 
 1. **数据库适配**：
-   - 确保 sync_session 工厂使用你的数据库连接池
+   - 确保 async_session 工厂使用你的数据库连接池
    - 表名前缀 TABLE_PREFIX 可根据目标项目规范调整
 
 2. **迁移脚本**：提取 Conversation / Message 两张表的建表语句，生成新迁移
@@ -477,9 +477,9 @@ from alon.models.core.engine import async_session
 async def test_models():
     async with async_session() as session:
         conv = await Conversation.create(session, {
-            \"app_id\": \"test-app\",
-            \"name\": \"测试会话\",
-            \"status\": \"normal\",
+            "app_id": "test-app",
+            "name": "测试会话",
+            "status": "normal",
         })
         await session.commit()
         assert conv.id is not None
@@ -515,10 +515,10 @@ alon/schemas/
 from alon.schemas.completion import LLMChatCompletion, ModelConfig
 
 req = LLMChatCompletion(
-    model=ModelConfig(name=\"gpt-4\", provider=\"xxx/openai\"),
-    query=\"你好\",
+    model=ModelConfig(name="gpt-4", provider="xxx/openai"),
+    query="你好",
 )
-assert req.query == \"你好\"
+assert req.query == "你好"
 ```
 
 ---
@@ -544,23 +544,23 @@ alon/controllers/portal/v1/generate/
 #### 原代码
 
 router = APIRouter(
-    prefix=\"/apps/llm\",
-    tags=[\"门户-生成\"],
+    prefix="/apps/llm",
+    tags=["门户-生成"],
 )
 
 # 改为你的路由结构
 
 router = APIRouter(
-    prefix=\"/chat\",  # 或其他前缀
-    tags=[\"LLM对话\"],
+    prefix="/chat",  # 或其他前缀
+    tags=["LLM对话"],
 )
 ```
 
 1. **APP_ID / APP_NAME**：原代码硬编码了固定 ID，若目标项目有多应用场景需参数化
 
 ```python
-APP_ID: str = \"00000000-0000-0000-0000-000000000001\"
-APP_NAME = \"通用智能体\"
+APP_ID: str = "00000000-0000-0000-0000-000000000001"
+APP_NAME = "通用智能体"
 ```
 
 1. **工具集成**：联网搜索使用了 BaiduSearchTools，若不需要可注释掉
@@ -578,15 +578,15 @@ uv run runserver
 #### 测试接口
 
 curl -X POST <http://localhost:8000/portal/v1/apps/llm/chat-messages> \\
-  -H \"Content-Type: application/json\" \\
-  -H \"Authorization: Bearer <token>\" \\
+  -H "Content-Type: application/json" \\
+  -H "Authorization: Bearer <token>" \\
   -d '{
-    \"model\": {
-      \"name\": \"gpt-4\",
-      \"provider\": \"<plugin_id>/openai\",
-      \"completion_params\": {\"temperature\": 0.7}
+    "model": {
+      "name": "gpt-4",
+      "provider": "<plugin_id>/openai",
+      "completion_params": {"temperature": 0.7}
     },
-    \"query\": \"你好，介绍一下自己\"
+    "query": "你好，介绍一下自己"
   }'
 ```
 
@@ -623,7 +623,7 @@ curl -X POST <http://localhost:8000/portal/v1/apps/llm/chat-messages> \\
 | 风险项 | 影响 | 应对 |
 |--------|------|------|
 | 每次对话创建 Agent 实例 | 内存泄漏 | 使用单例池或显式清理 |
-| 流式响应未正确关闭 | 连接残留 | 确保 inally 块发送 None 结束信号 |
+| 流式响应未正确关闭 | 连接残留 | 确保 finally 块发送 None 结束信号 |
 | 记忆/摘要查询无索引 | 数据库慢查询 | 为 conversation_id / session_id 加索引 |
 
 ---

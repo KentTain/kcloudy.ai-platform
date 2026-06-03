@@ -4,7 +4,7 @@
 
 ## 模块定位
 
-AI 模块负责 AI 相关的能力，包括：LLM、插件、工具等。它是业务模块，可以依赖 ramework 和  enant 模块，但不应把 IAM 专属逻辑下沉到 framework。
+AI 模块负责 AI 相关的能力，包括：LLM、插件、工具等。它是业务模块，可以依赖 framework 和  enant 模块，但不应把 IAM 专属逻辑下沉到 framework。
 
 **依赖关系：**
 
