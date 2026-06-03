@@ -12,6 +12,8 @@ Base = create_module_base("ai")
 BaseModel = create_base_model(Base)
 
 # 导入模型（必须在 Base 和 BaseModel 定义之后）
+from .model_config import ModelConfig, ModelType
+from .model_provider import ModelProvider, ProviderType
 from .plugin import (
     CredentialScope,
     InstallType,
@@ -39,10 +41,15 @@ __all__ = [
     "TaskStatus",
     "PluginStatus",
     "CredentialScope",
+    "ProviderType",
+    "ModelType",
     # 插件相关
     "Plugin",
     "PluginDeclaration",
     "PluginInstallation",
     "PluginInstallTask",
     "PluginCredential",
+    # 模型提供商相关
+    "ModelProvider",
+    "ModelConfig",
 ]
