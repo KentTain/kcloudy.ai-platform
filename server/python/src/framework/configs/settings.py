@@ -156,6 +156,13 @@ class LoggingSettings(BaseSettings):
 # 业务配置
 # ==============================================================================
 
+class WorkflowSettings(BaseSettings):
+    """工作流配置"""
+    task_cleanup_timeout: int = Field(
+        default=600, description="任务超时清理时间（秒）"
+    )
+
+
 class TenantSettings(BaseSettings):
     """租户配置"""
     request_header: str = Field(default="x-tenant-id", description="租户请求头")
@@ -352,6 +359,9 @@ class Settings(BaseSettings):
     )
     iam: IAMSettings = Field(
         default_factory=IAMSettings, description="IAM 配置"
+    )
+    workflow: WorkflowSettings = Field(
+        default_factory=WorkflowSettings, description="工作流配置"
     )
 
     # 内部接口配置

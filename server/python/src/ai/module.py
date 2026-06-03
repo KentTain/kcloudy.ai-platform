@@ -76,5 +76,6 @@ class AIModule:
         return None
 
     def get_listener_setup(self) -> tuple | None:
-        """AI 模块无消息监听器"""
-        return None
+        """返回监听器配置"""
+        from ai.listeners.setup import setup_listeners, cleanup_listeners
+        return (setup_listeners, cleanup_listeners)
