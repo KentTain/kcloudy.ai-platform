@@ -4,6 +4,7 @@
 验证 ai 插件相关表的 CRUD 操作。
 """
 
+import uuid
 import pytest
 import pytest_asyncio
 from sqlalchemy import text
@@ -58,21 +59,25 @@ class TestPluginCRUD:
 
     @pytest_asyncio.fixture
     async def session(self, ai_async_engine):
-        async with ai_async_engine.begin() as conn:
+        """使用事务隔离的测试会话"""
+        async with ai_async_engine.connect() as conn:
+            transaction = await conn.begin()
             yield conn
-            # 事务会在 yield 后自动回滚
+            await transaction.rollback()
 
     @pytest.mark.asyncio
     async def test_insert_plugin(self, session):
         """测试插入插件记录"""
+        test_id = str(uuid.uuid4())
         result = await session.execute(
             text("""
                 INSERT INTO ai.plugins (id, plugin_id, plugin_unique_identifier, refers, install_type, created_at, updated_at)
-                VALUES ('test-plugin-id', 'test/plugin', 'test/plugin:1.0.0@abc123', 0, 'local', NOW(), NOW())
+                VALUES (:id, 'test/plugin', :uid, 0, 'local', NOW(), NOW())
                 RETURNING id
-            """)
+            """),
+            {"id": test_id, "uid": f"test/plugin:1.0.0@{test_id[:8]}"}
         )
-        assert result.scalar() == "test-plugin-id"
+        assert result.scalar() == test_id
 
 
 class TestForeignKeyConstraints:
