@@ -129,15 +129,50 @@ _instances: WeakValueDictionary[str, LLMService] = WeakValueDictionary()
 
 | 功能 | Alon 路径 | 说明 |
 |------|-----------|------|
-| Embedding 服务 | `services/embedding_service.py` | 文本向量化服务 |
-| Rerank 服务 | `services/rerank_service.py` | 重排序服务 |
-| TextEmbedding 基类 | `model_providers/__base__/text_embedding_model.py` | Embedding 模型基类 |
-| Rerank 基类 | `model_providers/__base__/rerank_model.py` | Rerank 模型基类 |
-| Schema 验证器 | `schema_validators/` | Provider/Model 凭证 Schema 验证 |
-| 辅助工具 | `internal/helper/` | encrypter、position_helper、ssrf_proxy、yaml_utils |
-| 工具函数 | `utils/helper.py` | 通用工具函数 |
-| Logging 回调 | `callbacks/logging_callback.py` | 日志回调实现 |
-| Model Manager | `model_manager.py` | 旧版模型管理入口 |
+| Schema 验证器 | schema_validators/ | Provider/Model 凭证 Schema 验证 |
+| SSRF 代理 | internal/helper/ssrf_proxy.py | 深度依赖 alon_config，当前无 HTTP 出站场景 |
+| Model Manager | model_manager.py | 旧版模型管理入口，已由 LLMService + ManagementService 替代 |
+
+## 二次迁移差异（2026-06-03）
+
+以下功能在二次迁移中完成，与 Alon 存在以下差异：
+
+### 1. EmbeddingService 缓存配置
+
+Alon 通过 KnowledgeEmbeddingSettings 从配置文件加载缓存参数；本项目改为构造参数默认值，避免引入 Alon 的业务配置依赖。
+
+`python
+# Alon
+class EmbeddingService(BaseModelService):
+    def __init__(self, tenant_id: str):
+        embedding_settings = settings.knowledge.embedding
+        self._cache_enabled = embedding_settings.cache_enabled
+        self._max_cache_size = embedding_settings.cache_size
+
+# InitProject
+class EmbeddingService(BaseModelService):
+    def __init__(self, tenant_id: str, cache_enabled: bool = True,
+                 cache_size: int = 2000, log_cache_details: bool = False):
+        super().__init__(tenant_id)
+        self._cache_enabled = cache_enabled
+        self._max_cache_size = cache_size
+`
+
+### 2. RerankService 基类调用
+
+Alon 的 RerankService.__init__ 直接设置 self._factory 和 self._tenant_id；本项目改为调用 super().__init__(tenant_id)，遵循 BaseModelService 的初始化模式。
+
+### 3. ModelInstance 方法补充
+
+一次迁移时 ModelInstance 仅保留了 LLM 相关方法；二次迁移补回了 invoke_text_embedding、get_text_embedding_num_tokens、invoke_rerank 三个方法。
+
+### 4. LoggingCallback 回调
+
+Alon 的 LoggingCallback 使用模块级 logger 变量；本项目改为 logger.bind(name=__name__) 绑定日志名称。
+
+### 5. parameter_entities.py 参数实体
+
+直接迁移，导入路径替换为 i_plugin.sdk.entities.provider_config。该模块为 ModelProviderFactory 的凭证 Schema 验证提供类型支撑。
 
 ## 待完成项
 

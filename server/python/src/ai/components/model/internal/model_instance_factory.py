@@ -18,8 +18,14 @@ from ai.components.model.model_providers.__base__.large_language_model import (
     LargeLanguageModelImpl,
 )
 from ai_plugin.sdk.entities.model import ModelType
+from ai.components.model.model_providers.__base__.rerank_model import RerankModelImpl
+from ai.components.model.model_providers.__base__.text_embedding_model import (
+    TextEmbeddingModelImpl,
+)
 from ai_plugin.sdk.entities.model.llm import LLMResult, LLMResultChunk
 from ai_plugin.sdk.entities.model.message import PromptMessage, PromptMessageTool
+from ai_plugin.sdk.entities.model.rerank import RerankResult
+from ai_plugin.sdk.entities.model.text_embedding import TextEmbeddingResult
 
 _logger = logger.bind(name=__name__)
 
@@ -146,7 +152,73 @@ class ModelInstance:
             ),
         )
 
-    async def _round_robin_invoke(self, function, **kwargs):
+    async def invoke_text_embedding(
+        self, texts: list[str], user: str | None = None
+    ) -> TextEmbeddingResult:
+        """调用文本嵌入模型"""
+        if not isinstance(self.model_type_instance, TextEmbeddingModelImpl):
+            raise Exception("模型类型实例不是 TextEmbeddingModel")
+
+        self.model_type_instance = cast(
+            TextEmbeddingModelImpl, self.model_type_instance
+        )
+        return cast(
+            TextEmbeddingResult,
+            await self._async_round_robin_invoke(
+                function=self.model_type_instance.invoke,
+                model=self.model,
+                credentials=self.credentials,
+                texts=texts,
+                user=user,
+            ),
+        )
+
+    async def get_text_embedding_num_tokens(self, texts: list[str]) -> list[int]:
+        """获取文本嵌入的 token 数量"""
+        if not isinstance(self.model_type_instance, TextEmbeddingModelImpl):
+            raise Exception("模型类型实例不是 TextEmbeddingModel")
+
+        self.model_type_instance = cast(
+            TextEmbeddingModelImpl, self.model_type_instance
+        )
+        return cast(
+            list[int],
+            await self._async_round_robin_invoke(
+                function=self.model_type_instance.get_num_tokens,
+                model=self.model,
+                credentials=self.credentials,
+                texts=texts,
+            ),
+        )
+
+    async def invoke_rerank(
+        self,
+        query: str,
+        docs: list[str],
+        score_threshold: float | None = None,
+        top_n: int | None = None,
+        user: str | None = None,
+    ) -> RerankResult:
+        """调用重排序模型"""
+        if not isinstance(self.model_type_instance, RerankModelImpl):
+            raise Exception("模型类型实例不是 RerankModel")
+
+        self.model_type_instance = cast(RerankModelImpl, self.model_type_instance)
+        return cast(
+            RerankResult,
+            await self._async_round_robin_invoke(
+                function=self.model_type_instance.invoke,
+                model=self.model,
+                credentials=self.credentials,
+                query=query,
+                docs=docs,
+                score_threshold=score_threshold,
+                top_n=top_n,
+                user=user,
+            ),
+        )
+
+    def _round_robin_invoke(self, function, **kwargs):
         """
         轮询调用函数
         """

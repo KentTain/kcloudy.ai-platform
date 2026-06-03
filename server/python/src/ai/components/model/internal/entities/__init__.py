@@ -1,7 +1,12 @@
-"""
-模型组件内部实体类
-"""
+"""模型组件内部实体类"""
 
+from ai.components.model.internal.entities.parameter_entities import (
+    FormSchema,
+    ParameterConfig,
+    ParameterEntity,
+    ParameterGroup,
+    ValidationRule,
+)
 from ai.components.model.internal.entities.provider_entities import (
     CustomConfiguration,
     CustomModelConfiguration,
@@ -10,6 +15,11 @@ from ai.components.model.internal.entities.provider_entities import (
 )
 
 __all__ = [
+    "FormSchema",
+    "ParameterConfig",
+    "ParameterEntity",
+    "ParameterGroup",
+    "ValidationRule",
     "CustomConfiguration",
     "CustomModelConfiguration",
     "CustomProviderConfiguration",

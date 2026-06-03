@@ -4,11 +4,11 @@
 
 ## 模块定位
 
-Model 组件是 LLM 调用的统一门面。它封装了 Provider 管理、模型实例创建、凭证验证等底层细节，对外提供简洁的 LLM 调用和管理接口。
+Model 组件是模型调用的统一门面。它封装了 Provider 管理、模型实例创建、凭证验证等底层细节，对外提供 LLM、Embedding、Rerank 调用和管理接口。
 
 **核心职责：**
 
-- 统一的 LLM 调用入口（流式 / 非流式）
+- 统一的 LLM / Embedding / Rerank 调用入口
 - Provider 配置管理与缓存
 - 模型实例的创建与生命周期管理
 - 供应商凭证验证
@@ -25,7 +25,8 @@ model/
 │
 ├── callbacks/                   # LLM 调用回调机制
 │   ├── __init__.py
-│   └── base_callback.py         # 回调基类（on_before_invoke / on_new_chunk / on_after_invoke / on_invoke_error）
+│   ├── base_callback.py         # 回调基类（on_before_invoke / on_new_chunk / on_after_invoke / on_invoke_error）
+│   └── logging_callback.py      # 日志回调（记录请求参数、响应结果、错误信息）
 │
 ├── errors/                      # 异常定义
 │   ├── __init__.py
@@ -44,6 +45,8 @@ model/
 │       ├── __init__.py
 │       ├── ai_model.py            # AIModelImpl 基类
 │       ├── large_language_model.py # LargeLanguageModelImpl（LLM 调用实现）
+│       ├── text_embedding_model.py # TextEmbeddingModelImpl（Embedding 调用实现）
+│       ├── rerank_model.py        # RerankModelImpl（Rerank 调用实现）
 │       └── tokenizers/            # Token 计数器
 │           ├── __init__.py
 │           └── gpt2_tokenizer.py
@@ -53,11 +56,17 @@ model/
 │   ├── model_entities.py        # ModelStatus、SimpleModelProviderEntity、ModelWithProviderEntity 等
 │   └── provider_id.py           # GenericProviderID、ModelProviderID、ToolProviderID
 │
-└── services/                    # 对外服务层
+├── services/                    # 对外服务层
+│   ├── __init__.py
+│   ├── base_model_service.py     # BaseModelService（默认模型解析）
+│   ├── llm_service.py            # LLMService（核心：invoke / stream / tokens）
+│   ├── embedding_service.py      # EmbeddingService（embed / batch_embed / tokens）
+│   ├── rerank_service.py         # RerankService（rerank / score）
+│   └── management_service.py     # ManagementService、ModelService、ProviderService、DefaultModelService
+│
+└── utils/                       # 工具函数
     ├── __init__.py
-    ├── base_model_service.py     # BaseModelService（默认模型解析）
-    ├── llm_service.py            # LLMService（核心：invoke / stream / tokens）
-    └── management_service.py     # ManagementService、ModelService、ProviderService、DefaultModelService
+    └── helper.py                 # dump_model（Pydantic 模型序列化兼容）
 ```
 
 ## 核心类说明
@@ -73,6 +82,26 @@ LLM 调用的统一入口。使用单例模式（基于 `WeakValueDictionary`）
 | `tokens(prompt_messages, ...)` | 计算 token 数量 |
 | `clear_instance(tenant_id)` | 清除指定租户的单例 |
 | `clear_all_instances()` | 清除所有单例 |
+
+### EmbeddingService
+
+文本嵌入服务。提供 LRU 缓存（类级共享），支持单条和批量嵌入。
+
+| 方法 | 说明 |
+|------|------|
+| embed(text, ...) | 单文本嵌入，返回向量 |
+| atch_embed(texts, ...) | 批量文本嵌入，返回 TextEmbeddingResult |
+| 	okens(texts, ...) | 计算 token 数量 |
+
+### RerankService
+
+重排序服务。对文档列表按与查询的相关度排序。
+
+| 方法 | 说明 |
+|------|------|
+| 
+erank(query, docs, ...) | 文档重排序，返回 RerankResult |
+| score(query, doc, ...) | 单文档相似度打分 |
 
 ### ProviderManager
 

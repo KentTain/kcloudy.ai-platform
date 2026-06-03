@@ -1,8 +1,6 @@
-"""
-AI 模型组件
+"""AI 模型组件
 
-提供模型实例创建、管理和调用的核心功能
-"""
+提供模型实例创建、管理和调用的核心功能"""
 
 from ai.components.model.internal.model_instance_factory import (
     ModelInstance,
@@ -11,10 +9,12 @@ from ai.components.model.internal.model_instance_factory import (
 from ai.components.model.services import (
     BaseModelService,
     DefaultModelService,
+    EmbeddingService,
     LLMService,
     ManagementService,
     ModelService,
     ProviderService,
+    RerankService,
 )
 
 __all__ = [
@@ -23,9 +23,11 @@ __all__ = [
     "ModelInstanceFactory",
     # Services
     "BaseModelService",
+    "DefaultModelService",
+    "EmbeddingService",
     "LLMService",
     "ManagementService",
     "ModelService",
     "ProviderService",
-    "DefaultModelService",
+    "RerankService",
 ]
