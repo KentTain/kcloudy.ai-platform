@@ -17,7 +17,7 @@
 └── langgraph                                 # 工作流引擎
 
 缺失组件：
-└── ai/extended/langchain/                    # LangChain 桥接层 ← 本次实现
+└── extended/langchain/                    # LangChain 桥接层 ← 本次实现
 ```
 
 ### 约束
@@ -149,14 +149,14 @@ graph = AgentFactory.create_graph(model, tools, checkpointer)
 
 ### 阶段 1：消息转换器（约 1 小时）
 
-1. 创建 `ai/extended/langchain/models/message_adapter.py`
+1. 创建 `extended/langchain/models/message_adapter.py`
 2. 实现 `to_platform_message()` 方法
 3. 实现 `to_langchain_message()` 方法
 4. 编写单元测试
 
 ### 阶段 2：AlonChatModel（约 2-3 小时）
 
-1. 创建 `ai/extended/langchain/models/alon_chat.py`
+1. 创建 `extended/langchain/models/alon_chat.py`
 2. 实现 `_agenerate()` 非流式方法
 3. 实现 `_astream()` 流式方法
 4. 实现 `_llm_type` 和 `_identifying_params` 属性
@@ -164,7 +164,7 @@ graph = AgentFactory.create_graph(model, tools, checkpointer)
 
 ### 阶段 3：Agent 工厂（约 2 小时）
 
-1. 创建 `ai/extended/langchain/agents/agent_factory.py`
+1. 创建 `extended/langchain/agents/agent_factory.py`
 2. 实现 `create_executor()` 方法
 3. 实现 `create_graph()` 方法（可选）
 4. 编写使用示例

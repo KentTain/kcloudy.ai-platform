@@ -35,7 +35,7 @@
 ### 代码结构
 
 ```
-ai/extended/langchain/
+extended/langchain/
 ├── models/
 │   ├── alon_chat.py              # AlonChatModel 核心
 │   └── message_adapter.py        # 消息类型转换

@@ -1,4 +1,12 @@
-# Agno → LangChain 框架替换指南
+# Alon 项目的实现 Agno → LangChain 框架替换指南
+
+## 源项目路径
+
+```
+ALON_ROOT=D:\Project\ai\Alon\packages\platform
+
+Agno 的桥接器的实现路径：{ALON_ROOT}\src\extended\agno
+```
 
 ## 一、替换范围总览
 

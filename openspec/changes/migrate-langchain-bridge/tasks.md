@@ -2,10 +2,10 @@
 
 ## 1. 基础设施搭建
 
-- [ ] 1.1 创建 `ai/extended/langchain/` 目录结构
-- [ ] 1.2 创建 `ai/extended/langchain/__init__.py`
-- [ ] 1.3 创建 `ai/extended/langchain/models/__init__.py`
-- [ ] 1.4 创建 `ai/extended/langchain/agents/__init__.py`
+- [ ] 1.1 创建 `extended/langchain/` 目录结构
+- [ ] 1.2 创建 `extended/langchain/__init__.py`
+- [ ] 1.3 创建 `extended/langchain/models/__init__.py`
+- [ ] 1.4 创建 `extended/langchain/agents/__init__.py`
 
 ## 2. 消息适配器实现
 
@@ -53,10 +53,11 @@
 
 ## 6. 文档与收尾
 
-- [ ] 6.1 创建 `ai/extended/langchain/CLAUDE.md` 模块文档
-- [ ] 6.2 编写使用示例代码
-- [ ] 6.3 代码审查和清理
-- [ ] 6.4 运行完整测试套件验证
+- [ ] 6.1 创建 `extended/langchain/CLAUDE.md` 模块文档
+- [ ] 6.2 创建 `extended/langchain/MIGRATION.md`，记录目录/文件级差异（哪些从 Alon 迁移了、哪些未迁移）
+- [ ] 6.3 编写使用示例代码
+- [ ] 6.4 代码审查和清理
+- [ ] 6.5 运行完整测试套件验证
 
 ## 依赖说明
 
