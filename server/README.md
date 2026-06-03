@@ -21,9 +21,6 @@ server/
     │
     └── tests/                    # 测试目录
         └── {模块}/               # 模块测试
-            ├── fixtures/         # 测试夹具
-            ├── unit/             # 单元测试
-            └── integration/      # 集成测试
 ```
 
 ## 技术栈概览
@@ -32,19 +29,8 @@ server/
 |--------|------|------|------|------|
 | Python | Python 3.12 | FastAPI + SQLAlchemy 2.0 | ✅ 可用 | [README](python/README.md) |
 | Rust | Rust 1.95+ | Axum + SQLx | ✅ 可用 | [README](rust/README.md) |
-| Java | Java 21 | Spring Boot 3.x + MyBatis | 🚧 规划中 | - |
+| Java | Java 21 | Spring Boot 3.x | 🚧 规划中 | - |
 | .NET | .NET 8.0 | ASP.NET Core + EF Core | 🚧 规划中 | - |
-
-## 技术栈对比
-
-| 类别 | Python | Rust | Java | .NET |
-|------|--------|------|------|------|
-| **Web 框架** | FastAPI 0.115 | Axum 0.8 | Spring Boot 3.x | ASP.NET Core 8.0 |
-| **ORM** | SQLAlchemy 2.0 | SQLx 0.8 | MyBatis / Hibernate | Entity Framework Core |
-| **数据验证** | Pydantic 2.10 | serde + validator | Bean Validation | FluentValidation |
-| **AI 框架** | LangChain 1.3 + LangGraph 1.2 | LangChainRust | LangChain4j | LangChain.NET |
-| **测试框架** | pytest + pytest-asyncio | cargo-nextest | JUnit 5 | xUnit |
-| **异步运行时** | asyncio | Tokio | Virtual Threads | TPL |
 
 ## 统一架构
 
@@ -117,7 +103,7 @@ cp server/config/application-local.yml.example server/config/application-local.y
 ```bash
 cd server/python
 uv sync
-uv run runserver
+uv run python manage.py runserver
 # http://localhost:8000/health
 ```
 

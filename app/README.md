@@ -14,14 +14,10 @@ app/
     │       ├── screens/          # 页面组件
     │       ├── navigation/       # 导航配置
     │       ├── stores/           # 状态管理
-    │       ├── styles/           # 全局样式
-    │       ├── types/            # 类型定义
-    │       └── App.tsx/App.ts    # 根组件
+    │       └── types/            # 类型定义
     │
     └── tests/                    # 测试目录
         └── {模块}/               # 模块测试
-            ├── components/       # 组件测试
-            └── stores/           # Store 测试
 ```
 
 ## 技术栈概览
@@ -30,18 +26,6 @@ app/
 |--------|------|------|------|------|
 | Flutter | Dart 3.x | Flutter 3.x | 🚧 规划中 | - |
 | React Native | TypeScript 5.x | React Native 0.7x | 🚧 规划中 | - |
-
-## 技术栈对比
-
-| 类别 | Flutter | React Native | 说明 |
-|------|---------|--------------|------|
-| **语言** | Dart | TypeScript | 静态类型 vs 动态类型+注解 |
-| **渲染** | Skia 自绘 | 原生组件 | 性能 vs 原生体验 |
-| **状态管理** | Riverpod / BLoC | Zustand / Redux | 都有成熟方案 |
-| **导航** | GoRouter | React Navigation | 声明式导航 |
-| **样式** | Widget 树 | StyleSheet | 不同抽象层 |
-| **热重载** | ✅ | ✅ | 都支持 |
-| **测试框架** | flutter_test | Jest | 官方/社区 |
 
 ## 统一架构
 
@@ -56,15 +40,6 @@ app/
 | Stores | 全局状态管理 |
 | API | HTTP 请求封装 |
 | Hooks | 可复用的组合式函数 |
-
-### 基础设施
-
-| 组件 | 用途 |
-|------|------|
-| TypeScript/Dart | 类型系统 |
-| HTTP 客户端 | API 请求 |
-| 状态管理 | 全局状态 |
-| 导航框架 | 路由管理 |
 
 ### 统一 API
 
@@ -92,8 +67,6 @@ cd app/react-native
 pnpm install
 pnpm start
 ```
-
-详细说明请参阅各技术栈的 README 文档。
 
 ## 开发指南
 

@@ -1,40 +1,30 @@
 # 测试说明
 
-> 详细测试规范见 [CLAUDE.md](CLAUDE.md)
-
 ## 测试目录结构
 
-```
+```text
 tests/
 ├── demo/                      # Demo 模块测试
 │   ├── fixtures/              # 测试夹具和数据
-│   │   └── data/              # 测试数据文件
 │   ├── unit/                  # 单元测试
-│   │   ├── cache/             # 缓存测试
-│   │   ├── config/            # 配置测试
-│   │   ├── model/             # 模型测试
-│   │   ├── serialization/     # 序列化测试
-│   │   ├── services/          # 服务层测试
-│   │   └── utils/             # 工具函数测试
-│   ├── examples/              # 示例代码测试（LangChain、LangGraph、MCP 等）
-│   └── studies/               # 代码预研（非正式测试）
+│   ├── examples/              # 示例代码测试
+│   └── studies/               # 代码预研
 │
 ├── framework/                 # Framework 模块测试
 │   ├── fixtures/              # 测试夹具
 │   ├── unit/                  # 单元测试
 │   └── integration/           # 集成测试
 │
-├── conftest.py                # pytest 全局配置
-└── README.md                  # 本文件
+└── conftest.py                # pytest 全局配置
 ```
 
 ## 测试类型
 
 | 类型 | 说明 |
-| --- | --- |
+|------|------|
 | 单元测试 | 使用 mock 隔离外部依赖，验证函数、类、Service 逻辑 |
 | 集成测试 | 依赖真实 Redis、PostgreSQL、MinIO，必须可跳过、可清理 |
-| 示例测试 | 验证 AI 示例代码（LangChain、LangGraph、MCP 等）可导入运行 |
+| 示例测试 | 验证 AI 示例代码可导入运行 |
 | 代码预研 | 技术探索验证，不作为正式功能测试依据 |
 
 ## 运行测试
@@ -49,8 +39,7 @@ uv run pytest tests/framework/ -v
 
 # 指定类型
 uv run pytest tests/demo/unit/ -v
-uv run pytest tests/demo/examples/ -v
-uv run pytest tests/demo/studies/ -v
+uv run pytest tests/framework/integration/ -v
 
 # 按标记运行
 uv run pytest -m unit
@@ -60,14 +49,15 @@ uv run pytest -m integration
 uv run pytest -m "not slow"
 ```
 
-## 测试环境
+## 测试标记
 
-`conftest.py` 中配置：
+| 标记 | 说明 |
+|------|------|
+| @pytest.mark.unit | 单元测试 |
+| @pytest.mark.integration | 集成测试 |
+| @pytest.mark.slow | 慢测试 |
+| @pytest.mark.asyncio | 异步测试 |
 
-1. 环境变量 `PYTHON_SERVICE_ENV=local`
-2. 共享 fixtures（event_loop、async_engine 等）
-3. 异步事件循环
+## 开发指南
 
-## 代码预研区域
-
-`studies/` 目录用于技术探索和验证，这些不是正式测试，不必遵循严格测试规范。修改正式功能时，需要在 `unit/` 或 `examples/` 中补充正式测试。
+详细开发指南见上级目录的 [CLAUDE.md](../CLAUDE.md)。

@@ -8,26 +8,18 @@
 web/
 └── {技术栈}/                     # 技术栈目录
     ├── src/                      # 源码目录
+    │   ├── components/           # 通用组件
+    │   │   └── ui/               # UI 基础组件
+    │   ├── framework/            # 框架层（路由/状态/布局/权限）
     │   └── {模块}/               # 业务模块
     │       ├── api/              # API 客户端
-    │       ├── components/       # 通用组件
-    │       │   └── ui/           # UI 基础组件
-    │       ├── composables/      # 组合式函数 (Vue)
-    │       ├── hooks/            # React Hooks (React)
-    │       ├── layouts/          # 布局组件
+    │       ├── components/       # 模块专用组件
     │       ├── pages/            # 页面组件
     │       ├── router/           # 路由配置
-    │       ├── stores/           # 状态管理
-    │       ├── styles/           # 全局样式
-    │       ├── types/            # TypeScript 类型定义
-    │       ├── App.vue/App.tsx   # 根组件
-    │       └── main.ts           # 应用入口
+    │       └── stores/           # 状态管理
     │
     └── tests/                    # 测试目录
         └── {模块}/               # 模块测试
-            ├── components/       # 组件测试
-            ├── composables/      # Composable/Hook 测试
-            └── stores/           # Store 测试
 ```
 
 ## 技术栈概览
@@ -36,22 +28,6 @@ web/
 |--------|------|------|------|------|
 | Vue | TypeScript 5.x | Vue 3.5 + Vite 6.x | ✅ 可用 | [README](vue/README.md) |
 | React | TypeScript 5.x | React 19 + Vite 6.x | 🚧 规划中 | - |
-
-## 技术栈对比
-
-| 类别 | Vue | React | 说明 |
-|------|-----|-------|------|
-| **核心框架** | Vue 3.5 | React 19 | 响应式 vs 重新渲染 |
-| **构建工具** | Vite 6.x | Vite 6.x | 相同 |
-| **语言** | TypeScript 5.x | TypeScript 5.x | 相同 |
-| **路由** | Vue Router 4.x | TanStack Router | 都支持类型安全路由 |
-| **状态管理** | Pinia 3.x | Zustand | 相似的 store 模式 |
-| **UI 组件库** | shadcn-vue | shadcn/ui | 统一的组件风格 |
-| **无样式原语** | Radix Vue | Radix UI | 可访问性原语 |
-| **样式方案** | Tailwind CSS v4 | Tailwind CSS v4 | 相同 |
-| **HTTP 客户端** | Axios | Axios | 相同 |
-| **测试框架** | Vitest | Vitest | 相同 |
-| **Lint/Format** | Biome | Biome | 相同 |
 
 ## 统一架构
 
@@ -120,7 +96,7 @@ pnpm --version  # 10.x.x
 # Python 后端（推荐）
 cd server/python
 uv sync
-uv run runserver
+uv run python manage.py runserver
 # http://localhost:8000
 ```
 
