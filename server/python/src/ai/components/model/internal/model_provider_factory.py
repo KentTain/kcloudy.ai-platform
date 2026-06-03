@@ -6,14 +6,13 @@
 负责管理所有 AI 模型提供者的配置、验证、实例化等核心功能
 """
 
-import hashlib
 import os
 from collections.abc import Sequence
-from collections import OrderedDict
 
 from loguru import logger
 from pydantic import BaseModel
 
+from ai.components.model.errors import ProviderNotFoundError, UnsupportedProviderError
 from ai.components.model.internal.configs import model_config
 from ai.components.model.internal.entities.provider_entities import SimpleProviderConfig
 from ai.components.model.internal.helper.position_helper import (
@@ -168,7 +167,7 @@ class ModelProviderFactory:
         )
 
         if not plugin_model_provider_entity:
-            raise ValueError(f"无效的提供者: {provider}")
+            raise ProviderNotFoundError(provider)
 
         return plugin_model_provider_entity
 
@@ -193,7 +192,9 @@ class ModelProviderFactory:
             plugin_model_provider_entity.declaration.provider_credential_schema
         )
         if not provider_credential_schema:
-            raise ValueError(f"提供者 {provider} 没有提供者凭证模式")
+            raise UnsupportedProviderError(
+                provider, f"提供者 {provider} 没有提供者凭证模式"
+            )
 
         # TODO: 使用验证器验证提供者凭证模式
         # validator = ProviderCredentialSchemaValidator(provider_credential_schema)
@@ -242,7 +243,9 @@ class ModelProviderFactory:
             plugin_model_provider_entity.declaration.model_credential_schema
         )
         if not model_credential_schema:
-            raise ValueError(f"提供者 {provider} 没有模型凭证模式")
+            raise UnsupportedProviderError(
+                provider, f"提供者 {provider} 没有模型凭证模式"
+            )
 
         # TODO: 使用验证器验证模型凭证模式
         # validator = ModelCredentialSchemaValidator(model_type, model_credential_schema)
@@ -392,7 +395,9 @@ class ModelProviderFactory:
 
         # 根据模型类型创建对应的实例
         # TODO: 实现模型实例化
-        raise ValueError(f"未找到 model_type: {model_type}")
+        raise UnsupportedProviderError(
+            str(model_type), f"未找到 model_type: {model_type}"
+        )
 
     def get_plugin_id_and_provider_name_from_provider(
         self, provider: str

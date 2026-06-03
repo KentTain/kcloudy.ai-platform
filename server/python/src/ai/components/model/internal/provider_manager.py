@@ -14,13 +14,13 @@ import json
 
 from loguru import logger
 
+from ai.components.model.errors import ProviderNotFoundError
 from ai.components.model.internal.entities.provider_entities import (
     CustomConfiguration,
     CustomModelConfiguration,
     CustomProviderConfiguration,
     ModelSettings,
 )
-from ai.components.model.internal.helper import encrypter
 from ai.components.model.internal.helper.encrypter import decrypt_token
 from ai.components.model.internal.model_provider_factory import ModelProviderFactory
 from ai.components.model.schema.model_entities import (
@@ -104,8 +104,8 @@ class ProviderManager:
 
                 if cached_data:
                     _logger.debug(f"使用 Redis 缓存的配置 tenant_id={tenant_id}")
-                    # 反序列化缓存数据
-                    # TODO: 实现缓存数据的反序列化
+                    # TODO: 实现缓存数据的反序列化（需要 ProviderConfigurations 序列化支持）
+                    # 当前每次都从数据库加载，待任务 5 数据库模型完成后实现
                     pass
                 else:
                     _logger.debug(
@@ -185,7 +185,8 @@ class ProviderManager:
         if use_cache:
             try:
                 cache_manager = get_cache_manager()
-                # TODO: 实现缓存数据的序列化
+                # TODO: 实现缓存数据的序列化（需要 ProviderConfigurations 序列化支持）
+                # 当前不缓存配置，待任务 5 数据库模型完成后实现
                 # await cache_manager.set(cache_key, provider_configurations, ttl=CACHE_TTL, tenant_id=tenant_id)
                 _logger.debug(
                     f"已缓存配置到 Redis tenant_id={tenant_id}, TTL={CACHE_TTL}秒"
@@ -213,7 +214,7 @@ class ProviderManager:
         provider_configuration = configurations.get(provider)
 
         if not provider_configuration:
-            raise ValueError(f"供应商 {provider} 未找到")
+            raise ProviderNotFoundError(provider)
 
         model_type_instance = await provider_configuration.get_model_type_instance(
             model_type
