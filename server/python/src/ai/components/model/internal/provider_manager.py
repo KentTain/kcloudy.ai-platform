@@ -104,9 +104,23 @@ class ProviderManager:
 
                 if cached_data:
                     _logger.debug(f"使用 Redis 缓存的配置 tenant_id={tenant_id}")
-                    # TODO: 实现缓存数据的反序列化（需要 ProviderConfigurations 序列化支持）
-                    # 当前每次都从数据库加载，待任务 5 数据库模型完成后实现
-                    pass
+                    # 反序列化缓存数据
+                    try:
+                        # 获取供应商实体用于反序列化
+                        model_provider_factory = ModelProviderFactory(tenant_id)
+                        provider_entities = await model_provider_factory.get_providers()
+                        provider_entities_dict = {
+                            p.provider: p for p in provider_entities
+                        }
+
+                        provider_configurations = ProviderConfigurations.from_dict(
+                            cached_data, provider_entities_dict
+                        )
+                        return provider_configurations
+                    except Exception as deserialize_error:
+                        _logger.warning(
+                            f"反序列化缓存数据失败 tenant_id={tenant_id}: {deserialize_error}, 将从数据库加载"
+                        )
                 else:
                     _logger.debug(
                         f"Redis 缓存未命中 tenant_id={tenant_id}, 重新加载"
@@ -185,9 +199,11 @@ class ProviderManager:
         if use_cache:
             try:
                 cache_manager = get_cache_manager()
-                # TODO: 实现缓存数据的序列化（需要 ProviderConfigurations 序列化支持）
-                # 当前不缓存配置，待任务 5 数据库模型完成后实现
-                # await cache_manager.set(cache_key, provider_configurations, ttl=CACHE_TTL, tenant_id=tenant_id)
+                # 序列化配置数据并缓存
+                cache_data = provider_configurations.to_dict()
+                await cache_manager.set(
+                    cache_key, cache_data, ttl=CACHE_TTL, tenant_id=tenant_id
+                )
                 _logger.debug(
                     f"已缓存配置到 Redis tenant_id={tenant_id}, TTL={CACHE_TTL}秒"
                 )

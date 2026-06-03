@@ -375,29 +375,34 @@ class ModelProviderFactory:
         :return: 对应的模型实例
         :raises ValueError: 当模型类型不支持时抛出异常
         """
-        # TODO: 需要实现 AIModelImpl 类
-        # from ai.components.model.model_providers.__base.ai_model import AIModelImpl
-        # from ai.components.model.model_providers.__base.large_language_model import LargeLanguageModelImpl
-        # from ai.components.model.model_providers.__base.text_embedding_model import TextEmbeddingModelImpl
-        # from ai.components.model.model_providers.__base.rerank_model import RerankModelImpl
+        from ai.components.model.model_providers.__base__.ai_model import AIModelImpl
+        from ai.components.model.model_providers.__base__.large_language_model import (
+            LargeLanguageModelImpl,
+        )
 
         plugin_id, provider_name = self.get_plugin_id_and_provider_name_from_provider(
             provider
         )
+
+        # 获取插件模型提供者实体
+        plugin_model_provider = await self.get_plugin_model_provider(provider)
 
         # 准备初始化参数
         init_params = {
             "tenant_id": self.tenant_id,
             "plugin_id": plugin_id,
             "provider_name": provider_name,
-            "plugin_model_provider": await self.get_plugin_model_provider(provider),
+            "plugin_model_provider": plugin_model_provider,
         }
 
         # 根据模型类型创建对应的实例
-        # TODO: 实现模型实例化
-        raise UnsupportedProviderError(
-            str(model_type), f"未找到 model_type: {model_type}"
-        )
+        if model_type == ModelType.LLM:
+            init_params["model_type"] = ModelType.LLM
+            return LargeLanguageModelImpl(**init_params)
+        else:
+            raise UnsupportedProviderError(
+                str(model_type), f"未支持的模型类型: {model_type}"
+            )
 
     def get_plugin_id_and_provider_name_from_provider(
         self, provider: str

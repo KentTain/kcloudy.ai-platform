@@ -12,6 +12,10 @@ from ai.components.model.internal.entities.provider_entities import (
     CustomProviderConfiguration,
     ModelSettings,
 )
+from ai.components.model.internal.model_instance_factory import (
+    ModelInstance,
+    ModelInstanceFactory,
+)
 
 __all__ = [
     # Entities
@@ -19,4 +23,7 @@ __all__ = [
     "CustomModelConfiguration",
     "CustomProviderConfiguration",
     "ModelSettings",
+    # Factory
+    "ModelInstance",
+    "ModelInstanceFactory",
 ]

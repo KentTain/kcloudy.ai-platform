@@ -33,3 +33,55 @@ class UnsupportedProviderError(Exception):
         self.provider = provider
         self.message = message or f"不支持的 Provider 类型: '{provider}'"
         super().__init__(self.message)
+
+
+class ModelInvocationError(Exception):
+    """
+    模型调用错误
+
+    当插件通信失败或模型调用出错时抛出
+    """
+
+    def __init__(self, message: str | None = None, original_error: Exception | None = None):
+        self.message = message or "模型调用失败"
+        self.original_error = original_error
+        super().__init__(self.message)
+
+
+class ModelTimeoutError(Exception):
+    """
+    模型调用超时错误
+
+    当模型调用超时时抛出
+    """
+
+    def __init__(self, message: str | None = None, timeout: float | None = None):
+        self.message = message or "模型调用超时"
+        self.timeout = timeout
+        super().__init__(self.message)
+
+
+class ModelCredentialError(Exception):
+    """
+    模型凭证错误
+
+    当模型凭证无效或缺失时抛出
+    """
+
+    def __init__(self, message: str | None = None, provider: str | None = None):
+        self.message = message or "模型凭证无效"
+        self.provider = provider
+        super().__init__(self.message)
+
+
+class ModelParameterError(Exception):
+    """
+    无效的模型参数异常
+
+    当模型参数无效或缺失时抛出
+    """
+
+    def __init__(self, message: str | None = None, parameter: str | None = None):
+        self.message = message or "无效的模型参数"
+        self.parameter = parameter
+        super().__init__(self.message)

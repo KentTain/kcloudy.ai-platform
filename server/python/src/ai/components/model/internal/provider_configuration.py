@@ -8,8 +8,6 @@
 
 from collections import defaultdict
 from collections.abc import Iterator, Sequence
-from json import JSONDecodeError
-import json
 
 from loguru import logger
 from pydantic import BaseModel, ConfigDict, Field
@@ -69,6 +67,44 @@ class ProviderConfiguration(BaseModel):
                 original_provider_configurate_methods[self.provider.provider].append(
                     configurate_method
                 )
+
+    def to_dict(self) -> dict:
+        """
+        序列化为字典（仅包含配置数据，不包含 ProviderEntity）
+
+        :return: 配置字典
+        """
+        return {
+            "tenant_id": self.tenant_id,
+            "provider_name": self.provider.provider,
+            "custom_configuration": self.custom_configuration.model_dump(),
+            "model_settings": [ms.model_dump() for ms in self.model_settings],
+        }
+
+    @classmethod
+    def from_dict(
+        cls,
+        data: dict,
+        provider_entity: ProviderEntity,
+    ) -> "ProviderConfiguration":
+        """
+        从字典反序列化
+
+        :param data: 配置字典
+        :param provider_entity: 供应商实体（需要外部提供）
+        :return: ProviderConfiguration 实例
+        """
+        custom_configuration = CustomConfiguration(**data.get("custom_configuration", {}))
+        model_settings = [
+            ModelSettings(**ms) for ms in data.get("model_settings", [])
+        ]
+
+        return cls(
+            tenant_id=data["tenant_id"],
+            provider=provider_entity,
+            custom_configuration=custom_configuration,
+            model_settings=model_settings,
+        )
 
     def get_current_credentials(self, model_type: ModelType, model: str) -> dict | None:
         """
@@ -521,6 +557,46 @@ class ProviderConfigurations(BaseModel):
 
     def __init__(self, tenant_id: str):
         super().__init__(tenant_id=tenant_id)
+
+    def to_dict(self) -> dict:
+        """
+        序列化为字典（用于缓存）
+
+        :return: 配置字典
+        """
+        return {
+            "tenant_id": self.tenant_id,
+            "configurations": {
+                key: config.to_dict() for key, config in self.configurations.items()
+            },
+        }
+
+    @classmethod
+    def from_dict(
+        cls,
+        data: dict,
+        provider_entities: dict[str, ProviderEntity],
+    ) -> "ProviderConfigurations":
+        """
+        从字典反序列化
+
+        :param data: 配置字典
+        :param provider_entities: 供应商实体字典 {provider_name: ProviderEntity}
+        :return: ProviderConfigurations 实例
+        """
+        tenant_id = data["tenant_id"]
+        configurations: dict[str, ProviderConfiguration] = {}
+
+        for key, config_data in data.get("configurations", {}).items():
+            provider_name = config_data.get("provider_name", key)
+            if provider_name in provider_entities:
+                configurations[key] = ProviderConfiguration.from_dict(
+                    config_data, provider_entities[provider_name]
+                )
+
+        instance = cls(tenant_id=tenant_id)
+        instance.configurations = configurations
+        return instance
 
     async def get_models(
         self,
