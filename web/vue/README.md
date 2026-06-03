@@ -1,6 +1,6 @@
-# InitProject Web Frontend (Vue)
+# AI Platform Web Frontend (Vue)
 
-InitProject AI 助手平台前端应用（Vue 版本），基于 Vue 3 + TypeScript + Vite 构建。
+AI Platform AI 助手平台前端应用（Vue 版本），基于 Vue 3 + TypeScript + Vite 构建。
 
 ## 技术栈
 

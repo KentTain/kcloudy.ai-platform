@@ -1,4 +1,4 @@
-# InitProject - Minimal AI Assistant Platform
+# AI Platform - Minimal AI Assistant Platform
 
 This is a multi-tech-stack AI assistant platform demo project, providing various backend and frontend technology options for learning and comparing different implementation approaches.
 

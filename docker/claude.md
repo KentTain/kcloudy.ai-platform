@@ -27,7 +27,7 @@ docker/
     │   └── error-pages.conf          # 错误页面配置
     └── conf.d/                       # 站点配置目录
         ├── 00-default.conf           # 默认服务器配置
-        ├── 10-init-project.conf      # InitProject 应用网关
+        ├── 10-init-project.conf      # AI Platform 应用网关
         ├── 20-infrastructure.conf    # 基础设施服务代理
         ├── 30-ai-services.conf       # AI 服务网关
         ├── 40-k8s-master.conf        # K8s Master 服务代理
@@ -69,11 +69,13 @@ docker compose -f docker-compose.infrastructure.yml up -d
 ### 修改 Nginx 配置
 
 1. 修改配置文件后，验证语法：
+
    ```bash
    docker exec kcloudy-nginx nginx -t
    ```
 
 2. 重载配置（无需重启）：
+
    ```bash
    docker exec kcloudy-nginx nginx -s reload
    ```
@@ -107,6 +109,7 @@ server {
 ### 修改 Docker Compose
 
 1. 修改后重新创建服务：
+
    ```bash
    docker compose \
      -f docker-compose.infrastructure.yml \

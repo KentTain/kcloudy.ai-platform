@@ -4,7 +4,7 @@
 
 ## 项目定位
 
-Python 后端使用 FastAPI + SQLAlchemy 2.0 构建，是 InitProject 的 Python 技术栈实现。项目采用 **模块化单体架构**，支持模块独立部署。
+Python 后端使用 FastAPI + SQLAlchemy 2.0 构建，是 AI Platform 的 Python 技术栈实现。项目采用 **模块化单体架构**，支持模块独立部署。
 
 ## 架构特性
 

@@ -4,7 +4,7 @@
 
 ## 项目概述
 
-InitProject 是一个多技术栈的 AI 助手平台演示项目，提供多种后端和前端技术选型。项目采用模块化结构，每个技术栈作为独立子项目存在。
+AI Platform 是一个多技术栈的 AI 助手平台演示项目，提供多种后端和前端技术选型。项目采用模块化结构，每个技术栈作为独立子项目存在。
 
 **核心目标：** 提供可对比、可学习的多技术栈实现参考。
 
@@ -33,10 +33,6 @@ init_project/
 |------|------|
 | 后端 | Python 3.12+ / Rust 1.95+ / PostgreSQL 14+ / Redis 6+ |
 | 前端 | Node.js 22+ / pnpm 10+ |
-
-## License
-
-Copyright © 2025 Moles. All Rights Reserved.
 
 <!-- superpowers-zh:begin (do not edit between these markers) -->
 # Superpowers-ZH 技能框架

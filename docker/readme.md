@@ -1,6 +1,6 @@
 # Docker 部署配置
 
-本目录包含 InitProject 项目的 Docker Compose 部署配置和 Nginx 反向代理配置。
+本目录包含 AI Platform 项目的 Docker Compose 部署配置和 Nginx 反向代理配置。
 
 ## 目录结构
 
@@ -19,7 +19,7 @@ docker/
     │   └── error-pages.conf          # 错误页面配置
     └── conf.d/                       # 站点配置目录
         ├── 00-default.conf           # 默认服务器配置
-        ├── 10-init-project.conf      # InitProject 应用网关
+        ├── 10-init-project.conf      # AI Platform 应用网关
         ├── 20-infrastructure.conf    # 基础设施服务代理
         ├── 30-ai-services.conf       # AI 服务网关
         ├── 40-k8s-master.conf        # K8s Master 服务代理
@@ -139,7 +139,7 @@ docker compose \
 | snippets/ssl.conf | SSL 公共配置，被所有 HTTPS 站点引用 |
 | snippets/error-pages.conf | 错误页面配置 |
 | 00-default.conf | 默认服务器，捕获未匹配的请求 |
-| 10-init-project.conf | InitProject 前后端代理 |
+| 10-init-project.conf | AI Platform 前后端代理 |
 | 20-infrastructure.conf | 基础设施服务代理（MinIO 等） |
 | 30-ai-services.conf | AI 服务网关（Claude Code Hub、OpenClaw） |
 | 40-k8s-master.conf | K8s Master 节点服务代理 |
@@ -148,7 +148,7 @@ docker compose \
 
 ### 域名代理映射
 
-#### InitProject 应用
+#### AI Platform 应用
 
 | 域名 | 代理目标 | 说明 |
 |------|----------|------|
