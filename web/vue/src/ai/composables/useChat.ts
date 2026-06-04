@@ -4,7 +4,7 @@
  * 封装 @ai-sdk/vue Chat 类，集成模型选择功能
  * 适配 @ai-sdk/vue v3.x API
  */
-import { ref, type Ref, shallowRef, toValue, watchEffect } from "vue";
+import { onScopeDispose, ref, type Ref, shallowRef, toValue, watchEffect } from "vue";
 import { Chat } from "@ai-sdk/vue";
 import { DefaultChatTransport, type UIMessage as AiUIMessage } from "ai";
 import type { ModelConfig, UIMessage } from "@/ai/types";
@@ -112,16 +112,16 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
     })
   );
 
-  // 同步 Chat 实例的消息到响应式状态
-  const syncMessages = () => {
-    messages.value = [...(chat.value.messages as UIMessage[])];
-  };
-
   // 实时同步：流式传输过程中自动更新消息
-  watchEffect(() => {
+  const stopWatcher = watchEffect(() => {
     if (chat.value) {
       messages.value = [...(chat.value.messages as UIMessage[])];
     }
+  });
+
+  // 组件卸载时清理 watcher
+  onScopeDispose(() => {
+    stopWatcher();
   });
 
   // 发送消息
@@ -133,7 +133,6 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
 
     try {
       await chat.value.sendMessage({ text });
-      syncMessages();
     } finally {
       isLoading.value = false;
     }
@@ -148,7 +147,6 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
 
     try {
       await chat.value.regenerate({ messageId });
-      syncMessages();
     } finally {
       isLoading.value = false;
     }
@@ -158,7 +156,6 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
   const stop = async () => {
     if (chat.value.status === "streaming") {
       await chat.value.stop();
-      syncMessages();
     }
   };
 
