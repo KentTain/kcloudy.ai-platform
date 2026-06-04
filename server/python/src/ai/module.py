@@ -39,6 +39,7 @@ class AIModule:
         from ai.controllers.inner.plugin import router as inner_plugin_router
         from ai.controllers.v1.chat.llm import router as chat_llm_router
         from ai.controllers.v1.conversation import router as conversation_router
+        from ai.controllers.v1.model import router as model_router
 
         return [
             # Admin API - 插件管理
@@ -51,6 +52,8 @@ class AIModule:
             (chat_llm_router, "/api/v1", ["LLM对话"]),
             # V1 API - 会话管理接口
             (conversation_router, "/api/v1", ["会话管理"]),
+            # V1 API - 模型列表接口
+            (model_router, "/api/v1", ["模型列表"]),
         ]
 
     def get_middlewares(self) -> list[type]:

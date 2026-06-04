@@ -17,6 +17,7 @@ import { useConversationStore } from "@/ai/stores";
 import { RotateCcw, Square, Trash2, List } from "lucide-vue-next";
 import { Button } from "@/components/ui/button";
 import ToolCallItem from "@/ai/components/ToolCallItem.vue";
+import ModelSelector from "@/ai/components/ModelSelector.vue";
 import type { UIMessagePart, ToolCallPart, ToolResultPart } from "@/ai/types";
 
 const route = useRoute();
@@ -238,6 +239,10 @@ const mergeToolParts = (parts: (ToolCallPart | ToolResultPart)[]): (ToolCallPart
             :disabled="isLoading"
           />
           <div class="flex items-center justify-between gap-2 border-t p-2">
+            <div class="flex items-center gap-2">
+              <!-- 模型选择器 -->
+              <ModelSelector />
+            </div>
             <div class="flex items-center gap-1">
               <!-- 会话列表按钮 -->
               <Button
