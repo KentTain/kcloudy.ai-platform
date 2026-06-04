@@ -6,7 +6,7 @@ import type { RouteRecordRaw } from "vue-router";
 export const aiRoutes: RouteRecordRaw[] = [
   {
     path: "ai",
-    name: "AI",
+    name: "AIChat",
     component: () => import("@/ai/pages/AIChatPage.vue"),
     meta: { title: "AI 对话", icon: "message-square", requiresAuth: true },
   },

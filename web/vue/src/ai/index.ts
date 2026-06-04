@@ -1,6 +1,21 @@
 import type { ModuleDescriptor } from "@/framework/module/types";
 import { aiRoutes } from "./router";
 
+// 导出类型定义
+export type {
+  UIMessagePart,
+  TextPart,
+  ImagePart,
+  ToolCallPart,
+  ToolResultPart,
+  UIMessage,
+  AppUIMessage,
+  ModelConfig,
+  AIChatRequest,
+  AIChatResponse,
+  Conversation,
+} from "./types";
+
 /**
  * AI 模块描述符
  *
