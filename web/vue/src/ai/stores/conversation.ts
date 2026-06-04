@@ -5,14 +5,20 @@
  */
 import { defineStore } from "pinia";
 import { ref, computed } from "vue";
-import {
-  createConversation,
-  deleteConversation,
-  getConversations,
-  updateConversation,
-} from "@/ai/api/conversation";
-import type { CreateConversationParams, UpdateConversationParams } from "@/ai/api/conversation";
+import { deleteConversation, getConversations } from "@/ai/api/conversation";
+import type { ConversationListItem } from "@/ai/api/conversation";
 import type { Conversation, ModelConfig } from "@/ai/types";
+
+/**
+ * 将 ConversationListItem 转换为 Conversation
+ */
+const toItem = (item: ConversationListItem): Conversation => ({
+  id: item.id,
+  title: item.name,
+  createdAt: new Date(item.created_at),
+  updatedAt: new Date(item.created_at),
+  messageCount: item.message_count,
+});
 
 /**
  * 默认模型配置
@@ -51,7 +57,8 @@ export const useConversationStore = defineStore("conversation", () => {
     error.value = null;
 
     try {
-      conversations.value = await getConversations();
+      const response = await getConversations();
+      conversations.value = response.conversations.map(toItem);
     } catch (e) {
       error.value = e instanceof Error ? e.message : "获取会话列表失败";
     } finally {
@@ -76,32 +83,6 @@ export const useConversationStore = defineStore("conversation", () => {
     }
     const conversation = conversations.value.find((c) => c.id === id);
     activeConversation.value = conversation ?? null;
-  };
-
-  /**
-   * 创建新会话
-   */
-  const addConversation = async (params?: CreateConversationParams) => {
-    const conversation = await createConversation(params);
-    conversations.value.unshift(conversation);
-    activeConversation.value = conversation;
-    return conversation;
-  };
-
-  /**
-   * 更新会话
-   */
-  const editConversation = async (id: string, params: UpdateConversationParams) => {
-    const conversation = await updateConversation(id, params);
-    const index = conversations.value.findIndex((c) => c.id === id);
-    if (index !== -1) {
-      conversations.value[index] = conversation;
-    }
-    // 更新当前活跃会话
-    if (activeConversation.value?.id === id) {
-      activeConversation.value = conversation;
-    }
-    return conversation;
   };
 
   /**
@@ -151,8 +132,6 @@ export const useConversationStore = defineStore("conversation", () => {
     fetchConversations,
     selectConversation,
     selectConversationById,
-    addConversation,
-    editConversation,
     removeConversation,
     setModel,
     resetModel,

@@ -5,7 +5,8 @@
  * 使用 Vercel AI SDK 协议与后端通信
  * 集成 ai-elements 组件构建对话界面
  */
-import { computed, ref, watch } from "vue";
+import { computed, ref, watch, onMounted } from "vue";
+import { useRoute, useRouter } from "vue-router";
 import AppPage from "@/framework/layouts/components/AppPage.vue";
 import { Conversation } from "@/components/ai-elements/conversation";
 import { Message, MessageContent, MessageActions, MessageAction } from "@/components/ai-elements/message";
@@ -13,24 +14,63 @@ import { PromptInput, PromptInputTextarea, PromptInputSubmit } from "@/component
 import { MessageResponse } from "@/components/ai-elements/message";
 import { useChat } from "@/ai/composables";
 import { useConversationStore } from "@/ai/stores";
-import { RotateCcw, Square, Trash2 } from "lucide-vue-next";
+import { RotateCcw, Square, Trash2, List } from "lucide-vue-next";
 import { Button } from "@/components/ui/button";
 import ToolCallItem from "@/ai/components/ToolCallItem.vue";
 import type { UIMessagePart, ToolCallPart, ToolResultPart } from "@/ai/types";
 
+const route = useRoute();
+const router = useRouter();
+
 // 会话 Store
 const conversationStore = useConversationStore();
+
+// 从 query 参数获取会话 ID
+const conversationIdFromQuery = computed(() => route.query.conversationId as string | undefined);
 
 // 当前模型配置（响应式）
 const currentModel = computed(() => conversationStore.currentModel);
 
+// 当前会话 ID（响应式）
+const activeConversationId = ref<string | undefined>(undefined);
+
 // 使用 useChat composable
 const { messages, isLoading, error, sendMessage, stop, regenerate, setInput, reload } = useChat({
   api: "/api/v1/chat-messages",
+  id: activeConversationId,
   model: currentModel,
   onError: (err) => {
     console.error("Chat error:", err);
   },
+});
+
+// 监听 query 参数变化，切换会话
+watch(
+  conversationIdFromQuery,
+  (newId) => {
+    if (newId && newId !== activeConversationId.value) {
+      activeConversationId.value = newId;
+      // 重置聊天状态并加载新会话
+      reload();
+    } else if (!newId && activeConversationId.value) {
+      // 清空会话
+      activeConversationId.value = undefined;
+      reload();
+    }
+  },
+  { immediate: true }
+);
+
+// 页面加载时，如果有 conversationId，设置到 store
+onMounted(async () => {
+  if (conversationIdFromQuery.value) {
+    // 确保 conversations 已加载
+    if (conversationStore.conversations.length === 0) {
+      await conversationStore.fetchConversations();
+    }
+    conversationStore.selectConversationById(conversationIdFromQuery.value);
+    activeConversationId.value = conversationIdFromQuery.value;
+  }
 });
 
 // 本地输入状态（与 PromptInput 绑定）
@@ -199,6 +239,16 @@ const mergeToolParts = (parts: (ToolCallPart | ToolResultPart)[]): (ToolCallPart
           />
           <div class="flex items-center justify-between gap-2 border-t p-2">
             <div class="flex items-center gap-1">
+              <!-- 会话列表按钮 -->
+              <Button
+                variant="ghost"
+                size="icon"
+                class="size-8"
+                title="会话列表"
+                @click="router.push({ name: 'ConversationList' })"
+              >
+                <List class="size-4" />
+              </Button>
               <!-- 清空按钮 -->
               <Button
                 variant="ghost"

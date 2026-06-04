@@ -8,51 +8,24 @@ import { useConversationStore } from "@/ai/stores/conversation";
 // Mock API
 vi.mock("@/ai/api/conversation", () => ({
   getConversations: vi.fn(() =>
-    Promise.resolve([
-      {
-        id: "conv-1",
-        title: "会话1",
-        createdAt: "2025-01-01T00:00:00Z",
-        updatedAt: "2025-01-01T00:00:00Z",
-        messageCount: 5,
-      },
-      {
-        id: "conv-2",
-        title: "会话2",
-        createdAt: "2025-01-02T00:00:00Z",
-        updatedAt: "2025-01-02T00:00:00Z",
-        messageCount: 3,
-      },
-    ])
-  ),
-  getConversation: vi.fn((id: string) =>
     Promise.resolve({
-      id,
-      title: "会话详情",
-      createdAt: "2025-01-01T00:00:00Z",
-      updatedAt: "2025-01-01T00:00:00Z",
-      messageCount: 5,
+      conversations: [
+        {
+          id: "conv-1",
+          name: "会话1",
+          created_at: "2025-01-01T00:00:00Z",
+          message_count: 5,
+        },
+        {
+          id: "conv-2",
+          name: "会话2",
+          created_at: "2025-01-02T00:00:00Z",
+          message_count: 3,
+        },
+      ],
     })
   ),
-  createConversation: vi.fn((params?: { title?: string }) =>
-    Promise.resolve({
-      id: "conv-new",
-      title: params?.title || "新会话",
-      createdAt: "2025-01-03T00:00:00Z",
-      updatedAt: "2025-01-03T00:00:00Z",
-      messageCount: 0,
-    })
-  ),
-  updateConversation: vi.fn((id: string, params: { title?: string }) =>
-    Promise.resolve({
-      id,
-      title: params.title || "更新后的会话",
-      createdAt: "2025-01-01T00:00:00Z",
-      updatedAt: "2025-01-03T00:00:00Z",
-      messageCount: 5,
-    })
-  ),
-  deleteConversation: vi.fn(() => Promise.resolve()),
+  deleteConversation: vi.fn(() => Promise.resolve({ success: true })),
 }));
 
 describe("Conversation Store", () => {
@@ -183,70 +156,6 @@ describe("Conversation Store", () => {
       store.selectConversationById(null);
 
       expect(store.activeConversation).toBeNull();
-    });
-  });
-
-  describe("addConversation", () => {
-    it("创建新会话并设为活跃", async () => {
-      const store = useConversationStore();
-
-      const conversation = await store.addConversation();
-
-      expect(conversation.id).toBe("conv-new");
-      expect(store.conversations).toHaveLength(1);
-      expect(store.conversations[0].id).toBe("conv-new");
-      expect(store.activeConversation?.id).toBe("conv-new");
-    });
-
-    it("创建新会话并添加到列表开头", async () => {
-      const store = useConversationStore();
-      await store.fetchConversations();
-
-      await store.addConversation({ title: "自定义标题" });
-
-      expect(store.conversations).toHaveLength(3);
-      expect(store.conversations[0].id).toBe("conv-new");
-    });
-
-    it("使用自定义标题创建会话", async () => {
-      const store = useConversationStore();
-
-      await store.addConversation({ title: "我的新会话" });
-
-      expect(store.conversations[0].title).toBe("我的新会话");
-    });
-  });
-
-  describe("editConversation", () => {
-    it("更新会话标题", async () => {
-      const store = useConversationStore();
-      await store.fetchConversations();
-
-      const updated = await store.editConversation("conv-1", { title: "新标题" });
-
-      expect(updated.title).toBe("新标题");
-      expect(store.conversations[0].title).toBe("新标题");
-    });
-
-    it("更新当前活跃会话时同步更新", async () => {
-      const store = useConversationStore();
-      await store.fetchConversations();
-      store.selectConversation(store.conversations[0]);
-
-      await store.editConversation("conv-1", { title: "更新标题" });
-
-      expect(store.activeConversation?.title).toBe("更新标题");
-    });
-
-    it("更新非活跃会话不影响活跃会话", async () => {
-      const store = useConversationStore();
-      await store.fetchConversations();
-      store.selectConversation(store.conversations[0]);
-
-      await store.editConversation("conv-2", { title: "更新会话2" });
-
-      expect(store.activeConversation?.id).toBe("conv-1");
-      expect(store.conversations[1].title).toBe("更新会话2");
     });
   });
 

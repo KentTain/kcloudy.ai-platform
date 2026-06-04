@@ -4,7 +4,7 @@
  * 封装 @ai-sdk/vue Chat 类，集成模型选择功能
  * 适配 @ai-sdk/vue v3.x API
  */
-import { onScopeDispose, ref, type Ref, shallowRef, toValue, watchEffect } from "vue";
+import { isRef, onScopeDispose, ref, type Ref, shallowRef, toValue, watch, watchEffect } from "vue";
 import { Chat } from "@ai-sdk/vue";
 import { DefaultChatTransport, type UIMessage as AiUIMessage } from "ai";
 import type { ModelConfig, UIMessage } from "@/ai/types";
@@ -16,7 +16,7 @@ export interface UseChatOptions {
   /** API 端点，默认 /api/v1/chat-messages */
   api?: string;
   /** 会话 ID */
-  id?: string;
+  id?: Ref<string | undefined> | string;
   /** 当前模型 */
   model?: Ref<ModelConfig> | ModelConfig;
   /** 初始消息 */
@@ -64,6 +64,16 @@ function resolveModelConfig(model: Ref<ModelConfig> | ModelConfig | undefined): 
 }
 
 /**
+ * 将 id 参数转换为普通字符串
+ */
+function resolveId(id: Ref<string | undefined> | string | undefined): string | undefined {
+  if (!id) {
+    return undefined;
+  }
+  return toValue(id);
+}
+
+/**
  * 封装 @ai-sdk/vue Chat 的组合式函数
  *
  * @param options 配置选项
@@ -88,6 +98,9 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
   // 获取当前模型配置
   const currentModel = resolveModelConfig(model);
 
+  // 获取当前会话 ID
+  const currentId = resolveId(id);
+
   // 创建 Transport
   const transport = new DefaultChatTransport<AiUIMessage>({
     api,
@@ -97,7 +110,7 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
   // 创建 Chat 实例
   const chat = shallowRef(
     new Chat({
-      id,
+      id: currentId,
       transport,
       messages: initialMessages as AiUIMessage[],
       onFinish: (event) => {
@@ -119,9 +132,22 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
     }
   });
 
+  // 监听 model 变化，自动更新 transport
+  let stopModelWatcher: (() => void) | undefined;
+  if (isRef(model)) {
+    stopModelWatcher = watch(
+      model,
+      (newModel) => {
+        updateModel(toValue(newModel));
+      },
+      { deep: true }
+    );
+  }
+
   // 组件卸载时清理 watcher
   onScopeDispose(() => {
     stopWatcher();
+    stopModelWatcher?.();
   });
 
   // 发送消息
@@ -174,8 +200,10 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
       api,
       body: { model: currentModel },
     });
+    // 重新解析 id（支持响应式）
+    const reloadedId = resolveId(id);
     chat.value = new Chat({
-      id,
+      id: reloadedId,
       transport: newTransport,
       messages: [],
       onFinish: (event) => {
@@ -199,8 +227,10 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
       api,
       body: { model: currentModel },
     });
+    // 重新解析 id（支持响应式）
+    const updatedId = resolveId(id);
     chat.value = new Chat({
-      id,
+      id: updatedId,
       transport: newTransport,
       messages: messages.value as AiUIMessage[],
       onFinish: (event) => {
