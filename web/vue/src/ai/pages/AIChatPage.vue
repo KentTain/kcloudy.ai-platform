@@ -23,7 +23,7 @@ const conversationStore = useConversationStore();
 const currentModel = computed(() => conversationStore.currentModel);
 
 // 使用 useChat composable
-const { messages, isLoading, error, sendMessage, stop, regenerate, setInput } = useChat({
+const { messages, isLoading, error, sendMessage, stop, regenerate, setInput, reload } = useChat({
   api: "/api/v1/chat-messages",
   model: currentModel,
   onError: (err) => {
@@ -65,8 +65,7 @@ const handleRegenerate = async () => {
 
 // 清空对话
 const handleClear = () => {
-  // 重新加载会清空消息
-  window.location.reload();
+  reload();
 };
 
 // 从消息部分提取文本内容
@@ -125,7 +124,6 @@ const getTextFromParts = (parts: Array<{ type: string; text?: string }>): string
             v-model="localInput"
             placeholder="输入您的问题..."
             :disabled="isLoading"
-            @keydown.enter.prevent="handleSubmit"
           />
           <div class="flex items-center justify-between gap-2 border-t p-2">
             <div class="flex items-center gap-1">
