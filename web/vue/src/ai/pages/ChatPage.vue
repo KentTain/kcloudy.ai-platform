@@ -15,6 +15,8 @@ import { useChat } from "@/ai/composables";
 import { useConversationStore } from "@/ai/stores";
 import { RotateCcw, Square, Trash2 } from "lucide-vue-next";
 import { Button } from "@/components/ui/button";
+import ToolCallItem from "@/ai/components/ToolCallItem.vue";
+import type { UIMessagePart, ToolCallPart, ToolResultPart } from "@/ai/types";
 
 // 会话 Store
 const conversationStore = useConversationStore();
@@ -75,6 +77,62 @@ const getTextFromParts = (parts: Array<{ type: string; text?: string }>): string
     .map((p) => p.text ?? "")
     .join("");
 };
+
+// 检查是否有工具调用部分
+const hasToolParts = (parts: UIMessagePart[]): boolean => {
+  return parts.some((p) => p.type === "tool-call" || p.type === "tool-result");
+};
+
+// 从消息部分提取文本部分
+const getTextParts = (parts: UIMessagePart[]): Array<{ type: string; text?: string }> => {
+  return parts.filter((p) => p.type === "text");
+};
+
+// 从消息部分提取工具调用部分
+const getToolParts = (parts: UIMessagePart[]): (ToolCallPart | ToolResultPart)[] => {
+  return parts.filter((p) => p.type === "tool-call" || p.type === "tool-result") as (ToolCallPart | ToolResultPart)[];
+};
+
+// 合并工具调用和工具结果（按 toolCallId 配对）
+const mergeToolParts = (parts: (ToolCallPart | ToolResultPart)[]): (ToolCallPart | ToolResultPart)[] => {
+  const toolCallMap = new Map<string, { call?: ToolCallPart; result?: ToolResultPart }>();
+
+  for (const part of parts) {
+    const id = part.toolCallId;
+    const existing = toolCallMap.get(id) || {};
+
+    if (part.type === "tool-call") {
+      existing.call = part;
+    } else if (part.type === "tool-result") {
+      existing.result = part;
+    }
+
+    toolCallMap.set(id, existing);
+  }
+
+  // 返回合并后的列表
+  // 如果同时有 call 和 result，优先返回 call（包含 args），但状态由 result 决定
+  const merged: (ToolCallPart | ToolResultPart)[] = [];
+  for (const [, data] of toolCallMap) {
+    if (data.call && data.result) {
+      // 合并：使用 call 的 args 和 result 的结果
+      // 创建一个扩展的 tool-call 部分，包含 result 信息
+      merged.push({
+        ...data.call,
+        // @ts-expect-error 扩展字段用于传递 result
+        _result: data.result.result,
+      });
+    } else if (data.result) {
+      // 只有 result
+      merged.push(data.result);
+    } else if (data.call) {
+      // 只有 call（还在执行中）
+      merged.push(data.call);
+    }
+  }
+
+  return merged;
+};
 </script>
 
 <template>
@@ -97,7 +155,21 @@ const getTextFromParts = (parts: Array<{ type: string; text?: string }>): string
           <template v-for="message in messages" :key="message.id">
             <Message :from="message.role">
               <MessageContent>
-                <MessageResponse :content="getTextFromParts(message.parts)" />
+                <!-- 工具调用展示（仅在 assistant 消息中显示） -->
+                <template v-if="message.role === 'assistant' && hasToolParts(message.parts)">
+                  <div class="mb-3">
+                    <ToolCallItem
+                      v-for="toolPart in mergeToolParts(getToolParts(message.parts))"
+                      :key="toolPart.toolCallId"
+                      :part="toolPart"
+                    />
+                  </div>
+                </template>
+                <!-- 文本内容 -->
+                <MessageResponse
+                  v-if="getTextParts(message.parts).length > 0"
+                  :content="getTextFromParts(message.parts)"
+                />
               </MessageContent>
               <MessageActions v-if="message.role === 'assistant'">
                 <MessageAction tooltip="重新生成" @click="handleRegenerate">
