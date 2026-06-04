@@ -195,7 +195,7 @@ async def _update_message_status(
 ) -> None:
     """更新消息状态"""
     try:
-        async for session in get_session():
+        async with get_session() as session:
             message = await session.get(Message, message_id)
             if message:
                 message.status = status
@@ -238,7 +238,7 @@ async def chat_messages(
     try:
         # 创建或恢复会话
         is_new_conversation = False
-        async for session in get_session():
+        async with get_session() as session:
             # 如果前端未传 id，说明是新会话，直接创建
             if chat_request.id is None:
                 conversation = Conversation(
@@ -248,7 +248,6 @@ async def chat_messages(
                     name="新对话",
                     status=ConversationStatus.NORMAL,
                     mode=ConversationMode.CHAT,
-                    created_by=user_id,
                 )
                 session.add(conversation)
                 await session.commit()
@@ -274,14 +273,13 @@ async def chat_messages(
                         name="新对话",
                         status=ConversationStatus.NORMAL,
                         mode=ConversationMode.CHAT,
-                        created_by=user_id,
                     )
                     session.add(conversation)
                     await session.commit()
                     is_new_conversation = True
 
         # 创建初始消息记录（状态为 pending）
-        async for session in get_session():
+        async with get_session() as session:
             user_message = Message(
                 id=str(uuid.uuid4()),
                 tenant_id=tenant_id,
@@ -290,7 +288,6 @@ async def chat_messages(
                 role="user",
                 content=query,
                 status=MessageStatus.PENDING,
-                created_by=user_id,
             )
             assistant_message = Message(
                 id=message_id,
@@ -299,7 +296,6 @@ async def chat_messages(
                 conversation_id=conversation_id,
                 role="assistant",
                 status=MessageStatus.PENDING,
-                created_by=user_id,
             )
             session.add(user_message)
             session.add(assistant_message)
@@ -372,7 +368,7 @@ async def chat_messages(
 
                 # 更新会话名称（新会话）
                 if is_new_conversation:
-                    async for session in get_session():
+                    async with get_session() as session:
                         new_name = f"对话 {datetime.now().strftime('%Y-%m-%d %H:%M')}"
                         await Conversation.update_by_id(
                             session,
@@ -386,7 +382,7 @@ async def chat_messages(
                         await session.commit()
 
                 # 更新消息状态为正常并保存内容
-                async for session in get_session():
+                async with get_session() as session:
                     message = await session.get(Message, message_id)
                     if message:
                         message.content = full_content
@@ -459,7 +455,7 @@ async def stop_chat_messages(conversation_id: str) -> dict:
 
     # 验证会话存在
     conversation = None
-    async for session in get_session():
+    async with get_session() as session:
         conversation = await Conversation.one_by_conditions(
             session,
             conditions=[Conversation.id == conversation_id],

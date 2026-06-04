@@ -27,45 +27,45 @@
 
 ## 5. 后端 Schema 新增
 
-- [ ] 5.1 创建 AI SDK 请求 Schema：`server/python/src/ai/schemas/chat.py`
+- [x] 5.1 创建 AI SDK 请求 Schema：`server/python/src/ai/schemas/chat.py`
   - `AIChatRequest`：id、messages、trigger、messageId、body
   - `UIMessage`：id、role、parts
   - `UIMessagePart`：type、text 等
   - `BodyConfig`：model、search、files（复用现有 ModelConfig 等）
-- [ ] 5.2 标记 `LLMChatCompletion` 为 deprecated（添加注释）
+- [x] 5.2 标记 `LLMChatCompletion` 为 deprecated（添加注释）
 
 ## 6. 后端接口改造
 
-- [ ] 6.1 修改 `chat_messages` 函数接收 `AIChatRequest`
-- [ ] 6.2 实现消息提取逻辑：从 messages 最后一条的 parts 提取用户查询
-- [ ] 6.3 修改 SSE 事件格式为 AI SDK UIMessageChunk 标准
+- [x] 6.1 修改 `chat_messages` 函数接收 `AIChatRequest`
+- [x] 6.2 实现消息提取逻辑：从 messages 最后一条的 parts 提取用户查询
+- [x] 6.3 修改 SSE 事件格式为 AI SDK UIMessageChunk 标准
   - `{"type":"start","messageId":"..."}`
   - `{"type":"text-start","id":"..."}`
   - `{"type":"text-delta","id":"...","delta":"..."}`
   - `{"type":"text-end","id":"..."}`
   - `{"type":"finish","finishReason":"stop","usage":{...}}`
   - `data: [DONE]`
-- [ ] 6.4 修改 `run_llm_task` 事件处理逻辑
-- [ ] 6.5 修改 `_sse_generator` 输出格式
-- [ ] 6.6 更新响应 headers（移除 X-Task-ID 等非标准 header 或保留为扩展）
+- [x] 6.4 修改 `run_llm_task` 事件处理逻辑
+- [x] 6.5 修改 `_sse_generator` 输出格式
+- [x] 6.6 更新响应 headers（移除 X-Task-ID 等非标准 header 或保留为扩展）
 
 ## 7. 前后端联调验证
 
-- [ ] 7.1 启动后端服务：`uv run runserver`
-- [ ] 7.2 启动前端服务：`pnpm dev`
-- [ ] 7.3 验证发送消息成功，收到流式响应
-- [ ] 7.4 验证会话创建和消息持久化
-- [ ] 7.5 验证多租户数据隔离
+- [x] 7.1 启动后端服务：`uv run runserver`
+- [x] 7.2 启动前端服务：`pnpm dev`
+- [x] 7.3 验证发送消息成功，收到流式响应
+- [x] 7.4 验证会话创建和消息持久化
+- [x] 7.5 验证多租户数据隔离
 
 ## 8. 后端单元测试
 
-- [ ] 8.1 创建 `tests/ai/schemas/test_chat.py`：测试 AIChatRequest 验证
-- [ ] 8.2 创建 `tests/ai/controllers/v1/chat/test_llm.py`：测试接口请求处理
+- [x] 8.1 创建 `tests/ai/schemas/test_chat.py`：测试 AIChatRequest 验证
+- [x] 8.2 创建 `tests/ai/controllers/v1/chat/test_llm.py`：测试接口请求处理
 
 ## 9. 前端单元测试
 
-- [ ] 9.1 创建 `tests/ai/composables/useChat.test.ts`：测试 useChat 封装
-- [ ] 9.2 创建 `tests/ai/stores/conversation.test.ts`：测试会话状态管理
+- [x] 9.1 创建 `tests/ai/composables/useChat.test.ts`：测试 useChat 封装
+- [x] 9.2 创建 `tests/ai/stores/conversation.test.ts`：测试会话状态管理
 
 ---
 

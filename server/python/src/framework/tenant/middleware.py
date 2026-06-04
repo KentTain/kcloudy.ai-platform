@@ -83,7 +83,7 @@ class TenantMiddleware(BaseHTTPMiddleware):
             tenant = await self._load_and_validate_tenant(tenant_id, request)
 
             # 注入租户上下文
-            self._inject_context(tenant)
+            self._inject_context(tenant, request)
 
             # 执行后续处理
             response = await call_next(request)
@@ -136,11 +136,13 @@ class TenantMiddleware(BaseHTTPMiddleware):
         if tenant.expired_at and tenant.expired_at < datetime.now(timezone.utc):
             raise TenantExpiredError(f"租户已过期: {tenant.name}")
 
-    def _inject_context(self, tenant) -> None:
+    def _inject_context(self, tenant, request: "Request") -> None:
         """注入租户上下文"""
         TenantContext.set_current_tenant(tenant)
+        # 从请求头获取用户 ID（用于开发测试）
+        user_id = request.headers.get("X-User-Id")
         # 同时设置通用上下文
-        set_context(Context(tenant_id=tenant.id))
+        set_context(Context(tenant_id=tenant.id, user_id=user_id))
 
     def _error_response(
         self, error: TenantError, status_code: int | None = None

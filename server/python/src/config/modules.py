@@ -2,4 +2,4 @@
 # This file is generated during container build time
 # DO NOT edit manually
 
-ENABLED_MODULES = ["demo", "iam", "tenant"]
+ENABLED_MODULES = ["demo", "iam", "tenant", "ai"]
