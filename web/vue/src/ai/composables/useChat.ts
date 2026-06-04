@@ -4,7 +4,7 @@
  * 封装 @ai-sdk/vue Chat 类，集成模型选择功能
  * 适配 @ai-sdk/vue v3.x API
  */
-import { ref, type Ref, shallowRef, toValue } from "vue";
+import { ref, type Ref, shallowRef, toValue, watchEffect } from "vue";
 import { Chat } from "@ai-sdk/vue";
 import { DefaultChatTransport, type UIMessage as AiUIMessage } from "ai";
 import type { ModelConfig, UIMessage } from "@/ai/types";
@@ -116,6 +116,13 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
   const syncMessages = () => {
     messages.value = [...(chat.value.messages as UIMessage[])];
   };
+
+  // 实时同步：流式传输过程中自动更新消息
+  watchEffect(() => {
+    if (chat.value) {
+      messages.value = [...(chat.value.messages as UIMessage[])];
+    }
+  });
 
   // 发送消息
   const sendMessage = async (text: string) => {

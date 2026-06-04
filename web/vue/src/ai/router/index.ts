@@ -7,7 +7,7 @@ export const aiRoutes: RouteRecordRaw[] = [
   {
     path: "ai",
     name: "AIChat",
-    component: () => import("@/ai/pages/AIChatPage.vue"),
+    component: () => import("@/ai/pages/ChatPage.vue"),
     meta: { title: "AI 对话", icon: "message-square", requiresAuth: true },
   },
 ];
