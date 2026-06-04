@@ -218,7 +218,7 @@ async def chat_messages(
                 conversation_id=conversation_id,
                 role="user",
                 content=query,
-                status=MessageStatus.NORMAL,
+                status=MessageStatus.PENDING,
                 created_by=user_id,
             )
             assistant_message = Message(

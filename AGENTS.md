@@ -96,6 +96,30 @@ openspec/               # OpenSpec 变更规范
 - **Python**: Ruff (PT 规则), Python 3.12 目标版本。函数/变量使用 `snake_case`，类使用 `PascalCase`。模块遵循 controllers → services → models 分层。
 - **Vue/TS**: Biome lint + 格式化。2 空格缩进，100 字符行宽，双引号，总是使用分号，ES5 尾逗号。组件使用 `PascalCase`，组合式函数使用 `camelCase`。
 
+## Markdown 文档格式规范
+
+使用 AI 助手生成 Markdown 文档时，必须遵循以下格式要求，避免转义字符污染：
+
+### 代码块格式
+
+- **正确**：使用三个反引号包围代码块
+- **错误**：使用转义的反引号 \`\`\`
+
+### Python 文档字符串格式
+
+- **正确**：使用三个双引号 """
+- **错误**：使用转义的双引号 \"""
+
+### 引号格式
+
+- **正确**：使用正常的双引号 "
+- **错误**：使用转义的双引号 \"
+
+### PowerShell 写入注意事项
+
+- **禁止使用 PowerShell here-string (@"..."@) 写入 Python 文件**，here-string 会将 triple quotes 转义导致语法错误
+- **正确做法**：使用 Python 脚本写入文件：`uv run python -c "import pathlib; pathlib.Path('file.py').write_text('...', encoding='utf-8')"`
+
 ## 测试指南
 
 - **Python**: pytest + pytest-asyncio。测试在 `tests/{module}/` 下镜像 `src/{module}/`。标记: `unit`, `integration`, `slow`, `db`, `api`, `asyncio`。单元测试不得触及真实服务。集成测试在服务不可用时跳过。测试数据放在 `fixtures/`。
@@ -106,3 +130,12 @@ openspec/               # OpenSpec 变更规范
 - **约定式提交**: `type(scope): description`。类型: `feat`, `fix`, `refactor`, `docs`, `chore`。范围: `backend`, `vue`, `database`, `iam`, `framework`, `docker`, `openspec`。
 - 已配置 commitizen；使用 `cz commit` 进行引导式提交。
 - PR 应引用 issue 并包含清晰描述。
+
+## 子项目导航
+
+| 目录 | 说明 | 详细文档 |
+|------|------|----------|
+| server/ | 后端服务（Python/Rust/Java/.NET） | [server/CLAUDE.md](server/CLAUDE.md) |
+| web/ | 前端 PC 项目（Vue/React） | [web/CLAUDE.md](web/CLAUDE.md) |
+| app/ | 前端 Mobile 项目（Flutter/React Native） | [app/CLAUDE.md](app/CLAUDE.md) |
+| docker/ | Docker 部署配置 | [docker/CLAUDE.md](docker/CLAUDE.md) |
