@@ -44,11 +44,13 @@ export interface UseChatReturn {
   /** 重新生成 */
   regenerate: (messageId?: string) => Promise<void>;
   /** 停止生成 */
-  stop: () => void;
+  stop: () => Promise<void>;
   /** 设置输入 */
   setInput: (value: string) => void;
   /** 重置聊天 */
   reload: () => void;
+  /** 更新模型配置 */
+  updateModel: (newModel: ModelConfig) => void;
 }
 
 /**
@@ -146,9 +148,10 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
   };
 
   // 停止生成
-  const stop = () => {
+  const stop = async () => {
     if (chat.value.status === "streaming") {
-      chat.value.stop();
+      await chat.value.stop();
+      syncMessages();
     }
   };
 
@@ -162,6 +165,50 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
     messages.value = [];
     error.value = undefined;
     input.value = "";
+    // 重新创建 Chat 实例
+    const newTransport = new DefaultChatTransport<AiUIMessage>({
+      api,
+      body: { model: currentModel },
+    });
+    chat.value = new Chat({
+      id,
+      transport: newTransport,
+      messages: [],
+      onFinish: (event) => {
+        if (onFinish && event.message) {
+          onFinish(event.message as UIMessage);
+        }
+      },
+      onError: (err: Error) => {
+        error.value = err;
+        onError?.(err);
+      },
+    });
+  };
+
+  // 更新模型配置
+  const updateModel = (newModel: ModelConfig) => {
+    // 更新当前模型
+    Object.assign(currentModel, newModel);
+    // 重新创建 transport 和 chat 实例
+    const newTransport = new DefaultChatTransport<AiUIMessage>({
+      api,
+      body: { model: currentModel },
+    });
+    chat.value = new Chat({
+      id,
+      transport: newTransport,
+      messages: messages.value as AiUIMessage[],
+      onFinish: (event) => {
+        if (onFinish && event.message) {
+          onFinish(event.message as UIMessage);
+        }
+      },
+      onError: (err: Error) => {
+        error.value = err;
+        onError?.(err);
+      },
+    });
   };
 
   return {
@@ -174,6 +221,7 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
     stop,
     setInput,
     reload,
+    updateModel,
   };
 }
 
