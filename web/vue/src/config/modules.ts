@@ -5,7 +5,7 @@
  * Enabled modules for this build
  * Used by main.ts to selectively load modules
  */
-export const ENABLED_MODULES = ["demo","iam","tenant"] as const;
+export const ENABLED_MODULES = ["ai","demo","iam","tenant"] as const;
 
 /**
  * Type for enabled module names
@@ -22,5 +22,5 @@ export function isModuleEnabled(moduleName: string): moduleName is EnabledModule
 /**
  * All available modules
  */
-export const ALL_MODULES = ["demo","iam","tenant"] as const;
+export const ALL_MODULES = ["ai","demo","iam","tenant"] as const;
 export type AllModules = typeof ALL_MODULES[number];

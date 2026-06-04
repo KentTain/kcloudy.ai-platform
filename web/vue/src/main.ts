@@ -8,6 +8,7 @@ import { setupFramework } from "./framework/module";
 import { ENABLED_MODULES } from "./config/modules";
 
 // Import module descriptors (conditionally based on config)
+import { aiModule } from "./ai";
 import { demoModule } from "./demo";
 import { iamModule } from "./iam";
 import { tenantModule } from "./tenant";
@@ -21,6 +22,9 @@ import "./framework/styles/main.css";
 
 // Build modules array based on ENABLED_MODULES config
 const modules = [];
+if (ENABLED_MODULES.includes("ai")) {
+  modules.push(aiModule);
+}
 if (ENABLED_MODULES.includes("demo")) {
   modules.push(demoModule);
 }
