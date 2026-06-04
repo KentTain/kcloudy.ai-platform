@@ -24,7 +24,8 @@ from ai.listeners.services.pubsub.memory_task.helpers import stop_task_by_id
 from ai.models.conversation import Conversation
 from ai.models.enums import ConversationMode, ConversationStatus, MessageStatus
 from ai.models.message import Message
-from ai.schemas.completion import ErrorCode, LLMChatCompletion
+from ai.schemas.chat import AIChatRequest, TextPart
+from ai.schemas.completion import ErrorCode
 from extended.langchain.agents.agent_factory import AgentFactory
 from extended.langchain.models.alon_chat import AlonChatModel
 from framework.common.ctx import get_tenant_id, get_user_id
@@ -38,16 +39,14 @@ DEFAULT_APP_NAME = "通用智能体"
 
 
 class EventType(str, Enum):
-    """SSE 事件类型"""
+    """SSE 事件类型（AI SDK UIMessageChunk 标准）"""
 
-    READY = "ready"
-    UPDATE_SESSION = "update_session"
-    SEARCH_KEYWORDS = "search_keywords"
-    MESSAGE = "message"
+    START = "start"
+    TEXT_START = "text-start"
+    TEXT_DELTA = "text-delta"
+    TEXT_END = "text-end"
     FINISH = "finish"
     ERROR = "error"
-    STOP = "stop"
-    CLOSE = "close"
 
 
 # 搜索类工具名称关键字
@@ -72,6 +71,33 @@ def _is_search_tool(tool_name: str) -> bool:
     return any(keyword in tool_name_lower for keyword in SEARCH_TOOL_KEYWORDS)
 
 
+def _extract_user_query(messages: list) -> str:
+    """从消息列表提取用户查询
+
+    从最后一条用户消息的 parts 中提取文本内容。
+
+    Args:
+        messages: UIMessage 消息列表
+
+    Returns:
+        用户查询文本
+
+    Raises:
+        ValueError: 如果无法提取有效查询
+    """
+    # 从后往前找最后一条用户消息
+    for message in reversed(messages):
+        if message.role == "user":
+            # 从 parts 中提取文本
+            for part in message.parts:
+                if isinstance(part, TextPart):
+                    return part.text
+                # 处理 dict 类型的 part（Pydantic 可能解析为 dict）
+                if isinstance(part, dict) and part.get("type") == "text":
+                    return part.get("text", "")
+    raise ValueError("无法从消息中提取用户查询")
+
+
 def _format_sse_line(data: Any) -> str:
     """格式化 SSE 输出行"""
     try:
@@ -90,13 +116,25 @@ router = APIRouter(prefix="/chat-messages", tags=["LLM对话"])
 
 async def _sse_generator(
     event_queue: asyncio.Queue,
-    task_id: str,
-    conversation_id: str,
     message_id: str,
     max_timeout: int = 300,
 ) -> AsyncGenerator[str, None]:
-    """SSE 事件生成器"""
+    """SSE 事件生成器（AI SDK UIMessageChunk 格式）
+
+    输出格式：
+    - data: {"type":"start","messageId":"..."}
+    - data: {"type":"text-start","id":"..."}
+    - data: {"type":"text-delta","id":"...","delta":"..."}
+    - data: {"type":"text-end","id":"..."}
+    - data: {"type":"finish","finishReason":"stop","usage":{...}}
+    - data: [DONE]
+    """
     start_time = time.time()
+    text_id = f"text-{uuid.uuid4().hex[:8]}"
+    text_started = False
+
+    # 发送 start 事件
+    yield _format_sse_line({"type": EventType.START, "messageId": message_id})
 
     while True:
         try:
@@ -106,11 +144,32 @@ async def _sse_generator(
                 _logger.debug("收到流结束信号")
                 break
 
-            yield _format_sse_line(event)
+            event_type = event.get("type")
+
+            # 处理文本增量事件
+            if event_type == EventType.TEXT_DELTA:
+                if not text_started:
+                    yield _format_sse_line({"type": EventType.TEXT_START, "id": text_id})
+                    text_started = True
+                yield _format_sse_line(event)
+            elif event_type == EventType.TEXT_END:
+                if text_started:
+                    yield _format_sse_line({"type": EventType.TEXT_END, "id": text_id})
+                    text_started = False
+            elif event_type == EventType.FINISH:
+                # 确保文本块已关闭
+                if text_started:
+                    yield _format_sse_line({"type": EventType.TEXT_END, "id": text_id})
+                yield _format_sse_line(event)
+            elif event_type == EventType.ERROR:
+                yield _format_sse_line(event)
+            else:
+                # 其他事件直接转发
+                yield _format_sse_line(event)
 
             elapsed = time.time() - start_time
             if elapsed > max_timeout:
-                _logger.warning(f"任务 {task_id} 执行超时, 已运行 {elapsed:.2f} 秒")
+                _logger.warning(f"任务执行超时, 已运行 {elapsed:.2f} 秒")
                 break
 
         except TimeoutError:
@@ -119,14 +178,14 @@ async def _sse_generator(
             _logger.exception("处理事件流时出错")
             yield _format_sse_line(
                 {
-                    "event": EventType.ERROR,
-                    "data": {
-                        "code": ErrorCode.MODEL_ERROR,
-                        "message": f"Event processing error: {str(e)}",
-                    },
+                    "type": EventType.ERROR,
+                    "error": {"code": ErrorCode.MODEL_ERROR, "message": f"Event processing error: {str(e)}"},
                 }
             )
             break
+
+    # 发送 [DONE] 标记
+    yield "data: [DONE]\n\n"
 
 
 async def _update_message_status(
@@ -148,11 +207,12 @@ async def _update_message_status(
 
 @router.post("")
 async def chat_messages(
-    chat_completion: LLMChatCompletion = Body(..., description="聊天请求"),
+    chat_request: AIChatRequest = Body(..., description="聊天请求"),
 ) -> StreamingResponse:
-    """LLM 对话接口
+    """LLM 对话接口（AI SDK 标准）
 
     支持流式对话和会话创建/恢复。
+    使用 Vercel AI SDK 标准格式。
     """
     tenant_id = get_tenant_id()
     user_id = get_user_id()
@@ -161,9 +221,14 @@ async def chat_messages(
         raise HTTPException(status_code=401, detail="未授权访问")
 
     task_id = str(uuid.uuid4())
-    conversation_id = chat_completion.conversation_id or str(uuid.uuid4())
-    message_id = str(uuid.uuid4())
-    query = chat_completion.query
+    conversation_id = chat_request.id  # AIChatRequest.id 即为会话 ID
+    message_id = chat_request.message_id  # 使用前端传来的消息 ID
+
+    # 从消息列表提取用户查询
+    try:
+        query = _extract_user_query(chat_request.messages)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
     event_queue = asyncio.Queue()
 
@@ -171,17 +236,17 @@ async def chat_messages(
         # 创建或恢复会话
         is_new_conversation = False
         async for session in get_session():
-            if chat_completion.conversation_id:
+            # 检查会话是否已存在（通过 id 判断）
+            existing_conversation = await Conversation.one_by_conditions(
+                session,
+                conditions=[
+                    Conversation.id == conversation_id,
+                    Conversation.tenant_id == tenant_id,
+                ],
+            )
+            if existing_conversation:
                 # 恢复已有会话
-                conversation = await Conversation.one_by_conditions(
-                    session,
-                    conditions=[
-                        Conversation.id == chat_completion.conversation_id,
-                        Conversation.tenant_id == tenant_id,
-                    ],
-                )
-                if not conversation:
-                    raise HTTPException(status_code=404, detail="会话不存在")
+                conversation = existing_conversation
             else:
                 # 创建新会话
                 conversation = Conversation(
@@ -196,18 +261,6 @@ async def chat_messages(
                 session.add(conversation)
                 await session.commit()
                 is_new_conversation = True
-
-                # 发送 ready 事件
-                await event_queue.put(
-                    {
-                        "event": EventType.READY,
-                        "data": {
-                            "task_id": task_id,
-                            "conversation_id": conversation_id,
-                            "message_id": message_id,
-                        },
-                    }
-                )
 
         # 创建初始消息记录（状态为 pending）
         async for session in get_session():
@@ -235,12 +288,13 @@ async def chat_messages(
             await session.commit()
 
         # 创建 AlonChatModel
+        model_config = chat_request.body.model
         model = AlonChatModel(
-            model=chat_completion.model.name,
-            provider=chat_completion.model.provider,
+            model=model_config.name,
+            provider=model_config.provider,
             tenant_id=tenant_id,
             user_id=user_id,
-            model_parameters=chat_completion.model.completion_params,
+            model_parameters=model_config.completion_params,
         )
 
         # 创建 Agent
@@ -267,26 +321,12 @@ async def chat_messages(
                         if chunk and chunk.content:
                             content = chunk.content
                             full_content += content
+                            # 发送 text-delta 事件（AI SDK 格式）
                             await event_queue.put(
                                 {
-                                    "event": EventType.MESSAGE,
-                                    "data": {"content": content},
-                                }
-                            )
-
-                    elif event_name == "on_tool_start":
-                        tool_name = event.get("name", "")
-                        if _is_search_tool(tool_name):
-                            tool_input = event.get("data", {}).get("input", {})
-                            keywords = tool_input.get(
-                                "query", tool_input.get("keywords", [])
-                            )
-                            if isinstance(keywords, str):
-                                keywords = [keywords]
-                            await event_queue.put(
-                                {
-                                    "event": EventType.SEARCH_KEYWORDS,
-                                    "data": {"keywords": keywords},
+                                    "type": EventType.TEXT_DELTA,
+                                    "id": f"text-{message_id}",
+                                    "delta": content,
                                 }
                             )
 
@@ -299,16 +339,16 @@ async def chat_messages(
                 end_time = time.time()
                 latency = end_time - start_time
 
-                # 发送 finish 事件
+                # 发送 finish 事件（AI SDK 格式）
                 await event_queue.put(
                     {
-                        "event": EventType.FINISH,
-                        "data": {
-                            "latency": latency,
-                            "prompt_tokens": prompt_tokens,
-                            "completion_tokens": completion_tokens,
-                            "total_tokens": prompt_tokens + completion_tokens,
+                        "type": EventType.FINISH,
+                        "finishReason": "stop",
+                        "usage": {
+                            "promptTokens": prompt_tokens,
+                            "completionTokens": completion_tokens,
                         },
+                        "latency": latency,
                     }
                 )
 
@@ -336,7 +376,6 @@ async def chat_messages(
                         message.token_count = prompt_tokens + completion_tokens
                         await session.commit()
 
-                await event_queue.put({"event": EventType.CLOSE})
                 await event_queue.put(None)
 
             except asyncio.CancelledError:
@@ -351,8 +390,8 @@ async def chat_messages(
                 await _update_message_status(message_id, MessageStatus.ERROR, str(e))
                 await event_queue.put(
                     {
-                        "event": EventType.ERROR,
-                        "data": {
+                        "type": EventType.ERROR,
+                        "error": {
                             "code": ErrorCode.MODEL_ERROR,
                             "message": str(e),
                         },
@@ -368,8 +407,8 @@ async def chat_messages(
         task = asyncio.create_task(run_llm_task())
         ACTIVE_ASYNCIO_TASKS[TASK_TYPE_GENERATE_LLM][task_id] = task
 
+        # 保留扩展 headers（非标准但有用）
         headers = {
-            "X-Task-ID": task_id,
             "X-Conversation-ID": conversation_id,
             "X-Message-ID": message_id,
         }
@@ -377,8 +416,6 @@ async def chat_messages(
         return StreamingResponse(
             _sse_generator(
                 event_queue=event_queue,
-                task_id=task_id,
-                conversation_id=conversation_id,
                 message_id=message_id,
             ),
             media_type="text/event-stream",
