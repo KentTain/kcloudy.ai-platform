@@ -8,7 +8,6 @@ import time
 import uuid
 from collections.abc import AsyncGenerator
 from datetime import datetime
-from enum import Enum
 from typing import Any
 
 import orjson
@@ -26,7 +25,9 @@ from ai.models.enums import ConversationMode, ConversationStatus, MessageStatus
 from ai.models.message import Message
 from ai.schemas.chat import AIChatRequest, TextPart, UIMessage
 from ai.schemas.completion import ErrorCode
+from ai.controllers.v1.chat.event_types import EventType
 from extended.langchain.agents.agent_factory import AgentFactory
+from extended.langchain.callbacks import UIMessageChunkCallbackHandler
 from extended.langchain.models.alon_chat import AlonChatModel
 from framework.common.ctx import get_tenant_id, get_user_id
 from framework.database.core.engine import get_session
@@ -36,17 +37,6 @@ _logger = logger.bind(name=__name__)
 # 默认应用配置
 DEFAULT_APP_ID = "00000000-0000-0000-0000-000000000001"
 DEFAULT_APP_NAME = "通用智能体"
-
-
-class EventType(str, Enum):
-    """SSE 事件类型（AI SDK UIMessageChunk 标准）"""
-
-    START = "start"
-    TEXT_START = "text-start"
-    TEXT_DELTA = "text-delta"
-    TEXT_END = "text-end"
-    FINISH = "finish"
-    ERROR = "error"
 
 
 # 搜索类工具名称关键字
@@ -126,6 +116,8 @@ async def _sse_generator(
     - data: {"type":"text-start","id":"..."}
     - data: {"type":"text-delta","id":"...","delta":"..."}
     - data: {"type":"text-end","id":"..."}
+    - data: {"type":"tool-call","toolCallId":"...","toolName":"...","args":{...}}
+    - data: {"type":"tool-result","toolCallId":"...","result":"..."}
     - data: {"type":"finish","finishReason":"stop","usage":{...}}
     - data: [DONE]
     """
@@ -315,36 +307,26 @@ async def chat_messages(
         agent_factory = AgentFactory(model)
         agent = agent_factory.create_executor()
 
+        # 创建 CallbackHandler 用于处理工具调用事件和文本流事件
+        callback_handler = UIMessageChunkCallbackHandler(event_queue, message_id)
+
         # LLM 运行任务
         async def run_llm_task():
             try:
                 start_time = time.time()
-                full_content = ""
                 prompt_tokens = 0
                 completion_tokens = 0
 
-                # 流式运行 Agent
+                # 流式运行 Agent（传入 callback handler）
+                # 所有事件（包括 on_chat_model_stream）都通过 callback_handler 处理
                 async for event in agent.astream_events(
                     {"input": query},
                     version="v2",
+                    callbacks=[callback_handler],
                 ):
                     event_name = event.get("event")
 
-                    if event_name == "on_chat_model_stream":
-                        chunk = event.get("data", {}).get("chunk")
-                        if chunk and chunk.content:
-                            content = chunk.content
-                            full_content += content
-                            # 发送 text-delta 事件（AI SDK 格式）
-                            await event_queue.put(
-                                {
-                                    "type": EventType.TEXT_DELTA,
-                                    "id": f"text-{message_id}",
-                                    "delta": content,
-                                }
-                            )
-
-                    elif event_name == "on_chain_end":
+                    if event_name == "on_chain_end":
                         usage = event.get("data", {}).get("output", {}).get("usage", {})
                         if usage:
                             prompt_tokens = usage.get("input_tokens", 0)
@@ -352,6 +334,9 @@ async def chat_messages(
 
                 end_time = time.time()
                 latency = end_time - start_time
+
+                # 从 callback_handler 获取累积的文本内容
+                full_content = callback_handler.full_content
 
                 # 发送 finish 事件（AI SDK 格式）
                 await event_queue.put(

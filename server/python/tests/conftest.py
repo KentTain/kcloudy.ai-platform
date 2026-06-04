@@ -74,11 +74,8 @@ def pytest_ignore_collect(collection_path, config):
 
 # ===== Fixtures =====
 
-@pytest_asyncio.fixture(scope="module")
-def event_loop():
-    loop = asyncio.new_event_loop()
-    yield loop
-    loop.close()
+# 使用 pytest-asyncio 自动管理 event_loop，不再手动定义
+# pytest.ini_options 中配置了 asyncio_mode = "auto"
 
 
 @pytest_asyncio.fixture(scope="module")
