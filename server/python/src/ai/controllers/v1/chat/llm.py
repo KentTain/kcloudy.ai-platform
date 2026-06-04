@@ -24,7 +24,7 @@ from ai.listeners.services.pubsub.memory_task.helpers import stop_task_by_id
 from ai.models.conversation import Conversation
 from ai.models.enums import ConversationMode, ConversationStatus, MessageStatus
 from ai.models.message import Message
-from ai.schemas.chat import AIChatRequest, TextPart
+from ai.schemas.chat import AIChatRequest, TextPart, UIMessage
 from ai.schemas.completion import ErrorCode
 from extended.langchain.agents.agent_factory import AgentFactory
 from extended.langchain.models.alon_chat import AlonChatModel
@@ -71,7 +71,7 @@ def _is_search_tool(tool_name: str) -> bool:
     return any(keyword in tool_name_lower for keyword in SEARCH_TOOL_KEYWORDS)
 
 
-def _extract_user_query(messages: list) -> str:
+def _extract_user_query(messages: list[UIMessage]) -> str:
     """从消息列表提取用户查询
 
     从最后一条用户消息的 parts 中提取文本内容。
@@ -151,7 +151,9 @@ async def _sse_generator(
                 if not text_started:
                     yield _format_sse_line({"type": EventType.TEXT_START, "id": text_id})
                     text_started = True
-                yield _format_sse_line(event)
+                # 确保 text-delta 使用与 text-start/text-end 相同的 id
+                event_with_correct_id = {**event, "id": text_id}
+                yield _format_sse_line(event_with_correct_id)
             elif event_type == EventType.TEXT_END:
                 if text_started:
                     yield _format_sse_line({"type": EventType.TEXT_END, "id": text_id})
@@ -221,7 +223,8 @@ async def chat_messages(
         raise HTTPException(status_code=401, detail="未授权访问")
 
     task_id = str(uuid.uuid4())
-    conversation_id = chat_request.id  # AIChatRequest.id 即为会话 ID
+    # 如果 id 为 None，生成新的会话 ID
+    conversation_id = chat_request.id or str(uuid.uuid4())
     message_id = chat_request.message_id  # 使用前端传来的消息 ID
 
     # 从消息列表提取用户查询
@@ -236,19 +239,8 @@ async def chat_messages(
         # 创建或恢复会话
         is_new_conversation = False
         async for session in get_session():
-            # 检查会话是否已存在（通过 id 判断）
-            existing_conversation = await Conversation.one_by_conditions(
-                session,
-                conditions=[
-                    Conversation.id == conversation_id,
-                    Conversation.tenant_id == tenant_id,
-                ],
-            )
-            if existing_conversation:
-                # 恢复已有会话
-                conversation = existing_conversation
-            else:
-                # 创建新会话
+            # 如果前端未传 id，说明是新会话，直接创建
+            if chat_request.id is None:
                 conversation = Conversation(
                     id=conversation_id,
                     tenant_id=tenant_id,
@@ -261,6 +253,32 @@ async def chat_messages(
                 session.add(conversation)
                 await session.commit()
                 is_new_conversation = True
+            else:
+                # 检查会话是否已存在
+                existing_conversation = await Conversation.one_by_conditions(
+                    session,
+                    conditions=[
+                        Conversation.id == conversation_id,
+                        Conversation.tenant_id == tenant_id,
+                    ],
+                )
+                if existing_conversation:
+                    # 恢复已有会话
+                    conversation = existing_conversation
+                else:
+                    # 创建新会话
+                    conversation = Conversation(
+                        id=conversation_id,
+                        tenant_id=tenant_id,
+                        app_id=DEFAULT_APP_ID,
+                        name="新对话",
+                        status=ConversationStatus.NORMAL,
+                        mode=ConversationMode.CHAT,
+                        created_by=user_id,
+                    )
+                    session.add(conversation)
+                    await session.commit()
+                    is_new_conversation = True
 
         # 创建初始消息记录（状态为 pending）
         async for session in get_session():

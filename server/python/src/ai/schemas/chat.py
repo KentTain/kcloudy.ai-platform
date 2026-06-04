@@ -103,7 +103,7 @@ class AIChatRequest(BaseModel):
         }
     """
 
-    id: str = Field(description="会话 ID")
+    id: str | None = Field(None, description="会话 ID，为 None 时表示创建新会话")
     messages: list[UIMessage] = Field(description="消息列表")
     trigger: Literal["submit-message", "regenerate", "edit-message"] = Field(
         description="触发类型：submit-message(发送消息)、regenerate(重新生成)、edit-message(编辑消息)"
