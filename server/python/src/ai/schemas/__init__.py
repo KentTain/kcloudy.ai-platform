@@ -4,6 +4,16 @@ AI 模块 Pydantic 模型
 包含 AI 相关的所有请求/响应模型。
 """
 
+from .chat import (
+    AIChatRequest,
+    BodyConfig,
+    ImagePart,
+    TextPart,
+    ToolCallPart,
+    ToolResultPart,
+    UIMessage,
+    UIMessagePart,
+)
 from .plugin import (
     CreatePluginCredential,
     GetPluginCredentialsSchemaSuccessRespModel,
@@ -30,6 +40,15 @@ from .plugin import (
 )
 
 __all__ = [
+    # AI SDK Schema
+    "AIChatRequest",
+    "BodyConfig",
+    "UIMessage",
+    "UIMessagePart",
+    "TextPart",
+    "ImagePart",
+    "ToolCallPart",
+    "ToolResultPart",
     # 基础响应模型
     "SuccessRespModel",
     # 插件配置

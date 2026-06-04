@@ -1,29 +1,29 @@
 ﻿## 1. 前端依赖安装
 
-- [ ] 1.1 安装 AI SDK 核心依赖：`pnpm add ai @ai-sdk/vue`
-- [ ] 1.2 安装 ai-elements-vue 组件：`npx ai-elements-vue@latest`（选择 conversation、message、prompt-input、code-block 组件）
-- [ ] 1.3 验证依赖安装成功，项目可正常启动
+- [x] 1.1 安装 AI SDK 核心依赖：`pnpm add ai @ai-sdk/vue`
+- [x] 1.2 安装 ai-elements-vue 组件：`npx ai-elements-vue@latest`（选择 conversation、message、prompt-input、code-block 组件）
+- [x] 1.3 验证依赖安装成功，项目可正常启动
 
 ## 2. 前端 AI 模块骨架
 
-- [ ] 2.1 创建模块目录结构：`web/vue/src/ai/`（api、composables、pages、router、stores、types）
-- [ ] 2.2 创建模块入口文件 `web/vue/src/ai/index.ts`，导出 ModuleDescriptor
-- [ ] 2.3 创建路由配置 `web/vue/src/ai/router/index.ts`
-- [ ] 2.4 创建类型定义 `web/vue/src/ai/types/index.ts`（AppUIMessage、AIChatRequest）
-- [ ] 2.5 修改 `web/vue/src/config/modules.ts`，添加 `ai` 到 ENABLED_MODULES
+- [x] 2.1 创建模块目录结构：`web/vue/src/ai/`（api、composables、pages、router、stores、types）
+- [x] 2.2 创建模块入口文件 `web/vue/src/ai/index.ts`，导出 ModuleDescriptor
+- [x] 2.3 创建路由配置 `web/vue/src/ai/router/index.ts`
+- [x] 2.4 创建类型定义 `web/vue/src/ai/types/index.ts`（AppUIMessage、AIChatRequest）
+- [x] 2.5 修改 `web/vue/src/config/modules.ts`，添加 `ai` 到 ENABLED_MODULES
 
 ## 3. 前端 API 和状态管理
 
-- [ ] 3.1 创建会话 API：`web/vue/src/ai/api/conversation.ts`（复用 framework/api/client）
-- [ ] 3.2 创建会话 Store：`web/vue/src/ai/stores/conversation.ts`（会话列表、当前模型状态）
-- [ ] 3.3 创建 useChat composable：`web/vue/src/ai/composables/useChat.ts`（封装 @ai-sdk/vue useChat）
+- [x] 3.1 创建会话 API：`web/vue/src/ai/api/conversation.ts`（复用 framework/api/client）
+- [x] 3.2 创建会话 Store：`web/vue/src/ai/stores/conversation.ts`（会话列表、当前模型状态）
+- [x] 3.3 创建 useChat composable：`web/vue/src/ai/composables/useChat.ts`（封装 @ai-sdk/vue useChat）
 
 ## 4. 前端对话页面
 
-- [ ] 4.1 创建 ChatPage：`web/vue/src/ai/pages/ChatPage.vue`
-- [ ] 4.2 组装 ai-elements 组件：Conversation、Message、PromptInput
-- [ ] 4.3 集成 useChat 实现消息发送和接收
-- [ ] 4.4 验证流式响应正确渲染（Markdown、代码高亮）
+- [x] 4.1 创建 ChatPage：`web/vue/src/ai/pages/ChatPage.vue`
+- [x] 4.2 组装 ai-elements 组件：Conversation、Message、PromptInput
+- [x] 4.3 集成 useChat 实现消息发送和接收
+- [x] 4.4 验证流式响应正确渲染（Markdown、代码高亮）
 
 ## 5. 后端 Schema 新增
 

@@ -57,7 +57,13 @@ class FileItem(BaseModel):
 
 
 class LLMChatCompletion(BaseModel):
-    """LLM 对话请求 Schema"""
+    """LLM 对话请求 Schema
+
+    .. deprecated::
+        该 Schema 已废弃，请使用 `AIChatRequest` 替代。
+        AIChatRequest 采用 Vercel AI SDK 标准格式，支持更丰富的消息结构。
+        迁移路径: from ai.schemas.chat import AIChatRequest
+    """
 
     model: ModelConfig = Field(description="模型配置")
     query: str = Field(description="用户输入/提问内容")
