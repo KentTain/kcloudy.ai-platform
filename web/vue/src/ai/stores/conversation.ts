@@ -29,6 +29,11 @@ const DEFAULT_MODEL: ModelConfig = {
 };
 
 /**
+ * localStorage 存储键
+ */
+const STORAGE_KEY = "selected_model";
+
+/**
  * 会话状态管理 Store
  */
 export const useConversationStore = defineStore("conversation", () => {
@@ -36,8 +41,10 @@ export const useConversationStore = defineStore("conversation", () => {
   const conversations = ref<Conversation[]>([]);
   // 当前活跃会话
   const activeConversation = ref<Conversation | null>(null);
-  // 当前选择的模型
-  const currentModel = ref<ModelConfig>({ ...DEFAULT_MODEL });
+  // 当前选择的模型（从 localStorage 恢复）
+  const currentModel = ref<ModelConfig>(
+    JSON.parse(localStorage.getItem(STORAGE_KEY) || "null") ?? { ...DEFAULT_MODEL }
+  );
   // 加载状态
   const loading = ref(false);
   // 错误信息
@@ -102,6 +109,7 @@ export const useConversationStore = defineStore("conversation", () => {
    */
   const setModel = (model: ModelConfig) => {
     currentModel.value = model;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(model));
   };
 
   /**
@@ -109,6 +117,7 @@ export const useConversationStore = defineStore("conversation", () => {
    */
   const resetModel = () => {
     currentModel.value = { ...DEFAULT_MODEL };
+    localStorage.removeItem(STORAGE_KEY);
   };
 
   /**
