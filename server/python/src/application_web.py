@@ -17,6 +17,8 @@ from framework.database.core.engine import setup_engine
 from framework.module import load_modules, get_registry, ModuleDescriptor
 from framework.tenant.middleware import TenantMiddleware
 from framework.tenant.protocols import register_tenant_provider
+from iam.middlewares.iam_auth_middleware import IAMAuthMiddleware
+from framework.middlewares.test_user_middleware import TestUserMiddleware
 from framework.utils.startup_timer import StartupTimer
 from framework.utils.log_util import write_info, write_success, write_warning
 from demo.configs import settings
@@ -144,8 +146,21 @@ def create_app(module_names: list[str] | None = None) -> FastAPI:
     from demo.common.exception_handler import register_exception_handlers
     register_exception_handlers(app)
 
-    # 注册租户中间件（解析 X-Tenant-Id 并注入上下文）
+    # 注册中间件（注意：中间件执行顺序为栈结构，后注册的先执行）
+    # 执行顺序：TenantMiddleware -> IAMAuthMiddleware -> TestUserMiddleware
+    
+    # 1. 注册租户中间件（解析租户并注入上下文）
     app.add_middleware(TenantMiddleware)
+    
+    # 2. 注册认证中间件（验证 JWT 并同步用户信息到 Context）
+    app.add_middleware(IAMAuthMiddleware)
+    
+    # 3. 注册测试用户中间件（仅非生产环境）
+    # 必须最后注册（最先执行），以便在认证后覆盖用户信息
+    env = getattr(settings, 'env', 'development')
+    if env != 'production':
+        app.add_middleware(TestUserMiddleware, enabled=True, env=env)
+        _logger.info('已启用测试用户中间件（仅非生产环境）')
 
     # 动态注册各模块路由
     for module in modules:

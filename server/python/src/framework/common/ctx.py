@@ -1,13 +1,11 @@
-"""
-请求上下文管理
+﻿"""请求上下文管理
 
 提供请求级别的上下文存储，支持存储当前用户、租户等信息。
 """
 
-from typing import Any
 from contextvars import ContextVar
 from dataclasses import dataclass, field
-
+from typing import Any
 
 # 使用 contextvars 实现协程安全的上下文
 _context_var: ContextVar["Context | None"] = ContextVar("app_context", default=None)
@@ -17,12 +15,20 @@ _context_var: ContextVar["Context | None"] = ContextVar("app_context", default=N
 class Context:
     """请求上下文"""
 
+    # 用户信息
     user_id: str | None = None
     user_name: str | None = None
-    tenant_id: str | None = None
-    workspace_id: str | None = None
+    session_id: str | None = None
     roles: list[str] = field(default_factory=list)
     permissions: list[str] = field(default_factory=list)
+
+    # 租户信息
+    tenant_id: str | None = None
+    tenant_name: str | None = None
+    tenant_code: str | None = None
+
+    # 其他信息
+    workspace_id: str | None = None
     extra: dict[str, Any] = field(default_factory=dict)
 
     def set(self, key: str, value: Any) -> None:
@@ -94,6 +100,11 @@ def set_user(
 def get_user_id() -> str | None:
     """获取当前用户 ID"""
     return get_context().user_id
+
+
+def get_session_id() -> str | None:
+    """获取当前会话 ID"""
+    return get_context().session_id
 
 
 def get_tenant_id() -> str | None:

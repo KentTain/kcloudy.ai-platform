@@ -1,4 +1,4 @@
-"""
+﻿"""
 租户中间件
 
 自动解析租户标识、验证租户状态、注入租户上下文。
@@ -11,7 +11,6 @@ from loguru import logger
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import JSONResponse
 
-from framework.common.ctx import Context, set_context
 from framework.tenant.context import TenantContext
 from framework.tenant.exceptions import (
     TenantAccessDeniedError,
@@ -54,6 +53,8 @@ class TenantMiddleware(BaseHTTPMiddleware):
     4. 验证租户状态
     5. 注入租户上下文
     6. 请求结束后清理上下文
+
+    注意：用户信息由 IAMAuthMiddleware 设置，不再在此处理测试用户。
     """
 
     def __init__(self, app: "ASGIApp", *, skip_paths: list[str] | None = None):
@@ -83,7 +84,7 @@ class TenantMiddleware(BaseHTTPMiddleware):
             tenant = await self._load_and_validate_tenant(tenant_id, request)
 
             # 注入租户上下文
-            self._inject_context(tenant, request)
+            TenantContext.set_current_tenant(tenant)
 
             # 执行后续处理
             response = await call_next(request)
@@ -135,14 +136,6 @@ class TenantMiddleware(BaseHTTPMiddleware):
         # 检查过期时间
         if tenant.expired_at and tenant.expired_at < datetime.now(timezone.utc):
             raise TenantExpiredError(f"租户已过期: {tenant.name}")
-
-    def _inject_context(self, tenant, request: "Request") -> None:
-        """注入租户上下文"""
-        TenantContext.set_current_tenant(tenant)
-        # 从请求头获取用户 ID（用于开发测试）
-        user_id = request.headers.get("X-User-Id")
-        # 同时设置通用上下文
-        set_context(Context(tenant_id=tenant.id, user_id=user_id))
 
     def _error_response(
         self, error: TenantError, status_code: int | None = None

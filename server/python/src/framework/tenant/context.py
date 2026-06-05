@@ -1,14 +1,16 @@
-"""
+﻿"""
 租户上下文管理
 
 提供请求级别的租户上下文存储。
+
+注意：TenantContext 现在是 Context 的适配器，底层使用 Context 存储租户信息。
 """
 
-from contextvars import ContextVar
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
 
+from framework.common.ctx import get_context
 from framework.tenant.protocols import (
     TenantCacheConfig,
     TenantDatabaseConfig,
@@ -108,18 +110,42 @@ class SimpleTenant:
         )
 
 
-_tenant_context: ContextVar[SimpleTenant | None] = ContextVar(
-    "tenant_context", default=None
-)
+# 租户配置在 Context.extra 中的 key
+_TENANT_CONFIG_KEY = "tenant_config"
 
 
 class TenantContext:
-    """租户上下文管理类"""
+    """租户上下文适配器
+
+    所有租户信息存储在 Context 中，此类提供便捷的访问方法。
+    """
 
     @staticmethod
     def get_current_tenant() -> SimpleTenant | None:
-        """获取当前租户"""
-        return _tenant_context.get()
+        """获取当前租户
+
+        从 Context 重建 SimpleTenant 对象
+        """
+        ctx = get_context()
+        if not ctx.tenant_id:
+            return None
+
+        # 从 Context.extra 读取租户配置
+        tenant_config = ctx.extra.get(_TENANT_CONFIG_KEY, {})
+
+        return SimpleTenant(
+            id=ctx.tenant_id,
+            name=ctx.tenant_name or "",
+            code=ctx.tenant_code or "",
+            status=tenant_config.get("status", "active"),
+            expired_at=tenant_config.get("expired_at"),
+            contact_name=tenant_config.get("contact_name"),
+            contact_email=tenant_config.get("contact_email"),
+            contact_phone=tenant_config.get("contact_phone"),
+            database=tenant_config.get("database"),
+            storage=tenant_config.get("storage"),
+            cache=tenant_config.get("cache"),
+        )
 
     @staticmethod
     def set_current_tenant(tenant: SimpleTenant | Any | None) -> None:
@@ -129,57 +155,84 @@ class TenantContext:
             tenant: 可以是 SimpleTenant 实例或 ORM 模型实例
         """
         if tenant is None:
-            _tenant_context.set(None)
-        elif isinstance(tenant, SimpleTenant):
-            _tenant_context.set(tenant)
-        else:
-            _tenant_context.set(SimpleTenant.from_model(tenant))
+            ctx = get_context()
+            ctx.tenant_id = None
+            ctx.tenant_name = None
+            ctx.tenant_code = None
+            ctx.extra.pop(_TENANT_CONFIG_KEY, None)
+            return
+
+        # 转换为 SimpleTenant
+        if not isinstance(tenant, SimpleTenant):
+            tenant = SimpleTenant.from_model(tenant)
+
+        ctx = get_context()
+        ctx.tenant_id = tenant.id
+        ctx.tenant_name = tenant.name
+        ctx.tenant_code = tenant.code
+
+        # 租户配置存储到 extra
+        tenant_config = {
+            "status": tenant.status,
+            "expired_at": tenant.expired_at,
+            "contact_name": tenant.contact_name,
+            "contact_email": tenant.contact_email,
+            "contact_phone": tenant.contact_phone,
+            "database": tenant.database,
+            "storage": tenant.storage,
+            "cache": tenant.cache,
+        }
+        ctx.extra[_TENANT_CONFIG_KEY] = tenant_config
 
     @staticmethod
     def clear() -> None:
         """清理租户上下文"""
-        _tenant_context.set(None)
+        ctx = get_context()
+        ctx.tenant_id = None
+        ctx.tenant_name = None
+        ctx.tenant_code = None
+        ctx.extra.pop(_TENANT_CONFIG_KEY, None)
 
     @staticmethod
     def get_tenant_id() -> str | None:
         """获取当前租户 ID"""
-        tenant = _tenant_context.get()
-        return tenant.id if tenant else None
+        return get_context().tenant_id
 
     @staticmethod
     def get_tenant_code() -> str | None:
         """获取当前租户编码"""
-        tenant = _tenant_context.get()
-        return tenant.code if tenant else None
+        return get_context().tenant_code
 
     @staticmethod
     def get_tenant_name() -> str | None:
         """获取当前租户名称"""
-        tenant = _tenant_context.get()
-        return tenant.name if tenant else None
+        return get_context().tenant_name
 
     @staticmethod
     def is_set() -> bool:
         """检查是否设置了租户上下文"""
-        return _tenant_context.get() is not None
+        return get_context().tenant_id is not None
 
     @staticmethod
     def get_database_config() -> TenantDatabaseConfig | None:
         """获取当前租户的数据库配置"""
-        tenant = _tenant_context.get()
-        return tenant.database if tenant else None
+        ctx = get_context()
+        tenant_config = ctx.extra.get(_TENANT_CONFIG_KEY, {})
+        return tenant_config.get("database")
 
     @staticmethod
     def get_storage_config() -> TenantStorageConfig | None:
         """获取当前租户的存储配置"""
-        tenant = _tenant_context.get()
-        return tenant.storage if tenant else None
+        ctx = get_context()
+        tenant_config = ctx.extra.get(_TENANT_CONFIG_KEY, {})
+        return tenant_config.get("storage")
 
     @staticmethod
     def get_cache_config() -> TenantCacheConfig | None:
         """获取当前租户的缓存配置"""
-        tenant = _tenant_context.get()
-        return tenant.cache if tenant else None
+        ctx = get_context()
+        tenant_config = ctx.extra.get(_TENANT_CONFIG_KEY, {})
+        return tenant_config.get("cache")
 
     @staticmethod
     def has_physical_database() -> bool:

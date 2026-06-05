@@ -1,14 +1,12 @@
-﻿# tenant-context Specification
+﻿# Tenant Context 规格说明
 
-## Purpose
-租户上下文管理规范，提供请求级别的租户上下文存储和访问能力。
+## MODIFIED Requirements
 
-## Requirements
 ### Requirement: 租户上下文存储
 
 系统 SHALL 使用 ContextVar 实现线程安全的租户上下文存储。
 
-**实现说明**：租户上下文底层存储使用共享的 `_context_var`（Context 类），但 API 保持不变。
+**修改说明**：租户上下文底层存储从独立的 `_tenant_context` 改为共享的 `_context_var`（Context 类），但 API 保持不变。
 
 #### Scenario: 设置租户上下文
 - **WHEN** 调用 `TenantContext.set_current_tenant(tenant)` 设置租户信息
@@ -27,7 +25,7 @@
 
 系统 SHALL 提供便捷方法获取当前租户 ID。
 
-**实现说明**：get_tenant_id() 从 Context.tenant_id 读取。
+**修改说明**：get_tenant_id() 从 Context.tenant_id 读取，而非独立的 ContextVar。
 
 #### Scenario: 获取租户 ID
 - **WHEN** 已设置租户上下文时调用 `get_tenant_id()`
@@ -41,7 +39,7 @@
 
 系统 SHALL 在请求结束后自动清理租户上下文。
 
-**实现说明**：清理操作同时清理 Context 中的租户字段。
+**修改说明**：清理操作同时清理 Context 中的租户字段。
 
 #### Scenario: 清理租户上下文
 - **WHEN** 调用 `TenantContext.clear()` 清理上下文
@@ -60,7 +58,7 @@
 - tenant_name: 租户名称
 - status: 租户状态
 
-**实现说明**：租户信息存储在 Context 类的字段中（tenant_id, tenant_name, tenant_code）。
+**修改说明**：租户信息存储在 Context 类的字段中（tenant_id, tenant_name, tenant_code），而非独立的 SimpleTenant 对象。
 
 #### Scenario: 获取租户基本信息
 - **WHEN** 调用 `get_current_tenant()` 获取租户信息

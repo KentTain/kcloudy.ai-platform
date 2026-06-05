@@ -1,4 +1,4 @@
-"""
+﻿"""
 租户解析器
 
 从请求中解析租户标识，支持多种解析策略。
@@ -17,8 +17,8 @@ class TenantResolver:
 
     支持的解析策略（优先级从高到低）：
     1. 请求头 X-Tenant-Id
-    2. 用户信息中的 tenant_id
-    3. 用户默认租户
+    2. Context 中的 tenant_id（由 TenantMiddleware 或 IAMAuthMiddleware 设置）
+    3. request.state.user 中的 tenant_id（向后兼容）
     """
 
     HEADER_TENANT_ID = "X-Tenant-Id"
@@ -38,8 +38,8 @@ class TenantResolver:
         if tenant_id:
             return tenant_id
 
-        # 优先级 2: 从用户信息获取
-        tenant_id = cls._resolve_from_user(request)
+        # 优先级 2: 从 Context 获取（主要数据源）
+        tenant_id = cls._resolve_from_context()
         if tenant_id:
             return tenant_id
 
@@ -51,30 +51,16 @@ class TenantResolver:
         return request.headers.get(cls.HEADER_TENANT_ID)
 
     @classmethod
-    def _resolve_from_user(cls, request: "Request") -> str | None:
-        """从用户信息解析租户 ID
+    def _resolve_from_context(cls) -> str | None:
+        """从 Context (ContextVar) 获取租户 ID
 
-        用户信息可能来自：
-        1. request.state.user (认证中间件设置)
-        2. request.state.context (通用上下文)
+        Context 由以下中间件设置：
+        - TenantMiddleware: 解析租户并设置到 Context
+        - IAMAuthMiddleware: 验证用户并验证租户归属
         """
-        # 从 request.state.user 获取
-        user = getattr(request.state, "user", None)
-        if user:
-            # 支持对象属性
-            if hasattr(user, "tenant_id"):
-                return user.tenant_id
-            # 支持字典类型
-            if isinstance(user, dict) and "tenant_id" in user:
-                return user["tenant_id"]
+        from framework.common.ctx import get_tenant_id
 
-        # 从 request.state.context 获取
-        context = getattr(request.state, "context", None)
-        if context:
-            if hasattr(context, "tenant_id"):
-                return context.tenant_id
-
-        return None
+        return get_tenant_id()
 
     @classmethod
     def require_tenant_id(cls, request: "Request") -> str:
