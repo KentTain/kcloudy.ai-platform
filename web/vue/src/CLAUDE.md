@@ -13,6 +13,7 @@
 | framework | 基础设施：UI框架、路由、状态管理 | [framework/CLAUDE.md](framework/CLAUDE.md) |
 | tenant | 租户管理模块 | [tenant/CLAUDE.md](tenant/CLAUDE.md) |
 | iam | 身份认证与权限模块 | [iam/CLAUDE.md](iam/CLAUDE.md) |
+| ai | AI 对话模块 | [ai/CLAUDE.md](ai/CLAUDE.md) |
 | demo | 业务演示模块 | [demo/CLAUDE.md](demo/CLAUDE.md) |
 | components | 通用组件（跨模块共享） | - |
 | composables | 组合式函数 | - |
@@ -20,8 +21,8 @@
 ## 依赖边界
 
 ```
-demo / iam / tenant ──▶ framework
-framework ──X──▶ demo / iam / tenant
+demo / ai / iam / tenant ──▶ framework
+framework ──X──▶ demo / ai / iam / tenant
 ```
 
 - 业务模块可以依赖 `framework`
