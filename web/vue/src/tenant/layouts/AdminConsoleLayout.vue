@@ -1,89 +1,68 @@
 ﻿<script setup lang="ts">
 /**
  * AdminConsoleLayout 管理后台布局
+ * 参考 shadcn sidebar-08 设计
  */
-import { useAdminAuthStore } from "@/tenant/stores/adminAuth";
-import { useRouter } from "vue-router";
-import { Button } from "@/components/ui/button";
-import { Shield, LogOut } from "@lucide/vue";
+import { computed } from 'vue'
+import { useRoute } from 'vue-router'
+import { AdminSidebar } from '@/tenant/components/AdminSidebar.vue'
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from '@/components/ui/breadcrumb'
+import { Separator } from '@/components/ui/separator'
+import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar'
 
-const adminAuthStore = useAdminAuthStore();
-const router = useRouter();
+const route = useRoute()
 
-const handleLogout = async () => {
-  await adminAuthStore.logout();
-  router.push("/admin/login");
-};
+const breadcrumbItems = computed(() => {
+  const items: { title: string; url?: string }[] = []
+  const meta = route.meta
+
+  if (meta?.title) {
+    // 管理后台首页
+    items.push({ title: '管理后台', url: '/admin' })
+
+    // 当前页面
+    if (route.path !== '/admin') {
+      items.push({ title: meta.title as string })
+    }
+  }
+
+  return items
+})
 </script>
 
 <template>
-  <div class="admin-layout">
-    <header class="admin-layout__header">
-      <div class="admin-layout__brand">
-        <Shield class="admin-layout__brand-icon" />
-        <span class="admin-layout__brand-text">管理后台</span>
+  <SidebarProvider>
+    <AdminSidebar />
+    <SidebarInset>
+      <header class="flex h-16 shrink-0 items-center gap-2 border-b px-4">
+        <SidebarTrigger class="-ml-1" />
+        <Separator orientation="vertical" class="mr-2 h-4" />
+        <Breadcrumb>
+          <BreadcrumbList>
+            <template v-for="(item, index) in breadcrumbItems" :key="item.title">
+              <BreadcrumbItem v-if="index < breadcrumbItems.length - 1">
+                <BreadcrumbLink as-child>
+                  <router-link :to="item.url || '#'">{{ item.title }}</router-link>
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator v-if="index < breadcrumbItems.length - 1" />
+              <BreadcrumbItem v-if="index === breadcrumbItems.length - 1">
+                <BreadcrumbPage>{{ item.title }}</BreadcrumbPage>
+              </BreadcrumbItem>
+            </template>
+          </BreadcrumbList>
+        </Breadcrumb>
+      </header>
+      <div class="flex flex-1 flex-col gap-4 p-4">
+        <router-view />
       </div>
-      <div class="admin-layout__user">
-        <span class="admin-layout__username">{{ adminAuthStore.username }}</span>
-        <Button variant="ghost" size="sm" @click="handleLogout">
-          <LogOut class="w-4 h-4" />
-        </Button>
-      </div>
-    </header>
-    <main class="admin-layout__main">
-      <router-view />
-    </main>
-  </div>
+    </SidebarInset>
+  </SidebarProvider>
 </template>
-
-<style scoped>
-.admin-layout {
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-  background: #f5f5f5;
-}
-
-.admin-layout__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  height: 60px;
-  padding: 0 1.5rem;
-  background: #1a1a2e;
-  color: #fff;
-}
-
-.admin-layout__brand {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.admin-layout__brand-icon {
-  width: 1.5rem;
-  height: 1.5rem;
-  color: #dc2626;
-}
-
-.admin-layout__brand-text {
-  font-size: 1.125rem;
-  font-weight: 600;
-}
-
-.admin-layout__user {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.admin-layout__username {
-  font-size: 0.875rem;
-  color: #9ca3af;
-}
-
-.admin-layout__main {
-  flex: 1;
-  padding: 1.5rem;
-}
-</style>

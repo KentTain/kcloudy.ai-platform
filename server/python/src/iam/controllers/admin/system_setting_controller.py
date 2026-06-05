@@ -5,7 +5,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import ORJSONResponse
 
-from iam.middlewares.admin_auth_middleware import get_current_admin
+from tenant.middlewares.admin_auth_middleware import get_current_admin
 from iam.schemas.admin.system_setting import (
     SystemSettingCreate,
     SystemSettingListVo,
@@ -41,7 +41,7 @@ async def list_settings(
     WHEN 管理员发送 GET /admin/v1/system-settings
     THEN 返回当前租户的所有配置列表
     """
-    tenant_id = admin.get("tenant_id", "default")
+    tenant_id = "platform"  # 系统设置为平台级配置
     settings, total = await system_setting_service.list_settings(
         tenant_id=tenant_id,
         page=page,
@@ -79,7 +79,7 @@ async def create_setting(
     WHEN 管理员尝试创建已存在 code 的配置
     THEN 返回 HTTP 400 错误
     """
-    tenant_id = admin.get("tenant_id", "default")
+    tenant_id = "platform"  # 系统设置为平台级配置
 
     existing = await system_setting_service.get_setting_by_code(tenant_id, data.code)
     if existing:

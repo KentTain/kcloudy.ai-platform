@@ -9,7 +9,7 @@
 
 import pytest
 
-from iam.middlewares.admin_auth_middleware import (
+from tenant.middlewares.admin_auth_middleware import (
     hash_password,
     verify_password,
     generate_token,

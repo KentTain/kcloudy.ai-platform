@@ -16,7 +16,7 @@ from starlette.responses import JSONResponse
 
 from tenant.models import TenantAdmin
 from framework.database.core.engine import async_session
-from framework.utils.crypto import verify_password
+from framework.utils.crypto import hash_password, verify_password
 from sqlalchemy import select
 
 if TYPE_CHECKING:
