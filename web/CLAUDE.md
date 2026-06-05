@@ -65,6 +65,25 @@ web/
 | 模块级通用组件 | {模块} | DemoDatasetCard | 模块专用组件，带模块前缀 |
 | 框架级组件 | App | AppForm | 与框架功能耦合的组件 |
 
+## 测试
+
+测试目录按模块划分，统一放在各技术栈的 `tests/` 目录下。
+
+### 测试目录结构
+
+```text
+web/{技术栈}/tests/
+├── components/         # 通用组件测试
+├── framework/          # Framework 模块测试
+├── ai/                 # AI 模块测试
+├── iam/                # IAM 模块测试
+├── tenant/             # Tenant 模块测试
+├── demo/               # Demo 模块测试
+└── e2e/                # E2E 端到端测试
+```
+
+详细说明见各技术栈测试文档：[vue/tests/CLAUDE.md](vue/tests/CLAUDE.md)
+
 ## 环境要求
 
 - Node.js 22+

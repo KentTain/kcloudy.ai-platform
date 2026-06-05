@@ -66,9 +66,6 @@ pnpm build
 pnpm check
 pnpm check:fix
 
-# 测试
-pnpm test:unit
-pnpm test:unit -- --run
 ```
 
 ## 开发约束
@@ -80,7 +77,7 @@ pnpm test:unit -- --run
 
 ## 测试
 
-测试文件位于 `tests/` 目录，按模块组织，详见 [tests/CLAUDE.md](tests/CLAUDE.md)。
+测试文件位于 `tests/` 目录，按模块组织
 
 ### 测试目录结构
 
@@ -113,4 +110,4 @@ pnpm test:unit -- --coverage
 - Node.js 22+
 - pnpm 10+
 
-详细开发指南见 [src/CLAUDE.md](src/CLAUDE.md)，完整使用示例见 [README.md](README.md)。
+详细开发指南见 [src/CLAUDE.md](src/CLAUDE.md)，测试指南见 [tests/CLAUDE.md](tests/CLAUDE.md)，完整使用示例见 [README.md](README.md)。
