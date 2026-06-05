@@ -106,10 +106,18 @@ async def run(*, dry_run: bool = False) -> int:
     """
     from sqlalchemy import text
 
+    from framework.configs import get_settings
     from framework.database.core.engine import get_session
+    from framework.utils.crypto import hash_password
+
+    settings = get_settings()
+    tenant_config = settings.tenant
 
     async with get_session() as session:
         created_count = 0
+
+        # 获取默认租户 ID
+        tenant_id = tenant_config.default_tenant_id
 
         # 1. 创建权限
         existing_perms = set()
@@ -163,10 +171,11 @@ async def run(*, dry_run: bool = False) -> int:
                 await session.execute(
                     text("""
                         INSERT INTO iam.roles (id, tenant_id, code, name, description, is_system, created_at, updated_at)
-                        VALUES (:id, NULL, :code, :name, :description, true, now(), now())
+                        VALUES (:id, :tenant_id, :code, :name, :description, true, now(), now())
                     """),
                     {
                         "id": role_id,
+                        "tenant_id": tenant_id,
                         "code": role_code,
                         "name": role_data["name"],
                         "description": role_data["description"],

@@ -54,14 +54,14 @@ if str(src_path) not in sys.path:
 import click
 
 from framework.utils.log_util import (
-    write_info,
-    write_success,
-    write_warning,
-    write_error,
-    write_separator,
-    write_title,
-    write_empty_line,
     Color,
+    write_empty_line,
+    write_error,
+    write_info,
+    write_separator,
+    write_success,
+    write_title,
+    write_warning,
 )
 
 # 设置时区
@@ -70,7 +70,8 @@ os.environ["TZ"] = "Asia/Shanghai"
 
 def load_all_modules():
     """加载所有模块"""
-    from framework.module import load_modules, ModuleRegistry
+    from framework.module import ModuleRegistry, load_modules
+
     ModuleRegistry.reset()
     return load_modules(src_path)
 
@@ -109,6 +110,7 @@ def resolve_target_modules(module_arg: str | None, all_modules: bool = False):
 def get_module_alembic_config(module, database_url: str | None = None):
     """获取模块的 Alembic 配置"""
     from alembic.config import Config
+
     from demo.configs import settings
 
     module_dir = src_path / module.name / "migrations"
@@ -124,14 +126,8 @@ def get_module_alembic_config(module, database_url: str | None = None):
         config = Config(str(global_config_file))
 
     # 设置模块特定的配置
-    config.set_main_option(
-        "script_location",
-        str(module_dir)
-    )
-    config.set_main_option(
-        "version_locations",
-        str(module_dir / "versions")
-    )
+    config.set_main_option("script_location", str(module_dir))
+    config.set_main_option("version_locations", str(module_dir / "versions"))
 
     if database_url:
         connection_url = database_url
@@ -145,6 +141,7 @@ def get_module_alembic_config(module, database_url: str | None = None):
 def get_database_url():
     """获取数据库连接 URL"""
     from demo.configs import settings
+
     return str(settings.sqlalchemy.url)
 
 
@@ -175,14 +172,14 @@ def runserver(host, port, reload, module):
     # 如果指定了模块，通过环境变量传递
     if module:
         os.environ["LOAD_MODULES"] = module
-        print(f"  {Color.CYAN}加载模块:{Color.RESET} {module}")
+        write_info(f"加载模块: {module}")
 
     server_host = host or settings.server.host
     server_port = port or settings.server.port
     display_host = "127.0.0.1" if server_host == "0.0.0.0" else server_host
 
-    print(f"  {Color.CYAN}地址:{Color.RESET} http://{display_host}:{server_port}")
-    print(f"  {Color.CYAN}文档:{Color.RESET} http://{display_host}:{server_port}/docs")
+    write_info(f"地址: http://{display_host}:{server_port}")
+    write_info(f"文档: http://{display_host}:{server_port}/docs")
 
     uvicorn.run(
         "application_web:app",
@@ -200,6 +197,7 @@ def runtask(module):
     if module:
         os.environ["LOAD_MODULES"] = module
     from application_task import main
+
     main(module)
 
 
@@ -211,6 +209,7 @@ def runlistener(module):
     if module:
         os.environ["LOAD_MODULES"] = module
     from application_listener import main
+
     main(module)
 
 
@@ -250,7 +249,7 @@ def makemigrations(ctx, message, module):
     database_url = ctx.obj.get("database_url") if ctx.obj else None
 
     for m in modules:
-        print(f"  {Color.CYAN}[{m.name}] 生成迁移...{Color.RESET}")
+        write_info(f"  {Color.CYAN}[{m.name}] 生成迁移...{Color.RESET}")
         config = get_module_alembic_config(m, database_url)
         migration_message = message or f"{m.name}_auto_migration"
 
@@ -347,7 +346,9 @@ def downgrade(ctx, module, revision, yes):
     database_url = ctx.obj.get("database_url") if ctx.obj else None
 
     for m in modules:
-        if not yes and not click.confirm(f"  [{m.name}] 确定要回滚到版本 '{revision}' 吗？"):
+        if not yes and not click.confirm(
+            f"  [{m.name}] 确定要回滚到版本 '{revision}' 吗？"
+        ):
             write_warning(f"[{m.name}] 已取消回滚操作")
             continue
 
@@ -392,7 +393,7 @@ def rebuild(ctx, module, all_modules, yes, dry_run):
             return
 
     async def do_rebuild():
-        from framework.database.core.engine import setup_engine, get_session
+        from framework.database.core.engine import get_session, setup_engine
 
         db_url = get_database_url()
         if ctx.obj:
@@ -404,21 +405,19 @@ def rebuild(ctx, module, all_modules, yes, dry_run):
 
         for m in modules:
             if dry_run:
-                print(f"  {Color.CYAN}[{m.name}] [DRY-RUN] DROP + CREATE SCHEMA{Color.RESET}")
+                print(
+                    f"  {Color.CYAN}[{m.name}] [DRY-RUN] DROP + CREATE SCHEMA{Color.RESET}"
+                )
                 continue
 
             async with get_session() as session:
                 # DROP SCHEMA
-                await session.execute(
-                    text(f"DROP SCHEMA IF EXISTS {m.schema} CASCADE")
-                )
+                await session.execute(text(f"DROP SCHEMA IF EXISTS {m.schema} CASCADE"))
                 await session.commit()
                 write_success(f"[{m.name}] 已删除 schema: {m.schema}")
 
                 # CREATE SCHEMA
-                await session.execute(
-                    text(f"CREATE SCHEMA {m.schema}")
-                )
+                await session.execute(text(f"CREATE SCHEMA {m.schema}"))
                 await session.commit()
                 write_success(f"[{m.name}] 已创建 schema: {m.schema}")
 
@@ -436,7 +435,9 @@ def rebuild(ctx, module, all_modules, yes, dry_run):
             seeds = m.get_seeds()
             for seed_name, seed_func in seeds.items():
                 if dry_run:
-                    print(f"  {Color.CYAN}[{m.name}/{seed_name}] [DRY-RUN] 预览 seed{Color.RESET}")
+                    print(
+                        f"  {Color.CYAN}[{m.name}/{seed_name}] [DRY-RUN] 预览 seed{Color.RESET}"
+                    )
                     continue
 
                 try:
@@ -521,7 +522,9 @@ def seed(dry_run, module):
                 try:
                     count = await seed_func(dry_run=dry_run)
                     if count > 0:
-                        status = f"{Color.YELLOW}[DRY-RUN] {Color.RESET}" if dry_run else ""
+                        status = (
+                            f"{Color.YELLOW}[DRY-RUN] {Color.RESET}" if dry_run else ""
+                        )
                         print(f"  {status}[{m.name}/{seed_name}] 初始化 {count} 条记录")
                     total += count
                 except Exception as e:

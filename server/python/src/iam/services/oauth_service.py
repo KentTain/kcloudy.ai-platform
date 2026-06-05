@@ -1,4 +1,4 @@
-﻿"""
+"""
 OAuth 服务
 
 提供第三方 OAuth2 登录功能。
@@ -13,6 +13,7 @@ from sqlalchemy import select
 from iam.models import OAuthConnection, OAuthProvider, User
 from framework.database.core.engine import async_session
 from framework.utils.crypto import hash_password
+from framework.configs import get_settings
 
 _logger = logger.bind(name=__name__)
 
@@ -186,6 +187,7 @@ class OAuthService:
                 avatar=userinfo.get("headimgurl", ""),
                 password_hash=None,  # OAuth 用户无密码
                 profile_completed=False,
+                tenant_id=get_settings().tenant.default_tenant_id,  # 关联到默认租户
             )
             session.add(user)
             await session.flush()

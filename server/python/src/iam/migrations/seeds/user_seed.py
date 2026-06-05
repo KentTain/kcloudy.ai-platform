@@ -1,4 +1,4 @@
-﻿"""
+"""
 用户模块数据初始化
 
 初始化默认系统管理员用户。
@@ -31,8 +31,12 @@ async def run(*, dry_run: bool = False) -> int:
     Returns:
         初始化的记录数
     """
+    from framework.configs import get_settings
     from framework.database.core.engine import get_session
     from framework.utils.crypto import hash_password
+
+    settings = get_settings()
+    tenant_config = settings.tenant
 
     async with get_session() as session:
         # 检查是否已存在默认管理员
@@ -46,16 +50,7 @@ async def run(*, dry_run: bool = False) -> int:
             return 0
 
         # 获取默认租户 ID
-        tenant_result = await session.execute(
-            text("SELECT id FROM tenant.tenants WHERE code = 'default' LIMIT 1")
-        )
-        tenant_row = tenant_result.fetchone()
-        if not tenant_row:
-            write_warning("    [WARN] 默认租户不存在，跳过创建系统管理员")
-            write_warning("    [HINT] 请先运行 tenant seed 创建默认租户")
-            return 0
-
-        tenant_id = tenant_row[0]
+        tenant_id = tenant_config.default_tenant_id
 
         # 获取系统管理员角色 ID
         role_result = await session.execute(
@@ -83,6 +78,7 @@ async def run(*, dry_run: bool = False) -> int:
             status=UserStatus.ACTIVE,
             profile_completed=True,
             is_email_verified=True,
+            tenant_id=tenant_id,
         )
         session.add(user)
 
@@ -91,24 +87,20 @@ async def run(*, dry_run: bool = False) -> int:
 
         # 创建用户-租户关联
         user_tenant_id = str(uuid.uuid4())
-        await session.execute(
-            text("""
-                INSERT INTO iam.user_tenants (id, user_id, tenant_id, is_default, role, created_at, updated_at)
-                VALUES (:id, :user_id, :tenant_id, true, 'admin', now(), now())
-            """),
-            {"id": user_tenant_id, "user_id": user_id, "tenant_id": tenant_id},
-        )
+        userTenant = UserTenant(id=user_tenant_id, user_id=user_id, tenant_id=tenant_id)
+        session.add(userTenant)
+        # 立即 flush 确保用户被写入数据库
+        await session.flush()
 
         # 分配系统管理员角色
         if role_id:
             user_role_id = str(uuid.uuid4())
-            await session.execute(
-                text("""
-                    INSERT INTO iam.user_roles (id, user_id, role_id, created_at, updated_at)
-                    VALUES (:id, :user_id, :role_id, now(), now())
-                """),
-                {"id": user_role_id, "user_id": user_id, "role_id": role_id},
+            userRole = UserRole(
+                id=user_role_id, user_id=user_id, role_id=role_id, tenant_id=tenant_id
             )
+            session.add(userRole)
+            # 立即 flush 确保用户被写入数据库
+            await session.flush()
 
         await session.commit()
 
