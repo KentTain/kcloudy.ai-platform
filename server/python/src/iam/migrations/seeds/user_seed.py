@@ -85,9 +85,11 @@ async def run(*, dry_run: bool = False) -> int:
         # 立即 flush 确保用户被写入数据库
         await session.flush()
 
-        # 创建用户-租户关联
+        # 创建用户-租户关联（设置 is_default=True 作为用户的默认租户）
         user_tenant_id = str(uuid.uuid4())
-        userTenant = UserTenant(id=user_tenant_id, user_id=user_id, tenant_id=tenant_id)
+        userTenant = UserTenant(
+            id=user_tenant_id, user_id=user_id, tenant_id=tenant_id, is_default=True
+        )
         session.add(userTenant)
         # 立即 flush 确保用户被写入数据库
         await session.flush()
