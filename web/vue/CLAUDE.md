@@ -80,7 +80,33 @@ pnpm test:unit -- --run
 
 ## 测试
 
-测试文件位于 `tests/` 目录，详见 [tests/CLAUDE.md](tests/CLAUDE.md)。
+测试文件位于 `tests/` 目录，按模块组织，详见 [tests/CLAUDE.md](tests/CLAUDE.md)。
+
+### 测试目录结构
+
+| 目录 | 说明 |
+|------|------|
+| tests/components/ | 通用组件测试 |
+| tests/framework/ | Framework 模块测试 |
+| tests/tenant/ | Tenant 模块测试 |
+| tests/iam/ | IAM 模块测试 |
+| tests/ai/ | AI 模块测试 |
+| tests/demo/ | Demo 模块测试 |
+
+### 测试命令
+
+```bash
+# 运行所有测试
+pnpm test:unit
+
+# 运行特定模块测试
+pnpm test:unit tests/ai/ --run
+pnpm test:unit tests/iam/ --run
+pnpm test:unit tests/framework/ --run
+
+# 生成覆盖率报告
+pnpm test:unit -- --coverage
+```
 
 ## 环境要求
 
