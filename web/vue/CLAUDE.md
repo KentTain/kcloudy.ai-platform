@@ -77,18 +77,24 @@ pnpm check:fix
 
 ## 测试
 
-测试文件位于 `tests/` 目录，按模块组织。单元测试和 E2E 测试都放入各模块目录下。
+测试文件位于 `tests/` 目录，按模块组织，每个模块下按测试类型划分 `unit/` 和 `e2e/` 目录。
 
 ### 测试目录结构
 
 | 目录 | 说明 |
 |------|------|
-| tests/components/ | 通用组件测试 |
-| tests/framework/ | Framework 模块测试 |
-| tests/tenant/ | Tenant 模块测试 |
-| tests/iam/ | IAM 模块测试 |
-| tests/ai/ | AI 模块测试（含 e2e/ 子目录） |
-| tests/demo/ | Demo 模块测试 |
+| tests/components/unit/ | 通用组件单元测试 |
+| tests/components/e2e/ | 通用组件 E2E 测试 |
+| tests/framework/unit/ | Framework 模块单元测试 |
+| tests/framework/e2e/ | Framework 模块 E2E 测试 |
+| tests/tenant/unit/ | Tenant 模块单元测试 |
+| tests/tenant/e2e/ | Tenant 模块 E2E 测试 |
+| tests/iam/unit/ | IAM 模块单元测试 |
+| tests/iam/e2e/ | IAM 模块 E2E 测试 |
+| tests/ai/unit/ | AI 模块单元测试 |
+| tests/ai/e2e/ | AI 模块 E2E 测试 |
+| tests/demo/unit/ | Demo 模块单元测试 |
+| tests/demo/e2e/ | Demo 模块 E2E 测试 |
 
 ### 测试命令
 
@@ -97,18 +103,18 @@ pnpm check:fix
 pnpm test:unit
 
 # 运行特定模块单元测试
-pnpm test:unit tests/ai/ --run
-pnpm test:unit tests/iam/ --run
-pnpm test:unit tests/framework/ --run
+pnpm test:unit tests/ai/unit/ --run
+pnpm test:unit tests/iam/unit/ --run
+pnpm test:unit tests/framework/unit/ --run
 
 # 生成覆盖率报告
 pnpm test:unit -- --coverage
 
 # 运行 E2E 测试
-pnpm test:e2e tests/ai/
+pnpm test:e2e tests/ai/e2e/
 
 # 带界面运行 E2E 测试
-pnpm test:e2e:ui tests/ai/
+pnpm test:e2e:ui tests/ai/e2e/
 ```
 
 ## 环境要求

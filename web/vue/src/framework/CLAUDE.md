@@ -80,7 +80,7 @@ EventBus 用于跨模块通信，预定义事件：
 ## 测试
 
 ```bash
-pnpm test:unit tests/framework/ --run
+pnpm test:unit tests/framework/unit/ --run
 ```
 
 详细组件 API、设计令牌、使用示例见 [API.md](API.md)。

@@ -7,26 +7,36 @@
 ```text
 tests/
 ├── components/            # 通用组件测试
-├── ai/                    # AI 模块测试
-│   ├── components/        # 组件测试
-│   ├── composables/       # Composable 测试
-│   ├── pages/             # 页面测试
-│   ├── stores/            # Store 测试
+│   ├── unit/              # 单元测试
+│   └── e2e/               # E2E 端到端测试
+├── framework/             # Framework 模块测试
+│   ├── unit/              # 单元测试
+│   │   ├── components/    # 组件测试
+│   │   ├── composables/   # Composable 测试
+│   │   ├── events/        # 事件测试
+│   │   ├── module/        # 模块系统测试
+│   │   ├── stores/        # Store 测试
+│   │   └── utils/         # 工具函数测试
 │   └── e2e/               # E2E 端到端测试
 ├── iam/                   # IAM 模块测试
-│   ├── api/               # API 测试
-│   ├── components/        # 组件测试
-│   ├── stores/            # Store 测试
-│   └── router.test.ts     # 路由测试
-├── framework/             # Framework 模块测试
-│   ├── components/        # 组件测试
-│   ├── composables/       # Composable 测试
-│   ├── events/            # 事件测试
-│   ├── module/            # 模块系统测试
-│   ├── stores/            # Store 测试
-│   └── utils/             # 工具函数测试
+│   ├── unit/              # 单元测试
+│   │   ├── api/           # API 测试
+│   │   ├── components/    # 组件测试
+│   │   └── stores/        # Store 测试
+│   └── e2e/               # E2E 端到端测试
 ├── tenant/                # Tenant 模块测试
+│   ├── unit/              # 单元测试
+│   └── e2e/               # E2E 端到端测试
+├── ai/                    # AI 模块测试
+│   ├── unit/              # 单元测试
+│   │   ├── components/    # 组件测试
+│   │   ├── composables/   # Composable 测试
+│   │   ├── pages/         # 页面测试
+│   │   └── stores/        # Store 测试
+│   └── e2e/               # E2E 端到端测试
 ├── demo/                  # Demo 模块测试
+│   ├── unit/              # 单元测试
+│   └── e2e/               # E2E 端到端测试
 ├── test-results/          # E2E 测试运行结果（所有模块共享）
 └── playwright-report/     # E2E HTML 测试报告（所有模块共享）
 ```
@@ -34,20 +44,30 @@ tests/
 ## 运行测试
 
 ```bash
-# 运行所有测试
+# 运行所有单元测试
 pnpm test:unit
 
 # 详细输出
 pnpm test:unit -- --run
 
-# 运行特定模块测试
-pnpm test:unit tests/ai/ --run
-pnpm test:unit tests/iam/ --run
-pnpm test:unit tests/framework/ --run
-pnpm test:unit tests/demo/ --run
+# 运行特定模块单元测试
+pnpm test:unit tests/ai/unit/ --run
+pnpm test:unit tests/iam/unit/ --run
+pnpm test:unit tests/framework/unit/ --run
+pnpm test:unit tests/demo/unit/ --run
+pnpm test:unit tests/components/unit/ --run
 
 # 生成覆盖率报告
 pnpm test:unit -- --coverage
+
+# 运行所有 E2E 测试
+pnpm test:e2e
+
+# 运行特定模块 E2E 测试
+pnpm test:e2e tests/ai/e2e/
+
+# 带界面运行 E2E 测试
+pnpm test:e2e:ui tests/ai/e2e/
 ```
 
 ## 模块测试说明
@@ -56,26 +76,13 @@ pnpm test:unit -- --coverage
 
 | 目录 | 说明 |
 |------|------|
-| components/ | ModelSelector、ToolCallItem 组件测试 |
-| composables/ | useChat 组合式函数测试 |
-| pages/ | ChatPage、ConversationListPage 页面测试 |
-| stores/ | conversation Store 测试 |
+| unit/components/ | ModelSelector、ToolCallItem 组件测试 |
+| unit/composables/ | useChat 组合式函数测试 |
+| unit/pages/ | ConversationListPage 页面测试 |
+| unit/stores/ | conversation Store 测试 |
 | e2e/ | E2E 端到端测试（Playwright） |
 
 #### E2E 测试
-
-```bash
-# 运行所有 E2E 测试
-pnpm test:e2e
-
-# 运行特定模块 E2E 测试
-pnpm test:e2e tests/ai/
-
-# 带界面运行
-pnpm test:e2e:ui tests/ai/
-```
-
-测试结果输出到 `tests/test-results/`，报告输出到 `tests/playwright-report/`。
 
 详见 [tests/ai/e2e/TEST_PLAN.md](ai/e2e/TEST_PLAN.md)。
 
@@ -83,20 +90,26 @@ pnpm test:e2e:ui tests/ai/
 
 | 目录 | 说明 |
 |------|------|
-| api/ | auth、user、role、permission、department API 测试 |
-| components/ | DepartmentTree、PermissionTree 组件测试 |
-| stores/ | auth、user、role、department Store 测试 |
+| unit/api/ | auth、user、role、permission、department API 测试 |
+| unit/components/ | DepartmentTree、PermissionTree 组件测试 |
+| unit/stores/ | auth、user、role、department Store 测试 |
 
 ### Framework 模块测试
 
 | 目录 | 说明 |
 |------|------|
-| components/ | AppPage、AppNavbar、CommandPalette 等组件测试 |
-| composables/ | useMenuPermission 组合式函数测试 |
-| events/ | EventBus 事件系统测试 |
-| module/ | 模块注册、路由解析、动态路由测试 |
-| stores/ | app、menu、permission Store 测试 |
-| utils/ | tree 工具函数测试 |
+| unit/components/ | AppPage、AppNavbar、CommandPalette 等组件测试 |
+| unit/composables/ | useMenuPermission 组合式函数测试 |
+| unit/events/ | EventBus 事件系统测试 |
+| unit/module/ | 模块注册、路由解析、动态路由测试 |
+| unit/stores/ | app、menu、permission Store 测试 |
+| unit/utils/ | tree 工具函数测试 |
+
+### Components 测试
+
+| 目录 | 说明 |
+|------|------|
+| unit/ | CommonCheckboxTree、CommonTree、CommonPagination 等通用组件测试 |
 
 ## 测试标记
 
