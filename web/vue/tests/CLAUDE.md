@@ -26,7 +26,9 @@ tests/
 │   ├── stores/            # Store 测试
 │   └── utils/             # 工具函数测试
 ├── tenant/                # Tenant 模块测试
-└── demo/                  # Demo 模块测试
+├── demo/                  # Demo 模块测试
+├── test-results/          # E2E 测试运行结果（所有模块共享）
+└── playwright-report/     # E2E HTML 测试报告（所有模块共享）
 ```
 
 ## 运行测试
@@ -63,12 +65,17 @@ pnpm test:unit -- --coverage
 #### E2E 测试
 
 ```bash
-# 运行 AI 模块 E2E 测试
+# 运行所有 E2E 测试
 pnpm test:e2e
 
+# 运行特定模块 E2E 测试
+pnpm test:e2e tests/ai/
+
 # 带界面运行
-pnpm test:e2e:ui
+pnpm test:e2e:ui tests/ai/
 ```
+
+测试结果输出到 `tests/test-results/`，报告输出到 `tests/playwright-report/`。
 
 详见 [tests/ai/e2e/TEST_PLAN.md](ai/e2e/TEST_PLAN.md)。
 

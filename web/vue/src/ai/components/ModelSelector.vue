@@ -101,7 +101,7 @@ defineExpose({
 
     <!-- 正常状态 -->
     <Select v-else v-model="selectedModelId">
-      <SelectTrigger class="w-auto min-w-40">
+      <SelectTrigger class="w-auto min-w-40" data-testid="model-selector">
         <SelectValue>
           {{ selectedModelLabel }}
         </SelectValue>

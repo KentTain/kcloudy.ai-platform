@@ -194,7 +194,7 @@ const mergeToolParts = (parts: (ToolCallPart | ToolResultPart)[]): (ToolCallPart
         <!-- 消息列表 -->
         <div v-else class="flex flex-col gap-4 pb-4">
           <template v-for="message in messages" :key="message.id">
-            <Message :from="message.role">
+            <Message :from="message.role" :data-testid="message.role === 'user' ? 'user-message' : 'assistant-message'">
               <MessageContent>
                 <!-- 工具调用展示（仅在 assistant 消息中显示） -->
                 <template v-if="message.role === 'assistant' && hasToolParts(message.parts)">
@@ -237,6 +237,7 @@ const mergeToolParts = (parts: (ToolCallPart | ToolResultPart)[]): (ToolCallPart
             v-model="localInput"
             placeholder="输入您的问题..."
             :disabled="isLoading"
+            data-testid="chat-input"
           />
           <div class="flex items-center justify-between gap-2 border-t p-2">
             <div class="flex items-center gap-2">
@@ -281,6 +282,7 @@ const mergeToolParts = (parts: (ToolCallPart | ToolResultPart)[]): (ToolCallPart
               <PromptInputSubmit
                 :status="isLoading ? 'submitted' : undefined"
                 :disabled="!localInput.trim()"
+                data-testid="send-button"
               />
             </div>
           </div>

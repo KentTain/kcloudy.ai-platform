@@ -128,6 +128,7 @@ const formatDate = (date: Date): string => {
             v-for="conversation in conversationStore.conversations"
             :key="conversation.id"
             class="group relative cursor-pointer rounded-lg border bg-card p-4 transition-colors hover:border-primary/50 hover:bg-accent"
+            data-testid="conversation-item"
             @click="handleSelectConversation(conversation)"
           >
             <!-- 会话标题 -->
@@ -140,6 +141,7 @@ const formatDate = (date: Date): string => {
                 variant="ghost"
                 size="icon"
                 class="size-8 shrink-0 opacity-0 transition-opacity group-hover:opacity-100"
+                data-testid="delete-conversation"
                 @click.stop="handleDeleteClick(conversation)"
               >
                 <Trash2 class="size-4 text-muted-foreground hover:text-destructive" />

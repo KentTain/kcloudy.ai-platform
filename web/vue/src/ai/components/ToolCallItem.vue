@@ -109,12 +109,13 @@ const displayName = computed(() => {
 </script>
 
 <template>
-  <Tool :key="toolCallId" default-open>
+  <Tool :key="toolCallId" default-open data-testid="tool-call-item">
     <ToolHeader
       type="dynamic-tool"
       :state="toolState"
       :tool-name="toolName"
       :title="displayName"
+      data-testid="tool-name"
     />
     <ToolContent>
       <!-- 显示工具参数 -->
