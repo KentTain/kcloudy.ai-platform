@@ -15,6 +15,7 @@ from fastapi import APIRouter, Body, HTTPException
 from fastapi.responses import StreamingResponse
 from loguru import logger
 
+from ai.controllers.v1.chat.event_types import EventType
 from ai.listeners.services.pubsub.memory_task.constants import (
     ACTIVE_ASYNCIO_TASKS,
     TASK_TYPE_GENERATE_LLM,
@@ -25,7 +26,6 @@ from ai.models.enums import ConversationMode, ConversationStatus, MessageStatus
 from ai.models.message import Message
 from ai.schemas.chat import AIChatRequest, TextPart, UIMessage
 from ai.schemas.completion import ErrorCode
-from ai.controllers.v1.chat.event_types import EventType
 from extended.langchain.agents.agent_factory import AgentFactory
 from extended.langchain.callbacks import UIMessageChunkCallbackHandler
 from extended.langchain.models.alon_chat import AlonChatModel
@@ -101,9 +101,6 @@ def _format_sse_line(data: Any) -> str:
         return 'data: {"error": "Failed to format data"}\n\n'
 
 
-router = APIRouter(prefix="/chat-messages", tags=["LLM对话"])
-
-
 async def _sse_generator(
     event_queue: asyncio.Queue,
     message_id: str,
@@ -141,7 +138,9 @@ async def _sse_generator(
             # 处理文本增量事件
             if event_type == EventType.TEXT_DELTA:
                 if not text_started:
-                    yield _format_sse_line({"type": EventType.TEXT_START, "id": text_id})
+                    yield _format_sse_line(
+                        {"type": EventType.TEXT_START, "id": text_id}
+                    )
                     text_started = True
                 # 确保 text-delta 使用与 text-start/text-end 相同的 id
                 event_with_correct_id = {**event, "id": text_id}
@@ -173,7 +172,10 @@ async def _sse_generator(
             yield _format_sse_line(
                 {
                     "type": EventType.ERROR,
-                    "error": {"code": ErrorCode.MODEL_ERROR, "message": f"Event processing error: {str(e)}"},
+                    "error": {
+                        "code": ErrorCode.MODEL_ERROR,
+                        "message": f"Event processing error: {str(e)}",
+                    },
                 }
             )
             break
@@ -197,6 +199,9 @@ async def _update_message_status(
                 _logger.info(f"消息状态已更新为 {status.value}: {message_id}")
     except Exception:
         _logger.exception(f"更新消息状态失败: {message_id}")
+
+
+router = APIRouter(prefix="/chat-messages", tags=["LLM对话"])
 
 
 @router.post("")

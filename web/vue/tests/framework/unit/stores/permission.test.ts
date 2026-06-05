@@ -114,18 +114,8 @@ describe("Permission System", () => {
     it("initializes with default state", () => {
       const store = usePermissionStore();
 
-      expect(store.routes).toEqual([]);
       expect(store.menus).toEqual([]);
       expect(store.isLoaded).toBe(false);
-    });
-
-    it("sets routes", () => {
-      const store = usePermissionStore();
-      const routes = [{ path: "/test", name: "Test" }] as any;
-
-      store.setRoutes(routes);
-
-      expect(store.routes).toEqual(routes);
     });
 
     it("sets menus", () => {
@@ -137,16 +127,22 @@ describe("Permission System", () => {
       expect(store.menus).toEqual(menus);
     });
 
+    it("sets loaded state", () => {
+      const store = usePermissionStore();
+
+      store.setLoaded(true);
+
+      expect(store.isLoaded).toBe(true);
+    });
+
     it("resets permission", () => {
       const store = usePermissionStore();
 
-      store.setRoutes([{ path: "/test" }] as any);
       store.setMenus([{ id: "1", name: "Test", path: "/test" }]);
       store.setLoaded(true);
 
       store.resetPermission();
 
-      expect(store.routes).toEqual([]);
       expect(store.menus).toEqual([]);
       expect(store.isLoaded).toBe(false);
     });

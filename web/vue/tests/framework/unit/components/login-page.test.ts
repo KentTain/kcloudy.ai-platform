@@ -23,8 +23,8 @@ describe("LoginPage", () => {
 
   it("renders grid container with two-column layout", () => {
     const wrapper = mount(LoginPage);
-    const grid = wrapper.find(".login-page__grid");
-    expect(grid.exists()).toBe(true);
+    const content = wrapper.find(".login-page__content");
+    expect(content.exists()).toBe(true);
   });
 
   it("shows brand section with platform name", () => {
@@ -41,9 +41,9 @@ describe("LoginPage", () => {
     expect(brand.exists()).toBe(true);
   });
 
-  it("uses shadcn Card for form container", () => {
+  it("uses custom card for form container", () => {
     const wrapper = mount(LoginPage);
-    const card = wrapper.find('[data-slot="card"]');
+    const card = wrapper.find(".login-page__card");
     expect(card.exists()).toBe(true);
   });
 

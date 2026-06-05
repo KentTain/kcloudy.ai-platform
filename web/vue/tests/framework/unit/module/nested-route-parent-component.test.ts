@@ -83,6 +83,7 @@ describe("Nested route parent must have component", () => {
     await router.isReady();
 
     expect(router.currentRoute.value.name).toBe("UserManagement");
-    expect(router.currentRoute.value.matched.length).toBe(2); // Root + IAMRoot + UserManagement
+    // Root + IAMRoot + UserManagement = 3 层
+    expect(router.currentRoute.value.matched.length).toBe(3);
   });
 });

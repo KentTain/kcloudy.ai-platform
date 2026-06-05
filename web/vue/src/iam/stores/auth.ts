@@ -114,7 +114,7 @@ export const useAuthStore = defineStore("iam-auth", () => {
       localStorage.removeItem("refresh_token");
       localStorage.removeItem("token_expires_at");
       localStorage.removeItem("tenant_id");
-      userStore.clear();
+      userStore.logout();
     }
   };
 

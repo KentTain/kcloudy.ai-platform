@@ -86,7 +86,7 @@ describe("Auth Store", () => {
     });
   });
 
-  describe("refreshToken", () => {
+  describe("refresh", () => {
     it("calls refreshToken API and updates token", async () => {
       const mockSetToken = vi.fn();
       vi.mocked(useUserStore).mockReturnValue({
@@ -111,52 +111,10 @@ describe("Auth Store", () => {
       localStorage.setItem("refresh_token", "old-refresh");
 
       const store = useAuthStore();
-      await store.refreshToken();
+      await store.refresh();
 
       expect(authApi.refreshToken).toHaveBeenCalledWith("old-refresh");
       expect(mockSetToken).toHaveBeenCalledWith("new-token");
-    });
-  });
-
-  describe("isTokenExpired", () => {
-    it("returns true when no token expires_at", () => {
-      vi.mocked(useUserStore).mockReturnValue({
-        setToken: vi.fn(),
-        setUserInfo: vi.fn(),
-        userInfo: null,
-      } as any);
-
-      const store = useAuthStore();
-      expect(store.isTokenExpired).toBe(true);
-    });
-
-    it("returns true when token is expired", () => {
-      vi.mocked(useUserStore).mockReturnValue({
-        setToken: vi.fn(),
-        setUserInfo: vi.fn(),
-        userInfo: null,
-      } as any);
-
-      // Need to create a new store instance after setting localStorage
-      localStorage.setItem("token_expires_at", String(Date.now() - 1000));
-      setActivePinia(createPinia());
-
-      const store = useAuthStore();
-      expect(store.isTokenExpired).toBe(true);
-    });
-
-    it("returns false when token is not expired", () => {
-      vi.mocked(useUserStore).mockReturnValue({
-        setToken: vi.fn(),
-        setUserInfo: vi.fn(),
-        userInfo: null,
-      } as any);
-
-      localStorage.setItem("token_expires_at", String(Date.now() + 3600000));
-      setActivePinia(createPinia());
-
-      const store = useAuthStore();
-      expect(store.isTokenExpired).toBe(false);
     });
   });
 });
