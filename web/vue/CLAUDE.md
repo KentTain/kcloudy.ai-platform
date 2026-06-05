@@ -18,7 +18,7 @@ Vue 前端使用 Vue 3 + TypeScript + Vite 构建，提供 AI 助手平台演示
 | 无样式原语 | Radix Vue |
 | 样式 | Tailwind CSS v4 |
 | 代码质量 | Biome |
-| 测试 | Vitest, @vue/test-utils |
+| 测试 | Vitest, @vue/test-utils, e2e |
 
 ## 模块导航
 
@@ -77,7 +77,7 @@ pnpm check:fix
 
 ## 测试
 
-测试文件位于 `tests/` 目录，按模块组织
+测试文件位于 `tests/` 目录，按模块组织。单元测试和 E2E 测试都放入各模块目录下。
 
 ### 测试目录结构
 
@@ -87,22 +87,28 @@ pnpm check:fix
 | tests/framework/ | Framework 模块测试 |
 | tests/tenant/ | Tenant 模块测试 |
 | tests/iam/ | IAM 模块测试 |
-| tests/ai/ | AI 模块测试 |
+| tests/ai/ | AI 模块测试（含 e2e/ 子目录） |
 | tests/demo/ | Demo 模块测试 |
 
 ### 测试命令
 
 ```bash
-# 运行所有测试
+# 运行所有单元测试
 pnpm test:unit
 
-# 运行特定模块测试
+# 运行特定模块单元测试
 pnpm test:unit tests/ai/ --run
 pnpm test:unit tests/iam/ --run
 pnpm test:unit tests/framework/ --run
 
 # 生成覆盖率报告
 pnpm test:unit -- --coverage
+
+# 运行 E2E 测试
+pnpm test:e2e tests/ai/
+
+# 带界面运行 E2E 测试
+pnpm test:e2e:ui tests/ai/
 ```
 
 ## 环境要求

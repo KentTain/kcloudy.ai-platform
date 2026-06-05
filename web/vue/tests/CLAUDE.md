@@ -11,7 +11,8 @@ tests/
 │   ├── components/        # 组件测试
 │   ├── composables/       # Composable 测试
 │   ├── pages/             # 页面测试
-│   └── stores/            # Store 测试
+│   ├── stores/            # Store 测试
+│   └── e2e/               # E2E 端到端测试
 ├── iam/                   # IAM 模块测试
 │   ├── api/               # API 测试
 │   ├── components/        # 组件测试
@@ -57,6 +58,19 @@ pnpm test:unit -- --coverage
 | composables/ | useChat 组合式函数测试 |
 | pages/ | ChatPage、ConversationListPage 页面测试 |
 | stores/ | conversation Store 测试 |
+| e2e/ | E2E 端到端测试（Playwright） |
+
+#### E2E 测试
+
+```bash
+# 运行 AI 模块 E2E 测试
+pnpm test:e2e
+
+# 带界面运行
+pnpm test:e2e:ui
+```
+
+详见 [tests/ai/e2e/TEST_PLAN.md](ai/e2e/TEST_PLAN.md)。
 
 ### IAM 模块测试
 

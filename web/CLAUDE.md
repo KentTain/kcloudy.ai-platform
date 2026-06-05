@@ -75,14 +75,18 @@ web/
 web/{技术栈}/tests/
 ├── components/         # 通用组件测试
 ├── framework/          # Framework 模块测试
-├── ai/                 # AI 模块测试
-├── iam/                # IAM 模块测试
-├── tenant/             # Tenant 模块测试
-├── demo/               # Demo 模块测试
-└── e2e/                # E2E 端到端测试
+├── {模块}/              # 模块测试
+│   ├── {单元测试}/         # 单元测试
+│   └── e2e/               # E2E 端到端测试
+└── 
 ```
 
-详细说明见各技术栈测试文档：[vue/tests/CLAUDE.md](vue/tests/CLAUDE.md)
+### 测试技术栈状态
+
+| 技术栈 | 语言 | 框架 | 状态 | 详细文档 |
+|--------|------|------|------|----------|
+| Vue | TypeScript 5.x | Vitest, @vue/test-utils, playwright | ✅ 可用 | [vue/tests/CLAUDE.md](vue/tests/CLAUDE.md) |
+| React | TypeScript 5.x | React 19 + Vite 6.x | 🚧 规划中 | - |
 
 ## 环境要求
 
