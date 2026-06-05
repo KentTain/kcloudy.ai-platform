@@ -10,6 +10,7 @@ import uuid
 
 from sqlalchemy import select
 
+from framework.utils.log_util import write_info, write_success, write_warning
 from tenant.models import TenantAdmin
 
 
@@ -35,7 +36,7 @@ async def run(*, dry_run: bool = False) -> int:
         existing = result.scalar_one_or_none()
 
         if existing:
-            print("    默认管理员已存在，跳过初始化")
+            write_info("默认管理员已存在，跳过初始化")
             return 0
 
         # 创建默认管理员
@@ -54,14 +55,14 @@ async def run(*, dry_run: bool = False) -> int:
         )
 
         if dry_run:
-            print(f"    [DRY-RUN] 将创建管理员: {admin.username}")
-            print(f"    [DRY-RUN] 默认密码: {default_password}")
+            write_info(f"    [DRY-RUN] 将创建管理员: {admin.username}")
+            write_info(f"    [DRY-RUN] 默认密码: {default_password}")
             return 1
 
         session.add(admin)
         await session.commit()
 
-        print(f"    已创建管理员: {admin.username}")
-        print(f"    默认密码: {default_password}")
-        print("    [WARN] 请在生产环境中修改默认密码!")
+        write_success(f"    已创建管理员: {admin.username}")
+        write_success(f"    默认密码: {default_password}")
+        write_warning("    [WARN] 请在生产环境中修改默认密码!")
         return 1

@@ -2,8 +2,8 @@
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { Shield, Building2 } from '@lucide/vue'
-import { NavMain } from './NavMain.vue'
-import { NavUser } from './NavUser.vue'
+import NavMain from './NavMain.vue'
+import NavUser from './NavUser.vue'
 import {
   Sidebar,
   SidebarContent,

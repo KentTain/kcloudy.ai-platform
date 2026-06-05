@@ -10,8 +10,8 @@ import uuid
 
 from sqlalchemy import select
 
+from framework.utils.log_util import write_info, write_success, write_warning
 from iam.models import Menu, MenuPermission, Permission
-
 
 # 默认菜单配置
 # 每个菜单项包含：module, code, name, path, icon, parent_code, permissions
@@ -156,10 +156,12 @@ async def run(*, dry_run: bool = False) -> int:
         # 4. 使用 TreeNodeMixin.create_node 创建菜单
         if dry_run:
             for menu_data in menus_to_create:
-                print(f"    [DRY-RUN] 将创建菜单: {menu_data['code']} - {menu_data['name']}")
+                write_info(
+                    f"    [DRY-RUN] 将创建菜单: {menu_data['code']} - {menu_data['name']}"
+                )
                 # 显示权限关联
                 for perm_code in menu_data.get("permissions", []):
-                    print(f"    [DRY-RUN] 将关联权限: {perm_code}")
+                    write_info(f"    [DRY-RUN] 将关联权限: {perm_code}")
         else:
             for menu_data in menus_to_create:
                 code = menu_data["code"]
@@ -185,7 +187,7 @@ async def run(*, dry_run: bool = False) -> int:
                 await session.flush()
                 menu_map[code] = menu
                 created_count += 1
-                print(f"    已创建菜单: {menu.code} - {menu.name}")
+                write_success(f"    已创建菜单: {menu.code} - {menu.name}")
 
             # 5. 创建菜单-权限关联
             for menu_data in DEFAULT_MENUS:
@@ -196,14 +198,15 @@ async def run(*, dry_run: bool = False) -> int:
 
                 for perm_code in menu_data.get("permissions", []):
                     if perm_code not in all_permissions:
-                        print(f"    [WARN] 权限 {perm_code} 不存在，跳过关联")
+                        write_warning(f"    [WARN] 权限 {perm_code} 不存在，跳过关联")
                         continue
 
                     # 检查是否已存在
                     result = await session.execute(
                         select(MenuPermission).where(
                             MenuPermission.menu_id == menu.id,
-                            MenuPermission.permission_id == all_permissions[perm_code].id,
+                            MenuPermission.permission_id
+                            == all_permissions[perm_code].id,
                         )
                     )
                     if result.scalar_one_or_none():

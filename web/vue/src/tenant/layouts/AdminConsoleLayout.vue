@@ -5,7 +5,7 @@
  */
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
-import { AdminSidebar } from '@/tenant/components/AdminSidebar.vue'
+import AdminSidebar from '@/tenant/components/AdminSidebar.vue'
 import {
   Breadcrumb,
   BreadcrumbItem,

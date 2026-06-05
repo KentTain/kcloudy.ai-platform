@@ -10,8 +10,8 @@ import uuid
 
 from sqlalchemy import select
 
+from framework.utils.log_util import write_info, write_success, write_warning
 from iam.models import Permission, Role
-
 
 # 预定义权限
 DEFAULT_PERMISSIONS = [
@@ -24,15 +24,45 @@ DEFAULT_PERMISSIONS = [
     {"code": "role:write", "name": "编辑角色", "resource": "role", "action": "write"},
     {"code": "role:delete", "name": "删除角色", "resource": "role", "action": "delete"},
     # 部门权限
-    {"code": "department:read", "name": "查看部门", "resource": "department", "action": "read"},
-    {"code": "department:write", "name": "编辑部门", "resource": "department", "action": "write"},
-    {"code": "department:delete", "name": "删除部门", "resource": "department", "action": "delete"},
+    {
+        "code": "department:read",
+        "name": "查看部门",
+        "resource": "department",
+        "action": "read",
+    },
+    {
+        "code": "department:write",
+        "name": "编辑部门",
+        "resource": "department",
+        "action": "write",
+    },
+    {
+        "code": "department:delete",
+        "name": "删除部门",
+        "resource": "department",
+        "action": "delete",
+    },
     # 租户权限
     {"code": "tenant:read", "name": "查看租户", "resource": "tenant", "action": "read"},
-    {"code": "tenant:write", "name": "编辑租户", "resource": "tenant", "action": "write"},
-    {"code": "tenant:delete", "name": "删除租户", "resource": "tenant", "action": "delete"},
+    {
+        "code": "tenant:write",
+        "name": "编辑租户",
+        "resource": "tenant",
+        "action": "write",
+    },
+    {
+        "code": "tenant:delete",
+        "name": "删除租户",
+        "resource": "tenant",
+        "action": "delete",
+    },
     # 权限管理
-    {"code": "permission:read", "name": "查看权限", "resource": "permission", "action": "read"},
+    {
+        "code": "permission:read",
+        "name": "查看权限",
+        "resource": "permission",
+        "action": "read",
+    },
 ]
 
 
@@ -41,7 +71,14 @@ DEFAULT_ROLES = {
     "tenant_admin": {
         "name": "租户管理员",
         "description": "系统最高权限，可创建租户和管理租户管理员",
-        "permissions": ["tenant:read", "tenant:write", "tenant:delete", "user:*", "role:*", "department:*"],
+        "permissions": [
+            "tenant:read",
+            "tenant:write",
+            "tenant:delete",
+            "user:*",
+            "role:*",
+            "department:*",
+        ],
     },
     "system_admin": {
         "name": "系统管理员",
@@ -67,8 +104,9 @@ async def run(*, dry_run: bool = False) -> int:
     Returns:
         初始化的记录数
     """
-    from framework.database.core.engine import get_session
     from sqlalchemy import text
+
+    from framework.database.core.engine import get_session
 
     async with get_session() as session:
         created_count = 0
@@ -91,11 +129,11 @@ async def run(*, dry_run: bool = False) -> int:
 
         if dry_run:
             for perm in permissions_to_create:
-                print(f"    [DRY-RUN] 将创建权限: {perm.code} - {perm.name}")
+                write_info(f"    [DRY-RUN] 将创建权限: {perm.code} - {perm.name}")
         else:
             for perm in permissions_to_create:
                 session.add(perm)
-                print(f"    已创建权限: {perm.code}")
+                write_info(f"    已创建权限: {perm.code}")
 
         # 2. 创建角色（使用原生 SQL 绕过跨 schema 外键问题）
         existing_roles = set()
@@ -106,7 +144,9 @@ async def run(*, dry_run: bool = False) -> int:
         if dry_run:
             for role_code, role_data in DEFAULT_ROLES.items():
                 if role_code not in existing_roles:
-                    print(f"    [DRY-RUN] 将创建角色: {role_code} - {role_data['name']}")
+                    write_info(
+                        f"    [DRY-RUN] 将创建角色: {role_code} - {role_data['name']}"
+                    )
         else:
             # 获取所有权限用于关联
             all_permissions = {}
@@ -130,7 +170,7 @@ async def run(*, dry_run: bool = False) -> int:
                         "code": role_code,
                         "name": role_data["name"],
                         "description": role_data["description"],
-                    }
+                    },
                 )
 
                 # 关联权限（支持通配符）
@@ -146,7 +186,11 @@ async def run(*, dry_run: bool = False) -> int:
                                         INSERT INTO iam.role_permissions (id, role_id, permission_id, created_at, updated_at)
                                         VALUES (:id, :role_id, :permission_id, now(), now())
                                     """),
-                                    {"id": rp_id, "role_id": role_id, "permission_id": perm.id}
+                                    {
+                                        "id": rp_id,
+                                        "role_id": role_id,
+                                        "permission_id": perm.id,
+                                    },
                                 )
                     elif perm_code in all_permissions:
                         rp_id = str(uuid.uuid4())
@@ -155,11 +199,15 @@ async def run(*, dry_run: bool = False) -> int:
                                 INSERT INTO iam.role_permissions (id, role_id, permission_id, created_at, updated_at)
                                 VALUES (:id, :role_id, :permission_id, now(), now())
                             """),
-                            {"id": rp_id, "role_id": role_id, "permission_id": all_permissions[perm_code].id}
+                            {
+                                "id": rp_id,
+                                "role_id": role_id,
+                                "permission_id": all_permissions[perm_code].id,
+                            },
                         )
 
                 created_count += 1
-                print(f"    已创建角色: {role_code}")
+                write_success(f"    已创建角色: {role_code}")
 
             await session.commit()
 

@@ -11,6 +11,7 @@ from datetime import datetime, timedelta
 
 from sqlalchemy import select
 
+from framework.utils.log_util import write_info, write_success, write_warning
 from tenant.models import Tenant, TenantStatus
 
 
@@ -25,8 +26,8 @@ async def run(*, dry_run: bool = False) -> int:
     Returns:
         初始化的记录数
     """
-    from framework.database.core.engine import get_session
     from framework.configs import get_settings
+    from framework.database.core.engine import get_session
     from framework.utils.crypto import encrypt
 
     settings = get_settings()
@@ -40,19 +41,18 @@ async def run(*, dry_run: bool = False) -> int:
         existing = result.scalar_one_or_none()
 
         if existing:
-            print("    默认租户已存在，跳过初始化")
+            write_info("默认租户已存在，跳过初始化")
             return 0
 
         # 创建默认租户
-        tenant_id = str(uuid.uuid4())
-
+        default_tenant_id = tenant_config.default_tenant_id
         # 从配置读取资源隔离参数（可选）
         db_password_encrypted = None
         if tenant_config.default_db_password:
             db_password_encrypted = encrypt(tenant_config.default_db_password)
 
         tenant = Tenant(
-            id=tenant_id,
+            id=default_tenant_id,
             name="默认租户",
             code="default",
             status=TenantStatus.ACTIVE,
@@ -76,11 +76,11 @@ async def run(*, dry_run: bool = False) -> int:
         )
 
         if dry_run:
-            print(f"    [DRY-RUN] 将创建租户: {tenant.name} (code={tenant.code})")
+            write_info(f"[DRY-RUN] 将创建租户: {tenant.name} (code={tenant.code})")
             return 1
 
         session.add(tenant)
         await session.commit()
 
-        print(f"    已创建租户: {tenant.name} (id={tenant_id})")
+        write_success(f"已创建租户: {tenant.name} (id={default_tenant_id})")
         return 1
