@@ -13,14 +13,11 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./nginx/mime.types:/etc/nginx/mime.types:ro
-      - ./nginx/proxy_params:/etc/nginx/proxy_params:ro
-      - ./nginx/snippets:/etc/nginx/snippets:ro
-      - ./nginx/conf.d:/etc/nginx/conf.d:ro
-      - ./nginx/certs:/etc/nginx/certs:ro
-      - ./nginx/html:/usr/share/nginx/html:ro
-      - ./nginx/logs:/var/log/nginx
+      - /share/k8s-master/nginx/conf/nginx.conf:/etc/nginx/nginx.conf:ro
+      - /share/k8s-master/nginx/conf/conf.d:/etc/nginx/conf.d:ro
+      - /share/k8s-master/nginx/certs:/etc/nginx/certs:ro
+      - /share/k8s-master/nginx/html:/usr/share/nginx/html:ro
+      - /share/k8s-master/nginx/logs:/var/log/nginx
     networks:
       - kcloudy-network
     healthcheck:
@@ -43,7 +40,7 @@ services:
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - /share/k8s-master/postgres:/var/lib/postgresql/data
     networks:
       - kcloudy-network
     healthcheck:
@@ -64,7 +61,8 @@ services:
     ports:
       - "${MYSQL_PORT:-3306}:3306"
     volumes:
-      - mysql_data:/var/lib/mysql
+      - /share/k8s-master/mysql/log:/var/log/mysql
+      - /share/k8s-master/mysql/data:/var/lib/mysql
     networks:
       - kcloudy-network
     healthcheck:
@@ -84,7 +82,7 @@ services:
     ports:
       - "${MSSQL_PORT:-1433}:1433"
     volumes:
-      - sqlserver_data:/var/opt/mssql
+      - /share/k8s-master/sqlserver:/var/opt/mssql
     networks:
       - kcloudy-network
     healthcheck:
@@ -104,7 +102,7 @@ services:
     ports:
       - "${REDIS_PORT:-6379}:6379"
     volumes:
-      - redis_data:/data
+      - /share/k8s-master/redis:/data
     networks:
       - kcloudy-network
     healthcheck:
@@ -127,7 +125,7 @@ services:
       - "${MINIO_API_PORT:-9000}:9000"
       - "${MINIO_CONSOLE_PORT:-9001}:9001"
     volumes:
-      - minio_data:/data
+      - /share/k8s-master/minio:/data
     command: server /data --console-address ":9001"
     networks:
       - kcloudy-network
@@ -156,7 +154,7 @@ services:
       - "${NEXUS_DOCKER_PORT:-9091}:8082"
       - "${NEXUS_MAVEN_PORT:-9092}:8083"
     volumes:
-      - nexus_data:/nexus-data
+      - /share/k8s-master/data/nexus/data:/nexus-data
     networks:
       - kcloudy-network
     healthcheck:
@@ -200,11 +198,3 @@ networks:
   kcloudy-network:
     name: kcloudy-network
     driver: bridge
-
-volumes:
-  postgres_data:
-  mysql_data:
-  sqlserver_data:
-  redis_data:
-  minio_data:
-  nexus_data:

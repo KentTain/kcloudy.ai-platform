@@ -60,11 +60,11 @@ async def run(*, dry_run: bool = False) -> int:
         role_id = role_row[0] if role_row else None
 
         if dry_run:
-            write_info(f"    [DRY-RUN] 将创建用户: {DEFAULT_ADMIN_USERNAME}")
-            write_info(f"    [DRY-RUN] 默认密码: {DEFAULT_ADMIN_PASSWORD}")
-            write_info(f"    [DRY-RUN] 关联租户: {tenant_id}")
+            write_info(f"[DRY-RUN] 将创建用户: {DEFAULT_ADMIN_USERNAME}")
+            write_info(f"[DRY-RUN] 默认密码: {DEFAULT_ADMIN_PASSWORD}")
+            write_info(f"[DRY-RUN] 关联租户: {tenant_id}")
             if role_id:
-                write_info(f"    [DRY-RUN] 分配角色: system_admin")
+                write_info(f"[DRY-RUN] 分配角色: system_admin")
             return 1
 
         # 创建用户
