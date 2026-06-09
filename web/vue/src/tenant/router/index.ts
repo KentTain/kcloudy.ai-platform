@@ -46,6 +46,36 @@ export const adminRoutes: RouteRecordRaw[] = [
         component: () => import("@/tenant/pages/tenants/TenantForm.vue"),
         meta: { title: "编辑租户", hidden: true, requiresAdminAuth: true },
       },
+      {
+        path: "resource-configs",
+        name: "AdminResourceConfig",
+        component: () => import("@/tenant/pages/admin/ResourceConfigList.vue"),
+        meta: { title: "资源配置", requiresAdminAuth: true },
+      },
+      {
+        path: "modules",
+        name: "AdminModuleList",
+        component: () => import("@/tenant/pages/admin/ModuleList.vue"),
+        meta: { title: "模块管理", requiresAdminAuth: true },
+      },
+      {
+        path: "modules/create",
+        name: "AdminModuleCreate",
+        component: () => import("@/tenant/pages/admin/ModuleForm.vue"),
+        meta: { title: "创建模块", hidden: true, requiresAdminAuth: true },
+      },
+      {
+        path: "modules/:id",
+        name: "AdminModuleDetail",
+        component: () => import("@/tenant/pages/admin/ModuleDetail.vue"),
+        meta: { title: "模块详情", hidden: true, requiresAdminAuth: true },
+      },
+      {
+        path: "modules/:id/edit",
+        name: "AdminModuleEdit",
+        component: () => import("@/tenant/pages/admin/ModuleForm.vue"),
+        meta: { title: "编辑模块", hidden: true, requiresAdminAuth: true },
+      },
     ],
   },
 ];

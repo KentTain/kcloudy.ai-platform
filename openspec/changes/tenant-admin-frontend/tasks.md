@@ -62,9 +62,9 @@
 
 ## 9. 路由配置
 
-- [ ] 9.1 更新 `web/vue/src/tenant/router/index.ts` 添加资源配置路由
-- [ ] 9.2 更新 `web/vue/src/tenant/router/index.ts` 添加模块管理路由
-- [ ] 9.3 更新管理后台侧边栏菜单添加新入口
+- [x] 9.1 更新 `web/vue/src/tenant/router/index.ts` 添加资源配置路由
+- [x] 9.2 更新 `web/vue/src/tenant/router/index.ts` 添加模块管理路由
+- [x] 9.3 更新管理后台侧边栏菜单添加新入口
 
 ## 10. 验证
 
