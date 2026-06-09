@@ -1,4 +1,4 @@
-"""
+﻿"""
 租户模块分配服务单元测试
 """
 
@@ -25,6 +25,7 @@ class TestAssignModule:
         with patch("tenant.services.tenant_module_service.async_session") as mock_session, \
              patch("tenant.services.tenant_module_service.event_publisher") as mock_publisher:
 
+            mock_publisher.publish = AsyncMock()
             mock_ctx = AsyncMock()
             mock_session.return_value.__aenter__.return_value = mock_ctx
 
@@ -189,6 +190,7 @@ class TestUnassignModule:
              patch("tenant.services.tenant_module_service.event_publisher") as mock_publisher, \
              patch.object(TenantModuleService, "_check_module_role_usage") as mock_check:
 
+            mock_publisher.publish = AsyncMock()
             mock_ctx = AsyncMock()
             mock_session.return_value.__aenter__.return_value = mock_ctx
 

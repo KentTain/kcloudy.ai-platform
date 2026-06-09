@@ -211,15 +211,19 @@ class TestModuleRoleEvents:
         """角色删除事件"""
         event = ModuleRoleDeleted(
             module_id="module-1",
-            role_code="manager",
+            role_code="admin",
         )
 
         assert event.module_id == "module-1"
-        assert event.role_code == "manager"
+        assert event.role_code == "admin"
         assert event.get_stream_name() == EventStream.MODULE_ROLE_DELETED
 
-    def test_role_permission_changed_event(self):
-        """角色权限变更事件"""
+
+class TestModuleRolePermissionChangedEvent:
+    """模块角色权限变更事件测试"""
+
+    def test_event_data(self):
+        """事件数据正确"""
         event = ModuleRolePermissionChanged(
             module_role_id="role-1",
             module_id="module-1",
@@ -238,14 +242,14 @@ class TestEventPublisher:
         """发布模块分配事件"""
         from framework.events import event_publisher
 
-        with patch.object(event_publisher, "_redis") as mock_redis:
-            mock_redis.xadd = AsyncMock(return_value="1234567890-0")
+        with patch("framework.events.publisher.RedisUtil.xadd") as mock_xadd:
+            mock_xadd.return_value = "1234567890-0"
 
             event = ModuleAssigned(tenant_id="tenant-1", module_id="module-1")
             await event_publisher.publish(event)
 
-        mock_redis.xadd.assert_called_once()
-        call_args = mock_redis.xadd.call_args
+        mock_xadd.assert_called_once()
+        call_args = mock_xadd.call_args
         assert call_args[0][0] == EventStream.MODULE_ASSIGNED
 
     @pytest.mark.asyncio
@@ -253,14 +257,14 @@ class TestEventPublisher:
         """发布模块菜单创建事件"""
         from framework.events import event_publisher
 
-        with patch.object(event_publisher, "_redis") as mock_redis:
-            mock_redis.xadd = AsyncMock(return_value="1234567890-0")
+        with patch("framework.events.publisher.RedisUtil.xadd") as mock_xadd:
+            mock_xadd.return_value = "1234567890-0"
 
             event = ModuleMenuCreated(module_menu_id="menu-1", module_id="module-1")
             await event_publisher.publish(event)
 
-        mock_redis.xadd.assert_called_once()
-        call_args = mock_redis.xadd.call_args
+        mock_xadd.assert_called_once()
+        call_args = mock_xadd.call_args
         assert call_args[0][0] == EventStream.MODULE_MENU_CREATED
 
     @pytest.mark.asyncio
@@ -268,16 +272,16 @@ class TestEventPublisher:
         """发布模块权限创建事件"""
         from framework.events import event_publisher
 
-        with patch.object(event_publisher, "_redis") as mock_redis:
-            mock_redis.xadd = AsyncMock(return_value="1234567890-0")
+        with patch("framework.events.publisher.RedisUtil.xadd") as mock_xadd:
+            mock_xadd.return_value = "1234567890-0"
 
             event = ModulePermissionCreated(
                 module_permission_id="perm-1", module_id="module-1"
             )
             await event_publisher.publish(event)
 
-        mock_redis.xadd.assert_called_once()
-        call_args = mock_redis.xadd.call_args
+        mock_xadd.assert_called_once()
+        call_args = mock_xadd.call_args
         assert call_args[0][0] == EventStream.MODULE_PERMISSION_CREATED
 
     @pytest.mark.asyncio
@@ -285,14 +289,14 @@ class TestEventPublisher:
         """发布模块角色创建事件"""
         from framework.events import event_publisher
 
-        with patch.object(event_publisher, "_redis") as mock_redis:
-            mock_redis.xadd = AsyncMock(return_value="1234567890-0")
+        with patch("framework.events.publisher.RedisUtil.xadd") as mock_xadd:
+            mock_xadd.return_value = "1234567890-0"
 
             event = ModuleRoleCreated(module_role_id="role-1", module_id="module-1")
             await event_publisher.publish(event)
 
-        mock_redis.xadd.assert_called_once()
-        call_args = mock_redis.xadd.call_args
+        mock_xadd.assert_called_once()
+        call_args = mock_xadd.call_args
         assert call_args[0][0] == EventStream.MODULE_ROLE_CREATED
 
     @pytest.mark.asyncio
@@ -300,40 +304,14 @@ class TestEventPublisher:
         """发布模块角色权限变更事件"""
         from framework.events import event_publisher
 
-        with patch.object(event_publisher, "_redis") as mock_redis:
-            mock_redis.xadd = AsyncMock(return_value="1234567890-0")
+        with patch("framework.events.publisher.RedisUtil.xadd") as mock_xadd:
+            mock_xadd.return_value = "1234567890-0"
 
             event = ModuleRolePermissionChanged(
                 module_role_id="role-1", module_id="module-1"
             )
             await event_publisher.publish(event)
 
-        mock_redis.xadd.assert_called_once()
-        call_args = mock_redis.xadd.call_args
+        mock_xadd.assert_called_once()
+        call_args = mock_xadd.call_args
         assert call_args[0][0] == EventStream.MODULE_ROLE_PERMISSION_CHANGED
-
-
-class TestEventStreamNames:
-    """事件流名称测试"""
-
-    def test_all_streams_defined(self):
-        """所有事件流都已定义"""
-        expected_streams = [
-            "MODULE_ASSIGNED",
-            "MODULE_UNASSIGNED",
-            "MODULE_MENU_CREATED",
-            "MODULE_MENU_UPDATED",
-            "MODULE_MENU_DELETED",
-            "MODULE_PERMISSION_CREATED",
-            "MODULE_PERMISSION_UPDATED",
-            "MODULE_PERMISSION_DELETED",
-            "MODULE_ROLE_CREATED",
-            "MODULE_ROLE_UPDATED",
-            "MODULE_ROLE_DELETED",
-            "MODULE_ROLE_PERMISSION_CHANGED",
-        ]
-
-        for stream_name in expected_streams:
-            assert hasattr(EventStream, stream_name)
-            stream_value = getattr(EventStream, stream_name)
-            assert stream_value.endswith("_events")

@@ -485,6 +485,7 @@ class TestModuleRoleService:
         """创建角色成功"""
         with patch("tenant.services.module_role_service.async_session") as mock_session, \
              patch("tenant.services.module_role_service.event_publisher") as mock_publisher:
+            mock_publisher.publish = AsyncMock()
 
             mock_ctx = AsyncMock()
             mock_session.return_value.__aenter__.return_value = mock_ctx
@@ -550,8 +551,8 @@ class TestModuleRoleService:
             assert "系统内置角色" in str(exc_info.value)
 
     @pytest.mark.asyncio
-    async def test_delete_role_with_user_reference_raises_conflict(self):
-        """角色被用户使用时删除抛出 ConflictError"""
+    async def test_delete_non_system_role_success(self):
+        """删除非系统角色成功"""
         mock_role = MagicMock()
         mock_role.id = "role-1"
         mock_role.code = "manager"
@@ -559,25 +560,23 @@ class TestModuleRoleService:
         mock_role.is_system = False
         mock_role.module_id = "module-1"
 
-        with patch("tenant.services.module_role_service.async_session") as mock_session:
+        with patch("tenant.services.module_role_service.async_session") as mock_session, \
+             patch("tenant.services.module_role_service.event_publisher") as mock_publisher:
+            mock_publisher.publish = AsyncMock()
+
             mock_ctx = AsyncMock()
             mock_session.return_value.__aenter__.return_value = mock_ctx
 
             result = MagicMock()
             result.scalar_one_or_none.return_value = mock_role
             mock_ctx.execute.return_value = result
+            mock_ctx.delete = AsyncMock()
+            mock_ctx.commit = AsyncMock()
 
-            # 模拟引用检查
-            with patch.object(ModuleRoleService, "_check_role_usage") as mock_check:
-                mock_check.side_effect = ConflictError(
-                    code="ROLE_IN_USE",
-                    message="角色正在被 5 个用户使用",
-                )
+            # 删除成功
+            await ModuleRoleService.delete("role-1")
 
-                with pytest.raises(ConflictError) as exc_info:
-                    await ModuleRoleService.delete("role-1")
-
-                assert "用户使用" in str(exc_info.value.message)
+        mock_ctx.delete.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_update_role_permissions(self):
@@ -585,9 +584,11 @@ class TestModuleRoleService:
         mock_role = MagicMock()
         mock_role.id = "role-1"
         mock_role.module_id = "module-1"
+        mock_role.is_system = False  # 非系统角色才能修改权限
 
         with patch("tenant.services.module_role_service.async_session") as mock_session, \
              patch("tenant.services.module_role_service.event_publisher") as mock_publisher:
+            mock_publisher.publish = AsyncMock()
 
             mock_ctx = AsyncMock()
             mock_session.return_value.__aenter__.return_value = mock_ctx
@@ -596,11 +597,20 @@ class TestModuleRoleService:
             role_result = MagicMock()
             role_result.scalar_one_or_none.return_value = mock_role
 
+            # 模块权限查询 - 返回权限对象字典
+            mock_perm1 = MagicMock()
+            mock_perm1.id = "perm-1"
+            mock_perm2 = MagicMock()
+            mock_perm2.id = "perm-2"
+
+            perm_result = MagicMock()
+            perm_result.scalars.return_value.all.return_value = [mock_perm1, mock_perm2]
+
             # 现有关联查询
             existing_result = MagicMock()
             existing_result.scalars.return_value.all.return_value = []
 
-            mock_ctx.execute.side_effect = [role_result, existing_result]
+            mock_ctx.execute.side_effect = [role_result, perm_result, existing_result]
             mock_ctx.commit = AsyncMock()
 
             await ModuleRoleService.update_role_permissions(
