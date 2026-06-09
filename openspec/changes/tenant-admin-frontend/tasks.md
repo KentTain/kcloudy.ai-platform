@@ -54,11 +54,11 @@
 
 ## 8. 租户详情页扩展
 
-- [ ] 8.1 更新 `web/vue/src/tenant/pages/tenants/TenantDetail.vue` 为 Tab 结构
-- [ ] 8.2 创建 `web/vue/src/tenant/components/TenantResourceBinding.vue` 资源绑定 Tab 组件
-- [ ] 8.3 创建 `web/vue/src/tenant/components/TenantModuleAssignment.vue` 模块分配 Tab 组件
-- [ ] 8.4 实现资源绑定选择器和测试连接功能
-- [ ] 8.5 实现模块分配列表和分配/取消功能
+- [x] 8.1 更新 `web/vue/src/tenant/pages/tenants/TenantDetail.vue` 为 Tab 结构
+- [x] 8.2 创建资源绑定 Tab 组件（内嵌在 TenantDetail.vue）
+- [x] 8.3 创建模块分配 Tab 组件（内嵌在 TenantDetail.vue）
+- [x] 8.4 实现资源绑定选择器和测试连接功能
+- [x] 8.5 实现模块分配列表和分配/取消功能
 
 ## 9. 路由配置
 
