@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { getModule, getModuleMenus, createModuleMenu, updateModuleMenu, deleteModuleMenu, getModulePermissions, createModulePermission, updateModulePermission, deleteModulePermission } from '@/tenant/api/module'
-import type { Module, ModuleMenu, ModulePermission, CreateMenuParams, UpdateMenuParams, CreatePermissionParams, UpdatePermissionParams } from '@/tenant/types/admin'
+import { getModule, getModuleMenus, createModuleMenu, updateModuleMenu, deleteModuleMenu, getModulePermissions, createModulePermission, updateModulePermission, deleteModulePermission, getModuleRoles, createModuleRole, updateModuleRole, deleteModuleRole, updateRolePermissions } from '@/tenant/api/module'
+import type { Module, ModuleMenu, ModulePermission, ModuleRole, CreateMenuParams, UpdateMenuParams, CreatePermissionParams, UpdatePermissionParams, CreateRoleParams, UpdateRoleParams } from '@/tenant/types/admin'
 import { notifyError, notifySuccess, notifyWarning } from '@/framework/utils/feedback'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -42,7 +42,9 @@ import {
 } from '@/components/ui/table'
 import { Tree } from '@/components/ui/tree'
 import type { TreeNodeType } from '@/components/ui/tree'
-import { ArrowLeft, Pencil, Package, Menu, Key, Users, Plus, Trash2, FolderOpen, FileText, Search } from '@lucide/vue'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Textarea } from '@/components/ui/textarea'
+import { ArrowLeft, Pencil, Package, Menu, Key, Users, Plus, Trash2, FolderOpen, FileText, Search, Shield } from '@lucide/vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -88,6 +90,24 @@ const permissionForm = ref({
   code: '',
   resource: '',
   action: 'read' as 'read' | 'write' | 'delete',
+  description: '',
+})
+
+// ==================== 角色管理状态 ====================
+const roles = ref<ModuleRole[]>([])
+const rolesLoading = ref(false)
+const selectedRoleId = ref<string | null>(null)
+const roleDialogOpen = ref(false)
+const roleDialogMode = ref<'create' | 'edit'>('create')
+const deleteRoleDialogOpen = ref(false)
+const roleSearchKeyword = ref('')
+const permissionAssignDialogOpen = ref(false)
+const selectedPermissionIds = ref<string[]>([])
+
+// 角色表单
+const roleForm = ref({
+  name: '',
+  code: '',
   description: '',
 })
 
@@ -471,6 +491,172 @@ const deletePermission = async () => {
   }
 }
 
+// ==================== 角色管理方法 ====================
+
+// 筛选后的角色列表
+const filteredRoles = computed(() => {
+  if (!roleSearchKeyword.value.trim()) {
+    return roles.value
+  }
+  const keyword = roleSearchKeyword.value.toLowerCase()
+  return roles.value.filter(r =>
+    r.name.toLowerCase().includes(keyword) ||
+    r.code.toLowerCase().includes(keyword)
+  )
+})
+
+// 当前选中的角色对象
+const selectedRole = computed<ModuleRole | null>(() => {
+  if (!selectedRoleId.value) return null
+  return roles.value.find(r => r.id === selectedRoleId.value) || null
+})
+
+// 加载角色数据
+const loadRoles = async () => {
+  if (!moduleId.value) return
+  rolesLoading.value = true
+  try {
+    const response = await getModuleRoles(moduleId.value)
+    if (response.data) {
+      roles.value = response.data
+    }
+  } catch (error) {
+    console.error('加载角色失败:', error)
+    notifyError('加载角色失败')
+  } finally {
+    rolesLoading.value = false
+  }
+}
+
+// 打开新增角色弹窗
+const openCreateRoleDialog = () => {
+  roleDialogMode.value = 'create'
+  roleForm.value = {
+    name: '',
+    code: '',
+    description: '',
+  }
+  roleDialogOpen.value = true
+}
+
+// 打开编辑角色弹窗
+const openEditRoleDialog = (role: ModuleRole) => {
+  if (role.is_system) {
+    notifyWarning('系统内置角色禁止修改')
+    return
+  }
+  roleDialogMode.value = 'edit'
+  selectedRoleId.value = role.id
+  roleForm.value = {
+    name: role.name,
+    code: role.code,
+    description: role.description || '',
+  }
+  roleDialogOpen.value = true
+}
+
+// 打开删除确认弹窗
+const openDeleteRoleDialog = (role: ModuleRole) => {
+  if (role.is_system) {
+    notifyWarning('系统内置角色禁止删除')
+    return
+  }
+  selectedRoleId.value = role.id
+  deleteRoleDialogOpen.value = true
+}
+
+// 保存角色
+const saveRole = async () => {
+  if (!roleForm.value.name.trim()) {
+    notifyWarning('请输入角色名称')
+    return
+  }
+  if (!roleForm.value.code.trim()) {
+    notifyWarning('请输入角色编码')
+    return
+  }
+
+  try {
+    if (roleDialogMode.value === 'create') {
+      const params: CreateRoleParams = {
+        name: roleForm.value.name.trim(),
+        code: roleForm.value.code.trim(),
+        description: roleForm.value.description.trim() || undefined,
+      }
+      await createModuleRole(moduleId.value, params)
+      notifySuccess('角色创建成功')
+    } else if (selectedRoleId.value) {
+      const params: UpdateRoleParams = {
+        name: roleForm.value.name.trim(),
+        description: roleForm.value.description.trim() || undefined,
+      }
+      await updateModuleRole(moduleId.value, selectedRoleId.value, params)
+      notifySuccess('角色更新成功')
+    }
+
+    roleDialogOpen.value = false
+    await loadRoles()
+  } catch (error) {
+    console.error('保存角色失败:', error)
+    notifyError('保存角色失败')
+  }
+}
+
+// 删除角色
+const deleteRole = async () => {
+  if (!selectedRoleId.value) return
+  try {
+    await deleteModuleRole(moduleId.value, selectedRoleId.value)
+    notifySuccess('角色删除成功')
+    deleteRoleDialogOpen.value = false
+    selectedRoleId.value = null
+    await loadRoles()
+  } catch (error) {
+    console.error('删除角色失败:', error)
+    notifyError('删除角色失败')
+  }
+}
+
+// 打开权限分配弹窗
+const openPermissionAssignDialog = (role: ModuleRole) => {
+  selectedRoleId.value = role.id
+  selectedPermissionIds.value = [...role.permission_ids]
+  permissionAssignDialogOpen.value = true
+}
+
+// 切换权限选中状态
+const togglePermission = (permissionId: string) => {
+  const index = selectedPermissionIds.value.indexOf(permissionId)
+  if (index === -1) {
+    selectedPermissionIds.value.push(permissionId)
+  } else {
+    selectedPermissionIds.value.splice(index, 1)
+  }
+}
+
+// 全选/取消全选权限
+const toggleAllPermissions = () => {
+  if (selectedPermissionIds.value.length === permissions.value.length) {
+    selectedPermissionIds.value = []
+  } else {
+    selectedPermissionIds.value = permissions.value.map(p => p.id)
+  }
+}
+
+// 保存权限分配
+const savePermissionAssign = async () => {
+  if (!selectedRoleId.value) return
+  try {
+    await updateRolePermissions(moduleId.value, selectedRoleId.value, selectedPermissionIds.value)
+    notifySuccess('权限分配成功')
+    permissionAssignDialogOpen.value = false
+    await loadRoles()
+  } catch (error) {
+    console.error('保存权限分配失败:', error)
+    notifyError('保存权限分配失败')
+  }
+}
+
 // 监听 Tab 切换，加载菜单数据
 watch(activeTab, (newTab) => {
   if (newTab === 'menus' && menus.value.length === 0) {
@@ -478,6 +664,9 @@ watch(activeTab, (newTab) => {
   }
   if (newTab === 'permissions' && permissions.value.length === 0) {
     loadPermissions()
+  }
+  if (newTab === 'roles' && roles.value.length === 0) {
+    loadRoles()
   }
 })
 
@@ -808,11 +997,104 @@ onMounted(() => {
 
           <!-- 角色管理 Tab -->
           <TabsContent value="roles" class="mt-0">
-            <div class="flex h-full flex-col items-center justify-center gap-4 py-12">
-              <Users class="text-muted-foreground h-16 w-16" />
-              <div class="text-center">
-                <div class="font-medium">角色管理功能开发中</div>
-                <div class="text-muted-foreground mt-1 text-sm">角色管理功能将在后续实现</div>
+            <div v-if="rolesLoading" class="flex h-full items-center justify-center py-12">
+              <Skeleton class="h-8 w-8 rounded-full" />
+            </div>
+            <div v-else class="flex h-full flex-col gap-4">
+              <!-- 工具栏 -->
+              <div class="flex flex-wrap items-center justify-between gap-3">
+                <div class="relative w-full sm:w-64">
+                  <Search class="text-muted-foreground absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" />
+                  <Input
+                    v-model="roleSearchKeyword"
+                    placeholder="搜索角色名称、编码..."
+                    class="pl-9"
+                  />
+                </div>
+                <Button @click="openCreateRoleDialog">
+                  <Plus class="mr-1 h-4 w-4" />
+                  新增角色
+                </Button>
+              </div>
+
+              <!-- 角色列表 -->
+              <div class="rounded-lg border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead class="w-[150px]">角色名称</TableHead>
+                      <TableHead class="w-[150px]">角色编码</TableHead>
+                      <TableHead>说明</TableHead>
+                      <TableHead class="w-[100px]">系统角色</TableHead>
+                      <TableHead class="w-[100px]">权限数量</TableHead>
+                      <TableHead class="w-[150px]">操作</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    <TableRow v-if="filteredRoles.length === 0">
+                      <TableCell colspan="6" class="text-muted-foreground text-center">
+                        {{ roleSearchKeyword ? '未找到匹配的角色' : '暂无角色数据' }}
+                      </TableCell>
+                    </TableRow>
+                    <TableRow v-for="role in filteredRoles" :key="role.id">
+                      <TableCell class="font-medium">
+                        <div class="flex items-center gap-2">
+                          {{ role.name }}
+                          <Badge v-if="role.is_system" variant="outline" class="text-xs">
+                            系统
+                          </Badge>
+                        </div>
+                      </TableCell>
+                      <TableCell class="font-mono text-sm">{{ role.code }}</TableCell>
+                      <TableCell>{{ role.description || '--' }}</TableCell>
+                      <TableCell>
+                        <Badge :variant="role.is_system ? 'default' : 'secondary'">
+                          {{ role.is_system ? '是' : '否' }}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline">
+                          {{ role.permission_ids?.length || 0 }}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div class="flex items-center gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            title="分配权限"
+                            @click="openPermissionAssignDialog(role)"
+                          >
+                            <Shield class="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            :disabled="role.is_system"
+                            :title="role.is_system ? '系统内置角色禁止修改' : '编辑'"
+                            @click="openEditRoleDialog(role)"
+                          >
+                            <Pencil class="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            :disabled="role.is_system"
+                            :title="role.is_system ? '系统内置角色禁止删除' : '删除'"
+                            @click="openDeleteRoleDialog(role)"
+                          >
+                            <Trash2 class="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </div>
+
+              <!-- 角色统计 -->
+              <div class="text-muted-foreground text-sm">
+                共 {{ roles.length }} 个角色{{ roleSearchKeyword ? `，筛选结果 ${filteredRoles.length} 个` : '' }}
               </div>
             </div>
           </TabsContent>
@@ -967,6 +1249,116 @@ onMounted(() => {
           >
             确认删除
           </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
+    <!-- 角色表单弹窗 -->
+    <Dialog v-model:open="roleDialogOpen">
+      <DialogContent class="sm:max-w-[500px]">
+        <DialogHeader>
+          <DialogTitle>{{ roleDialogMode === 'create' ? '新增角色' : '编辑角色' }}</DialogTitle>
+        </DialogHeader>
+        <div class="grid gap-4 py-4">
+          <div class="grid gap-2">
+            <Label>角色名称 <span class="text-destructive">*</span></Label>
+            <Input v-model="roleForm.name" placeholder="请输入角色名称" />
+          </div>
+          <div class="grid gap-2">
+            <Label>角色编码 <span class="text-destructive">*</span></Label>
+            <Input
+              v-model="roleForm.code"
+              placeholder="请输入角色编码"
+              :disabled="roleDialogMode === 'edit'"
+            />
+            <p v-if="roleDialogMode === 'edit'" class="text-muted-foreground text-xs">编码不可修改</p>
+          </div>
+          <div class="grid gap-2">
+            <Label>说明</Label>
+            <Textarea v-model="roleForm.description" placeholder="请输入角色说明" :rows="3" />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" @click="roleDialogOpen = false">取消</Button>
+          <Button @click="saveRole">保存</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
+    <!-- 删除角色确认弹窗 -->
+    <Dialog v-model:open="deleteRoleDialogOpen">
+      <DialogContent class="sm:max-w-[400px]">
+        <DialogHeader>
+          <DialogTitle>确认删除角色</DialogTitle>
+          <DialogDescription>
+            确定要删除角色「{{ selectedRole?.name }}」吗？此操作不可撤销。
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <Button variant="outline" @click="deleteRoleDialogOpen = false">取消</Button>
+          <Button
+            variant="destructive"
+            @click="deleteRole"
+          >
+            确认删除
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
+    <!-- 权限分配弹窗 -->
+    <Dialog v-model:open="permissionAssignDialogOpen">
+      <DialogContent class="sm:max-w-[600px]">
+        <DialogHeader>
+          <DialogTitle>分配权限</DialogTitle>
+          <DialogDescription>
+            为角色「{{ selectedRole?.name }}」分配权限
+          </DialogDescription>
+        </DialogHeader>
+        <div class="py-4">
+          <div class="mb-3 flex items-center justify-between">
+            <span class="text-sm font-medium">已选择 {{ selectedPermissionIds.length }} / {{ permissions.length }} 项权限</span>
+            <Button variant="outline" size="sm" @click="toggleAllPermissions">
+              {{ selectedPermissionIds.length === permissions.length ? '取消全选' : '全选' }}
+            </Button>
+          </div>
+          <ScrollArea class="h-[400px] rounded-lg border">
+            <div class="p-4">
+              <div v-if="permissions.length === 0" class="text-muted-foreground py-8 text-center text-sm">
+                暂无可分配的权限，请先在「权限管理」中创建权限
+              </div>
+              <div v-else class="space-y-3">
+                <div
+                  v-for="permission in permissions"
+                  :key="permission.id"
+                  class="flex items-center gap-3 rounded-md border p-3 transition-colors hover:bg-muted/50"
+                  :class="{ 'bg-muted/50': selectedPermissionIds.includes(permission.id) }"
+                  @click="togglePermission(permission.id)"
+                >
+                  <Checkbox
+                    :checked="selectedPermissionIds.includes(permission.id)"
+                    @update:checked="togglePermission(permission.id)"
+                    @click.stop
+                  />
+                  <div class="flex-1">
+                    <div class="flex items-center gap-2">
+                      <span class="font-medium">{{ permission.name }}</span>
+                      <Badge :variant="getActionBadgeVariant(permission.action)" class="text-xs">
+                        {{ permission.action }}
+                      </Badge>
+                    </div>
+                    <div class="text-muted-foreground mt-1 font-mono text-xs">
+                      {{ permission.code }}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </ScrollArea>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" @click="permissionAssignDialogOpen = false">取消</Button>
+          <Button @click="savePermissionAssign">保存</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

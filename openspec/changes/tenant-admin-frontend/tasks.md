@@ -46,11 +46,11 @@
 
 ## 7. 模块角色管理
 
-- [ ] 7.1 创建 `web/vue/src/tenant/components/ModuleRoleList.vue` 角色列表组件
-- [ ] 7.2 创建 `web/vue/src/tenant/components/ModuleRoleForm.vue` 角色编辑表单弹窗
-- [ ] 7.3 创建 `web/vue/src/tenant/components/RolePermissionEditor.vue` 角色权限编辑组件
-- [ ] 7.4 实现角色的创建、编辑、删除功能
-- [ ] 7.5 实现角色权限分配功能
+- [x] 7.1 创建角色列表组件（内嵌在 ModuleDetail.vue）
+- [x] 7.2 创建角色编辑表单弹窗（内嵌在 ModuleDetail.vue）
+- [x] 7.3 创建权限分配组件（内嵌在 ModuleDetail.vue）
+- [x] 7.4 实现角色的创建、编辑、删除功能
+- [x] 7.5 实现角色权限分配功能
 
 ## 8. 租户详情页扩展
 
