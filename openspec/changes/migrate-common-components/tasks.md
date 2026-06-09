@@ -20,11 +20,11 @@
 
 ## 4. 迁移 form 类组件
 
-- [ ] 4.1 迁移 CommonInput.vue → form/input/Input.vue
-- [ ] 4.2 迁移 CommonSelect.vue → form/select/Select.vue
-- [ ] 4.3 迁移 CommonDateInput.vue → form/date-input/DateInput.vue
-- [ ] 4.4 迁移 AlonTreeSelect.vue → form/tree-select/TreeSelect.vue
-- [ ] 4.5 创建 form/index.ts
+- [x] 4.1 迁移 CommonInput.vue → form/input/Input.vue
+- [x] 4.2 迁移 CommonSelect.vue → form/select/Select.vue
+- [x] 4.3 迁移 CommonDateInput.vue → form/date-input/DateInput.vue
+- [x] 4.4 迁移 AlonTreeSelect.vue → form/tree-select/TreeSelect.vue
+- [x] 4.5 创建 form/index.ts
 
 ## 5. 迁移 data-display 类组件
 
