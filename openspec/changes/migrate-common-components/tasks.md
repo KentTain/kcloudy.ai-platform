@@ -28,15 +28,15 @@
 
 ## 5. 迁移 data-display 类组件
 
-- [ ] 5.1 迁移 CommonTable.vue → data-display/table/Table.vue
-- [ ] 5.2 迁移 AlonDataTable.vue → data-display/table/DataTable.vue
-- [ ] 5.3 迁移 AlonDataTablePagination.vue → data-display/table/DataTablePagination.vue
-- [ ] 5.4 迁移 use-alon-table.ts → data-display/table/use-data-table.ts
-- [ ] 5.5 迁移 CommonTree.vue → data-display/tree/Tree.vue
-- [ ] 5.6 迁移 CommonTreeList.vue → data-display/tree/TreeList.vue
-- [ ] 5.7 迁移 CommonCheckboxTree.vue → data-display/tree/CheckboxTree.vue
-- [ ] 5.8 迁移 CommonDescriptionList.vue → data-display/description-list/DescriptionList.vue
-- [ ] 5.9 创建 data-display/index.ts
+- [x] 5.1 迁移 CommonTable.vue → data-display/table/Table.vue
+- [x] 5.2 迁移 AlonDataTable.vue → data-display/table/DataTable.vue
+- [x] 5.3 迁移 AlonDataTablePagination.vue → data-display/table/DataTablePagination.vue
+- [x] 5.4 迁移 use-alon-table.ts → data-display/table/use-data-table.ts
+- [x] 5.5 迁移 CommonTree.vue → data-display/tree/Tree.vue
+- [x] 5.6 迁移 CommonTreeList.vue → data-display/tree/TreeList.vue
+- [x] 5.7 迁移 CommonCheckboxTree.vue → data-display/tree/CheckboxTree.vue
+- [x] 5.8 迁移 CommonDescriptionList.vue → data-display/description-list/DescriptionList.vue
+- [x] 5.9 创建 data-display/index.ts
 
 ## 6. 迁移 feedback 类组件
 
