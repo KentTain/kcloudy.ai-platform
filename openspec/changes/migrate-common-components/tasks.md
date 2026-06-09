@@ -14,9 +14,9 @@
 
 ## 3. 迁移 general 类组件
 
-- [ ] 3.1 迁移 CommonButton.vue → general/button/Button.vue
-- [ ] 3.2 迁移 CommonCard.vue → general/card/Card.vue
-- [ ] 3.3 创建 general/index.ts
+- [x] 3.1 迁移 CommonButton.vue → general/button/Button.vue
+- [x] 3.2 迁移 CommonCard.vue → general/card/Card.vue
+- [x] 3.3 创建 general/index.ts
 
 ## 4. 迁移 form 类组件
 
