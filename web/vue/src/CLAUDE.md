@@ -1,4 +1,4 @@
-# Vue 前端开发指南
+﻿# Vue 前端开发指南
 
 本文件为 Claude Code 在 Vue 前端源码目录中工作时提供指导。
 
@@ -15,8 +15,90 @@
 | iam | 身份认证与权限模块 | [iam/CLAUDE.md](iam/CLAUDE.md) |
 | ai | AI 对话模块 | [ai/CLAUDE.md](ai/CLAUDE.md) |
 | demo | 业务演示模块 | [demo/CLAUDE.md](demo/CLAUDE.md) |
-| components | 通用组件（跨模块共享） | - |
+| components | 通用组件（跨模块共享） | 见下方「通用组件清单」 |
 | composables | 组合式函数 | - |
+
+## 通用组件清单
+
+组件按层级分为三类，开发功能页面时优先复用已有组件。
+
+### UI 基础组件（ui/）
+
+基于 shadcn/ui 的原子组件，位于 `src/components/ui/`。
+
+| 类别 | 组件 | 说明 |
+|------|------|------|
+| 基础 | Button, Input, Textarea, Label, Checkbox, Switch, Select | 基础表单控件 |
+| 布局 | Card, Separator, Tabs, Accordion, Collapsible | 布局容器 |
+| 导航 | Breadcrumb, NavigationMenu, Sidebar | 导航组件 |
+| 反馈 | Alert, Progress, Spinner, Skeleton, Tooltip | 反馈提示 |
+| 弹层 | Dialog, Popover, Sheet, DropdownMenu, HoverCard | 弹层组件 |
+| 数据 | Table, Avatar, Badge | 数据展示 |
+| 滚动 | ScrollArea | 滚动容器 |
+
+**导入方式**：
+```typescript
+import { Button } from '@/components/ui/button/Button.vue';
+import { Dialog, DialogContent, DialogHeader } from '@/components/ui/dialog';
+```
+
+### 通用业务组件（待迁移至 common/）
+
+当前位于 `src/components/Common*.vue`，迁移后位于 `src/components/common/`。
+
+| 组件 | 当前位置 | 迁移后位置 | 用途 |
+|------|----------|-----------|------|
+| CommonButton | CommonButton.vue | common/general/button/ | 业务按钮 |
+| CommonCard | CommonCard.vue | common/general/card/ | 业务卡片 |
+| CommonInput | CommonInput.vue | common/form/input/ | 业务输入框 |
+| CommonSelect | CommonSelect.vue | common/form/select/ | 业务选择器 |
+| CommonDateInput | CommonDateInput.vue | common/form/date-input/ | 日期输入 |
+| CommonSelectTree | CommonSelectTree.vue | common/form/tree-select/ | 树选择器 |
+| CommonTable | CommonTable.vue | common/data-display/table/ | 业务表格 |
+| CommonTree | CommonTree.vue | common/data-display/tree/ | 树形展示 |
+| CommonTreeList | CommonTreeList.vue | common/data-display/tree/ | 树形列表 |
+| CommonCheckboxTree | CommonCheckboxTree.vue | common/data-display/tree/ | 复选框树 |
+| CommonDescriptionList | CommonDescriptionList.vue | common/data-display/description-list/ | 描述列表 |
+| CommonLoading | CommonLoading.vue | common/feedback/loading/ | 加载状态 |
+| CommonModal | CommonModal.vue | common/feedback/modal/ | 业务弹窗 |
+| CommonPagination | CommonPagination.vue | common/navigation/pagination/ | 分页组件 |
+
+**迁移后导入方式**：
+```typescript
+// 从统一入口导入
+import { Button, Card, Input, Select, Table, Tree, Loading, Modal, Pagination } from '@/components/common';
+```
+
+**迁移状态**：待迁移（详见 `openspec/changes/migrate-common-components/`）
+
+### AI 专用组件（ai-elements/）
+
+专为 AI 对话场景设计，位于 `src/components/ai-elements/`。详见 [ai-elements/CLAUDE.md](components/ai-elements/CLAUDE.md)。
+
+| 类别 | 组件示例 | 用途 |
+|------|----------|------|
+| 对话核心 | Conversation, Message, MessageContent | 对话容器和消息展示 |
+| Agent | Agent, AgentHeader, AgentTools | Agent 展示 |
+| 内容展示 | Artifact, CodeBlock, FileTree | 代码、文档展示 |
+| 交互反馈 | ChainOfThought, Loader, Shimmer | 思考链、加载状态 |
+| 输入组件 | PromptInput, SpeechInput, Attachments | 输入交互 |
+| 选择器 | ModelSelector, MicSelector, VoiceSelector | AI 模型/设备选择 |
+| 工具调用 | Tool, ToolInput, ToolOutput | 工具调用展示 |
+| 引用来源 | InlineCitation, Sources | 引用和来源 |
+
+**导入方式**：
+```typescript
+import Message from '@/components/ai-elements/message/Message.vue';
+import CodeBlock from '@/components/ai-elements/code-block/CodeBlock.vue';
+```
+
+## 组件复用查找优先级
+
+开发功能页面时，按以下优先级查找可复用组件：
+
+1. **AI 场景** → 先查 `ai-elements/`（对话、消息、代码块等）
+2. **通用业务** → 再查 `common/`（表格、表单、反馈等）
+3. **UI 基础** → 最后查 `ui/`（Button, Input, Dialog 等）
 
 ## 依赖边界
 
@@ -50,7 +132,8 @@ src/{module}/
 | 层级 | 目录 | 前缀 | 说明 |
 |------|------|------|------|
 | UI 基础组件 | `src/components/ui/` | 无前缀 | shadcn 组件 |
-| 技术栈通用组件 | `src/components/` | Common | 跨模块共享 |
+| 通用业务组件 | `src/components/common/` | 无前缀 | 跨模块共享 |
+| AI 专用组件 | `src/components/ai-elements/` | 无前缀 | AI 场景专用 |
 | 模块级组件 | `{模块}/components/` | {模块} | 模块专用 |
 | 框架级组件 | `framework/components/` | App | 框架功能耦合 |
 

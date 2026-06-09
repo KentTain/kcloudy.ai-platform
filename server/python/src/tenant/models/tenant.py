@@ -78,6 +78,23 @@ class Tenant(BaseModel, ActiveRecordMixin):
         Integer, nullable=True, comment="Redis DB 编号"
     )
 
+    # 资源配置关联（跨模块 FK，ORM 层不定义 ForeignKey 约束）
+    db_config_id: Mapped[str | None] = mapped_column(
+        String(36), nullable=True, comment="数据库配置ID"
+    )
+    storage_config_id: Mapped[str | None] = mapped_column(
+        String(36), nullable=True, comment="存储配置ID"
+    )
+    cache_config_id: Mapped[str | None] = mapped_column(
+        String(36), nullable=True, comment="缓存配置ID"
+    )
+    queue_config_id: Mapped[str | None] = mapped_column(
+        String(36), nullable=True, comment="队列配置ID"
+    )
+    pubsub_config_id: Mapped[str | None] = mapped_column(
+        String(36), nullable=True, comment="发布订阅配置ID"
+    )
+
     # 加密密钥
     encryption_key: Mapped[str | None] = mapped_column(
         Text, nullable=True, comment="租户加密密钥(主密钥加密)"

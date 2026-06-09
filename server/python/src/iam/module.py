@@ -39,6 +39,9 @@ class IAMModule:
         from iam.controllers.console.system_setting_controller import router as console_system_setting_router
         from iam.controllers.inner.user_controller import router as inner_user_router
         from iam.controllers.inner.department_controller import router as inner_department_router
+        from iam.controllers.inner.tenant_menu_controller import router as inner_tenant_menu_router
+        from iam.controllers.inner.tenant_permission_controller import router as inner_tenant_permission_router
+        from iam.controllers.inner.tenant_role_controller import router as inner_tenant_role_router
 
         return [
             (iam_router, "/api/v1", ["IAM"]),
@@ -46,6 +49,9 @@ class IAMModule:
             (console_system_setting_router, "/console/v1/system-settings", ["Console - SystemSetting"]),
             (inner_user_router, "/inner/v1", ["Inner - User"]),
             (inner_department_router, "/inner/v1", ["Inner - Department"]),
+            (inner_tenant_menu_router, "/inner/v1/iam", ["Inner - Tenant Menu"]),
+            (inner_tenant_permission_router, "/inner/v1/iam", ["Inner - Tenant Permission"]),
+            (inner_tenant_role_router, "/inner/v1/iam", ["Inner - Tenant Role"]),
         ]
 
     def get_middlewares(self) -> list[type]:
@@ -88,5 +94,10 @@ class IAMModule:
         return None
 
     def get_listener_setup(self) -> tuple | None:
-        """IAM 模块无消息监听器"""
-        return None
+        """
+        返回监听器配置
+
+        返回 (setup_func, cleanup_func) 元组
+        """
+        from iam.listeners.setup import setup_listeners, cleanup_listeners
+        return (setup_listeners, cleanup_listeners)

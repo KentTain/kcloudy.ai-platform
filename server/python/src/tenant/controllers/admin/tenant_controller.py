@@ -14,6 +14,9 @@ from tenant.schemas.admin.tenant import (
     AdminLoginVo,
     CacheConfigVo,
     DatabaseConfigVo,
+    ResourceBindingRequest,
+    ResourceBindingResponse,
+    ResourceConfigReferenceVo,
     ResourceValidateVo,
     StorageConfigVo,
     TenantCreateRequest,
@@ -483,3 +486,137 @@ async def get_tenant_stats(
     )
 
     return ORJSONResponse(content=Success(stats.model_dump()))
+
+
+# ============== 资源绑定 API ==============
+
+
+# 模块级辅助函数
+async def _get_resource_ref(
+    config_id: str | None, service
+) -> ResourceConfigReferenceVo | None:
+    """获取资源配置引用"""
+    if not config_id:
+        return None
+    config = await service.get_by_id(config_id)
+    if config:
+        return ResourceConfigReferenceVo(id=config.id, name=config.name)
+    return None
+
+
+@router.get("/tenants/{tenant_id}/resources")
+async def get_tenant_resources(
+    tenant_id: str,
+    admin: dict = Depends(get_current_admin),
+) -> ORJSONResponse:
+    """
+    获取租户资源绑定
+
+    场景：查询资源绑定
+    WHEN 管理员请求 GET /admin/v1/tenants/{id}/resources
+    THEN 返回租户当前的资源绑定情况
+    """
+    tenant = await TenantService.get_resource_bindings(tenant_id)
+    if not tenant:
+        raise HTTPException(status_code=404, detail="租户不存在")
+
+    from tenant.services import (
+        DatabaseConfigService,
+        StorageConfigService,
+        CacheConfigService,
+        QueueConfigService,
+        PubSubConfigService,
+    )
+
+    db_ref = await _get_resource_ref(tenant.db_config_id, DatabaseConfigService)
+    storage_ref = await _get_resource_ref(tenant.storage_config_id, StorageConfigService)
+    cache_ref = await _get_resource_ref(tenant.cache_config_id, CacheConfigService)
+    queue_ref = await _get_resource_ref(tenant.queue_config_id, QueueConfigService)
+    pubsub_ref = await _get_resource_ref(tenant.pubsub_config_id, PubSubConfigService)
+
+    return ORJSONResponse(
+        content=Success(
+            ResourceBindingResponse(
+                tenant_id=tenant.id,
+                db_config=db_ref,
+                storage_config=storage_ref,
+                cache_config=cache_ref,
+                queue_config=queue_ref,
+                pubsub_config=pubsub_ref,
+            ).model_dump()
+        )
+    )
+
+
+@router.put("/tenants/{tenant_id}/resources")
+async def update_tenant_resources(
+    tenant_id: str,
+    data: ResourceBindingRequest,
+    admin: dict = Depends(get_current_admin),
+) -> ORJSONResponse:
+    """
+    更新租户资源绑定
+
+    场景：资源绑定
+    WHEN 管理员请求 PUT /admin/v1/tenants/{id}/resources 并提供配置 ID
+    THEN 更新租户的资源绑定
+
+    场景：解绑资源
+    WHEN 管理员将某个配置设为 null
+    THEN 解除该资源的绑定
+    """
+    from tenant.services import (
+        DatabaseConfigService,
+        StorageConfigService,
+        CacheConfigService,
+        QueueConfigService,
+        PubSubConfigService,
+    )
+
+    # 引用校验：绑定的配置 ID 必须存在
+    async def _validate_config(config_id: str | None, service, config_type: str):
+        if config_id is not None:
+            config = await service.get_by_id(config_id)
+            if not config:
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"{config_type}配置不存在: {config_id}",
+                )
+
+    await _validate_config(data.db_config_id, DatabaseConfigService, "数据库")
+    await _validate_config(data.storage_config_id, StorageConfigService, "存储")
+    await _validate_config(data.cache_config_id, CacheConfigService, "缓存")
+    await _validate_config(data.queue_config_id, QueueConfigService, "队列")
+    await _validate_config(data.pubsub_config_id, PubSubConfigService, "发布订阅")
+
+    # 更新资源绑定
+    tenant = await TenantService.update_resource_bindings(
+        tenant_id=tenant_id,
+        db_config_id=data.db_config_id,
+        storage_config_id=data.storage_config_id,
+        cache_config_id=data.cache_config_id,
+        queue_config_id=data.queue_config_id,
+        pubsub_config_id=data.pubsub_config_id,
+    )
+
+    if not tenant:
+        raise HTTPException(status_code=404, detail="租户不存在")
+
+    db_ref = await _get_resource_ref(tenant.db_config_id, DatabaseConfigService)
+    storage_ref = await _get_resource_ref(tenant.storage_config_id, StorageConfigService)
+    cache_ref = await _get_resource_ref(tenant.cache_config_id, CacheConfigService)
+    queue_ref = await _get_resource_ref(tenant.queue_config_id, QueueConfigService)
+    pubsub_ref = await _get_resource_ref(tenant.pubsub_config_id, PubSubConfigService)
+
+    return ORJSONResponse(
+        content=Success(
+            ResourceBindingResponse(
+                tenant_id=tenant.id,
+                db_config=db_ref,
+                storage_config=storage_ref,
+                cache_config=cache_ref,
+                queue_config=queue_ref,
+                pubsub_config=pubsub_ref,
+            ).model_dump()
+        )
+    )

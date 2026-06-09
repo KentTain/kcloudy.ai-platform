@@ -36,6 +36,16 @@ class UserTenantInfo(BaseModel):
     is_default: bool = Field(..., description="是否默认租户")
 
 
+class ModuleRoleUsageInfo(BaseModel):
+    """模块角色使用信息"""
+
+    module_role_id: str = Field(..., description="模块定义层角色ID")
+    role_id: str = Field(..., description="IAM层角色ID")
+    role_code: str = Field(..., description="角色编码")
+    role_name: str = Field(..., description="角色名称")
+    user_count: int = Field(..., description="使用该角色的用户数")
+
+
 class IamClient:
     """
     IAM 模块客户端
@@ -285,6 +295,80 @@ class IamClient:
                 )
                 result = await session.execute(stmt)
                 return [row[0] for row in result.all()]
+
+    async def check_module_role_usage(
+        self, tenant_id: str, module_role_ids: list[str]
+    ) -> list[ModuleRoleUsageInfo]:
+        """
+        检查租户下模块角色的使用情况
+
+        Args:
+            tenant_id: 租户 ID
+            module_role_ids: 模块定义层角色 ID 列表（ModuleRole.id）
+
+        Returns:
+            list[ModuleRoleUsageInfo]: 有用户使用的角色列表
+        """
+        if not module_role_ids:
+            return []
+
+        if self._http_client:
+            # 微服务模式
+            data = await self._http_client.post(
+                f"/inner/v1/tenants/{tenant_id}/module-roles/usage",
+                json={"module_role_ids": module_role_ids},
+            )
+            if data and isinstance(data, dict) and "roles" in data:
+                return [ModuleRoleUsageInfo.model_validate(r) for r in data["roles"]]
+            return []
+        else:
+            # 单体模式
+            from iam.models import Role, UserRole
+            from framework.database.core.engine import async_session
+            from sqlalchemy import select, func
+
+            async with async_session() as session:
+                # 查找该租户下 ref_id 关联到这些模块角色的 IAM 角色
+                stmt = select(Role).where(
+                    Role.tenant_id == tenant_id,
+                    Role.ref_id.in_(module_role_ids),
+                )
+                result = await session.execute(stmt)
+                roles = result.scalars().all()
+
+                if not roles:
+                    return []
+
+                role_ids = [r.id for r in roles]
+                role_map = {r.id: r for r in roles}
+
+                # 统计每个角色的用户数
+                stmt = select(
+                    UserRole.role_id,
+                    func.count(UserRole.user_id).label("user_count"),
+                ).where(
+                    UserRole.tenant_id == tenant_id,
+                    UserRole.role_id.in_(role_ids),
+                ).group_by(UserRole.role_id)
+                result = await session.execute(stmt)
+                role_usage = {row[0]: row[1] for row in result.all()}
+
+                # 构建返回结果（只返回有用户使用的角色）
+                usage_list = []
+                for role in roles:
+                    user_count = role_usage.get(role.id, 0)
+                    if user_count > 0:
+                        usage_list.append(
+                            ModuleRoleUsageInfo(
+                                module_role_id=role.ref_id,
+                                role_id=role.id,
+                                role_code=role.code,
+                                role_name=role.name,
+                                user_count=user_count,
+                            )
+                        )
+
+                return usage_list
 
     async def health_check(self) -> bool:
         """

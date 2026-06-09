@@ -28,6 +28,4 @@ class TenantAdmin(BaseModel):
         default=True, nullable=False, comment="是否激活"
     )
 
-    __table_args__ = (
-        Index("ix_tenant_admins_username", "username"),
-    )
+    __table_args__ = (Index("ix_tenant_admins_username", "username"),)

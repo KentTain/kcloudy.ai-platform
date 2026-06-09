@@ -16,6 +16,12 @@ class Menu(BaseModel, TreeNodeMixin):
 
     __tablename__ = "menus"
 
+    # 租户ID（NULL 表示全局菜单）
+    # 跨模块外键在数据库层通过迁移脚本创建，ORM 层不定义以避免 MetaData 解析问题
+    tenant_id: Mapped[str | None] = mapped_column(
+        String(36), nullable=True, comment="租户ID（NULL 表示全局菜单）"
+    )
+
     # 覆盖 TreeNodeMixin 的 parent_id
     # 注意：不添加外键约束，因为顶级节点的 parent_id 为虚拟根节点 "root"（不存在于数据库）
     # 树结构的父子关系通过 parent_ids 字段维护，应用层保证一致性
@@ -27,7 +33,7 @@ class Menu(BaseModel, TreeNodeMixin):
         String(50), nullable=False, comment="所属模块标识（demo/iam/tenant）"
     )
     code: Mapped[str] = mapped_column(
-        String(100), unique=True, nullable=False, comment="菜单编码（格式：module:name）"
+        String(100), nullable=False, comment="菜单编码（格式：module:name）"
     )
     name: Mapped[str] = mapped_column(
         String(100), nullable=False, comment="菜单名称（显示用）"
@@ -44,11 +50,18 @@ class Menu(BaseModel, TreeNodeMixin):
     deployment_base_url: Mapped[str | None] = mapped_column(
         String(500), nullable=True, comment="模块部署地址（跨模块菜单）"
     )
+    # 模块定义层关联ID（跨模块 FK，ORM 层不定义 ForeignKey 约束）
+    ref_id: Mapped[str | None] = mapped_column(
+        String(36), nullable=True, comment="模块定义层关联ID"
+    )
 
     __table_args__ = (
+        Index("ix_menus_tenant_id", "tenant_id"),
         Index("ix_menus_parent_id", "parent_id"),
         Index("ix_menus_module", "module"),
         Index("ix_menus_code", "code"),
+        Index("ix_menus_ref_id", "ref_id"),
+        UniqueConstraint("tenant_id", "code", name="uq_menus_tenant_code"),
     )
 
     @classmethod
@@ -63,14 +76,22 @@ class MenuPermission(BaseModel):
     __tablename__ = "menu_permissions"
 
     menu_id: Mapped[str] = mapped_column(
-        String(36), ForeignKey("menus.id", ondelete="CASCADE"), nullable=False, comment="菜单ID"
+        String(36),
+        ForeignKey("menus.id", ondelete="CASCADE"),
+        nullable=False,
+        comment="菜单ID",
     )
     permission_id: Mapped[str] = mapped_column(
-        String(36), ForeignKey("permissions.id", ondelete="CASCADE"), nullable=False, comment="权限ID"
+        String(36),
+        ForeignKey("permissions.id", ondelete="CASCADE"),
+        nullable=False,
+        comment="权限ID",
     )
 
     __table_args__ = (
         Index("ix_menu_permissions_menu_id", "menu_id"),
         Index("ix_menu_permissions_permission_id", "permission_id"),
-        UniqueConstraint("menu_id", "permission_id", name="uq_menu_permissions_menu_permission"),
+        UniqueConstraint(
+            "menu_id", "permission_id", name="uq_menu_permissions_menu_permission"
+        ),
     )

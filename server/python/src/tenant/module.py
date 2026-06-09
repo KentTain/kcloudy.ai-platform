@@ -35,11 +35,17 @@ class TenantModule:
         格式: [(router, prefix, tags), ...]
         """
         from tenant.controllers.admin.tenant_controller import router as admin_tenant_router
+        from tenant.controllers.admin.resource_config_controller import router as admin_resource_router
+        from tenant.controllers.admin.module_controller import router as admin_module_router
+        from tenant.controllers.admin.tenant_module_controller import router as admin_tenant_module_router
         from tenant.controllers.console.tenant_controller import router as console_tenant_router
         from tenant.controllers.inner.tenant_controller import router as inner_tenant_router
 
         return [
             (admin_tenant_router, "/admin/v1", ["Admin - Tenant"]),
+            (admin_resource_router, "/admin/v1", ["Admin - Resource Config"]),
+            (admin_module_router, "/admin/v1", ["Admin - Module"]),
+            (admin_tenant_module_router, "/admin/v1", ["Admin - Tenant Module"]),
             (console_tenant_router, "/console/v1/tenants", ["Console - Tenant"]),
             (inner_tenant_router, "/inner/v1", ["Inner - Tenant"]),
         ]
