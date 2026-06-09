@@ -15,12 +15,12 @@
 
 ## 3. 资源配置管理页面
 
-- [ ] 3.1 创建 `web/vue/src/tenant/pages/admin/ResourceConfigList.vue` 资源配置列表页面
-- [ ] 3.2 实现资源配置 Tab 切换组件
-- [ ] 3.3 实现资源配置统计卡片
-- [ ] 3.4 实现资源配置 DataTable 列表展示
-- [ ] 3.5 创建 `web/vue/src/tenant/components/ResourceConfigForm.vue` 资源配置表单弹窗
-- [ ] 3.6 实现资源配置连通性测试功能
+- [x] 3.1 创建 `web/vue/src/tenant/pages/admin/ResourceConfigList.vue` 资源配置列表页面
+- [x] 3.2 实现资源配置 Tab 切换组件
+- [x] 3.3 实现资源配置统计卡片
+- [x] 3.4 实现资源配置 DataTable 列表展示
+- [x] 3.5 创建资源配置表单弹窗（内嵌在 ResourceConfigList.vue）
+- [x] 3.6 实现资源配置连通性测试功能
 
 ## 4. 模块管理页面
 
