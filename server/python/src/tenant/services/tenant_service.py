@@ -406,6 +406,69 @@ class TenantService:
             # 按请求顺序返回
             return [tenants_map.get(tid) for tid in tenant_ids if tid in tenants_map]
 
+    @staticmethod
+    async def get_resource_bindings(tenant_id: str) -> Tenant | None:
+        """
+        获取租户的资源绑定情况
+
+        Args:
+            tenant_id: 租户 ID
+
+        Returns:
+            Tenant | None: 租户对象（包含资源配置 ID）
+        """
+        async with async_session() as session:
+            stmt = select(Tenant).where(Tenant.id == tenant_id)
+            result = await session.execute(stmt)
+            return result.scalar_one_or_none()
+
+    @staticmethod
+    async def update_resource_bindings(
+        tenant_id: str,
+        db_config_id: str | None = None,
+        storage_config_id: str | None = None,
+        cache_config_id: str | None = None,
+        queue_config_id: str | None = None,
+        pubsub_config_id: str | None = None,
+    ) -> Tenant | None:
+        """
+        更新租户的资源绑定
+
+        Args:
+            tenant_id: 租户 ID
+            db_config_id: 数据库配置 ID（None 表示解绑）
+            storage_config_id: 存储配置 ID
+            cache_config_id: 缓存配置 ID
+            queue_config_id: 队列配置 ID
+            pubsub_config_id: 发布订阅配置 ID
+
+        Returns:
+            Tenant | None: 更新后的租户对象
+        """
+        async with async_session() as session:
+            stmt = select(Tenant).where(Tenant.id == tenant_id)
+            result = await session.execute(stmt)
+            tenant = result.scalar_one_or_none()
+
+            if not tenant:
+                return None
+
+            # 更新资源绑定
+            tenant.db_config_id = db_config_id
+            tenant.storage_config_id = storage_config_id
+            tenant.cache_config_id = cache_config_id
+            tenant.queue_config_id = queue_config_id
+            tenant.pubsub_config_id = pubsub_config_id
+
+            await session.commit()
+            await session.refresh(tenant)
+
+            # 使缓存失效
+            await TenantCache.invalidate(tenant_id)
+
+            _logger.info(f"更新租户资源绑定: {tenant_id}")
+            return tenant
+
 
 # 服务单例
 tenant_service = TenantService()

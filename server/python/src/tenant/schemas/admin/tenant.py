@@ -147,3 +147,34 @@ class AdminInfoVo(BaseModel):
     is_default: bool = Field(..., description="是否默认管理员")
     is_active: bool = Field(..., description="是否激活")
     created_at: datetime = Field(..., description="创建时间")
+
+
+# ============== 资源绑定 Schema ==============
+
+
+class ResourceBindingRequest(BaseModel):
+    """资源绑定请求"""
+
+    db_config_id: str | None = Field(None, description="数据库配置ID")
+    storage_config_id: str | None = Field(None, description="存储配置ID")
+    cache_config_id: str | None = Field(None, description="缓存配置ID")
+    queue_config_id: str | None = Field(None, description="队列配置ID")
+    pubsub_config_id: str | None = Field(None, description="发布订阅配置ID")
+
+
+class ResourceConfigReferenceVo(BaseModel):
+    """资源配置引用响应"""
+
+    id: str = Field(..., description="配置ID")
+    name: str = Field(..., description="配置名称")
+
+
+class ResourceBindingResponse(BaseModel):
+    """资源绑定响应"""
+
+    tenant_id: str = Field(..., description="租户ID")
+    db_config: ResourceConfigReferenceVo | None = Field(None, description="数据库配置")
+    storage_config: ResourceConfigReferenceVo | None = Field(None, description="存储配置")
+    cache_config: ResourceConfigReferenceVo | None = Field(None, description="缓存配置")
+    queue_config: ResourceConfigReferenceVo | None = Field(None, description="队列配置")
+    pubsub_config: ResourceConfigReferenceVo | None = Field(None, description="发布订阅配置")

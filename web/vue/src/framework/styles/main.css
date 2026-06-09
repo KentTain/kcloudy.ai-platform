@@ -176,8 +176,22 @@
   * {
     @apply border-border outline-ring/50;
   }
-  body {
-    @apply bg-background text-foreground;
-    @apply font-sans;
+  @layer base {
+    * {
+      @apply border-border outline-ring/50;
+    }
+    
+    body {
+      @apply bg-background text-foreground font-sans;
+      min-height: 100vh;
+      font-size: 15px;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      line-height: 1.6;
+      text-rendering: optimizeLegibility;
+      transition:
+        color 0.5s,
+        background-color 0.5s;
+    }
   }
 }

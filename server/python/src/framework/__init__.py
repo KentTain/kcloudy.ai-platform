@@ -12,6 +12,7 @@ Framework 模块
 - pubsub: 发布订阅
 - database: 数据库组件
 - tenant: 租户模型
+- events: 领域事件
 - utils: 工具函数
 """
 
