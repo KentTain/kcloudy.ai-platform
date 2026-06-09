@@ -20,10 +20,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Skeleton } from '@/components/ui/skeleton'
-import CommonPagination from '@/components/CommonPagination.vue'
-import CommonDateInput from '@/components/CommonDateInput.vue'
-import CommonDescriptionList from '@/components/CommonDescriptionList.vue'
-import type { DescriptionItem } from '@/components/CommonDescriptionList.vue'
+import { DateInput, DescriptionList, type DescriptionItem, Pagination } from '@/components/common'
 import { toTypedSchema } from '@vee-validate/zod'
 import { useForm } from 'vee-validate'
 import * as z from 'zod'
@@ -198,7 +195,7 @@ onMounted(async () => {
       <!-- 个人资料 Tab -->
       <TabsContent value="profile">
         <div class="flex flex-col gap-6 max-w-[600px]">
-          <CommonDescriptionList :items="profileDescriptionItems" :columns="2" bordered />
+          <DescriptionList :items="profileDescriptionItems" :columns="2" bordered />
 
           <form @submit="onProfileSubmit" class="flex flex-col gap-4">
             <FormField v-slot="{ componentField }" name="nickname">
@@ -327,7 +324,7 @@ onMounted(async () => {
           <div class="flex items-end gap-3">
             <div class="flex flex-col gap-1.5">
               <span class="text-sm text-muted-foreground">日期范围</span>
-              <CommonDateInput
+              <DateInput
                 v-model="dateRange"
                 type="range"
                 placeholder="选择日期范围"
@@ -375,7 +372,7 @@ onMounted(async () => {
             </Table>
           </div>
 
-          <CommonPagination
+          <Pagination
             :total="loginHistoryTotal"
             :page="loginHistoryPage"
             :page-size="loginHistoryPageSize"

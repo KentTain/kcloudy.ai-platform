@@ -55,7 +55,7 @@ export function flattenTree<T extends TreeNodeTree>(tree: T[]): T[] {
   walk(tree)
   // 仅当所有节点都有 tree_sorts 时才排序
   if (result.length > 0 && 'tree_sorts' in result[0]) {
-    return sortByTreeSorts(result as TreeNode[])
+    return sortByTreeSorts(result as T[])
   }
   return result
 }

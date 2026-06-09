@@ -25,7 +25,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Skeleton } from '@/components/ui/skeleton'
-import CommonPagination from '@/components/CommonPagination.vue'
+import { Pagination } from '@/components/common'
 import { Plus, Search, RotateCcw, Pencil, Trash2, Lock, ShieldOff, ShieldCheck } from '@lucide/vue'
 
 const router = useRouter()
@@ -263,7 +263,7 @@ onMounted(() => {
     </div>
 
     <!-- 分页 -->
-    <CommonPagination
+    <Pagination
       :total="userStore.total"
       :page="pagination.page"
       :page-size="pagination.pageSize"

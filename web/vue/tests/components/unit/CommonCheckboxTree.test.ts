@@ -1,9 +1,9 @@
 import { describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { nextTick } from 'vue'
-import CommonCheckboxTree from '@/components/CommonCheckboxTree.vue'
+import { CheckboxTree } from '@/components/common'
 
-describe('CommonCheckboxTree', () => {
+describe('CheckboxTree', () => {
   const sampleTree = [
     {
       id: '1',
@@ -25,7 +25,7 @@ describe('CommonCheckboxTree', () => {
 
   describe('基本渲染', () => {
     it('渲染树形结构', () => {
-      const wrapper = mount(CommonCheckboxTree, {
+      const wrapper = mount(CheckboxTree, {
         props: { data: sampleTree },
       })
       expect(wrapper.text()).toContain('根节点1')
@@ -35,7 +35,7 @@ describe('CommonCheckboxTree', () => {
     // TODO: CommonTree 使用 render 函数，在 jsdom 环境中 expandedKeys 变化不会触发重新渲染
     // 该功能在真实浏览器中正常工作，测试环境需要特殊处理
     it.skip('展开子节点', async () => {
-      const wrapper = mount(CommonCheckboxTree, {
+      const wrapper = mount(CheckboxTree, {
         props: { data: sampleTree, defaultExpandLevel: 1 },
       })
       // 等待 watch 触发和组件重新渲染
@@ -46,14 +46,14 @@ describe('CommonCheckboxTree', () => {
     })
 
     it('搜索框渲染', () => {
-      const wrapper = mount(CommonCheckboxTree, {
+      const wrapper = mount(CheckboxTree, {
         props: { data: sampleTree, searchable: true },
       })
       expect(wrapper.find('input').exists()).toBe(true)
     })
 
     it('禁用搜索框', () => {
-      const wrapper = mount(CommonCheckboxTree, {
+      const wrapper = mount(CheckboxTree, {
         props: { data: sampleTree, searchable: true, disabled: true },
       })
       expect(wrapper.find('input').attributes('disabled')).toBeDefined()
@@ -62,7 +62,7 @@ describe('CommonCheckboxTree', () => {
 
   describe('勾选功能', () => {
     it('勾选叶子节点触发 update:modelValue', async () => {
-      const wrapper = mount(CommonCheckboxTree, {
+      const wrapper = mount(CheckboxTree, {
         props: { data: sampleTree, defaultExpandLevel: 1 },
       })
       const checkboxes = wrapper.findAllComponents({ name: 'Checkbox' })
@@ -71,7 +71,7 @@ describe('CommonCheckboxTree', () => {
     })
 
     it('父节点显示半选状态', async () => {
-      const wrapper = mount(CommonCheckboxTree, {
+      const wrapper = mount(CheckboxTree, {
         props: {
           data: sampleTree,
           modelValue: ['1-1'], // 只选中一个子节点
@@ -83,7 +83,7 @@ describe('CommonCheckboxTree', () => {
     })
 
     it('勾选父节点自动勾选所有子节点', async () => {
-      const wrapper = mount(CommonCheckboxTree, {
+      const wrapper = mount(CheckboxTree, {
         props: {
           data: sampleTree,
           modelValue: [],
@@ -99,7 +99,7 @@ describe('CommonCheckboxTree', () => {
   describe('搜索过滤', () => {
     // TODO: CommonTree 使用 render 函数，在 jsdom 环境中展开状态变化不会触发重新渲染
     it.skip('搜索匹配节点', async () => {
-      const wrapper = mount(CommonCheckboxTree, {
+      const wrapper = mount(CheckboxTree, {
         props: { data: sampleTree, searchable: true, defaultExpandLevel: 1 },
       })
       // 等待初始展开完成
@@ -114,7 +114,7 @@ describe('CommonCheckboxTree', () => {
     })
 
     it('搜索无匹配显示空状态', async () => {
-      const wrapper = mount(CommonCheckboxTree, {
+      const wrapper = mount(CheckboxTree, {
         props: { data: sampleTree, searchable: true, defaultExpandLevel: 1 },
       })
       const input = wrapper.find('input')
@@ -125,7 +125,7 @@ describe('CommonCheckboxTree', () => {
 
   describe('禁用状态', () => {
     it('禁用时禁止勾选操作', () => {
-      const wrapper = mount(CommonCheckboxTree, {
+      const wrapper = mount(CheckboxTree, {
         props: { data: sampleTree, disabled: true, defaultExpandLevel: 1 },
       })
       // 检查禁用状态
@@ -135,7 +135,7 @@ describe('CommonCheckboxTree', () => {
 
   describe('默认展开层级', () => {
     it('defaultExpandLevel=0 不展开任何节点', () => {
-      const wrapper = mount(CommonCheckboxTree, {
+      const wrapper = mount(CheckboxTree, {
         props: { data: sampleTree, defaultExpandLevel: 0 },
       })
       // 不展开时不显示子节点
@@ -143,7 +143,7 @@ describe('CommonCheckboxTree', () => {
 
     // TODO: CommonTree 使用 render 函数，在 jsdom 环境中展开状态变化不会触发重新渲染
     it.skip('defaultExpandLevel=1 展开第一层', async () => {
-      const wrapper = mount(CommonCheckboxTree, {
+      const wrapper = mount(CheckboxTree, {
         props: { data: sampleTree, defaultExpandLevel: 1 },
       })
       await vi.waitFor(() => {

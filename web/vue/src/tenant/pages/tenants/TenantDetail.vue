@@ -4,8 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useTenantStore } from '@/tenant/stores/tenant'
 import AppPage from '@/framework/layouts/components/AppPage.vue'
 import { Button } from '@/components/ui/button'
-import CommonDescriptionList from '@/components/CommonDescriptionList.vue'
-import type { DescriptionItem } from '@/components/CommonDescriptionList.vue'
+import { DescriptionList, type DescriptionItem } from '@/components/common'
 import { Pencil, ShieldCheck, ShieldOff } from '@lucide/vue'
 
 const route = useRoute()
@@ -104,6 +103,6 @@ onMounted(() => {
         <div class="h-5 w-full bg-muted animate-pulse rounded" />
       </div>
     </div>
-    <CommonDescriptionList v-else :items="descriptionItems" :columns="2" bordered />
+    <DescriptionList v-else :items="descriptionItems" :columns="2" bordered />
   </AppPage>
 </template>

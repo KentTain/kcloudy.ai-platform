@@ -66,9 +66,9 @@
 
 ## 11. 验证
 
-- [ ] 11.1 运行 `pnpm build` 验证构建
-- [ ] 11.2 运行 `pnpm type-check` 验证类型
-- [ ] 11.3 运行 `pnpm test:unit` 验证测试
+- [x] 11.1 运行 `pnpm build` 验证构建
+- [x] 11.2 运行 `pnpm type-check` 验证类型
+- [x] 11.3 运行 `pnpm test:unit` 验证测试
 
 ## 12. 补充组件文档
 

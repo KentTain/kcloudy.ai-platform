@@ -10,10 +10,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
-import CommonDescriptionList from '@/components/CommonDescriptionList.vue'
-import type { DescriptionItem } from '@/components/CommonDescriptionList.vue'
+import { DescriptionList, type DescriptionItem, Pagination, Table } from '@/components/common'
 import {
-  Table,
   TableBody,
   TableCell,
   TableHead,
@@ -21,7 +19,6 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Skeleton } from '@/components/ui/skeleton'
-import CommonPagination from '@/components/CommonPagination.vue'
 import {
   Dialog,
   DialogContent,
@@ -239,7 +236,7 @@ onMounted(() => {
         <div class="rounded-lg border p-4">
           <template v-if="selectedDepartment">
             <!-- 部门详情 -->
-            <CommonDescriptionList :items="departmentDescriptionItems" :columns="2" bordered />
+            <DescriptionList :items="departmentDescriptionItems" :columns="2" bordered />
 
             <div class="flex gap-2 mt-4">
               <Button size="sm" @click="handleEdit">
@@ -333,7 +330,7 @@ onMounted(() => {
                 </Table>
               </div>
 
-              <CommonPagination
+              <Pagination
                 :total="departmentStore.departmentUsers.length"
                 :page="userPagination.page"
                 :page-size="userPagination.pageSize"

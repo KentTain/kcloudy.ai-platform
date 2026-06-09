@@ -29,7 +29,7 @@ describe('PermissionTree', () => {
       const wrapper = mount(PermissionTree, {
         props: { permissions: mockPermissions, modelValue: [] },
       })
-      expect(wrapper.findComponent({ name: 'CommonCheckboxTree' }).exists()).toBe(true)
+      expect(wrapper.findComponent({ name: 'CheckboxTree' }).exists()).toBe(true)
     })
   })
 
@@ -95,7 +95,7 @@ describe('PermissionTree', () => {
       const wrapper = mount(PermissionTree, {
         props: { permissions: mockPermissions, modelValue: [] },
       })
-      const checkboxTree = wrapper.findComponent({ name: 'CommonCheckboxTree' })
+      const checkboxTree = wrapper.findComponent({ name: 'CheckboxTree' })
       expect(checkboxTree.exists()).toBe(true)
       expect(checkboxTree.props('searchable')).toBe(true)
     })
@@ -114,7 +114,7 @@ describe('PermissionTree', () => {
         props: { permissions: mockPermissions, modelValue: [], disabled: true },
       })
       expect(wrapper.props('disabled')).toBe(true)
-      const checkboxTree = wrapper.findComponent({ name: 'CommonCheckboxTree' })
+      const checkboxTree = wrapper.findComponent({ name: 'CheckboxTree' })
       expect(checkboxTree.props('disabled')).toBe(true)
     })
   })

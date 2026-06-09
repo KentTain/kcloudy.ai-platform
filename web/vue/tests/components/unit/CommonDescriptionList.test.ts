@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import { h } from 'vue'
 import { mount } from '@vue/test-utils'
-import CommonDescriptionList from '@/components/CommonDescriptionList.vue'
-import type { DescriptionItem } from '@/components/CommonDescriptionList.vue'
+import { DescriptionList } from '@/components/common'
+import type { DescriptionItem } from '@/components/common'
 
-describe('CommonDescriptionList', () => {
+describe('DescriptionList', () => {
   const sampleItems: DescriptionItem[] = [
     { label: '用户名', value: 'admin' },
     { label: '邮箱', value: 'admin@example.com' },
@@ -16,7 +16,7 @@ describe('CommonDescriptionList', () => {
 
   describe('基本渲染', () => {
     it('渲染 key-value 对', () => {
-      const wrapper = mount(CommonDescriptionList, {
+      const wrapper = mount(DescriptionList, {
         props: { items: sampleItems },
       })
       expect(wrapper.text()).toContain('用户名')
@@ -26,21 +26,21 @@ describe('CommonDescriptionList', () => {
     })
 
     it('使用 grid 布局', () => {
-      const wrapper = mount(CommonDescriptionList, {
+      const wrapper = mount(DescriptionList, {
         props: { items: sampleItems, columns: 2 },
       })
       expect(wrapper.find('.grid').classes()).toContain('grid-cols-2')
     })
 
     it('支持 1 列布局', () => {
-      const wrapper = mount(CommonDescriptionList, {
+      const wrapper = mount(DescriptionList, {
         props: { items: sampleItems, columns: 1 },
       })
       expect(wrapper.find('.grid').classes()).toContain('grid-cols-1')
     })
 
     it('支持 3 列布局', () => {
-      const wrapper = mount(CommonDescriptionList, {
+      const wrapper = mount(DescriptionList, {
         props: { items: sampleItems, columns: 3 },
       })
       expect(wrapper.find('.grid').classes()).toContain('grid-cols-3')
@@ -49,21 +49,21 @@ describe('CommonDescriptionList', () => {
 
   describe('空值处理', () => {
     it('null 值显示占位符', () => {
-      const wrapper = mount(CommonDescriptionList, {
+      const wrapper = mount(DescriptionList, {
         props: { items: [{ label: '测试', value: null }] },
       })
       expect(wrapper.text()).toContain('--')
     })
 
     it('undefined 值显示占位符', () => {
-      const wrapper = mount(CommonDescriptionList, {
+      const wrapper = mount(DescriptionList, {
         props: { items: [{ label: '测试', value: undefined }] },
       })
       expect(wrapper.text()).toContain('--')
     })
 
     it('空字符串显示占位符', () => {
-      const wrapper = mount(CommonDescriptionList, {
+      const wrapper = mount(DescriptionList, {
         props: { items: [{ label: '测试', value: '' }] },
       })
       expect(wrapper.text()).toContain('--')
@@ -72,7 +72,7 @@ describe('CommonDescriptionList', () => {
 
   describe('Badge 类型', () => {
     it('type=badge 时渲染 Badge 组件', () => {
-      const wrapper = mount(CommonDescriptionList, {
+      const wrapper = mount(DescriptionList, {
         props: {
           items: [{ label: '状态', value: 'active', type: 'badge' as const }],
         },
@@ -81,7 +81,7 @@ describe('CommonDescriptionList', () => {
     })
 
     it('Badge 支持不同 variant', () => {
-      const wrapper = mount(CommonDescriptionList, {
+      const wrapper = mount(DescriptionList, {
         props: {
           items: [
             { label: '状态', value: 'active', type: 'badge' as const, badgeVariant: 'default' as const },
@@ -95,7 +95,7 @@ describe('CommonDescriptionList', () => {
 
   describe('边框样式', () => {
     it('bordered=true 显示边框', () => {
-      const wrapper = mount(CommonDescriptionList, {
+      const wrapper = mount(DescriptionList, {
         props: { items: sampleItems, bordered: true },
       })
       const borderedElements = wrapper.findAll('.border-b')
@@ -103,7 +103,7 @@ describe('CommonDescriptionList', () => {
     })
 
     it('bordered=false 不显示边框', () => {
-      const wrapper = mount(CommonDescriptionList, {
+      const wrapper = mount(DescriptionList, {
         props: { items: sampleItems, bordered: false },
       })
       expect(wrapper.find('.border-b').exists()).toBe(false)
@@ -112,7 +112,7 @@ describe('CommonDescriptionList', () => {
 
   describe('自定义 slot', () => {
     it('支持 item slot', () => {
-      const wrapper = mount(CommonDescriptionList, {
+      const wrapper = mount(DescriptionList, {
         props: { items: sampleItems },
         slots: {
           item: (slotProps: { item: DescriptionItem }) =>

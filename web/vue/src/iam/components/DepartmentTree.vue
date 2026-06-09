@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import CommonCheckboxTree from '@/components/CommonCheckboxTree.vue'
+import { CheckboxTree } from '@/components/common'
 import type { TreeComponentNode } from '@/framework/types/tree'
 import type { Department } from '@/iam/types'
 
@@ -84,7 +84,7 @@ function flattenDepartments(depts: Department[]): Department[] {
 
 <template>
   <!-- 单选模式 -->
-  <CommonCheckboxTree
+  <CheckboxTree
     v-if="mode === 'single'"
     :data="treeData"
     v-model="selectedIdArray"
@@ -96,7 +96,7 @@ function flattenDepartments(depts: Department[]): Department[] {
   />
 
   <!-- 多选模式 -->
-  <CommonCheckboxTree
+  <CheckboxTree
     v-else
     :data="treeData"
     v-model="selectedIds"

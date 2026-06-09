@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { mount } from '@vue/test-utils'
-import CommonTree from '@/components/CommonTree.vue'
+import { Tree } from '@/components/common'
 import type { TreeComponentNode } from '@/framework/types/tree'
 
 // 测试数据
@@ -24,9 +24,9 @@ const flatData: TreeComponentNode[] = [
   { id: '4', name: '市场部' },
 ]
 
-describe('CommonTree', () => {
+describe('Tree', () => {
   it('渲染扁平节点列表', () => {
-    const wrapper = mount(CommonTree, {
+    const wrapper = mount(Tree, {
       props: { data: flatData, defaultExpandLevel: 0 },
     })
     expect(wrapper.text()).toContain('研发部')
@@ -34,7 +34,7 @@ describe('CommonTree', () => {
   })
 
   it('默认展开第一层显示子节点', () => {
-    const wrapper = mount(CommonTree, {
+    const wrapper = mount(Tree, {
       props: { data: treeData, defaultExpandLevel: 1 },
     })
     // 根节点 + 子节点 + 叶子节点 都应该可见
@@ -44,7 +44,7 @@ describe('CommonTree', () => {
   })
 
   it('空数据不崩溃', () => {
-    const wrapper = mount(CommonTree, {
+    const wrapper = mount(Tree, {
       props: { data: [] },
     })
     expect(wrapper.find('div').exists()).toBe(true)

@@ -6,7 +6,7 @@
 import { type App, createApp, h, ref } from "vue";
 
 import type { MessageBoxOptions, MessageBoxType } from "./MessageBox.vue";
-import MessageBox from "./MessageBox.vue";
+import MessageBoxComponent from "./MessageBox.vue";
 
 /**
  * MessageBox 实例接口
@@ -59,7 +59,7 @@ class MessageBoxService {
         // 监听 messageBoxRef 变化
         return () =>
           h(
-            MessageBox,
+            MessageBoxComponent,
             {
               onVnodeMounted: updateInstance,
               ref: messageBoxRef,

@@ -1,18 +1,18 @@
 import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
-import CommonPagination from '@/components/CommonPagination.vue'
+import { Pagination } from '@/components/common'
 
-describe('CommonPagination', () => {
+describe('Pagination', () => {
   describe('基本渲染', () => {
     it('当 total 为 0 时不显示', () => {
-      const wrapper = mount(CommonPagination, {
+      const wrapper = mount(Pagination, {
         props: { total: 0, page: 1, pageSize: 10 },
       })
       expect(wrapper.find('div').exists()).toBe(false)
     })
 
     it('当 total > 0 时显示分页控件', () => {
-      const wrapper = mount(CommonPagination, {
+      const wrapper = mount(Pagination, {
         props: { total: 100, page: 1, pageSize: 10 },
       })
       expect(wrapper.find('div').exists()).toBe(true)
@@ -22,7 +22,7 @@ describe('CommonPagination', () => {
     })
 
     it('显示正确的总数', () => {
-      const wrapper = mount(CommonPagination, {
+      const wrapper = mount(Pagination, {
         props: { total: 256, page: 1, pageSize: 10 },
       })
       expect(wrapper.text()).toContain('256')
@@ -31,7 +31,7 @@ describe('CommonPagination', () => {
 
   describe('页码导航', () => {
     it('点击页码按钮触发 update:page 事件', async () => {
-      const wrapper = mount(CommonPagination, {
+      const wrapper = mount(Pagination, {
         props: { total: 100, page: 1, pageSize: 10 },
       })
       // 找到页码按钮（包含数字的按钮）
@@ -46,7 +46,7 @@ describe('CommonPagination', () => {
     })
 
     it('点击下一页按钮触发 update:page 事件', async () => {
-      const wrapper = mount(CommonPagination, {
+      const wrapper = mount(Pagination, {
         props: { total: 100, page: 1, pageSize: 10 },
       })
       // 找到所有按钮
@@ -62,7 +62,7 @@ describe('CommonPagination', () => {
     })
 
     it('点击上一页按钮触发 update:page 事件', async () => {
-      const wrapper = mount(CommonPagination, {
+      const wrapper = mount(Pagination, {
         props: { total: 100, page: 2, pageSize: 10 },
       })
       const buttons = wrapper.findAll('button')
@@ -79,7 +79,7 @@ describe('CommonPagination', () => {
 
   describe('每页条数切换', () => {
     it('切换每页条数触发 update:pageSize 事件', async () => {
-      const wrapper = mount(CommonPagination, {
+      const wrapper = mount(Pagination, {
         props: { total: 100, page: 5, pageSize: 10 },
       })
       const selectTrigger = wrapper.find('[data-testid="select-trigger"]')
@@ -89,7 +89,7 @@ describe('CommonPagination', () => {
     })
 
     it('切换每页条数后页码重置为 1', async () => {
-      const wrapper = mount(CommonPagination, {
+      const wrapper = mount(Pagination, {
         props: { total: 100, page: 5, pageSize: 10, pageSizeOptions: [10, 20, 50] },
       })
     })
@@ -97,14 +97,14 @@ describe('CommonPagination', () => {
 
   describe('边界条件', () => {
     it('当前页码大于最大页码时自动修正', () => {
-      const wrapper = mount(CommonPagination, {
+      const wrapper = mount(Pagination, {
         props: { total: 100, page: 20, pageSize: 10 },
       })
       expect(wrapper.vm.currentPage).toBe(10)
     })
 
     it('在第一页时禁用首页和上一页按钮', () => {
-      const wrapper = mount(CommonPagination, {
+      const wrapper = mount(Pagination, {
         props: { total: 100, page: 1, pageSize: 10 },
       })
       const buttons = wrapper.findAll('button')
@@ -113,7 +113,7 @@ describe('CommonPagination', () => {
     })
 
     it('在最后一页时禁用下一页和末页按钮', () => {
-      const wrapper = mount(CommonPagination, {
+      const wrapper = mount(Pagination, {
         props: { total: 100, page: 10, pageSize: 10 },
       })
       const buttons = wrapper.findAll('button')

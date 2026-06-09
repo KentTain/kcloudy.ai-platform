@@ -17,7 +17,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Skeleton } from '@/components/ui/skeleton'
-import CommonPagination from '@/components/CommonPagination.vue'
+import { Pagination } from '@/components/common'
 import { Plus, Pencil, Trash2 } from '@lucide/vue'
 
 const router = useRouter()
@@ -142,7 +142,7 @@ onMounted(() => {
       </Table>
     </div>
 
-    <CommonPagination
+    <Pagination
       :total="roleStore.total"
       :page="pagination.page"
       :page-size="pagination.pageSize"

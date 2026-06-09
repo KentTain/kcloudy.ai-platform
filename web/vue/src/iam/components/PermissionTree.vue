@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import CommonCheckboxTree from '@/components/CommonCheckboxTree.vue'
+import { CheckboxTree } from '@/components/common'
 import type { TreeComponentNode } from '@/framework/types/tree'
 import type { Permission } from '@/iam/types'
 
@@ -57,7 +57,7 @@ const handleUpdate = (value: (string | number)[]) => {
 </script>
 
 <template>
-  <CommonCheckboxTree
+  <CheckboxTree
     :data="treeData"
     v-model="selectedIds"
     :disabled="disabled"
