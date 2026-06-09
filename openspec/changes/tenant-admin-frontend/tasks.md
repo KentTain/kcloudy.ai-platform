@@ -33,10 +33,10 @@
 
 ## 5. 模块菜单管理
 
-- [ ] 5.1 创建 `web/vue/src/tenant/components/ModuleMenuTree.vue` 模块菜单树组件
-- [ ] 5.2 创建 `web/vue/src/tenant/components/ModuleMenuForm.vue` 菜单编辑表单弹窗
-- [ ] 5.3 实现菜单树的展开/折叠功能
-- [ ] 5.4 实现菜单的创建、编辑、删除功能
+- [x] 5.1 创建菜单树组件（内嵌在 ModuleDetail.vue）
+- [x] 5.2 创建菜单编辑表单弹窗（内嵌在 ModuleDetail.vue）
+- [x] 5.3 实现菜单树的展开/折叠功能
+- [x] 5.4 实现菜单的创建、编辑、删除功能
 
 ## 6. 模块权限管理
 

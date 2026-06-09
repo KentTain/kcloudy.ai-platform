@@ -12,6 +12,10 @@ export const notifyError = (message: string) => {
   console.error(message);
 };
 
+export const notifyWarning = (message: string) => {
+  console.warn(message);
+};
+
 export const confirmAction = (message: string) => window.confirm(message);
 
 export const getErrorMessage = (error: unknown, fallback: string) => {
