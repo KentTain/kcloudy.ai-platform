@@ -1,15 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { mount } from "@vue/test-utils";
-import CommonButton from "@/components/CommonButton.vue";
-import CommonCard from "@/components/CommonCard.vue";
-import CommonLoading from "@/components/CommonLoading.vue";
-import CommonInput from "@/components/CommonInput.vue";
-import CommonModal from "@/components/CommonModal.vue";
+import { Button, Card, Loading, Input, Modal } from "@/components/common";
 
 describe("P0 Components", () => {
-  describe("CommonButton", () => {
+  describe("Button", () => {
     it("renders correctly with default props", () => {
-      const wrapper = mount(CommonButton, {
+      const wrapper = mount(Button, {
         slots: { default: "Click me" },
       });
 
@@ -26,7 +22,7 @@ describe("P0 Components", () => {
       ] as const;
 
       cases.forEach(({ variant, expected }) => {
-        const wrapper = mount(CommonButton, {
+        const wrapper = mount(Button, {
           props: { variant },
         });
 
@@ -38,7 +34,7 @@ describe("P0 Components", () => {
       const sizes = ["sm", "md", "lg"] as const;
 
       sizes.forEach((size) => {
-        const wrapper = mount(CommonButton, {
+        const wrapper = mount(Button, {
           props: { size },
         });
 
@@ -47,7 +43,7 @@ describe("P0 Components", () => {
     });
 
     it("emits click event", async () => {
-      const wrapper = mount(CommonButton);
+      const wrapper = mount(Button);
 
       await wrapper.trigger("click");
 
@@ -55,7 +51,7 @@ describe("P0 Components", () => {
     });
 
     it("does not emit click when disabled", async () => {
-      const wrapper = mount(CommonButton, {
+      const wrapper = mount(Button, {
         props: { disabled: true },
       });
 
@@ -65,7 +61,7 @@ describe("P0 Components", () => {
     });
 
     it("does not emit click when loading", async () => {
-      const wrapper = mount(CommonButton, {
+      const wrapper = mount(Button, {
         props: { loading: true },
       });
 
@@ -75,9 +71,9 @@ describe("P0 Components", () => {
     });
   });
 
-  describe("CommonCard", () => {
+  describe("Card", () => {
     it("renders correctly", () => {
-      const wrapper = mount(CommonCard, {
+      const wrapper = mount(Card, {
         slots: { default: "Card content" },
       });
 
@@ -85,7 +81,7 @@ describe("P0 Components", () => {
     });
 
     it("renders with title", () => {
-      const wrapper = mount(CommonCard, {
+      const wrapper = mount(Card, {
         props: { title: "Card Title" },
       });
 
@@ -93,7 +89,7 @@ describe("P0 Components", () => {
     });
 
     it("renders with header slot", () => {
-      const wrapper = mount(CommonCard, {
+      const wrapper = mount(Card, {
         slots: { header: "Custom Header" },
       });
 
@@ -101,7 +97,7 @@ describe("P0 Components", () => {
     });
 
     it("renders with footer slot", () => {
-      const wrapper = mount(CommonCard, {
+      const wrapper = mount(Card, {
         slots: { footer: "Custom Footer" },
       });
 
@@ -109,15 +105,15 @@ describe("P0 Components", () => {
     });
   });
 
-  describe("CommonLoading", () => {
+  describe("Loading", () => {
     it("renders correctly", () => {
-      const wrapper = mount(CommonLoading);
+      const wrapper = mount(Loading);
 
       expect(wrapper.find(".animate-spin").exists()).toBe(true);
     });
 
     it("renders with text", () => {
-      const wrapper = mount(CommonLoading, {
+      const wrapper = mount(Loading, {
         props: { text: "Loading..." },
       });
 
@@ -128,7 +124,7 @@ describe("P0 Components", () => {
       const sizes = ["sm", "md", "lg"] as const;
 
       sizes.forEach((size) => {
-        const wrapper = mount(CommonLoading, {
+        const wrapper = mount(Loading, {
           props: { size },
         });
 
@@ -137,15 +133,15 @@ describe("P0 Components", () => {
     });
   });
 
-  describe("CommonInput", () => {
+  describe("Input", () => {
     it("renders correctly", () => {
-      const wrapper = mount(CommonInput);
+      const wrapper = mount(Input);
 
       expect(wrapper.find("input").exists()).toBe(true);
     });
 
     it("updates model value", async () => {
-      const wrapper = mount(CommonInput, {
+      const wrapper = mount(Input, {
         props: { modelValue: "" },
       });
 
@@ -157,7 +153,7 @@ describe("P0 Components", () => {
     });
 
     it("renders with error state", () => {
-      const wrapper = mount(CommonInput, {
+      const wrapper = mount(Input, {
         props: { error: "This field is required" },
       });
 
@@ -165,7 +161,7 @@ describe("P0 Components", () => {
     });
 
     it("renders with placeholder", () => {
-      const wrapper = mount(CommonInput, {
+      const wrapper = mount(Input, {
         props: { placeholder: "Enter text" },
       });
 
@@ -176,7 +172,7 @@ describe("P0 Components", () => {
       const sizes = ["sm", "md", "lg"] as const;
 
       sizes.forEach((size) => {
-        const wrapper = mount(CommonInput, {
+        const wrapper = mount(Input, {
           props: { size },
         });
 
@@ -185,7 +181,7 @@ describe("P0 Components", () => {
     });
 
     it("clears value without throwing", async () => {
-      const wrapper = mount(CommonInput, {
+      const wrapper = mount(Input, {
         props: { modelValue: "abc", clearable: true },
       });
 
@@ -196,16 +192,16 @@ describe("P0 Components", () => {
     });
 
     it("exposes focus and blur methods", () => {
-      const wrapper = mount(CommonInput);
+      const wrapper = mount(Input);
 
       expect(() => wrapper.vm.focus()).not.toThrow();
       expect(() => wrapper.vm.blur()).not.toThrow();
     });
   });
 
-  describe("CommonModal", () => {
+  describe("Modal", () => {
     it("hides close button when closable is false", () => {
-      const wrapper = mount(CommonModal, {
+      const wrapper = mount(Modal, {
         props: { modelValue: true, closable: false },
         slots: { default: "Modal content" },
         attachTo: document.body,
@@ -216,7 +212,7 @@ describe("P0 Components", () => {
     });
 
     it("emits close when dialog closes", async () => {
-      const wrapper = mount(CommonModal, {
+      const wrapper = mount(Modal, {
         props: { modelValue: true },
         slots: { default: "Modal content" },
         attachTo: document.body,

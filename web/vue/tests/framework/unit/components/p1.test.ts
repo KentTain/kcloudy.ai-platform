@@ -1,13 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
 import { mount } from "@vue/test-utils";
-import CommonSelect from "@/components/CommonSelect.vue";
-import CommonTable from "@/components/CommonTable.vue";
+import { Select, Table, Input } from "@/components/common";
 import AppForm from "@/framework/components/ui/AppForm.vue";
 import AppFormItem from "@/framework/components/ui/AppFormItem.vue";
-import CommonInput from "@/components/CommonInput.vue";
 
 describe("P1 Components", () => {
-  describe("CommonSelect", () => {
+  describe("Select", () => {
     const options = [
       { label: "选项1", value: "1" },
       { label: "选项2", value: "2" },
@@ -15,7 +13,7 @@ describe("P1 Components", () => {
     ];
 
     it("renders correctly", () => {
-      const wrapper = mount(CommonSelect, {
+      const wrapper = mount(Select, {
         props: { options },
       });
 
@@ -23,7 +21,7 @@ describe("P1 Components", () => {
     });
 
     it("shows placeholder when no value selected", () => {
-      const wrapper = mount(CommonSelect, {
+      const wrapper = mount(Select, {
         props: { options },
       });
 
@@ -31,7 +29,7 @@ describe("P1 Components", () => {
     });
 
     it("opens dropdown on click", async () => {
-      const wrapper = mount(CommonSelect, {
+      const wrapper = mount(Select, {
         props: { options },
       });
 
@@ -43,7 +41,7 @@ describe("P1 Components", () => {
 
     it("preserves number value when selecting option", async () => {
       const numberOptions = [{ label: "零", value: 0 }, { label: "一", value: 1 }];
-      const wrapper = mount(CommonSelect, {
+      const wrapper = mount(Select, {
         props: { options: numberOptions },
       });
 
@@ -57,7 +55,7 @@ describe("P1 Components", () => {
 
     it("preserves zero value when selecting option", async () => {
       const numberOptions = [{ label: "零", value: 0 }, { label: "一", value: 1 }];
-      const wrapper = mount(CommonSelect, {
+      const wrapper = mount(Select, {
         props: { options: numberOptions },
       });
 
@@ -69,7 +67,7 @@ describe("P1 Components", () => {
     });
 
     it("does not open when disabled", async () => {
-      const wrapper = mount(CommonSelect, {
+      const wrapper = mount(Select, {
         props: { options, disabled: true },
       });
 
@@ -77,7 +75,7 @@ describe("P1 Components", () => {
     });
   });
 
-  describe("CommonTable", () => {
+  describe("Table", () => {
     const columns = [
       { key: "name", title: "名称" },
       { key: "age", title: "年龄", align: "center" as const },
@@ -90,7 +88,7 @@ describe("P1 Components", () => {
     ];
 
     it("renders correctly", () => {
-      const wrapper = mount(CommonTable, {
+      const wrapper = mount(Table, {
         props: { columns, data },
       });
 
@@ -98,7 +96,7 @@ describe("P1 Components", () => {
     });
 
     it("renders columns", () => {
-      const wrapper = mount(CommonTable, {
+      const wrapper = mount(Table, {
         props: { columns, data },
       });
 
@@ -109,7 +107,7 @@ describe("P1 Components", () => {
     });
 
     it("renders data rows", () => {
-      const wrapper = mount(CommonTable, {
+      const wrapper = mount(Table, {
         props: { columns, data },
       });
 
@@ -118,7 +116,7 @@ describe("P1 Components", () => {
     });
 
     it("shows empty text when no data", () => {
-      const wrapper = mount(CommonTable, {
+      const wrapper = mount(Table, {
         props: { columns, data: [] },
       });
 
@@ -126,7 +124,7 @@ describe("P1 Components", () => {
     });
 
     it("shows loading state", () => {
-      const wrapper = mount(CommonTable, {
+      const wrapper = mount(Table, {
         props: { columns, data: [], loading: true },
       });
 
@@ -134,7 +132,7 @@ describe("P1 Components", () => {
     });
 
     it("emits sort event", async () => {
-      const wrapper = mount(CommonTable, {
+      const wrapper = mount(Table, {
         props: { columns, data },
       });
 
@@ -145,7 +143,7 @@ describe("P1 Components", () => {
     });
 
     it("renders stripe rows", () => {
-      const wrapper = mount(CommonTable, {
+      const wrapper = mount(Table, {
         props: { columns, data, stripe: true },
       });
 
@@ -153,7 +151,7 @@ describe("P1 Components", () => {
     });
 
     it("renders border", () => {
-      const wrapper = mount(CommonTable, {
+      const wrapper = mount(Table, {
         props: { columns, data, border: true },
       });
 
