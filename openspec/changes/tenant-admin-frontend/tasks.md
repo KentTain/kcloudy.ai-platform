@@ -24,12 +24,12 @@
 
 ## 4. 模块管理页面
 
-- [ ] 4.1 创建 `web/vue/src/tenant/pages/admin/ModuleList.vue` 模块列表页面
-- [ ] 4.2 实现模块列表统计卡片
-- [ ] 4.3 实现模块 DataTable 列表展示
-- [ ] 4.4 创建 `web/vue/src/tenant/pages/admin/ModuleDetail.vue` 模块详情页面
-- [ ] 4.5 实现模块详情 Tab 切换（基本信息/菜单/权限/角色）
-- [ ] 4.6 创建 `web/vue/src/tenant/pages/admin/ModuleForm.vue` 模块创建/编辑表单
+- [x] 4.1 创建 `web/vue/src/tenant/pages/admin/ModuleList.vue` 模块列表页面
+- [x] 4.2 实现模块列表统计卡片
+- [x] 4.3 实现模块 DataTable 列表展示
+- [x] 4.4 创建 `web/vue/src/tenant/pages/admin/ModuleDetail.vue` 模块详情页面
+- [x] 4.5 实现模块详情 Tab 切换（基本信息/菜单/权限/角色）
+- [x] 4.6 创建 `web/vue/src/tenant/pages/admin/ModuleForm.vue` 模块创建/编辑表单
 
 ## 5. 模块菜单管理
 
