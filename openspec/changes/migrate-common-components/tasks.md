@@ -49,8 +49,8 @@
 
 ## 7. 迁移 navigation 类组件
 
-- [ ] 7.1 迁移 CommonPagination.vue → navigation/pagination/Pagination.vue
-- [ ] 7.2 创建 navigation/index.ts
+- [x] 7.1 迁移 CommonPagination.vue → navigation/pagination/Pagination.vue
+- [x] 7.2 创建 navigation/index.ts
 
 ## 8. 创建总导出
 
