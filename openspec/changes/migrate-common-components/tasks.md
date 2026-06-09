@@ -54,7 +54,7 @@
 
 ## 8. 创建总导出
 
-- [ ] 8.1 创建 `web/vue/src/components/common/index.ts` 命名导出
+- [x] 8.1 创建 `web/vue/src/components/common/index.ts` 命名导出
 
 ## 9. 删除旧组件
 
