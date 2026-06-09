@@ -40,12 +40,12 @@
 
 ## 6. 迁移 feedback 类组件
 
-- [ ] 6.1 迁移 CommonLoading.vue → feedback/loading/Loading.vue
-- [ ] 6.2 迁移 CommonModal.vue → feedback/modal/Modal.vue
-- [ ] 6.3 迁移 AlonMessageBox.vue → feedback/message-box/MessageBox.vue
-- [ ] 6.4 迁移 messageBox.ts → feedback/message-box/messageBox.ts
-- [ ] 6.5 迁移 AlonTooltip.vue → feedback/tooltip/SmartTooltip.vue
-- [ ] 6.6 创建 feedback/index.ts
+- [x] 6.1 迁移 CommonLoading.vue → feedback/loading/Loading.vue
+- [x] 6.2 迁移 CommonModal.vue → feedback/modal/Modal.vue
+- [x] 6.3 迁移 AlonMessageBox.vue → feedback/message-box/MessageBox.vue
+- [x] 6.4 迁移 messageBox.ts → feedback/message-box/messageBox.ts
+- [x] 6.5 迁移 AlonTooltip.vue → feedback/tooltip/SmartTooltip.vue
+- [x] 6.6 创建 feedback/index.ts
 
 ## 7. 迁移 navigation 类组件
 
