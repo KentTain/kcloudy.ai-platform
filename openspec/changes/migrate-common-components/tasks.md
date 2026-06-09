@@ -58,11 +58,11 @@
 
 ## 9. 删除旧组件
 
-- [ ] 9.1 删除 `web/vue/src/components/Common*.vue` 所有文件
+- [x] 9.1 删除 `web/vue/src/components/Common*.vue` 所有文件
 
 ## 10. 添加依赖
 
-- [ ] 10.1 安装 `@chenglou/pretext@0.0.7` 依赖
+- [x] 10.1 安装 `@chenglou/pretext@0.0.7` 依赖
 
 ## 11. 验证
 

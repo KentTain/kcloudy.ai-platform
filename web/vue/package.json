@@ -23,6 +23,7 @@
   },
   "dependencies": {
     "@ai-sdk/vue": "^3.0.196",
+    "@chenglou/pretext": "0.0.7",
     "@lucide/vue": "^1.16.0",
     "@rive-app/webgl2": "^2.37.8",
     "@tanstack/vue-table": "^8.21.3",
