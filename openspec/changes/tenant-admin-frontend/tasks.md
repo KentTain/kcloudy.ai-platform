@@ -8,10 +8,10 @@
 
 ## 2. API 模块
 
-- [ ] 2.1 创建 `web/vue/src/tenant/api/resourceConfig.ts` 资源配置 API（5 种类型）
-- [ ] 2.2 创建 `web/vue/src/tenant/api/module.ts` 模块管理 API
-- [ ] 2.3 创建 `web/vue/src/tenant/api/tenantModule.ts` 租户模块分配 API
-- [ ] 2.4 更新 `web/vue/src/tenant/api/index.ts` 导出新 API
+- [x] 2.1 创建 `web/vue/src/tenant/api/resourceConfig.ts` 资源配置 API（5 种类型）
+- [x] 2.2 创建 `web/vue/src/tenant/api/module.ts` 模块管理 API
+- [x] 2.3 创建 `web/vue/src/tenant/api/tenantModule.ts` 租户模块分配 API
+- [x] 2.4 更新 `web/vue/src/tenant/api/index.ts` 导出新 API
 
 ## 3. 资源配置管理页面
 
