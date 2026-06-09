@@ -40,9 +40,9 @@
 
 ## 6. 模块权限管理
 
-- [ ] 6.1 创建 `web/vue/src/tenant/components/ModulePermissionList.vue` 权限列表组件
-- [ ] 6.2 创建 `web/vue/src/tenant/components/ModulePermissionForm.vue` 权限编辑表单弹窗
-- [ ] 6.3 实现权限的创建、编辑、删除功能
+- [x] 6.1 创建权限列表组件（内嵌在 ModuleDetail.vue）
+- [x] 6.2 创建权限编辑表单弹窗（内嵌在 ModuleDetail.vue）
+- [x] 6.3 实现权限的创建、编辑、删除功能
 
 ## 7. 模块角色管理
 

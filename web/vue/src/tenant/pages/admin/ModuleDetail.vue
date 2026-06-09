@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { getModule, getModuleMenus, createModuleMenu, updateModuleMenu, deleteModuleMenu } from '@/tenant/api/module'
-import type { Module, ModuleMenu, CreateMenuParams, UpdateMenuParams } from '@/tenant/types/admin'
+import { getModule, getModuleMenus, createModuleMenu, updateModuleMenu, deleteModuleMenu, getModulePermissions, createModulePermission, updateModulePermission, deleteModulePermission } from '@/tenant/api/module'
+import type { Module, ModuleMenu, ModulePermission, CreateMenuParams, UpdateMenuParams, CreatePermissionParams, UpdatePermissionParams } from '@/tenant/types/admin'
 import { notifyError, notifySuccess, notifyWarning } from '@/framework/utils/feedback'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -32,9 +32,17 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 import { Tree } from '@/components/ui/tree'
 import type { TreeNodeType } from '@/components/ui/tree'
-import { ArrowLeft, Pencil, Package, Menu, Key, Users, Plus, Trash2, FolderOpen, FileText } from '@lucide/vue'
+import { ArrowLeft, Pencil, Package, Menu, Key, Users, Plus, Trash2, FolderOpen, FileText, Search } from '@lucide/vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -63,6 +71,24 @@ const menuForm = ref({
   parent_id: '',
   icon: '',
   sort: 10,
+})
+
+// ==================== 权限管理状态 ====================
+const permissions = ref<ModulePermission[]>([])
+const permissionsLoading = ref(false)
+const selectedPermissionId = ref<string | null>(null)
+const permissionDialogOpen = ref(false)
+const permissionDialogMode = ref<'create' | 'edit'>('create')
+const deletePermissionDialogOpen = ref(false)
+const permissionSearchKeyword = ref('')
+
+// 权限表单
+const permissionForm = ref({
+  name: '',
+  code: '',
+  resource: '',
+  action: 'read' as 'read' | 'write' | 'delete',
+  description: '',
 })
 
 // 加载模块详情
@@ -289,10 +315,169 @@ const deleteMenu = async () => {
   }
 }
 
+// ==================== 权限管理方法 ====================
+
+// 筛选后的权限列表
+const filteredPermissions = computed(() => {
+  if (!permissionSearchKeyword.value.trim()) {
+    return permissions.value
+  }
+  const keyword = permissionSearchKeyword.value.toLowerCase()
+  return permissions.value.filter(p =>
+    p.name.toLowerCase().includes(keyword) ||
+    p.code.toLowerCase().includes(keyword) ||
+    p.resource.toLowerCase().includes(keyword)
+  )
+})
+
+// 当前选中的权限对象
+const selectedPermission = computed<ModulePermission | null>(() => {
+  if (!selectedPermissionId.value) return null
+  return permissions.value.find(p => p.id === selectedPermissionId.value) || null
+})
+
+// 加载权限数据
+const loadPermissions = async () => {
+  if (!moduleId.value) return
+  permissionsLoading.value = true
+  try {
+    const response = await getModulePermissions(moduleId.value)
+    if (response.data) {
+      permissions.value = response.data
+    }
+  } catch (error) {
+    console.error('加载权限失败:', error)
+    notifyError('加载权限失败')
+  } finally {
+    permissionsLoading.value = false
+  }
+}
+
+// 操作类型标签颜色
+const getActionBadgeVariant = (action: string) => {
+  switch (action) {
+    case 'read':
+      return 'default'
+    case 'write':
+      return 'secondary'
+    case 'delete':
+      return 'destructive'
+    default:
+      return 'outline'
+  }
+}
+
+// 打开新增权限弹窗
+const openCreatePermissionDialog = () => {
+  permissionDialogMode.value = 'create'
+  permissionForm.value = {
+    name: '',
+    code: '',
+    resource: '',
+    action: 'read',
+    description: '',
+  }
+  permissionDialogOpen.value = true
+}
+
+// 打开编辑权限弹窗
+const openEditPermissionDialog = (permission: ModulePermission) => {
+  permissionDialogMode.value = 'edit'
+  selectedPermissionId.value = permission.id
+  permissionForm.value = {
+    name: permission.name,
+    code: permission.code,
+    resource: permission.resource,
+    action: permission.action,
+    description: permission.description || '',
+  }
+  permissionDialogOpen.value = true
+}
+
+// 打开删除确认弹窗
+const openDeletePermissionDialog = (permission: ModulePermission) => {
+  selectedPermissionId.value = permission.id
+  deletePermissionDialogOpen.value = true
+}
+
+// 验证权限编码格式
+const validatePermissionCode = (code: string): boolean => {
+  const pattern = /^[a-zA-Z][a-zA-Z0-9_-]*:[a-zA-Z][a-zA-Z0-9_-]*:(read|write|delete)$/
+  return pattern.test(code)
+}
+
+// 保存权限
+const savePermission = async () => {
+  if (!permissionForm.value.name.trim()) {
+    notifyWarning('请输入权限名称')
+    return
+  }
+  if (!permissionForm.value.code.trim()) {
+    notifyWarning('请输入权限编码')
+    return
+  }
+  if (!validatePermissionCode(permissionForm.value.code)) {
+    notifyWarning('权限编码格式不正确，必须为 module:resource:action 格式，且 action 必须是 read/write/delete')
+    return
+  }
+  if (!permissionForm.value.resource.trim()) {
+    notifyWarning('请输入资源名称')
+    return
+  }
+  if (!['read', 'write', 'delete'].includes(permissionForm.value.action)) {
+    notifyWarning('操作类型必须是 read、write 或 delete')
+    return
+  }
+
+  try {
+    const params: CreatePermissionParams | UpdatePermissionParams = {
+      name: permissionForm.value.name.trim(),
+      code: permissionForm.value.code.trim(),
+      resource: permissionForm.value.resource.trim(),
+      action: permissionForm.value.action,
+      description: permissionForm.value.description.trim() || undefined,
+    }
+
+    if (permissionDialogMode.value === 'create') {
+      await createModulePermission(moduleId.value, params as CreatePermissionParams)
+      notifySuccess('权限创建成功')
+    } else if (selectedPermissionId.value) {
+      // 编辑模式下不修改 code
+      delete params.code
+      await updateModulePermission(moduleId.value, selectedPermissionId.value, params as UpdatePermissionParams)
+      notifySuccess('权限更新成功')
+    }
+
+    permissionDialogOpen.value = false
+    await loadPermissions()
+  } catch (error) {
+    console.error('保存权限失败:', error)
+    notifyError('保存权限失败')
+  }
+}
+
+// 删除权限
+const deletePermission = async () => {
+  if (!selectedPermissionId.value) return
+  try {
+    await deleteModulePermission(moduleId.value, selectedPermissionId.value)
+    notifySuccess('权限删除成功')
+    deletePermissionDialogOpen.value = false
+    selectedPermissionId.value = null
+    await loadPermissions()
+  } catch (error) {
+    console.error('删除权限失败:', error)
+    notifyError('删除权限失败')
+  }
+}
+
 // 监听 Tab 切换，加载菜单数据
 watch(activeTab, (newTab) => {
   if (newTab === 'menus' && menus.value.length === 0) {
     loadMenus()
+  }
+  if (newTab === 'permissions' && permissions.value.length === 0) {
+    loadPermissions()
   }
 })
 
@@ -542,11 +727,81 @@ onMounted(() => {
 
           <!-- 权限管理 Tab -->
           <TabsContent value="permissions" class="mt-0">
-            <div class="flex h-full flex-col items-center justify-center gap-4 py-12">
-              <Key class="text-muted-foreground h-16 w-16" />
-              <div class="text-center">
-                <div class="font-medium">权限管理功能开发中</div>
-                <div class="text-muted-foreground mt-1 text-sm">权限管理功能将在后续实现</div>
+            <div v-if="permissionsLoading" class="flex h-full items-center justify-center py-12">
+              <Skeleton class="h-8 w-8 rounded-full" />
+            </div>
+            <div v-else class="flex h-full flex-col gap-4">
+              <!-- 工具栏 -->
+              <div class="flex flex-wrap items-center justify-between gap-3">
+                <div class="relative w-full sm:w-64">
+                  <Search class="text-muted-foreground absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" />
+                  <Input
+                    v-model="permissionSearchKeyword"
+                    placeholder="搜索权限名称、编码..."
+                    class="pl-9"
+                  />
+                </div>
+                <Button @click="openCreatePermissionDialog">
+                  <Plus class="mr-1 h-4 w-4" />
+                  新增权限
+                </Button>
+              </div>
+
+              <!-- 权限列表 -->
+              <div class="rounded-lg border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead class="w-[150px]">权限名称</TableHead>
+                      <TableHead class="w-[200px]">权限编码</TableHead>
+                      <TableHead class="w-[120px]">资源</TableHead>
+                      <TableHead class="w-[100px]">操作类型</TableHead>
+                      <TableHead>说明</TableHead>
+                      <TableHead class="w-[120px]">操作</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    <TableRow v-if="filteredPermissions.length === 0">
+                      <TableCell colspan="6" class="text-muted-foreground text-center">
+                        {{ permissionSearchKeyword ? '未找到匹配的权限' : '暂无权限数据' }}
+                      </TableCell>
+                    </TableRow>
+                    <TableRow v-for="permission in filteredPermissions" :key="permission.id">
+                      <TableCell class="font-medium">{{ permission.name }}</TableCell>
+                      <TableCell class="font-mono text-sm">{{ permission.code }}</TableCell>
+                      <TableCell>{{ permission.resource }}</TableCell>
+                      <TableCell>
+                        <Badge :variant="getActionBadgeVariant(permission.action)">
+                          {{ permission.action }}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{{ permission.description || '--' }}</TableCell>
+                      <TableCell>
+                        <div class="flex items-center gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            @click="openEditPermissionDialog(permission)"
+                          >
+                            <Pencil class="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            @click="openDeletePermissionDialog(permission)"
+                          >
+                            <Trash2 class="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </div>
+
+              <!-- 权限统计 -->
+              <div class="text-muted-foreground text-sm">
+                共 {{ permissions.length }} 项权限{{ permissionSearchKeyword ? `，筛选结果 ${filteredPermissions.length} 项` : '' }}
               </div>
             </div>
           </TabsContent>
@@ -637,6 +892,78 @@ onMounted(() => {
           <Button
             variant="destructive"
             @click="deleteMenu"
+          >
+            确认删除
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
+    <!-- 权限表单弹窗 -->
+    <Dialog v-model:open="permissionDialogOpen">
+      <DialogContent class="sm:max-w-[500px]">
+        <DialogHeader>
+          <DialogTitle>{{ permissionDialogMode === 'create' ? '新增权限' : '编辑权限' }}</DialogTitle>
+        </DialogHeader>
+        <div class="grid gap-4 py-4">
+          <div class="grid gap-2">
+            <Label>权限名称 <span class="text-destructive">*</span></Label>
+            <Input v-model="permissionForm.name" placeholder="请输入权限名称" />
+          </div>
+          <div class="grid gap-2">
+            <Label>权限编码 <span class="text-destructive">*</span></Label>
+            <Input
+              v-model="permissionForm.code"
+              placeholder="格式: module:resource:action"
+              :disabled="permissionDialogMode === 'edit'"
+            />
+            <p class="text-muted-foreground text-xs">
+              {{ permissionDialogMode === 'edit' ? '编码不可修改' : '格式: module:resource:action，如 user:data:read' }}
+            </p>
+          </div>
+          <div class="grid gap-2">
+            <Label>资源 <span class="text-destructive">*</span></Label>
+            <Input v-model="permissionForm.resource" placeholder="请输入资源名称，如 user、role" />
+          </div>
+          <div class="grid gap-2">
+            <Label>操作类型 <span class="text-destructive">*</span></Label>
+            <Select v-model="permissionForm.action">
+              <SelectTrigger>
+                <SelectValue placeholder="请选择操作类型" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="read">read - 读取</SelectItem>
+                <SelectItem value="write">write - 写入</SelectItem>
+                <SelectItem value="delete">delete - 删除</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div class="grid gap-2">
+            <Label>说明</Label>
+            <Input v-model="permissionForm.description" placeholder="请输入权限说明" />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" @click="permissionDialogOpen = false">取消</Button>
+          <Button @click="savePermission">保存</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
+    <!-- 删除权限确认弹窗 -->
+    <Dialog v-model:open="deletePermissionDialogOpen">
+      <DialogContent class="sm:max-w-[400px]">
+        <DialogHeader>
+          <DialogTitle>确认删除权限</DialogTitle>
+          <DialogDescription>
+            确定要删除权限「{{ selectedPermission?.name }}」吗？此操作不可撤销。
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <Button variant="outline" @click="deletePermissionDialogOpen = false">取消</Button>
+          <Button
+            variant="destructive"
+            @click="deletePermission"
           >
             确认删除
           </Button>
