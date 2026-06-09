@@ -72,16 +72,16 @@
 
 ## 12. 补充组件文档
 
-- [ ] 12.1 在 web/vue/src/CLAUDE.md 添加「通用组件清单」章节
+- [x] 12.1 在 web/vue/src/CLAUDE.md 添加「通用组件清单」章节
   - UI 基础组件清单（ui/）
   - 通用业务组件清单（common/）
   - AI 专用组件清单（ai-elements/）
   - 导入方式说明
-- [ ] 12.2 创建 web/vue/src/components/common/CLAUDE.md 组件详细文档
+- [x] 12.2 创建 web/vue/src/components/common/CLAUDE.md 组件详细文档
   - 组件清单表格（组件/用途/Props）
   - 按功能分类（form/data-display/feedback/navigation/general）
   - 导入示例
-- [ ] 12.3 创建 web/vue/src/components/ai-elements/CLAUDE.md AI 组件文档
+- [x] 12.3 创建 web/vue/src/components/ai-elements/CLAUDE.md AI 组件文档
   - AI 组件清单
   - 用途说明
   - 导入示例

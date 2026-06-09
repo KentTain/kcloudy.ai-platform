@@ -42,34 +42,26 @@ import { Button } from '@/components/ui/button/Button.vue';
 import { Dialog, DialogContent, DialogHeader } from '@/components/ui/dialog';
 ```
 
-### 通用业务组件（待迁移至 common/）
+### 通用业务组件（common/）
 
-当前位于 `src/components/Common*.vue`，迁移后位于 `src/components/common/`。
+位于 `src/components/common/`，按功能分类组织。
 
-| 组件 | 当前位置 | 迁移后位置 | 用途 |
-|------|----------|-----------|------|
-| CommonButton | CommonButton.vue | common/general/button/ | 业务按钮 |
-| CommonCard | CommonCard.vue | common/general/card/ | 业务卡片 |
-| CommonInput | CommonInput.vue | common/form/input/ | 业务输入框 |
-| CommonSelect | CommonSelect.vue | common/form/select/ | 业务选择器 |
-| CommonDateInput | CommonDateInput.vue | common/form/date-input/ | 日期输入 |
-| CommonSelectTree | CommonSelectTree.vue | common/form/tree-select/ | 树选择器 |
-| CommonTable | CommonTable.vue | common/data-display/table/ | 业务表格 |
-| CommonTree | CommonTree.vue | common/data-display/tree/ | 树形展示 |
-| CommonTreeList | CommonTreeList.vue | common/data-display/tree/ | 树形列表 |
-| CommonCheckboxTree | CommonCheckboxTree.vue | common/data-display/tree/ | 复选框树 |
-| CommonDescriptionList | CommonDescriptionList.vue | common/data-display/description-list/ | 描述列表 |
-| CommonLoading | CommonLoading.vue | common/feedback/loading/ | 加载状态 |
-| CommonModal | CommonModal.vue | common/feedback/modal/ | 业务弹窗 |
-| CommonPagination | CommonPagination.vue | common/navigation/pagination/ | 分页组件 |
+| 类别 | 组件 | 用途 |
+|------|------|------|
+| **通用** | Button, Card | 业务按钮、业务卡片 |
+| **表单** | Input, Select, DateInput, TreeSelect | 业务输入框、选择器、日期输入、树选择器 |
+| **数据展示** | Table, DataTable, Tree, TreeList, CheckboxTree, DescriptionList | 业务表格、高级表格、树形展示、树形列表、复选框树、描述列表 |
+| **反馈** | Loading, Modal, MessageBox, SmartTooltip | 加载状态、业务弹窗、消息框、智能提示 |
+| **导航** | Pagination | 分页组件 |
 
-**迁移后导入方式**：
+**导入方式**：
 ```typescript
 // 从统一入口导入
 import { Button, Card, Input, Select, Table, Tree, Loading, Modal, Pagination } from '@/components/common';
-```
 
-**迁移状态**：待迁移（详见 `openspec/changes/migrate-common-components/`）
+// 导入类型
+import type { TreeSelectProps, DescriptionItem, MessageBoxOptions } from '@/components/common';
+```
 
 ### AI 专用组件（ai-elements/）
 
