@@ -2,15 +2,15 @@
 
 ## 1. 创建目录结构
 
-- [ ] 1.1 创建 `web/vue/src/components/common/` 分层目录结构
-- [ ] 1.2 创建 `web/vue/src/components/ui/tree/` 目录
+- [x] 1.1 创建 `web/vue/src/components/common/` 分层目录结构
+- [x] 1.2 创建 `web/vue/src/components/ui/tree/` 目录
 
 ## 2. 迁移基础树组件至 ui/tree/
 
-- [ ] 2.1 迁移 ShadcnTree.vue → Tree.vue
-- [ ] 2.2 迁移 ShadcnTreeNode.vue → TreeNode.vue
-- [ ] 2.3 迁移 types.ts
-- [ ] 2.4 创建 index.ts 导出
+- [x] 2.1 迁移 ShadcnTree.vue → Tree.vue
+- [x] 2.2 迁移 ShadcnTreeNode.vue → TreeNode.vue
+- [x] 2.3 迁移 types.ts
+- [x] 2.4 创建 index.ts 导出
 
 ## 3. 迁移 general 类组件
 
