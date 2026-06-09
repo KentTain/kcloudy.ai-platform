@@ -2,9 +2,9 @@
 
 ## 1. 类型定义
 
-- [ ] 1.1 创建 `web/vue/src/tenant/types/resource.ts` 资源配置类型定义
-- [ ] 1.2 扩展 `web/vue/src/tenant/types/index.ts` 导出资源类型
-- [ ] 1.3 扩展 `web/vue/src/tenant/types/admin.ts` 添加模块管理类型定义
+- [x] 1.1 创建 `web/vue/src/tenant/types/resource.ts` 资源配置类型定义
+- [x] 1.2 扩展 `web/vue/src/tenant/types/index.ts` 导出资源类型
+- [x] 1.3 扩展 `web/vue/src/tenant/types/admin.ts` 添加模块管理类型定义
 
 ## 2. API 模块
 
