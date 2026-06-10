@@ -18,7 +18,8 @@ import {
 } from '@/components/ui/table'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Pagination } from '@/components/common'
-import { Plus, Pencil, Trash2 } from '@lucide/vue'
+import { Plus, Pencil, Trash2, Shield } from '@lucide/vue'
+import PermissionAssignDialog from '@/iam/components/PermissionAssignDialog.vue'
 
 const router = useRouter()
 const roleStore = useRoleStore()
@@ -64,9 +65,22 @@ const handleDelete = async (row: Role) => {
   await roleStore.removeRole(row.id)
 }
 
+const assignRole = ref<Role | null>(null)
+const assignDialogOpen = ref(false)
+
+const handleAssignPermission = (row: Role) => {
+  assignRole.value = row
+  assignDialogOpen.value = true
+}
+
+const handleAssignSaved = () => {
+  loadRoles()
+}
+
 const canCreate = computed(() => frameworkUserStore.hasPermission('role:add'))
 const canEdit = computed(() => frameworkUserStore.hasPermission('role:edit'))
 const canDelete = computed(() => frameworkUserStore.hasPermission('role:delete'))
+const canAssign = computed(() => frameworkUserStore.hasPermission('role:edit'))
 
 function formatDate(dateStr: string): string {
   return new Date(dateStr).toLocaleString()
@@ -126,6 +140,15 @@ onMounted(() => {
                   编辑
                 </Button>
                 <Button
+                  v-if="canAssign"
+                  variant="ghost"
+                  size="sm"
+                  @click="handleAssignPermission(row)"
+                >
+                  <Shield class="mr-1 h-3.5 w-3.5" />
+                  分配权限
+                </Button>
+                <Button
                   v-if="canDelete && !row.is_system"
                   variant="ghost"
                   size="sm"
@@ -150,4 +173,10 @@ onMounted(() => {
       @update:page-size="handlePageSizeChange"
     />
   </AppPage>
+
+  <PermissionAssignDialog
+    :role="assignRole"
+    v-model:open="assignDialogOpen"
+    @saved="handleAssignSaved"
+  />
 </template>
