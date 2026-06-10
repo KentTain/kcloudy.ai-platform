@@ -119,6 +119,7 @@ export const useRoleStore = defineStore("iam-role", () => {
     } catch (error: any) {
       notifyError(getErrorMessage(error, "更新角色权限失败"));
       console.error("updateRolePermissions error:", error);
+      throw error;
     } finally {
       loading.value = false;
     }
