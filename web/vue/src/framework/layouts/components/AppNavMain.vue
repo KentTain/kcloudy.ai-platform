@@ -77,6 +77,7 @@ const defaultItems: MenuGroup[] = [
           { title: "角色管理", url: "/iam/roles", permissionKey: "iam.roles" },
           { title: "部门管理", url: "/iam/departments", permissionKey: "iam.departments" },
           { title: "租户管理", url: "/iam/tenants", permissionKey: "iam.tenants" },
+          { title: "菜单管理", url: "/iam/menus", permissionKey: "iam.menus" },
           { title: "权限管理", url: "/iam/permissions", permissionKey: "iam.permissions" },
         ],
       },

@@ -74,6 +74,14 @@ export const iamRoutes: RouteRecordRaw[] = [
         meta: { title: "部门管理", icon: "department", requiresAuth: true },
       },
 
+      // 菜单管理
+      {
+        path: "menus",
+        name: "MenuManagement",
+        component: () => import("@/iam/pages/menus/MenuList.vue"),
+        meta: { title: "菜单管理", icon: "menu", requiresAuth: true },
+      },
+
       // 个人中心
       {
         path: "profile",

@@ -98,7 +98,7 @@ onMounted(() => {
             <!-- 空状态 -->
             <TableRow v-if="filteredPermissions.length === 0">
               <TableCell colspan="5" class="text-muted-foreground text-center">
-                {{ searchKeyword ? '未找到匹配的权限' : '暂无权限数据' }}
+                {{ searchKeyword.trim() ? '未找到匹配的权限' : '暂无权限数据' }}
               </TableCell>
             </TableRow>
             <!-- 权限列表 -->
