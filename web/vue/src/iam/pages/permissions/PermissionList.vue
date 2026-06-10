@@ -2,8 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { usePermissionStore } from '@/iam/stores/permission'
 import AppPage from '@/framework/layouts/components/AppPage.vue'
-import { Badge } from '@/components/ui/badge'
-import { Input } from '@/components/ui/input'
+import { Badge, Input } from '@/components'
 import {
   Table,
   TableBody,

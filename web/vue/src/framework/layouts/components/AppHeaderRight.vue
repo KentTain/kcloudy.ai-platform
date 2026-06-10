@@ -6,6 +6,7 @@
 import { computed } from "vue";
 import { useRouter } from "vue-router";
 import { Moon, Sun, User, LogOut, HelpCircle, ClipboardList } from "@lucide/vue";
+import { Button } from "@/components";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,7 +14,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useUserStore } from "@/framework/stores/user";
 import { useColorMode } from "@/framework/composables/useColorMode";

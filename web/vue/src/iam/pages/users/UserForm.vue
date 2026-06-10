@@ -7,9 +7,8 @@ import * as z from 'zod'
 import { useUserStore } from '@/iam/stores/user'
 import type { CreateUserParams, UpdateUserParams } from '@/iam/types'
 import AppPage from '@/framework/layouts/components/AppPage.vue'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
+import { Button, Input } from '@/components'
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components'
 
 const route = useRoute()
 const router = useRouter()

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { CheckboxTree } from '@/components/common'
+import { CheckboxTree } from '@/components'
 import type { TreeComponentNode } from '@/framework/types/tree'
 import type { Permission } from '@/iam/types'
 

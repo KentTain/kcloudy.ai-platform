@@ -4,7 +4,7 @@
  * 无需登录，用于验证布局效果
  */
 import { ref } from "vue";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import AppPage from "@/framework/layouts/components/AppPage.vue";
 

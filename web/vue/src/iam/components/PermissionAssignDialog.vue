@@ -4,9 +4,7 @@ import { usePermissionStore } from '@/iam/stores/permission'
 import { useRoleStore } from '@/iam/stores/role'
 import type { Permission, Role } from '@/iam/types'
 
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Checkbox } from '@/components/ui/checkbox'
+import { Button, Badge, Checkbox } from '@/components'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import {
   Dialog,
@@ -15,7 +13,7 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from '@/components/ui/dialog'
+} from '@/components'
 
 const props = withDefaults(defineProps<{
   role: Role | null

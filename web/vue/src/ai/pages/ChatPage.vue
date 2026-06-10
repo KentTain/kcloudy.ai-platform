@@ -15,7 +15,7 @@ import { MessageResponse } from "@/components/ai-elements/message";
 import { useChat } from "@/ai/composables";
 import { useConversationStore } from "@/ai/stores";
 import { RotateCcw, Square, Trash2, List } from "lucide-vue-next";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components";
 import ToolCallItem from "@/ai/components/ToolCallItem.vue";
 import ModelSelector from "@/ai/components/ModelSelector.vue";
 import type { UIMessagePart, ToolCallPart, ToolResultPart } from "@/ai/types";

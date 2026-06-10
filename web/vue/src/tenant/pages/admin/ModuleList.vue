@@ -4,11 +4,7 @@ import { useRouter } from 'vue-router'
 import { getModules, deleteModule } from '@/tenant/api/module'
 import type { Module } from '@/tenant/types/admin'
 import { notifySuccess, notifyError, confirmAction } from '@/framework/utils/feedback'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Card } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Skeleton } from '@/components/ui/skeleton'
+import { Button, Input, Badge, Skeleton, Pagination } from '@/components'
 import {
   Select,
   SelectContent,
@@ -24,7 +20,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { Pagination } from '@/components/common'
+import { Card } from '@/components'
 import { Plus, Search, RotateCcw, Pencil, Trash2, Eye, RefreshCw, Package, CheckCircle, Star, Users } from '@lucide/vue'
 
 const router = useRouter()

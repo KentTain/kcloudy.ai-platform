@@ -7,7 +7,7 @@
 import { onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 import AppPage from "@/framework/layouts/components/AppPage.vue";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components";
 import {
   Dialog,
   DialogContent,
@@ -15,7 +15,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
+} from "@/components";
 import { useConversationStore } from "@/ai/stores";
 import { MessageSquare, Trash2, Plus, Loader2 } from "lucide-vue-next";
 import type { Conversation } from "@/ai/types";

@@ -6,11 +6,7 @@ import DepartmentTree from '@/iam/components/DepartmentTree.vue'
 import type { CreateDepartmentParams, Department, UpdateDepartmentParams } from '@/iam/types'
 import { confirmAction, getErrorMessage, notifyError, notifySuccess } from '@/framework/utils/feedback'
 import AppPage from '@/framework/layouts/components/AppPage.vue'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Badge } from '@/components/ui/badge'
-import { Checkbox } from '@/components/ui/checkbox'
-import { DescriptionList, type DescriptionItem, Pagination, Table } from '@/components/common'
+import { Button, Input, Badge, Checkbox, Skeleton, DescriptionList, type DescriptionItem, Pagination, Table } from '@/components'
 import {
   TableBody,
   TableCell,
@@ -18,7 +14,6 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { Skeleton } from '@/components/ui/skeleton'
 import {
   Dialog,
   DialogContent,
@@ -26,14 +21,14 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog'
+} from '@/components'
 import {
   FormControl,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form'
+} from '@/components'
 import { toTypedSchema } from '@vee-validate/zod'
 import { useForm } from 'vee-validate'
 import * as z from 'zod'

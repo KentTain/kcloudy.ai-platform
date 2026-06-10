@@ -6,11 +6,9 @@ import { getErrorMessage, notifyError, notifySuccess } from '@/framework/utils/f
 import { useUserStore } from '@/framework/stores'
 import type { LoginHistory } from '@/iam/types'
 import AppPage from '@/framework/layouts/components/AppPage.vue'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Badge } from '@/components/ui/badge'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
+import { Button, Input, Badge, Skeleton, DateInput, DescriptionList, type DescriptionItem, Pagination } from '@/components'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components'
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components'
 import {
   Table,
   TableBody,
@@ -19,8 +17,6 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { Skeleton } from '@/components/ui/skeleton'
-import { DateInput, DescriptionList, type DescriptionItem, Pagination } from '@/components/common'
 import { toTypedSchema } from '@vee-validate/zod'
 import { useForm } from 'vee-validate'
 import * as z from 'zod'

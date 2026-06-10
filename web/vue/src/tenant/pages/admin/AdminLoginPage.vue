@@ -5,9 +5,8 @@ import { useAdminAuthStore } from "@/tenant/stores/adminAuth";
 import { toTypedSchema } from "@vee-validate/zod";
 import { useForm } from "vee-validate";
 import { z } from "zod";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Button, Input } from "@/components";
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components";
 import { Loader2, Shield } from "@lucide/vue";
 
 const router = useRouter();

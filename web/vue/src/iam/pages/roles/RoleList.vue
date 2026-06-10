@@ -6,8 +6,7 @@ import { useUserStore } from '@/framework/stores'
 import type { Role } from '@/iam/types'
 import { confirmAction, notifyError } from '@/framework/utils/feedback'
 import AppPage from '@/framework/layouts/components/AppPage.vue'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
+import { Button, Badge, Skeleton, Pagination } from '@/components'
 import {
   Table,
   TableBody,
@@ -16,8 +15,6 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { Skeleton } from '@/components/ui/skeleton'
-import { Pagination } from '@/components/common'
 import { Plus, Pencil, Trash2, Shield } from '@lucide/vue'
 import PermissionAssignDialog from '@/iam/components/PermissionAssignDialog.vue'
 

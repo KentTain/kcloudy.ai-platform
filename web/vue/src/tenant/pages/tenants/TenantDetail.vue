@@ -3,16 +3,13 @@ import { ref, onMounted, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useTenantStore } from '@/tenant/stores/tenant'
 import AppPage from '@/framework/layouts/components/AppPage.vue'
-import { Button } from '@/components/ui/button'
-import { DescriptionList, type DescriptionItem } from '@/components/common'
-import { Badge } from '@/components/ui/badge'
-import { Skeleton } from '@/components/ui/skeleton'
+import { Button, Badge, Skeleton, Input, Label, DescriptionList, type DescriptionItem } from '@/components'
 import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
-} from '@/components/ui/tabs'
+} from '@/components'
 import {
   Card,
   CardContent,
@@ -41,9 +38,7 @@ import {
   DialogTitle,
   DialogFooter,
   DialogDescription,
-} from '@/components/ui/dialog'
-import { Label } from '@/components/ui/label'
-import { Input } from '@/components/ui/input'
+} from '@/components'
 import {
   Pencil,
   ShieldCheck,

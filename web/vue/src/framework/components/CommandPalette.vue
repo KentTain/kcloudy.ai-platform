@@ -7,6 +7,7 @@
 import { onMounted, onUnmounted } from "vue";
 import { useRouter } from "vue-router";
 import { SearchIcon } from "@lucide/vue";
+import { Dialog, DialogContent } from "@/components";
 import {
   Command,
   CommandEmpty,
@@ -15,7 +16,6 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { useCommandPalette } from "@/framework/composables/useCommandPalette";
 
 const router = useRouter();

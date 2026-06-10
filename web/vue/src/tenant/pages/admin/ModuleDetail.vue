@@ -4,18 +4,13 @@ import { useRoute, useRouter } from 'vue-router'
 import { getModule, getModuleMenus, createModuleMenu, updateModuleMenu, deleteModuleMenu, getModulePermissions, createModulePermission, updateModulePermission, deleteModulePermission, getModuleRoles, createModuleRole, updateModuleRole, deleteModuleRole, updateRolePermissions } from '@/tenant/api/module'
 import type { Module, ModuleMenu, ModulePermission, ModuleRole, CreateMenuParams, UpdateMenuParams, CreatePermissionParams, UpdatePermissionParams, CreateRoleParams, UpdateRoleParams } from '@/tenant/types/admin'
 import { notifyError, notifySuccess, notifyWarning } from '@/framework/utils/feedback'
-import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Skeleton } from '@/components/ui/skeleton'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import { Button, Input, Label, Card, Badge, Skeleton, Checkbox, Textarea } from '@/components'
 import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
-} from '@/components/ui/tabs'
+} from '@/components'
 import {
   Dialog,
   DialogContent,
@@ -23,7 +18,7 @@ import {
   DialogTitle,
   DialogFooter,
   DialogDescription,
-} from '@/components/ui/dialog'
+} from '@/components'
 import {
   Select,
   SelectContent,
@@ -42,8 +37,6 @@ import {
 } from '@/components/ui/table'
 import { Tree } from '@/components/ui/tree'
 import type { TreeNodeType } from '@/components/ui/tree'
-import { Checkbox } from '@/components/ui/checkbox'
-import { Textarea } from '@/components/ui/textarea'
 import { ArrowLeft, Pencil, Package, Menu, Key, Users, Plus, Trash2, FolderOpen, FileText, Search, Shield } from '@lucide/vue'
 
 const route = useRoute()

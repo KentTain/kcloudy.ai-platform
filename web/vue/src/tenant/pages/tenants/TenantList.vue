@@ -6,9 +6,7 @@ import { useUserStore } from '@/framework/stores'
 import type { Tenant } from '@/tenant/types'
 import { confirmAction, notifySuccess } from '@/framework/utils/feedback'
 import AppPage from '@/framework/layouts/components/AppPage.vue'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Badge } from '@/components/ui/badge'
+import { Button, Input, Badge, Skeleton, Pagination } from '@/components'
 import {
   Select,
   SelectContent,
@@ -24,8 +22,6 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { Skeleton } from '@/components/ui/skeleton'
-import { Pagination } from '@/components/common'
 import { Plus, Search, RotateCcw, Pencil, Trash2, ShieldCheck, ShieldOff } from '@lucide/vue'
 
 const router = useRouter()

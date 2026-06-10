@@ -3,10 +3,7 @@ import { onMounted, ref, computed } from "vue";
 import { storeToRefs } from "pinia";
 import { useDatasetStore } from "@/demo/stores/datasets";
 import AppPage from "@/framework/layouts/components/AppPage.vue";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Button, Input, Badge, Skeleton } from "@/components";
 import {
   Table,
   TableBody,

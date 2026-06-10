@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref } from "vue";
 import AppPage from "@/framework/layouts/components/AppPage.vue";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getEventBus, ModuleEvents } from "@/framework/events";
 import type { EventHandler } from "@/framework/events";

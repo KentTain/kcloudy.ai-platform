@@ -8,9 +8,8 @@ import { useRoleStore } from '@/iam/stores/role'
 import { usePermissionStore } from '@/iam/stores/permission'
 import PermissionTree from '@/iam/components/PermissionTree.vue'
 import AppPage from '@/framework/layouts/components/AppPage.vue'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
+import { Button, Input } from '@/components'
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components'
 
 const route = useRoute()
 const router = useRouter()

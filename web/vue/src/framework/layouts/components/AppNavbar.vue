@@ -6,9 +6,9 @@
 import { computed } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { SearchIcon, ClipboardCheckIcon, BellIcon } from "@lucide/vue";
-import { SidebarTrigger } from "@/components/ui/sidebar";
+import { Button } from "@/components";
 import { Separator } from "@/components/ui/separator";
-import { Button } from "@/components/ui/button";
+import { SidebarTrigger } from "@/components/ui/sidebar";
 import {
   Breadcrumb,
   BreadcrumbItem,

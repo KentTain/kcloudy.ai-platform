@@ -38,9 +38,7 @@ import type {
   UpdateResourceConfigParams,
 } from '@/tenant/types/resource'
 import { notifySuccess, notifyError } from '@/framework/utils/feedback'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import { Button, Input, Label, Card, Badge, Skeleton, Pagination } from '@/components'
 import {
   Select,
   SelectContent,
@@ -48,15 +46,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Card } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Skeleton } from '@/components/ui/skeleton'
 import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
-} from '@/components/ui/tabs'
+} from '@/components'
 import {
   Table,
   TableBody,
@@ -71,8 +66,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog'
-import { Pagination } from '@/components/common'
+} from '@/components'
 import { Plus, Pencil, Trash2, Plug, RefreshCw } from '@lucide/vue'
 
 // 资源类型定义

@@ -2,10 +2,8 @@
 import { onMounted, ref } from "vue";
 import { getHealth, type HealthStatus } from "@/demo/api/health";
 import AppPage from "@/framework/layouts/components/AppPage.vue";
+import { Badge, Button, Skeleton } from "@/components";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
 
 const healthStatus = ref<HealthStatus | null>(null);
 const loading = ref(false);

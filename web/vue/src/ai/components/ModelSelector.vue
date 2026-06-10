@@ -6,6 +6,7 @@
  * 选择后自动同步到 conversationStore.currentModel。
  */
 import { ref, computed, onMounted } from "vue";
+import { Skeleton } from "@/components";
 import {
   Select,
   SelectContent,
@@ -15,7 +16,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Skeleton } from "@/components/ui/skeleton";
 import { useConversationStore } from "@/ai/stores";
 import { getModels, type ProviderItem } from "@/ai/api/model";
 import type { ModelConfig } from "@/ai/types";

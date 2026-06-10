@@ -5,8 +5,8 @@
  */
 import { computed } from "vue";
 import { useRouter } from "vue-router";
+import { Button } from "@/components";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Button } from "@/components/ui/button";
 import { useNotificationStore, type NotificationItem } from "@/framework/stores/notification";
 
 const router = useRouter();

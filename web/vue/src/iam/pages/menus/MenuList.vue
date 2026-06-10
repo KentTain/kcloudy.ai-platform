@@ -9,8 +9,7 @@ import type { MenuTreeNode } from '@/iam/types'
 import { findMenuById } from '@/iam/utils/menu'
 import MenuTree from '@/iam/components/MenuTree.vue'
 import AppPage from '@/framework/layouts/components/AppPage.vue'
-import { Card } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
+import { Card, Badge } from '@/components'
 import { FolderOpen } from '@lucide/vue'
 
 const menuStore = useMenuStore()

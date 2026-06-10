@@ -14,9 +14,7 @@ import { useUserStore } from '@/iam/stores/user'
 import type { Department, Role } from '@/iam/types'
 import { getErrorMessage, notifyError, notifySuccess } from '@/framework/utils/feedback'
 import AppPage from '@/framework/layouts/components/AppPage.vue'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { DescriptionList, type DescriptionItem } from '@/components/common'
+import { Button, Badge, DescriptionList, type DescriptionItem } from '@/components'
 import {
   Select,
   SelectContent,

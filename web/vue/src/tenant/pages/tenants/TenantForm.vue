@@ -7,10 +7,8 @@ import * as z from 'zod'
 import { useTenantStore } from '@/tenant/stores/tenant'
 import type { CreateTenantParams, UpdateTenantParams } from '@/tenant/types'
 import AppPage from '@/framework/layouts/components/AppPage.vue'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
-import { DateInput } from '@/components/common'
+import { Button, Input, DateInput } from '@/components'
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components'
 
 const route = useRoute()
 const router = useRouter()

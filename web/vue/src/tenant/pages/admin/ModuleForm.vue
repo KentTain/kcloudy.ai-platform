@@ -4,11 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { getModule, createModule, updateModule } from '@/tenant/api/module'
 import type { CreateModuleParams, UpdateModuleParams } from '@/tenant/types/admin'
 import { notifySuccess, notifyError } from '@/framework/utils/feedback'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Card } from '@/components/ui/card'
-import { Switch } from '@/components/ui/switch'
+import { Button, Input, Label, Card, Switch } from '@/components'
 import { ArrowLeft, Save } from '@lucide/vue'
 
 const route = useRoute()
