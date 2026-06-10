@@ -22,6 +22,28 @@
 
 组件按层级分为三类，开发功能页面时优先复用已有组件。
 
+### 通用业务组件（common/）
+
+位于 `src/components/common/`，按功能分类组织，位于 `src/components/common/`。详见 [common/CLAUDE.md](components/common/CLAUDE.md)。
+
+| 类别 | 组件 | 用途 |
+|------|------|------|
+| **通用** | Button, Card | 业务按钮、业务卡片 |
+| **表单** | Input, Select, DateInput, TreeSelect | 业务输入框、选择器、日期输入、树选择器 |
+| **数据展示** | Table, DataTable, Tree, TreeList, CheckboxTree, DescriptionList | 业务表格、高级表格、树形展示、树形列表、复选框树、描述列表 |
+| **反馈** | Loading, Modal, MessageBox, SmartTooltip | 加载状态、业务弹窗、消息框、智能提示 |
+| **导航** | Pagination | 分页组件 |
+
+**导入方式**：
+
+```typescript
+// 从统一入口导入
+import { Button, Card, Input, Select, Table, Tree, Loading, Modal, Pagination } from '@/components/common';
+
+// 导入类型
+import type { TreeSelectProps, DescriptionItem, MessageBoxOptions } from '@/components/common';
+```
+
 ### UI 基础组件（ui/）
 
 基于 shadcn/ui 的原子组件，位于 `src/components/ui/`。
@@ -37,30 +59,10 @@
 | 滚动 | ScrollArea | 滚动容器 |
 
 **导入方式**：
+
 ```typescript
 import { Button } from '@/components/ui/button/Button.vue';
 import { Dialog, DialogContent, DialogHeader } from '@/components/ui/dialog';
-```
-
-### 通用业务组件（common/）
-
-位于 `src/components/common/`，按功能分类组织。
-
-| 类别 | 组件 | 用途 |
-|------|------|------|
-| **通用** | Button, Card | 业务按钮、业务卡片 |
-| **表单** | Input, Select, DateInput, TreeSelect | 业务输入框、选择器、日期输入、树选择器 |
-| **数据展示** | Table, DataTable, Tree, TreeList, CheckboxTree, DescriptionList | 业务表格、高级表格、树形展示、树形列表、复选框树、描述列表 |
-| **反馈** | Loading, Modal, MessageBox, SmartTooltip | 加载状态、业务弹窗、消息框、智能提示 |
-| **导航** | Pagination | 分页组件 |
-
-**导入方式**：
-```typescript
-// 从统一入口导入
-import { Button, Card, Input, Select, Table, Tree, Loading, Modal, Pagination } from '@/components/common';
-
-// 导入类型
-import type { TreeSelectProps, DescriptionItem, MessageBoxOptions } from '@/components/common';
 ```
 
 ### AI 专用组件（ai-elements/）
@@ -79,6 +81,7 @@ import type { TreeSelectProps, DescriptionItem, MessageBoxOptions } from '@/comp
 | 引用来源 | InlineCitation, Sources | 引用和来源 |
 
 **导入方式**：
+
 ```typescript
 import Message from '@/components/ai-elements/message/Message.vue';
 import CodeBlock from '@/components/ai-elements/code-block/CodeBlock.vue';
@@ -123,8 +126,8 @@ src/{module}/
 
 | 层级 | 目录 | 前缀 | 说明 |
 |------|------|------|------|
-| UI 基础组件 | `src/components/ui/` | 无前缀 | shadcn 组件 |
 | 通用业务组件 | `src/components/common/` | 无前缀 | 跨模块共享 |
+| UI 基础组件 | `src/components/ui/` | 无前缀 | shadcn 组件 |
 | AI 专用组件 | `src/components/ai-elements/` | 无前缀 | AI 场景专用 |
 | 模块级组件 | `{模块}/components/` | {模块} | 模块专用 |
 | 框架级组件 | `framework/components/` | App | 框架功能耦合 |
