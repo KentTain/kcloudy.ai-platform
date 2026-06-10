@@ -20,8 +20,7 @@ export const getTenants = (params?: TenantQueryParams) =>
 /**
  * 获取租户详情（管理员）
  */
-export const getTenant = (id: string) =>
-  rawGet<ApiResponse<Tenant>>(`/admin/v1/tenants/${id}`);
+export const getTenant = (id: string) => rawGet<ApiResponse<Tenant>>(`/admin/v1/tenants/${id}`);
 
 /**
  * 创建租户（管理员）
@@ -38,8 +37,7 @@ export const updateTenant = (id: string, data: UpdateTenantParams) =>
 /**
  * 删除租户（管理员）
  */
-export const deleteTenant = (id: string) =>
-  rawDel<ApiResponse<void>>(`/admin/v1/tenants/${id}`);
+export const deleteTenant = (id: string) => rawDel<ApiResponse<void>>(`/admin/v1/tenants/${id}`);
 
 /**
  * 激活租户
@@ -62,14 +60,12 @@ export const getTenantStats = (id: string) =>
 /**
  * 获取当前租户（控制台）
  */
-export const getCurrentTenant = () =>
-  rawGet<ApiResponse<Tenant>>("/console/v1/tenants/current");
+export const getCurrentTenant = () => rawGet<ApiResponse<Tenant>>("/console/v1/tenants/current");
 
 /**
  * 获取用户可切换的租户列表
  */
-export const getMyTenants = () =>
-  rawGet<ApiResponse<UserTenantVo[]>>("/console/v1/tenants");
+export const getMyTenants = () => rawGet<ApiResponse<UserTenantVo[]>>("/console/v1/tenants");
 
 /**
  * 切换当前租户

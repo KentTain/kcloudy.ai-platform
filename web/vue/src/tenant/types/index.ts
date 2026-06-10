@@ -12,6 +12,41 @@ export type {
   AdminInfo,
 } from "./admin";
 
+// 导出资源类型
+export type {
+  ResourceConfig,
+  DatabaseConfig,
+  StorageConfig,
+  CacheConfig,
+  QueueConfig,
+  PubsubConfig,
+  ConnectionTestResult,
+  ResourceConfigQueryParams,
+  CreateResourceConfigParams,
+  UpdateResourceConfigParams,
+} from "./resource";
+
+// 导出模块管理类型
+export type {
+  ModuleStatus,
+  Module,
+  ModuleMenu,
+  ModulePermission,
+  ModuleRole,
+  TenantModule,
+  TenantResource,
+  ModuleQueryParams,
+  CreateModuleParams,
+  UpdateModuleParams,
+  CreateMenuParams,
+  UpdateMenuParams,
+  CreatePermissionParams,
+  UpdatePermissionParams,
+  CreateRoleParams,
+  UpdateRoleParams,
+  AssignModuleParams,
+} from "./admin";
+
 // 租户实体
 export interface Tenant {
   id: string;

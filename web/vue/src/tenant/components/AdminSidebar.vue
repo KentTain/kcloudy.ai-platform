@@ -1,7 +1,7 @@
 ﻿<script setup lang="ts">
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
-import { Shield, Building2 } from '@lucide/vue'
+import { Shield, Building2, Settings, Puzzle } from '@lucide/vue'
 import NavMain from './NavMain.vue'
 import NavUser from './NavUser.vue'
 import {
@@ -22,6 +22,18 @@ const navItems = computed(() => [
     url: '/admin/tenants',
     icon: Building2,
     isActive: route.path.startsWith('/admin/tenants'),
+  },
+  {
+    title: '资源配置',
+    url: '/admin/resource-configs',
+    icon: Settings,
+    isActive: route.path.startsWith('/admin/resource-configs'),
+  },
+  {
+    title: '模块管理',
+    url: '/admin/modules',
+    icon: Puzzle,
+    isActive: route.path.startsWith('/admin/modules'),
   },
 ])
 </script>
