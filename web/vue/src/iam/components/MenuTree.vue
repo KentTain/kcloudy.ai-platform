@@ -64,6 +64,11 @@ const selectedMenu = computed<MenuTreeNode | null>(() => {
 const handleNodeClick = (node: TreeNodeType) => {
   emit('update:selectedId', node.value as string)
 }
+
+// 处理展开折叠变化
+const handleExpandedChange = (values: string[]) => {
+  emit('update:expandedIds', values)
+}
 </script>
 
 <template>
@@ -92,12 +97,13 @@ const handleNodeClick = (node: TreeNodeType) => {
       <!-- 菜单树 -->
       <Tree
         v-else
-        :model-value="selectedValues"
+        v-model="selectedValues"
         :data="treeData"
         :expanded-value="expandedIds"
         :multiple="false"
         :show-line="true"
         @on-node-click="handleNodeClick"
+        @update:expanded-value="handleExpandedChange"
       >
         <template #label="{ node }">
           <div class="flex items-center gap-2">

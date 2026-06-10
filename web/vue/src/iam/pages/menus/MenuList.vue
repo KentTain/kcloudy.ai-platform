@@ -29,6 +29,11 @@ const handleMenuSelect = (id: string | null) => {
   selectedMenuId.value = id
 }
 
+// 处理展开折叠变化
+const handleExpandedChange = (ids: string[]) => {
+  expandedMenuIds.value = ids
+}
+
 // 加载菜单数据
 onMounted(async () => {
   await menuStore.fetchMenus()
@@ -48,6 +53,7 @@ onMounted(async () => {
           :expanded-ids="expandedMenuIds"
           :loading="menuStore.loading"
           @update:selected-id="handleMenuSelect"
+          @update:expanded-ids="handleExpandedChange"
         />
       </Card>
 
