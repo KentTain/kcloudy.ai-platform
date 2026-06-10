@@ -1,33 +1,54 @@
-## ADDED Requirements
+# tenant-resource-binding Specification
 
-### 需求:查询租户资源绑定
+## Purpose
+TBD - created by syncing change tenant-admin-frontend. Update Purpose after archive.
 
-系统必须支持查询租户当前绑定的所有资源配置。
+## Requirements
 
-#### 场景:获取租户资源绑定
-- **当** 管理员请求 `GET /api/v1/tenant/tenants/{id}/resources`
-- **那么** 返回租户绑定的 db_config_id、storage_config_id、cache_config_id、queue_config_id、pubsub_config_id
+### Requirement: 管理员可以查看租户资源绑定
 
-#### 场景:租户无资源绑定
-- **当** 租户未绑定任何资源配置
-- **那么** 所有配置 ID 字段返回 null
+系统 SHALL 允许管理员查看租户当前的资源配置绑定情况。
 
-### 需求:更新租户资源绑定
+#### Scenario: 查询租户资源绑定
+- **WHEN** 管理员请求 GET /admin/v1/tenants/{id}/resources
+- **THEN** 系统返回租户的资源绑定情况（数据库/存储/缓存/队列/发布订阅）
 
-系统必须支持整体更新租户的资源绑定，采用 PUT 整体替换策略。
+#### Scenario: 未绑定资源显示
+- **WHEN** 租户某项资源未绑定
+- **THEN** 系统返回该项资源为 null
 
-#### 场景:绑定资源配置
-- **当** 管理员请求 `PUT /api/v1/tenant/tenants/{id}/resources` 并提供配置 ID
-- **那么** 更新租户的资源绑定；配置 ID 必须存在
+### Requirement: 管理员可以更新租户资源绑定
 
-#### 场景:解绑资源配置
-- **当** 管理员请求更新资源绑定，将某个配置 ID 设为 null
-- **那么** 解绑该资源配置，不影响租户其他数据
+系统 SHALL 允许管理员为租户绑定或解绑资源配置。
 
-#### 场景:绑定不存在的配置
-- **当** 管理员请求绑定一个不存在的配置 ID
-- **那么** 返回 HTTP 404，错误消息为"资源配置不存在"
+#### Scenario: 绑定资源配置
+- **WHEN** 管理员请求 PUT /admin/v1/tenants/{id}/resources 并提供配置 ID
+- **THEN** 系统更新租户的资源绑定
 
-#### 场景:同时绑定多种资源
-- **当** 管理员请求同时更新多种资源配置
-- **那么** 一次性更新所有指定的资源绑定
+#### Scenario: 解绑资源
+- **WHEN** 管理员将某个配置设为 null
+- **THEN** 系统解除该资源的绑定
+
+#### Scenario: 绑定不存在的配置
+- **WHEN** 管理员绑定的配置 ID 不存在
+- **THEN** 系统返回 404 错误
+
+### Requirement: 租户详情页提供资源绑定 Tab
+
+系统 SHALL 在租户详情页提供资源绑定 Tab，展示租户的资源绑定情况。
+
+#### Scenario: 显示资源绑定 Tab
+- **WHEN** 管理员进入租户详情页并点击「资源绑定」Tab
+- **THEN** 页面显示租户当前的资源绑定情况
+
+#### Scenario: 选择资源配置
+- **WHEN** 管理员点击资源配置下拉框
+- **THEN** 系统显示可用的配置列表
+
+#### Scenario: 测试资源配置连通性
+- **WHEN** 管理员点击「测试连接」按钮
+- **THEN** 系统调用对应的 test-connection API 并显示结果
+
+#### Scenario: 保存资源绑定
+- **WHEN** 管理员修改资源绑定并点击「保存」
+- **THEN** 系统更新资源绑定并显示成功提示

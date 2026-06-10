@@ -19,13 +19,29 @@ TBD - created by archiving change impl-iam-frontend-vue. Update Purpose after ar
 - **WHEN** 管理员选择筛选条件（全部/激活/停用）
 - **THEN** 系统返回对应状态的租户列表，筛选 SHALL 使用 shadcn Select 替代 el-select
 
-### Requirement: 租户详情查看
+### Requirement: 租户详情页支持 Tab 切换
 
-系统 SHALL 支持管理员查看租户的详细信息，UI SHALL 使用 shadcn 组件。
+系统 SHALL 支持租户详情页以 Tab 结构展示，包含基本信息、资源绑定、模块分配三个 Tab。
 
 #### Scenario: 查看租户详情
-- **WHEN** 管理员点击租户列表中的某一行
-- **THEN** 系统展示该租户的完整信息，TenantDetail SHALL 使用 DescriptionList 替代 el-descriptions
+- **WHEN** 管理员访问 /admin/tenants/{id}
+- **THEN** 系统显示租户详情页，默认展示基本信息 Tab
+
+#### Scenario: 切换 Tab
+- **WHEN** 管理员点击不同 Tab
+- **THEN** 页面切换显示对应的内容
+
+#### Scenario: 基本信息 Tab
+- **WHEN** 管理员查看基本信息 Tab
+- **THEN** 系统显示租户名称、编码、状态、联系人、过期时间等基本信息
+
+#### Scenario: 资源绑定 Tab
+- **WHEN** 管理员查看资源绑定 Tab
+- **THEN** 系统显示租户的资源绑定情况，支持修改
+
+#### Scenario: 模块分配 Tab
+- **WHEN** 管理员查看模块分配 Tab
+- **THEN** 系统显示租户已分配的模块列表，支持分配/取消
 
 ### Requirement: 创建租户
 系统 SHALL 支持管理员创建新租户。
