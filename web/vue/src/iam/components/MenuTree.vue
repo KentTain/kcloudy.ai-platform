@@ -104,6 +104,18 @@ const handleNodeClick = (node: TreeNodeType) => {
         :show-line="true"
         @on-node-click="handleNodeClick"
       >
+        <template #label="{ node }">
+          <div class="flex items-center gap-2">
+            <span class="truncate">{{ node.label }}</span>
+            <Badge
+              v-if="findMenuById(menus, node.value)?.module"
+              variant="outline"
+              class="text-xs"
+            >
+              {{ findMenuById(menus, node.value)?.module }}
+            </Badge>
+          </div>
+        </template>
         <template #leaf-icon>
           <FileText class="h-4 w-4 text-muted-foreground" />
         </template>
