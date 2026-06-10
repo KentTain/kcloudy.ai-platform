@@ -18,6 +18,81 @@
 | components | 通用组件（跨模块共享） | 见下方「通用组件清单」 |
 | composables | 组合式函数 | - |
 
+## 组件导入规范
+
+### 统一入口
+
+**优先从 `@/components` 统一入口导入组件**，该入口整合了 common 业务组件和高频 ui 组件：
+
+```typescript
+// 推荐：从统一入口导入
+import { Button, Input, Badge, Skeleton, Dialog, DialogContent, Tabs, FormField, FormItem } from '@/components'
+
+// 同时支持类型导入
+import { Button, type DescriptionItem, type MessageBoxOptions } from '@/components'
+```
+
+### 统一入口组件清单
+
+| 来源 | 组件 | 说明 |
+|------|------|------|
+| common | Button, Card, Input, Select, Table, Tree, TreeList, CheckboxTree, DescriptionList, Loading, Modal, MessageBox, SmartTooltip, Pagination, DateInput, TreeSelect, DataTable, DataTablePagination | 业务封装组件，同名覆盖 ui 版本 |
+| ui 重导出 | Badge, Skeleton, Label, Checkbox, Switch, Textarea | 高频基础组件 |
+| ui 重导出 | Dialog/DialogClose/DialogContent/... | 弹窗复合组件 |
+| ui 重导出 | Tabs/TabsContent/TabsList/TabsTrigger | 标签页复合组件 |
+| ui 重导出 | Form/FormField/FormItem/FormLabel/FormControl/FormMessage | 表单复合组件 |
+
+### 低频组件保持原路径
+
+以下组件不在统一入口，需从 `@/components/ui/xxx` 单独导入：
+
+```typescript
+import { Sidebar, SidebarContent } from '@/components/ui/sidebar'
+import { Breadcrumb, BreadcrumbItem } from '@/components/ui/breadcrumb'
+import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { DropdownMenu, DropdownMenuContent } from '@/components/ui/dropdown-menu'
+import { ScrollArea } from '@/components/ui/scroll-area'
+import { Collapsible, CollapsibleContent } from '@/components/ui/collapsible'
+import { Separator } from '@/components/ui/separator'
+import { Accordion, AccordionItem } from '@/components/ui/accordion'
+import { HoverCard, HoverCardContent } from '@/components/ui/hover-card'
+import { Tooltip, TooltipContent } from '@/components/ui/tooltip'
+import { Command, CommandInput } from '@/components/ui/command'
+import { Popover, PopoverContent } from '@/components/ui/popover'
+import { Progress } from '@/components/ui/progress'
+import { Spinner } from '@/components/ui/spinner'
+```
+
+### 特殊组件：Tree
+
+**ui/Tree 与 common/Tree 数据结构不兼容**，需根据场景选择：
+
+```typescript
+// 简单展示树（click/toggle 事件）→ 从统一入口导入
+import { Tree } from '@/components'
+
+// 功能树（checkbox/cascade/异步加载）→ 从 ui 路径导入
+import { Tree } from '@/components/ui/tree'
+import type { TreeNodeType } from '@/components/ui/tree'
+```
+
+### 手动组装型组件
+
+Card/Select/Table 在 ui/ 和 common/ 中 API 模式不同：
+
+- **common 版本**：声明式 API（如 `options`、`columns`），一步到位
+- **ui 版本**：手动组装子组件（如 CardContent、SelectItem、TableBody）
+
+如果页面使用手动组装方式，保持从 `ui/xxx` 导入：
+
+```typescript
+// 手动组装 Card → 保持 ui 路径
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+
+// 使用 common Card 封装 → 从统一入口导入
+import { Card } from '@/components'
+```
+
 ## 通用组件清单
 
 组件按层级分为三类，开发功能页面时优先复用已有组件。
@@ -37,11 +112,14 @@
 **导入方式**：
 
 ```typescript
-// 从统一入口导入
-import { Button, Card, Input, Select, Table, Tree, Loading, Modal, Pagination } from '@/components/common';
+// 推荐：从统一入口导入
+import { Button, Card, Input, Select, Table, Tree, Loading, Modal, Pagination } from '@/components';
 
 // 导入类型
-import type { TreeSelectProps, DescriptionItem, MessageBoxOptions } from '@/components/common';
+import type { TreeSelectProps, DescriptionItem, MessageBoxOptions } from '@/components';
+
+// 兼容：仍可从 @/components/common 导入（但不推荐）
+import { Button, Card } from '@/components/common';
 ```
 
 ### UI 基础组件（ui/）
@@ -61,8 +139,18 @@ import type { TreeSelectProps, DescriptionItem, MessageBoxOptions } from '@/comp
 **导入方式**：
 
 ```typescript
-import { Button } from '@/components/ui/button/Button.vue';
-import { Dialog, DialogContent, DialogHeader } from '@/components/ui/dialog';
+// 高频组件：从统一入口导入（推荐）
+import { Badge, Skeleton, Label, Checkbox, Switch, Textarea } from '@/components';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components';
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components';
+
+// 低频组件：从 ui 路径导入
+import { Sidebar, SidebarContent } from '@/components/ui/sidebar';
+import { Breadcrumb, BreadcrumbItem } from '@/components/ui/breadcrumb';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Command, CommandInput } from '@/components/ui/command';
 ```
 
 ### AI 专用组件（ai-elements/）
@@ -91,9 +179,16 @@ import CodeBlock from '@/components/ai-elements/code-block/CodeBlock.vue';
 
 开发功能页面时，按以下优先级查找可复用组件：
 
-1. **AI 场景** → 先查 `ai-elements/`（对话、消息、代码块等）
-2. **通用业务** → 再查 `common/`（表格、表单、反馈等）
-3. **UI 基础** → 最后查 `ui/`（Button, Input, Dialog 等）
+1. **统一入口** → 先从 `@/components` 导入（覆盖 90% 场景）
+2. **AI 场景** → 再查 `@/components/ai-elements/`（对话、消息、代码块等）
+3. **低频 UI** → 最后查 `@/components/ui/xxx`（sidebar、breadcrumb 等）
+
+**快速判断**：
+- 业务按钮/输入框/表格 → `@/components`
+- 弹窗/标签页/表单验证 → `@/components`
+- 徽章/骨架屏/开关 → `@/components`
+- 侧边栏/面包屑/头像 → `@/components/ui/xxx`
+- AI 对话相关 → `@/components/ai-elements/xxx`
 
 ## 依赖边界
 

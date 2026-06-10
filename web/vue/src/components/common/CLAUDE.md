@@ -49,27 +49,36 @@
 
 ## 导入方式
 
-### 从统一入口导入
+### 推荐：从统一入口导入
 
 ```typescript
+// 统一入口 @/components 是推荐导入路径
 import {
   Button, Card,
   Input, Select, DateInput, TreeSelect,
   Table, DataTable, Tree, TreeList, CheckboxTree, DescriptionList,
   Loading, Modal, MessageBox, SmartTooltip,
   Pagination
-} from '@/components/common';
-```
+} from '@/components';
 
-### 导入类型
-
-```typescript
+// 类型同样从统一入口导入
 import type {
   TreeSelectProps,
   DescriptionItem,
   MessageBoxOptions,
   MessageBoxType,
   DataTableState
+} from '@/components';
+```
+
+### 兼容：从 common 直接导入
+
+```typescript
+// 仍支持从 common 导入（向后兼容，但不推荐）
+import {
+  Button, Card,
+  Input, Select, DateInput, TreeSelect,
+  Table, DataTable, Tree, TreeList, CheckboxTree, DescriptionList
 } from '@/components/common';
 ```
 
