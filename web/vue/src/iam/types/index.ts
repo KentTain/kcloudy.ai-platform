@@ -191,3 +191,11 @@ export interface LoginHistoryQueryParams {
   start_date?: string;
   end_date?: string;
 }
+
+// 菜单类型（从 framework 导入并重新导出）
+export type { MenuTreeNode } from "@/framework/stores/menu";
+
+// 菜单列表响应
+export interface MenuListResponse {
+  menus: MenuTreeNode[];
+}
