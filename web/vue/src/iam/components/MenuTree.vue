@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { FolderOpen, FileText } from '@lucide/vue'
 import type { MenuTreeNode } from '@/iam/types'
+import { findMenuById } from '@/iam/utils/menu'
 
 interface Props {
   menus: MenuTreeNode[]
@@ -30,11 +31,17 @@ const emit = defineEmits<{
   'update:expandedIds': [value: string[]]
 }>()
 
+// 扩展 TreeNodeType 以包含 module 信息
+interface MenuTreeNodeType extends TreeNodeType {
+  module?: string
+}
+
 // 将 MenuTreeNode 转换为 TreeNodeType
-const convertToTreeNode = (menuList: MenuTreeNode[]): TreeNodeType[] => {
+const convertToTreeNode = (menuList: MenuTreeNode[]): MenuTreeNodeType[] => {
   return menuList.map(menu => ({
     value: menu.id,
     label: menu.name,
+    module: menu.module,
     children: menu.children?.length ? convertToTreeNode(menu.children) : [],
   }))
 }
@@ -46,18 +53,6 @@ const treeData = computed<TreeNodeType[]>(() => convertToTreeNode(props.menus))
 const selectedValues = computed<string[]>(() =>
   props.selectedId ? [props.selectedId] : [],
 )
-
-// 递归查找菜单节点
-const findMenuById = (menuList: MenuTreeNode[], id: string): MenuTreeNode | null => {
-  for (const menu of menuList) {
-    if (menu.id === id) return menu
-    if (menu.children?.length) {
-      const found = findMenuById(menu.children, id)
-      if (found) return found
-    }
-  }
-  return null
-}
 
 // 当前选中的菜单对象
 const selectedMenu = computed<MenuTreeNode | null>(() => {
@@ -108,11 +103,11 @@ const handleNodeClick = (node: TreeNodeType) => {
           <div class="flex items-center gap-2">
             <span class="truncate">{{ node.label }}</span>
             <Badge
-              v-if="findMenuById(menus, node.value)?.module"
+              v-if="(node as MenuTreeNodeType).module"
               variant="outline"
               class="text-xs"
             >
-              {{ findMenuById(menus, node.value)?.module }}
+              {{ (node as MenuTreeNodeType).module }}
             </Badge>
           </div>
         </template>

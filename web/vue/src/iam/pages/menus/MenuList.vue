@@ -6,6 +6,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { useMenuStore } from '@/iam/stores/menu'
 import type { MenuTreeNode } from '@/iam/types'
+import { findMenuById } from '@/iam/utils/menu'
 import MenuTree from '@/iam/components/MenuTree.vue'
 import AppPage from '@/framework/layouts/components/AppPage.vue'
 import { Card } from '@/components/ui/card'
@@ -16,18 +17,6 @@ const menuStore = useMenuStore()
 
 const selectedMenuId = ref<string | null>(null)
 const expandedMenuIds = ref<string[]>([])
-
-// 递归查找菜单节点
-const findMenuById = (menuList: MenuTreeNode[], id: string): MenuTreeNode | null => {
-  for (const menu of menuList) {
-    if (menu.id === id) return menu
-    if (menu.children?.length) {
-      const found = findMenuById(menu.children, id)
-      if (found) return found
-    }
-  }
-  return null
-}
 
 // 当前选中的菜单对象
 const selectedMenu = computed<MenuTreeNode | null>(() => {
