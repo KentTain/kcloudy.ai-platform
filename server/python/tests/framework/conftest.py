@@ -44,11 +44,13 @@ def integration_settings():
     """
     加载集成测试配置
 
-    使用 server/python/config/application-local.yml
+    使用 server/config/application-local.yml
     """
     from framework.configs import init_settings
 
-    config_dir = Path(__file__).parent.parent.parent / "config"
+    # conftest.py 在 server/python/tests/framework/
+    # 配置在 server/config/
+    config_dir = Path(__file__).parent.parent.parent.parent / "config"
     settings = init_settings(config_dir)
 
     return settings
