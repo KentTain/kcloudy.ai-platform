@@ -109,6 +109,7 @@ class TestTenantPubSubManager:
         mock_cache = MagicMock()
         mock_client = MagicMock()
         mock_pubsub = MagicMock()
+        mock_pubsub.subscribe = AsyncMock()  # 需要 AsyncMock
         mock_client.pubsub.return_value = mock_pubsub
         mock_cache.get_client = AsyncMock(return_value=mock_client)
         manager = TenantPubSubManager(mock_cache)
@@ -117,7 +118,7 @@ class TestTenantPubSubManager:
             result = await manager.subscribe("events", tenant_id="tenant-001")
 
         assert result is mock_pubsub
-        mock_pubsub.subscribe.assert_called_once()
+        mock_pubsub.subscribe.assert_awaited_once()
 
     @pytest.mark.asyncio
     async def test_subscribe_physical_isolation(self):
@@ -125,6 +126,7 @@ class TestTenantPubSubManager:
         mock_cache = MagicMock()
         mock_client = MagicMock()
         mock_pubsub = MagicMock()
+        mock_pubsub.subscribe = AsyncMock()  # 需要 AsyncMock
         mock_client.pubsub.return_value = mock_pubsub
         mock_cache.get_client = AsyncMock(return_value=mock_client)
         manager = TenantPubSubManager(mock_cache)
@@ -135,7 +137,7 @@ class TestTenantPubSubManager:
         )
 
         assert result is mock_pubsub
-        mock_pubsub.subscribe.assert_called_once()
+        mock_pubsub.subscribe.assert_awaited_once()
         # get_client 应该使用物理隔离配置调用
         mock_cache.get_client.assert_awaited_once()
 

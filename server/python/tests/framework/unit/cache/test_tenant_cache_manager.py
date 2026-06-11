@@ -176,19 +176,21 @@ class TestTenantCacheManagerPhysicalIsolation:
         mock_client = MagicMock()
         manager = TenantCacheManager(mock_client)
 
-        # 模拟实例客户端
+        # 模拟实例客户端（设置一个过去的时间）
+        from datetime import datetime, timedelta
         manager._instance_clients["redis-a.com:6379"] = AsyncMock()
         manager._instance_access_times["redis-a.com:6379"] = (
-            __import__("datetime").datetime.now()
+            datetime.now() - timedelta(seconds=10)  # 10秒前
         )
 
-        # 使用超时=0确保所有客户端被释放
-        released = await manager.release_idle_instances(timeout=0)
+        # 使用超时=5秒，确保 10秒前的客户端被释放
+        released = await manager.release_idle_instances(timeout=5)
 
         assert released == 1
         assert "redis-a.com:6379" not in manager._instance_clients
 
-    def test_create_instance_client(self):
+    @pytest.mark.asyncio
+    async def test_create_instance_client(self):
         """创建实例客户端"""
         mock_client = MagicMock()
         manager = TenantCacheManager(mock_client)
@@ -199,7 +201,7 @@ class TestTenantCacheManagerPhysicalIsolation:
             db=2,
         )
 
-        client = manager._create_instance_client(config)
+        client = await manager._create_instance_client(config)
 
         assert client is not None
         pool = client.connection_pool
