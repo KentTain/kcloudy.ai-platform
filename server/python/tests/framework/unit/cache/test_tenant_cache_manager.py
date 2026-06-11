@@ -115,6 +115,98 @@ class TestTenantCacheManager:
 
         assert stats["registered_tenants"] == 1
         assert 3 in stats["db_usage"]
+        assert "total_instance_clients" in stats
+
+
+class TestTenantCacheManagerPhysicalIsolation:
+    """物理隔离测试"""
+
+    def test_is_physical_isolation_with_host(self):
+        """有 host 时判断为物理隔离"""
+        mock_client = MagicMock()
+        manager = TenantCacheManager(mock_client)
+        config = TenantCacheConfig(host="redis-tenant.example.com", port=6380)
+
+        assert manager._is_physical_isolation(config) is True
+
+    def test_is_physical_isolation_without_host(self):
+        """无 host 时判断为非物理隔离"""
+        mock_client = MagicMock()
+        manager = TenantCacheManager(mock_client)
+
+        assert manager._is_physical_isolation(None) is False
+        assert manager._is_physical_isolation(TenantCacheConfig(db=3)) is False
+        assert manager._is_physical_isolation(TenantCacheConfig(host="")) is False
+
+    def test_build_key_with_physical_isolation(self):
+        """物理隔离场景不添加租户前缀"""
+        mock_client = MagicMock()
+        manager = TenantCacheManager(mock_client)
+        config = TenantCacheConfig(host="redis-tenant.example.com", port=6380)
+
+        key = manager._build_key("user:123", "tenant-001", config)
+
+        assert key == "user:123"
+        assert "tenant-001" not in key
+
+    def test_build_stream_key_with_physical_isolation(self):
+        """物理隔离场景 Stream Key 不添加租户前缀"""
+        mock_client = MagicMock()
+        manager = TenantCacheManager(mock_client)
+        config = TenantCacheConfig(host="redis-tenant.example.com")
+
+        stream = manager._build_stream_key("myqueue", "tenant-001", config)
+
+        assert stream == "queue:myqueue"
+        assert "tenant-001" not in stream
+
+    @pytest.mark.asyncio
+    async def test_get_client_returns_default_when_no_config(self):
+        """无配置时返回默认客户端"""
+        mock_client = MagicMock()
+        manager = TenantCacheManager(mock_client)
+
+        client = await manager.get_client("tenant-001", None)
+
+        assert client is mock_client
+
+    @pytest.mark.asyncio
+    async def test_release_idle_instances(self):
+        """释放空闲实例客户端"""
+        mock_client = MagicMock()
+        manager = TenantCacheManager(mock_client)
+
+        # 模拟实例客户端
+        manager._instance_clients["redis-a.com:6379"] = AsyncMock()
+        manager._instance_access_times["redis-a.com:6379"] = (
+            __import__("datetime").datetime.now()
+        )
+
+        # 使用超时=0确保所有客户端被释放
+        released = await manager.release_idle_instances(timeout=0)
+
+        assert released == 1
+        assert "redis-a.com:6379" not in manager._instance_clients
+
+    def test_create_instance_client(self):
+        """创建实例客户端"""
+        mock_client = MagicMock()
+        manager = TenantCacheManager(mock_client)
+        config = TenantCacheConfig(
+            host="redis-t.example.com",
+            port=6380,
+            password="pass123",
+            db=2,
+        )
+
+        client = manager._create_instance_client(config)
+
+        assert client is not None
+        pool = client.connection_pool
+        assert pool.connection_kwargs["host"] == "redis-t.example.com"
+        assert pool.connection_kwargs["port"] == 6380
+        assert pool.connection_kwargs["password"] == "pass123"
+        assert pool.connection_kwargs["db"] == 2
 
 
 class TestCacheManagerGlobal:
