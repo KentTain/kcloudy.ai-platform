@@ -56,12 +56,12 @@
 
 ## 6. 单元测试
 
-- [ ] 6.1 测试 TenantCacheManager 物理隔离场景
-- [ ] 6.2 测试 TenantCacheManager 客户端缓存
-- [ ] 6.3 测试 TenantStorageManager 物理隔离场景
-- [ ] 6.4 测试 TenantStorageManager 客户端缓存
-- [ ] 6.5 测试 TenantQueueManager 消息发送和消费
-- [ ] 6.6 测试 TenantPubSubManager 发布和订阅
+- [x] 6.1 测试 TenantCacheManager 物理隔离场景
+- [x] 6.2 测试 TenantCacheManager 客户端缓存
+- [x] 6.3 测试 TenantStorageManager 物理隔离场景
+- [x] 6.4 测试 TenantStorageManager 客户端缓存
+- [x] 6.5 测试 TenantQueueManager 消息发送和消费
+- [x] 6.6 测试 TenantPubSubManager 发布和订阅
 
 ## 7. 集成测试与文档
 
