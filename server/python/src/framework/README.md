@@ -396,15 +396,299 @@ app.add_middleware(TenantMiddleware, resolver=resolver)
 | 资源 | 物理隔离 | 逻辑隔离 |
 |------|---------|---------|
 | 数据库 | 独立 Database / Schema | `tenant_id` 字段过滤 |
-| 缓存 | 独立 Redis DB (0-15) | Key 前缀 `{tenant_id}:{key}` |
-| 存储 | 独立 Bucket | 路径前缀 `{tenant_id}/{path}` |
-| 队列 | 独立 Stream Key | Key 前缀 `{tenant_id}:queue:{name}` |
+| 缓存 | 独立 Redis 实例 | Key 前缀 `{tenant_id}:{key}` |
+| 存储 | 独立 Bucket / 服务 | 路径前缀 `{tenant_id}/{path}` |
+| 队列 | 独立队列实例 | Key 前缀 `{tenant_id}:queue:{name}` |
+| 发布订阅 | 独立消息实例 | 频道前缀 `{tenant_id}:channel:{name}` |
 
-### 9. clients - 内部客户端层
+### 9. 资源配置详解
+
+租户资源配置通过 `TenantInfo` 协议的属性传递，支持灵活的物理隔离和逻辑隔离策略。配置定义在 `framework.tenant.protocols` 模块。
+
+#### 9.1 TenantCacheConfig - 缓存配置
+
+**字段说明：**
+
+| 字段 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `host` | `str` | `""` | Redis 主机地址，配置后启用物理隔离 |
+| `port` | `int` | `6379` | Redis 端口 |
+| `password` | `str` | `""` | Redis 密码（已解密） |
+| `db` | `int` | `0` | Redis DB 编号（0-15），配置非 0 启用 DB 隔离 |
+| `prefix` | `str` | `""` | 键前缀（可选） |
+
+**隔离策略：**
+
+1. **物理隔离**：配置 `host` 后，使用独立的 Redis 实例
+2. **DB 隔离**：配置 `db` 为非 0 值，使用同一实例的不同 DB
+3. **前缀隔离**（默认）：不配置 `host` 和 `db`，自动添加 `{tenant_id}:{key}` 前缀
+
+**使用示例：**
+
+```python
+from framework.tenant.protocols import TenantCacheConfig
+
+# 物理隔离：独立 Redis 实例
+cache_config = TenantCacheConfig(
+    host="redis-tenant-001.example.com",
+    port=6379,
+    password="secret",
+    db=0,
+)
+
+# DB 隔离：同一 Redis 实例的不同 DB
+cache_config = TenantCacheConfig(
+    db=3,  # 使用 DB 3
+)
+
+# 前缀隔离（默认行为）：无需配置，系统自动添加前缀
+# TenantCacheManager 会自动处理
+```
+
+**管理器使用：**
+
+```python
+from framework.cache.tenant_cache_manager import get_cache_manager
+
+cache_manager = get_cache_manager()
+
+# 获取租户客户端（自动路由）
+client = await cache_manager.get_client(
+    tenant_id="tenant_001",
+    config=cache_config,  # 传入租户的缓存配置
+)
+
+# 设置缓存（自动添加前缀或路由到正确实例）
+await cache_manager.set("user:123", "data", config=cache_config)
+```
+
+#### 9.2 TenantStorageConfig - 存储配置
+
+**字段说明：**
+
+| 字段 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `type` | `StorageType` | `MINIO` | 存储类型（MINIO / ALIYUN_OSS / TENCENT_COS） |
+| `endpoint` | `str` | `""` | 存储服务端点，配置后启用物理隔离 |
+| `access_key` | `str` | `""` | 访问密钥 |
+| `secret_key` | `str` | `""` | 密钥（已解密） |
+| `bucket` | `str` | `""` | 存储桶名称，配置后使用独立 Bucket |
+
+**隔离策略：**
+
+1. **物理隔离**：配置 `endpoint` 后，使用独立的存储服务
+2. **Bucket 隔离**：配置 `bucket` 后，使用同一服务的独立 Bucket
+3. **前缀隔离**（默认）：不配置 `endpoint` 和 `bucket`，自动添加 `{tenant_id}/{path}` 路径前缀
+
+**使用示例：**
+
+```python
+from framework.tenant.protocols import TenantStorageConfig
+
+# 物理隔离：独立 MinIO 服务
+storage_config = TenantStorageConfig(
+    endpoint="minio-tenant-001.example.com:9000",
+    access_key="tenant001_key",
+    secret_key="tenant001_secret",
+    bucket="tenant-001-bucket",
+)
+
+# Bucket 隔离：同一 MinIO 服务的不同 Bucket
+storage_config = TenantStorageConfig(
+    bucket="tenant-001-bucket",
+)
+
+# 前缀隔离（默认行为）：无需配置，系统自动添加路径前缀
+# TenantStorageManager 会自动处理
+```
+
+**管理器使用：**
+
+```python
+from framework.storage.tenant_storage_manager import get_storage_manager
+
+storage_manager = get_storage_manager()
+
+# 上传文件（自动路由到正确存储桶/服务）
+url = await storage_manager.upload(
+    path="documents/report.pdf",
+    data=file_bytes,
+    tenant_id="tenant_001",
+    config=storage_config,
+)
+
+# 下载文件
+content = await storage_manager.download(
+    path="documents/report.pdf",
+    config=storage_config,
+)
+```
+
+#### 9.3 TenantQueueConfig - 队列配置
+
+**字段说明：**
+
+| 字段 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `type` | `QueueType` | `REDIS` | 队列类型（目前支持 REDIS） |
+| `host` | `str` | `""` | 队列服务主机，配置后启用物理隔离 |
+| `port` | `int` | `5672` | 队列服务端口 |
+| `username` | `str` | `""` | 用户名 |
+| `password` | `str` | `""` | 密码（已解密） |
+| `vhost` | `str` | `"/"` | 虚拟主机（RabbitMQ） |
+
+**隔离策略：**
+
+1. **物理隔离**：配置 `host` 后，使用独立的队列实例
+2. **前缀隔离**（默认）：不配置 `host`，自动添加 `{tenant_id}:queue:{name}` 前缀
+
+**使用示例：**
+
+```python
+from framework.tenant.protocols import TenantQueueConfig
+
+# 物理隔离：独立 Redis 队列实例
+queue_config = TenantQueueConfig(
+    host="redis-queue-001.example.com",
+    port=6379,
+    password="secret",
+)
+
+# 前缀隔离（默认行为）：无需配置，系统自动添加队列名前缀
+# TenantQueueManager 会自动处理
+```
+
+**管理器使用：**
+
+```python
+from framework.queue.tenant_queue_manager import get_queue_manager
+
+queue_manager = get_queue_manager()
+
+# 发送消息到队列（自动路由）
+message_id = await queue_manager.xadd(
+    queue_name="email-queue",
+    fields={"to": "user@example.com", "subject": "Hello"},
+    tenant_id="tenant_001",
+    config=queue_config,
+)
+
+# 消费消息
+messages = await queue_manager.xreadgroup(
+    groupname="email-workers",
+    consumername="worker-1",
+    queue_name="email-queue",
+    config=queue_config,
+)
+```
+
+#### 9.4 TenantPubSubConfig - 发布订阅配置
+
+**字段说明：**
+
+| 字段 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `type` | `PubSubType` | `REDIS` | 发布订阅类型（目前支持 REDIS） |
+| `host` | `str` | `""` | 消息服务主机，配置后启用物理隔离 |
+| `port` | `int` | `6379` | 消息服务端口 |
+| `username` | `str` | `""` | 用户名 |
+| `password` | `str` | `""` | 密码（已解密） |
+
+**隔离策略：**
+
+1. **物理隔离**：配置 `host` 后，使用独立的消息实例
+2. **前缀隔离**（默认）：不配置 `host`，自动添加 `{tenant_id}:channel:{name}` 频道前缀
+
+**使用示例：**
+
+```python
+from framework.tenant.protocols import TenantPubSubConfig
+
+# 物理隔离：独立 Redis PubSub 实例
+pubsub_config = TenantPubSubConfig(
+    host="redis-pubsub-001.example.com",
+    port=6379,
+    password="secret",
+)
+
+# 前缀隔离（默认行为）：无需配置，系统自动添加频道名前缀
+# TenantPubSubManager 会自动处理
+```
+
+**管理器使用：**
+
+```python
+from framework.pubsub.tenant_pubsub_manager import get_pubsub_manager
+
+pubsub_manager = get_pubsub_manager()
+
+# 发布消息（自动路由到正确实例/频道）
+subscriber_count = await pubsub_manager.publish(
+    channel="user-events",
+    message='{"event": "user_created", "user_id": "123"}',
+    tenant_id="tenant_001",
+    config=pubsub_config,
+)
+
+# 订阅频道
+pubsub = await pubsub_manager.subscribe(
+    channel="user-events",
+    config=pubsub_config,
+)
+```
+
+#### 9.5 配置传递方式
+
+租户资源配置通过 `TenantInfo` 协议传递，业务模块实现 `TenantProvider` 协议时返回包含资源配置的租户信息：
+
+```python
+from framework.tenant.protocols import (
+    TenantInfo,
+    TenantCacheConfig,
+    TenantStorageConfig,
+)
+
+class MyTenantInfo(TenantInfo):
+    def __init__(self, tenant_data):
+        self._data = tenant_data
+
+    # 基础信息
+    @property
+    def id(self) -> str:
+        return self._data["id"]
+
+    @property
+    def name(self) -> str:
+        return self._data["name"]
+
+    # 资源配置（可选）
+    @property
+    def cache(self) -> TenantCacheConfig | None:
+        if self._data.get("cache_config"):
+            return TenantCacheConfig(**self._data["cache_config"])
+        return None
+
+    @property
+    def storage(self) -> TenantStorageConfig | None:
+        if self._data.get("storage_config"):
+            return TenantStorageConfig(**self._data["storage_config"])
+        return None
+```
+
+#### 9.6 隔离策略选择指南
+
+| 场景 | 推荐策略 | 说明 |
+|------|---------|------|
+| 中小租户、成本敏感 | 前缀隔离 | 共享资源，最低成本，依赖代码过滤 |
+| 中型租户、需要一定隔离 | DB/Bucket 隔离 | 同一实例的逻辑隔离，中等成本 |
+| 大型企业租户、高安全要求 | 物理隔离 | 独立资源实例，最高安全，成本最高 |
+| 混合场景 | 按需配置 | VIP 租户物理隔离，普通租户逻辑隔离 |
+
+### 10. clients - 内部客户端层
 
 **职责**：模块间 HTTP 调用客户端封装
 
-#### 9.1 核心组件
+#### 10.1 核心组件
 
 | 组件 | 文件 | 职责 |
 |------|------|------|
@@ -412,7 +696,7 @@ app.add_middleware(TenantMiddleware, resolver=resolver)
 | `TenantClient` | `tenant_client.py` | 租户服务客户端 |
 | `IamClient` | `iam_client.py` | IAM 服务客户端 |
 
-#### 9.2 InnerHttpClient 设计
+#### 10.2 InnerHttpClient 设计
 
 **核心功能**：
 - 支持单体模式和微服务模式切换
@@ -440,11 +724,11 @@ users = await client.get_list("/inner/v1/users", UserVo)
 result = await client.post("/inner/v1/users", json={"username": "test"})
 ```
 
-### 10. common - 通用组件层
+### 11. common - 通用组件层
 
 **职责**：通用上下文、异常、响应、枚举、单例、异常处理器
 
-#### 10.1 核心组件
+#### 11.1 核心组件
 
 | 组件 | 文件 | 职责 |
 |------|------|------|
@@ -455,7 +739,7 @@ result = await client.post("/inner/v1/users", json={"username": "test"})
 | `singleton` | `singleton.py` | 单例装饰器 |
 | `exception_handler` | `exception_handler.py` | FastAPI 全局异常处理器 |
 
-#### 10.2 异常体系设计
+#### 11.2 异常体系设计
 
 ```python
 class AppException(Exception):
@@ -476,7 +760,7 @@ class ValidationError(AppException):
         super().__init__(message, code=422, data=data)
 ```
 
-#### 10.3 统一响应格式
+#### 11.3 统一响应格式
 
 ```python
 # 成功响应
@@ -494,11 +778,11 @@ class ValidationError(AppException):
 }
 ```
 
-### 11. module - 模块系统
+### 12. module - 模块系统
 
 **职责**：模块动态加载、注册中心、依赖解析
 
-#### 11.1 核心组件
+#### 12.1 核心组件
 
 | 组件 | 文件 | 职责 |
 |------|------|------|
@@ -506,7 +790,7 @@ class ValidationError(AppException):
 | `ModuleRegistry` | `registry.py` | 模块注册中心（单例） |
 | `load_modules()` | `loader.py` | 模块扫描与加载函数 |
 
-#### 11.2 ModuleDescriptor Protocol
+#### 12.2 ModuleDescriptor Protocol
 
 ```python
 class ModuleDescriptor(Protocol):
@@ -536,7 +820,7 @@ class ModuleDescriptor(Protocol):
         ...
 ```
 
-#### 11.3 模块加载流程
+#### 12.3 模块加载流程
 
 ```python
 from framework.module import load_modules, get_registry
@@ -563,11 +847,11 @@ bases = registry.get_all_bases()
 schemas = registry.get_all_schemas()
 ```
 
-### 12. utils - 工具层
+### 13. utils - 工具层
 
 **职责**：加密、JWT、Session、字符串、时间、JSON、树形结构、启动计时器等工具
 
-#### 12.1 核心组件
+#### 13.1 核心组件
 
 | 组件 | 文件 | 职责 |
 |------|------|------|
@@ -585,7 +869,7 @@ schemas = registry.get_all_schemas()
 | `log_util` | `log_util.py` | 日志格式化工具 |
 | `file_util` | `file_util.py` | 文件处理工具 |
 
-#### 12.2 StartupTimer 设计
+#### 13.2 StartupTimer 设计
 
 **核心功能**：
 - 记录应用启动各阶段耗时
