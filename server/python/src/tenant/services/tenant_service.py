@@ -11,10 +11,28 @@ from loguru import logger
 from sqlalchemy import select, func, delete as sql_delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from tenant.models import Tenant, TenantConfig, TenantAdmin, TenantStatus
+from tenant.models import (
+    Tenant,
+    TenantConfig,
+    TenantAdmin,
+    TenantStatus,
+    DatabaseConfig,
+    StorageConfig,
+    CacheConfig,
+    QueueConfig,
+    PubSubConfig,
+)
 from framework.database.core.engine import async_session
 from framework.tenant.cache import TenantCache
 from framework.tenant.context import SimpleTenant
+from framework.tenant.protocols import (
+    TenantDatabaseConfig,
+    TenantStorageConfig,
+    TenantCacheConfig,
+    TenantQueueConfig,
+    TenantPubSubConfig,
+)
+from framework.tenant.enums import DatabaseType, StorageType, QueueType, PubSubType
 from framework.tenant.exceptions import (
     TenantNotFoundError,
     TenantInactiveError,
@@ -24,6 +42,7 @@ from framework.utils.crypto import (
     generate_tenant_key,
     encrypt,
 )
+from framework.utils.resource_crypto import decrypt_password
 
 _logger = logger.bind(name=__name__)
 
@@ -32,6 +51,132 @@ TenantRecord: TypeAlias = Tenant | SimpleTenant
 
 class TenantService:
     """租户服务"""
+
+    @staticmethod
+    async def _load_database_config(config_id: str | None) -> TenantDatabaseConfig | None:
+        """加载数据库配置"""
+        if not config_id:
+            return None
+        async with async_session() as session:
+            stmt = select(DatabaseConfig).where(DatabaseConfig.id == config_id)
+            result = await session.execute(stmt)
+            config = result.scalar_one_or_none()
+            if not config:
+                return None
+            return TenantDatabaseConfig(
+                type=DatabaseType(config.type),
+                host=config.host,
+                port=config.port,
+                database=config.database,
+                username=config.username,
+                password=decrypt_password(config.password) if config.password else "",
+            )
+
+    @staticmethod
+    async def _load_storage_config(config_id: str | None) -> TenantStorageConfig | None:
+        """加载存储配置"""
+        if not config_id:
+            return None
+        async with async_session() as session:
+            stmt = select(StorageConfig).where(StorageConfig.id == config_id)
+            result = await session.execute(stmt)
+            config = result.scalar_one_or_none()
+            if not config:
+                return None
+            return TenantStorageConfig(
+                type=StorageType(config.type),
+                endpoint=config.endpoint or "",
+                access_key=config.access_key or "",
+                secret_key=decrypt_password(config.secret_key) if config.secret_key else "",
+                bucket=config.bucket,
+            )
+
+    @staticmethod
+    async def _load_cache_config(config_id: str | None) -> TenantCacheConfig | None:
+        """加载缓存配置"""
+        if not config_id:
+            return None
+        async with async_session() as session:
+            stmt = select(CacheConfig).where(CacheConfig.id == config_id)
+            result = await session.execute(stmt)
+            config = result.scalar_one_or_none()
+            if not config:
+                return None
+            return TenantCacheConfig(
+                host=config.host,
+                port=config.port,
+                password=decrypt_password(config.password) if config.password else "",
+                db=config.db,
+                prefix=config.prefix or "",
+            )
+
+    @staticmethod
+    async def _load_queue_config(config_id: str | None) -> TenantQueueConfig | None:
+        """加载队列配置"""
+        if not config_id:
+            return None
+        async with async_session() as session:
+            stmt = select(QueueConfig).where(QueueConfig.id == config_id)
+            result = await session.execute(stmt)
+            config = result.scalar_one_or_none()
+            if not config:
+                return None
+            return TenantQueueConfig(
+                type=QueueType(config.type),
+                host=config.host,
+                port=config.port,
+                username=config.username or "",
+                password=decrypt_password(config.password) if config.password else "",
+                vhost=config.vhost or "/",
+            )
+
+    @staticmethod
+    async def _load_pubsub_config(config_id: str | None) -> TenantPubSubConfig | None:
+        """加载发布订阅配置"""
+        if not config_id:
+            return None
+        async with async_session() as session:
+            stmt = select(PubSubConfig).where(PubSubConfig.id == config_id)
+            result = await session.execute(stmt)
+            config = result.scalar_one_or_none()
+            if not config:
+                return None
+            return TenantPubSubConfig(
+                type=PubSubType(config.type),
+                host=config.host,
+                port=config.port,
+                username=config.username or "",
+                password=decrypt_password(config.password) if config.password else "",
+            )
+
+    @staticmethod
+    async def build_simple_tenant(tenant: Tenant) -> SimpleTenant:
+        """
+        从 Tenant 模型构建 SimpleTenant，包括加载关联的资源配置
+
+        Args:
+            tenant: Tenant ORM 模型实例
+
+        Returns:
+            SimpleTenant: 包含完整资源配置的租户信息
+        """
+        # 并行加载所有资源配置
+        import asyncio
+        db_config, storage_config, cache_config, queue_config, pubsub_config = await asyncio.gather(
+            TenantService._load_database_config(tenant.db_config_id),
+            TenantService._load_storage_config(tenant.storage_config_id),
+            TenantService._load_cache_config(tenant.cache_config_id),
+            TenantService._load_queue_config(tenant.queue_config_id),
+            TenantService._load_pubsub_config(tenant.pubsub_config_id),
+        )
+        return SimpleTenant.from_model(
+            tenant,
+            database=db_config,
+            storage=storage_config,
+            cache=cache_config,
+            queue=queue_config,
+            pubsub=pubsub_config,
+        )
 
     @staticmethod
     async def get_by_id(tenant_id: str, use_cache: bool = True) -> TenantRecord | None:
@@ -57,11 +202,15 @@ class TenantService:
             result = await session.execute(stmt)
             tenant = result.scalar_one_or_none()
 
-            if tenant and use_cache:
-                # 写入缓存
-                await TenantCache.set(SimpleTenant.from_model(tenant))
+            if tenant:
+                # 构建完整的 SimpleTenant（包含资源配置）
+                simple_tenant = await TenantService.build_simple_tenant(tenant)
+                if use_cache:
+                    # 写入缓存
+                    await TenantCache.set(simple_tenant)
+                return simple_tenant
 
-            return tenant
+            return None
 
     @staticmethod
     async def get_by_code(code: str) -> Tenant | None:
@@ -80,16 +229,12 @@ class TenantService:
         contact_phone: str | None = None,
         expired_at: datetime | None = None,
         settings: dict[str, Any] | None = None,
-        # 资源配置
-        db_type: str | None = None,
-        db_host: str | None = None,
-        db_port: int | None = None,
-        db_name: str | None = None,
-        db_username: str | None = None,
-        db_password: str | None = None,
-        storage_type: str | None = None,
-        storage_bucket: str | None = None,
-        cache_db: int | None = None,
+        # 资源配置关联
+        db_config_id: str | None = None,
+        storage_config_id: str | None = None,
+        cache_config_id: str | None = None,
+        queue_config_id: str | None = None,
+        pubsub_config_id: str | None = None,
     ) -> Tenant:
         """
         创建租户
@@ -102,15 +247,11 @@ class TenantService:
             contact_phone: 联系人电话
             expired_at: 过期时间
             settings: 扩展设置
-            db_type: 数据库类型
-            db_host: 数据库主机
-            db_port: 数据库端口
-            db_name: 数据库名称
-            db_username: 数据库用户名
-            db_password: 数据库密码（明文，会自动加密）
-            storage_type: 存储类型
-            storage_bucket: 存储桶名称
-            cache_db: Redis DB 编号
+            db_config_id: 数据库配置 ID
+            storage_config_id: 存储配置 ID
+            cache_config_id: 缓存配置 ID
+            queue_config_id: 队列配置 ID
+            pubsub_config_id: 发布订阅配置 ID
 
         Returns:
             Tenant
@@ -119,11 +260,6 @@ class TenantService:
         tenant_key = generate_tenant_key()
         # 用主密钥加密租户密钥
         encrypted_tenant_key = encrypt(tenant_key)
-
-        # 加密数据库密码
-        encrypted_db_password = None
-        if db_password:
-            encrypted_db_password = encrypt(db_password)
 
         async with async_session() as session:
             tenant = Tenant(
@@ -134,18 +270,12 @@ class TenantService:
                 contact_phone=contact_phone,
                 expired_at=expired_at,
                 settings=settings or {},
-                # 数据库配置
-                db_type=db_type,
-                db_host=db_host,
-                db_port=db_port,
-                db_name=db_name,
-                db_username=db_username,
-                db_password=encrypted_db_password,
-                # 存储配置
-                storage_type=storage_type,
-                storage_bucket=storage_bucket,
-                # 缓存配置
-                cache_db=cache_db,
+                # 资源配置关联
+                db_config_id=db_config_id,
+                storage_config_id=storage_config_id,
+                cache_config_id=cache_config_id,
+                queue_config_id=queue_config_id,
+                pubsub_config_id=pubsub_config_id,
                 # 加密密钥
                 encryption_key=encrypted_tenant_key,
             )
@@ -165,26 +295,24 @@ class TenantService:
         contact_phone: str | None = None,
         expired_at: datetime | None = None,
         settings: dict[str, Any] | None = None,
-        # 资源配置
-        db_type: str | None = None,
-        db_host: str | None = None,
-        db_port: int | None = None,
-        db_name: str | None = None,
-        db_username: str | None = None,
-        db_password: str | None = None,
-        storage_type: str | None = None,
-        storage_bucket: str | None = None,
-        cache_db: int | None = None,
     ) -> Tenant | None:
         """
-        更新租户
+        更新租户基础信息
 
         Args:
             tenant_id: 租户 ID
-            其他参数为要更新的字段
+            name: 租户名称
+            contact_name: 联系人姓名
+            contact_email: 联系人邮箱
+            contact_phone: 联系人电话
+            expired_at: 过期时间
+            settings: 扩展设置
 
         Returns:
             Tenant | None
+
+        Note:
+            资源配置绑定请使用 update_resource_bindings 方法
         """
         async with async_session() as session:
             stmt = select(Tenant).where(Tenant.id == tenant_id)
@@ -206,31 +334,6 @@ class TenantService:
                 tenant.expired_at = expired_at
             if settings is not None:
                 tenant.settings = settings
-
-            # 更新数据库配置
-            if db_type is not None:
-                tenant.db_type = db_type
-            if db_host is not None:
-                tenant.db_host = db_host
-            if db_port is not None:
-                tenant.db_port = db_port
-            if db_name is not None:
-                tenant.db_name = db_name
-            if db_username is not None:
-                tenant.db_username = db_username
-            if db_password is not None:
-                # 加密数据库密码
-                tenant.db_password = encrypt(db_password) if db_password else None
-
-            # 更新存储配置
-            if storage_type is not None:
-                tenant.storage_type = storage_type
-            if storage_bucket is not None:
-                tenant.storage_bucket = storage_bucket
-
-            # 更新缓存配置
-            if cache_db is not None:
-                tenant.cache_db = cache_db
 
             await session.commit()
             await session.refresh(tenant)

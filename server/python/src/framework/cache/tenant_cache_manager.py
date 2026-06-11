@@ -2,12 +2,14 @@
 租户缓存管理器
 
 根据租户配置路由到独立 Redis DB，支持：
-- 独立 Redis DB 物理隔离
+- 独立 Redis 实例物理隔离
+- 独立 Redis DB 逻辑隔离
 - 默认 Redis DB + Key 前缀逻辑隔离
 - Redis 客户端缓存
 """
 
-from typing import Any, Optional
+from datetime import datetime, timedelta
+from typing import Any
 
 from redis.asyncio import Redis, ConnectionPool
 from loguru import logger
@@ -23,11 +25,21 @@ _logger = logger.bind(name=__name__)
 MIN_DB = 0
 MAX_DB = 15
 
+# 最大实例客户端数
+MAX_INSTANCE_CLIENTS = 50
+# 实例客户端空闲超时（秒）
+INSTANCE_IDLE_TIMEOUT = 300
+
 # Key 前缀格式
 TENANT_KEY_PREFIX = "{tenant_id}:{key}"
 TENANT_QUEUE_PREFIX = "{tenant_id}:queue:{queue_name}"
 TENANT_CHANNEL_PREFIX = "{tenant_id}:channel:{channel_name}"
 TENANT_LOCK_PREFIX = "{tenant_id}:lock:{lock_key}"
+
+
+def _build_instance_key(host: str, port: int) -> str:
+    """构建实例缓存 Key"""
+    return f"{host}:{port}"
 
 
 class TenantCacheManager:
@@ -37,6 +49,7 @@ class TenantCacheManager:
     管理：
     - 默认 Redis 客户端
     - 租户级 Redis DB 客户端
+    - 租户级 Redis 实例客户端（物理隔离）
     - DB 编号分配
     """
 
@@ -51,6 +64,15 @@ class TenantCacheManager:
         self._db_clients: dict[int, Redis] = {}  # db_index -> client
         self._tenant_db_map: dict[str, int] = {}  # tenant_id -> db_index
         self._db_usage: dict[int, set[str]] = {}  # db_index -> tenant_ids
+
+        # 物理隔离实例客户端
+        self._instance_clients: dict[str, Redis] = {}  # "host:port" -> client
+        self._instance_access_times: dict[str, datetime] = {}  # "host:port" -> last_access
+
+    @staticmethod
+    def _is_physical_isolation(config: TenantCacheConfig | None) -> bool:
+        """判断是否使用物理隔离"""
+        return bool(config and config.host)
 
     def register_tenant_db(self, tenant_id: str, db: int) -> None:
         """
@@ -118,6 +140,8 @@ class TenantCacheManager:
         """
         获取租户 Redis 客户端
 
+        优先级：物理隔离 > 独立 DB > 默认
+
         Args:
             tenant_id: 租户 ID
             config: 租户缓存配置
@@ -125,6 +149,11 @@ class TenantCacheManager:
         Returns:
             Redis: Redis 客户端
         """
+        # 物理隔离：有独立 host，使用独立实例
+        if self._is_physical_isolation(config):
+            assert config is not None
+            return await self._get_or_create_instance_client(config)
+
         db = self.get_db(tenant_id, config)
 
         # DB 0 使用默认客户端
@@ -139,6 +168,50 @@ class TenantCacheManager:
         client = await self._create_db_client(db)
         self._db_clients[db] = client
         return client
+
+    async def _get_or_create_instance_client(self, config: TenantCacheConfig) -> Redis:
+        """
+        获取或创建实例级 Redis 客户端
+
+        Args:
+            config: 租户缓存配置
+
+        Returns:
+            Redis: Redis 客户端
+        """
+        instance_key = _build_instance_key(config.host, config.port)
+
+        # 检查缓存
+        if instance_key in self._instance_clients:
+            self._instance_access_times[instance_key] = datetime.now()
+            return self._instance_clients[instance_key]
+
+        # 创建新客户端
+        client = await self._create_instance_client(config)
+        self._instance_clients[instance_key] = client
+        self._instance_access_times[instance_key] = datetime.now()
+
+        _logger.debug(f"创建实例 Redis 客户端: {instance_key}")
+        return client
+
+    async def _create_instance_client(self, config: TenantCacheConfig) -> Redis:
+        """
+        创建实例级 Redis 客户端
+
+        Args:
+            config: 租户缓存配置
+
+        Returns:
+            Redis: Redis 客户端
+        """
+        pool = ConnectionPool(
+            host=config.host,
+            port=config.port,
+            password=config.password or None,
+            db=config.db,
+            decode_responses=True,
+        )
+        return Redis(connection_pool=pool)
 
     async def _create_db_client(self, db: int) -> Redis:
         """
@@ -183,6 +256,10 @@ class TenantCacheManager:
         if skip_tenant or should_skip_tenant():
             return key
 
+        # 有物理隔离，不添加前缀
+        if self._is_physical_isolation(config):
+            return key
+
         # 有独立 Redis DB 配置，不添加前缀
         if config and config.db is not None:
             return key
@@ -218,6 +295,9 @@ class TenantCacheManager:
             str: 实际 Stream Key
         """
         if skip_tenant or should_skip_tenant():
+            return f"queue:{queue_name}"
+
+        if self._is_physical_isolation(config):
             return f"queue:{queue_name}"
 
         if config and config.db is not None:
@@ -328,7 +408,7 @@ class TenantCacheManager:
             consumername=consumername,
             streams={actual_stream: ">"},
             count=count,
-            block=block
+            block=block,
         )
 
     async def xack(
@@ -361,12 +441,12 @@ class TenantCacheManager:
         client = await self.get_client(tenant_id, config)
         actual_channel = channel
         if not skip_tenant and not should_skip_tenant():
-            if not (config and config.db is not None):
+            if not self._is_physical_isolation(config) and not (config and config.db is not None):
                 actual_tenant_id = tenant_id or get_tenant_id()
                 if actual_tenant_id and actual_tenant_id not in self._tenant_db_map:
                     actual_channel = TENANT_CHANNEL_PREFIX.format(
                         tenant_id=actual_tenant_id,
-                        channel_name=channel
+                        channel_name=channel,
                     )
         return await client.publish(actual_channel, message)
 
@@ -386,12 +466,12 @@ class TenantCacheManager:
         client = await self.get_client(tenant_id, config)
         actual_key = lock_key
         if not skip_tenant and not should_skip_tenant():
-            if not (config and config.db is not None):
+            if not self._is_physical_isolation(config) and not (config and config.db is not None):
                 actual_tenant_id = tenant_id or get_tenant_id()
                 if actual_tenant_id and actual_tenant_id not in self._tenant_db_map:
                     actual_key = TENANT_LOCK_PREFIX.format(
                         tenant_id=actual_tenant_id,
-                        lock_key=lock_key
+                        lock_key=lock_key,
                     )
         return await client.set(actual_key, "1", ex=ttl, nx=True)
 
@@ -406,37 +486,85 @@ class TenantCacheManager:
         client = await self.get_client(tenant_id, config)
         actual_key = lock_key
         if not skip_tenant and not should_skip_tenant():
-            if not (config and config.db is not None):
+            if not self._is_physical_isolation(config) and not (config and config.db is not None):
                 actual_tenant_id = tenant_id or get_tenant_id()
                 if actual_tenant_id and actual_tenant_id not in self._tenant_db_map:
                     actual_key = TENANT_LOCK_PREFIX.format(
                         tenant_id=actual_tenant_id,
-                        lock_key=lock_key
+                        lock_key=lock_key,
                     )
         result = await client.delete(actual_key)
         return result > 0
 
     # =========================================================================
-    # 管理
+    # 实例管理
     # =========================================================================
+
+    async def release_idle_instances(self, timeout: int | None = None) -> int:
+        """
+        释放空闲实例客户端
+
+        Args:
+            timeout: 空闲超时（秒），默认使用配置值
+
+        Returns:
+            int: 释放的客户端数量
+        """
+        if timeout is None:
+            timeout = INSTANCE_IDLE_TIMEOUT
+
+        now = datetime.now()
+        threshold = now - timedelta(seconds=timeout)
+
+        released = 0
+        to_release: list[str] = []
+
+        for instance_key, last_access in self._instance_access_times.items():
+            if last_access < threshold:
+                to_release.append(instance_key)
+
+        for instance_key in to_release:
+            client = self._instance_clients.pop(instance_key, None)
+            if client:
+                try:
+                    await client.aclose()
+                except Exception as e:
+                    _logger.warning(f"关闭实例客户端失败: {instance_key}, error={e}")
+                self._instance_access_times.pop(instance_key, None)
+                released += 1
+                _logger.debug(f"释放空闲实例客户端: {instance_key}")
+
+        return released
 
     async def close(self) -> None:
         """关闭所有客户端"""
+        # 关闭 DB 客户端
         for db, client in self._db_clients.items():
             try:
                 await client.aclose()
             except Exception as e:
                 _logger.warning(f"关闭 Redis DB {db} 客户端失败: {e}")
-
         self._db_clients.clear()
+
+        # 关闭实例客户端
+        for key, client in self._instance_clients.items():
+            try:
+                await client.aclose()
+            except Exception as e:
+                _logger.warning(f"关闭 Redis 实例 {key} 客户端失败: {e}")
+        self._instance_clients.clear()
+        self._instance_access_times.clear()
+
         _logger.info("所有租户 Redis 客户端已关闭")
 
     def get_stats(self) -> dict:
         """获取统计信息"""
         return {
             "total_db_clients": len(self._db_clients),
+            "total_instance_clients": len(self._instance_clients),
             "registered_tenants": len(self._tenant_db_map),
             "db_usage": {db: list(tenants) for db, tenants in self._db_usage.items()},
+            "instances": list(self._instance_clients.keys()),
         }
 
 

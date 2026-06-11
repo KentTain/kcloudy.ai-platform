@@ -8,50 +8,6 @@ from typing import Any
 from pydantic import BaseModel, Field
 
 
-# ============== 资源配置 Schema ==============
-
-class DatabaseConfigRequest(BaseModel):
-    """数据库配置请求"""
-    db_type: str | None = Field(None, max_length=20, description="数据库类型")
-    db_host: str | None = Field(None, max_length=255, description="数据库主机")
-    db_port: int | None = Field(None, description="数据库端口")
-    db_name: str | None = Field(None, max_length=100, description="数据库名称")
-    db_username: str | None = Field(None, max_length=100, description="数据库用户名")
-    db_password: str | None = Field(None, max_length=255, description="数据库密码")
-
-
-class StorageConfigRequest(BaseModel):
-    """存储配置请求"""
-    storage_type: str | None = Field(None, max_length=20, description="存储类型")
-    storage_bucket: str | None = Field(None, max_length=100, description="存储桶名称")
-
-
-class CacheConfigRequest(BaseModel):
-    """缓存配置请求"""
-    cache_db: int | None = Field(None, ge=0, le=15, description="Redis DB 编号 (0-15)")
-
-
-class DatabaseConfigVo(BaseModel):
-    """数据库配置响应"""
-    db_type: str | None = Field(None, description="数据库类型")
-    db_host: str | None = Field(None, description="数据库主机")
-    db_port: int | None = Field(None, description="数据库端口")
-    db_name: str | None = Field(None, description="数据库名称")
-    db_username: str | None = Field(None, description="数据库用户名")
-    # 密码不返回
-
-
-class StorageConfigVo(BaseModel):
-    """存储配置响应"""
-    storage_type: str | None = Field(None, description="存储类型")
-    storage_bucket: str | None = Field(None, description="存储桶名称")
-
-
-class CacheConfigVo(BaseModel):
-    """缓存配置响应"""
-    cache_db: int | None = Field(None, description="Redis DB 编号")
-
-
 # ============== 请求 Schema ==============
 
 class TenantCreateRequest(BaseModel):
@@ -63,10 +19,12 @@ class TenantCreateRequest(BaseModel):
     contact_phone: str | None = Field(None, max_length=20, description="联系人电话")
     expired_at: datetime | None = Field(None, description="过期时间")
     settings: dict[str, Any] | None = Field(None, description="扩展设置")
-    # 资源配置
-    database: DatabaseConfigRequest | None = Field(None, description="数据库配置")
-    storage: StorageConfigRequest | None = Field(None, description="存储配置")
-    cache: CacheConfigRequest | None = Field(None, description="缓存配置")
+    # 资源配置关联
+    db_config_id: str | None = Field(None, description="数据库配置ID")
+    storage_config_id: str | None = Field(None, description="存储配置ID")
+    cache_config_id: str | None = Field(None, description="缓存配置ID")
+    queue_config_id: str | None = Field(None, description="队列配置ID")
+    pubsub_config_id: str | None = Field(None, description="发布订阅配置ID")
 
 
 class TenantUpdateRequest(BaseModel):
@@ -77,10 +35,6 @@ class TenantUpdateRequest(BaseModel):
     contact_phone: str | None = Field(None, max_length=20, description="联系人电话")
     expired_at: datetime | None = Field(None, description="过期时间")
     settings: dict[str, Any] | None = Field(None, description="扩展设置")
-    # 资源配置
-    database: DatabaseConfigRequest | None = Field(None, description="数据库配置")
-    storage: StorageConfigRequest | None = Field(None, description="存储配置")
-    cache: CacheConfigRequest | None = Field(None, description="缓存配置")
 
 
 class AdminLoginRequest(BaseModel):
@@ -97,6 +51,13 @@ class ResourceValidateVo(BaseModel):
 
 # ============== 响应 Schema ==============
 
+class ResourceConfigReferenceVo(BaseModel):
+    """资源配置引用响应"""
+
+    id: str = Field(..., description="配置ID")
+    name: str = Field(..., description="配置名称")
+
+
 class TenantVo(BaseModel):
     """租户响应"""
     id: str = Field(..., description="租户ID")
@@ -108,10 +69,12 @@ class TenantVo(BaseModel):
     contact_phone: str | None = Field(None, description="联系人电话")
     expired_at: datetime | None = Field(None, description="过期时间")
     settings: dict[str, Any] = Field(default_factory=dict, description="扩展设置")
-    # 资源配置
-    database: DatabaseConfigVo | None = Field(None, description="数据库配置")
-    storage: StorageConfigVo | None = Field(None, description="存储配置")
-    cache: CacheConfigVo | None = Field(None, description="缓存配置")
+    # 资源配置关联
+    db_config: ResourceConfigReferenceVo | None = Field(None, description="数据库配置")
+    storage_config: ResourceConfigReferenceVo | None = Field(None, description="存储配置")
+    cache_config: ResourceConfigReferenceVo | None = Field(None, description="缓存配置")
+    queue_config: ResourceConfigReferenceVo | None = Field(None, description="队列配置")
+    pubsub_config: ResourceConfigReferenceVo | None = Field(None, description="发布订阅配置")
     # 时间
     created_at: datetime = Field(..., description="创建时间")
     updated_at: datetime = Field(..., description="更新时间")
@@ -160,13 +123,6 @@ class ResourceBindingRequest(BaseModel):
     cache_config_id: str | None = Field(None, description="缓存配置ID")
     queue_config_id: str | None = Field(None, description="队列配置ID")
     pubsub_config_id: str | None = Field(None, description="发布订阅配置ID")
-
-
-class ResourceConfigReferenceVo(BaseModel):
-    """资源配置引用响应"""
-
-    id: str = Field(..., description="配置ID")
-    name: str = Field(..., description="配置名称")
 
 
 class ResourceBindingResponse(BaseModel):

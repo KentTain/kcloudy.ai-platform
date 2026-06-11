@@ -204,19 +204,16 @@ class TestCreate:
                 contact_phone="13800138000",
                 expired_at=datetime.now() + timedelta(days=365),
                 settings={"theme": "dark"},
-                db_type="postgresql",
-                db_host="localhost",
-                db_port=5432,
-                db_name="tenant_db",
-                db_username="tenant_user",
-                db_password="password123",
-                storage_type="minio",
-                storage_bucket="tenant-bucket",
-                cache_db=1,
+                # 资源配置关联
+                db_config_id="db-config-1",
+                storage_config_id="storage-config-1",
+                cache_config_id="cache-config-1",
+                queue_config_id="queue-config-1",
+                pubsub_config_id="pubsub-config-1",
             )
 
-        # encrypt 被调用两次：租户密钥和数据库密码
-        assert mock_encrypt.call_count == 2
+        # encrypt 被调用一次：租户密钥
+        mock_encrypt.assert_called_once_with("raw-tenant-key")
 
 
 class TestUpdate:
@@ -268,35 +265,6 @@ class TestUpdate:
             )
 
         assert result is None
-
-    @pytest.mark.asyncio
-    async def test_encrypts_db_password_on_update(self):
-        """更新数据库密码时加密"""
-        mock_tenant = MagicMock(spec=Tenant)
-        mock_tenant.id = "tenant-1"
-
-        with patch("tenant.services.tenant_service.async_session") as mock_session, \
-             patch("tenant.services.tenant_service.encrypt") as mock_encrypt, \
-             patch("tenant.services.tenant_service.TenantCache.invalidate"):
-
-            mock_encrypt.return_value = "encrypted-password"
-
-            mock_session_context = AsyncMock()
-            mock_session.return_value.__aenter__.return_value = mock_session_context
-
-            mock_result = MagicMock()
-            mock_result.scalar_one_or_none.return_value = mock_tenant
-            mock_session_context.execute.return_value = mock_result
-            mock_session_context.commit = AsyncMock()
-            mock_session_context.refresh = AsyncMock()
-
-            await TenantService.update(
-                tenant_id="tenant-1",
-                db_password="new_password",
-            )
-
-        mock_encrypt.assert_called_once_with("new_password")
-        assert mock_tenant.db_password == "encrypted-password"
 
 
 class TestDelete:

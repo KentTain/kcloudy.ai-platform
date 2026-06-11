@@ -1,5 +1,5 @@
 """
-Tenant 模块数据初始化
+Tenant 模块数据模块数据初始化
 
 初始化默认租户数据。
 """
@@ -28,7 +28,6 @@ async def run(*, dry_run: bool = False) -> int:
     """
     from framework.configs import get_settings
     from framework.database.core.engine import get_session
-    from framework.utils.crypto import encrypt
 
     settings = get_settings()
     tenant_config = settings.tenant
@@ -46,10 +45,6 @@ async def run(*, dry_run: bool = False) -> int:
 
         # 创建默认租户
         default_tenant_id = tenant_config.default_tenant_id
-        # 从配置读取资源隔离参数（可选）
-        db_password_encrypted = None
-        if tenant_config.default_db_password:
-            db_password_encrypted = encrypt(tenant_config.default_db_password)
 
         tenant = Tenant(
             id=default_tenant_id,
@@ -63,16 +58,8 @@ async def run(*, dry_run: bool = False) -> int:
                 "max_users": 100,
                 "max_storage_mb": 10240,
             },
-            # 资源配置（可选物理隔离）
-            db_type=tenant_config.default_db_type,
-            db_host=tenant_config.default_db_host,
-            db_port=tenant_config.default_db_port,
-            db_name=tenant_config.default_db_name,
-            db_username=tenant_config.default_db_username,
-            db_password=db_password_encrypted,
-            storage_type=tenant_config.default_storage_type,
-            storage_bucket=tenant_config.default_storage_bucket,
-            cache_db=tenant_config.default_cache_db,
+            # 资源配置关联（可选，使用资源表的配置 ID）
+            # 默认租户使用共享资源，无需指定配置 ID
         )
 
         if dry_run:

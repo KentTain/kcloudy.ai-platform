@@ -10,6 +10,7 @@ from fastapi import APIRouter, HTTPException
 from fastapi.responses import ORJSONResponse
 from pydantic import BaseModel, Field
 
+from framework.tenant.context import SimpleTenant
 from tenant.models import Tenant, TenantStatus
 from tenant.services.tenant_service import TenantService
 
@@ -19,6 +20,65 @@ router = APIRouter()
 def Success(data: Any = None, msg: str = "success") -> dict:
     """成功响应"""
     return {"code": 200, "msg": msg, "data": data}
+
+
+class ResourceConfigInfo(BaseModel):
+    """资源配置信息"""
+
+    id: str = Field(..., description="配置ID")
+    name: str = Field(..., description="配置名称")
+
+
+class TenantDatabaseConfigInfo(BaseModel):
+    """数据库配置信息（含连接参数）"""
+
+    type: str = Field(..., description="数据库类型")
+    host: str = Field(..., description="数据库主机")
+    port: int = Field(..., description="数据库端口")
+    database: str = Field(..., description="数据库名称")
+    username: str = Field(..., description="数据库用户名")
+    password: str | None = Field(None, description="数据库密码（解密后）")
+
+
+class TenantStorageConfigInfo(BaseModel):
+    """存储配置信息"""
+
+    type: str = Field(..., description="存储类型")
+    endpoint: str = Field(..., description="服务端点")
+    bucket: str = Field(..., description="存储桶名称")
+    access_key: str = Field(..., description="访问密钥")
+    secret_key: str | None = Field(None, description="私密密钥（解密后）")
+
+
+class TenantCacheConfigInfo(BaseModel):
+    """缓存配置信息"""
+
+    host: str = Field(..., description="缓存主机")
+    port: int = Field(..., description="缓存端口")
+    password: str | None = Field(None, description="缓存密码（解密后）")
+    db: int = Field(..., description="数据库编号")
+    prefix: str = Field(..., description="键前缀")
+
+
+class TenantQueueConfigInfo(BaseModel):
+    """队列配置信息"""
+
+    type: str = Field(..., description="队列类型")
+    host: str = Field(..., description="队列主机")
+    port: int = Field(..., description="队列端口")
+    username: str | None = Field(None, description="用户名")
+    password: str | None = Field(None, description="密码（解密后）")
+    vhost: str = Field(..., description="虚拟主机")
+
+
+class TenantPubSubConfigInfo(BaseModel):
+    """发布订阅配置信息"""
+
+    type: str = Field(..., description="发布订阅类型")
+    host: str = Field(..., description="主机地址")
+    port: int = Field(..., description="端口")
+    username: str | None = Field(None, description="用户名")
+    password: str | None = Field(None, description="密码（解密后）")
 
 
 class TenantInfoResponse(BaseModel):
@@ -32,16 +92,35 @@ class TenantInfoResponse(BaseModel):
     contact_email: str | None = Field(None, description="联系人邮箱")
     contact_phone: str | None = Field(None, description="联系人电话")
     expired_at: str | None = Field(None, description="过期时间")
-    # 资源配置
-    db_type: str | None = Field(None, description="数据库类型")
-    db_host: str | None = Field(None, description="数据库主机")
-    db_port: int | None = Field(None, description="数据库端口")
-    db_name: str | None = Field(None, description="数据库名称")
-    db_username: str | None = Field(None, description="数据库用户名")
-    db_password: str | None = Field(None, description="数据库密码（解密后）")
-    storage_type: str | None = Field(None, description="存储类型")
-    storage_bucket: str | None = Field(None, description="存储桶名称")
-    cache_db: int | None = Field(None, description="Redis DB 编号")
+    # 资源配置 ID
+    db_config_id: str | None = Field(None, description="数据库配置ID")
+    storage_config_id: str | None = Field(None, description="存储配置ID")
+    cache_config_id: str | None = Field(None, description="缓存配置ID")
+    queue_config_id: str | None = Field(None, description="队列配置ID")
+    pubsub_config_id: str | None = Field(None, description="发布订阅配置ID")
+    # 敏感信息
+    encryption_key: str | None = Field(None, description="租户加密密钥（解密后）")
+    settings: dict[str, Any] = Field(default_factory=dict, description="扩展设置")
+
+
+class TenantFullInfoResponse(BaseModel):
+    """租户完整信息响应（含资源配置详情）"""
+
+    id: str = Field(..., description="租户ID")
+    name: str = Field(..., description="租户名称")
+    code: str = Field(..., description="租户编码")
+    status: str = Field(..., description="状态")
+    contact_name: str | None = Field(None, description="联系人姓名")
+    contact_email: str | None = Field(None, description="联系人邮箱")
+    contact_phone: str | None = Field(None, description="联系人电话")
+    expired_at: str | None = Field(None, description="过期时间")
+    # 资源配置详情
+    database: TenantDatabaseConfigInfo | None = Field(None, description="数据库配置")
+    storage: TenantStorageConfigInfo | None = Field(None, description="存储配置")
+    cache: TenantCacheConfigInfo | None = Field(None, description="缓存配置")
+    queue: TenantQueueConfigInfo | None = Field(None, description="队列配置")
+    pubsub: TenantPubSubConfigInfo | None = Field(None, description="发布订阅配置")
+    # 敏感信息
     encryption_key: str | None = Field(None, description="租户加密密钥（解密后）")
     settings: dict[str, Any] = Field(default_factory=dict, description="扩展设置")
 
@@ -60,26 +139,16 @@ class ValidateAccessResponse(BaseModel):
     user_id: str = Field(..., description="用户ID")
 
 
-def build_tenant_info(
-    tenant: Tenant, include_secrets: bool = False
-) -> TenantInfoResponse:
-    """构建租户信息响应"""
+def build_tenant_info(tenant: Tenant, include_secrets: bool = False) -> TenantInfoResponse:
+    """构建租户基础信息响应"""
     from framework.utils.crypto import decrypt
 
-    db_password = None
     encryption_key = None
-
-    if include_secrets:
-        if tenant.db_password:
-            try:
-                db_password = decrypt(tenant.db_password)
-            except Exception:
-                pass
-        if tenant.encryption_key:
-            try:
-                encryption_key = decrypt(tenant.encryption_key)
-            except Exception:
-                pass
+    if include_secrets and tenant.encryption_key:
+        try:
+            encryption_key = decrypt(tenant.encryption_key)
+        except Exception:
+            pass
 
     return TenantInfoResponse(
         id=tenant.id,
@@ -90,17 +159,92 @@ def build_tenant_info(
         contact_email=tenant.contact_email,
         contact_phone=tenant.contact_phone,
         expired_at=tenant.expired_at.isoformat() if tenant.expired_at else None,
-        db_type=tenant.db_type,
-        db_host=tenant.db_host,
-        db_port=tenant.db_port,
-        db_name=tenant.db_name,
-        db_username=tenant.db_username,
-        db_password=db_password,
-        storage_type=tenant.storage_type,
-        storage_bucket=tenant.storage_bucket,
-        cache_db=tenant.cache_db,
+        db_config_id=tenant.db_config_id,
+        storage_config_id=tenant.storage_config_id,
+        cache_config_id=tenant.cache_config_id,
+        queue_config_id=tenant.queue_config_id,
+        pubsub_config_id=tenant.pubsub_config_id,
         encryption_key=encryption_key,
         settings=tenant.settings or {},
+    )
+
+
+def build_tenant_full_info(simple_tenant: SimpleTenant) -> TenantFullInfoResponse:
+    """构建租户完整信息响应（含资源配置详情）"""
+    from framework.utils.crypto import decrypt
+
+    encryption_key = None
+    # SimpleTenant 没有 encryption_key，需要从原始模型获取
+    # 这里暂时返回 None，如果需要可以在调用方传入
+
+    database = None
+    if simple_tenant.database:
+        database = TenantDatabaseConfigInfo(
+            type=simple_tenant.database.type.value,
+            host=simple_tenant.database.host,
+            port=simple_tenant.database.port,
+            database=simple_tenant.database.database,
+            username=simple_tenant.database.username,
+            password=simple_tenant.database.password or None,
+        )
+
+    storage = None
+    if simple_tenant.storage:
+        storage = TenantStorageConfigInfo(
+            type=simple_tenant.storage.type.value,
+            endpoint=simple_tenant.storage.endpoint,
+            bucket=simple_tenant.storage.bucket,
+            access_key=simple_tenant.storage.access_key,
+            secret_key=simple_tenant.storage.secret_key or None,
+        )
+
+    cache = None
+    if simple_tenant.cache:
+        cache = TenantCacheConfigInfo(
+            host=simple_tenant.cache.host,
+            port=simple_tenant.cache.port,
+            password=simple_tenant.cache.password or None,
+            db=simple_tenant.cache.db,
+            prefix=simple_tenant.cache.prefix,
+        )
+
+    queue = None
+    if simple_tenant.queue:
+        queue = TenantQueueConfigInfo(
+            type=simple_tenant.queue.type.value,
+            host=simple_tenant.queue.host,
+            port=simple_tenant.queue.port,
+            username=simple_tenant.queue.username or None,
+            password=simple_tenant.queue.password or None,
+            vhost=simple_tenant.queue.vhost,
+        )
+
+    pubsub = None
+    if simple_tenant.pubsub:
+        pubsub = TenantPubSubConfigInfo(
+            type=simple_tenant.pubsub.type.value,
+            host=simple_tenant.pubsub.host,
+            port=simple_tenant.pubsub.port,
+            username=simple_tenant.pubsub.username or None,
+            password=simple_tenant.pubsub.password or None,
+        )
+
+    return TenantFullInfoResponse(
+        id=simple_tenant.id,
+        name=simple_tenant.name,
+        code=simple_tenant.code,
+        status=simple_tenant.status,
+        contact_name=simple_tenant.contact_name,
+        contact_email=simple_tenant.contact_email,
+        contact_phone=simple_tenant.contact_phone,
+        expired_at=simple_tenant.expired_at.isoformat() if simple_tenant.expired_at else None,
+        database=database,
+        storage=storage,
+        cache=cache,
+        queue=queue,
+        pubsub=pubsub,
+        encryption_key=encryption_key,
+        settings=getattr(simple_tenant, "settings", {}),
     )
 
 
@@ -120,7 +264,7 @@ async def health_check() -> ORJSONResponse:
 @router.get("/tenants/{tenant_id}")
 async def get_tenant(tenant_id: str) -> ORJSONResponse:
     """
-    获取单个租户
+    获取单个租户（含完整资源配置）
 
     场景：获取单个租户
     WHEN 请求 GET /inner/v1/tenants/{tenant_id}
@@ -133,19 +277,32 @@ async def get_tenant(tenant_id: str) -> ORJSONResponse:
     THEN 返回 HTTP 404
     AND 响应体包含错误信息
     """
-    tenant = await TenantService.get_by_id(tenant_id, use_cache=True)
+    simple_tenant = await TenantService.get_by_id(tenant_id, use_cache=True)
+
+    if not simple_tenant:
+        raise HTTPException(status_code=404, detail=f"租户 {tenant_id} 不存在")
+
+    return ORJSONResponse(
+        content=Success(build_tenant_full_info(simple_tenant).model_dump())
+    )
+
+
+@router.get("/tenants/{tenant_id}/basic")
+async def get_tenant_basic(tenant_id: str) -> ORJSONResponse:
+    """
+    获取租户基础信息（不含资源配置详情）
+
+    场景：获取租户基础信息
+    WHEN 请求 GET /inner/v1/tenants/{tenant_id}/basic
+    THEN 返回租户基础信息和资源配置 ID
+    """
+    tenant = await TenantService.get_resource_bindings(tenant_id)
 
     if not tenant:
         raise HTTPException(status_code=404, detail=f"租户 {tenant_id} 不存在")
 
-    # 如果是 SimpleTenant（缓存），需要从数据库获取完整信息
-    if not isinstance(tenant, Tenant):
-        tenant = await TenantService.get_by_id(tenant_id, use_cache=False)
-        if not tenant:
-            raise HTTPException(status_code=404, detail=f"租户 {tenant_id} 不存在")
-
     return ORJSONResponse(
-        content=Success(build_tenant_info(tenant, include_secrets=True).model_dump())
+        content=Success(build_tenant_info(tenant, include_secrets=False).model_dump())
     )
 
 
@@ -165,11 +322,32 @@ async def get_tenants_batch(data: BatchTenantsRequest) -> ORJSONResponse:
     return ORJSONResponse(
         content=Success(
             [
-                build_tenant_info(t, include_secrets=True).model_dump()
+                build_tenant_info(t, include_secrets=False).model_dump()
                 for t in tenants
                 if t
             ]
         )
+    )
+
+
+@router.post("/tenants/batch-full")
+async def get_tenants_batch_full(data: BatchTenantsRequest) -> ORJSONResponse:
+    """
+    批量获取租户完整信息（含资源配置详情）
+
+    场景：批量获取租户完整信息
+    WHEN 请求 POST /inner/v1/tenants/batch-full
+    WITH 请求体 {"tenant_ids": ["id1", "id2"]}
+    THEN 返回多个租户的完整信息列表（含资源配置）
+    """
+    import asyncio
+    tenants = await TenantService.get_tenants_batch(data.tenant_ids)
+    simple_tenants = await asyncio.gather(
+        *[TenantService.build_simple_tenant(t) for t in tenants if t is not None]
+    )
+
+    return ORJSONResponse(
+        content=Success([build_tenant_full_info(st).model_dump() for st in simple_tenants])
     )
 
 
@@ -185,9 +363,8 @@ async def validate_tenant_access(
     WHEN 请求 GET /inner/v1/tenants/{tenant_id}/validate?user_id={user_id}
     THEN 返回布尔值表示用户是否有权访问该租户
     """
-    # 检查租户是否存在且状态正常
-    tenant = await TenantService.get_by_id(tenant_id)
-    if not tenant:
+    simple_tenant = await TenantService.get_by_id(tenant_id)
+    if not simple_tenant:
         return ORJSONResponse(
             content=Success(
                 ValidateAccessResponse(
@@ -198,7 +375,7 @@ async def validate_tenant_access(
             )
         )
 
-    if tenant.status != TenantStatus.ACTIVE:
+    if simple_tenant.status != TenantStatus.ACTIVE:
         return ORJSONResponse(
             content=Success(
                 ValidateAccessResponse(

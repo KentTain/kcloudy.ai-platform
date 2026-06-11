@@ -187,23 +187,12 @@ class TenantSettings(BaseSettings):
     default_tenant_id: str = Field(
         default="00000000-0000-0000-0000-000000000000", description="默认租户 ID"
     )
-    default_db_type: str | None = Field(default=None, description="默认租户数据库类型")
-    default_db_host: str | None = Field(default=None, description="默认租户数据库主机")
-    default_db_port: int | None = Field(default=None, description="默认租户数据库端口")
-    default_db_name: str | None = Field(default=None, description="默认租户数据库名")
-    default_db_username: str | None = Field(
-        default=None, description="默认租户数据库用户名"
-    )
-    default_db_password: str | None = Field(
-        default=None, description="默认租户数据库密码"
-    )
-    default_storage_type: str | None = Field(
-        default=None, description="默认租户存储类型"
-    )
-    default_storage_bucket: str | None = Field(
-        default=None, description="默认租户存储桶"
-    )
-    default_cache_db: int | None = Field(default=None, description="默认租户 Redis DB")
+    # 默认租户使用资源配置关联，不再使用内嵌配置
+    default_db_config_id: str | None = Field(default=None, description="默认租户数据库配置ID")
+    default_storage_config_id: str | None = Field(default=None, description="默认租户存储配置ID")
+    default_cache_config_id: str | None = Field(default=None, description="默认租户缓存配置ID")
+    default_queue_config_id: str | None = Field(default=None, description="默认租户队列配置ID")
+    default_pubsub_config_id: str | None = Field(default=None, description="默认租户发布订阅配置ID")
 
 
 class JWTSettings(BaseSettings):

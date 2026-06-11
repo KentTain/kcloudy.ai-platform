@@ -5,13 +5,9 @@ Tenant 模块的 TenantProvider 实现
 """
 
 from loguru import logger
-from sqlalchemy import select
 
-from framework.database.core.engine import async_session
 from framework.tenant.context import SimpleTenant
 from framework.tenant.protocols import TenantInfo, TenantProvider
-from framework.utils.crypto import decrypt
-from tenant.models import Tenant
 from tenant.services.tenant_service import TenantService
 
 _logger = logger.bind(name=__name__)
@@ -34,9 +30,10 @@ class TenantProviderImpl(TenantProvider):
         Returns:
             TenantInfo | None
         """
+        # get_by_id 已经返回包含完整资源配置的 SimpleTenant
         tenant = await TenantService.get_by_id(tenant_id)
-        if tenant:
-            return self._build_tenant_info(tenant)
+        if tenant and isinstance(tenant, SimpleTenant):
+            return tenant
         return None
 
     async def validate_access(self, user_id: str, tenant_id: str) -> bool:
@@ -80,44 +77,13 @@ class TenantProviderImpl(TenantProvider):
         # 批量获取租户信息
         tenant_ids = [ut.tenant_id for ut in user_tenants]
         tenants = await TenantService.get_tenants_batch(tenant_ids)
-        return [self._build_tenant_info(t) for t in tenants]
 
-    def _build_tenant_info(self, tenant: Tenant | SimpleTenant) -> SimpleTenant:
-        """
-        构建租户信息，包含资源配置
-
-        Args:
-            tenant: Tenant ORM 模型或缓存中的 SimpleTenant
-
-        Returns:
-            SimpleTenant
-        """
-        if isinstance(tenant, SimpleTenant):
-            return tenant
-
-        # 从模型创建基础信息
-        simple_tenant = SimpleTenant.from_model(tenant)
-
-        db_name = getattr(tenant, "db_name", None)
-        db_password = getattr(tenant, "db_password", None)
-        if (
-            isinstance(db_name, str)
-            and db_name
-            and isinstance(db_password, str)
-            and db_password
-        ):
-            try:
-                decrypted_password = decrypt(db_password)
-                # 更新数据库配置中的密码
-                if simple_tenant.database:
-                    simple_tenant.database.password = decrypted_password
-            except Exception as e:
-                _logger.warning(
-                    f"解密租户 {tenant.id} 数据库密码失败: {e}，密码将保持为空"
-                )
-                # 解密失败，密码保持为空
-
-        return simple_tenant
+        # 为每个租户构建完整的 SimpleTenant（包含资源配置）
+        import asyncio
+        simple_tenants = await asyncio.gather(
+            *[TenantService.build_simple_tenant(t) for t in tenants if t is not None]
+        )
+        return list(simple_tenants)
 
 
 # 单例实例

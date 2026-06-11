@@ -19,7 +19,6 @@ from framework.tenant.protocols import (
     TenantPubSubConfig,
     TenantStorageConfig,
 )
-from framework.tenant.enums import DatabaseType, StorageType
 
 
 @dataclass
@@ -52,49 +51,28 @@ class SimpleTenant:
     cache: TenantCacheConfig | None = None
 
     @classmethod
-    def from_model(cls, model: Any) -> "SimpleTenant":
+    def from_model(
+        cls,
+        model: Any,
+        database: TenantDatabaseConfig | None = None,
+        storage: TenantStorageConfig | None = None,
+        queue: TenantQueueConfig | None = None,
+        pubsub: TenantPubSubConfig | None = None,
+        cache: TenantCacheConfig | None = None,
+    ) -> "SimpleTenant":
         """从 ORM 模型创建
 
-        注意：当前仅提取基础信息和联系人字段。
-        资源配置（database/storage/queue/pubsub）需要在业务层单独设置，
-        或通过扩展 ORM 模型添加资源配置字段后在此处映射。
+        Args:
+            model: Tenant ORM 模型实例
+            database: 数据库配置（需在调用方从关联表加载）
+            storage: 存储配置（需在调用方从关联表加载）
+            queue: 队列配置（需在调用方从关联表加载）
+            pubsub: 发布订阅配置（需在调用方从关联表加载）
+            cache: 缓存配置（需在调用方从关联表加载）
+
+        Returns:
+            SimpleTenant: 简化的租户信息实例
         """
-        # 提取数据库配置
-        db_config = None
-        db_name = getattr(model, "db_name", None)
-        if isinstance(db_name, str) and db_name:
-            db_type = DatabaseType.POSTGRESQL
-            model_db_type = getattr(model, "db_type", None)
-            if isinstance(model_db_type, str) and model_db_type:
-                db_type = DatabaseType(model_db_type)
-            db_config = TenantDatabaseConfig(
-                type=db_type,
-                host=getattr(model, "db_host", "") or "",
-                port=getattr(model, "db_port", 5432) or 5432,
-                database=db_name,
-                username=getattr(model, "db_username", "") or "",
-                password=getattr(model, "db_password", "") or "",  # 需要在调用方解密
-            )
-
-        # 提取存储配置
-        storage_config = None
-        storage_bucket = getattr(model, "storage_bucket", None)
-        if isinstance(storage_bucket, str) and storage_bucket:
-            storage_type = StorageType.MINIO
-            model_storage_type = getattr(model, "storage_type", None)
-            if isinstance(model_storage_type, str) and model_storage_type:
-                storage_type = StorageType(model_storage_type)
-            storage_config = TenantStorageConfig(
-                type=storage_type,
-                bucket=storage_bucket,
-            )
-
-        # 提取缓存配置
-        cache_config = None
-        cache_db = getattr(model, "cache_db", None)
-        if isinstance(cache_db, int):
-            cache_config = TenantCacheConfig(db=cache_db)
-
         return cls(
             id=model.id,
             name=model.name,
@@ -104,9 +82,11 @@ class SimpleTenant:
             contact_name=getattr(model, "contact_name", None),
             contact_email=getattr(model, "contact_email", None),
             contact_phone=getattr(model, "contact_phone", None),
-            database=db_config,
-            storage=storage_config,
-            cache=cache_config,
+            database=database,
+            storage=storage,
+            queue=queue,
+            pubsub=pubsub,
+            cache=cache,
         )
 
 
@@ -145,6 +125,8 @@ class TenantContext:
             database=tenant_config.get("database"),
             storage=tenant_config.get("storage"),
             cache=tenant_config.get("cache"),
+            queue=tenant_config.get("queue"),
+            pubsub=tenant_config.get("pubsub"),
         )
 
     @staticmethod
@@ -181,6 +163,8 @@ class TenantContext:
             "database": tenant.database,
             "storage": tenant.storage,
             "cache": tenant.cache,
+            "queue": tenant.queue,
+            "pubsub": tenant.pubsub,
         }
         ctx.extra[_TENANT_CONFIG_KEY] = tenant_config
 
@@ -233,6 +217,20 @@ class TenantContext:
         ctx = get_context()
         tenant_config = ctx.extra.get(_TENANT_CONFIG_KEY, {})
         return tenant_config.get("cache")
+
+    @staticmethod
+    def get_queue_config() -> TenantQueueConfig | None:
+        """获取当前租户的队列配置"""
+        ctx = get_context()
+        tenant_config = ctx.extra.get(_TENANT_CONFIG_KEY, {})
+        return tenant_config.get("queue")
+
+    @staticmethod
+    def get_pubsub_config() -> TenantPubSubConfig | None:
+        """获取当前租户的发布订阅配置"""
+        ctx = get_context()
+        tenant_config = ctx.extra.get(_TENANT_CONFIG_KEY, {})
+        return tenant_config.get("pubsub")
 
     @staticmethod
     def has_physical_database() -> bool:

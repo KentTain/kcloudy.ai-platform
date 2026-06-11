@@ -174,13 +174,89 @@ class TenantCache:
         if data:
             try:
                 obj = json.loads(data)
+                # 解析资源配置
+                from framework.tenant.protocols import (
+                    TenantDatabaseConfig,
+                    TenantStorageConfig,
+                    TenantCacheConfig,
+                    TenantQueueConfig,
+                    TenantPubSubConfig,
+                )
+                from framework.tenant.enums import DatabaseType, StorageType, QueueType, PubSubType
+
+                database = None
+                if obj.get("database"):
+                    db = obj["database"]
+                    database = TenantDatabaseConfig(
+                        type=DatabaseType(db.get("type", "postgresql")),
+                        host=db.get("host", ""),
+                        port=db.get("port", 5432),
+                        database=db.get("database", ""),
+                        username=db.get("username", ""),
+                        password=db.get("password", ""),
+                    )
+
+                storage = None
+                if obj.get("storage"):
+                    st = obj["storage"]
+                    storage = TenantStorageConfig(
+                        type=StorageType(st.get("type", "minio")),
+                        endpoint=st.get("endpoint", ""),
+                        access_key=st.get("access_key", ""),
+                        secret_key=st.get("secret_key", ""),
+                        bucket=st.get("bucket", ""),
+                    )
+
+                cache = None
+                if obj.get("cache"):
+                    c = obj["cache"]
+                    cache = TenantCacheConfig(
+                        host=c.get("host", ""),
+                        port=c.get("port", 6379),
+                        password=c.get("password", ""),
+                        db=c.get("db", 0),
+                        prefix=c.get("prefix", ""),
+                    )
+
+                queue = None
+                if obj.get("queue"):
+                    q = obj["queue"]
+                    queue = TenantQueueConfig(
+                        type=QueueType(q.get("type", "redis")),
+                        host=q.get("host", ""),
+                        port=q.get("port", 5672),
+                        username=q.get("username", ""),
+                        password=q.get("password", ""),
+                        vhost=q.get("vhost", "/"),
+                    )
+
+                pubsub = None
+                if obj.get("pubsub"):
+                    ps = obj["pubsub"]
+                    pubsub = TenantPubSubConfig(
+                        type=PubSubType(ps.get("type", "redis")),
+                        host=ps.get("host", ""),
+                        port=ps.get("port", 6379),
+                        username=ps.get("username", ""),
+                        password=ps.get("password", ""),
+                    )
+
                 return SimpleTenant(
                     id=obj["id"],
                     name=obj["name"],
                     code=obj["code"],
                     status=obj["status"],
+                    expired_at=datetime.fromisoformat(obj["expired_at"]) if obj.get("expired_at") else None,
+                    contact_name=obj.get("contact_name"),
+                    contact_email=obj.get("contact_email"),
+                    contact_phone=obj.get("contact_phone"),
+                    database=database,
+                    storage=storage,
+                    cache=cache,
+                    queue=queue,
+                    pubsub=pubsub,
                 )
-            except (json.JSONDecodeError, KeyError) as e:
+            except (json.JSONDecodeError, KeyError, ValueError) as e:
                 _logger.warning(f"解析 Redis 缓存失败: {e}")
         return None
 
@@ -191,11 +267,74 @@ class TenantCache:
             return
 
         key = f"{TENANT_INFO_PREFIX}{tenant.id}"
+
+        # 序列化资源配置
+        database = None
+        if tenant.database:
+            database = {
+                "type": tenant.database.type.value,
+                "host": tenant.database.host,
+                "port": tenant.database.port,
+                "database": tenant.database.database,
+                "username": tenant.database.username,
+                "password": tenant.database.password,
+            }
+
+        storage = None
+        if tenant.storage:
+            storage = {
+                "type": tenant.storage.type.value,
+                "endpoint": tenant.storage.endpoint,
+                "access_key": tenant.storage.access_key,
+                "secret_key": tenant.storage.secret_key,
+                "bucket": tenant.storage.bucket,
+            }
+
+        cache = None
+        if tenant.cache:
+            cache = {
+                "host": tenant.cache.host,
+                "port": tenant.cache.port,
+                "password": tenant.cache.password,
+                "db": tenant.cache.db,
+                "prefix": tenant.cache.prefix,
+            }
+
+        queue = None
+        if tenant.queue:
+            queue = {
+                "type": tenant.queue.type.value,
+                "host": tenant.queue.host,
+                "port": tenant.queue.port,
+                "username": tenant.queue.username,
+                "password": tenant.queue.password,
+                "vhost": tenant.queue.vhost,
+            }
+
+        pubsub = None
+        if tenant.pubsub:
+            pubsub = {
+                "type": tenant.pubsub.type.value,
+                "host": tenant.pubsub.host,
+                "port": tenant.pubsub.port,
+                "username": tenant.pubsub.username,
+                "password": tenant.pubsub.password,
+            }
+
         data = json.dumps({
             "id": tenant.id,
             "name": tenant.name,
             "code": tenant.code,
             "status": tenant.status,
+            "expired_at": tenant.expired_at.isoformat() if tenant.expired_at else None,
+            "contact_name": tenant.contact_name,
+            "contact_email": tenant.contact_email,
+            "contact_phone": tenant.contact_phone,
+            "database": database,
+            "storage": storage,
+            "cache": cache,
+            "queue": queue,
+            "pubsub": pubsub,
         })
         await cls._redis.set(key, data, ttl=L2_TTL_SECONDS)
 

@@ -42,7 +42,11 @@ class TenantQueueConfig:
     """租户队列配置"""
 
     type: QueueType = QueueType.REDIS
-    endpoint: str = ""
+    host: str = ""
+    port: int = 5672
+    username: str = ""
+    password: str = ""  # 已解密的密码
+    vhost: str = "/"  # 虚拟主机
 
 
 @dataclass
@@ -50,14 +54,21 @@ class TenantPubSubConfig:
     """租户发布订阅配置"""
 
     type: PubSubType = PubSubType.REDIS
-    endpoint: str = ""
+    host: str = ""
+    port: int = 6379
+    username: str = ""
+    password: str = ""  # 已解密的密码
 
 
 @dataclass
 class TenantCacheConfig:
     """租户缓存配置"""
 
+    host: str = ""
+    port: int = 6379
+    password: str = ""  # 已解密的密码
     db: int = 0  # Redis DB 编号 (0-15)
+    prefix: str = ""  # 键前缀
 
 
 # ============== TenantInfo Protocol ==============

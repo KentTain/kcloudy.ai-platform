@@ -1,12 +1,15 @@
 """
 租户存储管理器
 
-根据租户配置路由到独立存储桶，支持：
-- 独立 Bucket 物理隔离
+根据租户配置路由到独立存储桶/服务，支持：
+- 独立存储服务物理隔离（不同 endpoint）
+- 独立 Bucket 逻辑隔离
 - 默认 Bucket + 路径前缀逻辑隔离
 - 存储桶自动创建
+- 存储客户端缓存
 """
 
+from datetime import datetime, timedelta
 from typing import Any
 
 from loguru import logger
@@ -18,6 +21,11 @@ from framework.database.mixins.tenant import should_skip_tenant
 
 _logger = logger.bind(name=__name__)
 
+# 最大实例客户端数
+MAX_INSTANCE_STORAGES = 50
+# 实例空闲超时（秒）
+INSTANCE_IDLE_TIMEOUT = 600
+
 
 class TenantStorageManager:
     """
@@ -26,6 +34,7 @@ class TenantStorageManager:
     管理：
     - 默认存储实例
     - 租户级存储桶路由
+    - 租户级存储服务实例（物理隔离）
     """
 
     def __init__(self, default_storage: MinioStorage, default_bucket: str):
@@ -39,6 +48,15 @@ class TenantStorageManager:
         self._default_storage = default_storage
         self._default_bucket = default_bucket
         self._bucket_map: dict[str, str] = {}  # tenant_id -> bucket_name
+
+        # 物理隔离实例客户端
+        self._instance_storages: dict[str, MinioStorage] = {}  # endpoint -> storage
+        self._instance_access_times: dict[str, datetime] = {}
+
+    @staticmethod
+    def _is_physical_isolation(config: TenantStorageConfig | None) -> bool:
+        """判断是否使用物理隔离"""
+        return bool(config and config.endpoint)
 
     def register_bucket(self, tenant_id: str, bucket: str) -> None:
         """
@@ -75,16 +93,62 @@ class TenantStorageManager:
         Returns:
             str: 存储桶名称
         """
-        # 有配置且配置了 bucket，使用独立存储桶
         if config and config.bucket:
             return config.bucket
 
-        # 从注册表查找
         if tenant_id and tenant_id in self._bucket_map:
             return self._bucket_map[tenant_id]
 
-        # 使用默认存储桶
         return self._default_bucket
+
+    def get_storage(
+        self,
+        config: TenantStorageConfig | None = None,
+    ) -> MinioStorage:
+        """
+        获取存储服务客户端
+
+        Args:
+            config: 租户存储配置
+
+        Returns:
+            MinioStorage: 存储客户端
+        """
+        if not self._is_physical_isolation(config):
+            return self._default_storage
+
+        assert config is not None
+        instance_key = config.endpoint
+
+        if instance_key in self._instance_storages:
+            self._instance_access_times[instance_key] = datetime.now()
+            return self._instance_storages[instance_key]
+
+        storage = self._create_storage(config)
+        self._instance_storages[instance_key] = storage
+        self._instance_access_times[instance_key] = datetime.now()
+        _logger.debug(f"创建实例存储客户端: {instance_key}")
+        return storage
+
+    def _create_storage(self, config: TenantStorageConfig) -> MinioStorage:
+        """
+        创建存储服务客户端
+
+        Args:
+            config: 租户存储配置
+
+        Returns:
+            MinioStorage: 存储客户端
+        """
+        from framework.configs.settings import MinioSettings
+
+        settings = MinioSettings(
+            endpoint=config.endpoint,
+            access_key=config.access_key,
+            secret_key=config.secret_key,
+            secure=config.endpoint.startswith("https"),
+        )
+        return MinioStorage(settings)
 
     def _build_path(
         self,
@@ -108,11 +172,13 @@ class TenantStorageManager:
         if skip_tenant or should_skip_tenant():
             return path
 
-        # 有独立存储桶配置，不添加前缀
+        # 有物理隔离或独立存储桶，不添加前缀
+        if self._is_physical_isolation(config):
+            return path.lstrip("/")
+
         if config and config.bucket:
             return path.lstrip("/")
 
-        # 从注册表找到独立存储桶，不添加前缀
         if tenant_id and tenant_id in self._bucket_map:
             return path.lstrip("/")
 
@@ -132,27 +198,12 @@ class TenantStorageManager:
         content_type: str | None = None,
         skip_tenant: bool = False,
     ) -> str:
-        """
-        上传文件
-
-        Args:
-            path: 对象路径
-            data: 文件数据
-            tenant_id: 租户 ID
-            config: 租户存储配置
-            content_type: 内容类型
-            skip_tenant: 是否跳过租户前缀
-
-        Returns:
-            str: 对象完整路径
-        """
+        """上传文件"""
+        storage = self.get_storage(config)
         bucket = self.get_bucket(tenant_id, config)
         actual_path = self._build_path(path, tenant_id, config, skip_tenant)
-
-        # 确保存储桶存在
-        await self._ensure_bucket_exists(bucket)
-
-        return await self._default_storage.upload(bucket, actual_path, data, content_type)
+        await self._ensure_bucket_exists(storage, bucket)
+        return await storage.upload(bucket, actual_path, data, content_type)
 
     async def download(
         self,
@@ -161,22 +212,11 @@ class TenantStorageManager:
         config: TenantStorageConfig | None = None,
         skip_tenant: bool = False,
     ) -> bytes:
-        """
-        下载文件
-
-        Args:
-            path: 对象路径
-            tenant_id: 租户 ID
-            config: 租户存储配置
-            skip_tenant: 是否跳过租户前缀
-
-        Returns:
-            bytes: 文件数据
-        """
+        """下载文件"""
+        storage = self.get_storage(config)
         bucket = self.get_bucket(tenant_id, config)
         actual_path = self._build_path(path, tenant_id, config, skip_tenant)
-
-        return await self._default_storage.download(bucket, actual_path)
+        return await storage.download(bucket, actual_path)
 
     async def delete(
         self,
@@ -185,22 +225,11 @@ class TenantStorageManager:
         config: TenantStorageConfig | None = None,
         skip_tenant: bool = False,
     ) -> bool:
-        """
-        删除文件
-
-        Args:
-            path: 对象路径
-            tenant_id: 租户 ID
-            config: 租户存储配置
-            skip_tenant: 是否跳过租户前缀
-
-        Returns:
-            bool: 是否删除成功
-        """
+        """删除文件"""
+        storage = self.get_storage(config)
         bucket = self.get_bucket(tenant_id, config)
         actual_path = self._build_path(path, tenant_id, config, skip_tenant)
-
-        return await self._default_storage.delete(bucket, actual_path)
+        return await storage.delete(bucket, actual_path)
 
     async def exists(
         self,
@@ -209,22 +238,11 @@ class TenantStorageManager:
         config: TenantStorageConfig | None = None,
         skip_tenant: bool = False,
     ) -> bool:
-        """
-        检查文件是否存在
-
-        Args:
-            path: 对象路径
-            tenant_id: 租户 ID
-            config: 租户存储配置
-            skip_tenant: 是否跳过租户前缀
-
-        Returns:
-            bool: 文件是否存在
-        """
+        """检查文件是否存在"""
+        storage = self.get_storage(config)
         bucket = self.get_bucket(tenant_id, config)
         actual_path = self._build_path(path, tenant_id, config, skip_tenant)
-
-        return await self._default_storage.exists(bucket, actual_path)
+        return await storage.exists(bucket, actual_path)
 
     async def get_presigned_url(
         self,
@@ -234,23 +252,11 @@ class TenantStorageManager:
         expires: int = 3600,
         skip_tenant: bool = False,
     ) -> str:
-        """
-        获取预签名 URL
-
-        Args:
-            path: 对象路径
-            tenant_id: 租户 ID
-            config: 租户存储配置
-            expires: URL 过期时间（秒）
-            skip_tenant: 是否跳过租户前缀
-
-        Returns:
-            str: 预签名 URL
-        """
+        """获取预签名 URL"""
+        storage = self.get_storage(config)
         bucket = self.get_bucket(tenant_id, config)
         actual_path = self._build_path(path, tenant_id, config, skip_tenant)
-
-        return await self._default_storage.get_presigned_url(bucket, actual_path, expires)
+        return await storage.get_presigned_url(bucket, actual_path, expires)
 
     async def list_objects(
         self,
@@ -260,26 +266,19 @@ class TenantStorageManager:
         recursive: bool = True,
         skip_tenant: bool = False,
     ) -> list[str]:
-        """
-        列出对象
-
-        Args:
-            prefix: 对象前缀
-            tenant_id: 租户 ID
-            config: 租户存储配置
-            recursive: 是否递归列出
-            skip_tenant: 是否跳过租户前缀
-
-        Returns:
-            list[str]: 对象名称列表
-        """
+        """列出对象"""
+        storage = self.get_storage(config)
         bucket = self.get_bucket(tenant_id, config)
         actual_prefix = self._build_path(prefix, tenant_id, config, skip_tenant)
 
-        objects = await self._default_storage.list_objects(bucket, actual_prefix, recursive)
+        objects = await storage.list_objects(bucket, actual_prefix, recursive)
 
         # 如果使用租户前缀，移除前缀返回原始路径
-        if not skip_tenant and not should_skip_tenant():
+        if (
+            not skip_tenant
+            and not should_skip_tenant()
+            and not self._is_physical_isolation(config)
+        ):
             actual_tenant_id = tenant_id or get_tenant_id()
             if actual_tenant_id and (not config or not config.bucket):
                 tenant_prefix = f"{actual_tenant_id}/"
@@ -290,19 +289,58 @@ class TenantStorageManager:
 
         return objects
 
-    async def _ensure_bucket_exists(self, bucket: str) -> None:
+    async def _ensure_bucket_exists(self, storage: MinioStorage, bucket: str) -> None:
         """
         确保存储桶存在
 
         Args:
+            storage: 存储客户端
             bucket: 存储桶名称
         """
         try:
-            if not await self._default_storage.bucket_exists(bucket):
-                await self._default_storage.create_bucket(bucket)
-                _logger.info(f"创建租户存储桶: {bucket}")
+            if not await storage.bucket_exists(bucket):
+                await storage.create_bucket(bucket)
+                _logger.info(f"创建存储桶: {bucket}")
         except Exception as e:
             _logger.warning(f"检查/创建存储桶失败: {bucket}, error={e}")
+
+    async def release_idle_instances(self, timeout: int | None = None) -> int:
+        """
+        释放空闲实例客户端
+
+        Args:
+            timeout: 空闲超时（秒）
+
+        Returns:
+            int: 释放的客户端数量
+        """
+        if timeout is None:
+            timeout = INSTANCE_IDLE_TIMEOUT
+
+        now = datetime.now()
+        threshold = now - timedelta(seconds=timeout)
+
+        released = 0
+        to_release: list[str] = []
+
+        for key, last_access in self._instance_access_times.items():
+            if last_access < threshold:
+                to_release.append(key)
+
+        for key in to_release:
+            self._instance_storages.pop(key, None)
+            self._instance_access_times.pop(key, None)
+            released += 1
+            _logger.debug(f"释放空闲存储客户端: {key}")
+
+        return released
+
+    async def close(self) -> None:
+        """关闭所有客户端"""
+        for key in list(self._instance_storages.keys()):
+            self._instance_storages.pop(key, None)
+            self._instance_access_times.pop(key, None)
+        _logger.info("所有租户存储客户端已关闭")
 
 
 # 全局存储管理器实例

@@ -4,7 +4,7 @@
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import ORJSONResponse
-from sqlalchemy import func, select
+from sqlalchemy import select
 
 from framework.database.core.engine import async_session
 from tenant.middlewares.admin_auth_middleware import AdminAuthService, get_current_admin
@@ -12,13 +12,10 @@ from tenant.models import Tenant
 from tenant.schemas.admin.tenant import (
     AdminLoginRequest,
     AdminLoginVo,
-    CacheConfigVo,
-    DatabaseConfigVo,
     ResourceBindingRequest,
     ResourceBindingResponse,
     ResourceConfigReferenceVo,
     ResourceValidateVo,
-    StorageConfigVo,
     TenantCreateRequest,
     TenantListVo,
     TenantStatsVo,
@@ -35,28 +32,33 @@ def Success(data=None, msg: str = "success") -> dict:
     return {"code": 200, "msg": msg, "data": data}
 
 
-def build_tenant_vo(tenant: Tenant) -> TenantVo:
+async def _get_resource_ref(
+    config_id: str | None, service
+) -> ResourceConfigReferenceVo | None:
+    """获取资源配置引用"""
+    if not config_id:
+        return None
+    config = await service.get_by_id(config_id)
+    if config:
+        return ResourceConfigReferenceVo(id=config.id, name=config.name)
+    return None
+
+
+async def build_tenant_vo(tenant: Tenant) -> TenantVo:
     """构建租户响应对象"""
-    database = None
-    if tenant.db_name:
-        database = DatabaseConfigVo(
-            db_type=tenant.db_type,
-            db_host=tenant.db_host,
-            db_port=tenant.db_port,
-            db_name=tenant.db_name,
-            db_username=tenant.db_username,
-        )
+    from tenant.services import (
+        DatabaseConfigService,
+        StorageConfigService,
+        CacheConfigService,
+        QueueConfigService,
+        PubSubConfigService,
+    )
 
-    storage = None
-    if tenant.storage_bucket:
-        storage = StorageConfigVo(
-            storage_type=tenant.storage_type,
-            storage_bucket=tenant.storage_bucket,
-        )
-
-    cache = None
-    if tenant.cache_db is not None:
-        cache = CacheConfigVo(cache_db=tenant.cache_db)
+    db_ref = await _get_resource_ref(tenant.db_config_id, DatabaseConfigService)
+    storage_ref = await _get_resource_ref(tenant.storage_config_id, StorageConfigService)
+    cache_ref = await _get_resource_ref(tenant.cache_config_id, CacheConfigService)
+    queue_ref = await _get_resource_ref(tenant.queue_config_id, QueueConfigService)
+    pubsub_ref = await _get_resource_ref(tenant.pubsub_config_id, PubSubConfigService)
 
     return TenantVo(
         id=tenant.id,
@@ -68,9 +70,11 @@ def build_tenant_vo(tenant: Tenant) -> TenantVo:
         contact_phone=tenant.contact_phone,
         expired_at=tenant.expired_at,
         settings=tenant.settings or {},
-        database=database,
-        storage=storage,
-        cache=cache,
+        db_config=db_ref,
+        storage_config=storage_ref,
+        cache_config=cache_ref,
+        queue_config=queue_ref,
+        pubsub_config=pubsub_ref,
         created_at=tenant.created_at,
         updated_at=tenant.updated_at,
     )
@@ -120,125 +124,6 @@ async def admin_logout(
     return ORJSONResponse(content=Success())
 
 
-@router.post("/tenants/validate/database")
-async def validate_database_config(
-    data: DatabaseConfigVo,
-    admin: dict = Depends(get_current_admin),
-) -> ORJSONResponse:
-    """验证数据库连接配置"""
-    if not data.db_name:
-        return ORJSONResponse(
-            content=Success(
-                ResourceValidateVo(valid=True, message="使用默认数据库").model_dump()
-            )
-        )
-
-    if not all([data.db_type, data.db_host, data.db_port, data.db_username]):
-        return ORJSONResponse(
-            content=Success(
-                ResourceValidateVo(valid=False, message="数据库配置不完整").model_dump()
-            )
-        )
-
-    driver = "postgresql+asyncpg"
-    if data.db_type == "mysql":
-        driver = "mysql+aiomysql"
-    elif data.db_type == "sqlite":
-        driver = "sqlite+aiosqlite"
-
-    # 验证接口不接收密码，无法真实连接，仅验证格式
-    if data.db_type not in ("postgresql", "mysql", "sqlite"):
-        return ORJSONResponse(
-            content=Success(
-                ResourceValidateVo(
-                    valid=False, message="不支持的数据库类型"
-                ).model_dump()
-            )
-        )
-
-    return ORJSONResponse(
-        content=Success(
-            ResourceValidateVo(valid=True, message="数据库配置格式有效").model_dump()
-        )
-    )
-
-
-@router.post("/tenants/validate/storage")
-async def validate_storage_config(
-    data: StorageConfigVo,
-    admin: dict = Depends(get_current_admin),
-) -> ORJSONResponse:
-    """验证存储桶配置"""
-    if not data.storage_bucket:
-        return ORJSONResponse(
-            content=Success(
-                ResourceValidateVo(valid=True, message="使用默认存储桶").model_dump()
-            )
-        )
-
-    if data.storage_type and data.storage_type not in (
-        "minio",
-        "aliyun",
-        "tencent",
-        "local",
-    ):
-        return ORJSONResponse(
-            content=Success(
-                ResourceValidateVo(valid=False, message="不支持的存储类型").model_dump()
-            )
-        )
-
-    return ORJSONResponse(
-        content=Success(
-            ResourceValidateVo(valid=True, message="存储配置格式有效").model_dump()
-        )
-    )
-
-
-@router.post("/tenants/validate/cache")
-async def validate_cache_config(
-    data: CacheConfigVo,
-    admin: dict = Depends(get_current_admin),
-) -> ORJSONResponse:
-    """验证 Redis DB 配置"""
-    if data.cache_db is None:
-        return ORJSONResponse(
-            content=Success(
-                ResourceValidateVo(valid=True, message="使用默认 Redis DB").model_dump()
-            )
-        )
-
-    if data.cache_db < 0 or data.cache_db > 15:
-        return ORJSONResponse(
-            content=Success(
-                ResourceValidateVo(
-                    valid=False, message="Redis DB 编号必须在 0-15 范围内"
-                ).model_dump()
-            )
-        )
-
-    # 检查是否已被其他租户使用
-    async with async_session() as session:
-        stmt = select(Tenant).where(Tenant.cache_db == data.cache_db)
-        result = await session.execute(stmt)
-        existing = result.scalar_one_or_none()
-        if existing:
-            return ORJSONResponse(
-                content=Success(
-                    ResourceValidateVo(
-                        valid=False,
-                        message=f"Redis DB {data.cache_db} 已被租户 {existing.code} 使用",
-                    ).model_dump()
-                )
-            )
-
-    return ORJSONResponse(
-        content=Success(
-            ResourceValidateVo(valid=True, message="缓存配置有效").model_dump()
-        )
-    )
-
-
 # ============== 租户管理 API ==============
 
 
@@ -268,12 +153,16 @@ async def list_tenants(
         status=status,
     )
 
+    # 并行构建 TenantVo
+    import asyncio
+    tenant_vos = await asyncio.gather(*[build_tenant_vo(t) for t in tenants])
+
     return ORJSONResponse(
         content={
             "code": 200,
             "msg": "success",
             "data": TenantListVo(
-                items=[build_tenant_vo(t) for t in tenants],
+                items=tenant_vos,
                 total=total,
                 page=page,
                 page_size=page_size,
@@ -311,18 +200,14 @@ async def create_tenant(
         contact_phone=data.contact_phone,
         expired_at=data.expired_at,
         settings=data.settings,
-        db_type=data.database.db_type if data.database else None,
-        db_host=data.database.db_host if data.database else None,
-        db_port=data.database.db_port if data.database else None,
-        db_name=data.database.db_name if data.database else None,
-        db_username=data.database.db_username if data.database else None,
-        db_password=data.database.db_password if data.database else None,
-        storage_type=data.storage.storage_type if data.storage else None,
-        storage_bucket=data.storage.storage_bucket if data.storage else None,
-        cache_db=data.cache.cache_db if data.cache else None,
+        db_config_id=data.db_config_id,
+        storage_config_id=data.storage_config_id,
+        cache_config_id=data.cache_config_id,
+        queue_config_id=data.queue_config_id,
+        pubsub_config_id=data.pubsub_config_id,
     )
 
-    return ORJSONResponse(content=Success(build_tenant_vo(tenant).model_dump()))
+    return ORJSONResponse(content=Success((await build_tenant_vo(tenant)).model_dump()))
 
 
 @router.get("/tenants/{tenant_id}")
@@ -345,7 +230,9 @@ async def get_tenant(
     if not tenant:
         raise HTTPException(status_code=404, detail="租户不存在")
 
-    return ORJSONResponse(content=Success(build_tenant_vo(tenant).model_dump()))
+    # get_by_id 返回的是 SimpleTenant，需要重新获取 ORM 模型来构建完整的 VO
+    tenant_model = await TenantService.get_resource_bindings(tenant_id)
+    return ORJSONResponse(content=Success((await build_tenant_vo(tenant_model)).model_dump()))
 
 
 @router.put("/tenants/{tenant_id}")
@@ -369,21 +256,12 @@ async def update_tenant(
         contact_phone=data.contact_phone,
         expired_at=data.expired_at,
         settings=data.settings,
-        db_type=data.database.db_type if data.database else None,
-        db_host=data.database.db_host if data.database else None,
-        db_port=data.database.db_port if data.database else None,
-        db_name=data.database.db_name if data.database else None,
-        db_username=data.database.db_username if data.database else None,
-        db_password=data.database.db_password if data.database else None,
-        storage_type=data.storage.storage_type if data.storage else None,
-        storage_bucket=data.storage.storage_bucket if data.storage else None,
-        cache_db=data.cache.cache_db if data.cache else None,
     )
 
     if not tenant:
         raise HTTPException(status_code=404, detail="租户不存在")
 
-    return ORJSONResponse(content=Success(build_tenant_vo(tenant).model_dump()))
+    return ORJSONResponse(content=Success((await build_tenant_vo(tenant)).model_dump()))
 
 
 @router.delete("/tenants/{tenant_id}")
@@ -433,7 +311,7 @@ async def activate_tenant(
     if not tenant:
         raise HTTPException(status_code=404, detail="租户不存在")
 
-    return ORJSONResponse(content=Success(build_tenant_vo(tenant).model_dump()))
+    return ORJSONResponse(content=Success((await build_tenant_vo(tenant)).model_dump()))
 
 
 @router.post("/tenants/{tenant_id}/deactivate")
@@ -452,7 +330,7 @@ async def deactivate_tenant(
     if not tenant:
         raise HTTPException(status_code=404, detail="租户不存在")
 
-    return ORJSONResponse(content=Success(build_tenant_vo(tenant).model_dump()))
+    return ORJSONResponse(content=Success((await build_tenant_vo(tenant)).model_dump()))
 
 
 @router.get("/tenants/{tenant_id}/stats")
@@ -489,19 +367,6 @@ async def get_tenant_stats(
 
 
 # ============== 资源绑定 API ==============
-
-
-# 模块级辅助函数
-async def _get_resource_ref(
-    config_id: str | None, service
-) -> ResourceConfigReferenceVo | None:
-    """获取资源配置引用"""
-    if not config_id:
-        return None
-    config = await service.get_by_id(config_id)
-    if config:
-        return ResourceConfigReferenceVo(id=config.id, name=config.name)
-    return None
 
 
 @router.get("/tenants/{tenant_id}/resources")
