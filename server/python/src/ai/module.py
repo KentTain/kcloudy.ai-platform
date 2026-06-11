@@ -23,7 +23,8 @@ class AIModule:
     @property
     def dependencies(self) -> list[str]:
         # AI 依赖 Tenant 模块（通过 inner 接口获取租户信息）
-        return ["tenant"]
+        # AI 依赖 IAM 模块（跨 schema 外键引用 iam.users）
+        return ["tenant", "iam"]
 
     def get_base(self) -> type:
         return Base

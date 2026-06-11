@@ -6,7 +6,6 @@ Alembic 环境配置 - IAM 模块
 
 import asyncio
 import sys
-from logging.config import fileConfig
 from pathlib import Path
 
 from alembic import context
@@ -34,8 +33,8 @@ except Exception as e:
     print(f"[WARN] 无法从配置加载数据库 URL: {e}")
     print("[INFO] 使用 alembic.ini 中的默认配置")
 
-if config.config_file_name is not None:
-    fileConfig(config.config_file_name)
+# 注意：不调用 fileConfig()，避免 raw=True 导致 %% 未转换的问题
+# 应用层日志配置已足够，Alembic 的日志会继承根日志器的配置
 
 # IAM 模块的 metadata
 target_metadata = Base.metadata
