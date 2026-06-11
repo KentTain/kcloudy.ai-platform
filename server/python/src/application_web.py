@@ -166,7 +166,9 @@ def create_app(module_names: list[str] | None = None) -> FastAPI:
     for module in modules:
         for router, prefix, tags in module.get_routers():
             app.include_router(router, prefix=prefix, tags=tags)
-            _logger.info(f"注册路由: {prefix} [{module.name}]")
+            tag_str = tags[0] if tags else "default"
+            endpoint_count = len(router.routes)
+            _logger.info(f"注册路由: {prefix} → {tag_str} ({endpoint_count} 个端点) [{module.name}]")
 
     # 动态注册各模块中间件
     for module in modules:
