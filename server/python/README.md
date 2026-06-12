@@ -1,6 +1,6 @@
-# Demo Backend
+# AI Platform Backend
 
-Demo AI 助手平台后端服务，基于 FastAPI 构建的**模块化单体架构**。
+AI 助手平台后端服务，基于 FastAPI 构建的**模块化单体架构**。
 
 ## 功能特点
 
