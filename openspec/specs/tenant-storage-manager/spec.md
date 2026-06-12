@@ -1,4 +1,9 @@
-## ADDED Requirements
+# tenant-storage-manager Specification
+
+## Purpose
+租户存储管理器规范，提供存储桶路由、文件操作隔离和存储服务物理隔离能力。
+
+## Requirements
 
 ### Requirement: 存储桶路由管理
 

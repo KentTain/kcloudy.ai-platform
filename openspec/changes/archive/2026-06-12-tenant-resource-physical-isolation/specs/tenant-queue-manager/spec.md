@@ -1,3 +1,8 @@
+# tenant-queue-manager Specification
+
+## Purpose
+租户级队列管理器规范，提供消息队列、消费者组管理和物理隔离能力。
+
 ## ADDED Requirements
 
 ### Requirement: 队列资源管理

@@ -27,15 +27,6 @@
 - **THEN** 使用配置创建新的 MinIO 客户端
 - **AND** 将客户端缓存到 _instance_storages
 
-### Requirement: 存储桶自动创建
-
-系统 SHALL 在物理隔离场景下自动创建存储桶。
-
-#### Scenario: 独立服务的存储桶创建
-- **WHEN** 配置了独立 endpoint 且存储桶不存在
-- **THEN** 自动创建存储桶
-- **AND** 记录创建日志
-
 ### Requirement: 密钥安全处理
 
 系统 SHALL 安全处理存储服务的访问密钥。
@@ -44,6 +35,18 @@
 - **WHEN** 配置中的 secret_key 为加密存储
 - **THEN** 在创建客户端前解密密钥
 - **AND** 解密后的密钥不记录到日志
+
+### Requirement: 文件路径隔离
+
+系统 SHALL 自动构建正确的文件存储路径。
+
+#### Scenario: 物理隔离路径
+- **WHEN** 配置了独立 endpoint
+- **THEN** 文件路径不添加租户前缀
+
+#### Scenario: 逻辑隔离路径
+- **WHEN** 使用默认存储服务且无独立 bucket
+- **THEN** 文件路径添加 {tenant_id}/ 前缀
 
 ## MODIFIED Requirements
 
@@ -66,14 +69,11 @@
 - **THEN** 使用默认存储桶
 - **AND** 文件路径添加 {tenant_id}/ 前缀
 
-### Requirement: 文件路径隔离
+### Requirement: 存储桶自动创建
 
-系统 SHALL 自动构建正确的文件存储路径。
+系统 SHALL 在物理隔离场景下自动创建存储桶。
 
-#### Scenario: 物理隔离路径
-- **WHEN** 配置了独立 endpoint
-- **THEN** 文件路径不添加租户前缀
-
-#### Scenario: 逻辑隔离路径
-- **WHEN** 使用默认存储服务且无独立 bucket
-- **THEN** 文件路径添加 {tenant_id}/ 前缀
+#### Scenario: 独立服务的存储桶创建
+- **WHEN** 配置了独立 endpoint 且存储桶不存在
+- **THEN** 自动创建存储桶
+- **AND** 记录创建日志

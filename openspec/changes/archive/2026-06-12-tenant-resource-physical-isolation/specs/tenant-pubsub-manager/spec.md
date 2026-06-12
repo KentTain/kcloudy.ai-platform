@@ -1,3 +1,8 @@
+# tenant-pubsub-manager Specification
+
+## Purpose
+租户级发布订阅管理器规范，提供消息发布、频道订阅和物理隔离能力。
+
 ## ADDED Requirements
 
 ### Requirement: 发布订阅资源管理
