@@ -35,9 +35,7 @@ async def setup_listeners(settings: "Settings") -> None:
     _heartbeat_handler = HeartbeatHandler()
     _dataset_notify_handler = DatasetNotifyHandler()
 
-    await _pubsub_provider.subscribe(
-        HEARTBEAT_TOPIC, _heartbeat_handler.handle
-    )
+    await _pubsub_provider.subscribe(HEARTBEAT_TOPIC, _heartbeat_handler.handle)
 
     await _queue_provider.create_consumer_group(
         DATASET_NOTIFY_QUEUE,

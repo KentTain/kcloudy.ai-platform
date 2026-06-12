@@ -22,8 +22,6 @@ class DatasetNotifyHandler(SingleQueueHandler):
             body = message.body
             dataset_id = body.get("dataset_id")
             if not dataset_id:
-                _logger.warning(
-                    f"{queue} => 消息缺少 dataset_id 字段，跳过: {body}"
-                )
+                _logger.warning(f"{queue} => 消息缺少 dataset_id 字段，跳过: {body}")
                 continue
             _logger.info(f"{queue} => 收到数据集通知: {body}")

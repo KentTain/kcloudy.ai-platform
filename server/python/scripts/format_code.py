@@ -129,11 +129,11 @@ def main() -> int:
         total_files += file_count
 
         if Path(target).is_dir():
-            print(f"  📁 {target}: {file_count} 个Python文件")
+            print(f"  [目录] {target}: {file_count} 个Python文件")
         elif Path(target).is_file():
-            print(f"   {target}: 1 个Python文件")
+            print(f"  [文件] {target}: 1 个Python文件")
 
-    print(f"  📈 总计: {total_files} 个Python文件")
+    print(f"  [统计] 总计: {total_files} 个Python文件")
 
     return 0 if success else 1
 

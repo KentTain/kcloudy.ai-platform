@@ -14,12 +14,8 @@ async def queue_status_task() -> None:
     try:
         settings = init_settings()
         queue_provider = get_queue_provider(settings.messaging)
-        length = await queue_provider.get_queue_length(
-            DATASET_NOTIFY_QUEUE
-        )
-        _logger.info(
-            f"queue_status => {DATASET_NOTIFY_QUEUE} 队列长度: {length}"
-        )
+        length = await queue_provider.get_queue_length(DATASET_NOTIFY_QUEUE)
+        _logger.info(f"queue_status => {DATASET_NOTIFY_QUEUE} 队列长度: {length}")
     except Exception:
         _logger.exception("queue_status_task 执行异常")
 

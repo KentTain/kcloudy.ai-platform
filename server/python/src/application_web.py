@@ -12,20 +12,20 @@ from fastapi import FastAPI
 from fastapi.responses import ORJSONResponse
 from loguru import logger
 
+from demo.configs import settings
 from framework.common.time import ChinaTimeZone
 from framework.database.core.engine import setup_engine
-from framework.module import load_modules, get_registry, ModuleDescriptor
+from framework.middlewares.test_user_middleware import TestUserMiddleware
+from framework.module import ModuleDescriptor, get_registry, load_modules
 from framework.tenant.middleware import TenantMiddleware
 from framework.tenant.protocols import register_tenant_provider
-from iam.middlewares.iam_auth_middleware import IAMAuthMiddleware
-from framework.middlewares.test_user_middleware import TestUserMiddleware
-from framework.utils.startup_timer import StartupTimer
 from framework.utils.log_util import write_info, write_success, write_warning
-from demo.configs import settings
+from framework.utils.startup_timer import StartupTimer
+from iam.middlewares.iam_auth_middleware import IAMAuthMiddleware
 
 _logger = logger.bind(name=__name__)
 
-APP_NAME = "Demo API"
+APP_NAME = "AI Platform API"
 
 
 @asynccontextmanager
@@ -33,8 +33,9 @@ async def lifespan(app: FastAPI):
     """应用生命周期管理"""
     timer: StartupTimer = app.state.startup_timer
     from datetime import datetime
+
     write_info(
-        f"Demo 应用开始启动... ({datetime.now(tz=ChinaTimeZone).strftime('%Y-%m-%d %H:%M:%S')})"
+        f"AI Platform 应用开始启动... ({datetime.now(tz=ChinaTimeZone).strftime('%Y-%m-%d %H:%M:%S')})"
     )
 
     with timer.phase("基础组件初始化", order=2) as phase:
@@ -71,13 +72,14 @@ async def lifespan(app: FastAPI):
 
     yield
 
-    write_info("Demo 应用关闭")
+    write_info("AI Platform 应用关闭")
 
 
 def _get_tenant_provider():
     """获取 TenantProvider 实现"""
     try:
         from tenant.services.tenant_provider_impl import tenant_provider_impl
+
         return tenant_provider_impl
     except ImportError:
         write_warning("TenantProvider 不可用")
@@ -93,9 +95,13 @@ async def _run_seed_initialization():
         for seed_name, seed_func in seeds.items():
             try:
                 count = await seed_func(dry_run=False)
-                write_success(f"Seed 初始化完成 [{module.name}/{seed_name}]: {count} 条记录")
+                write_success(
+                    f"Seed 初始化完成 [{module.name}/{seed_name}]: {count} 条记录"
+                )
             except Exception:
-                _logger.exception(f"Seed 初始化失败 [{module.name}/{seed_name}]，跳过该模块")
+                _logger.exception(
+                    f"Seed 初始化失败 [{module.name}/{seed_name}]，跳过该模块"
+                )
 
 
 def create_app(module_names: list[str] | None = None) -> FastAPI:
@@ -117,6 +123,7 @@ def create_app(module_names: list[str] | None = None) -> FastAPI:
     if module_names is None:
         try:
             from config.modules import ENABLED_MODULES
+
             module_names = ENABLED_MODULES
             _logger.info(f"Loaded modules from config: {ENABLED_MODULES}")
         except ImportError:
@@ -132,7 +139,7 @@ def create_app(module_names: list[str] | None = None) -> FastAPI:
 
     app = FastAPI(
         title=APP_NAME,
-        description="最小化 AI 助手平台",
+        description="AI 助手平台",
         version="1.0.0",
         docs_url="/docs",
         redoc_url="/redoc",
@@ -144,23 +151,24 @@ def create_app(module_names: list[str] | None = None) -> FastAPI:
 
     # 注册异常处理器
     from demo.common.exception_handler import register_exception_handlers
+
     register_exception_handlers(app)
 
     # 注册中间件（注意：中间件执行顺序为栈结构，后注册的先执行）
     # 执行顺序：TenantMiddleware -> IAMAuthMiddleware -> TestUserMiddleware
-    
+
     # 1. 注册租户中间件（解析租户并注入上下文）
     app.add_middleware(TenantMiddleware)
-    
+
     # 2. 注册认证中间件（验证 JWT 并同步用户信息到 Context）
     app.add_middleware(IAMAuthMiddleware)
-    
+
     # 3. 注册测试用户中间件（仅非生产环境）
     # 必须最后注册（最先执行），以便在认证后覆盖用户信息
-    env = getattr(settings, 'env', 'development')
-    if env != 'production':
+    env = getattr(settings, "env", "development")
+    if env != "production":
         app.add_middleware(TestUserMiddleware, enabled=True, env=env)
-        _logger.info('已启用测试用户中间件（仅非生产环境）')
+        _logger.info("已启用测试用户中间件（仅非生产环境）")
 
     # 动态注册各模块路由
     for module in modules:
@@ -168,7 +176,9 @@ def create_app(module_names: list[str] | None = None) -> FastAPI:
             app.include_router(router, prefix=prefix, tags=tags)
             tag_str = tags[0] if tags else "default"
             endpoint_count = len(router.routes)
-            _logger.info(f"注册路由: {prefix} → {tag_str} ({endpoint_count} 个端点) [{module.name}]")
+            _logger.info(
+                f"注册路由: {prefix} → {tag_str} ({endpoint_count} 个端点) [{module.name}]"
+            )
 
     # 动态注册各模块中间件
     for module in modules:

@@ -67,6 +67,7 @@ class DemoModule:
         返回 (setup_func, cleanup_func) 元组
         """
         from demo.tasks.setup import setup_scheduler, cleanup_scheduler
+
         return (setup_scheduler, cleanup_scheduler)
 
     def get_listener_setup(self) -> tuple | None:
@@ -76,4 +77,5 @@ class DemoModule:
         返回 (setup_func, cleanup_func) 元组
         """
         from demo.listeners.setup import setup_listeners, cleanup_listeners
+
         return (setup_listeners, cleanup_listeners)

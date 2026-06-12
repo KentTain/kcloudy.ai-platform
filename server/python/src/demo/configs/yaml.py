@@ -24,4 +24,5 @@ class YamlParser(FrameworkYamlParser):
     ):
         # 使用 demo 的环境变量
         from demo.core.common.env import ENV
+
         super().__init__(config_dir, base_config_file, env=ENV)

@@ -49,9 +49,9 @@ dependencies = [
 runserver   = "run:main"
 runtask     = "application_task:main"
 runlistener = "application_listener:main"
-setup-dev   = "scripts.dev.setup_dev:main"
-check-dev   = "scripts.dev.check_dev:main"
-format-code = "scripts.dev.format_code:main"
+setup-dev   = "scripts.setup_dev:main"
+check-dev   = "scripts.check_dev:main"
+format-code = "scripts.format_code:main"
 
 [project.urls]
 Homepage      = "https://gitcode.com/moles-team/Alon.git"

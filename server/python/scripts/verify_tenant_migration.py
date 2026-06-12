@@ -4,6 +4,7 @@
 
 检查 Tenant 模块 schema 是否正确创建。
 """
+
 import asyncio
 import sys
 from pathlib import Path
@@ -25,7 +26,9 @@ async def check_tenant_schema():
     async with engine.connect() as conn:
         # 检查 tenant schema
         result = await conn.execute(
-            text("SELECT schema_name FROM information_schema.schemata WHERE schema_name = 'tenant'")
+            text(
+                "SELECT schema_name FROM information_schema.schemata WHERE schema_name = 'tenant'"
+            )
         )
         schema_exists = result.fetchone() is not None
 
