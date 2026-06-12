@@ -80,5 +80,6 @@ docs/Excalidraw
 .codegraph
 .superpowers
 .worktrees
+.cursor
 # Claude AI assistant
 .claude/settings.local.json

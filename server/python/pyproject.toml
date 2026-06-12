@@ -24,6 +24,7 @@ dependencies = [
   "redis[hiredis]==5.2.1",
   # 对象存储
   "minio==7.2.15",
+  "boto3==1.38.32",
   "oss2==2.19.1",
   "cos-python-sdk-v5==1.9.32",
   # 工具库
