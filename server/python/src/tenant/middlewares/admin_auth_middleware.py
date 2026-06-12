@@ -120,8 +120,9 @@ class AdminAuthMiddleware(BaseHTTPMiddleware):
         if not request.url.path.startswith(ADMIN_PATH_PREFIX):
             return await call_next(request)
 
-        # 登录接口跳过认证
+        # 登录接口跳过认证，标记为已认证
         if request.url.path == "/admin/v1/auth/login":
+            request.state.authenticated = True
             return await call_next(request)
 
         try:
@@ -139,6 +140,7 @@ class AdminAuthMiddleware(BaseHTTPMiddleware):
 
             # 注入管理员信息到请求状态
             request.state.admin = token_data
+            request.state.authenticated = True  # 标记已认证，供后续中间件识别
 
             return await call_next(request)
 

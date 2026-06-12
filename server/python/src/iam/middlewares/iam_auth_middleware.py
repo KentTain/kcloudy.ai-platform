@@ -37,6 +37,10 @@ class IAMAuthMiddleware(BaseHTTPMiddleware):
 
     async def dispatch(self, request: Request, call_next):
         """处理请求"""
+        # 检查是否已被其他认证中间件处理（如 AdminAuthMiddleware）
+        if getattr(request.state, "authenticated", False):
+            return await call_next(request)
+
         # 检查是否需要认证
         if self._is_exempt_path(request.url.path):
             return await call_next(request)
@@ -63,6 +67,7 @@ class IAMAuthMiddleware(BaseHTTPMiddleware):
             )
             return await self._forbidden("跨租户访问被拒绝")
 
+        request.state.authenticated = True
         # 同步用户信息到 Context（主要数据源）
         ctx.session_id = payload.get("session_id")
         ctx.user_id = payload.get("user_id")
