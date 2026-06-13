@@ -5,8 +5,10 @@ import {
   findNodeById,
   getAncestors,
   sortByTreeSorts,
+  toSelectNode,
+  toSelectNodes,
 } from '@/framework/utils/tree'
-import type { TreeNode, TreeNodeTree, TreeComponentNode } from '@/framework/types/tree'
+import type { TreeNode, TreeNodeTree, TreeComponentNode, TreeSelectNode } from '@/framework/types/tree'
 
 // 测试数据
 const flatNodes: TreeNode[] = [
@@ -98,5 +100,63 @@ describe('sortByTreeSorts', () => {
     expect(sorted[1].tree_sorts).toBe('00000010,00000010,')
     expect(sorted[2].tree_sorts).toBe('00000010,00000020,')
     expect(sorted[3].tree_sorts).toBe('00000020,')
+  })
+})
+
+describe('toSelectNode', () => {
+  it('转换有效节点', () => {
+    const node: TreeNode = flatNodes[0]
+    const result = toSelectNode(node)
+
+    expect(result).not.toBeNull()
+    expect(result?.id).toBe('1')
+    expect(result?.name).toBe('研发部')
+    expect(result?.isLeaf).toBe(false)
+    expect(result?.children).toBeUndefined()
+    expect(result?.disabled).toBeUndefined()
+  })
+
+  it('转换叶子节点', () => {
+    const node: TreeNode = flatNodes[1] // 前端组
+    const result = toSelectNode(node)
+
+    expect(result?.isLeaf).toBe(true)
+  })
+
+  it('空节点返回 null', () => {
+    expect(toSelectNode(null)).toBeNull()
+    expect(toSelectNode(undefined)).toBeNull()
+  })
+})
+
+describe('toSelectNodes', () => {
+  it('转换嵌套树结构', () => {
+    const tree = buildTree(flatNodes)
+    const result = toSelectNodes(tree)
+
+    expect(result.length).toBe(2)
+    expect(result[0].id).toBe('1')
+    expect(result[0].name).toBe('研发部')
+    expect(result[0].isLeaf).toBe(false)
+    expect(result[0].children?.length).toBe(2)
+    expect(result[0].children![0].id).toBe('2')
+    expect(result[0].children![0].name).toBe('前端组')
+    expect(result[0].children![0].isLeaf).toBe(true)
+    expect(result[1].id).toBe('4')
+  })
+
+  it('空数组返回空数组', () => {
+    expect(toSelectNodes([])).toEqual([])
+    expect(toSelectNodes(null)).toEqual([])
+    expect(toSelectNodes(undefined)).toEqual([])
+  })
+
+  it('无 children 的节点不包含 children 属性', () => {
+    const nodes: TreeNodeTree[] = [
+      { ...flatNodes[3], children: [] }, // 市场部
+    ]
+    const result = toSelectNodes(nodes)
+
+    expect(result[0].children).toBeUndefined()
   })
 })

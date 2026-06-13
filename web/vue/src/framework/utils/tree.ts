@@ -2,7 +2,7 @@
  * 树工具函数
  */
 
-import type { TreeNode, TreeNodeTree } from '@/framework/types/tree'
+import type { TreeNode, TreeNodeTree, TreeSelectNode } from '@/framework/types/tree'
 
 /**
  * 将平铺列表转换为树结构
@@ -96,4 +96,48 @@ export function getAncestors<T extends TreeNode>(
  */
 export function sortByTreeSorts<T extends TreeNode>(nodes: T[]): T[] {
   return [...nodes].sort((a, b) => a.tree_sorts.localeCompare(b.tree_sorts))
+}
+
+/**
+ * 将单个 TreeNode 转换为 TreeSelectNode
+ * @param node - 源树节点
+ * @returns TreeSelectNode 格式的节点，输入为空时返回 null
+ */
+export function toSelectNode(node: TreeNode | null | undefined): TreeSelectNode | null {
+  if (!node) {
+    return null
+  }
+
+  return {
+    id: node.id,
+    name: node.name,
+    isLeaf: node.tree_leaf,
+  }
+}
+
+/**
+ * 将 TreeNodeTree 数组转换为 TreeSelectNode 数组
+ * 支持递归转换嵌套的 children
+ * @param nodes - 源树节点数组
+ * @returns TreeSelectNode 数组，输入为空时返回空数组
+ */
+export function toSelectNodes(nodes: TreeNodeTree[] | null | undefined): TreeSelectNode[] {
+  if (!nodes || !Array.isArray(nodes) || nodes.length === 0) {
+    return []
+  }
+
+  return nodes.map((node) => {
+    const selectNode: TreeSelectNode = {
+      id: node.id,
+      name: node.name,
+      isLeaf: node.tree_leaf,
+    }
+
+    // 递归转换 children
+    if (node.children && node.children.length > 0) {
+      selectNode.children = toSelectNodes(node.children)
+    }
+
+    return selectNode
+  })
 }
