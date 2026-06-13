@@ -18,10 +18,10 @@
 
 ## 3. 废弃别名与兼容层
 
-- [ ] 3.1 在 `ui/tree/types.ts` 添加 @deprecated TreeNodeType 别名
-- [ ] 3.2 在 `ui/tree/types.ts` 添加 @deprecated TreeNode 别名
-- [ ] 3.3 从 framework/types/tree 重新导出 TreeSelectNode
-- [ ] 3.4 在 `ui/tree/Tree.vue` 添加废弃警告（控制台）
+- [x] 3.1 在 `ui/tree/types.ts` 添加 @deprecated TreeNodeType 别名
+- [x] 3.2 在 `ui/tree/types.ts` 添加 @deprecated TreeNode 别名
+- [x] 3.3 从 framework/types/tree 重新导出 TreeSelectNode
+- [x] 3.4 在 `ui/tree/Tree.vue` 添加废弃警告（控制台）
 
 ## 4. common/Tree 组件增强
 

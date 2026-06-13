@@ -42,6 +42,16 @@ import { computed, onMounted, ref, watch } from "vue";
 import TreeNode from "./TreeNode.vue";
 import type { TreeEmits, TreeNodeType, TreeProps } from "./types";
 
+// 废弃警告：提示用户迁移到新类型
+if (import.meta.env.DEV) {
+  console.warn(
+    '[ui/Tree] 此组件已废弃，建议迁移到 common/Tree。\n' +
+    '- 类型 TreeNodeType 已废弃，请使用 TreeSelectNode\n' +
+    '- 字段映射: value → id, label → name\n' +
+    '- 导入路径: import { TreeSelectNode } from \'@/framework/types/tree\''
+  );
+}
+
 type TreeNodeValue = TreeNodeType["value"];
 
 const emit = defineEmits<TreeEmits>();
