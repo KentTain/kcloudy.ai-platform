@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import type { TreeComponentNode, TreeAction } from '@/framework/types/tree'
+import type { TreeSelectNode, TreeAction } from '@/framework/types/tree'
 import type { HTMLAttributes } from 'vue'
 import { cn } from '@/lib/utils'
 import Tree from './Tree.vue'
 
 interface Props {
-  data: TreeComponentNode[]
+  data: TreeSelectNode[]
   actions?: TreeAction[]
   defaultExpandLevel?: number
   class?: HTMLAttributes['class']
@@ -16,11 +16,11 @@ const props = withDefaults(defineProps<Props>(), {
   defaultExpandLevel: 1,
 })
 
-function handleNodeClick({ node: _node }: { node: TreeComponentNode; level: number }) {
+function handleNodeClick({ node: _node }: { node: TreeSelectNode; level: number }) {
   // 列表树节点点击，不做特殊处理
 }
 
-function getVisibleActions(node: TreeComponentNode): TreeAction[] {
+function getVisibleActions(node: TreeSelectNode): TreeAction[] {
   return props.actions.filter(action => {
     if (action.visible) {
       return action.visible(node)

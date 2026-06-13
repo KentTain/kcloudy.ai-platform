@@ -1,15 +1,16 @@
 <script setup lang="ts">
-import type { TreeComponentNode } from '@/framework/types/tree'
+import type { TreeSelectNode } from '@/framework/types/tree'
 import type { HTMLAttributes } from 'vue'
-import { computed, ref } from 'vue'
+import { computed, ref, toRef } from 'vue'
 import { cn } from '@/lib/utils'
+import { useTreeData } from '@/framework/composables/useTreeData'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { Search } from '@lucide/vue'
 import Tree from './Tree.vue'
 
 interface Props {
-  data: TreeComponentNode[]
+  data: TreeSelectNode[]
   modelValue?: (string | number)[]
   disabled?: boolean
   defaultExpandLevel?: number
@@ -30,17 +31,28 @@ const emit = defineEmits<{
   'update:modelValue': [value: (string | number)[]]
 }>()
 
+// 搜索关键词
 const searchQuery = ref('')
 
+// 使用 useTreeData 管理树数据
+const { filteredData, treeData } = useTreeData<TreeSelectNode>({
+  source: toRef(() => props.data),
+  searchable: props.searchable,
+  searchQuery,
+  defaultExpandLevel: props.defaultExpandLevel,
+})
+
 // 判断节点是否为叶子节点
-function isLeaf(node: TreeComponentNode): boolean {
+function isLeaf(node: TreeSelectNode): boolean {
+  // 优先使用 isLeaf 字段，否则根据 children 判断
+  if (node.isLeaf !== undefined) return node.isLeaf
   return !node.children?.length
 }
 
 // 获取节点的所有后代叶子节点 ID
-function getDescendantLeafIds(node: TreeComponentNode): (string | number)[] {
+function getDescendantLeafIds(node: TreeSelectNode): (string | number)[] {
   const leafIds: (string | number)[] = []
-  function collect(n: TreeComponentNode) {
+  function collect(n: TreeSelectNode) {
     if (isLeaf(n)) {
       leafIds.push(n.id)
     } else if (n.children) {
@@ -52,7 +64,7 @@ function getDescendantLeafIds(node: TreeComponentNode): (string | number)[] {
 }
 
 // 计算节点的选中状态
-function getNodeCheckState(node: TreeComponentNode): 'checked' | 'unchecked' | 'indeterminate' {
+function getNodeCheckState(node: TreeSelectNode): 'checked' | 'unchecked' | 'indeterminate' {
   if (isLeaf(node)) {
     return props.modelValue.includes(node.id) ? 'checked' : 'unchecked'
   }
@@ -68,8 +80,8 @@ function getNodeCheckState(node: TreeComponentNode): 'checked' | 'unchecked' | '
 }
 
 // 处理节点勾选
-function handleCheck(node: TreeComponentNode) {
-  if (props.disabled) return
+function handleCheck(node: TreeSelectNode) {
+  if (props.disabled || node.disabled) return
 
   const currentState = getNodeCheckState(node)
   let newSelectedIds = [...props.modelValue]
@@ -96,42 +108,16 @@ function handleCheck(node: TreeComponentNode) {
   emit('update:modelValue', newSelectedIds)
 }
 
-// 搜索过滤 - 计算可见节点
-const filteredData = computed(() => {
-  if (!searchQuery.value.trim()) return props.data
-
-  const query = searchQuery.value.toLowerCase()
-  const matchedIds = new Set<string | number>()
-  const ancestorIds = new Set<string | number>()
-
-  function findMatches(nodes: TreeComponentNode[], parentIds: (string | number)[] = []) {
-    for (const node of nodes) {
-      if (node.name.toLowerCase().includes(query)) {
-        matchedIds.add(node.id)
-        parentIds.forEach(id => ancestorIds.add(id))
-      }
-      if (node.children?.length) {
-        findMatches(node.children, [...parentIds, node.id])
-      }
-    }
-  }
-  findMatches(props.data)
-
-  function filterTree(nodes: TreeComponentNode[]): TreeComponentNode[] {
-    return nodes
-      .filter(node => matchedIds.has(node.id) || ancestorIds.has(node.id))
-      .map(node => ({
-        ...node,
-        children: node.children ? filterTree(node.children) : undefined,
-      }))
-  }
-
-  return filterTree(props.data)
+// 是否有搜索结果
+const hasResults = computed(() => {
+  if (!props.searchable || !searchQuery.value.trim()) return true
+  return filteredData.value.length > 0
 })
 
-const hasResults = computed(() => {
-  if (!searchQuery.value.trim()) return true
-  return filteredData.value.length > 0
+// 获取要显示的树数据
+const displayData = computed(() => {
+  if (!props.searchable) return treeData.value
+  return filteredData.value
 })
 </script>
 
@@ -151,29 +137,29 @@ const hasResults = computed(() => {
     <!-- 树结构 -->
     <Tree
       v-if="hasResults"
-      :data="filteredData"
+      :data="displayData"
       :default-expand-level="defaultExpandLevel"
       :class="{ 'opacity-50 cursor-not-allowed': disabled }"
     >
       <template #node="{ node }">
         <div
           class="flex items-center gap-2"
-          :class="{ 'cursor-not-allowed': disabled }"
-          @click.stop="handleCheck(node as TreeComponentNode)"
+          :class="{ 'cursor-not-allowed': disabled || (node as TreeSelectNode).disabled }"
+          @click.stop="handleCheck(node as TreeSelectNode)"
         >
           <Checkbox
-            :checked="getNodeCheckState(node as TreeComponentNode) === 'checked'"
-            :indeterminate="getNodeCheckState(node as TreeComponentNode) === 'indeterminate'"
-            :disabled="disabled"
+            :checked="getNodeCheckState(node as TreeSelectNode) === 'checked'"
+            :indeterminate="getNodeCheckState(node as TreeSelectNode) === 'indeterminate'"
+            :disabled="disabled || (node as TreeSelectNode).disabled"
           />
           <span
             class="text-sm"
             :class="cn(
-              searchQuery && (node as TreeComponentNode).name.toLowerCase().includes(searchQuery.toLowerCase())
+              searchQuery && (node as TreeSelectNode).name.toLowerCase().includes(searchQuery.toLowerCase())
                 && 'text-primary font-medium'
             )"
           >
-            {{ (node as TreeComponentNode).name }}
+            {{ (node as TreeSelectNode).name }}
           </span>
         </div>
       </template>

@@ -33,8 +33,8 @@ export interface TreeAction {
   key: string
   label: string
   icon?: any
-  visible?: (node: TreeComponentNode) => boolean
-  handler: (node: TreeComponentNode) => void
+  visible?: (node: TreeSelectNode) => boolean
+  handler: (node: TreeSelectNode) => void
 }
 
 /**

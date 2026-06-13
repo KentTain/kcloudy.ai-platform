@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { CheckboxTree } from '@/components'
-import type { TreeComponentNode } from '@/framework/types/tree'
+import type { TreeSelectNode } from '@/framework/types/tree'
 import type { Permission } from '@/iam/types'
 
 interface Props {
@@ -18,8 +18,8 @@ const emit = defineEmits<{
   'update:modelValue': [value: string[]]
 }>()
 
-const treeData = computed<TreeComponentNode[]>(() => {
-  const resourceMap = new Map<string, TreeComponentNode>()
+const treeData = computed<TreeSelectNode[]>(() => {
+  const resourceMap = new Map<string, TreeSelectNode>()
 
   props.permissions.forEach(perm => {
     if (!resourceMap.has(perm.resource)) {

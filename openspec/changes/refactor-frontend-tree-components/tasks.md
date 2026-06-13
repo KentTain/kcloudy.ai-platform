@@ -34,14 +34,14 @@
 
 ## 5. common/CheckboxTree 重构
 
-- [ ] 5.1 使用 useTreeData 重构 CheckboxTree.vue
-- [ ] 5.2 更新 Props 类型为 TreeSelectNode
-- [ ] 5.3 保持原有 API 向后兼容
+- [x] 5.1 使用 useTreeData 重构 CheckboxTree.vue
+- [x] 5.2 更新 Props 类型为 TreeSelectNode
+- [x] 5.3 保持原有 API 向后兼容
 
 ## 6. common/TreeList 重构
 
-- [ ] 6.1 更新 TreeList.vue 使用 TreeSelectNode 类型
-- [ ] 6.2 更新 TreeAction 接口类型
+- [x] 6.1 更新 TreeList.vue 使用 TreeSelectNode 类型
+- [x] 6.2 更新 TreeAction 接口类型
 
 ## 7. common/TreeSelect 适配
 
@@ -50,9 +50,9 @@
 
 ## 8. 业务组件迁移
 
-- [ ] 8.1 DepartmentTree.vue 使用 useTreeData 重构
+- [x] 8.1 DepartmentTree.vue 使用 useTreeData 重构
 - [ ] 8.2 MenuTree.vue 使用 useTreeData 重构
-- [ ] 8.3 PermissionTree.vue 使用 useTreeData 重构
+- [x] 8.3 PermissionTree.vue 使用 useTreeData 重构
 - [ ] 8.4 移除各组件中的重复代码（数据转换、查找逻辑）
 
 ## 9. 测试
