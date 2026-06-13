@@ -57,10 +57,10 @@
 
 ## 9. 测试
 
-- [ ] 9.1 编写 toSelectNode/toSelectNodes 单元测试
-- [ ] 9.2 编写 useTreeData 单元测试
+- [x] 9.1 编写 toSelectNode/toSelectNodes 单元测试
+- [x] 9.2 编写 useTreeData 单元测试
 - [x] 9.3 编写 common/Tree 新增功能测试
-- [ ] 9.4 运行现有组件测试确保向后兼容
+- [x] 9.4 运行现有组件测试确保向后兼容
 - [ ] 9.5 编写业务组件迁移后的集成测试
 
 ## 10. 文档更新
