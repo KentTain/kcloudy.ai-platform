@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
 
-from framework.common.ctx import get_context
+from framework.common.ctx import _update_context, get_context
 from framework.tenant.protocols import (
     TenantCacheConfig,
     TenantDatabaseConfig,
@@ -137,21 +137,19 @@ class TenantContext:
             tenant: 可以是 SimpleTenant 实例或 ORM 模型实例
         """
         if tenant is None:
-            ctx = get_context()
-            ctx.tenant_id = None
-            ctx.tenant_name = None
-            ctx.tenant_code = None
-            ctx.extra.pop(_TENANT_CONFIG_KEY, None)
+
+            def modifier(ctx) -> None:
+                ctx.tenant_id = None
+                ctx.tenant_name = None
+                ctx.tenant_code = None
+                ctx.extra.pop(_TENANT_CONFIG_KEY, None)
+
+            _update_context(modifier)
             return
 
         # 转换为 SimpleTenant
         if not isinstance(tenant, SimpleTenant):
             tenant = SimpleTenant.from_model(tenant)
-
-        ctx = get_context()
-        ctx.tenant_id = tenant.id
-        ctx.tenant_name = tenant.name
-        ctx.tenant_code = tenant.code
 
         # 租户配置存储到 extra
         tenant_config = {
@@ -166,16 +164,26 @@ class TenantContext:
             "queue": tenant.queue,
             "pubsub": tenant.pubsub,
         }
-        ctx.extra[_TENANT_CONFIG_KEY] = tenant_config
+
+        def modifier(ctx) -> None:
+            ctx.tenant_id = tenant.id
+            ctx.tenant_name = tenant.name
+            ctx.tenant_code = tenant.code
+            ctx.extra[_TENANT_CONFIG_KEY] = tenant_config
+
+        _update_context(modifier)
 
     @staticmethod
     def clear() -> None:
         """清理租户上下文"""
-        ctx = get_context()
-        ctx.tenant_id = None
-        ctx.tenant_name = None
-        ctx.tenant_code = None
-        ctx.extra.pop(_TENANT_CONFIG_KEY, None)
+
+        def modifier(ctx) -> None:
+            ctx.tenant_id = None
+            ctx.tenant_name = None
+            ctx.tenant_code = None
+            ctx.extra.pop(_TENANT_CONFIG_KEY, None)
+
+        _update_context(modifier)
 
     @staticmethod
     def get_tenant_id() -> str | None:

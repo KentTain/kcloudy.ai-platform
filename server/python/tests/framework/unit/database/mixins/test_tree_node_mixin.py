@@ -213,7 +213,7 @@ class TestTreeNodeMixinUpdateNode:
 
         # WHEN 尝试将父节点移动到子节点下
         # THEN 抛出异常
-        with pytest.raises(ValueError, match="不能将节点移动到其子孙节点下"):
+        with pytest.raises(ValueError, match="父节点不能设置为当前节点的子孙节点"):
             await TestTreeNode.update_node(
                 session, parent.id, {"parent_id": child.id}
             )
@@ -316,9 +316,9 @@ class TestTreeNodeMixinBuildTree:
 
         # THEN 返回树形结构，每个节点包含 children 列表
         assert len(tree) == 1
-        assert tree[0]["id"] == parent.id
-        assert len(tree[0]["children"]) == 1
-        assert tree[0]["children"][0]["id"] == child.id
+        assert tree[0].id == parent.id
+        assert len(tree[0].children) == 1
+        assert tree[0].children[0].id == child.id
 
     async def test_build_subtree(self, session: AsyncSession):
         """测试构建子树"""
@@ -334,4 +334,4 @@ class TestTreeNodeMixinBuildTree:
 
         # THEN 返回以指定节点为根的子树
         assert len(tree) == 1
-        assert tree[0]["id"] == child.id
+        assert tree[0].id == child.id

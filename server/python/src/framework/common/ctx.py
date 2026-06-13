@@ -4,6 +4,7 @@
 """
 
 from contextvars import ContextVar
+from copy import deepcopy
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -39,6 +40,21 @@ class Context:
         """获取额外属性"""
         return self.extra.get(key, default)
 
+    def copy(self) -> "Context":
+        """创建上下文副本"""
+        return Context(
+            user_id=self.user_id,
+            user_name=self.user_name,
+            session_id=self.session_id,
+            roles=list(self.roles),
+            permissions=list(self.permissions),
+            tenant_id=self.tenant_id,
+            tenant_name=self.tenant_name,
+            tenant_code=self.tenant_code,
+            workspace_id=self.workspace_id,
+            extra=deepcopy(self.extra),
+        )
+
 
 def get_context() -> Context:
     """
@@ -62,6 +78,19 @@ def set_context(ctx: Context) -> None:
         ctx: 上下文实例
     """
     _context_var.set(ctx)
+
+
+def _update_context(modifier: callable) -> None:
+    """
+    更新上下文（创建副本以确保协程隔离）
+
+    Args:
+        modifier: 修改上下文的函数
+    """
+    ctx = get_context()
+    new_ctx = ctx.copy()
+    modifier(new_ctx)
+    _context_var.set(new_ctx)
 
 
 def clear_context() -> None:
@@ -88,13 +117,16 @@ def set_user(
         roles: 角色列表
         permissions: 权限列表
     """
-    ctx = get_context()
-    ctx.user_id = user_id
-    ctx.user_name = user_name
-    ctx.tenant_id = tenant_id
-    ctx.workspace_id = workspace_id
-    ctx.roles = roles or []
-    ctx.permissions = permissions or []
+
+    def modifier(ctx: Context) -> None:
+        ctx.user_id = user_id
+        ctx.user_name = user_name
+        ctx.tenant_id = tenant_id
+        ctx.workspace_id = workspace_id
+        ctx.roles = roles or []
+        ctx.permissions = permissions or []
+
+    _update_context(modifier)
 
 
 def get_user_id() -> str | None:
