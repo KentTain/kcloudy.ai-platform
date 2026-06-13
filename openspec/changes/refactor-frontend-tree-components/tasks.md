@@ -25,12 +25,12 @@
 
 ## 4. common/Tree 组件增强
 
-- [ ] 4.1 更新 Tree.vue Props 接口，支持 TreeSelectNode 数据
-- [ ] 4.2 新增 checkable/cascade/modelValue Props
-- [ ] 4.3 新增 loadData 异步加载支持
-- [ ] 4.4 新增 showLine/disabled Props
-- [ ] 4.5 实现复选框渲染和级联选择逻辑
-- [ ] 4.6 更新 TreeNode.vue 支持新 Props
+- [x] 4.1 更新 Tree.vue Props 接口，支持 TreeSelectNode 数据
+- [x] 4.2 新增 checkable/cascade/modelValue Props
+- [x] 4.3 新增 loadData 异步加载支持
+- [x] 4.4 新增 showLine/disabled Props
+- [x] 4.5 实现复选框渲染和级联选择逻辑
+- [x] 4.6 更新 TreeNode.vue 支持新 Props
 
 ## 5. common/CheckboxTree 重构
 
@@ -59,7 +59,7 @@
 
 - [ ] 9.1 编写 toSelectNode/toSelectNodes 单元测试
 - [ ] 9.2 编写 useTreeData 单元测试
-- [ ] 9.3 编写 common/Tree 新增功能测试
+- [x] 9.3 编写 common/Tree 新增功能测试
 - [ ] 9.4 运行现有组件测试确保向后兼容
 - [ ] 9.5 编写业务组件迁移后的集成测试
 
