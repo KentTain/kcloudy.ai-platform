@@ -27,9 +27,9 @@
 | Table | `data-display/table/Table.vue` | 业务表格 | `columns`, `data`, `loading`, `stripe`, `border` |
 | DataTable | `data-display/table/DataTable.vue` | 高级表格（@tanstack/vue-table） | `dataTable`, `fixedLayout` |
 | DataTablePagination | `data-display/table/DataTablePagination.vue` | 表格分页 | `table` |
-| Tree | `data-display/tree/Tree.vue` | 树形展示 | `data`, `defaultExpandLevel`, `indent` |
+| Tree | `data-display/tree/Tree.vue` | 树形展示（支持 checkbox/cascade/loadData） | `data`, `checkable`, `cascade`, `modelValue`, `loadData`, `showLine`, `disabled` |
 | TreeList | `data-display/tree/TreeList.vue` | 树形列表（带操作按钮） | `data`, `actions`, `defaultExpandLevel` |
-| CheckboxTree | `data-display/tree/CheckboxTree.vue` | 复选框树 | `data`, `modelValue`, `searchable`, `disabled` |
+| CheckboxTree | `data-display/tree/CheckboxTree.vue` | 复选框树（基于 useTreeData） | `data`, `modelValue`, `searchable`, `disabled` |
 | DescriptionList | `data-display/description-list/DescriptionList.vue` | 描述列表 | `items`, `columns`, `bordered` |
 
 ### 反馈组件（feedback/）
@@ -114,20 +114,72 @@ await MessageBox.error('操作失败');
 await MessageBox.info('提示信息');
 ```
 
-## 基础树组件（ui/tree/）
+## 统一树类型体系
 
-`ui/tree/` 提供基础树组件原语，被 TreeSelect 等上层组件复用：
+树组件使用统一的三层类型体系，与后端 TreeNodeMixin 字段命名对齐：
 
 ```typescript
-import { Tree, TreeNode } from '@/components/ui/tree';
-import type { TreeNode as TreeNodeType, TreeProps } from '@/components/ui/tree';
+import type { TreeNode, TreeNodeTree, TreeSelectNode } from '@/framework/types/tree'
+import { toSelectNode, toSelectNodes } from '@/framework/utils/tree'
 ```
+
+### 类型说明
+
+| 类型 | 用途 | 主要字段 |
+|------|------|----------|
+| `TreeNode` | API 响应、数据存储（与后端对齐） | `id`, `parent_id`, `name`, `tree_level`, `tree_leaf` |
+| `TreeNodeTree` | 树形展示，`buildTree()` 输出 | 继承 TreeNode + `children` |
+| `TreeSelectNode` | TreeSelect、CheckboxTree、选择器场景 | `id`, `name`, `children`, `disabled`, `isLeaf` |
+
+### 类型转换
+
+```typescript
+// TreeNode → TreeSelectNode
+const node = toSelectNode(treeNode)
+
+// TreeNodeTree[] → TreeSelectNode[]（支持嵌套）
+const nodes = toSelectNodes(treeNodes)
+```
+
+### useTreeData Composable
+
+```typescript
+import { useTreeData } from '@/framework/composables/useTreeData'
+
+const { treeData, selectedIds, filteredData, findNode, toggleSelect } = useTreeData({
+  source: rawData,
+  mode: 'multiple',
+  searchable: true,
+  defaultExpandLevel: 1,
+})
+```
+
+### ui/tree/ 废弃说明
+
+`ui/tree/` 已废弃，请迁移到 `common/data-display/tree/`：
+
+```typescript
+// 旧（废弃）
+import { Tree } from '@/components/ui/tree'
+import type { TreeNodeType } from '@/components/ui/tree'
+
+// 新（推荐）
+import { Tree } from '@/components'
+import type { TreeSelectNode } from '@/framework/types/tree'
+```
+
+| 旧类型 | 新类型 | 字段映射 |
+|--------|--------|----------|
+| `TreeNodeType.value` | `TreeSelectNode.id` | - |
+| `TreeNodeType.label` | `TreeSelectNode.name` | - |
+| `TreeNodeType.selected` | 使用组件 `modelValue` 管理 | - |
 
 ## 使用建议
 
 1. **优先使用 common/ 组件**：开发业务页面时，优先查找 common/ 目录
 2. **遵循组件分层**：
-   - `ui/` - 基础 UI 原语（无业务逻辑）
-   - `common/` - 通用业务组件（跨模块复用）
+   - `common/` - 通用业务组件（跨模块复用）— 优先使用
+   - `framework/` - 框架层类型、工具、composable — 基础设施
    - `{module}/components/` - 模块专用组件
-3. **统一导入入口**：使用 `@/components/common` 统一入口，便于 tree-shaking
+3. **统一导入入口**：使用 `@/components` 统一入口，便于 tree-shaking
+4. **树组件统一使用 TreeSelectNode 类型**：不再使用 `ui/tree` 中的 `TreeNodeType`

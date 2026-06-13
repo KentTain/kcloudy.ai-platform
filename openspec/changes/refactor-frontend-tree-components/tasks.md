@@ -65,6 +65,6 @@
 
 ## 10. 文档更新
 
-- [ ] 10.1 更新 `framework/types/tree.ts` 的 JSDoc 注释
-- [ ] 10.2 更新 `components/common/CLAUDE.md` 说明统一类型用法
-- [ ] 10.3 创建迁移指南文档
+- [x] 10.1 更新 `framework/types/tree.ts` 的 JSDoc 注释
+- [x] 10.2 更新 `components/common/CLAUDE.md` 说明统一类型用法
+- [x] 10.3 创建迁移指南文档
