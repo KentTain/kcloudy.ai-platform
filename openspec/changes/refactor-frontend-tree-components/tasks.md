@@ -8,13 +8,13 @@
 
 ## 2. useTreeData Composable
 
-- [ ] 2.1 创建 `framework/composables/useTreeData.ts` 文件
-- [ ] 2.2 实现数据转换逻辑（字段映射、响应式）
-- [ ] 2.3 实现选中状态管理（单选/多选、modelValue 同步）
-- [ ] 2.4 实现搜索过滤逻辑
-- [ ] 2.5 实现节点查找方法（findNode、getAncestors）
-- [ ] 2.6 实现选择操作方法（toggleSelect、clearSelection）
-- [ ] 2.7 导出 composable 并添加类型声明
+- [x] 2.1 创建 `framework/composables/useTreeData.ts` 文件
+- [x] 2.2 实现数据转换逻辑（字段映射、响应式）
+- [x] 2.3 实现选中状态管理（单选/多选、modelValue 同步）
+- [x] 2.4 实现搜索过滤逻辑
+- [x] 2.5 实现节点查找方法（findNode、getAncestors）
+- [x] 2.6 实现选择操作方法（toggleSelect、clearSelection）
+- [x] 2.7 导出 composable 并添加类型声明
 
 ## 3. 废弃别名与兼容层
 
