@@ -20,9 +20,9 @@
           <template v-if="multiple">
             <div
               v-for="node in selectedNodes"
-              :key="node.value"
+              :key="node.id"
               class="bg-secondary text-secondary-foreground inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium">
-              <span class="max-w-[150px] truncate">{{ node.label }}</span>
+              <span class="max-w-[150px] truncate">{{ node.name }}</span>
               <X v-if="!disabled" class="hover:text-destructive size-3 cursor-pointer transition-colors" @click.stop="handleRemove(node)" />
             </div>
 
@@ -53,7 +53,7 @@
               class="placeholder:text-muted-foreground flex h-full w-full border-none bg-transparent outline-none"
               @click.stop
               @focus="isOpen = true" />
-            <span v-else-if="selectedNode" class="flex-1 truncate">{{ selectedNode.label }}</span>
+            <span v-else-if="selectedNode" class="flex-1 truncate">{{ selectedNode.name }}</span>
             <span v-else class="text-muted-foreground flex-1">{{ placeholder }}</span>
           </template>
         </div>
@@ -113,14 +113,12 @@
             :checkable="checkable"
             :cascade="cascade"
             :show-line="showLine"
-            :load-data="loadData"
-            :expanded-value="expandedValue"
+            :default-expand-level="defaultExpandLevel"
             @update:model-value="handleTreeUpdate"
-            @update:expanded-value="handleExpandedUpdate"
-            @on-node-click="handleNodeClick">
+            @node-click="handleNodeClick">
             <template #label="{ node }">
               <div class="group/folder-label flex min-w-0 flex-1 truncate pl-0 pr-0 py-0.5 text-sm whitespace-nowrap">
-                <div class="flex-1 truncate">{{ node.label }}</div>
+                <div class="flex-1 truncate">{{ node.name }}</div>
               </div>
             </template>
           </Tree>
@@ -136,15 +134,30 @@
 </template>
 
 <script setup lang="ts">
+/**
+ * TreeSelect 树选择器组件
+ * 支持单选/多选、搜索、级联选择等功能
+ *
+ * @example
+ * ```vue
+ * <TreeSelect
+ *   v-model="selectedId"
+ *   :data="treeData"
+ *   placeholder="请选择..."
+ * />
+ * ```
+ */
 import { ChevronDown, Search, X } from "@lucide/vue";
 import { computed, ref, watch } from "vue";
 
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Tree } from "@/components/ui/tree";
-import type { TreeNode, TreeNodeValue } from "@/components/ui/tree/types";
+import { Tree } from "@/components/common/data-display/tree/Tree.vue";
+import type { TreeSelectNode } from "@/framework/types/tree";
 import { cn } from "@/lib/utils";
 
-type TreeSelectValue = NonNullable<TreeNode["value"]>;
+/** 选中值类型 */
+type TreeSelectValue = string | number;
+/** v-model 值类型 */
 type TreeSelectModelValue = TreeSelectValue | TreeSelectValue[] | null;
 
 export interface TreeSelectProps {
@@ -158,16 +171,14 @@ export interface TreeSelectProps {
   class?: string;
   /** 是否可清空 */
   clearable?: boolean;
-  /** 树形数据 */
-  data: TreeNode[];
+  /** 树形数据（使用 TreeSelectNode 类型） */
+  data: TreeSelectNode[];
+  /** 默认展开层级 */
+  defaultExpandLevel?: number;
   /** 是否禁用 */
   disabled?: boolean;
   /** 空状态文本 */
   emptyText?: string;
-  /** 已展开的节点值 */
-  expandedValue?: TreeNodeValue[];
-  /** 异步加载子节点数据 */
-  loadData?: (node: TreeNode, callback: (children: TreeNode[]) => void) => void;
   /** 是否正在加载 */
   loading?: boolean;
   /** 加载中文本 */
@@ -193,6 +204,7 @@ const props = withDefaults(defineProps<TreeSelectProps>(), {
   cascade: false,
   checkable: false,
   clearable: false,
+  defaultExpandLevel: 1,
   disabled: false,
   emptyText: "暂无数据",
   loading: false,
@@ -207,9 +219,8 @@ const props = withDefaults(defineProps<TreeSelectProps>(), {
 
 const emit = defineEmits<{
   "update:modelValue": [value: TreeSelectModelValue];
-  "update:expandedValue": [value: TreeNodeValue[]];
   search: [query: string];
-  "on-node-click": [node: TreeNode];
+  "node-click": [node: TreeSelectNode];
 }>();
 
 // 状态
@@ -248,10 +259,10 @@ const selectedValues = computed(() => {
 });
 
 // 根据值查找节点
-const findNodesByValues = (nodes: TreeNode[], values: TreeSelectValue[]): TreeNode[] => {
-  const result: TreeNode[] = [];
+const findNodesByValues = (nodes: TreeSelectNode[], values: TreeSelectValue[]): TreeSelectNode[] => {
+  const result: TreeSelectNode[] = [];
   for (const node of nodes) {
-    if (values.includes(node.value)) {
+    if (values.includes(node.id)) {
       result.push(node);
     }
     if (node.children && node.children.length > 0) {
@@ -271,7 +282,7 @@ const selectedNode = computed(() => (props.multiple ? null : selectedNodes.value
 const singleSearchDisplay = computed({
   get: () => {
     if (searchQuery.value) return searchQuery.value;
-    return selectedNode.value?.label || "";
+    return selectedNode.value?.name || "";
   },
   set: (value: string) => {
     searchQuery.value = value;
@@ -279,22 +290,22 @@ const singleSearchDisplay = computed({
 });
 
 // 递归过滤树节点
-const filterTree = (nodes: TreeNode[], query: string): TreeNode[] => {
+const filterTree = (nodes: TreeSelectNode[], query: string): TreeSelectNode[] => {
   if (!query.trim()) return nodes;
   const lowerQuery = query.toLowerCase();
   return nodes
     .map((node) => {
-      const labelMatch = node.label.toLowerCase().includes(lowerQuery);
+      const nameMatch = node.name.toLowerCase().includes(lowerQuery);
       const filteredChildren = node.children ? filterTree(node.children, query) : [];
-      if (labelMatch || filteredChildren.length > 0) {
+      if (nameMatch || filteredChildren.length > 0) {
         return {
           ...node,
-          children: labelMatch ? node.children || [] : filteredChildren,
+          children: nameMatch ? node.children || [] : filteredChildren,
         };
       }
       return null;
     })
-    .filter((node): node is TreeNode => node !== null);
+    .filter((node): node is TreeSelectNode => node !== null);
 };
 
 // 过滤后的数据
@@ -316,16 +327,11 @@ const handleTreeUpdate = (values: TreeSelectValue[]) => {
   }
 };
 
-// 处理展开状态更新
-const handleExpandedUpdate = (values: TreeNodeValue[]) => {
-  emit("update:expandedValue", values);
-};
-
 // 处理节点点击
-const handleNodeClick = (node: TreeNode) => {
-  emit("on-node-click", node);
+const handleNodeClick = ({ node }: { node: TreeSelectNode; level: number }) => {
+  emit("node-click", node);
   if (!props.multiple && !props.checkable) {
-    emit("update:modelValue", node.value);
+    emit("update:modelValue", node.id);
     isOpen.value = false;
     searchQuery.value = "";
   }
@@ -342,9 +348,9 @@ const handleTriggerClick = (event: MouseEvent) => {
 };
 
 // 移除选中项（多选模式）
-const handleRemove = (node: TreeNode) => {
+const handleRemove = (node: TreeSelectNode) => {
   if (!props.multiple || props.disabled) return;
-  const newValues = selectedValues.value.filter((v) => v !== node.value);
+  const newValues = selectedValues.value.filter((v) => v !== node.id);
   emit("update:modelValue", newValues);
 };
 

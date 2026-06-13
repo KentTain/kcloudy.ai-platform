@@ -4,54 +4,43 @@
  * 以树形结构展示菜单数据，支持展开/折叠和选中高亮
  */
 import { computed } from 'vue'
-import { Tree } from '@/components/ui/tree'
-import type { TreeNodeType } from '@/components/ui/tree'
+import { Tree } from '@/components/common/data-display/tree/Tree.vue'
+import type { TreeSelectNode } from '@/framework/types/tree'
+import { useTreeData } from '@/framework/composables/useTreeData'
 import { Badge, Skeleton } from '@/components'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { FolderOpen, FileText } from '@lucide/vue'
+import { FolderOpen } from '@lucide/vue'
 import type { MenuTreeNode } from '@/iam/types'
 import { findMenuById } from '@/iam/utils/menu'
+
+/** 扩展 TreeSelectNode 以包含 MenuTree 需要的 module 信息 */
+interface MenuTreeSelectNode extends TreeSelectNode {
+  module?: string
+  code?: string
+  path?: string
+}
 
 interface Props {
   menus: MenuTreeNode[]
   selectedId?: string | null
-  expandedIds?: string[]
   loading?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
   selectedId: null,
-  expandedIds: () => [],
   loading: false,
 })
 
 const emit = defineEmits<{
   'update:selectedId': [value: string | null]
-  'update:expandedIds': [value: string[]]
 }>()
 
-// 扩展 TreeNodeType 以包含 module 信息
-interface MenuTreeNodeType extends TreeNodeType {
-  module?: string
-}
-
-// 将 MenuTreeNode 转换为 TreeNodeType
-const convertToTreeNode = (menuList: MenuTreeNode[]): MenuTreeNodeType[] => {
-  return menuList.map(menu => ({
-    value: menu.id,
-    label: menu.name,
-    module: menu.module,
-    children: menu.children?.length ? convertToTreeNode(menu.children) : [],
-  }))
-}
-
-// 菜单树数据
-const treeData = computed<TreeNodeType[]>(() => convertToTreeNode(props.menus))
-
-// 选中的菜单节点值（用于 Tree 组件）
-const selectedValues = computed<string[]>(() =>
-  props.selectedId ? [props.selectedId] : [],
-)
+// 使用 useTreeData composable 转换菜单数据
+const { treeData, selectedIds } = useTreeData<MenuTreeNode, MenuTreeSelectNode>({
+  source: () => props.menus,
+  modelValue: () => props.selectedId ? [props.selectedId] : [],
+  mode: 'single',
+})
 
 // 当前选中的菜单对象
 const selectedMenu = computed<MenuTreeNode | null>(() => {
@@ -60,13 +49,8 @@ const selectedMenu = computed<MenuTreeNode | null>(() => {
 })
 
 // 处理树节点点击
-const handleNodeClick = (node: TreeNodeType) => {
-  emit('update:selectedId', node.value as string)
-}
-
-// 处理展开折叠变化
-const handleExpandedChange = (values: string[]) => {
-  emit('update:expandedIds', values)
+const handleNodeClick = ({ node }: { node: MenuTreeSelectNode; level: number }) => {
+  emit('update:selectedId', node.id as string)
 }
 </script>
 
@@ -96,28 +80,24 @@ const handleExpandedChange = (values: string[]) => {
       <!-- 菜单树 -->
       <Tree
         v-else
-        v-model="selectedValues"
         :data="treeData"
-        :expanded-value="expandedIds"
+        :model-value="selectedIds"
         :multiple="false"
         :show-line="true"
-        @on-node-click="handleNodeClick"
-        @update:expanded-value="handleExpandedChange"
+        :default-expand-level="2"
+        @node-click="handleNodeClick"
       >
         <template #label="{ node }">
           <div class="flex items-center gap-2">
-            <span class="truncate">{{ node.label }}</span>
+            <span class="truncate">{{ node.name }}</span>
             <Badge
-              v-if="(node as MenuTreeNodeType).module"
+              v-if="(node as MenuTreeSelectNode).module"
               variant="outline"
               class="text-xs"
             >
-              {{ (node as MenuTreeNodeType).module }}
+              {{ (node as MenuTreeSelectNode).module }}
             </Badge>
           </div>
-        </template>
-        <template #leaf-icon>
-          <FileText class="h-4 w-4 text-muted-foreground" />
         </template>
       </Tree>
     </ScrollArea>

@@ -45,15 +45,15 @@
 
 ## 7. common/TreeSelect 适配
 
-- [ ] 7.1 更新 TreeSelect.vue Props 使用 TreeSelectNode
-- [ ] 7.2 内部使用 toSelectNodes 转换数据
+- [x] 7.1 更新 TreeSelect.vue Props 使用 TreeSelectNode
+- [x] 7.2 内部使用 toSelectNodes 转换数据
 
 ## 8. 业务组件迁移
 
 - [x] 8.1 DepartmentTree.vue 使用 useTreeData 重构
-- [ ] 8.2 MenuTree.vue 使用 useTreeData 重构
+- [x] 8.2 MenuTree.vue 使用 useTreeData 重构
 - [x] 8.3 PermissionTree.vue 使用 useTreeData 重构
-- [ ] 8.4 移除各组件中的重复代码（数据转换、查找逻辑）
+- [x] 8.4 移除各组件中的重复代码（数据转换、查找逻辑）
 
 ## 9. 测试
 

@@ -15,7 +15,6 @@ import { FolderOpen } from '@lucide/vue'
 const menuStore = useMenuStore()
 
 const selectedMenuId = ref<string | null>(null)
-const expandedMenuIds = ref<string[]>([])
 
 // 当前选中的菜单对象
 const selectedMenu = computed<MenuTreeNode | null>(() => {
@@ -28,16 +27,9 @@ const handleMenuSelect = (id: string | null) => {
   selectedMenuId.value = id
 }
 
-// 处理展开折叠变化
-const handleExpandedChange = (ids: string[]) => {
-  expandedMenuIds.value = ids
-}
-
 // 加载菜单数据
 onMounted(async () => {
   await menuStore.fetchMenus()
-  // 默认展开第一级
-  expandedMenuIds.value = menuStore.menus.map(m => m.id)
 })
 </script>
 
@@ -49,10 +41,8 @@ onMounted(async () => {
         <MenuTree
           :menus="menuStore.menus"
           :selected-id="selectedMenuId"
-          :expanded-ids="expandedMenuIds"
           :loading="menuStore.loading"
           @update:selected-id="handleMenuSelect"
-          @update:expanded-ids="handleExpandedChange"
         />
       </Card>
 
