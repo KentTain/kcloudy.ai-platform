@@ -4,7 +4,28 @@
 负责将模块定义（菜单、权限、角色）同步到数据库。
 """
 
-from framework.module.definition import ModuleDefinition
+from loguru import logger
+from sqlalchemy import select, delete, update
+from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from framework.database import async_session
+from framework.module.definition import (
+    ModuleDefinition,
+    MenuDef,
+    PermissionDef,
+    RoleDef,
+)
+from framework.module.registry import get_registry
+from tenant.models import (
+    Module,
+    ModuleMenu,
+    ModulePermission,
+    ModuleRole,
+    ModuleRolePermission,
+)
+
+_logger = logger.bind(name=__name__)
 
 
 class ModuleDefinitionSyncService:
@@ -22,8 +43,21 @@ class ModuleDefinitionSyncService:
         遍历所有已注册的模块，将模块定义同步到数据库。
         包括菜单、权限、角色的同步，以及孤儿数据清理。
         """
-        # TODO: 实现同步逻辑
-        pass
+        registry = get_registry()
+        modules = registry.get_all_modules()
+
+        for module in modules:
+            definition = module.get_module_definition()
+            if definition is None:
+                _logger.debug(f"模块 {module.name} 无模块定义，跳过同步")
+                continue
+
+            try:
+                await self.sync_module(definition)
+                _logger.info(f"模块 {definition.code} 同步完成")
+            except Exception as e:
+                _logger.error(f"模块 {definition.code} 同步失败: {e}")
+                raise
 
     async def sync_module(self, definition: ModuleDefinition) -> None:
         """
@@ -34,24 +68,179 @@ class ModuleDefinitionSyncService:
         Args:
             definition: 模块定义实例
         """
-        # TODO: 实现单模块同步逻辑
-        pass
+        async with async_session() as session:
+            # 1. Upsert Module 记录
+            stmt = insert(Module).values(
+                code=definition.code,
+                name=definition.name,
+                description=definition.description,
+                icon=definition.icon,
+                version=definition.version,
+                is_active=True,
+                is_need=False,
+            ).on_conflict_do_update(
+                index_elements=["code"],
+                set_={
+                    "name": definition.name,
+                    "description": definition.description,
+                    "icon": definition.icon,
+                    "version": definition.version,
+                },
+            ).returning(Module.id)
 
-    async def _sync_menus(self, module_code: str, menus: list) -> None:
+            result = await session.execute(stmt)
+            module_id = result.scalar_one()
+
+            # 2. 同步菜单
+            await self._sync_menus(session, module_id, definition.code, definition.menus)
+
+            # 3. 同步权限
+            await self._sync_permissions(
+                session, module_id, definition.code, definition.permissions
+            )
+
+            # 4. 同步角色
+            await self._sync_roles(session, module_id, definition.code, definition.default_roles)
+
+            # 5. 清理孤儿数据
+            await self._cleanup_orphans(
+                session,
+                module_id,
+                definition.code,
+                definition.menus,
+                definition.permissions,
+                definition.default_roles,
+            )
+
+            await session.commit()
+
+    async def _sync_menus(
+        self,
+        session: AsyncSession,
+        module_id: str,
+        module_code: str,
+        menus: list[MenuDef],
+    ) -> None:
         """
         同步菜单定义
 
         将模块的菜单定义同步到数据库。
+        使用两阶段处理：先创建所有菜单，再更新父子关系。
 
         Args:
+            session: 数据库会话
+            module_id: 模块ID
             module_code: 模块编码
             menus: 菜单定义列表
+
+        Raises:
+            ValueError: 菜单循环引用或父菜单不存在
         """
-        # TODO: 实现菜单同步逻辑
-        pass
+        if not menus:
+            return
+
+        # 检测循环引用
+        self._detect_menu_cycles(menus)
+
+        # 构建 code -> MenuDef 映射
+        menu_def_map = {menu.code: menu for menu in menus}
+
+        # 第一阶段：创建所有菜单（不设置 parent_id）
+        code_to_id_map: dict[str, str] = {}
+
+        for menu_def in menus:
+            stmt = insert(ModuleMenu).values(
+                module_id=module_id,
+                parent_id=None,  # 先不设置父菜单
+                code=menu_def.code,
+                name=menu_def.name,
+                path=menu_def.path,
+                icon=menu_def.icon,
+                sort_order=menu_def.sort_order,
+                is_visible=menu_def.is_visible,
+            ).on_conflict_do_update(
+                index_elements=["code"],
+                set_={
+                    "name": menu_def.name,
+                    "path": menu_def.path,
+                    "icon": menu_def.icon,
+                    "sort_order": menu_def.sort_order,
+                    "is_visible": menu_def.is_visible,
+                },
+            ).returning(ModuleMenu.id)
+
+            result = await session.execute(stmt)
+            menu_id = result.scalar_one()
+            code_to_id_map[menu_def.code] = menu_id
+
+        # 第二阶段：更新父子关系（使用 update 语句避免 N+1 问题）
+        for menu_def in menus:
+            if menu_def.parent_code is None:
+                continue
+
+            # 检查父菜单是否存在
+            if menu_def.parent_code not in code_to_id_map:
+                raise ValueError(
+                    f"菜单 {menu_def.code} 的父菜单 {menu_def.parent_code} 不存在"
+                )
+
+            parent_id = code_to_id_map[menu_def.parent_code]
+            menu_id = code_to_id_map[menu_def.code]
+
+            # 使用 update 语句直接更新，避免 SELECT
+            stmt = (
+                update(ModuleMenu)
+                .where(ModuleMenu.id == menu_id)
+                .values(parent_id=parent_id)
+            )
+            await session.execute(stmt)
+
+    def _detect_menu_cycles(self, menus: list[MenuDef]) -> None:
+        """
+        检测菜单循环引用
+
+        Args:
+            menus: 菜单定义列表
+
+        Raises:
+            ValueError: 存在循环引用
+        """
+        menu_def_map = {menu.code: menu for menu in menus}
+        visited: set[str] = set()
+        rec_stack: set[str] = set()
+
+        def has_cycle(code: str) -> bool:
+            visited.add(code)
+            rec_stack.add(code)
+
+            menu = menu_def_map.get(code)
+            if menu and menu.parent_code:
+                # 父菜单不存在于当前批次，跳过检测（由 _sync_menus 处理）
+                if menu.parent_code not in menu_def_map:
+                    rec_stack.remove(code)
+                    return False
+                if menu.parent_code not in visited:
+                    if has_cycle(menu.parent_code):
+                        return True
+                elif menu.parent_code in rec_stack:
+                    return True
+
+            rec_stack.remove(code)
+            return False
+
+        for menu in menus:
+            if menu.code not in visited:
+                if has_cycle(menu.code):
+                    raise ValueError(
+                        f"检测到菜单循环引用，涉及菜单: {menu.code}"
+                    )
 
     async def _sync_permissions(
-        self, module_code: str, permissions: list
+        self,
+        session: AsyncSession,
+        module_id: str,
+        module_code: str,
+        permissions: list[PermissionDef],
     ) -> None:
         """
         同步权限定义
@@ -59,14 +248,40 @@ class ModuleDefinitionSyncService:
         将模块的权限定义同步到数据库。
 
         Args:
+            session: 数据库会话
+            module_id: 模块ID
             module_code: 模块编码
             permissions: 权限定义列表
         """
-        # TODO: 实现权限同步逻辑
-        pass
+        if not permissions:
+            return
+
+        for perm_def in permissions:
+            stmt = insert(ModulePermission).values(
+                module_id=module_id,
+                code=perm_def.code,
+                name=perm_def.name,
+                resource=perm_def.resource,
+                action=perm_def.action,
+                description=perm_def.description,
+            ).on_conflict_do_update(
+                index_elements=["code"],
+                set_={
+                    "name": perm_def.name,
+                    "resource": perm_def.resource,
+                    "action": perm_def.action,
+                    "description": perm_def.description,
+                },
+            )
+
+            await session.execute(stmt)
 
     async def _sync_roles(
-        self, module_code: str, roles: list
+        self,
+        session: AsyncSession,
+        module_id: str,
+        module_code: str,
+        roles: list[RoleDef],
     ) -> None:
         """
         同步角色定义
@@ -74,20 +289,157 @@ class ModuleDefinitionSyncService:
         将模块的默认角色定义同步到数据库。
 
         Args:
+            session: 数据库会话
+            module_id: 模块ID
             module_code: 模块编码
             roles: 角色定义列表
-        """
-        # TODO: 实现角色同步逻辑
-        pass
 
-    async def _cleanup_orphans(self, module_code: str) -> None:
+        Raises:
+            ValueError: 角色权限 code 不存在
+        """
+        if not roles:
+            return
+
+        # 获取模块所有权限的 code -> id 映射
+        stmt = select(ModulePermission.id, ModulePermission.code).where(
+            ModulePermission.module_id == module_id
+        )
+        result = await session.execute(stmt)
+        perm_code_to_id = {row.code: row.id for row in result.all()}
+
+        for role_def in roles:
+            # Upsert 角色
+            stmt = insert(ModuleRole).values(
+                module_id=module_id,
+                code=role_def.code,
+                name=role_def.name,
+                description=role_def.description,
+                is_system=role_def.is_system,
+            ).on_conflict_do_update(
+                constraint="uq_module_roles_module_code",
+                set_={
+                    "name": role_def.name,
+                    "description": role_def.description,
+                    "is_system": role_def.is_system,
+                },
+            ).returning(ModuleRole.id)
+
+            result = await session.execute(stmt)
+            role_id = result.scalar_one()
+
+            # 同步角色权限关联
+            if role_def.permission_codes:
+                # 验证权限是否存在
+                missing_perms = [
+                    code
+                    for code in role_def.permission_codes
+                    if code not in perm_code_to_id
+                ]
+                if missing_perms:
+                    raise ValueError(
+                        f"角色 {role_def.code} 引用的权限不存在: {missing_perms}"
+                    )
+
+                # 删除旧的权限关联
+                stmt = delete(ModuleRolePermission).where(
+                    ModuleRolePermission.module_role_id == role_id
+                )
+                await session.execute(stmt)
+
+                # 创建新的权限关联
+                for perm_code in role_def.permission_codes:
+                    perm_id = perm_code_to_id[perm_code]
+                    stmt = insert(ModuleRolePermission).values(
+                        module_role_id=role_id,
+                        module_permission_id=perm_id,
+                    ).on_conflict_do_nothing(
+                        constraint="uq_module_role_permissions_role_perm"
+                    )
+                    await session.execute(stmt)
+
+    async def _cleanup_orphans(
+        self,
+        session: AsyncSession,
+        module_id: str,
+        module_code: str,
+        menus: list[MenuDef],
+        permissions: list[PermissionDef],
+        roles: list[RoleDef],
+    ) -> None:
         """
         清理孤儿数据
 
         删除数据库中已不存在于模块定义的菜单、权限、角色。
 
         Args:
+            session: 数据库会话
+            module_id: 模块ID
             module_code: 模块编码
+            menus: 菜单定义列表
+            permissions: 权限定义列表
+            roles: 角色定义列表
         """
-        # TODO: 实现孤儿数据清理逻辑
-        pass
+        # 清理孤儿菜单
+        if menus:
+            menu_codes = [menu.code for menu in menus]
+            stmt = delete(ModuleMenu).where(
+                ModuleMenu.module_id == module_id,
+                ModuleMenu.code.not_in(menu_codes),
+            )
+            await session.execute(stmt)
+        else:
+            # 如果没有菜单定义，删除该模块的所有菜单
+            stmt = delete(ModuleMenu).where(ModuleMenu.module_id == module_id)
+            await session.execute(stmt)
+
+        # 清理孤儿权限
+        if permissions:
+            perm_codes = [perm.code for perm in permissions]
+            stmt = delete(ModulePermission).where(
+                ModulePermission.module_id == module_id,
+                ModulePermission.code.not_in(perm_codes),
+            )
+            await session.execute(stmt)
+        else:
+            stmt = delete(ModulePermission).where(
+                ModulePermission.module_id == module_id
+            )
+            await session.execute(stmt)
+
+        # 清理孤儿角色
+        if roles:
+            role_codes = [role.code for role in roles]
+            # 先获取要删除的角色ID
+            stmt = select(ModuleRole.id).where(
+                ModuleRole.module_id == module_id,
+                ModuleRole.code.not_in(role_codes),
+            )
+            result = await session.execute(stmt)
+            role_ids_to_delete = [row.id for row in result.all()]
+
+            if role_ids_to_delete:
+                # 删除角色权限关联
+                stmt = delete(ModuleRolePermission).where(
+                    ModuleRolePermission.module_role_id.in_(role_ids_to_delete)
+                )
+                await session.execute(stmt)
+
+                # 删除角色
+                stmt = delete(ModuleRole).where(ModuleRole.id.in_(role_ids_to_delete))
+                await session.execute(stmt)
+        else:
+            # 如果没有角色定义，删除该模块的所有角色
+            stmt = select(ModuleRole.id).where(ModuleRole.module_id == module_id)
+            result = await session.execute(stmt)
+            role_ids = [row.id for row in result.all()]
+
+            if role_ids:
+                # 删除角色权限关联
+                stmt = delete(ModuleRolePermission).where(
+                    ModuleRolePermission.module_role_id.in_(role_ids)
+                )
+                await session.execute(stmt)
+
+                # 删除角色
+                stmt = delete(ModuleRole).where(ModuleRole.module_id == module_id)
+                await session.execute(stmt)
