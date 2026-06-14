@@ -2,7 +2,34 @@
 IAM 模块数据初始化
 
 初始化预定义角色和权限。
-"""
+
+---
+已废弃 (DEPRECATED)
+---
+
+此 seed 脚本已废弃，功能已迁移至模块元数据声明系统。
+
+新的实现方式：
+在 `src/iam/module.py` 中实现 `get_module_definition()` 方法，
+声明菜单、权限、角色等元数据。系统启动时会自动同步到数据库。
+
+示例：
+```python
+def get_module_definition(self) -> ModuleDefinition:
+    return ModuleDefinition(
+        code="iam",
+        permissions=[...],
+        default_roles=[...],
+    )
+```
+
+参考：
+- framework/module/definition.py - 数据结构定义
+- framework/module/sync_service.py - 同步服务
+- iam/module.py - IAM 模块实现示例
+
+保留此文件仅供参考，未来版本将删除。
+---
 
 from __future__ import annotations
 

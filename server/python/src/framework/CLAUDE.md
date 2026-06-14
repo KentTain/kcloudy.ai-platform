@@ -244,3 +244,163 @@ uv run pytest tests/framework/integration/ -v
 ```
 
 详细设计和使用示例见 [README.md](README.md)。
+
+## 模块元数据声明
+
+### 概述
+
+模块元数据声明是一种声明式的方式，用于定义模块的菜单、权限、角色等元数据。系统启动时会自动将这些定义同步到数据库，确保代码与数据库状态一致。
+
+### 实现步骤
+
+在模块的 `module.py` 中实现 `get_module_definition()` 方法：
+
+```python
+from framework.module.definition import (
+    MenuDef,
+    ModuleDefinition,
+    PermissionDef,
+    RoleDef,
+)
+
+class MyModule:
+    # ... 其他方法 ...
+
+    def get_module_definition(self) -> ModuleDefinition:
+        """
+        返回模块的元数据定义
+        """
+        return ModuleDefinition(
+            code="mymodule",
+            name="我的模块",
+            description="模块描述",
+            icon="Apps",
+            version="1.0.0",
+            menus=[...],
+            permissions=[...],
+            default_roles=[...],
+        )
+```
+
+### 数据结构
+
+#### MenuDef（菜单定义）
+
+```python
+@dataclass
+class MenuDef:
+    code: str           # 唯一标识，格式：<module>.<name>
+    name: str           # 显示名称
+    path: str           # 前端路由路径
+    icon: str | None    # 图标标识（可选）
+    parent_code: str | None  # 父菜单 code（可选）
+    sort_order: int     # 排序顺序，默认 0
+    is_visible: bool    # 是否可见，默认 True
+```
+
+#### PermissionDef（权限定义）
+
+```python
+@dataclass
+class PermissionDef:
+    code: str           # 唯一标识，格式：<module>:<resource>:<action>
+    name: str           # 显示名称
+    resource: str       # 资源名称
+    action: str         # 操作类型：read/write/delete
+    description: str | None  # 权限描述（可选）
+```
+
+#### RoleDef（角色定义）
+
+```python
+@dataclass
+class RoleDef:
+    code: str           # 角色编码
+    name: str           # 角色名称
+    description: str | None  # 角色描述（可选）
+    permission_codes: list[str]  # 关联的权限 code 列表
+    is_system: bool     # 是否系统内置角色，默认 False
+```
+
+#### ModuleDefinition（模块定义）
+
+```python
+@dataclass
+class ModuleDefinition:
+    code: str           # 模块编码
+    name: str           # 模块名称
+    description: str | None  # 模块描述（可选）
+    icon: str | None    # 图标标识（可选）
+    version: str        # 模块版本，默认 "1.0.0"
+    menus: list[MenuDef]
+    permissions: list[PermissionDef]
+    default_roles: list[RoleDef]
+```
+
+### 命名规范
+
+| 类型 | 格式 | 示例 |
+|------|------|------|
+| 菜单 code | `<module>.<name>` | `iam.users`, `demo.home` |
+| 权限 code | `<module>:<resource>:<action>` | `iam:user:read`, `demo:dataset:write` |
+
+**权限通配符**：角色可以引用通配符权限，如 `iam:*:read` 匹配模块所有读取权限。
+
+### 完整示例
+
+参考 IAM 模块的实现（`src/iam/module.py`）：
+
+```python
+def get_module_definition(self) -> ModuleDefinition:
+    return ModuleDefinition(
+        code="iam",
+        name="身份与访问管理",
+        description="用户认证、授权、角色权限管理",
+        icon="Shield",
+        version="1.0.0",
+        menus=[
+            MenuDef(code="iam.users", name="用户管理", path="/iam/users", icon="Users", sort_order=1),
+            MenuDef(code="iam.roles", name="角色管理", path="/iam/roles", icon="Badge", sort_order=2),
+            MenuDef(code="iam.departments", name="部门管理", path="/iam/departments", icon="Building", sort_order=3),
+        ],
+        permissions=[
+            PermissionDef(code="iam:user:read", name="查看用户", resource="user", action="read"),
+            PermissionDef(code="iam:user:write", name="编辑用户", resource="user", action="write"),
+            PermissionDef(code="iam:user:delete", name="删除用户", resource="user", action="delete"),
+            # ... 更多权限
+        ],
+        default_roles=[
+            RoleDef(
+                code="admin",
+                name="管理员",
+                description="IAM 模块管理员，拥有所有权限",
+                permission_codes=["iam:*:*"],
+                is_system=True,
+            ),
+            RoleDef(
+                code="viewer",
+                name="查看者",
+                description="IAM 模块只读用户",
+                permission_codes=["iam:*:read"],
+                is_system=True,
+            ),
+        ],
+    )
+```
+
+### 同步机制
+
+系统启动时，`ModuleDefinitionSyncService` 会：
+
+1. **Upsert 模块记录**：创建或更新 `Module` 表中的模块信息
+2. **同步菜单**：创建或更新菜单，处理父子关系
+3. **同步权限**：创建或更新权限定义
+4. **同步角色**：创建或更新角色，关联权限
+5. **清理孤儿数据**：删除数据库中已不存在于模块定义的菜单、权限、角色
+
+### 注意事项
+
+1. **菜单层级**：支持多级菜单，通过 `parent_code` 建立父子关系
+2. **循环引用检测**：系统会自动检测菜单的循环引用并报错
+3. **权限引用验证**：角色引用的权限必须存在于同一模块的权限列表中
+4. **幂等性**：多次执行同步操作是安全的，不会产生重复数据
