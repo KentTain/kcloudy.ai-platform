@@ -21,8 +21,8 @@ const convertToUserInfo = (user: User): UserInfo => ({
   nickname: user.nickname || user.username,
   avatar: user.avatar,
   email: user.email,
-  roles: [],
-  permissions: [],
+  roles: user.roles || [],
+  permissions: user.permissions || [],
 });
 
 const decodeJwtPayload = (token: string): Record<string, any> => {
