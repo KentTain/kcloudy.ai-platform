@@ -88,25 +88,25 @@ export const tenantRoutes: RouteRecordRaw[] = [
     path: "tenants",
     name: "TenantManagement",
     component: () => import("@/tenant/pages/tenants/TenantList.vue"),
-    meta: { title: "租户管理", icon: "tenant", requiresAuth: true, roles: ["tenant_admin"] },
+    meta: { title: "租户管理", icon: "tenant", requiresAuth: true, roles: ["admin"] },
   },
   {
     path: "tenants/create",
     name: "TenantCreate",
     component: () => import("@/tenant/pages/tenants/TenantForm.vue"),
-    meta: { title: "创建租户", hidden: true, requiresAuth: true, roles: ["tenant_admin"] },
+    meta: { title: "创建租户", hidden: true, requiresAuth: true, roles: ["admin"] },
   },
   {
     path: "tenants/:id",
     name: "TenantDetail",
     component: () => import("@/tenant/pages/tenants/TenantDetail.vue"),
-    meta: { title: "租户详情", hidden: true, requiresAuth: true, roles: ["tenant_admin"] },
+    meta: { title: "租户详情", hidden: true, requiresAuth: true, roles: ["admin"] },
   },
   {
     path: "tenants/:id/edit",
     name: "TenantEdit",
     component: () => import("@/tenant/pages/tenants/TenantForm.vue"),
-    meta: { title: "编辑租户", hidden: true, requiresAuth: true, roles: ["tenant_admin"] },
+    meta: { title: "编辑租户", hidden: true, requiresAuth: true, roles: ["admin"] },
   },
 ];
 
