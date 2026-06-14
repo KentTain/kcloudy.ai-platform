@@ -102,8 +102,8 @@ const handleDeactivate = async (row: Tenant) => {
   notifySuccess('停用成功')
 }
 
-const canCreate = computed(() => frameworkUserStore.hasRole('tenant_admin'))
-const canEdit = computed(() => frameworkUserStore.hasRole('tenant_admin'))
+const canCreate = computed(() => frameworkUserStore.hasRole('admin'))
+const canEdit = computed(() => frameworkUserStore.hasRole('admin'))
 
 function formatDate(dateStr?: string): string {
   if (!dateStr) return '永久'
