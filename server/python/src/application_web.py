@@ -17,6 +17,7 @@ from framework.common.time import ChinaTimeZone
 from framework.database.core.engine import setup_engine
 from framework.middlewares.test_user_middleware import TestUserMiddleware
 from framework.module import ModuleDescriptor, get_registry, load_modules
+from framework.module.sync_service import ModuleDefinitionSyncService
 from framework.tenant.middleware import TenantMiddleware
 from framework.tenant.protocols import register_tenant_provider
 from framework.utils.log_util import write_info, write_success, write_warning
@@ -57,6 +58,10 @@ async def lifespan(app: FastAPI):
         else:
             phase.details["TenantProvider"] = "不可用"
 
+    with timer.phase("模块定义同步", order=3) as phase:
+        # 同步模块定义（菜单、权限、角色）到数据库
+        await _run_module_definition_sync(phase)
+
     with timer.phase("数据初始化", order=4):
         # 自动执行各模块 seed 初始化（异常不阻止应用启动）
         await _run_seed_initialization()
@@ -84,6 +89,28 @@ def _get_tenant_provider():
     except ImportError:
         write_warning("TenantProvider 不可用")
         return None
+
+
+async def _run_module_definition_sync(phase) -> None:
+    """
+    执行模块定义同步
+
+    将所有模块的元数据定义（菜单、权限、角色）同步到数据库。
+
+    Args:
+        phase: 启动计时器阶段对象，用于记录同步详情
+    """
+    sync_service = ModuleDefinitionSyncService()
+
+    try:
+        await sync_service.sync_all_modules()
+        write_success("模块定义同步完成")
+        phase.details["同步状态"] = "成功"
+    except Exception as e:
+        _logger.exception(f"模块定义同步失败: {e}")
+        phase.details["同步状态"] = f"失败: {e}"
+        # 同步失败不阻止应用启动，但记录错误
+        write_warning(f"模块定义同步失败，部分功能可能异常: {e}")
 
 
 async def _run_seed_initialization():
