@@ -6,6 +6,13 @@ IAM 模块声明
 
 from typing import Callable
 
+from framework.module.definition import (
+    MenuDef,
+    ModuleDefinition,
+    PermissionDef,
+    RoleDef,
+)
+
 from iam.models import Base
 
 
@@ -101,3 +108,67 @@ class IAMModule:
         """
         from iam.listeners.setup import setup_listeners, cleanup_listeners
         return (setup_listeners, cleanup_listeners)
+
+    def get_module_definition(self) -> ModuleDefinition:
+        """
+        返回 IAM 模块的元数据定义
+
+        包括菜单、权限、默认角色等声明
+        """
+        return ModuleDefinition(
+            code="iam",
+            name="身份与访问管理",
+            description="用户认证、授权、角色权限管理",
+            icon="Shield",
+            version="1.0.0",
+            menus=[
+                MenuDef(code="iam.users", name="用户管理", path="/iam/users", icon="Users", sort_order=1),
+                MenuDef(code="iam.roles", name="角色管理", path="/iam/roles", icon="Badge", sort_order=2),
+                MenuDef(code="iam.departments", name="部门管理", path="/iam/departments", icon="Building", sort_order=3),
+                MenuDef(code="iam.tenants", name="租户管理", path="/iam/tenants", icon="Organization", sort_order=4),
+                MenuDef(code="iam.menus", name="菜单管理", path="/iam/menus", icon="Menu", sort_order=5),
+                MenuDef(code="iam.permissions", name="权限管理", path="/iam/permissions", icon="Lock", sort_order=6),
+            ],
+            permissions=[
+                # 用户权限
+                PermissionDef(code="iam:user:read", name="查看用户", resource="user", action="read"),
+                PermissionDef(code="iam:user:write", name="编辑用户", resource="user", action="write"),
+                PermissionDef(code="iam:user:delete", name="删除用户", resource="user", action="delete"),
+                # 角色权限
+                PermissionDef(code="iam:role:read", name="查看角色", resource="role", action="read"),
+                PermissionDef(code="iam:role:write", name="编辑角色", resource="role", action="write"),
+                PermissionDef(code="iam:role:delete", name="删除角色", resource="role", action="delete"),
+                # 部门权限
+                PermissionDef(code="iam:department:read", name="查看部门", resource="department", action="read"),
+                PermissionDef(code="iam:department:write", name="编辑部门", resource="department", action="write"),
+                PermissionDef(code="iam:department:delete", name="删除部门", resource="department", action="delete"),
+                # 租户权限
+                PermissionDef(code="iam:tenant:read", name="查看租户", resource="tenant", action="read"),
+                PermissionDef(code="iam:tenant:write", name="编辑租户", resource="tenant", action="write"),
+                PermissionDef(code="iam:tenant:delete", name="删除租户", resource="tenant", action="delete"),
+                # 菜单权限
+                PermissionDef(code="iam:menu:read", name="查看菜单", resource="menu", action="read"),
+                PermissionDef(code="iam:menu:write", name="编辑菜单", resource="menu", action="write"),
+                PermissionDef(code="iam:menu:delete", name="删除菜单", resource="menu", action="delete"),
+                # 权限管理权限
+                PermissionDef(code="iam:permission:read", name="查看权限", resource="permission", action="read"),
+                PermissionDef(code="iam:permission:write", name="编辑权限", resource="permission", action="write"),
+                PermissionDef(code="iam:permission:delete", name="删除权限", resource="permission", action="delete"),
+            ],
+            default_roles=[
+                RoleDef(
+                    code="admin",
+                    name="管理员",
+                    description="IAM 模块管理员，拥有所有权限",
+                    permission_codes=["iam:*:*"],
+                    is_system=True,
+                ),
+                RoleDef(
+                    code="viewer",
+                    name="查看者",
+                    description="IAM 模块只读用户",
+                    permission_codes=["iam:*:read"],
+                    is_system=True,
+                ),
+            ],
+        )

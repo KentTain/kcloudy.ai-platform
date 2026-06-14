@@ -6,6 +6,13 @@ AI 模块声明
 
 from typing import Callable
 
+from framework.module.definition import (
+    MenuDef,
+    ModuleDefinition,
+    PermissionDef,
+    RoleDef,
+)
+
 from ai.models import Base
 
 
@@ -90,3 +97,42 @@ class AIModule:
         from ai.listeners.setup import setup_listeners, cleanup_listeners
 
         return (setup_listeners, cleanup_listeners)
+
+    def get_module_definition(self) -> ModuleDefinition:
+        """
+        返回 AI 模块的元数据定义
+
+        包括菜单、权限、默认角色等声明
+        """
+        return ModuleDefinition(
+            code="ai",
+            name="AI 能力",
+            description="AI 插件管理、模型调用、智能助手",
+            icon="Robot",
+            version="1.0.0",
+            menus=[
+                MenuDef(code="ai.plugins", name="插件管理", path="/ai/plugins", icon="Puzzle", sort_order=1),
+            ],
+            permissions=[
+                # 插件权限
+                PermissionDef(code="ai:plugin:read", name="查看插件", resource="plugin", action="read"),
+                PermissionDef(code="ai:plugin:write", name="编辑插件", resource="plugin", action="write"),
+                PermissionDef(code="ai:plugin:delete", name="删除插件", resource="plugin", action="delete"),
+            ],
+            default_roles=[
+                RoleDef(
+                    code="admin",
+                    name="管理员",
+                    description="AI 模块管理员，拥有所有权限",
+                    permission_codes=["ai:*:*"],
+                    is_system=True,
+                ),
+                RoleDef(
+                    code="viewer",
+                    name="查看者",
+                    description="AI 模块只读用户",
+                    permission_codes=["ai:*:read"],
+                    is_system=True,
+                ),
+            ],
+        )
