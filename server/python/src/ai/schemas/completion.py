@@ -4,7 +4,6 @@
 """
 
 from typing import Any, Literal
-from uuid import uuid4
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -54,28 +53,6 @@ class FileItem(BaseModel):
         if v not in ["remote_url", "local_file"]:
             raise ValueError("传递方式必须是 remote_url 或 local_file")
         return v
-
-
-class LLMChatCompletion(BaseModel):
-    """LLM 对话请求 Schema
-
-    .. deprecated::
-        该 Schema 已废弃，请使用 `AIChatRequest` 替代。
-        AIChatRequest 采用 Vercel AI SDK 标准格式，支持更丰富的消息结构。
-        迁移路径: from ai.schemas.chat import AIChatRequest
-    """
-
-    model: ModelConfig = Field(description="模型配置")
-    query: str = Field(description="用户输入/提问内容")
-    conversation_id: str | None = Field(
-        None,
-        description="会话 ID。如果提供则恢复现有会话，如果不提供则创建新会话",
-        examples=[str(uuid4())],
-    )
-    files: list[FileItem] | None = Field(
-        None, description="上传的文件列表（目前仅支持图片）"
-    )
-    search: SearchConfig | None = Field(None, description="联网搜索配置")
 
 
 # SSE 事件 Schema
