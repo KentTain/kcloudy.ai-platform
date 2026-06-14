@@ -20,6 +20,8 @@ export interface User {
   is_phone_verified: boolean;
   last_login_at?: string;
   created_at: string;
+  roles: string[];
+  permissions: string[];
 }
 
 // 角色类型
