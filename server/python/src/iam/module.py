@@ -49,9 +49,11 @@ class IAMModule:
         from iam.controllers.inner.tenant_menu_controller import router as inner_tenant_menu_router
         from iam.controllers.inner.tenant_permission_controller import router as inner_tenant_permission_router
         from iam.controllers.inner.tenant_role_controller import router as inner_tenant_role_router
+        from iam.controllers.user_menu_controller import router as user_menu_router
 
         return [
             (iam_router, "/api/v1", ["IAM"]),
+            (user_menu_router, "/api/v1/user", ["User Menu"]),
             (admin_system_setting_router, "/admin/v1/system-settings", ["Admin - SystemSetting"]),
             (console_system_setting_router, "/console/v1/system-settings", ["Console - SystemSetting"]),
             (inner_user_router, "/inner/v1", ["Inner - User"]),

@@ -1,0 +1,33 @@
+"""
+用户菜单响应模型
+
+定义用户菜单 API 的响应格式。
+"""
+
+from pydantic import BaseModel, Field
+
+
+class UserMenuVo(BaseModel):
+    """
+    用户菜单视图对象
+
+    用于返回用户有权限访问的菜单树。
+    """
+
+    id: str = Field(..., description="菜单ID")
+    code: str = Field(..., description="菜单编码")
+    name: str = Field(..., description="菜单名称")
+    icon: str | None = Field(None, description="图标标识")
+    path: str | None = Field(None, description="前端路由路径")
+    sort_order: int = Field(0, description="排序号")
+    children: list["UserMenuVo"] = Field(default_factory=list, description="子菜单列表")
+
+
+class UserMenuListResponse(BaseModel):
+    """
+    用户菜单列表响应
+
+    返回当前用户有权限的菜单树。
+    """
+
+    data: list[UserMenuVo] = Field(default_factory=list, description="菜单树列表")
