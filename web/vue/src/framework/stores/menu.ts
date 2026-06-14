@@ -1,6 +1,7 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
 import { get } from "@/framework/api/client";
+import type { UserMenuVo } from "@/framework/api/menu";
 
 /**
  * 菜单树节点
@@ -29,6 +30,19 @@ export interface MenuTreeNode {
 }
 
 /**
+ * 用户菜单项（用于前端导航）
+ */
+export interface UserMenuItem {
+  id: string;
+  code: string;
+  name: string;
+  icon: string | null;
+  path: string | null;
+  sortOrder: number;
+  children: UserMenuItem[];
+}
+
+/**
  * 菜单列表响应
  */
 interface MenuListResponse {
@@ -53,7 +67,10 @@ const CACHE_KEY = "menu_cache";
  * 菜单状态管理
  */
 export const useMenuStore = defineStore("menu", () => {
+  /** 后台管理菜单树（用于 IAM 菜单管理） */
   const menus = ref<MenuTreeNode[]>([]);
+  /** 用户导航菜单（用于前端导航） */
+  const userMenus = ref<UserMenuItem[]>([]);
   const loading = ref(false);
   const error = ref<string | null>(null);
 
@@ -74,6 +91,21 @@ export const useMenuStore = defineStore("menu", () => {
         children: item.children?.length ? processMenuTree(item.children) : [],
       };
     });
+  }
+
+  /**
+   * 将 UserMenuVo 转换为 UserMenuItem
+   */
+  function convertToUserMenuItem(vo: UserMenuVo): UserMenuItem {
+    return {
+      id: vo.id,
+      code: vo.code,
+      name: vo.name,
+      icon: vo.icon,
+      path: vo.path,
+      sortOrder: vo.sort_order,
+      children: vo.children?.map(convertToUserMenuItem) || [],
+    };
   }
 
   /**
@@ -111,7 +143,7 @@ export const useMenuStore = defineStore("menu", () => {
   }
 
   /**
-   * 获取菜单数据
+   * 获取后台管理菜单数据（用于 IAM 菜单管理）
    * @param options.force 强制刷新，忽略缓存
    */
   async function fetchMenus(options?: { force?: boolean }): Promise<void> {
@@ -130,7 +162,7 @@ export const useMenuStore = defineStore("menu", () => {
   }
 
   /**
-   * 从 API 获取菜单
+   * 从 API 获取后台管理菜单
    * @param silent 静默模式，不更新 loading 状态
    */
   async function fetchFromApi(silent: boolean): Promise<void> {
@@ -153,11 +185,43 @@ export const useMenuStore = defineStore("menu", () => {
     }
   }
 
+  /**
+   * 获取用户导航菜单
+   */
+  async function fetchUserMenus(): Promise<void> {
+    loading.value = true;
+    error.value = null;
+
+    try {
+      const { getUserMenus } = await import("@/framework/api/menu");
+      const response = await getUserMenus();
+      userMenus.value = response.data.map(convertToUserMenuItem);
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : "加载菜单失败";
+      console.error("Failed to fetch user menus:", err);
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  /**
+   * 清空菜单状态
+   */
+  function clearMenus(): void {
+    menus.value = [];
+    userMenus.value = [];
+    error.value = null;
+    localStorage.removeItem(CACHE_KEY);
+  }
+
   return {
     menus,
+    userMenus,
     loading,
     error,
     fetchMenus,
+    fetchUserMenus,
+    clearMenus,
   };
 });
 

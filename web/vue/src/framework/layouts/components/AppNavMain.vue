@@ -1,10 +1,10 @@
 <script setup lang="ts">
 /**
  * AppNavMain 分组菜单组件
- * 支持权限过滤
+ * 从后端获取用户菜单，支持权限过滤
  */
 import type { FunctionalComponent } from "vue";
-import { computed, ref } from "vue";
+import { computed, onMounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import {
   ChevronRight,
@@ -12,6 +12,14 @@ import {
   Activity,
   Database,
   Settings,
+  Users,
+  Shield,
+  Badge,
+  Building,
+  Key,
+  Package,
+  Puzzle,
+  type LucideIcon,
 } from "@lucide/vue";
 import {
   Collapsible,
@@ -30,7 +38,29 @@ import {
   SidebarMenuSubItem,
 } from "@/components/ui/sidebar";
 import { useUserStore } from "@/framework/stores/user";
+import { useMenuStore, type UserMenuItem } from "@/framework/stores/menu";
 
+/**
+ * 图标映射表
+ * 将后端返回的图标名称映射到 Lucide 组件
+ */
+const ICON_MAP: Record<string, LucideIcon> = {
+  Users,
+  Shield,
+  Settings,
+  Badge,
+  Building,
+  Key,
+  Package,
+  Database,
+  Puzzle,
+  Home,
+  Activity,
+};
+
+/**
+ * 内部菜单项接口
+ */
 interface MenuItem {
   icon?: FunctionalComponent;
   title: string;
@@ -39,51 +69,63 @@ interface MenuItem {
   items?: MenuItem[];
 }
 
+/**
+ * 内部菜单分组接口
+ */
 interface MenuGroup {
   title?: string;
   items: MenuItem[];
 }
 
-const props = withDefaults(
-  defineProps<{
-    items?: MenuGroup[];
-  }>(),
-  {
-    items: () => [],
-  }
-);
-
 const route = useRoute();
 const router = useRouter();
 const userStore = useUserStore();
+const menuStore = useMenuStore();
 
-const defaultItems: MenuGroup[] = [
-  {
-    items: [
-      { icon: Home, title: "首页", url: "/", permissionKey: "home" },
-      { icon: Activity, title: "健康检查", url: "/health", permissionKey: "health" },
-      { icon: Database, title: "知识库", url: "/datasets", permissionKey: "datasets" },
-    ],
-  },
-  {
-    title: "系统管理",
-    items: [
-      {
-        icon: Settings,
-        title: "IAM",
-        permissionKey: "iam",
-        items: [
-          { title: "用户管理", url: "/iam/users", permissionKey: "iam.users" },
-          { title: "角色管理", url: "/iam/roles", permissionKey: "iam.roles" },
-          { title: "部门管理", url: "/iam/departments", permissionKey: "iam.departments" },
-          { title: "租户管理", url: "/iam/tenants", permissionKey: "iam.tenants" },
-          { title: "菜单管理", url: "/iam/menus", permissionKey: "iam.menus" },
-          { title: "权限管理", url: "/iam/permissions", permissionKey: "iam.permissions" },
-        ],
-      },
-    ],
-  },
-];
+/**
+ * 将 UserMenuItem 转换为内部 MenuItem
+ */
+function convertToMenuItem(item: UserMenuItem): MenuItem {
+  const icon = item.icon ? ICON_MAP[item.icon] : undefined;
+  const children = item.children?.map(convertToMenuItem) || [];
+
+  return {
+    icon,
+    title: item.name,
+    url: item.path || undefined,
+    permissionKey: item.code,
+    items: children.length > 0 ? children : undefined,
+  };
+}
+
+/**
+ * 将用户菜单转换为分组结构
+ * 第一级菜单作为分组，第二级作为菜单项
+ */
+function convertToMenuGroups(items: UserMenuItem[]): MenuGroup[] {
+  return items.map((item) => {
+    const children = item.children?.map(convertToMenuItem) || [];
+
+    // 如果有子菜单，第一级作为分组
+    if (children.length > 0) {
+      return {
+        title: item.name,
+        items: children,
+      };
+    }
+
+    // 如果没有子菜单，作为顶级菜单项
+    const icon = item.icon ? ICON_MAP[item.icon] : undefined;
+    return {
+      items: [{
+        icon,
+        title: item.name,
+        url: item.path || undefined,
+        permissionKey: item.code,
+      }],
+    };
+  });
+}
 
 // 权限检查函数
 function hasPermissionKey(permissionKey: string | undefined): boolean {
@@ -131,11 +173,23 @@ function filterMenuGroups(groups: MenuGroup[]): MenuGroup[] {
     .filter((g): g is MenuGroup => g !== null);
 }
 
-const rawMenuItems = computed(() =>
-  props.items.length > 0 ? props.items : defaultItems
-);
+// 计算菜单项
+const menuItems = computed(() => {
+  const userMenus = menuStore.userMenus;
 
-const menuItems = computed(() => filterMenuGroups(rawMenuItems.value));
+  if (userMenus.length === 0) {
+    return [];
+  }
+
+  const groups = convertToMenuGroups(userMenus);
+  return filterMenuGroups(groups);
+});
+
+// 加载状态
+const loading = computed(() => menuStore.loading);
+
+// 是否有菜单
+const hasMenus = computed(() => menuItems.value.length > 0);
 
 const expandedMenus = ref<string[]>([]);
 
@@ -159,9 +213,27 @@ const toggleExpand = (title: string) => {
 const handleNavigate = (url: string) => {
   router.push(url);
 };
+
+// 组件挂载时获取菜单
+onMounted(() => {
+  if (menuStore.userMenus.length === 0) {
+    menuStore.fetchUserMenus();
+  }
+});
 </script>
 
 <template>
+  <!-- 加载状态 -->
+  <div v-if="loading" class="p-4 text-center text-muted-foreground">
+    加载菜单中...
+  </div>
+
+  <!-- 无菜单提示 -->
+  <div v-else-if="!hasMenus" class="p-4 text-center text-muted-foreground">
+    暂无可用菜单
+  </div>
+
+  <!-- 菜单列表 -->
   <SidebarGroup v-for="(group, groupIndex) in menuItems" :key="groupIndex">
     <SidebarGroupLabel v-if="group.title">{{ group.title }}</SidebarGroupLabel>
     <SidebarGroupContent>

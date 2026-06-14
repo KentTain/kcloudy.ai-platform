@@ -32,9 +32,17 @@ export interface ModuleDescriptor {
  * 菜单项接口
  */
 export interface MenuItem {
+  /** 菜单代码 */
+  code?: string;
+  /** 菜单标题 */
   title: string;
+  /** 路由路径 */
   path?: string;
+  /** 图标名称 */
   icon?: string;
+  /** 排序值 */
+  sortOrder?: number;
+  /** 子菜单 */
   children?: MenuItem[];
 }
 

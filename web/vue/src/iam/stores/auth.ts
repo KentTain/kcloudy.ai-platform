@@ -1,6 +1,7 @@
 ﻿import { defineStore } from "pinia";
 import { computed, ref } from "vue";
 import { useUserStore } from "@/framework/stores";
+import { useMenuStore } from "@/framework/stores/menu";
 import type { UserInfo } from "@/framework/stores/user";
 import {
   getCurrentUser as getCurrentUserApi,
@@ -64,6 +65,7 @@ const createFallbackUserInfo = (account: string, accessToken: string): UserInfo 
 export const useAuthStore = defineStore("iam-auth", () => {
   const loading = ref(false);
   const userStore = useUserStore();
+  const menuStore = useMenuStore();
 
   const login = async (data: LoginRequest) => {
     loading.value = true;
@@ -76,12 +78,12 @@ export const useAuthStore = defineStore("iam-auth", () => {
       localStorage.setItem("token", access_token);
       localStorage.setItem("refresh_token", refresh_token);
       localStorage.setItem("token_expires_at", String(expires_at));
-      
+
       // 保存租户 ID
       if (tenant_id) {
         localStorage.setItem("tenant_id", tenant_id);
       }
-      
+
       userStore.setToken(access_token);
 
       try {
@@ -90,6 +92,14 @@ export const useAuthStore = defineStore("iam-auth", () => {
       } catch (error) {
         console.warn("getCurrentUser failed after login, using fallback user info:", error);
         userStore.setUserInfo(createFallbackUserInfo(data.account, access_token));
+      }
+
+      // 获取用户菜单
+      try {
+        await menuStore.fetchUserMenus();
+      } catch (error) {
+        console.warn("Failed to fetch user menus after login:", error);
+        // 菜单获取失败不阻塞登录流程
       }
 
       notifySuccess("登录成功");
@@ -115,6 +125,7 @@ export const useAuthStore = defineStore("iam-auth", () => {
       localStorage.removeItem("token_expires_at");
       localStorage.removeItem("tenant_id");
       userStore.logout();
+      menuStore.clearMenus();
     }
   };
 
