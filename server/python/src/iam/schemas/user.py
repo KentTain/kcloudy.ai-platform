@@ -147,6 +147,8 @@ class UserVo(BaseModel):
     is_phone_verified: bool
     last_login_at: datetime | None
     created_at: datetime
+    roles: list[str] = Field(default_factory=list, description="用户角色编码列表")
+    permissions: list[str] = Field(default_factory=list, description="用户权限编码列表")
 
 
 class UserListVo(BaseModel):
