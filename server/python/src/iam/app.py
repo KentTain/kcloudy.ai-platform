@@ -57,10 +57,8 @@ async def lifespan(app: FastAPI):
 async def _run_seed_initialization():
     """执行数据初始化种子脚本"""
     from iam.migrations.seeds.admin_seed import run as admin_seed_run
-    from iam.migrations.seeds.iam_seed import run as iam_seed_run
 
     seed_modules = [
-        ("角色权限", iam_seed_run),
         ("管理员", admin_seed_run),
     ]
 

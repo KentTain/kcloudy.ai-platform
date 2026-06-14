@@ -26,13 +26,6 @@ def _register_modules() -> None:
     global SEED_MODULES
 
     try:
-        from iam.migrations.seeds import tenant_seed
-
-        SEED_MODULES["tenant"] = tenant_seed.run
-    except ImportError:
-        pass
-
-    try:
         from iam.migrations.seeds import user_seed
 
         SEED_MODULES["user"] = user_seed.run
@@ -43,20 +36,6 @@ def _register_modules() -> None:
         from iam.migrations.seeds import admin_seed
 
         SEED_MODULES["admin"] = admin_seed.run
-    except ImportError:
-        pass
-
-    try:
-        from iam.migrations.seeds import iam_seed
-
-        SEED_MODULES["iam"] = iam_seed.run
-    except ImportError:
-        pass
-
-    try:
-        from iam.migrations.seeds import menu_seed
-
-        SEED_MODULES["menu"] = menu_seed.run
     except ImportError:
         pass
 

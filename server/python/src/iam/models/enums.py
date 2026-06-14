@@ -42,16 +42,14 @@ class OAuthProvider(str, EnumBase):
 class RoleCode(str, EnumBase):
     """角色编码枚举"""
 
-    TENANT_ADMIN = "tenant_admin"
-    SYSTEM_ADMIN = "system_admin"
-    USER = "user"
+    ADMIN = "admin"
+    VIEWER = "viewer"
 
     @property
     def label(self) -> str:
         labels = {
-            RoleCode.TENANT_ADMIN: "租户管理员",
-            RoleCode.SYSTEM_ADMIN: "系统管理员",
-            RoleCode.USER: "普通用户",
+            RoleCode.ADMIN: "管理员",
+            RoleCode.VIEWER: "查看者",
         }
         return labels.get(self, self.name)
 

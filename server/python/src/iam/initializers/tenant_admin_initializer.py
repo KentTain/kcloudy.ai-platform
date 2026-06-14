@@ -7,7 +7,7 @@
 from loguru import logger
 from sqlalchemy import select
 
-from iam.models import TenantAdmin
+from tenant.models import TenantAdmin
 from framework.database.core.engine import async_session
 from framework.utils.crypto import hash_password, verify_password
 

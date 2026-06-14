@@ -52,9 +52,9 @@ async def run(*, dry_run: bool = False) -> int:
         # 获取默认租户 ID
         tenant_id = tenant_config.default_tenant_id
 
-        # 获取系统管理员角色 ID
+        # 获取 IAM 模块管理员角色 ID（由模块定义同步创建）
         role_result = await session.execute(
-            text("SELECT id FROM iam.roles WHERE code = 'system_admin' LIMIT 1")
+            text("SELECT id FROM iam.roles WHERE code = 'admin' LIMIT 1")
         )
         role_row = role_result.fetchone()
         role_id = role_row[0] if role_row else None
@@ -64,7 +64,7 @@ async def run(*, dry_run: bool = False) -> int:
             write_info(f"[DRY-RUN] 默认密码: {DEFAULT_ADMIN_PASSWORD}")
             write_info(f"[DRY-RUN] 关联租户: {tenant_id}")
             if role_id:
-                write_info(f"[DRY-RUN] 分配角色: system_admin")
+                write_info(f"[DRY-RUN] 分配角色: admin")
             return 1
 
         # 创建用户
@@ -110,6 +110,6 @@ async def run(*, dry_run: bool = False) -> int:
         write_success(f"    默认密码: {DEFAULT_ADMIN_PASSWORD}")
         write_success(f"    关联租户: {tenant_id}")
         if role_id:
-            write_success(f"    分配角色: system_admin")
+            write_success(f"    分配角色: admin")
         write_warning("    [WARN] 请在生产环境中修改默认密码!")
         return 1
