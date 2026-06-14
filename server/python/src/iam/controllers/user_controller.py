@@ -26,7 +26,7 @@ from iam.schemas.user import (
     UserUpdateRequest,
     UserVo,
 )
-from iam.services import department_service, user_role_service, user_service
+from iam.services import department_service, permission_check_service, user_role_service, user_service
 from iam.services.role_service import user_role_service as user_roles_service
 from framework.database.core.engine import async_session
 from framework.tenant.context import get_tenant_id
@@ -87,17 +87,29 @@ async def get_current_user(user_id: str = Depends(get_current_user_id)) -> ORJSO
     """
     获取当前用户信息
 
-    返回当前登录用户的详细信息。
+    返回当前登录用户的详细信息，包括角色和权限。
     """
     user = await user_service.get_by_id(user_id)
     if not user:
         raise HTTPException(status_code=404, detail="用户不存在")
 
+    # 获取用户角色
+    roles = await user_roles_service.get_user_roles(user_id)
+    role_codes = [r.code for r in roles]
+
+    # 获取用户权限
+    permissions = await permission_check_service.get_user_permissions(user_id)
+
+    # 构建响应
+    user_vo = UserVo.model_validate(user)
+    user_vo.roles = role_codes
+    user_vo.permissions = permissions
+
     return ORJSONResponse(
         content={
             "code": 200,
             "msg": "success",
-            "data": UserVo.model_validate(user).model_dump(),
+            "data": user_vo.model_dump(),
         }
     )
 
