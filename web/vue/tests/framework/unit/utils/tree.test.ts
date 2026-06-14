@@ -8,7 +8,7 @@ import {
   toSelectNode,
   toSelectNodes,
 } from '@/framework/utils/tree'
-import type { TreeNode, TreeNodeTree, TreeComponentNode, TreeSelectNode } from '@/framework/types/tree'
+import type { TreeNode, TreeNodeTree, TreeSelectNode } from '@/framework/types/tree'
 
 // 测试数据
 const flatNodes: TreeNode[] = [
@@ -18,7 +18,7 @@ const flatNodes: TreeNode[] = [
   { id: '4', parent_id: null, name: '市场部', tree_level: 0, tree_leaf: true, tree_sort: 20, tree_sorts: '00000020,', tree_names: '市场部', parent_ids: 'root,' },
 ]
 
-const componentNodes: TreeComponentNode[] = [
+const componentNodes: TreeSelectNode[] = [
   { id: '1', name: '研发部', children: [
     { id: '2', name: '前端组' },
     { id: '3', name: '后端组' },

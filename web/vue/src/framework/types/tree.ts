@@ -58,20 +58,6 @@ export interface TreeNodeTree extends TreeNode {
 }
 
 /**
- * 简化版树节点接口（兼容层）
- *
- * 用于纯展示组件的简化接口。
- *
- * @deprecated 新组件推荐使用 {@link TreeSelectNode}
- */
-export interface TreeComponentNode {
-  id: string | number
-  name: string
-  children?: TreeComponentNode[]
-  [key: string]: any
-}
-
-/**
  * 树操作按钮配置
  *
  * @template TNode 树节点类型，默认为 TreeSelectNode

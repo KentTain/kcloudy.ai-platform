@@ -68,12 +68,9 @@ import { Spinner } from '@/components/ui/spinner'
 **ui/Tree 与 common/Tree 数据结构不兼容**，需根据场景选择：
 
 ```typescript
-// 简单展示树（click/toggle 事件）→ 从统一入口导入
+// 树组件（支持 checkbox/cascade/异步加载）→ 从统一入口导入
 import { Tree } from '@/components'
-
-// 功能树（checkbox/cascade/异步加载）→ 从 ui 路径导入
-import { Tree } from '@/components/ui/tree'
-import type { TreeNodeType } from '@/components/ui/tree'
+import type { TreeSelectNode } from '@/framework/types/tree'
 ```
 
 ### 手动组装型组件

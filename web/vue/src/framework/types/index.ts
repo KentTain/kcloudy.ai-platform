@@ -52,4 +52,4 @@ export interface PageResult<T> {
 }
 
 // 树节点类型
-export type { TreeNode, TreeNodeTree, TreeComponentNode, TreeAction, TreeSelectNode } from './tree'
+export type { TreeNode, TreeNodeTree, TreeAction, TreeSelectNode } from './tree'

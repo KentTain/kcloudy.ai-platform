@@ -154,25 +154,14 @@ const { treeData, selectedIds, filteredData, findNode, toggleSelect } = useTreeD
 })
 ```
 
-### ui/tree/ 废弃说明
+### 树组件使用
 
-`ui/tree/` 已废弃，请迁移到 `common/data-display/tree/`：
+使用 `Tree` 组件和 `TreeSelectNode` 类型：
 
 ```typescript
-// 旧（废弃）
-import { Tree } from '@/components/ui/tree'
-import type { TreeNodeType } from '@/components/ui/tree'
-
-// 新（推荐）
 import { Tree } from '@/components'
 import type { TreeSelectNode } from '@/framework/types/tree'
 ```
-
-| 旧类型 | 新类型 | 字段映射 |
-|--------|--------|----------|
-| `TreeNodeType.value` | `TreeSelectNode.id` | - |
-| `TreeNodeType.label` | `TreeSelectNode.name` | - |
-| `TreeNodeType.selected` | 使用组件 `modelValue` 管理 | - |
 
 ## 使用建议
 
@@ -182,4 +171,4 @@ import type { TreeSelectNode } from '@/framework/types/tree'
    - `framework/` - 框架层类型、工具、composable — 基础设施
    - `{module}/components/` - 模块专用组件
 3. **统一导入入口**：使用 `@/components` 统一入口，便于 tree-shaking
-4. **树组件统一使用 TreeSelectNode 类型**：不再使用 `ui/tree` 中的 `TreeNodeType`
+4. **树组件统一使用 TreeSelectNode 类型**：从 `@/framework/types/tree` 导入

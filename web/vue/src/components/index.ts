@@ -7,11 +7,10 @@
  * 3. 类型定义导出
  *
  * 使用方式：
- *   import { Button, Input, Dialog, Badge } from '@/components'
+ *   import { Button, Input, Dialog, Badge, Tree } from '@/components'
  *
  * 未包含的低频 ui 组件请从原始路径导入：
  *   import { Sidebar } from '@/components/ui/sidebar'
- *   import { Tree } from '@/components/ui/tree'  // 功能树，与 common/Tree 不兼容
  */
 
 // ── common 组件（优先导出，同名覆盖 ui） ──────────────────────────

@@ -35,8 +35,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { Tree } from '@/components/ui/tree'
-import type { TreeNodeType } from '@/components/ui/tree'
+import { Tree } from '@/components'
+import type { TreeSelectNode } from '@/framework/types/tree'
 import { ArrowLeft, Pencil, Package, Menu, Key, Users, Plus, Trash2, FolderOpen, FileText, Search, Shield } from '@lucide/vue'
 
 const route = useRoute()
@@ -138,17 +138,17 @@ const formatDate = (dateStr?: string): string => {
 
 // ==================== 菜单管理方法 ====================
 
-// 将 ModuleMenu 转换为 TreeNodeType
-const convertToTreeNode = (menuList: ModuleMenu[]): TreeNodeType[] => {
+// 将 ModuleMenu 转换为 TreeSelectNode
+const convertToTreeSelectNode = (menuList: ModuleMenu[]): TreeSelectNode[] => {
   return menuList.map(menu => ({
-    value: menu.id,
-    label: menu.name,
-    children: menu.children ? convertToTreeNode(menu.children) : [],
+    id: menu.id,
+    name: menu.name,
+    children: menu.children ? convertToTreeSelectNode(menu.children) : [],
   }))
 }
 
 // 菜单树数据
-const menuTreeData = computed<TreeNodeType[]>(() => convertToTreeNode(menus.value))
+const menuTreeData = computed<TreeSelectNode[]>(() => convertToTreeSelectNode(menus.value))
 
 // 选中的菜单节点值（用于 Tree 组件）
 const selectedMenuValues = computed<string[]>(() => selectedMenuId.value ? [selectedMenuId.value] : [])
@@ -222,8 +222,8 @@ const loadMenus = async () => {
 }
 
 // 处理菜单树节点点击
-const handleMenuNodeClick = (node: TreeNodeType) => {
-  selectedMenuId.value = node.value as string
+const handleMenuNodeClick = (node: TreeSelectNode) => {
+  selectedMenuId.value = node.id as string
 }
 
 // 打开新增菜单弹窗
