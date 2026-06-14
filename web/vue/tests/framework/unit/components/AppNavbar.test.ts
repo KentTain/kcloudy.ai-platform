@@ -12,6 +12,39 @@ vi.mock("@/framework/composables/useCommandPalette", () => ({
   }),
 }));
 
+// Mock sidebar
+vi.mock("@/components/ui/sidebar", () => ({
+  useSidebar: () => ({
+    isMobile: { value: false },
+    state: { value: "expanded" },
+    open: { value: true },
+    setOpen: vi.fn(),
+    openMobile: { value: false },
+    setOpenMobile: vi.fn(),
+    toggleSidebar: vi.fn(),
+  }),
+  SidebarTrigger: {
+    name: "SidebarTrigger",
+    template: '<button class="sidebar-trigger">Toggle</button>',
+  },
+}));
+
+// Mock separator
+vi.mock("@/components/ui/separator", () => ({
+  Separator: {
+    name: "Separator",
+    template: '<div class="separator"></div>',
+    props: ["orientation", "class"],
+  },
+}));
+
+// Mock Lucide icons
+vi.mock("@lucide/vue", () => ({
+  SearchIcon: { name: "SearchIcon", template: "<span>search-icon</span>" },
+  ClipboardCheckIcon: { name: "ClipboardCheckIcon", template: "<span>clipboard-icon</span>" },
+  BellIcon: { name: "BellIcon", template: "<span>bell-icon</span>" },
+}));
+
 describe("AppNavbar", () => {
   let router: ReturnType<typeof createRouter>;
 
@@ -29,22 +62,6 @@ describe("AppNavbar", () => {
     const wrapper = mount(AppNavbar, {
       global: {
         plugins: [router],
-        stubs: {
-          SidebarTrigger: true,
-          Separator: true,
-          Breadcrumb: true,
-          BreadcrumbList: true,
-          BreadcrumbItem: true,
-          BreadcrumbLink: true,
-          BreadcrumbPage: true,
-          BreadcrumbSeparator: true,
-          NavigationMenu: true,
-          NavigationMenuList: true,
-          NavigationMenuItem: true,
-          NavigationMenuLink: true,
-          Button: true,
-          RouterLink: true,
-        },
       },
     });
 
@@ -55,22 +72,6 @@ describe("AppNavbar", () => {
     const wrapper = mount(AppNavbar, {
       global: {
         plugins: [router],
-        stubs: {
-          SidebarTrigger: true,
-          Separator: true,
-          Breadcrumb: true,
-          BreadcrumbList: true,
-          BreadcrumbItem: true,
-          BreadcrumbLink: true,
-          BreadcrumbPage: true,
-          BreadcrumbSeparator: true,
-          NavigationMenu: true,
-          NavigationMenuList: true,
-          NavigationMenuItem: true,
-          NavigationMenuLink: true,
-          Button: true,
-          RouterLink: true,
-        },
       },
     });
 
@@ -82,22 +83,6 @@ describe("AppNavbar", () => {
     const wrapper = mount(AppNavbar, {
       global: {
         plugins: [router],
-        stubs: {
-          SidebarTrigger: true,
-          Separator: true,
-          Breadcrumb: true,
-          BreadcrumbList: true,
-          BreadcrumbItem: true,
-          BreadcrumbLink: true,
-          BreadcrumbPage: true,
-          BreadcrumbSeparator: true,
-          NavigationMenu: true,
-          NavigationMenuList: true,
-          NavigationMenuItem: true,
-          NavigationMenuLink: true,
-          Button: true,
-          RouterLink: true,
-        },
       },
     });
 

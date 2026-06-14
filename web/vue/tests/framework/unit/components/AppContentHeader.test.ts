@@ -15,6 +15,32 @@ vi.mock("vue-router", () => ({
   }),
 }));
 
+// Mock sidebar
+vi.mock("@/components/ui/sidebar", () => ({
+  useSidebar: () => ({
+    isMobile: { value: false },
+    state: { value: "expanded" },
+    open: { value: true },
+    setOpen: vi.fn(),
+    openMobile: { value: false },
+    setOpenMobile: vi.fn(),
+    toggleSidebar: vi.fn(),
+  }),
+  SidebarTrigger: {
+    name: "SidebarTrigger",
+    template: '<button class="sidebar-trigger">Toggle</button>',
+  },
+}));
+
+// Mock separator
+vi.mock("@/components/ui/separator", () => ({
+  Separator: {
+    name: "Separator",
+    template: '<div class="separator"></div>',
+    props: ["orientation", "class"],
+  },
+}));
+
 describe("AppContentHeader", () => {
   beforeEach(() => {
     setActivePinia(createPinia());
@@ -24,11 +50,6 @@ describe("AppContentHeader", () => {
     const wrapper = mount(AppContentHeader, {
       global: {
         plugins: [createPinia()],
-        stubs: {
-          SidebarTrigger: true,
-          Separator: true,
-          RouterLink: true,
-        },
       },
     });
 
