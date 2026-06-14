@@ -1,4 +1,36 @@
-## 新增需求
+# Module Descriptor 规范
+
+## Purpose
+
+定义模块描述符接口，支持模块动态加载和装配。
+
+## ADDED Requirements
+
+### 需求:后端 ModuleDescriptor 协议扩展
+
+系统必须扩展后端 ModuleDescriptor 协议，新增 get_module_definition() 方法。
+
+#### 场景:模块实现 get_module_definition
+- **当** 模块类实现 get_module_definition() 方法
+- **那么** 返回 ModuleDefinition 实例，包含模块的菜单、权限、默认角色定义
+
+#### 场景:模块未实现 get_module_definition
+- **当** 模块类未实现 get_module_definition() 方法
+- **那么** 返回 None，同步服务跳过该模块
+
+### 需求:前端 ModuleDescriptor 接口对齐
+
+系统必须对齐前端 ModuleDescriptor 接口与后端协议。
+
+#### 场景:前端类型定义更新
+- **当** 定义前端 ModuleDescriptor 类型
+- **那么** 必须支持 getMenuItems() 方法，返回类型为 MenuItem[]
+
+#### 场景:前端菜单与后端一致
+- **当** 前端模块的 getMenuItems() 返回菜单列表
+- **那么** 菜单结构应与后端 ModuleDefinition.menus 一致
+
+## MODIFIED Requirements
 
 ### 需求:ModuleDescriptor 接口定义
 
@@ -45,11 +77,3 @@ ModuleDescriptor 接口必须支持以下可选字段：
 #### 场景:验证非对象输入
 - **当** 传入 null 或 undefined
 - **那么** 函数返回 false
-
-## 修改需求
-
-无。
-
-## 移除需求
-
-无。
