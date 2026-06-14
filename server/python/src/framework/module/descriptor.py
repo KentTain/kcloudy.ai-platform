@@ -5,7 +5,10 @@
 """
 
 from typing import Protocol, Any, Callable
+
 from fastapi import FastAPI
+
+from framework.module.definition import ModuleDefinition
 
 
 class ModuleDescriptor(Protocol):
@@ -110,5 +113,19 @@ class ModuleDescriptor(Protocol):
         返回 (setup_func, cleanup_func) 元组或 None。
         - setup_func: 注册监听器的函数
         - cleanup_func: 清理监听器的函数
+        """
+        ...
+
+    def get_module_definition(self) -> ModuleDefinition | None:
+        """
+        返回模块定义（可选）
+
+        返回模块的元数据声明，包括菜单、权限、角色等。
+        系统启动时会将这些定义同步到数据库。
+
+        返回 None 表示模块无需声明元数据（默认行为）。
+
+        Returns:
+            ModuleDefinition 实例或 None
         """
         ...
