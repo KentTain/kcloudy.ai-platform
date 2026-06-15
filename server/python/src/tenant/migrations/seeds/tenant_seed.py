@@ -1,5 +1,5 @@
 """
-Tenant 模块数据模块数据初始化
+Tenant 模块种子数据初始化
 
 初始化默认租户数据并分配活跃模块。
 """
@@ -19,6 +19,7 @@ async def run(*, dry_run: bool = False) -> int:
     """初始化租户数据
 
     创建默认租户（如果不存在）并分配所有活跃模块。
+    如果默认租户已存在但未分配模块，也会补充分配。
 
     Args:
         dry_run: 仅预览，不写入数据库
@@ -29,46 +30,48 @@ async def run(*, dry_run: bool = False) -> int:
     from framework.configs import get_settings
     from framework.database.core.engine import get_session
     from framework.events import ModuleAssigned, event_publisher
+    from iam.services.module_sync_service import module_sync_service
 
     settings = get_settings()
     tenant_config = settings.tenant
+    default_tenant_id = tenant_config.default_tenant_id
+
+    created_count = 0
+    assigned_count = 0
 
     async with get_session() as session:
         # 检查是否已存在默认租户
         result = await session.execute(
             select(Tenant).where(Tenant.code == "default").limit(1)
         )
-        existing = result.scalar_one_or_none()
+        existing_tenant = result.scalar_one_or_none()
 
-        if existing:
-            write_info("默认租户已存在，跳过初始化")
-            return 0
+        if existing_tenant:
+            write_info("默认租户已存在，跳过创建")
+        else:
+            # 创建默认租户
+            tenant = Tenant(
+                id=default_tenant_id,
+                name="默认租户",
+                code="default",
+                status=TenantStatus.ACTIVE,
+                contact_name="系统管理员",
+                contact_email="admin@example.com",
+                expired_at=datetime.now() + timedelta(days=365),
+                settings={
+                    "max_users": 100,
+                    "max_storage_mb": 10240,
+                },
+            )
 
-        # 创建默认租户
-        default_tenant_id = tenant_config.default_tenant_id
+            if dry_run:
+                write_info(f"[DRY-RUN] 将创建租户: {tenant.name} (code={tenant.code})")
+                return 1
 
-        tenant = Tenant(
-            id=default_tenant_id,
-            name="默认租户",
-            code="default",
-            status=TenantStatus.ACTIVE,
-            contact_name="系统管理员",
-            contact_email="admin@example.com",
-            expired_at=datetime.now() + timedelta(days=365),
-            settings={
-                "max_users": 100,
-                "max_storage_mb": 10240,
-            },
-            # 资源配置关联（可选，使用资源表的配置 ID）
-            # 默认租户使用共享资源，无需指定配置 ID
-        )
-
-        if dry_run:
-            write_info(f"[DRY-RUN] 将创建租户: {tenant.name} (code={tenant.code})")
-            return 1
-
-        session.add(tenant)
-        await session.flush()  # 确保 tenant.id 可用
+            session.add(tenant)
+            await session.flush()
+            created_count += 1
+            write_success(f"已创建租户: {tenant.name} (id={default_tenant_id})")
 
         # 查询所有活跃模块
         module_result = await session.execute(
@@ -76,8 +79,11 @@ async def run(*, dry_run: bool = False) -> int:
         )
         active_modules = list(module_result.scalars().all())
 
-        # 为租户分配所有活跃模块
-        assigned_count = 0
+        if not active_modules:
+            write_info("无活跃模块需要分配")
+            return created_count or 0
+
+        # 为默认租户分配所有活跃模块
         for module in active_modules:
             # 检查是否已分配
             existing_tm = await session.execute(
@@ -89,6 +95,10 @@ async def run(*, dry_run: bool = False) -> int:
             if existing_tm.scalar_one_or_none():
                 continue
 
+            if dry_run:
+                write_info(f"[DRY-RUN] 将为租户分配模块: {module.code}")
+                continue
+
             # 创建租户模块关联
             tenant_module = TenantModule(
                 tenant_id=default_tenant_id,
@@ -97,17 +107,24 @@ async def run(*, dry_run: bool = False) -> int:
                 started_at=datetime.now(),
             )
             session.add(tenant_module)
-            assigned_count += 1
+            await session.flush()
 
-            # 发布 ModuleAssigned 事件以触发模块同步
-            await event_publisher.publish(
-                ModuleAssigned(tenant_id=default_tenant_id, module_id=module.id)
+            # 直接同步模块数据到租户实例层（不依赖事件机制）
+            await module_sync_service.sync_module_assigned(
+                session, default_tenant_id, module.id, module.code
             )
+            assigned_count += 1
+            write_success(f"  已分配模块: {module.code}")
 
-        await session.commit()
+        if not dry_run:
+            await session.commit()
 
-        write_success(f"已创建租户: {tenant.name} (id={default_tenant_id})")
-        if assigned_count > 0:
-            write_success(f"已为租户分配 {assigned_count} 个模块")
+        if created_count:
+            write_success(f"已创建默认租户")
+        if assigned_count:
+            write_success(f"已分配 {assigned_count} 个模块")
 
-        return 1
+        if not created_count and not assigned_count:
+            write_info("默认租户已初始化且模块已分配，无需变更")
+
+        return created_count + assigned_count
