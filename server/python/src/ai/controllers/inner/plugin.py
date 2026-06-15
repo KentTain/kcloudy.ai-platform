@@ -45,13 +45,13 @@ class PluginInvokeResponse(BaseModel):
     error: str | None = Field(default=None, description="错误信息")
 
 
-@router.get("/ai/health")
+@router.get("/health")
 async def health_check() -> ORJSONResponse:
     """
     健康检查端点
 
     场景：健康检查
-    WHEN 请求 GET /inner/v1/ai/health
+    WHEN 请求 GET /ai/inner/v1/health
     THEN 返回 {"status": "healthy"}
     """
     return ORJSONResponse(content={"status": "healthy", "module": "ai"})
@@ -63,13 +63,13 @@ async def get_plugin(plugin_id: str) -> ORJSONResponse:
     获取单个插件信息
 
     场景：获取插件信息
-    WHEN 请求 GET /inner/v1/plugins/{plugin_id}
+    WHEN 请求 GET /ai/inner/v1/plugins/{plugin_id}
     THEN 返回指定插件的详细信息
     AND 不依赖 Token 认证
     AND plugin_id 由调用方显式传入
 
     场景：插件不存在
-    WHEN 请求 GET /inner/v1/plugins/nonexistent
+    WHEN 请求 GET /ai/inner/v1/plugins/nonexistent
     THEN 返回 HTTP 404
     """
     try:
@@ -92,7 +92,7 @@ async def invoke_plugin(
     调用插件方法
 
     场景：内部调用插件
-    WHEN 请求 POST /inner/v1/plugins/{plugin_id}/invoke
+    WHEN 请求 POST /ai/inner/v1/plugins/{plugin_id}/invoke
     THEN 执行插件调用并返回结果
 
     - **plugin_id**: 插件ID
@@ -144,7 +144,7 @@ async def get_plugin_credentials(plugin_id: str) -> ORJSONResponse:
     获取插件凭证列表
 
     场景：获取插件凭证
-    WHEN 请求 GET /inner/v1/plugins/{plugin_id}/credentials
+    WHEN 请求 GET /ai/inner/v1/plugins/{plugin_id}/credentials
     THEN 返回插件的凭证列表
     """
     try:
@@ -173,7 +173,7 @@ async def get_plugin_credentials_schema(plugin_id: str) -> ORJSONResponse:
     获取插件凭证架构
 
     场景：获取凭证架构
-    WHEN 请求 GET /inner/v1/plugins/{plugin_id}/credentials-schema
+    WHEN 请求 GET /ai/inner/v1/plugins/{plugin_id}/credentials-schema
     THEN 返回插件的凭证架构定义
     """
     try:
