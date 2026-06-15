@@ -36,16 +36,16 @@ SKIP_PATHS = [
     "/redoc",
     "/openapi.json",
     "/admin/",  # 管理后台不经过租户中间件
-    # Console 层公开接口（登录/注册/OAuth 无需租户上下文）
+    # Console 层公开接口（前端 baseURL=/api，实际路径带 /api 前缀）
+    "/api/console/v1/iam/auth/login",
+    "/api/console/v1/iam/auth/register",
+    "/api/console/v1/iam/auth/token/refresh",
+    "/api/console/v1/iam/oauth/",
+    # 兼容无 /api 前缀的直接访问
     "/console/v1/iam/auth/login",
     "/console/v1/iam/auth/register",
     "/console/v1/iam/auth/token/refresh",
     "/console/v1/iam/oauth/",
-    # 兼容旧路径（如有）
-    "/api/v1/iam/auth/login",
-    "/api/v1/iam/auth/register",
-    "/api/v1/iam/auth/token/refresh",
-    "/api/v1/iam/oauth/",
 ]
 
 
