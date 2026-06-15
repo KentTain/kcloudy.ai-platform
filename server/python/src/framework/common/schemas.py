@@ -105,6 +105,39 @@ class AuditedOperatorVoMixin(VoMixin):
         return utc_now.astimezone(beijing_tz)
 
 
+class PropertyVoMixin(VoMixin):
+    """
+    属性容器 VO Mixin
+
+    对应 ORM 层 PropertyMixin，提供属性容器的通用字段。
+    """
+
+    name: str = Field(description="名称")
+    display_name: str | None = Field(default=None, description="显示名称")
+    description: str | None = Field(default=None, description="描述")
+    can_edit: bool = Field(default=True, description="是否能编辑")
+    is_require: bool = Field(default=False, description="是否必须")
+    index: int = Field(default=0, description="排序")
+
+
+class PropertyAttributeVoMixin(VoMixin):
+    """
+    属性值 VO Mixin
+
+    对应 ORM 层 PropertyAttributeMixin，提供属性值的通用字段。
+    """
+
+    data_type: str = Field(default="string", description="属性数据类型")
+    name: str = Field(description="属性值名称")
+    display_name: str | None = Field(default=None, description="显示名称")
+    description: str | None = Field(default=None, description="描述")
+    value: str | None = Field(default=None, description="属性值")
+    ext_data: dict[str, Any] | None = Field(default=None, description="扩展数据")
+    can_edit: bool = Field(default=True, description="是否能编辑")
+    is_require: bool = Field(default=False, description="是否必须")
+    index: int = Field(default=0, description="排序")
+
+
 class I18nConvertibleBaseModel(BaseModel):
     """
     支持I18nObject自动转换的基础模型类
@@ -209,3 +242,15 @@ class I18nConvertibleBaseModel(BaseModel):
             raw_data[field_name] = self._convert_i18n_to_string(field_value)
 
         return raw_data
+
+
+__all__ = [
+    "BaseModel",
+    "BaseQueryParams",
+    "VoMixin",
+    "TreeNodeVoMixin",
+    "AuditedOperatorVoMixin",
+    "PropertyVoMixin",
+    "PropertyAttributeVoMixin",
+    "I18nConvertibleBaseModel",
+]
