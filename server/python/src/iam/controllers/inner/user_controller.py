@@ -98,13 +98,13 @@ def build_user_info(user: User, tenant_id: str | None = None) -> UserInfoRespons
     )
 
 
-@router.get("/iam/health")
+@router.get("/health")
 async def health_check() -> ORJSONResponse:
     """
     健康检查端点
 
     场景：健康检查端点
-    WHEN 请求 GET /inner/v1/iam/health
+    WHEN 请求 GET /iam/inner/v1/health
     THEN 返回 {"status": "healthy"}
     """
     return ORJSONResponse(content={"status": "healthy", "module": "iam"})
