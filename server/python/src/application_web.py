@@ -4,7 +4,6 @@ FastAPI Web 应用工厂
 通过动态模块扫描与装配创建应用，替代硬编码 import。
 """
 
-import time
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -16,7 +15,7 @@ from demo.configs import settings
 from framework.common.time import ChinaTimeZone
 from framework.database.core.engine import setup_engine
 from framework.middlewares.test_user_middleware import TestUserMiddleware
-from framework.module import ModuleDescriptor, get_registry, load_modules
+from framework.module import get_registry, load_modules
 from framework.module.sync_service import ModuleDefinitionSyncService
 from framework.tenant.middleware import TenantMiddleware
 from framework.tenant.protocols import register_tenant_provider
@@ -24,7 +23,6 @@ from framework.utils.log_util import (
     write_error,
     write_info,
     write_success,
-    write_warning,
 )
 from framework.utils.startup_timer import StartupTimer
 from iam.middlewares.iam_auth_middleware import IAMAuthMiddleware
@@ -41,7 +39,8 @@ async def lifespan(app: FastAPI):
     from datetime import datetime
 
     write_info(
-        f"AI Platform 应用开始启动... ({datetime.now(tz=ChinaTimeZone).strftime('%Y-%m-%d %H:%M:%S')})"
+        "AI Platform 应用开始启动... "
+        f"({datetime.now(tz=ChinaTimeZone).strftime('%Y-%m-%d %H:%M:%S')})"
     )
 
     with timer.phase("基础组件初始化", order=2) as phase:
@@ -133,7 +132,8 @@ async def _run_seed_initialization():
                 )
             except Exception as e:
                 _logger.exception(
-                    f"Seed 初始化失败 [{module.name}/{seed_name}]，跳过该模块，错误消息: {e}"
+                    f"Seed 初始化失败 [{module.name}/{seed_name}]，"
+                    f"跳过该模块，错误消息: {e}"
                 )
                 write_error(f"Seed 初始化失败 [{module.name}/{seed_name}]，跳过该模块")
 
@@ -160,10 +160,8 @@ def create_app(module_names: list[str] | None = None) -> FastAPI:
 
             module_names = ENABLED_MODULES
             write_info(f"Loaded modules from config: {ENABLED_MODULES}")
-        except ImportError as e:
-            _logger.exception(
-                "No modules config found, loading all modules，错误消息: {e}"
-            )
+        except ImportError:
+            _logger.exception("No modules config found, loading all modules")
             write_error("No modules config found, loading all modules")
 
     with timer.phase("模块加载与路由注册", order=3) as phase:
@@ -207,15 +205,8 @@ def create_app(module_names: list[str] | None = None) -> FastAPI:
         app.add_middleware(TestUserMiddleware, enabled=True, env=env)
         write_info("已启用测试用户中间件（仅非生产环境）")
 
-    # 动态注册各模块路由
-    for module in modules:
-        for router, prefix, tags in module.get_routers():
-            app.include_router(router, prefix=prefix, tags=tags)
-            tag_str = tags[0] if tags else "default"
-            endpoint_count = len(router.routes)
-            write_info(
-                f"注册路由: {prefix} → {tag_str} ({endpoint_count} 个端点) [{module.name}]"
-            )
+    # 动态注册各模块路由并打印日志
+    _register_module_routes(app, modules)
 
     # 动态注册各模块中间件
     for module in modules:
@@ -229,6 +220,76 @@ def create_app(module_names: list[str] | None = None) -> FastAPI:
         return {"status": "ok", "app": APP_NAME}
 
     return app
+
+
+def _register_module_routes(app: FastAPI, modules: list) -> None:
+    """
+    注册模块路由并打印路由日志
+
+    Args:
+        app: FastAPI 应用实例
+        modules: 模块列表
+    """
+    from collections import defaultdict
+
+    # 按模块和类型分组收集路由信息
+    # 结构: {module_name: {route_type: {prefix: {first_level: count}}}}
+    module_routes = defaultdict(
+        lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(int)))
+    )
+
+    # 注册路由并收集统计信息
+    for module in modules:
+        for router, prefix, tags in module.get_routers():
+            app.include_router(router, prefix=prefix, tags=tags)
+
+            # 确定路由类型
+            if "/admin/" in prefix:
+                route_type = "admin"
+            elif "/console/" in prefix:
+                route_type = "console"
+            elif "/inner/" in prefix:
+                route_type = "inner"
+            else:
+                route_type = "default"
+
+            # 统计第一级路径的端点数量
+            for route in router.routes:
+                if hasattr(route, "path") and hasattr(route, "methods"):
+                    # 提取第一级路径（如 /auth/login → /auth）
+                    path = route.path
+                    parts = path.strip("/").split("/")
+                    first_level = "/" + parts[0] if parts else "/"
+
+                    # 统计端点数量
+                    for method in route.methods:
+                        if method != "HEAD":
+                            key = module.name, route_type, prefix, first_level
+                            module_routes[key[0]][key[1]][key[2]][key[3]] += 1
+
+    # 打印路由注册日志
+    type_labels = {
+        "admin": "管理后台",
+        "console": "用户端",
+        "inner": "内部接口",
+        "default": "默认",
+    }
+
+    for module_name, types_dict in module_routes.items():
+        for route_type, prefix_dict in types_dict.items():
+            type_label = type_labels.get(route_type, route_type)
+
+            for prefix, first_levels in prefix_dict.items():
+                # 生成路由汇总
+                route_stats = [
+                    f"{path}（{count} 个端点）"
+                    for path, count in sorted(first_levels.items())
+                ]
+                # 单行显示：模块、类型、路由
+                write_info(
+                    f"注册路由: {module_name} {type_label} ({prefix}) "
+                    f"路由：{', '.join(route_stats)}"
+                )
 
 
 app = create_app()
