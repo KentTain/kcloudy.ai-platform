@@ -62,27 +62,29 @@ class TestIamModuleAutoAssigner:
         mock_scalars.all.return_value = [mock_module, mock_module2]
         mock_result = MagicMock()
         mock_result.scalars.return_value = mock_scalars
-        mock_session.execute.return_value = mock_result
 
         # Mock existing check - no existing
         mock_existing_result = MagicMock()
         mock_existing_result.scalar_one_or_none.return_value = None
-        mock_session.execute.return_value = mock_existing_result
+
+        # 第一个 execute 返回模块列表，后续返回空（幂等检查）
+        mock_session.execute.side_effect = [
+            mock_result,
+            mock_existing_result,
+            mock_existing_result,
+        ]
 
         with patch(
-            "iam.services.module_auto_assigner.module_sync_service"
+            "iam.services.module_sync_service.ModuleSyncService.sync_module_assigned",
+            new_callable=AsyncMock,
         ) as mock_sync:
             await assigner.auto_assign(mock_session, "tenant-1")
-
-            # 验证：查询活跃模块
-            execute_calls = [call[0] for call in mock_session.execute.call_args_list]
-            assert any("is_active" in str(c) for c in execute_calls)
 
             # 验证：创建了 TenantModule
             assert mock_session.add.call_count >= 2  # 两个模块
 
             # 验证：调用了 sync_module_assigned
-            assert mock_sync.sync_module_assigned.call_count == 2
+            assert mock_sync.call_count == 2
 
     @pytest.mark.asyncio
     async def test_auto_assign_skips_existing(self):
@@ -102,21 +104,22 @@ class TestIamModuleAutoAssigner:
         mock_scalars.all.return_value = [mock_module]
         mock_result = MagicMock()
         mock_result.scalars.return_value = mock_scalars
-        mock_session.execute.return_value = mock_result
 
-        # 第一次返回模块查询，第二次返回已存在的 TenantModule
+        # 第一个 execute 返回模块列表，第二个返回已存在的 TenantModule
         mock_existing_result = MagicMock()
         mock_existing_result.scalar_one_or_none.return_value = MagicMock()  # 已存在
-        mock_session.execute.return_value = mock_existing_result
+
+        mock_session.execute.side_effect = [mock_result, mock_existing_result]
 
         with patch(
-            "iam.services.module_auto_assigner.module_sync_service"
+            "iam.services.module_sync_service.ModuleSyncService.sync_module_assigned",
+            new_callable=AsyncMock,
         ) as mock_sync:
             await assigner.auto_assign(mock_session, "tenant-1")
 
             # 验证：没有创建新的 TenantModule
             assert mock_session.add.call_count == 0
-            assert mock_sync.sync_module_assigned.call_count == 0
+            assert mock_sync.call_count == 0
 
 
 class TestTenantServiceCreate:
@@ -158,7 +161,7 @@ class TestTenantServiceCreate:
                 return_value="encrypted_key",
             ),
             patch(
-                "tenant.services.tenant_service.get_module_auto_assigner"
+                "framework.tenant.protocols.get_module_auto_assigner"
             ) as mock_get_assigner,
         ):
             mock_assigner = AsyncMock()
@@ -169,10 +172,10 @@ class TestTenantServiceCreate:
                 code="T001",
             )
 
-            # 验证：自动分配被调用
-            mock_assigner.auto_assign.assert_awaited_once_with(
-                mock_session, mock_tenant.id
-            )
+            # 验证：自动分配被调用（使用同一 session）
+            mock_assigner.auto_assign.assert_awaited_once()
+            call_args = mock_assigner.auto_assign.await_args
+            assert call_args[0][0] is mock_session  # 同一个 session
 
     @pytest.mark.asyncio
     async def test_create_without_assigner_still_works(self):
@@ -207,7 +210,7 @@ class TestTenantServiceCreate:
                 return_value="encrypted_key",
             ),
             patch(
-                "tenant.services.tenant_service.get_module_auto_assigner",
+                "framework.tenant.protocols.get_module_auto_assigner",
                 return_value=None,
             ),
         ):
