@@ -6,7 +6,7 @@ from typing import Any
 
 from pydantic import Field
 
-from framework.common.schemas import BaseModel
+from framework.schemas import BaseModel
 from ai_plugin.sdk.entities.agent import AgentStrategyProviderConfiguration
 from ai_plugin.sdk.entities.model.provider import ModelProviderConfiguration
 from ai_plugin.sdk.entities.tool import ToolProviderConfiguration

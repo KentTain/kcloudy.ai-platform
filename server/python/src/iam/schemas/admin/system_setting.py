@@ -7,7 +7,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from framework.common.schemas import PropertyAttributeVoMixin, PropertyVoMixin, VoMixin
+from framework.schemas import PropertyAttributeVoMixin, PropertyVoMixin
 from framework.database import AttributeDataType
 
 
@@ -30,7 +30,7 @@ class SystemSettingAttributeCreate(BaseModel):
     index: int = Field(default=0, ge=0, description="排序")
 
 
-class SystemSettingAttributeResponse(VoMixin, PropertyAttributeVoMixin):
+class SystemSettingAttributeResponse(PropertyAttributeVoMixin):
     """属性值响应"""
 
     id: str = Field(..., description="属性值ID")
@@ -75,7 +75,7 @@ class SystemSettingUpdate(BaseModel):
     )
 
 
-class SystemSettingResponse(VoMixin, PropertyVoMixin):
+class SystemSettingResponse(PropertyVoMixin):
     """系统设置响应"""
 
     id: str = Field(..., description="设置ID")

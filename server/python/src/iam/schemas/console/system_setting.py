@@ -6,17 +6,17 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field
 
-from framework.common.schemas import PropertyAttributeVoMixin, PropertyVoMixin, VoMixin
+from framework.schemas import PropertyAttributeVoMixin, PropertyVoMixin
 
 
-class ConsoleSystemSettingAttributeResponse(VoMixin, PropertyAttributeVoMixin):
+class ConsoleSystemSettingAttributeResponse(PropertyAttributeVoMixin):
     """用户端属性值响应"""
 
     id: str = Field(..., description="属性值ID")
     setting_id: str = Field(..., description="配置ID")
 
 
-class ConsoleSystemSettingResponse(VoMixin, PropertyVoMixin):
+class ConsoleSystemSettingResponse(PropertyVoMixin):
     """用户端系统设置响应"""
 
     id: str = Field(..., description="设置ID")

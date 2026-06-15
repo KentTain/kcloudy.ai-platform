@@ -8,14 +8,13 @@ from datetime import datetime
 
 import pytest
 
-from framework.common.schemas import (
+from framework.schemas import (
     PropertyAttributeVoMixin,
     PropertyVoMixin,
+    TreeNodeTreeVo,
+    TreeNodeVo,
     VoMixin,
 )
-from framework.schemas import PropertyAttributeVoMixin as ExportedPropertyAttributeVoMixin
-from framework.schemas import PropertyVoMixin as ExportedPropertyVoMixin
-from framework.schemas import TreeNodeTreeVo, TreeNodeVo
 from framework.schemas.tree import TreeNodeVoMixin
 
 
@@ -167,15 +166,15 @@ class TestExports:
 
     def test_property_vo_mixin_exported(self):
         """PropertyVoMixin 必须从 framework.schemas 导出"""
-        from framework.schemas import PropertyVoMixin
+        from framework.schemas import PropertyVoMixin as ReImported
 
-        assert PropertyVoMixin is ExportedPropertyVoMixin
+        assert PropertyVoMixin is ReImported
 
     def test_property_attribute_vo_mixin_exported(self):
         """PropertyAttributeVoMixin 必须从 framework.schemas 导出"""
-        from framework.schemas import PropertyAttributeVoMixin
+        from framework.schemas import PropertyAttributeVoMixin as ReImported
 
-        assert PropertyAttributeVoMixin is ExportedPropertyAttributeVoMixin
+        assert PropertyAttributeVoMixin is ReImported
 
 
 class TestSystemSettingResponse:
@@ -234,6 +233,8 @@ class TestSystemSettingResponse:
             tenant_id="tenant-1",
             code="APP_CONFIG",
             name="应用配置",
+            application_id=None,
+            application_name=None,
             attributes=[attr],
             created_at=datetime.now(),
             updated_at=datetime.now(),

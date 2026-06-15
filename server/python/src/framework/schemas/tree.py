@@ -6,14 +6,16 @@
 
 from pydantic import Field
 
-from framework.common.schemas import TreeNodeVoMixin, VoMixin
+from framework.schemas.base import TreeNodeVoMixin
 
 
-class TreeNodeVo(VoMixin, TreeNodeVoMixin):
+class TreeNodeVo(TreeNodeVoMixin):
     """
     树节点 VO 基类
 
-    继承 VoMixin 和 TreeNodeVoMixin，提供统一的树节点字段，用于 API 响应。
+    继承 TreeNodeVoMixin（已含 VoMixin），提供统一的树节点字段，用于 API 响应。
+
+    注意：TreeNodeVoMixin 已继承 VoMixin，无需再次继承，避免 MRO 问题。
     """
 
     id: str
