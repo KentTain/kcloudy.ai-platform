@@ -27,10 +27,10 @@ export interface ConversationListResponse {
  * 获取会话列表
  */
 export const getConversations = (): Promise<ConversationListResponse> =>
-  get<ApiResponse<ConversationListResponse>>("/v1/conversations").then((res) => res.data);
+  get<ApiResponse<ConversationListResponse>>("/ai/console/v1/conversations").then((res) => res.data);
 
 /**
  * 删除会话
  */
 export const deleteConversation = (id: string): Promise<{ success: boolean }> =>
-  del<ApiResponse<{ success: boolean }>>(`/v1/conversations/${id}`).then((res) => res.data);
+  del<ApiResponse<{ success: boolean }>>(`/ai/console/v1/conversations/${id}`).then((res) => res.data);

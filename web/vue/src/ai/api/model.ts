@@ -35,4 +35,4 @@ export interface ModelListResponse {
  * 获取模型列表
  */
 export const getModels = (): Promise<ModelListResponse> =>
-  get<ApiResponse<ModelListResponse>>("/v1/models").then((res) => res.data);
+  get<ApiResponse<ModelListResponse>>("/ai/console/v1/models").then((res) => res.data);

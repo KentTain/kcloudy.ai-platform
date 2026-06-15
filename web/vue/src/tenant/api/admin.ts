@@ -6,14 +6,14 @@ import type { AdminInfo, AdminLoginRequest, AdminLoginResponse } from "../types/
  * 管理员登录
  */
 export const adminLogin = (data: AdminLoginRequest) =>
-  rawPost<ApiResponse<AdminLoginResponse>>("/admin/v1/auth/login", data);
+  rawPost<ApiResponse<AdminLoginResponse>>("/tenant/admin/v1/auth/login", data);
 
 /**
  * 管理员登出
  */
-export const adminLogout = () => rawPost<ApiResponse<void>>("/admin/v1/auth/logout");
+export const adminLogout = () => rawPost<ApiResponse<void>>("/tenant/admin/v1/auth/logout");
 
 /**
  * 获取当前管理员信息
  */
-export const getCurrentAdmin = () => rawGet<ApiResponse<AdminInfo>>("/admin/v1/admin/me");
+export const getCurrentAdmin = () => rawGet<ApiResponse<AdminInfo>>("/tenant/admin/v1/admin/me");

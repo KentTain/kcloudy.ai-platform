@@ -22,10 +22,8 @@ export const createApiClient = (config?: AxiosRequestConfig): AxiosInstance => {
   instance.interceptors.request.use(
     (config) => {
       // 根据请求路径判断使用哪个 token
-      // 注意：/admin/v1/iam/* 和 /admin/v1/system-settings/* 是租户级管理 API，使用普通用户 token
-      const isAdminRequest = config.url?.startsWith("/admin") &&
-        !config.url?.startsWith("/admin/v1/iam") &&
-        !config.url?.startsWith("/admin/v1/system-settings");
+      // 规则：/tenant/admin/* 使用租户管理员 Token，其他路径使用 JWT Token
+      const isAdminRequest = config.url?.startsWith("/tenant/admin/");
       const tokenKey = isAdminRequest ? "admin_token" : "token";
       const token = localStorage.getItem(tokenKey);
 
@@ -50,10 +48,8 @@ export const createApiClient = (config?: AxiosRequestConfig): AxiosInstance => {
     (error) => {
       const { response, config } = error;
 
-      // 判断是否为管理后台请求（租户级管理 API 使用普通用户 token）
-      const isAdminRequest = config?.url?.startsWith("/admin") &&
-        !config?.url?.startsWith("/admin/v1/iam") &&
-        !config?.url?.startsWith("/admin/v1/system-settings");
+      // 判断是否为租户管理后台请求
+      const isAdminRequest = config?.url?.startsWith("/tenant/admin/");
 
       // 401 未登录
       if (response?.status === 401) {
@@ -87,9 +83,10 @@ export const createApiClient = (config?: AxiosRequestConfig): AxiosInstance => {
 export const apiClient = createApiClient();
 
 /**
- * 无前缀 API 客户端，用于后端根路径注册的接口（如 /admin、/console）
+ * 管理端 API 客户端，使用租户管理员 Token
+ * 用于 /tenant/admin/* 路径的接口
  */
-export const rawApiClient = createApiClient({ baseURL: "" });
+export const rawApiClient = createApiClient({ baseURL: "/api" });
 
 /**
  * GET 请求

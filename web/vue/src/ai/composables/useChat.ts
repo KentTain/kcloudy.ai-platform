@@ -13,7 +13,7 @@ import type { ModelConfig, UIMessage } from "@/ai/types";
  * useChat 配置选项
  */
 export interface UseChatOptions {
-  /** API 端点，默认 /api/v1/chat-messages */
+  /** API 端点，默认 /api/ai/console/v1/chat-messages */
   api?: string;
   /** 会话 ID */
   id?: Ref<string | undefined> | string;
@@ -81,7 +81,7 @@ function resolveId(id: Ref<string | undefined> | string | undefined): string | u
  */
 export function useChat(options: UseChatOptions = {}): UseChatReturn {
   const {
-    api = "/api/v1/chat-messages",
+    api = "/api/ai/console/v1/chat-messages",
     id,
     model,
     initialMessages = [],

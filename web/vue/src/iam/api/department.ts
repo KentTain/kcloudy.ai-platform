@@ -26,37 +26,37 @@ export interface UpdateDepartmentParams {
  * 获取部门列表
  */
 export const getDepartments = (params?: DepartmentQueryParams) =>
-  get<ApiResponse<Department[]>>("/admin/v1/iam/departments", { params });
+  get<ApiResponse<Department[]>>("/iam/admin/v1/departments", { params });
 
 /**
  * 获取部门树形结构
  */
 export const getDepartmentTree = () =>
-  get<ApiResponse<Department[]>>("/admin/v1/iam/departments/tree");
+  get<ApiResponse<Department[]>>("/iam/admin/v1/departments/tree");
 
 /**
  * 获取部门详情
  */
 export const getDepartment = (id: string) =>
-  get<ApiResponse<Department>>(`/admin/v1/iam/departments/${id}`);
+  get<ApiResponse<Department>>(`/iam/admin/v1/departments/${id}`);
 
 /**
  * 创建部门
  */
 export const createDepartment = (data: CreateDepartmentParams) =>
-  post<ApiResponse<Department>>("/admin/v1/iam/departments", data);
+  post<ApiResponse<Department>>("/iam/admin/v1/departments", data);
 
 /**
  * 更新部门
  */
 export const updateDepartment = (id: string, data: UpdateDepartmentParams) =>
-  put<ApiResponse<Department>>(`/admin/v1/iam/departments/${id}`, data);
+  put<ApiResponse<Department>>(`/iam/admin/v1/departments/${id}`, data);
 
 /**
  * 删除部门
  */
 export const deleteDepartment = (id: string) =>
-  del<ApiResponse<void>>(`/admin/v1/iam/departments/${id}`);
+  del<ApiResponse<void>>(`/iam/admin/v1/departments/${id}`);
 
 /**
  * 设置部门负责人
@@ -68,13 +68,13 @@ export const setDepartmentLeader = (id: string, leader_id: string) =>
  * 获取部门用户
  */
 export const getDepartmentUsers = (id: string) =>
-  get<ApiResponse<DepartmentUser[]>>(`/admin/v1/iam/departments/${id}/users`);
+  get<ApiResponse<DepartmentUser[]>>(`/iam/admin/v1/departments/${id}/users`);
 
 export const addDepartmentUser = (department_id: string, user_id: string, is_leader = false) =>
-  post<ApiResponse<DepartmentUser>>(`/admin/v1/iam/departments/${department_id}/users`, {
+  post<ApiResponse<DepartmentUser>>(`/iam/admin/v1/departments/${department_id}/users`, {
     user_id,
     is_leader,
   });
 
 export const removeDepartmentUser = (department_id: string, user_id: string) =>
-  del<ApiResponse<void>>(`/admin/v1/iam/departments/${department_id}/users/${user_id}`);
+  del<ApiResponse<void>>(`/iam/admin/v1/departments/${department_id}/users/${user_id}`);

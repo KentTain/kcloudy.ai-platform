@@ -27,40 +27,40 @@ export interface AssignPermissionsParams {
  * 获取角色列表
  */
 export const getRoles = (params?: RoleQueryParams) =>
-  get<ApiResponse<PageResult<Role>>>("/admin/v1/iam/roles", { params });
+  get<ApiResponse<PageResult<Role>>>("/iam/admin/v1/roles", { params });
 
 /**
  * 获取角色详情（含权限）
  */
 export const getRole = (id: string) =>
-  get<ApiResponse<Role>>(`/admin/v1/iam/roles/${id}`);
+  get<ApiResponse<Role>>(`/iam/admin/v1/roles/${id}`);
 
 /**
  * 创建角色
  */
 export const createRole = (data: CreateRoleParams) =>
-  post<ApiResponse<Role>>("/admin/v1/iam/roles", data);
+  post<ApiResponse<Role>>("/iam/admin/v1/roles", data);
 
 /**
  * 更新角色
  */
 export const updateRole = (id: string, data: UpdateRoleParams) =>
-  put<ApiResponse<Role>>(`/admin/v1/iam/roles/${id}`, data);
+  put<ApiResponse<Role>>(`/iam/admin/v1/roles/${id}`, data);
 
 /**
  * 删除角色
  */
 export const deleteRole = (id: string) =>
-  del<ApiResponse<void>>(`/admin/v1/iam/roles/${id}`);
+  del<ApiResponse<void>>(`/iam/admin/v1/roles/${id}`);
 
 /**
  * 为角色分配权限
  */
 export const assignRolePermissions = (role_id: string, data: AssignPermissionsParams) =>
-  post<ApiResponse<void>>(`/admin/v1/iam/roles/${role_id}/permissions`, data);
+  post<ApiResponse<void>>(`/iam/admin/v1/roles/${role_id}/permissions`, data);
 
 /**
  * 获取角色权限
  */
 export const getRolePermissions = (role_id: string) =>
-  get<ApiResponse<Permission[]>>(`/admin/v1/iam/roles/${role_id}/permissions`);
+  get<ApiResponse<Permission[]>>(`/iam/admin/v1/roles/${role_id}/permissions`);

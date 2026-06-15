@@ -37,7 +37,7 @@ const activeConversationId = ref<string | undefined>(undefined);
 
 // 使用 useChat composable
 const { messages, isLoading, error, sendMessage, stop, regenerate, setInput, reload } = useChat({
-  api: "/api/v1/chat-messages",
+  api: "/api/ai/console/v1/chat-messages",
   id: activeConversationId,
   model: currentModel,
   onError: (err) => {

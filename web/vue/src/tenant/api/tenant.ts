@@ -15,60 +15,60 @@ import type {
  * 获取租户列表（管理员）
  */
 export const getTenants = (params?: TenantQueryParams) =>
-  rawGet<ApiResponse<PageResult<Tenant>>>("/admin/v1/tenants", { params });
+  rawGet<ApiResponse<PageResult<Tenant>>>("/tenant/admin/v1/tenants", { params });
 
 /**
  * 获取租户详情（管理员）
  */
-export const getTenant = (id: string) => rawGet<ApiResponse<Tenant>>(`/admin/v1/tenants/${id}`);
+export const getTenant = (id: string) => rawGet<ApiResponse<Tenant>>(`/tenant/admin/v1/tenants/${id}`);
 
 /**
  * 创建租户（管理员）
  */
 export const createTenant = (data: CreateTenantParams) =>
-  rawPost<ApiResponse<Tenant>>("/admin/v1/tenants", data);
+  rawPost<ApiResponse<Tenant>>("/tenant/admin/v1/tenants", data);
 
 /**
  * 更新租户（管理员）
  */
 export const updateTenant = (id: string, data: UpdateTenantParams) =>
-  rawPut<ApiResponse<Tenant>>(`/admin/v1/tenants/${id}`, data);
+  rawPut<ApiResponse<Tenant>>(`/tenant/admin/v1/tenants/${id}`, data);
 
 /**
  * 删除租户（管理员）
  */
-export const deleteTenant = (id: string) => rawDel<ApiResponse<void>>(`/admin/v1/tenants/${id}`);
+export const deleteTenant = (id: string) => rawDel<ApiResponse<void>>(`/tenant/admin/v1/tenants/${id}`);
 
 /**
  * 激活租户
  */
 export const activateTenant = (id: string) =>
-  rawPost<ApiResponse<Tenant>>(`/admin/v1/tenants/${id}/activate`);
+  rawPost<ApiResponse<Tenant>>(`/tenant/admin/v1/tenants/${id}/activate`);
 
 /**
  * 停用租户
  */
 export const deactivateTenant = (id: string) =>
-  rawPost<ApiResponse<Tenant>>(`/admin/v1/tenants/${id}/deactivate`);
+  rawPost<ApiResponse<Tenant>>(`/tenant/admin/v1/tenants/${id}/deactivate`);
 
 /**
  * 获取租户统计
  */
 export const getTenantStats = (id: string) =>
-  rawGet<ApiResponse<TenantStatsVo>>(`/admin/v1/tenants/${id}/stats`);
+  rawGet<ApiResponse<TenantStatsVo>>(`/tenant/admin/v1/tenants/${id}/stats`);
 
 /**
  * 获取当前租户（控制台）
  */
-export const getCurrentTenant = () => rawGet<ApiResponse<Tenant>>("/console/v1/tenants/current");
+export const getCurrentTenant = () => rawGet<ApiResponse<Tenant>>("/tenant/console/v1/tenants/current");
 
 /**
  * 获取用户可切换的租户列表
  */
-export const getMyTenants = () => rawGet<ApiResponse<UserTenantVo[]>>("/console/v1/tenants");
+export const getMyTenants = () => rawGet<ApiResponse<UserTenantVo[]>>("/tenant/console/v1/tenants");
 
 /**
  * 切换当前租户
  */
 export const switchTenant = (tenant_id: string) =>
-  rawPost<ApiResponse<SwitchTenantVo>>(`/console/v1/tenants/${tenant_id}/switch`);
+  rawPost<ApiResponse<SwitchTenantVo>>(`/tenant/console/v1/tenants/${tenant_id}/switch`);

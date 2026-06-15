@@ -31,4 +31,4 @@ interface UserMenusResponse {
  * 获取当前用户菜单
  */
 export const getUserMenus = () =>
-  get<UserMenusResponse>("/console/v1/iam/users/menus");
+  get<UserMenusResponse>("/iam/console/v1/users/menus");
