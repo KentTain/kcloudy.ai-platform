@@ -64,23 +64,23 @@ class IAMModule:
 
         return [
             # Admin 层路由
-            (admin_user_router, "/admin/v1/iam", ["Admin - User"]),
-            (admin_role_router, "/admin/v1/iam", ["Admin - Role"]),
-            (admin_permission_router, "/admin/v1/iam", ["Admin - Permission"]),
-            (admin_department_router, "/admin/v1/iam", ["Admin - Department"]),
-            (admin_menu_router, "/admin/v1/iam", ["Admin - Menu"]),
-            (admin_system_setting_router, "/admin/v1/system-settings", ["Admin - SystemSetting"]),
+            (admin_user_router, "/iam/admin/v1", ["Admin - User"]),
+            (admin_role_router, "/iam/admin/v1", ["Admin - Role"]),
+            (admin_permission_router, "/iam/admin/v1", ["Admin - Permission"]),
+            (admin_department_router, "/iam/admin/v1", ["Admin - Department"]),
+            (admin_menu_router, "/iam/admin/v1", ["Admin - Menu"]),
+            (admin_system_setting_router, "/iam/admin/v1/system-settings", ["Admin - SystemSetting"]),
             # Console 层路由
-            (console_auth_router, "/console/v1/iam", ["Console - Auth"]),
-            (console_oauth_router, "/console/v1/iam", ["Console - OAuth"]),
-            (console_user_router, "/console/v1/iam", ["Console - User"]),
-            (console_system_setting_router, "/console/v1/system-settings", ["Console - SystemSetting"]),
+            (console_auth_router, "/iam/console/v1", ["Console - Auth"]),
+            (console_oauth_router, "/iam/console/v1", ["Console - OAuth"]),
+            (console_user_router, "/iam/console/v1", ["Console - User"]),
+            (console_system_setting_router, "/iam/console/v1/system-settings", ["Console - SystemSetting"]),
             # Inner 层路由
-            (inner_user_router, "/inner/v1", ["Inner - User"]),
-            (inner_department_router, "/inner/v1", ["Inner - Department"]),
-            (inner_tenant_menu_router, "/inner/v1/iam", ["Inner - Tenant Menu"]),
-            (inner_tenant_permission_router, "/inner/v1/iam", ["Inner - Tenant Permission"]),
-            (inner_tenant_role_router, "/inner/v1/iam", ["Inner - Tenant Role"]),
+            (inner_user_router, "/iam/inner/v1", ["Inner - User"]),
+            (inner_department_router, "/iam/inner/v1", ["Inner - Department"]),
+            (inner_tenant_menu_router, "/iam/inner/v1", ["Inner - Tenant Menu"]),
+            (inner_tenant_permission_router, "/iam/inner/v1", ["Inner - Tenant Permission"]),
+            (inner_tenant_role_router, "/iam/inner/v1", ["Inner - Tenant Role"]),
         ]
 
     def get_middlewares(self) -> list[type]:

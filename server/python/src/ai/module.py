@@ -51,17 +51,17 @@ class AIModule:
 
         return [
             # Admin API - 插件管理
-            (admin_plugin_router, "/admin/v1/plugins", ["Admin - Plugin"]),
+            (admin_plugin_router, "/ai/admin/v1/plugins", ["Admin - Plugin"]),
             # Console API - 插件列表和凭证管理
-            (console_plugin_router, "/console/v1/plugins", ["Console - Plugin"]),
+            (console_plugin_router, "/ai/console/v1/plugins", ["Console - Plugin"]),
             # Inner API - 内部接口
-            (inner_plugin_router, "/inner/v1", ["Inner - Plugin"]),
-            # V1 API - LLM 对话接口
-            (chat_llm_router, "/api/v1", ["LLM对话"]),
-            # V1 API - 会话管理接口
-            (conversation_router, "/api/v1", ["会话管理"]),
-            # V1 API - 模型列表接口
-            (model_router, "/api/v1", ["模型列表"]),
+            (inner_plugin_router, "/ai/inner/v1", ["Inner - Plugin"]),
+            # Console API - LLM 对话接口
+            (chat_llm_router, "/ai/console/v1", ["LLM对话"]),
+            # Console API - 会话管理接口
+            (conversation_router, "/ai/console/v1", ["会话管理"]),
+            # Console API - 模型列表接口
+            (model_router, "/ai/console/v1", ["模型列表"]),
         ]
 
     def get_middlewares(self) -> list[type]:

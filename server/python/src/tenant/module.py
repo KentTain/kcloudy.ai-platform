@@ -49,12 +49,12 @@ class TenantModule:
         from tenant.controllers.inner.tenant_controller import router as inner_tenant_router
 
         return [
-            (admin_tenant_router, "/admin/v1", ["Admin - Tenant"]),
-            (admin_resource_router, "/admin/v1", ["Admin - Resource Config"]),
-            (admin_module_router, "/admin/v1", ["Admin - Module"]),
-            (admin_tenant_module_router, "/admin/v1", ["Admin - Tenant Module"]),
-            (console_tenant_router, "/console/v1/tenants", ["Console - Tenant"]),
-            (inner_tenant_router, "/inner/v1", ["Inner - Tenant"]),
+            (admin_tenant_router, "/tenant/admin/v1", ["Admin - Tenant"]),
+            (admin_resource_router, "/tenant/admin/v1", ["Admin - Resource Config"]),
+            (admin_module_router, "/tenant/admin/v1", ["Admin - Module"]),
+            (admin_tenant_module_router, "/tenant/admin/v1", ["Admin - Tenant Module"]),
+            (console_tenant_router, "/tenant/console/v1/tenants", ["Console - Tenant"]),
+            (inner_tenant_router, "/tenant/inner/v1", ["Inner - Tenant"]),
         ]
 
     def get_middlewares(self) -> list[type]:
