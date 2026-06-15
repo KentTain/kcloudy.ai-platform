@@ -16,10 +16,10 @@
 
 ## 4. 重构现有 Property 相关 VO
 
-- [ ] 4.1 重构 `iam/schemas/admin/system_setting.py` 中的 `SystemSettingResponse`，使用 `PropertyVoMixin`
-- [ ] 4.2 重构 `iam/schemas/admin/system_setting.py` 中的 `SystemSettingAttributeResponse`，使用 `PropertyAttributeVoMixin`
-- [ ] 4.3 重构 `iam/schemas/console/system_setting.py` 中的 `ConsoleSystemSettingResponse`，使用 `PropertyVoMixin`
-- [ ] 4.4 重构 `iam/schemas/console/system_setting.py` 中的 `ConsoleSystemSettingAttributeResponse`，使用 `PropertyAttributeVoMixin`
+- [x] 4.1 重构 `iam/schemas/admin/system_setting.py` 中的 `SystemSettingResponse`，使用 `PropertyVoMixin`
+- [x] 4.2 重构 `iam/schemas/admin/system_setting.py` 中的 `SystemSettingAttributeResponse`，使用 `PropertyAttributeVoMixin`
+- [x] 4.3 重构 `iam/schemas/console/system_setting.py` 中的 `ConsoleSystemSettingResponse`，使用 `PropertyVoMixin`
+- [x] 4.4 重构 `iam/schemas/console/system_setting.py` 中的 `ConsoleSystemSettingAttributeResponse`，使用 `PropertyAttributeVoMixin`
 
 ## 5. 编写单元测试
 
