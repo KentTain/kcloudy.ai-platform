@@ -248,13 +248,13 @@ def build_tenant_full_info(simple_tenant: SimpleTenant) -> TenantFullInfoRespons
     )
 
 
-@router.get("/tenant/health")
+@router.get("/health")
 async def health_check() -> ORJSONResponse:
     """
     健康检查端点
 
     场景：健康检查端点
-    WHEN 请求 GET /inner/v1/tenant/health
+    WHEN 请求 GET /tenant/inner/v1/health
     THEN 返回 {"status": "healthy"}
     AND 不依赖外部服务
     """
