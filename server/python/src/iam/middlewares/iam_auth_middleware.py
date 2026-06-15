@@ -29,6 +29,12 @@ class IAMAuthMiddleware(BaseHTTPMiddleware):
         "/docs",
         "/redoc",
         "/openapi.json",
+        # Console 层公开接口
+        "/console/v1/iam/auth/login",
+        "/console/v1/iam/auth/register",
+        "/console/v1/iam/auth/token/refresh",
+        "/console/v1/iam/oauth/",
+        # 兼容旧路径（如有）
         "/api/v1/iam/auth/login",
         "/api/v1/iam/auth/register",
         "/api/v1/iam/auth/token/refresh",
