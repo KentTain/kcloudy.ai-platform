@@ -23,12 +23,12 @@
 
 ## 5. 编写单元测试
 
-- [ ] 5.1 创建 `tests/framework/unit/schemas/test_vo_mixins.py`
-- [ ] 5.2 测试 `PropertyVoMixin` 字段定义正确
-- [ ] 5.3 测试 `PropertyAttributeVoMixin` 字段定义正确
-- [ ] 5.4 测试 `TreeNodeVo` 继承链和序列化行为
-- [ ] 5.5 测试 ORM 模型到 VO 的转换
-- [ ] 5.6 测试重构后的 SystemSettingResponse 序列化行为
+- [x] 5.1 创建 `tests/framework/unit/schemas/test_vo_mixins.py`
+- [x] 5.2 测试 `PropertyVoMixin` 字段定义正确
+- [x] 5.3 测试 `PropertyAttributeVoMixin` 字段定义正确
+- [x] 5.4 测试 `TreeNodeVo` 继承链和序列化行为
+- [x] 5.5 测试 ORM 模型到 VO 的转换
+- [x] 5.6 测试重构后的 SystemSettingResponse 序列化行为
 
 ## 6. 验证与清理
 
