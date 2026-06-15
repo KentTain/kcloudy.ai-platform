@@ -111,7 +111,7 @@ def create_app() -> FastAPI:
     # 注册 Demo 路由
     from demo.controllers.dataset import router as dataset_router
 
-    app.include_router(dataset_router, prefix="/api/v1/datasets", tags=["Dataset"])
+    app.include_router(dataset_router, prefix="/demo/console/v1/datasets", tags=["Dataset"])
 
     # 健康检查端点
     @app.get("/health", tags=["Health"])

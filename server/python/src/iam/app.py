@@ -98,7 +98,7 @@ def create_app() -> FastAPI:
 
     app.include_router(
         admin_system_setting_router,
-        prefix="/admin/v1/system-settings",
+        prefix="/iam/admin/v1/system-settings",
         tags=["Admin - SystemSetting"],
     )
 
@@ -109,7 +109,7 @@ def create_app() -> FastAPI:
 
     app.include_router(
         console_system_setting_router,
-        prefix="/console/v1/system-settings",
+        prefix="/iam/console/v1/system-settings",
         tags=["Console - SystemSetting"],
     )
 
