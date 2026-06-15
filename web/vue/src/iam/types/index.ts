@@ -22,6 +22,15 @@ export interface User {
   created_at: string;
   roles: string[];
   permissions: string[];
+  tenants?: UserTenant[];
+}
+
+// 用户租户类型
+export interface UserTenant {
+  id: string;
+  name: string;
+  code: string;
+  is_default: boolean;
 }
 
 // 角色类型

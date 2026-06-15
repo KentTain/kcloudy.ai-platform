@@ -8,6 +8,7 @@ export interface TenantInfo {
   id: string;
   name: string;
   code: string;
+  is_default?: boolean;
 }
 
 /**
@@ -40,9 +41,15 @@ export const useUserStore = defineStore("user", () => {
   // 是否登录
   const isLoggedIn = computed(() => !!token.value);
 
-  // 当前租户
+  // 当前租户（从 tenants 列表中获取完整信息，包含 is_default）
   const currentTenant = computed<TenantInfo | null>(() => {
     if (!userInfo.value?.tenantId) return null;
+    // 从 tenants 列表中找到当前租户，这样可以保留 is_default 字段
+    const tenant = userInfo.value.tenants?.find((t) => t.id === userInfo.value.tenantId);
+    if (tenant) {
+      return tenant;
+    }
+    // 如果 tenants 列表中没有找到，使用基本信息
     return {
       id: userInfo.value.tenantId,
       name: userInfo.value.tenantName || "",

@@ -15,15 +15,31 @@ import type { LoginRequest, LoginResponse, User } from "../types";
 /**
  * 将 IAM User 转换为 Framework UserInfo
  */
-const convertToUserInfo = (user: User): UserInfo => ({
-  id: user.id,
-  username: user.username,
-  nickname: user.nickname || user.username,
-  avatar: user.avatar,
-  email: user.email,
-  roles: user.roles || [],
-  permissions: user.permissions || [],
-});
+const convertToUserInfo = (user: User): UserInfo => {
+  // 找到默认租户
+  const defaultTenant = user.tenants?.find((t) => t.is_default);
+  // user.tenant_id 是后端返回的字段名（下划线）
+  const currentTenant = user.tenants?.find((t) => t.id === user.tenant_id) || defaultTenant;
+
+  return {
+    id: user.id,
+    username: user.username,
+    nickname: user.nickname || user.username,
+    avatar: user.avatar,
+    email: user.email,
+    roles: user.roles || [],
+    permissions: user.permissions || [],
+    tenantId: user.tenant_id,
+    tenantName: currentTenant?.name,
+    tenantCode: currentTenant?.code,
+    tenants: user.tenants?.map((t) => ({
+      id: t.id,
+      name: t.name,
+      code: t.code,
+      is_default: t.is_default,
+    })),
+  };
+};
 
 const decodeJwtPayload = (token: string): Record<string, any> => {
   try {

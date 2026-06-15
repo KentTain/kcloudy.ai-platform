@@ -581,6 +581,27 @@ class TenantService:
             _logger.info(f"更新租户资源绑定: {tenant_id}")
             return tenant
 
+    @staticmethod
+    async def get_tenants_by_ids(tenant_ids: list[str]) -> dict[str, Tenant]:
+        """
+        根据租户 ID 列表批量获取租户信息
+
+        Args:
+            tenant_ids: 租户 ID 列表
+
+        Returns:
+            dict[str, Tenant]: 租户 ID 到租户对象的映射
+        """
+        if not tenant_ids:
+            return {}
+
+        async with async_session() as session:
+            stmt = select(Tenant).where(Tenant.id.in_(tenant_ids))
+            result = await session.execute(stmt)
+            tenants = result.scalars().all()
+
+            return {t.id: t for t in tenants}
+
 
 # 服务单例
 tenant_service = TenantService()

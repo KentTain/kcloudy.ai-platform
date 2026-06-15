@@ -4,8 +4,8 @@
  * 显示当前租户 logo 和名称，支持切换租户
  * 参照 shadcn team-switcher 实现
  */
-import { computed } from "vue";
-import { ChevronsUpDown, Plus, Building2 } from "@lucide/vue";
+import { computed, onMounted } from "vue";
+import { ChevronsUpDown, Building2, Check } from "@lucide/vue";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -32,6 +32,17 @@ const tenants = computed(() => userStore.tenants);
 const tenantInitial = computed(() => {
   const name = currentTenant.value?.name || "T";
   return name.charAt(0).toUpperCase();
+});
+
+// 初始化时选择默认租户
+onMounted(() => {
+  // 如果当前没有选中租户，但有默认租户，则自动选择
+  if (!currentTenant.value && tenants.value.length > 0) {
+    const defaultTenant = tenants.value.find((t) => t.is_default);
+    if (defaultTenant) {
+      switchTenant(defaultTenant.id);
+    }
+  }
 });
 
 function switchTenant(tenantId: string) {
@@ -80,17 +91,11 @@ function switchTenant(tenantId: string) {
               <span class="text-xs font-medium">{{ tenant.name.charAt(0).toUpperCase() }}</span>
             </div>
             {{ tenant.name }}
-            <DropdownMenuShortcut>{{ '' }}{{ index + 1 }}</DropdownMenuShortcut>
+            <Check v-if="tenant.id === currentTenant?.id" class="ml-auto size-4 text-primary" />
+            <DropdownMenuShortcut v-else>{{ '' }}{{ index + 1 }}</DropdownMenuShortcut>
           </DropdownMenuItem>
           <DropdownMenuItem v-if="tenants.length === 0" disabled>
             暂无其他租户
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem class="gap-2 p-2">
-            <div class="flex size-6 items-center justify-center rounded-md border bg-transparent">
-              <Plus class="size-4" />
-            </div>
-            <div class="font-medium text-muted-foreground">添加租户</div>
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

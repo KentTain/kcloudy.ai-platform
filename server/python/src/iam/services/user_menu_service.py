@@ -88,9 +88,14 @@ class UserMenuService:
                 all_menus, visible_menu_ids
             )
 
-            # 7. 构建菜单树
+            # 7. 获取模块信息（用于构建模块级顶级节点）
+            modules_info = await UserMenuService._get_modules_info(
+                session, enabled_module_ids
+            )
+
+            # 8. 构建菜单树
             visible_menus = [m for m in all_menus if m.id in visible_menu_ids]
-            return UserMenuService._build_menu_tree(visible_menus)
+            return UserMenuService._build_menu_tree(visible_menus, modules_info)
 
     @staticmethod
     async def _get_enabled_modules(session, tenant_id: str | None) -> set[str]:
@@ -119,7 +124,42 @@ class UserMenuService:
             stmt = stmt.where(TenantModule.tenant_id == tenant_id)
 
         result = await session.execute(stmt)
-        return {row[0] for row in result.fetchall()}
+        module_codes = {row[0] for row in result.fetchall()}
+
+        # 排除 tenant 模块（系统级管理模块，只对租户管理员可见）
+        module_codes.discard("tenant")
+
+        return module_codes
+
+    @staticmethod
+    async def _get_modules_info(
+        session, module_codes: set[str]
+    ) -> dict[str, dict]:
+        """
+        获取模块信息（用于构建模块级顶级节点）
+
+        Args:
+            session: 数据库会话
+            module_codes: 模块 code 集合
+
+        Returns:
+            dict[str, dict]: 模块信息映射 {module_code: {name, icon, sort_order}}
+        """
+        if not module_codes:
+            return {}
+
+        stmt = select(Module).where(Module.code.in_(module_codes))
+        result = await session.execute(stmt)
+        modules = list(result.scalars().all())
+
+        return {
+            m.code: {
+                "name": m.name,
+                "icon": m.icon,
+                "sort_order": idx,  # 按查询顺序排序
+            }
+            for idx, m in enumerate(modules)
+        }
 
     @staticmethod
     async def _get_user_permissions(
@@ -286,60 +326,90 @@ class UserMenuService:
         return result_ids
 
     @staticmethod
-    def _build_menu_tree(menus: list[Menu]) -> list[MenuTreeDict]:
+    def _build_menu_tree(menus: list[Menu], modules_info: dict[str, dict] | None = None) -> list[MenuTreeDict]:
         """
-        构建菜单树
+        构建菜单树，顶级节点为模块
 
         Args:
             menus: 菜单列表
+            modules_info: 模块信息映射 {module_code: {name, icon, sort_order}}
 
         Returns:
-            list[MenuTreeDict]: 菜单树列表
+            list[MenuTreeDict]: 菜单树列表，顶级节点为模块
         """
         if not menus:
             return []
 
-        # 构建 id -> menu 映射
-        menu_map = {m.id: m for m in menus}
-
-        # 构建树节点字典
-        tree_map: dict[str, MenuTreeDict] = {}
+        # 1. 按模块分组菜单
+        menus_by_module: dict[str, list[Menu]] = {}
         for menu in menus:
-            tree_map[menu.id] = {
-                "id": menu.id,
-                "code": menu.code,
-                "name": menu.name,
-                "icon": menu.icon,
-                "path": menu.path if menu.path else None,
-                "sort_order": menu.tree_sort,
+            module_code = menu.module
+            if module_code not in menus_by_module:
+                menus_by_module[module_code] = []
+            menus_by_module[module_code].append(menu)
+
+        # 2. 构建模块级顶级节点
+        result: list[MenuTreeDict] = []
+        for module_code, module_menus in menus_by_module.items():
+            # 获取模块信息
+            module_info = modules_info.get(module_code, {}) if modules_info else {}
+            module_name = module_info.get("name", module_code.upper())
+            module_icon = module_info.get("icon")
+
+            # 创建模块级顶级节点（无 path，不可点击）
+            module_node: MenuTreeDict = {
+                "id": f"module_{module_code}",
+                "code": f"{module_code}.module",
+                "name": module_name,
+                "icon": module_icon,
+                "path": None,  # 模块节点无路由
+                "sort_order": module_info.get("sort_order", 0),
                 "children": [],
             }
 
-        # 构建树结构
-        root_nodes: list[MenuTreeDict] = []
-        for menu in menus:
-            node = tree_map[menu.id]
-            parent_id = menu.parent_id
+            # 3. 构建该模块下的菜单树
+            menu_map = {m.id: m for m in module_menus}
+            tree_map: dict[str, MenuTreeDict] = {}
 
-            # 顶级节点或父节点不在列表中
-            if not parent_id or parent_id == "root" or parent_id not in tree_map:
-                root_nodes.append(node)
-            else:
-                # 添加到父节点的 children
-                parent_node = tree_map[parent_id]
-                parent_node["children"].append(node)
+            for menu in module_menus:
+                tree_map[menu.id] = {
+                    "id": menu.id,
+                    "code": menu.code,
+                    "name": menu.name,
+                    "icon": menu.icon,
+                    "path": menu.path if menu.path else None,
+                    "sort_order": menu.tree_sort,
+                    "children": [],
+                }
 
-        # 按 sort_order 排序
-        def sort_children(node: MenuTreeDict) -> None:
-            node["children"].sort(key=lambda x: x["sort_order"])
-            for child in node["children"]:
+            # 构建树结构（模块内）
+            for menu in module_menus:
+                node = tree_map[menu.id]
+                parent_id = menu.parent_id
+
+                # 顶级节点或父节点不在列表中，挂载到模块节点
+                if not parent_id or parent_id == "root" or parent_id not in tree_map:
+                    module_node["children"].append(node)
+                else:
+                    # 添加到父节点的 children
+                    parent_node = tree_map[parent_id]
+                    parent_node["children"].append(node)
+
+            # 按sort_order 排序
+            def sort_children(node: MenuTreeDict) -> None:
+                node["children"].sort(key=lambda x: x["sort_order"])
+                for child in node["children"]:
+                    sort_children(child)
+
+            module_node["children"].sort(key=lambda x: x["sort_order"])
+            for child in module_node["children"]:
                 sort_children(child)
 
-        root_nodes.sort(key=lambda x: x["sort_order"])
-        for node in root_nodes:
-            sort_children(node)
+            result.append(module_node)
 
-        return root_nodes
+        # 按模块排序
+        result.sort(key=lambda x: x["sort_order"])
+        return result
 
 
 # 服务单例

@@ -6,21 +6,8 @@
 import type { FunctionalComponent } from "vue";
 import { computed, onMounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import {
-  ChevronRight,
-  Home,
-  Activity,
-  Database,
-  Settings,
-  Users,
-  Shield,
-  Badge,
-  Building,
-  Key,
-  Package,
-  Puzzle,
-  type LucideIcon,
-} from "@lucide/vue";
+import * as LucideIcons from "@lucide/vue";
+import { ChevronRight } from "@lucide/vue";
 import {
   Collapsible,
   CollapsibleContent,
@@ -41,22 +28,22 @@ import { useUserStore } from "@/framework/stores/user";
 import { useMenuStore, type UserMenuItem } from "@/framework/stores/menu";
 
 /**
- * 图标映射表
- * 将后端返回的图标名称映射到 Lucide 组件
+ * 默认图标（当指定图标不存在时使用）
  */
-const ICON_MAP: Record<string, LucideIcon> = {
-  Users,
-  Shield,
-  Settings,
-  Badge,
-  Building,
-  Key,
-  Package,
-  Database,
-  Puzzle,
-  Home,
-  Activity,
-};
+const DEFAULT_ICON = LucideIcons.Folder;
+
+/**
+ * 获取图标组件
+ * @param iconName 图标名称
+ * @returns 图标组件或默认图标
+ */
+function getIconComponent(iconName: string | null | undefined): FunctionalComponent | undefined {
+  if (!iconName) return undefined;
+
+  // 尝试从 Lucide 图标库获取
+  const icon = (LucideIcons as Record<string, FunctionalComponent>)[iconName];
+  return icon || DEFAULT_ICON;
+}
 
 /**
  * 内部菜单项接口
@@ -86,7 +73,7 @@ const menuStore = useMenuStore();
  * 将 UserMenuItem 转换为内部 MenuItem
  */
 function convertToMenuItem(item: UserMenuItem): MenuItem {
-  const icon = item.icon ? ICON_MAP[item.icon] : undefined;
+  const icon = getIconComponent(item.icon);
   const children = item.children?.map(convertToMenuItem) || [];
 
   return {
@@ -115,7 +102,7 @@ function convertToMenuGroups(items: UserMenuItem[]): MenuGroup[] {
     }
 
     // 如果没有子菜单，作为顶级菜单项
-    const icon = item.icon ? ICON_MAP[item.icon] : undefined;
+    const icon = getIconComponent(item.icon);
     return {
       items: [{
         icon,

@@ -129,6 +129,15 @@ class AdminPasswordResetVo(BaseModel):
     password: str
 
 
+class UserTenantVo(BaseModel):
+    """用户租户视图对象"""
+
+    id: str = Field(..., description="租户 ID")
+    name: str = Field(..., description="租户名称")
+    code: str = Field(..., description="租户编码")
+    is_default: bool = Field(False, description="是否默认租户")
+
+
 class UserVo(BaseModel):
     """用户视图对象"""
 
@@ -149,6 +158,7 @@ class UserVo(BaseModel):
     created_at: datetime
     roles: list[str] = Field(default_factory=list, description="用户角色编码列表")
     permissions: list[str] = Field(default_factory=list, description="用户权限编码列表")
+    tenants: list[UserTenantVo] = Field(default_factory=list, description="用户所属租户列表")
 
 
 class UserListVo(BaseModel):

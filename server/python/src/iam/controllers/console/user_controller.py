@@ -73,7 +73,7 @@ async def get_current_user(user_id: str = Depends(get_current_user_id)) -> ORJSO
     """
     获取当前用户信息
 
-    返回当前登录用户的详细信息，包括角色和权限。
+    返回当前登录用户的详细信息，包括角色、权限和租户列表。
     """
     user = await user_service.get_by_id(user_id)
     if not user:
@@ -86,10 +86,32 @@ async def get_current_user(user_id: str = Depends(get_current_user_id)) -> ORJSO
     # 获取用户权限
     permissions = await permission_check_service.get_user_permissions(user_id)
 
+    # 获取用户租户列表
+    user_tenants = await user_service.get_user_tenants_detail(user_id)
+
+    # 获取租户详细信息
+    tenant_ids = [ut["tenant_id"] for ut in user_tenants]
+    from tenant.services.tenant_service import tenant_service
+    tenants_info = await tenant_service.get_tenants_by_ids(tenant_ids)
+
+    # 构建租户列表
+    tenants_vo = []
+    for ut in user_tenants:
+        tenant_info = tenants_info.get(ut["tenant_id"])
+        if tenant_info:
+            from iam.schemas.user import UserTenantVo
+            tenants_vo.append(UserTenantVo(
+                id=ut["tenant_id"],
+                name=tenant_info.name,
+                code=tenant_info.code,
+                is_default=ut["is_default"],
+            ))
+
     # 构建响应
     user_vo = UserVo.model_validate(user)
     user_vo.roles = role_codes
     user_vo.permissions = permissions
+    user_vo.tenants = tenants_vo
 
     return ORJSONResponse(
         content={

@@ -1,6 +1,8 @@
 ﻿import type { Router } from "vue-router";
 import { useUserStore, usePermissionStore } from "@/framework/stores";
+import { useMenuStore } from "@/framework/stores/menu";
 import { useAdminAuthStore } from "@/tenant/stores/adminAuth";
+import { getCurrentUser } from "@/iam/api/auth";
 
 // 白名单路由
 const whiteList = ["/login", "/admin/login", "/403", "/404"];
@@ -14,6 +16,7 @@ export const setupRouterGuards = (router: Router) => {
 
     const userStore = useUserStore();
     const permissionStore = usePermissionStore();
+    const menuStore = useMenuStore();
     const adminAuthStore = useAdminAuthStore();
 
     // 设置页面标题
@@ -54,6 +57,42 @@ export const setupRouterGuards = (router: Router) => {
       return;
     }
 
+    // 已登录但 userInfo 为空，重新获取用户信息
+    if (!userStore.userInfo) {
+      console.log("[RouterGuard] User logged in but userInfo is null, fetching...");
+      try {
+        const response = await getCurrentUser();
+        // 手动转换用户信息
+        const user = response.data;
+        const defaultTenant = user.tenants?.find((t: any) => t.is_default);
+        const currentTenant = user.tenants?.find((t: any) => t.id === user.tenant_id) || defaultTenant;
+
+        userStore.setUserInfo({
+          id: user.id,
+          username: user.username,
+          nickname: user.nickname || user.username,
+          avatar: user.avatar,
+          email: user.email,
+          roles: user.roles || [],
+          permissions: user.permissions || [],
+          tenantId: user.tenant_id,
+          tenantName: currentTenant?.name,
+          tenantCode: currentTenant?.code,
+          tenants: user.tenants?.map((t: any) => ({
+            id: t.id,
+            name: t.name,
+            code: t.code,
+            is_default: t.is_default,
+          })),
+        });
+      } catch (error) {
+        console.error("[RouterGuard] Failed to fetch user info:", error);
+        // 获取用户信息失败，可能是 token 过期，重定向到登录页
+        next("/login?redirect=" + to.path);
+        return;
+      }
+    }
+
     // 已登录访问登录页，重定向首页
     if (to.path === "/login") {
       next("/");
@@ -85,7 +124,7 @@ export const setupRouterGuards = (router: Router) => {
     // 加载菜单（仅首次）
     if (!permissionStore.isLoaded) {
       console.log("[RouterGuard] Loading menus...");
-      await permissionStore.fetchUserMenus();
+      await menuStore.fetchUserMenus();
       permissionStore.setLoaded(true);
     }
 
