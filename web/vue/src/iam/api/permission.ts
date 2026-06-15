@@ -21,7 +21,7 @@ export const getAllPermissions = async () => {
   const response = await getPermissions({ page: 1, page_size: 1000 });
   return {
     ...response,
-    data: response.data.items,
+    data: response.data.items ?? [],
   } as ApiResponse<Permission[]>;
 };
 

@@ -22,7 +22,10 @@ export const createApiClient = (config?: AxiosRequestConfig): AxiosInstance => {
   instance.interceptors.request.use(
     (config) => {
       // 根据请求路径判断使用哪个 token
-      const isAdminRequest = config.url?.startsWith("/admin");
+      // 注意：/admin/v1/iam/* 和 /admin/v1/system-settings/* 是租户级管理 API，使用普通用户 token
+      const isAdminRequest = config.url?.startsWith("/admin") &&
+        !config.url?.startsWith("/admin/v1/iam") &&
+        !config.url?.startsWith("/admin/v1/system-settings");
       const tokenKey = isAdminRequest ? "admin_token" : "token";
       const token = localStorage.getItem(tokenKey);
 
@@ -47,8 +50,10 @@ export const createApiClient = (config?: AxiosRequestConfig): AxiosInstance => {
     (error) => {
       const { response, config } = error;
 
-      // 判断是否为管理后台请求
-      const isAdminRequest = config?.url?.startsWith("/admin");
+      // 判断是否为管理后台请求（租户级管理 API 使用普通用户 token）
+      const isAdminRequest = config?.url?.startsWith("/admin") &&
+        !config?.url?.startsWith("/admin/v1/iam") &&
+        !config?.url?.startsWith("/admin/v1/system-settings");
 
       // 401 未登录
       if (response?.status === 401) {

@@ -24,8 +24,8 @@ export const usePermissionStore = defineStore("iam-permission", () => {
     loading.value = true;
     try {
       const response = await getAllPermissions();
-      permissions.value = response.data;
-      total.value = response.data.length;
+      permissions.value = response.data ?? [];
+      total.value = response.data?.length ?? 0;
     } finally {
       loading.value = false;
     }
@@ -35,7 +35,7 @@ export const usePermissionStore = defineStore("iam-permission", () => {
     loading.value = true;
     try {
       const response = await getPermissionsByResource();
-      permissionGroups.value = response.data;
+      permissionGroups.value = response.data ?? [];
     } finally {
       loading.value = false;
     }

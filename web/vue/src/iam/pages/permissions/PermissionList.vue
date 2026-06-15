@@ -52,8 +52,8 @@ const getActionBadgeVariant = (action: string) => {
 
 // 统计信息文本
 const statsText = computed(() => {
-  const total = permissionStore.permissions.length
-  const filtered = filteredPermissions.value.length
+  const total = permissionStore.permissions?.length ?? 0
+  const filtered = filteredPermissions.value?.length ?? 0
 
   if (searchKeyword.value.trim()) {
     return `共 ${total} 项权限，筛选结果 ${filtered} 项`
