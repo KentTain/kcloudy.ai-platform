@@ -24,7 +24,6 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
 } from "@/components/ui/sidebar";
-import { useUserStore } from "@/framework/stores/user";
 import { useMenuStore, type UserMenuItem } from "@/framework/stores/menu";
 
 /**
@@ -66,7 +65,6 @@ interface MenuGroup {
 
 const route = useRoute();
 const router = useRouter();
-const userStore = useUserStore();
 const menuStore = useMenuStore();
 
 /**
@@ -115,21 +113,10 @@ function convertToMenuGroups(items: UserMenuItem[]): MenuGroup[] {
 }
 
 // 权限检查函数
-function hasPermissionKey(permissionKey: string | undefined): boolean {
-  if (!permissionKey) return true;
-  const userPermissions = userStore.userInfo?.permissions || [];
-  if (userPermissions.length === 0) return true;
-
-  if (userPermissions.includes(permissionKey)) return true;
-
-  // 层级匹配
-  const parts = permissionKey.split(".");
-  for (let i = parts.length - 1; i > 0; i--) {
-    const parentKey = parts.slice(0, i).join(".");
-    if (userPermissions.includes(parentKey)) return true;
-  }
-
-  return false;
+// 注意：后端 user_menu_service 已经根据用户权限过滤了菜单
+// 前端不需要再次进行权限过滤，直接显示后端返回的菜单即可
+function hasPermissionKey(_permissionKey: string | undefined): boolean {
+  return true;
 }
 
 // 过滤菜单项

@@ -142,9 +142,8 @@ class IAMModule:
                 MenuDef(code="iam.users", name="用户管理", path="/iam/users", icon="Users", sort_order=1),
                 MenuDef(code="iam.roles", name="角色管理", path="/iam/roles", icon="Badge", sort_order=2),
                 MenuDef(code="iam.departments", name="部门管理", path="/iam/departments", icon="Building", sort_order=3),
-                MenuDef(code="iam.tenants", name="租户管理", path="/iam/tenants", icon="Organization", sort_order=4),
-                MenuDef(code="iam.menus", name="菜单管理", path="/iam/menus", icon="Menu", sort_order=5),
-                MenuDef(code="iam.permissions", name="权限管理", path="/iam/permissions", icon="Lock", sort_order=6),
+                MenuDef(code="iam.menus", name="菜单管理", path="/iam/menus", icon="Menu", sort_order=4),
+                MenuDef(code="iam.permissions", name="权限管理", path="/iam/permissions", icon="Lock", sort_order=5),
             ],
             permissions=[
                 # 用户权限
@@ -159,10 +158,6 @@ class IAMModule:
                 PermissionDef(code="iam:department:read", name="查看部门", resource="department", action="read"),
                 PermissionDef(code="iam:department:write", name="编辑部门", resource="department", action="write"),
                 PermissionDef(code="iam:department:delete", name="删除部门", resource="department", action="delete"),
-                # 租户权限
-                PermissionDef(code="iam:tenant:read", name="查看租户", resource="tenant", action="read"),
-                PermissionDef(code="iam:tenant:write", name="编辑租户", resource="tenant", action="write"),
-                PermissionDef(code="iam:tenant:delete", name="删除租户", resource="tenant", action="delete"),
                 # 菜单权限
                 PermissionDef(code="iam:menu:read", name="查看菜单", resource="menu", action="read"),
                 PermissionDef(code="iam:menu:write", name="编辑菜单", resource="menu", action="write"),

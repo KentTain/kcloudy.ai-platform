@@ -23,8 +23,8 @@ export const useRoleStore = defineStore("iam-role", () => {
     loading.value = true;
     try {
       const response = await getRoles(params);
-      roles.value = response.data.items;
-      total.value = response.data.total;
+      roles.value = response.data.items ?? [];
+      total.value = response.data.total ?? 0;
     } catch (error: any) {
       notifyError(getErrorMessage(error, "获取角色列表失败"));
       console.error("fetchRoles error:", error);

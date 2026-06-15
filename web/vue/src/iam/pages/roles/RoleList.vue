@@ -115,7 +115,7 @@ onMounted(() => {
               <Skeleton class="h-5 w-full" />
             </TableCell>
           </TableRow>
-          <TableRow v-else-if="!roleStore.roles.length">
+          <TableRow v-else-if="!roleStore.roles?.length">
             <TableCell colspan="6" class="h-24 text-center text-muted-foreground">
               暂无数据
             </TableCell>

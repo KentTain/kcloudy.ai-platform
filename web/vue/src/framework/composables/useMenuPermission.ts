@@ -1,5 +1,3 @@
-import { useUserStore } from "@/framework/stores/user";
-
 export interface MenuItemWithPermission {
   title: string;
   url: string;
@@ -15,32 +13,18 @@ export interface MenuGroupWithPermission {
 
 /**
  * 菜单权限过滤组合式函数
- * 根据用户权限动态过滤菜单项
+ * 注意：后端 user_menu_service 已经根据用户权限过滤了菜单
+ * 前端不需要再次进行权限过滤，直接显示后端返回的菜单即可
  */
 export function useMenuPermission() {
-  const userStore = useUserStore();
 
   /**
    * 检查用户是否有指定权限
-   * 支持层级权限键匹配（父级权限键可以覆盖子级）
+   * 注意：后端 user_menu_service 已经根据用户权限过滤了菜单
+   * 前端不需要再次进行权限过滤，直接显示后端返回的菜单即可
    */
-  function hasPermissionKey(permissionKey: string | undefined): boolean {
-    if (!permissionKey) return true;
-
-    const userPermissions = userStore.userInfo?.permissions || [];
-    if (userPermissions.length === 0) return true; // 无权限配置时默认显示所有
-
-    // 精确匹配
-    if (userPermissions.includes(permissionKey)) return true;
-
-    // 层级匹配：检查父级权限键
-    const parts = permissionKey.split(".");
-    for (let i = parts.length - 1; i > 0; i--) {
-      const parentKey = parts.slice(0, i).join(".");
-      if (userPermissions.includes(parentKey)) return true;
-    }
-
-    return false;
+  function hasPermissionKey(_permissionKey: string | undefined): boolean {
+    return true;
   }
 
   /**

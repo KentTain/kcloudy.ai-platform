@@ -32,8 +32,8 @@ export const useTenantStore = defineStore("tenant", () => {
     loading.value = true;
     try {
       const response = await getTenants(params);
-      tenants.value = response.data.items;
-      total.value = response.data.total;
+      tenants.value = response.data.items ?? [];
+      total.value = response.data.total ?? 0;
     } catch (error: unknown) {
       notifyError(getErrorMessage(error, "获取租户列表失败"));
       console.error("fetchTenants error:", error);

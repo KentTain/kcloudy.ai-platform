@@ -19,8 +19,11 @@ export interface UserMenuVo {
 
 /**
  * 用户菜单列表响应
+ * 与后端统一响应格式对齐
  */
 interface UserMenusResponse {
+  code: number;
+  msg: string;
   data: UserMenuVo[];
 }
 
