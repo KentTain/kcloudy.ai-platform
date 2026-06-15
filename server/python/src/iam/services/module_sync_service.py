@@ -81,10 +81,38 @@ class ModuleSyncService:
         # 4. 创建租户实例层的菜单（先处理 parent_id 映射）
         menu_id_map: dict[str, str] = {}  # module_menu_id -> tenant_menu_id
 
+        # 查询已存在的菜单（幂等检查：优先通过 ref_id，其次通过 tenant_id + module + code）
+        if module_menus:
+            existing_menu_stmt = select(Menu).where(
+                Menu.tenant_id == tenant_id,
+                Menu.module == module_code,
+            )
+            existing_menu_result = await session.execute(existing_menu_stmt)
+            # 同时建立 ref_id 映射和 code 映射，兼容有无 ref_id 的历史数据
+            existing_menus_by_ref: dict[str, Menu] = {}
+            existing_menus_by_code: dict[str, Menu] = {}
+            for m in existing_menu_result.scalars().all():
+                if m.ref_id:
+                    existing_menus_by_ref[m.ref_id] = m
+                existing_menus_by_code[m.code] = m
+        else:
+            existing_menus_by_ref = {}
+            existing_menus_by_code = {}
+
         # 按树层级排序，确保父菜单先创建
         sorted_menus = sorted(module_menus, key=lambda m: m.parent_id or "")
 
         for mm in sorted_menus:
+            # 幂等检查：优先通过 ref_id，其次通过 code
+            existing = existing_menus_by_ref.get(mm.id) or existing_menus_by_code.get(mm.code)
+            if existing:
+                menu_id_map[mm.id] = existing.id
+                # 如果历史数据缺少 ref_id，补全它
+                if not existing.ref_id:
+                    existing.ref_id = mm.id
+                    await session.flush()
+                continue
+
             # 查找父菜单的租户 ID
             tenant_parent_id = None
             if mm.parent_id:
@@ -108,7 +136,33 @@ class ModuleSyncService:
         # 5. 创建租户实例层的权限
         perm_id_map: dict[str, str] = {}  # module_permission_id -> tenant_permission_id
 
+        # 查询已存在的权限（幂等检查：优先通过 ref_id，其次通过 tenant_id + code）
+        if module_permissions:
+            existing_perm_stmt = select(Permission).where(
+                Permission.tenant_id == tenant_id,
+            )
+            existing_perm_result = await session.execute(existing_perm_stmt)
+            existing_perms_by_ref: dict[str, Permission] = {}
+            existing_perms_by_code: dict[str, Permission] = {}
+            for p in existing_perm_result.scalars().all():
+                if p.ref_id:
+                    existing_perms_by_ref[p.ref_id] = p
+                existing_perms_by_code[p.code] = p
+        else:
+            existing_perms_by_ref = {}
+            existing_perms_by_code = {}
+
         for mp in module_permissions:
+            # 幂等检查：优先通过 ref_id，其次通过 code
+            existing = existing_perms_by_ref.get(mp.id) or existing_perms_by_code.get(mp.code)
+            if existing:
+                perm_id_map[mp.id] = existing.id
+                # 如果历史数据缺少 ref_id，补全它
+                if not existing.ref_id:
+                    existing.ref_id = mp.id
+                    await session.flush()
+                continue
+
             permission = Permission(
                 tenant_id=tenant_id,
                 code=mp.code,
@@ -125,7 +179,33 @@ class ModuleSyncService:
         # 6. 创建租户实例层的角色
         role_id_map: dict[str, str] = {}  # module_role_id -> tenant_role_id
 
+        # 查询已存在的角色（幂等检查：优先通过 ref_id，其次通过 tenant_id + code）
+        if module_roles:
+            existing_role_stmt = select(Role).where(
+                Role.tenant_id == tenant_id,
+            )
+            existing_role_result = await session.execute(existing_role_stmt)
+            existing_roles_by_ref: dict[str, Role] = {}
+            existing_roles_by_code: dict[str, Role] = {}
+            for r in existing_role_result.scalars().all():
+                if r.ref_id:
+                    existing_roles_by_ref[r.ref_id] = r
+                existing_roles_by_code[r.code] = r
+        else:
+            existing_roles_by_ref = {}
+            existing_roles_by_code = {}
+
         for mr in module_roles:
+            # 幂等检查：优先通过 ref_id，其次通过 code
+            existing = existing_roles_by_ref.get(mr.id) or existing_roles_by_code.get(mr.code)
+            if existing:
+                role_id_map[mr.id] = existing.id
+                # 如果历史数据缺少 ref_id，补全它
+                if not existing.ref_id:
+                    existing.ref_id = mr.id
+                    await session.flush()
+                continue
+
             role = Role(
                 tenant_id=tenant_id,
                 code=mr.code,
@@ -139,6 +219,20 @@ class ModuleSyncService:
             role_id_map[mr.id] = role.id
 
         # 7. 创建租户实例层的角色权限关联
+        # 查询已存在的角色权限关联（幂等检查）
+        tenant_role_ids = list(role_id_map.values())
+        if tenant_role_ids:
+            existing_rp_stmt = select(RolePermission).where(
+                RolePermission.tenant_id == tenant_id,
+                RolePermission.role_id.in_(tenant_role_ids),
+            )
+            existing_rp_result = await session.execute(existing_rp_stmt)
+            existing_rps = {
+                (rp.role_id, rp.permission_id) for rp in existing_rp_result.scalars().all()
+            }
+        else:
+            existing_rps = set()
+
         for module_role_id, module_perm_ids in role_perms_map.items():
             tenant_role_id = role_id_map.get(module_role_id)
             if not tenant_role_id:
@@ -147,6 +241,10 @@ class ModuleSyncService:
             for module_perm_id in module_perm_ids:
                 tenant_perm_id = perm_id_map.get(module_perm_id)
                 if not tenant_perm_id:
+                    continue
+
+                # 幂等检查：如果已存在则跳过
+                if (tenant_role_id, tenant_perm_id) in existing_rps:
                     continue
 
                 role_permission = RolePermission(
