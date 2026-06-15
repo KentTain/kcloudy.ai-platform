@@ -92,7 +92,7 @@ class TenantModuleService:
         2. 校验该租户未已分配该模块
         3. 如果模块 is_need=true，分配时不可设置过期时间
         4. 创建 TenantModule 记录
-        5. 发布 ModuleAssigned 事件（TODO: 任务 6 实现）
+        5. 发布 ModuleAssigned 事件
 
         Args:
             tenant_id: 租户 ID
@@ -150,7 +150,7 @@ class TenantModuleService:
                 f"生效时间: {started_at}，过期时间: {expired_at or '无'}"
             )
 
-            # 发布 ModuleAssigned 事件
+            # 5. 发布 ModuleAssigned 事件
             await event_publisher.publish(
                 ModuleAssigned(tenant_id=tenant_id, module_id=module_id)
             )
@@ -167,7 +167,7 @@ class TenantModuleService:
         2. 检查租户实例层是否有用户使用该模块的角色
         3. 有用户使用 -> 返回错误；无用户使用 -> 继续
         4. 删除 TenantModule 记录
-        5. 发布 ModuleUnassigned 事件（TODO: 任务 6 实现）
+        5. 发布 ModuleUnassigned 事件
 
         Args:
             tenant_id: 租户 ID
@@ -214,7 +214,7 @@ class TenantModuleService:
 
             _logger.info(f"租户 {tenant_id} 取消分配模块 {module.code}")
 
-            # 发布 ModuleUnassigned 事件
+            # 5. 发布 ModuleUnassigned 事件
             await event_publisher.publish(
                 ModuleUnassigned(tenant_id=tenant_id, module_id=module_id)
             )
