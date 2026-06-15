@@ -49,7 +49,7 @@ function switchTenant(tenantId: string) {
             size="lg"
             class="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
           >
-            <div class="flex aspect-square size-8 items-center justify-center rounded-lg bg-secondary text-secondary-foreground">
+            <div class="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
               <Building2 v-if="!currentTenant" class="size-4" />
               <span v-else class="text-sm font-bold">{{ tenantInitial }}</span>
             </div>

@@ -105,12 +105,12 @@
 
     --radius: 0.5rem;
 
-    /* 侧边栏 */
-    --sidebar: oklch(1 0 0);
-    --sidebar-foreground: oklch(0.22 0 0);
+    /* 侧边栏 - 对齐 Alon 风格 */
+    --sidebar: #f2f3f6;
+    --sidebar-foreground: #121933;
     --sidebar-primary: oklch(0.55 0.24 266);
     --sidebar-primary-foreground: oklch(0.99 0 0);
-    --sidebar-accent: oklch(0.96 0.006 264);
+    --sidebar-accent: #e9e9ec;
     --sidebar-accent-foreground: oklch(0.22 0 0);
     --sidebar-border: oklch(0.91 0 0);
     --sidebar-ring: oklch(0.55 0.24 266);

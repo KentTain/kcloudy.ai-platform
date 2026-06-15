@@ -235,7 +235,7 @@ onMounted(() => {
 
   <!-- 菜单列表 -->
   <SidebarGroup v-for="(group, groupIndex) in menuItems" :key="groupIndex">
-    <SidebarGroupLabel v-if="group.title">{{ group.title }}</SidebarGroupLabel>
+    <SidebarGroupLabel v-if="group.title" class="mb-3 h-5 text-gray-500">{{ group.title }}</SidebarGroupLabel>
     <SidebarGroupContent>
       <SidebarMenu>
         <template v-for="(item, itemIndex) in group.items" :key="itemIndex">
@@ -244,6 +244,8 @@ onMounted(() => {
             <SidebarMenuButton
               :tooltip="item.title"
               :is-active="isItemActive(item.url)"
+              class="h-10 hover:bg-accent-foreground/5"
+              :class="isItemActive(item.url) ? 'bg-white! text-primary!' : ''"
               @click="handleNavigate(item.url)"
             >
               <component :is="item.icon" v-if="item.icon" />
@@ -258,7 +260,7 @@ onMounted(() => {
               @update:open="toggleExpand(item.title)"
             >
               <CollapsibleTrigger as-child>
-                <SidebarMenuButton :tooltip="item.title">
+                <SidebarMenuButton :tooltip="item.title" class="h-10 hover:bg-accent-foreground/5">
                   <component :is="item.icon" v-if="item.icon" />
                   <span>{{ item.title }}</span>
                   <ChevronRight
