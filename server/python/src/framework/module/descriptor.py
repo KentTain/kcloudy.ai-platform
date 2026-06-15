@@ -66,8 +66,13 @@ class ModuleDescriptor(Protocol):
 
         返回格式: [(router, prefix, tags), ...]
         - router: FastAPI APIRouter 实例
-        - prefix: 路由前缀，如 "/api/v1"
-        - tags: OpenAPI 标签列表，如 ["IAM"]
+        - prefix: 路由前缀，遵循模块优先格式 "/{模块}/{类型}/v1"
+        - tags: OpenAPI 标签列表，如 ["Admin - User"]
+
+        示例:
+        - "/iam/admin/v1" - IAM 模块管理端路由
+        - "/iam/console/v1" - IAM 模块用户端路由
+        - "/iam/inner/v1" - IAM 模块内部接口
         """
         ...
 

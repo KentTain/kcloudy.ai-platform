@@ -86,11 +86,6 @@ def create_app() -> FastAPI:
     # 注册租户中间件
     app.add_middleware(TenantMiddleware)
 
-    # 注册 IAM 路由
-    from iam.controllers import router as iam_router
-
-    app.include_router(iam_router, prefix="/api/v1", tags=["IAM"])
-
     # 注册管理后台路由
     from iam.controllers.admin.system_setting_controller import (
         router as admin_system_setting_router,
