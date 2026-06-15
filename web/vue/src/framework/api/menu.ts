@@ -28,4 +28,4 @@ interface UserMenusResponse {
  * 获取当前用户菜单
  */
 export const getUserMenus = () =>
-  get<UserMenusResponse>("/v1/user/menus");
+  get<UserMenusResponse>("/console/v1/iam/users/menus");

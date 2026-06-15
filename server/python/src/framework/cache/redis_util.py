@@ -62,6 +62,11 @@ class RedisUtil:
             raise RuntimeError("Redis 客户端未初始化")
         return cls._client
 
+    @classmethod
+    def is_initialized(cls) -> bool:
+        """检查 Redis 是否已初始化"""
+        return cls._client is not None
+
     # =========================================================================
     # 字符串操作
     # =========================================================================
@@ -80,7 +85,7 @@ class RedisUtil:
         Returns:
             bool: 操作是否成功
         """
-        return await cls._client.set(key, value, ex=ttl, nx=nx)
+        return await cls.get_client().set(key, value, ex=ttl, nx=nx)
 
     @classmethod
     async def get(cls, key: str) -> Optional[str]:
@@ -93,7 +98,7 @@ class RedisUtil:
         Returns:
             str | None: 键值，不存在则返回 None
         """
-        result = await cls._client.get(key)
+        result = await cls.get_client().get(key)
         if result is None:
             return None
         if isinstance(result, bytes):
@@ -111,7 +116,7 @@ class RedisUtil:
         Returns:
             int: 删除的键数量
         """
-        return await cls._client.delete(key)
+        return await cls.get_client().delete(key)
 
     @classmethod
     async def exists(cls, key: str) -> bool:
@@ -124,7 +129,7 @@ class RedisUtil:
         Returns:
             bool: 键是否存在
         """
-        return await cls._client.exists(key) > 0
+        return await cls.get_client().exists(key) > 0
 
     @classmethod
     async def expire(cls, key: str, ttl: int) -> bool:
@@ -138,7 +143,7 @@ class RedisUtil:
         Returns:
             bool: 操作是否成功
         """
-        return await cls._client.expire(key, ttl)
+        return await cls.get_client().expire(key, ttl)
 
     @classmethod
     async def keys(cls, pattern: str) -> list[str]:
@@ -151,7 +156,7 @@ class RedisUtil:
         Returns:
             list[str]: 键列表
         """
-        result = await cls._client.keys(pattern)
+        result = await cls.get_client().keys(pattern)
         return [k.decode() if isinstance(k, bytes) else k for k in result]
 
     @classmethod
@@ -166,7 +171,7 @@ class RedisUtil:
         Returns:
             int: 递增后的值
         """
-        return await cls._client.incrby(key, amount)
+        return await cls.get_client().incrby(key, amount)
 
     @classmethod
     async def decr(cls, key: str, amount: int = 1) -> int:
@@ -180,7 +185,7 @@ class RedisUtil:
         Returns:
             int: 递减后的值
         """
-        return await cls._client.decrby(key, amount)
+        return await cls.get_client().decrby(key, amount)
 
     # =========================================================================
     # Hash 操作
@@ -189,7 +194,7 @@ class RedisUtil:
     @classmethod
     async def hget(cls, name: str, key: str) -> Optional[str]:
         """获取 Hash 字段值"""
-        result = await cls._client.hget(name, key)
+        result = await cls.get_client().hget(name, key)
         if result is None:
             return None
         if isinstance(result, bytes):
@@ -199,23 +204,23 @@ class RedisUtil:
     @classmethod
     async def hset(cls, name: str, key: str, value: str) -> int:
         """设置 Hash 字段值"""
-        return await cls._client.hset(name, key, value)
+        return await cls.get_client().hset(name, key, value)
 
     @classmethod
     async def hdel(cls, name: str, key: str) -> int:
         """删除 Hash 字段"""
-        return await cls._client.hdel(name, key)
+        return await cls.get_client().hdel(name, key)
 
     @classmethod
     async def hgetall(cls, name: str) -> dict[str, str]:
         """获取 Hash 所有字段"""
-        result = await cls._client.hgetall(name)
+        result = await cls.get_client().hgetall(name)
         return {k.decode() if isinstance(k, bytes) else k: v.decode() if isinstance(v, bytes) else v for k, v in result.items()}
 
     @classmethod
     async def hexists(cls, name: str, key: str) -> bool:
         """检查 Hash 字段是否存在"""
-        return await cls._client.hexists(name, key)
+        return await cls.get_client().hexists(name, key)
 
     # =========================================================================
     # List 操作
@@ -224,17 +229,17 @@ class RedisUtil:
     @classmethod
     async def lpush(cls, key: str, *values: str) -> int:
         """从左侧插入列表"""
-        return await cls._client.lpush(key, *values)
+        return await cls.get_client().lpush(key, *values)
 
     @classmethod
     async def rpush(cls, key: str, *values: str) -> int:
         """从右侧插入列表"""
-        return await cls._client.rpush(key, *values)
+        return await cls.get_client().rpush(key, *values)
 
     @classmethod
     async def lpop(cls, key: str) -> Optional[str]:
         """从左侧弹出"""
-        result = await cls._client.lpop(key)
+        result = await cls.get_client().lpop(key)
         if result is None:
             return None
         if isinstance(result, bytes):
@@ -244,7 +249,7 @@ class RedisUtil:
     @classmethod
     async def rpop(cls, key: str) -> Optional[str]:
         """从右侧弹出"""
-        result = await cls._client.rpop(key)
+        result = await cls.get_client().rpop(key)
         if result is None:
             return None
         if isinstance(result, bytes):
@@ -254,7 +259,7 @@ class RedisUtil:
     @classmethod
     async def llen(cls, key: str) -> int:
         """获取列表长度"""
-        return await cls._client.llen(key)
+        return await cls.get_client().llen(key)
 
     # =========================================================================
     # Set 操作
@@ -263,23 +268,23 @@ class RedisUtil:
     @classmethod
     async def sadd(cls, key: str, *values: str) -> int:
         """添加集合成员"""
-        return await cls._client.sadd(key, *values)
+        return await cls.get_client().sadd(key, *values)
 
     @classmethod
     async def srem(cls, key: str, *values: str) -> int:
         """移除集合成员"""
-        return await cls._client.srem(key, *values)
+        return await cls.get_client().srem(key, *values)
 
     @classmethod
     async def smembers(cls, key: str) -> set[str]:
         """获取集合所有成员"""
-        result = await cls._client.smembers(key)
+        result = await cls.get_client().smembers(key)
         return {v.decode() if isinstance(v, bytes) else v for v in result}
 
     @classmethod
     async def sismember(cls, key: str, value: str) -> bool:
         """检查是否是集合成员"""
-        return await cls._client.sismember(key, value)
+        return await cls.get_client().sismember(key, value)
 
     # =========================================================================
     # Stream 操作（用于队列）
@@ -288,13 +293,13 @@ class RedisUtil:
     @classmethod
     async def xadd(cls, stream: str, fields: dict[str, Any], id: str = "*") -> str:
         """添加 Stream 消息"""
-        result = await cls._client.xadd(stream, fields, id=id)
+        result = await cls.get_client().xadd(stream, fields, id=id)
         return result.decode() if isinstance(result, bytes) else result
 
     @classmethod
     async def xread(cls, streams: dict[str, str], count: int = 1, block: int | None = None) -> list:
         """读取 Stream 消息"""
-        return await cls._client.xread(streams, count=count, block=block)
+        return await cls.get_client().xread(streams, count=count, block=block)
 
     @classmethod
     async def xreadgroup(
@@ -306,7 +311,7 @@ class RedisUtil:
         block: int | None = None
     ) -> list:
         """使用消费者组读取 Stream 消息"""
-        return await cls._client.xreadgroup(
+        return await cls.get_client().xreadgroup(
             groupname=groupname,
             consumername=consumername,
             streams=streams,
@@ -317,13 +322,13 @@ class RedisUtil:
     @classmethod
     async def xack(cls, stream: str, group: str, *ids: str) -> int:
         """确认 Stream 消息"""
-        return await cls._client.xack(stream, group, *ids)
+        return await cls.get_client().xack(stream, group, *ids)
 
     @classmethod
     async def xgroup_create(cls, stream: str, group: str, id: str = "0", mkstream: bool = False) -> bool:
         """创建消费者组"""
         try:
-            await cls._client.xgroup_create(stream, group, id=id, mkstream=mkstream)
+            await cls.get_client().xgroup_create(stream, group, id=id, mkstream=mkstream)
             return True
         except Exception:
             return False
@@ -331,7 +336,7 @@ class RedisUtil:
     @classmethod
     async def xinfo_stream(cls, stream: str) -> dict:
         """获取 Stream 信息"""
-        return await cls._client.xinfo_stream(stream)
+        return await cls.get_client().xinfo_stream(stream)
 
     # =========================================================================
     # Pub/Sub 操作
@@ -340,12 +345,12 @@ class RedisUtil:
     @classmethod
     async def publish(cls, channel: str, message: str) -> int:
         """发布消息"""
-        return await cls._client.publish(channel, message)
+        return await cls.get_client().publish(channel, message)
 
     @classmethod
     async def pubsub_numsub(cls, *channels: str) -> dict[str, int]:
         """获取频道订阅者数量"""
-        result = await cls._client.pubsub_numsub(*channels)
+        result = await cls.get_client().pubsub_numsub(*channels)
         return {k.decode() if isinstance(k, bytes) else k: v for k, v in result}
 
     # =========================================================================
@@ -355,7 +360,7 @@ class RedisUtil:
     @classmethod
     async def eval(cls, script: str, numkeys: int, *args: Any) -> Any:
         """执行 Lua 脚本"""
-        return await cls._client.eval(script, numkeys, *args)
+        return await cls.get_client().eval(script, numkeys, *args)
 
     # =========================================================================
     # 健康检查
@@ -370,7 +375,7 @@ class RedisUtil:
             bool: 连接是否正常
         """
         try:
-            await cls._client.ping()
+            await cls.get_client().ping()
             return True
         except (RedisError, ConnectionError, OSError):
             return False

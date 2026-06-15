@@ -70,12 +70,15 @@ class PermissionCheckService:
             list[str]: 权限编码列表
         """
         # 尝试从缓存获取
-        if use_cache:
-            cache_key = f"{PERMISSION_CACHE_PREFIX}{user_id}"
-            cached = await RedisUtil.get(cache_key)
-            if cached:
-                import json
-                return json.loads(cached)
+        if use_cache and RedisUtil.is_initialized():
+            try:
+                cache_key = f"{PERMISSION_CACHE_PREFIX}{user_id}"
+                cached = await RedisUtil.get(cache_key)
+                if cached:
+                    import json
+                    return json.loads(cached)
+            except (RuntimeError, Exception) as e:
+                _logger.debug(f"Redis 缓存读取失败，降级到数据库查询: {e}")
 
         # 从数据库查询
         async with async_session() as session:
@@ -90,14 +93,17 @@ class PermissionCheckService:
             permissions = [row for row in result.scalars().all()]
 
         # 写入缓存
-        if use_cache:
-            cache_key = f"{PERMISSION_CACHE_PREFIX}{user_id}"
-            import json
-            await RedisUtil.set(
-                cache_key,
-                json.dumps(permissions),
-                ttl=PERMISSION_CACHE_TTL,
-            )
+        if use_cache and RedisUtil.is_initialized():
+            try:
+                cache_key = f"{PERMISSION_CACHE_PREFIX}{user_id}"
+                import json
+                await RedisUtil.set(
+                    cache_key,
+                    json.dumps(permissions),
+                    ttl=PERMISSION_CACHE_TTL,
+                )
+            except (RuntimeError, Exception) as e:
+                _logger.debug(f"Redis 缓存写入失败，跳过缓存: {e}")
 
         return permissions
 
@@ -179,9 +185,14 @@ class PermissionCheckService:
         Args:
             user_id: 用户 ID
         """
-        cache_key = f"{PERMISSION_CACHE_PREFIX}{user_id}"
-        await RedisUtil.delete(cache_key)
-        _logger.debug(f"权限缓存已清除: {user_id}")
+        if not RedisUtil.is_initialized():
+            return
+        try:
+            cache_key = f"{PERMISSION_CACHE_PREFIX}{user_id}"
+            await RedisUtil.delete(cache_key)
+            _logger.debug(f"权限缓存已清除: {user_id}")
+        except (RuntimeError, Exception) as e:
+            _logger.debug(f"权限缓存清除失败: {e}")
 
     @staticmethod
     async def invalidate_tenant_permission_cache(tenant_id: str) -> None:
@@ -193,6 +204,8 @@ class PermissionCheckService:
         Args:
             tenant_id: 租户 ID
         """
+        if not RedisUtil.is_initialized():
+            return
         # 查找租户内所有用户
         from iam.models import UserTenant
         async with async_session() as session:

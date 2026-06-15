@@ -213,3 +213,94 @@ class TestRedisUtilConnectionPool:
                 assert call_kwargs['max_connections'] == 50
 
         await RedisUtil.close()
+
+
+class TestRedisUtilUninitialized:
+    """RedisUtil 未初始化状态测试"""
+
+    @pytest.mark.asyncio
+    async def test_is_initialized_returns_false_when_not_initialized(self):
+        """
+        场景：检查 Redis 是否已初始化
+        WHEN: Redis 未初始化时调用 is_initialized()
+        THEN: 返回 False
+        """
+        from framework.cache.redis_util import RedisUtil
+
+        # 确保未初始化
+        RedisUtil._client = None
+        RedisUtil._pool = None
+
+        assert RedisUtil.is_initialized() is False
+
+    @pytest.mark.asyncio
+    async def test_is_initialized_returns_true_when_initialized(self):
+        """
+        场景：检查 Redis 是否已初始化
+        WHEN: Redis 已初始化时调用 is_initialized()
+        THEN: 返回 True
+        """
+        from framework.cache.redis_util import RedisUtil
+        from unittest.mock import MagicMock, patch
+
+        mock_config = MagicMock()
+        mock_config.mode = "single"
+        mock_config.single.host = "localhost"
+        mock_config.single.port = 6379
+        mock_config.single.db = 0
+        mock_config.single.connection_pool = None
+
+        await RedisUtil.init(mock_config)
+
+        assert RedisUtil.is_initialized() is True
+
+        # 清理
+        await RedisUtil.close()
+
+    @pytest.mark.asyncio
+    async def test_get_raises_runtime_error_when_not_initialized(self):
+        """
+        场景：未初始化时调用 get
+        WHEN: Redis 未初始化时调用 get()
+        THEN: 抛出 RuntimeError
+        """
+        from framework.cache.redis_util import RedisUtil
+
+        # 确保未初始化
+        RedisUtil._client = None
+        RedisUtil._pool = None
+
+        with pytest.raises(RuntimeError, match="Redis 客户端未初始化"):
+            await RedisUtil.get("key")
+
+    @pytest.mark.asyncio
+    async def test_set_raises_runtime_error_when_not_initialized(self):
+        """
+        场景：未初始化时调用 set
+        WHEN: Redis 未初始化时调用 set()
+        THEN: 抛出 RuntimeError
+        """
+        from framework.cache.redis_util import RedisUtil
+
+        # 确保未初始化
+        RedisUtil._client = None
+        RedisUtil._pool = None
+
+        with pytest.raises(RuntimeError, match="Redis 客户端未初始化"):
+            await RedisUtil.set("key", "value")
+
+    @pytest.mark.asyncio
+    async def test_get_client_raises_runtime_error_when_not_initialized(self):
+        """
+        场景：未初始化时获取客户端
+        WHEN: Redis 未初始化时调用 get_client()
+        THEN: 抛出 RuntimeError
+        """
+        from framework.cache.redis_util import RedisUtil
+
+        # 确保未初始化
+        RedisUtil._client = None
+        RedisUtil._pool = None
+
+        with pytest.raises(RuntimeError, match="Redis 客户端未初始化"):
+            RedisUtil.get_client()
