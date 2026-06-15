@@ -1,4 +1,8 @@
-﻿from framework.module.definition import ModuleDefinition
+﻿from typing import Callable
+
+from framework.module.definition import ModuleDefinition
+
+from demo.models import Base
 
 
 class DemoModule:

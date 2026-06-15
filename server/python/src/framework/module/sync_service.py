@@ -4,19 +4,22 @@
 负责将模块定义（菜单、权限、角色）同步到数据库。
 """
 
+import fnmatch
+
 from loguru import logger
-from sqlalchemy import select, delete, update
+from sqlalchemy import delete, select, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from framework.database import async_session
 from framework.module.definition import (
-    ModuleDefinition,
     MenuDef,
+    ModuleDefinition,
     PermissionDef,
     RoleDef,
 )
 from framework.module.registry import get_registry
+from framework.utils.log_util import write_error, write_info, write_warning
 from tenant.models import (
     Module,
     ModuleMenu,
@@ -24,8 +27,6 @@ from tenant.models import (
     ModuleRole,
     ModuleRolePermission,
 )
-
-import fnmatch
 
 _logger = logger.bind(name=__name__)
 
@@ -81,14 +82,15 @@ class ModuleDefinitionSyncService:
         for module in modules:
             definition = module.get_module_definition()
             if definition is None:
-                _logger.debug(f"模块 {module.name} 无模块定义，跳过同步")
+                write_warning(f"模块 {module.name} 无模块定义，跳过同步")
                 continue
 
             try:
                 await self.sync_module(definition)
-                _logger.info(f"模块 {definition.code} 同步完成")
+                write_info(f"模块 {definition.code} 同步完成")
             except Exception as e:
                 _logger.error(f"模块 {definition.code} 同步失败: {e}")
+                write_error(f"模块 {definition.code} 同步失败")
                 raise
 
     async def sync_module(self, definition: ModuleDefinition) -> None:
@@ -102,29 +104,36 @@ class ModuleDefinitionSyncService:
         """
         async with async_session() as session:
             # 1. Upsert Module 记录
-            stmt = insert(Module).values(
-                code=definition.code,
-                name=definition.name,
-                description=definition.description,
-                icon=definition.icon,
-                version=definition.version,
-                is_active=True,
-                is_need=False,
-            ).on_conflict_do_update(
-                index_elements=["code"],
-                set_={
-                    "name": definition.name,
-                    "description": definition.description,
-                    "icon": definition.icon,
-                    "version": definition.version,
-                },
-            ).returning(Module.id)
+            stmt = (
+                insert(Module)
+                .values(
+                    code=definition.code,
+                    name=definition.name,
+                    description=definition.description,
+                    icon=definition.icon,
+                    version=definition.version,
+                    is_active=True,
+                    is_need=False,
+                )
+                .on_conflict_do_update(
+                    index_elements=["code"],
+                    set_={
+                        "name": definition.name,
+                        "description": definition.description,
+                        "icon": definition.icon,
+                        "version": definition.version,
+                    },
+                )
+                .returning(Module.id)
+            )
 
             result = await session.execute(stmt)
             module_id = result.scalar_one()
 
             # 2. 同步菜单
-            await self._sync_menus(session, module_id, definition.code, definition.menus)
+            await self._sync_menus(
+                session, module_id, definition.code, definition.menus
+            )
 
             # 3. 同步权限
             await self._sync_permissions(
@@ -132,7 +141,9 @@ class ModuleDefinitionSyncService:
             )
 
             # 4. 同步角色
-            await self._sync_roles(session, module_id, definition.code, definition.default_roles)
+            await self._sync_roles(
+                session, module_id, definition.code, definition.default_roles
+            )
 
             # 5. 清理孤儿数据
             await self._cleanup_orphans(
@@ -181,25 +192,30 @@ class ModuleDefinitionSyncService:
         code_to_id_map: dict[str, str] = {}
 
         for menu_def in menus:
-            stmt = insert(ModuleMenu).values(
-                module_id=module_id,
-                parent_id=None,  # 先不设置父菜单
-                code=menu_def.code,
-                name=menu_def.name,
-                path=menu_def.path,
-                icon=menu_def.icon,
-                sort_order=menu_def.sort_order,
-                is_visible=menu_def.is_visible,
-            ).on_conflict_do_update(
-                index_elements=["code"],
-                set_={
-                    "name": menu_def.name,
-                    "path": menu_def.path,
-                    "icon": menu_def.icon,
-                    "sort_order": menu_def.sort_order,
-                    "is_visible": menu_def.is_visible,
-                },
-            ).returning(ModuleMenu.id)
+            stmt = (
+                insert(ModuleMenu)
+                .values(
+                    module_id=module_id,
+                    parent_id=None,  # 先不设置父菜单
+                    code=menu_def.code,
+                    name=menu_def.name,
+                    path=menu_def.path,
+                    icon=menu_def.icon,
+                    sort_order=menu_def.sort_order,
+                    is_visible=menu_def.is_visible,
+                )
+                .on_conflict_do_update(
+                    index_elements=["code"],
+                    set_={
+                        "name": menu_def.name,
+                        "path": menu_def.path,
+                        "icon": menu_def.icon,
+                        "sort_order": menu_def.sort_order,
+                        "is_visible": menu_def.is_visible,
+                    },
+                )
+                .returning(ModuleMenu.id)
+            )
 
             result = await session.execute(stmt)
             menu_id = result.scalar_one()
@@ -263,9 +279,7 @@ class ModuleDefinitionSyncService:
         for menu in menus:
             if menu.code not in visited:
                 if has_cycle(menu.code):
-                    raise ValueError(
-                        f"检测到菜单循环引用，涉及菜单: {menu.code}"
-                    )
+                    raise ValueError(f"检测到菜单循环引用，涉及菜单: {menu.code}")
 
     async def _sync_permissions(
         self,
@@ -289,21 +303,25 @@ class ModuleDefinitionSyncService:
             return
 
         for perm_def in permissions:
-            stmt = insert(ModulePermission).values(
-                module_id=module_id,
-                code=perm_def.code,
-                name=perm_def.name,
-                resource=perm_def.resource,
-                action=perm_def.action,
-                description=perm_def.description,
-            ).on_conflict_do_update(
-                index_elements=["code"],
-                set_={
-                    "name": perm_def.name,
-                    "resource": perm_def.resource,
-                    "action": perm_def.action,
-                    "description": perm_def.description,
-                },
+            stmt = (
+                insert(ModulePermission)
+                .values(
+                    module_id=module_id,
+                    code=perm_def.code,
+                    name=perm_def.name,
+                    resource=perm_def.resource,
+                    action=perm_def.action,
+                    description=perm_def.description,
+                )
+                .on_conflict_do_update(
+                    index_elements=["code"],
+                    set_={
+                        "name": perm_def.name,
+                        "resource": perm_def.resource,
+                        "action": perm_def.action,
+                        "description": perm_def.description,
+                    },
+                )
             )
 
             await session.execute(stmt)
@@ -341,20 +359,25 @@ class ModuleDefinitionSyncService:
 
         for role_def in roles:
             # Upsert 角色
-            stmt = insert(ModuleRole).values(
-                module_id=module_id,
-                code=role_def.code,
-                name=role_def.name,
-                description=role_def.description,
-                is_system=role_def.is_system,
-            ).on_conflict_do_update(
-                constraint="uq_module_roles_module_code",
-                set_={
-                    "name": role_def.name,
-                    "description": role_def.description,
-                    "is_system": role_def.is_system,
-                },
-            ).returning(ModuleRole.id)
+            stmt = (
+                insert(ModuleRole)
+                .values(
+                    module_id=module_id,
+                    code=role_def.code,
+                    name=role_def.name,
+                    description=role_def.description,
+                    is_system=role_def.is_system,
+                )
+                .on_conflict_do_update(
+                    constraint="uq_module_roles_module_code",
+                    set_={
+                        "name": role_def.name,
+                        "description": role_def.description,
+                        "is_system": role_def.is_system,
+                    },
+                )
+                .returning(ModuleRole.id)
+            )
 
             result = await session.execute(stmt)
             role_id = result.scalar_one()
@@ -386,11 +409,15 @@ class ModuleDefinitionSyncService:
                 # 创建新的权限关联（使用展开后的具体权限码）
                 for perm_code in expanded_codes:
                     perm_id = perm_code_to_id[perm_code]
-                    stmt = insert(ModuleRolePermission).values(
-                        module_role_id=role_id,
-                        module_permission_id=perm_id,
-                    ).on_conflict_do_nothing(
-                        constraint="uq_module_role_permissions_role_perm"
+                    stmt = (
+                        insert(ModuleRolePermission)
+                        .values(
+                            module_role_id=role_id,
+                            module_permission_id=perm_id,
+                        )
+                        .on_conflict_do_nothing(
+                            constraint="uq_module_role_permissions_role_perm"
+                        )
                     )
                     await session.execute(stmt)
 

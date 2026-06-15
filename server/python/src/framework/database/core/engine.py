@@ -16,6 +16,8 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
 )
 
+from framework.utils.log_util import write_error, write_info, write_warning
+
 _logger = logger.bind(name=__name__)
 
 
@@ -50,7 +52,7 @@ class EngineManager:
             **kwargs: 额外配置参数
         """
         if self._engine is not None:
-            _logger.warning("数据库引擎已初始化，跳过重复初始化")
+            write_warning("数据库引擎已初始化，跳过重复初始化")
             return
 
         engine_config = {
@@ -70,8 +72,8 @@ class EngineManager:
         )
 
         self._setup_connection_events()
-        _logger.debug(f"连接池配置 - 大小: {pool_size}, 最大溢出: {max_overflow}")
-        _logger.info("数据库引擎初始化完成")
+        write_info(f"连接池配置 - 大小: {pool_size}, 最大溢出: {max_overflow}")
+        write_info("数据库引擎初始化完成")
 
     def _setup_connection_events(self) -> None:
         """设置连接事件监听器"""
@@ -84,8 +86,9 @@ class EngineManager:
             try:
                 if hasattr(dbapi_connection, "set_client_encoding"):
                     dbapi_connection.set_client_encoding("UTF8")
-            except Exception:
-                _logger.exception("连接池连接事件处理失败")
+            except Exception as e:
+                _logger.exception(f"连接池连接事件处理失败，失败消息：{e}")
+                write_error(f"连接池连接事件处理失败")
 
     async def close(self) -> None:
         """关闭数据库连接"""
