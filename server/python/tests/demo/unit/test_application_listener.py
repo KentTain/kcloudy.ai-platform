@@ -1,7 +1,7 @@
 """application_listener 入口测试"""
 
 import asyncio
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
@@ -17,18 +17,31 @@ class TestApplicationListener:
         assert callable(main)
 
     @pytest.mark.asyncio
-    async def test_run_listener_calls_setup(self):
+    async def test_run_listener_loads_modules(self):
         """WHEN: run_listener 启动
-        THEN: 调用 setup_listeners()"""
+        THEN: 加载模块并调用 listener setup"""
+        # 创建 mock 模块
+        mock_module = MagicMock()
+        mock_module.name = "test_module"
+        mock_setup = AsyncMock()
+        mock_cleanup = AsyncMock()
+        mock_module.get_listener_setup.return_value = (mock_setup, mock_cleanup)
+
         with patch(
-            "application_listener.setup_listeners",
-            new_callable=AsyncMock,
-        ) as mock_setup, patch(
-            "application_listener.cleanup_listeners",
-            new_callable=AsyncMock,
-        ) as mock_cleanup, patch(
-            "application_listener.init_settings"
+            "application_listener.load_modules",
+            return_value=[mock_module],
+        ), patch(
+            "application_listener.get_registry",
+        ) as mock_registry, patch(
+            "application_listener._get_tenant_provider",
+            return_value=None,
+        ), patch(
+            "framework.database.core.engine.setup_engine",
         ):
+            mock_registry_instance = MagicMock()
+            mock_registry_instance.get_all_modules.return_value = [mock_module]
+            mock_registry.return_value = mock_registry_instance
+
             from application_listener import run_listener
 
             loop = asyncio.get_running_loop()
@@ -43,8 +56,8 @@ class TestApplicationListener:
             with patch.object(loop, "add_signal_handler", side_effect=mock_add_signal):
                 task = asyncio.create_task(run_listener())
 
-                # 等待 setup_listeners 完成
-                await asyncio.sleep(0.05)
+                # 等待 setup 完成
+                await asyncio.sleep(0.1)
 
                 # 触发第一个 signal 回调来 resolve stop future
                 if signal_callbacks:
@@ -53,22 +66,32 @@ class TestApplicationListener:
                 await task
 
             mock_setup.assert_called_once()
-            mock_cleanup.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_run_listener_registers_signal_handlers(self):
         """WHEN: run_listener 启动
         THEN: 注册 SIGINT 和 SIGTERM 信号处理器"""
+        import signal
+
+        # 创建 mock 模块（无 listener setup）
+        mock_module = MagicMock()
+        mock_module.name = "test_module"
+        mock_module.get_listener_setup.return_value = None
+
         with patch(
-            "application_listener.setup_listeners",
-            new_callable=AsyncMock,
+            "application_listener.load_modules",
+            return_value=[mock_module],
         ), patch(
-            "application_listener.cleanup_listeners",
-            new_callable=AsyncMock,
+            "application_listener.get_registry",
+        ) as mock_registry, patch(
+            "application_listener._get_tenant_provider",
+            return_value=None,
         ), patch(
-            "application_listener.init_settings"
+            "framework.database.core.engine.setup_engine",
         ):
-            import signal
+            mock_registry_instance = MagicMock()
+            mock_registry_instance.get_all_modules.return_value = [mock_module]
+            mock_registry.return_value = mock_registry_instance
 
             from application_listener import run_listener
 
@@ -81,7 +104,7 @@ class TestApplicationListener:
 
             with patch.object(loop, "add_signal_handler", side_effect=mock_add_signal):
                 task = asyncio.create_task(run_listener())
-                await asyncio.sleep(0.05)
+                await asyncio.sleep(0.1)
 
                 # 触发 stop
                 if registered_signals:

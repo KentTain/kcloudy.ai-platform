@@ -121,3 +121,16 @@ class ErrorCode:
     TIMEOUT_ERROR = "TIMEOUT_ERROR"
     CONVERSATION_NOT_FOUND = "CONVERSATION_NOT_FOUND"
     PERMISSION_DENIED = "PERMISSION_DENIED"
+
+
+class LLMChatCompletion(BaseModel):
+    """LLM 对话补全请求 Schema
+
+    用于简化的对话请求，包含模型配置、查询内容、会话 ID、文件和搜索配置。
+    """
+
+    model: ModelConfig = Field(description="模型配置")
+    query: str = Field(description="用户查询内容")
+    conversation_id: str | None = Field(None, description="会话 ID，为 None 时表示创建新会话")
+    files: list[FileItem] | None = Field(None, description="上传的文件列表")
+    search: SearchConfig | None = Field(None, description="联网搜索配置")

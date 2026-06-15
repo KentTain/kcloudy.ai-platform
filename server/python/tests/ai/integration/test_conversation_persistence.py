@@ -16,22 +16,13 @@ from ai.models.message import Message
 from ai.models.enums import ConversationStatus, ConversationMode, MessageStatus, MessageRole
 
 
-@pytest.fixture(scope="module")
-def event_loop():
-    import asyncio
-    policy = asyncio.get_event_loop_policy()
-    loop = policy.new_event_loop()
-    yield loop
-    loop.close()
-
-
 @pytest_asyncio.fixture(scope="module")
 async def db_engine():
     from framework.configs import init_settings
     from pathlib import Path
     from sqlalchemy.ext.asyncio import create_async_engine
 
-    config_dir = Path(__file__).parent.parent.parent.parent / "config"
+    config_dir = Path(__file__).parent.parent.parent.parent.parent / "config"
     settings = init_settings(config_dir)
 
     engine = create_async_engine(

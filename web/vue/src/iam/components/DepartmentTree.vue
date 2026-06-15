@@ -30,7 +30,7 @@ const emit = defineEmits<{
 
 // 使用 useTreeData 转换部门数据
 const { treeData, selectedIds } = useTreeData<Department, TreeSelectNode>({
-  source: () => props.departments,
+  source: computed(() => props.departments),
   modelValue: () => {
     if (props.mode === 'single') {
       return typeof props.modelValue === 'string' && props.modelValue ? [props.modelValue] : []

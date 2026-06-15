@@ -15,12 +15,12 @@ from ai.components.model.internal.provider_manager import (
 class TestCredentialCacheIntegration:
     """凭证缓存集成测试（需要 Redis）"""
 
-    @pytest_asyncio.fixture
+    @pytest_asyncio.fixture(loop_scope="function")
     async def provider_manager(self):
         """创建 ProviderManager 实例"""
         return ProviderManager()
 
-    @pytest_asyncio.fixture
+    @pytest_asyncio.fixture(loop_scope="function")
     async def mock_cache_manager(self):
         """模拟缓存管理器"""
         cache_manager = AsyncMock()
@@ -29,7 +29,7 @@ class TestCredentialCacheIntegration:
         cache_manager.delete = AsyncMock()
         return cache_manager
 
-    @pytest_asyncio.fixture
+    @pytest_asyncio.fixture(loop_scope="function")
     def tenant_id(self):
         """生成测试租户 ID"""
         return "test-cache-tenant-001"
@@ -244,7 +244,7 @@ class TestCredentialUpdateCacheInvalidation:
 class TestCredentialCacheWithRealRedis:
     """凭证缓存真实 Redis 测试（需要 Redis 服务）"""
 
-    @pytest_asyncio.fixture
+    @pytest_asyncio.fixture(loop_scope="function")
     async def redis_available(self, integration_settings):
         """检测 Redis 服务是否可用"""
         from framework.cache.redis_util import RedisUtil
@@ -257,7 +257,7 @@ class TestCredentialCacheWithRealRedis:
         except Exception:
             return False
 
-    @pytest_asyncio.fixture
+    @pytest_asyncio.fixture(loop_scope="function")
     async def redis_client(self, integration_settings, redis_available):
         """Redis 客户端 fixture"""
         if not redis_available:

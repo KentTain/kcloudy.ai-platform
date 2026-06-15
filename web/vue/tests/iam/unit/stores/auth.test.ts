@@ -3,6 +3,7 @@ import { setActivePinia, createPinia } from "pinia";
 import { useAuthStore } from "@/iam/stores/auth";
 import * as authApi from "@/iam/api/auth";
 import { useUserStore } from "@/framework/stores";
+import { useMenuStore } from "@/framework/stores/menu";
 
 vi.mock("@/iam/api/auth", () => ({
   login: vi.fn(),
@@ -13,6 +14,10 @@ vi.mock("@/iam/api/auth", () => ({
 
 vi.mock("@/framework/stores", () => ({
   useUserStore: vi.fn(),
+}));
+
+vi.mock("@/framework/stores/menu", () => ({
+  useMenuStore: vi.fn(),
 }));
 
 describe("Auth Store", () => {
@@ -26,10 +31,22 @@ describe("Auth Store", () => {
     it("calls login API and stores token", async () => {
       const mockSetToken = vi.fn();
       const mockSetUserInfo = vi.fn();
+      const mockFetchUserMenus = vi.fn().mockResolvedValue(undefined);
+      const mockClearMenus = vi.fn();
+
       vi.mocked(useUserStore).mockReturnValue({
         setToken: mockSetToken,
         setUserInfo: mockSetUserInfo,
         userInfo: null,
+      } as any);
+
+      vi.mocked(useMenuStore).mockReturnValue({
+        fetchUserMenus: mockFetchUserMenus,
+        clearMenus: mockClearMenus,
+        menus: [],
+        userMenus: [],
+        loading: false,
+        error: null,
       } as any);
 
       const mockResponse = {
@@ -69,11 +86,22 @@ describe("Auth Store", () => {
   describe("logout", () => {
     it("calls logout API and clears state", async () => {
       const mockLogout = vi.fn();
+      const mockClearMenus = vi.fn();
+
       vi.mocked(useUserStore).mockReturnValue({
         logout: mockLogout,
         setToken: vi.fn(),
         setUserInfo: vi.fn(),
         userInfo: null,
+      } as any);
+
+      vi.mocked(useMenuStore).mockReturnValue({
+        fetchUserMenus: vi.fn().mockResolvedValue(undefined),
+        clearMenus: mockClearMenus,
+        menus: [],
+        userMenus: [],
+        loading: false,
+        error: null,
       } as any);
 
       vi.mocked(authApi.logout).mockResolvedValue({ code: 0, msg: "success", data: undefined });
@@ -83,6 +111,7 @@ describe("Auth Store", () => {
 
       expect(authApi.logout).toHaveBeenCalled();
       expect(mockLogout).toHaveBeenCalled();
+      expect(mockClearMenus).toHaveBeenCalled();
     });
   });
 

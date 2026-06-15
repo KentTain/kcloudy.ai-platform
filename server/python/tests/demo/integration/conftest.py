@@ -4,7 +4,6 @@ Demo 集成测试配置
 提供 demo 集成测试所需的 fixtures。
 """
 
-import asyncio
 import os
 import uuid
 from pathlib import Path
@@ -18,19 +17,6 @@ os.environ["TZ"] = "Asia/Shanghai"
 
 
 # =============================================================================
-# Event Loop (session 作用域)
-# =============================================================================
-
-@pytest.fixture(scope="session")
-def event_loop():
-    """创建 session 作用域的事件循环"""
-    policy = asyncio.get_event_loop_policy()
-    loop = policy.new_event_loop()
-    yield loop
-    loop.close()
-
-
-# =============================================================================
 # 配置加载
 # =============================================================================
 
@@ -39,11 +25,11 @@ def integration_settings():
     """
     加载集成测试配置
 
-    使用 server/python/config/application-local.yml
+    使用 server/config/application-local.yml
     """
     from framework.configs import init_settings
 
-    config_dir = Path(__file__).parent.parent.parent.parent / "config"
+    config_dir = Path(__file__).parent.parent.parent.parent.parent / "config"
     settings = init_settings(config_dir)
 
     return settings

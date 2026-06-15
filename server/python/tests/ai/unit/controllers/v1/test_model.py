@@ -36,6 +36,8 @@ class TestListModels:
     @pytest.mark.asyncio
     async def test_list_models_with_tenant(self):
         """测试有租户时返回模型列表"""
+        from ai_plugin.sdk.entities.model import ModelType
+
         # 模拟提供商数据
         mock_provider = MagicMock()
         mock_provider.provider = "openai"
@@ -47,8 +49,7 @@ class TestListModels:
         # 模拟模型数据
         mock_model = MagicMock()
         mock_model.model = "gpt-4o-mini"
-        mock_model.model_type = MagicMock()
-        mock_model.model_type.value = "llm"
+        mock_model.model_type = ModelType.LLM  # 使用真实的枚举值
         mock_model.label = MagicMock()
         mock_model.label.zh_Hans = "GPT-4o Mini"
         mock_model.label.en_US = "GPT-4o Mini"

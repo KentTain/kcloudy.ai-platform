@@ -57,18 +57,21 @@ def pytest_ignore_collect(collection_path, config):
     """
     if HAS_LANGCHAIN:
         return False
-    
+
     path_str = str(collection_path).replace("\\", "/")
     langchain_paths = [
         "/tests/demo/examples/",
         "/tests/demo/studies/langchain_study/",
         "/tests/demo/studies/langgraph_study/",
+        "/tests/extended/langchain/",
+        "/tests/ai/controllers/v1/chat/test_llm.py",
+        "/tests/ai/unit/controllers/v1/chat/test_llm.py",
     ]
-    
+
     for skip_path in langchain_paths:
         if skip_path in path_str:
             return True
-    
+
     return False
 
 

@@ -55,6 +55,69 @@ class TreeUtil:
         return result
 
     @classmethod
+    async def build_parameter_tree(
+        cls,
+        root: Any,
+        nodes: list[Any],
+    ) -> None:
+        """
+        构建参数树，设置节点的 tree_level、tree_leaf、parent_ids、tree_names、tree_sorts 属性
+
+        Args:
+            root: 根节点
+            nodes: 所有节点列表
+        """
+        # 构建节点映射
+        node_map = {cls._get_node_id(node): node for node in nodes}
+
+        # 递归设置节点属性
+        await cls._build_parameter_tree_recursive(
+            root, nodes, level=0, parent_ids="", tree_names="", tree_sorts=""
+        )
+
+    @classmethod
+    async def _build_parameter_tree_recursive(
+        cls,
+        node: Any,
+        nodes: list[Any],
+        level: int,
+        parent_ids: str,
+        tree_names: str,
+        tree_sorts: str,
+    ) -> None:
+        """递归构建参数树"""
+        node_id = cls._get_node_id(node)
+        node_name = cls._get_node_name(node)
+        node_sort = cls._get_node_sort(node)
+
+        # 设置当前节点属性
+        node.tree_level = level
+        node.parent_ids = parent_ids
+        node.tree_names = tree_names + node_name if tree_names else node_name
+        node.tree_sorts = tree_sorts + f"{node_sort:010d},"
+
+        # 找到子节点
+        children = [n for n in nodes if cls._get_parent_id(n) == node_id]
+
+        if children:
+            node.tree_leaf = False
+            new_parent_ids = f"{parent_ids},{node_id}" if parent_ids else str(node_id)
+            new_tree_names = node.tree_names
+            new_tree_sorts = node.tree_sorts
+
+            for child in children:
+                await cls._build_parameter_tree_recursive(
+                    child,
+                    nodes,
+                    level=level + 1,
+                    parent_ids=new_parent_ids,
+                    tree_names=new_tree_names + "/",
+                    tree_sorts=new_tree_sorts,
+                )
+        else:
+            node.tree_leaf = True
+
+    @classmethod
     def _get_node_id(cls, node: Any) -> str:
         """智能获取节点ID"""
         if isinstance(node, dict):
@@ -65,6 +128,26 @@ class TreeUtil:
             return str(node.id)
         else:
             return str(getattr(node, "id", ""))
+
+    @classmethod
+    def _get_node_name(cls, node: Any) -> str:
+        """获取节点名称"""
+        if isinstance(node, dict):
+            return str(node.get("name", ""))
+        elif hasattr(node, "name"):
+            return str(node.name)
+        else:
+            return ""
+
+    @classmethod
+    def _get_node_sort(cls, node: Any) -> int:
+        """获取节点排序值"""
+        if isinstance(node, dict):
+            return int(node.get("sort", 0))
+        elif hasattr(node, "sort"):
+            return int(node.sort)
+        else:
+            return 0
 
     @classmethod
     def _get_parent_id(cls, node: Any) -> Any:

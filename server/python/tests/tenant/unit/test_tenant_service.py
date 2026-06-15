@@ -47,9 +47,18 @@ class TestGetById:
         mock_tenant.status = TenantStatus.ACTIVE
         mock_tenant.expired_at = None
 
+        # 创建预期的 SimpleTenant
+        expected_simple_tenant = SimpleTenant(
+            id="tenant-1",
+            code="T001",
+            name="测试租户",
+            status=TenantStatus.ACTIVE,
+        )
+
         with patch("tenant.services.tenant_service.TenantCache.get") as mock_cache_get, \
              patch("tenant.services.tenant_service.async_session") as mock_session, \
-             patch("tenant.services.tenant_service.TenantCache.set") as mock_cache_set:
+             patch("tenant.services.tenant_service.TenantCache.set") as mock_cache_set, \
+             patch("tenant.services.tenant_service.TenantService.build_simple_tenant") as mock_build:
 
             mock_cache_get.return_value = None
 
@@ -60,9 +69,11 @@ class TestGetById:
             mock_result.scalar_one_or_none.return_value = mock_tenant
             mock_session_context.execute.return_value = mock_result
 
+            mock_build.return_value = expected_simple_tenant
+
             result = await TenantService.get_by_id("tenant-1", use_cache=True)
 
-        assert result is mock_tenant
+        assert result.id == "tenant-1"
         mock_cache_set.assert_awaited_once()
 
     @pytest.mark.asyncio
@@ -89,8 +100,17 @@ class TestGetById:
         """use_cache=False 时跳过缓存"""
         mock_tenant = MagicMock(spec=Tenant)
 
+        # 创建预期的 SimpleTenant
+        expected_simple_tenant = SimpleTenant(
+            id="tenant-1",
+            code="T001",
+            name="测试租户",
+            status=TenantStatus.ACTIVE,
+        )
+
         with patch("tenant.services.tenant_service.TenantCache.get") as mock_cache_get, \
-             patch("tenant.services.tenant_service.async_session") as mock_session:
+             patch("tenant.services.tenant_service.async_session") as mock_session, \
+             patch("tenant.services.tenant_service.TenantService.build_simple_tenant") as mock_build:
 
             mock_session_context = AsyncMock()
             mock_session.return_value.__aenter__.return_value = mock_session_context
@@ -99,9 +119,11 @@ class TestGetById:
             mock_result.scalar_one_or_none.return_value = mock_tenant
             mock_session_context.execute.return_value = mock_result
 
+            mock_build.return_value = expected_simple_tenant
+
             result = await TenantService.get_by_id("tenant-1", use_cache=False)
 
-        assert result is mock_tenant
+        assert result.id == "tenant-1"
         mock_cache_get.assert_not_awaited()
 
 
