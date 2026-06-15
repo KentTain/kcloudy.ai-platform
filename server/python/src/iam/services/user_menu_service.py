@@ -95,18 +95,19 @@ class UserMenuService:
     @staticmethod
     async def _get_enabled_modules(session, tenant_id: str | None) -> set[str]:
         """
-        获取租户已分配且启用的模块 ID
+        获取租户已分配且启用的模块 code
 
         Args:
             session: 数据库会话
             tenant_id: 租户 ID
 
         Returns:
-            set[str]: 启用的模块 ID 集合
+            set[str]: 启用的模块 code 集合（如 "iam", "demo"）
         """
         # 构建查询：租户已分配的模块 + 模块启用状态
+        # 返回 Module.code，因为 Menu.module 存储的是模块 code 而不是 id
         stmt = (
-            select(Module.id)
+            select(Module.code)
             .join(TenantModule, Module.id == TenantModule.module_id)
             .where(
                 Module.is_active == True,
