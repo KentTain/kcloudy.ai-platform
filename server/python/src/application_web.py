@@ -20,7 +20,12 @@ from framework.module import ModuleDescriptor, get_registry, load_modules
 from framework.module.sync_service import ModuleDefinitionSyncService
 from framework.tenant.middleware import TenantMiddleware
 from framework.tenant.protocols import register_tenant_provider
-from framework.utils.log_util import write_info, write_success, write_warning
+from framework.utils.log_util import (
+    write_error,
+    write_info,
+    write_success,
+    write_warning,
+)
 from framework.utils.startup_timer import StartupTimer
 from iam.middlewares.iam_auth_middleware import IAMAuthMiddleware
 
@@ -86,8 +91,9 @@ def _get_tenant_provider():
         from tenant.services.tenant_provider_impl import tenant_provider_impl
 
         return tenant_provider_impl
-    except ImportError:
-        write_warning("TenantProvider 不可用")
+    except ImportError as e:
+        _logger.exception(f"模块定义同步失败: {e}")
+        write_error("TenantProvider 不可用")
         return None
 
 
@@ -110,7 +116,7 @@ async def _run_module_definition_sync(phase) -> None:
         _logger.exception(f"模块定义同步失败: {e}")
         phase.details["同步状态"] = f"失败: {e}"
         # 同步失败不阻止应用启动，但记录错误
-        write_warning(f"模块定义同步失败，部分功能可能异常: {e}")
+        write_error(f"模块定义同步失败，部分功能可能异常: {e}")
 
 
 async def _run_seed_initialization():
@@ -125,10 +131,11 @@ async def _run_seed_initialization():
                 write_success(
                     f"Seed 初始化完成 [{module.name}/{seed_name}]: {count} 条记录"
                 )
-            except Exception:
+            except Exception as e:
                 _logger.exception(
-                    f"Seed 初始化失败 [{module.name}/{seed_name}]，跳过该模块"
+                    f"Seed 初始化失败 [{module.name}/{seed_name}]，跳过该模块，错误消息: {e}"
                 )
+                write_error(f"Seed 初始化失败 [{module.name}/{seed_name}]，跳过该模块")
 
 
 def create_app(module_names: list[str] | None = None) -> FastAPI:
@@ -152,9 +159,12 @@ def create_app(module_names: list[str] | None = None) -> FastAPI:
             from config.modules import ENABLED_MODULES
 
             module_names = ENABLED_MODULES
-            _logger.info(f"Loaded modules from config: {ENABLED_MODULES}")
-        except ImportError:
-            _logger.info("No modules config found, loading all modules")
+            write_info(f"Loaded modules from config: {ENABLED_MODULES}")
+        except ImportError as e:
+            _logger.exception(
+                "No modules config found, loading all modules，错误消息: {e}"
+            )
+            write_error("No modules config found, loading all modules")
 
     with timer.phase("模块加载与路由注册", order=3) as phase:
         # 加载模块
@@ -195,7 +205,7 @@ def create_app(module_names: list[str] | None = None) -> FastAPI:
     env = getattr(settings, "env", "development")
     if env != "production":
         app.add_middleware(TestUserMiddleware, enabled=True, env=env)
-        _logger.info("已启用测试用户中间件（仅非生产环境）")
+        write_info("已启用测试用户中间件（仅非生产环境）")
 
     # 动态注册各模块路由
     for module in modules:
@@ -203,7 +213,7 @@ def create_app(module_names: list[str] | None = None) -> FastAPI:
             app.include_router(router, prefix=prefix, tags=tags)
             tag_str = tags[0] if tags else "default"
             endpoint_count = len(router.routes)
-            _logger.info(
+            write_info(
                 f"注册路由: {prefix} → {tag_str} ({endpoint_count} 个端点) [{module.name}]"
             )
 
@@ -211,7 +221,7 @@ def create_app(module_names: list[str] | None = None) -> FastAPI:
     for module in modules:
         for middleware_class in module.get_middlewares():
             app.add_middleware(middleware_class)
-            _logger.info(f"注册中间件: {middleware_class.__name__} [{module.name}]")
+            write_info(f"注册中间件: {middleware_class.__name__} [{module.name}]")
 
     # 健康检查端点
     @app.get("/health", tags=["Health"])

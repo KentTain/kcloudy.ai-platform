@@ -25,7 +25,39 @@ from tenant.models import (
     ModuleRolePermission,
 )
 
+import fnmatch
+
 _logger = logger.bind(name=__name__)
+
+
+def _is_wildcard(code: str) -> bool:
+    """判断权限码是否包含通配符"""
+    return "*" in code
+
+
+def _expand_permission_codes(
+    codes: list[str],
+    perm_code_to_id: dict[str, str],
+) -> list[str]:
+    """
+    展开通配符权限码为具体权限码列表
+
+    支持的通配符模式：
+    - {module}:*:* → 匹配模块下所有权限
+    - {module}:*:read → 匹配模块下所有 read 权限
+    - {module}:user:* → 匹配 user 资源下所有权限
+
+    非通配符权限码原样保留。
+    """
+    expanded: list[str] = []
+    for code in codes:
+        if _is_wildcard(code):
+            for perm_code in perm_code_to_id:
+                if fnmatch.fnmatch(perm_code, code):
+                    expanded.append(perm_code)
+        else:
+            expanded.append(code)
+    return expanded
 
 
 class ModuleDefinitionSyncService:
@@ -329,11 +361,16 @@ class ModuleDefinitionSyncService:
 
             # 同步角色权限关联
             if role_def.permission_codes:
-                # 验证权限是否存在
+                # 展开通配符权限码为具体权限码列表
+                expanded_codes = _expand_permission_codes(
+                    role_def.permission_codes, perm_code_to_id
+                )
+
+                # 验证非通配符权限是否存在
                 missing_perms = [
                     code
                     for code in role_def.permission_codes
-                    if code not in perm_code_to_id
+                    if not _is_wildcard(code) and code not in perm_code_to_id
                 ]
                 if missing_perms:
                     raise ValueError(
@@ -346,8 +383,8 @@ class ModuleDefinitionSyncService:
                 )
                 await session.execute(stmt)
 
-                # 创建新的权限关联
-                for perm_code in role_def.permission_codes:
+                # 创建新的权限关联（使用展开后的具体权限码）
+                for perm_code in expanded_codes:
                     perm_id = perm_code_to_id[perm_code]
                     stmt = insert(ModuleRolePermission).values(
                         module_role_id=role_id,

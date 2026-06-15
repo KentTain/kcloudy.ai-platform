@@ -13,8 +13,8 @@ from loguru import logger
 
 from framework.module import ModuleDescriptor, get_registry, load_modules
 from framework.tenant.protocols import register_tenant_provider
+from framework.utils.log_util import write_error, write_info, write_warning
 from framework.utils.startup_timer import StartupTimer
-from framework.utils.log_util import write_info, write_warning
 
 _logger = logger.bind(name=__name__)
 
@@ -35,9 +35,9 @@ async def run_task(module_names: list[str] | None = None) -> None:
                 from config.modules import ENABLED_MODULES
 
                 module_names = ENABLED_MODULES
-                _logger.info(f"Loaded modules from config: {ENABLED_MODULES}")
+                write_info(f"Loaded modules from config: {ENABLED_MODULES}")
             except ImportError:
-                _logger.info("No modules config found, loading all modules")
+                write_info("No modules config found, loading all modules")
 
     # 阶段2: 基础组件初始化 (order=2)
     with timer.phase("基础组件初始化", order=2) as phase:
@@ -54,7 +54,7 @@ async def run_task(module_names: list[str] | None = None) -> None:
             )
             phase.details["数据库"] = "PostgreSQL"
         except Exception:
-            _logger.exception("数据库引擎初始化失败")
+            write_error("数据库引擎初始化失败")
 
         provider = _get_tenant_provider()
         if provider:
@@ -85,7 +85,7 @@ async def run_task(module_names: list[str] | None = None) -> None:
                 setup_func, cleanup_func = task_setup
                 setup_funcs.append(setup_func)
                 cleanup_funcs.append(cleanup_func)
-                _logger.info(f"注册任务调度器: {module.name}")
+                write_info(f"注册任务调度器: {module.name}")
 
         for setup_func in setup_funcs:
             await setup_func()
@@ -107,7 +107,7 @@ async def run_task(module_names: list[str] | None = None) -> None:
             try:
                 await cleanup_func()
             except Exception:
-                _logger.exception("任务调度器清理失败")
+                write_error("任务调度器清理失败")
         write_info("所有任务调度器已停止")
 
 
@@ -118,7 +118,7 @@ def _get_tenant_provider():
 
         return tenant_provider_impl
     except ImportError:
-        write_warning("TenantProvider 不可用")
+        write_error("TenantProvider 不可用")
         return None
 
 

@@ -630,3 +630,89 @@ class TestModuleDefinitionSyncService:
         await sync_service._sync_roles(mock_session, "module-id", "demo", [])
 
         mock_session.execute.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_sync_roles_with_wildcard_permissions(self, sync_service):
+        """角色同步：通配符权限码展开为具体权限"""
+        roles = [
+            RoleDef(
+                code="admin",
+                name="管理员",
+                permission_codes=["test:*:*"],
+            ),
+            RoleDef(
+                code="viewer",
+                name="查看者",
+                permission_codes=["test:*:read"],
+            ),
+        ]
+
+        mock_session = AsyncMock()
+
+        # 模拟权限查询
+        perm_query_result = MagicMock()
+        perm_query_result.all.return_value = [
+            MagicMock(code="test:user:read", id="perm-id-1"),
+            MagicMock(code="test:user:write", id="perm-id-2"),
+            MagicMock(code="test:role:read", id="perm-id-3"),
+            MagicMock(code="test:role:write", id="perm-id-4"),
+        ]
+
+        # 两个角色的返回值
+        admin_result = MagicMock()
+        admin_result.scalar_one.return_value = "role-id-1"
+        viewer_result = MagicMock()
+        viewer_result.scalar_one.return_value = "role-id-2"
+
+        mock_session.execute.side_effect = [
+            perm_query_result,
+            admin_result,
+            MagicMock(),  # delete old admin perms
+            MagicMock(),  # insert admin perm 1
+            MagicMock(),  # insert admin perm 2
+            MagicMock(),  # insert admin perm 3
+            MagicMock(),  # insert admin perm 4
+            viewer_result,
+            MagicMock(),  # delete old viewer perms
+            MagicMock(),  # insert viewer perm 1
+            MagicMock(),  # insert viewer perm 3
+        ]
+
+        await sync_service._sync_roles(mock_session, "module-id", "test", roles)
+
+        # admin 应展开为 4 个权限，viewer 应展开为 2 个 read 权限
+        assert mock_session.execute.call_count == 11
+
+    @pytest.mark.asyncio
+    async def test_sync_roles_wildcard_no_match(self, sync_service):
+        """角色同步：通配符无匹配项时不创建关联"""
+        roles = [
+            RoleDef(
+                code="admin",
+                name="管理员",
+                permission_codes=["other:*:*"],
+            ),
+        ]
+
+        mock_session = AsyncMock()
+
+        # 模拟权限查询（无匹配 other 模块的权限）
+        perm_query_result = MagicMock()
+        perm_query_result.all.return_value = [
+            MagicMock(code="test:user:read", id="perm-id-1"),
+        ]
+
+        role_result = MagicMock()
+        role_result.scalar_one.return_value = "role-id-1"
+
+        mock_session.execute.side_effect = [
+            perm_query_result,
+            role_result,
+            MagicMock(),  # delete old perms
+        ]
+
+        await sync_service._sync_roles(mock_session, "module-id", "test", roles)
+
+        # 只有权限查询、角色 upsert、删除旧关联，无新增关联
+        assert mock_session.execute.call_count == 3
+

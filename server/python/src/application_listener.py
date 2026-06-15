@@ -13,8 +13,8 @@ from loguru import logger
 
 from framework.module import ModuleDescriptor, get_registry, load_modules
 from framework.tenant.protocols import register_tenant_provider
-from framework.utils.startup_timer import StartupTimer
 from framework.utils.log_util import write_info, write_warning
+from framework.utils.startup_timer import StartupTimer
 
 _logger = logger.bind(name=__name__)
 
@@ -33,16 +33,18 @@ async def run_listener(module_names: list[str] | None = None) -> None:
         if module_names is None:
             try:
                 from config.modules import ENABLED_MODULES
+
                 module_names = ENABLED_MODULES
-                _logger.info(f"Loaded modules from config: {ENABLED_MODULES}")
+                write_info(f"Loaded modules from config: {ENABLED_MODULES}")
             except ImportError:
-                _logger.info("No modules config found, loading all modules")
+                write_info("No modules config found, loading all modules")
 
     # 阶段2: 基础组件初始化 (order=2)
     with timer.phase("基础组件初始化", order=2) as phase:
         try:
             from demo.configs import settings
             from framework.database.core.engine import setup_engine
+
             sqlalchemy_config = settings.sqlalchemy
             setup_engine(
                 database_url=sqlalchemy_config.url,
@@ -76,9 +78,11 @@ async def run_listener(module_names: list[str] | None = None) -> None:
         settings_obj = None
         try:
             from demo.configs import settings as demo_settings
+
             settings_obj = demo_settings
         except ImportError:
             from framework.configs import get_settings
+
             settings_obj = get_settings()
 
         registry = get_registry()
@@ -88,7 +92,7 @@ async def run_listener(module_names: list[str] | None = None) -> None:
                 setup_func, cleanup_func = listener_setup
                 setup_funcs.append((setup_func, module.name))
                 cleanup_funcs.append((cleanup_func, module.name))
-                _logger.info(f"注册监听器: {module.name}")
+                write_info(f"注册监听器: {module.name}")
 
         started_count = 0
         for setup_func, module_name in setup_funcs:
