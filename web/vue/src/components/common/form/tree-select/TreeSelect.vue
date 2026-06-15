@@ -151,7 +151,7 @@ import { ChevronDown, Search, X } from "@lucide/vue";
 import { computed, ref, watch } from "vue";
 
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Tree } from "@/components/common/data-display/tree/Tree.vue";
+import { Tree } from "@/components/common/data-display/tree";
 import type { TreeSelectNode } from "@/framework/types/tree";
 import { cn } from "@/lib/utils";
 

@@ -4,7 +4,7 @@
  * 以树形结构展示菜单数据，支持展开/折叠和选中高亮
  */
 import { computed } from 'vue'
-import { Tree } from '@/components/common/data-display/tree/Tree.vue'
+import { Tree } from '@/components/common/data-display/tree'
 import type { TreeSelectNode } from '@/framework/types/tree'
 import { useTreeData } from '@/framework/composables/useTreeData'
 import { Badge, Skeleton } from '@/components'
