@@ -220,17 +220,6 @@ GET /health → {"status": "healthy", "timestamp": "..."}
 }
 ```
 
-## 环境要求
-
-| 技术栈 | 版本要求 | 包管理器 |
-|--------|----------|----------|
-| Python | 3.12+ | uv |
-| Rust | 1.95+ | cargo |
-| Java | 21+ | maven |
-| .NET | 8.0+ | dotnet cli |
-
-公共依赖：PostgreSQL 14+、Redis 6+、MinIO（可选）
-
 ## API 路由规范
 
 ### 路由格式
@@ -273,3 +262,14 @@ GET /health → {"status": "healthy", "timestamp": "..."}
 | admin | 管理后台接口 | 需要管理员权限 |
 | console | 用户端接口 | 需要登录用户权限 |
 | inner | 内部接口 | 无认证，仅供模块间调用 |
+
+## 环境要求
+
+| 技术栈 | 版本要求 | 包管理器 |
+|--------|----------|----------|
+| Python | 3.12+ | uv |
+| Rust | 1.95+ | cargo |
+| Java | 21+ | maven |
+| .NET | 8.0+ | dotnet cli |
+
+公共依赖：PostgreSQL 14+、Redis 6+、MinIO（可选）
