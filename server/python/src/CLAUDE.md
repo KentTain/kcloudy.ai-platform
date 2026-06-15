@@ -35,7 +35,6 @@ framework ──X──▶ demo / iam / tenant
 | application_web.py | FastAPI Web 应用装配入口（动态模块扫描） |
 | application_task.py | 定时任务调度器入口 |
 | application_listener.py | 消息监听器入口 |
-| run.py | Web 服务启动入口 |
 
 ## 模块结构规范
 

@@ -284,7 +284,6 @@ server/python/
 │   ├── application_web.py      # FastAPI 应用入口（动态模块装配）
 │   ├── application_task.py     # 任务调度器入口
 │   ├── application_listener.py # 消息监听器入口
-│   └── run.py                  # Web 服务器启动入口
 ├── tests/                      # 测试目录
 │   ├── framework/              # Framework 模块测试
 │   │   └── unit/module/        # 模块系统单元测试
