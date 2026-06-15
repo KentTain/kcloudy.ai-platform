@@ -12,7 +12,7 @@
 
 ## 3. 更新导出
 
-- [ ] 3.1 更新 `framework/schemas/__init__.py`，导出新增的 Mixin
+- [x] 3.1 更新 `framework/schemas/__init__.py`，导出新增的 Mixin
 
 ## 4. 重构现有 Property 相关 VO
 
