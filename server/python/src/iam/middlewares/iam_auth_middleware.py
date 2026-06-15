@@ -23,22 +23,28 @@ class IAMAuthMiddleware(BaseHTTPMiddleware):
     3. 同步用户信息到 Context 和 request.state
     """
 
-    # 不需要认证的路径
+    # 需要认证的路径前缀（模块优先路由）
+    PATH_PREFIXES = [
+        "/iam/",
+        "/ai/",
+        "/tenant/console/",  # tenant 的 console 层也使用 IAM 认证
+    ]
+
+    # 不需要认证的路径（精确匹配或前缀匹配）
     EXEMPT_PATHS = {
         "/health",
         "/docs",
         "/redoc",
         "/openapi.json",
-        # Console 层公开接口（前端 baseURL=/api，实际路径带 /api 前缀）
-        "/api/console/v1/iam/auth/login",
-        "/api/console/v1/iam/auth/register",
-        "/api/console/v1/iam/auth/token/refresh",
-        "/api/console/v1/iam/oauth/",
-        # 兼容无 /api 前缀的直接访问
-        "/console/v1/iam/auth/login",
-        "/console/v1/iam/auth/register",
-        "/console/v1/iam/auth/token/refresh",
-        "/console/v1/iam/oauth/",
+        # IAM 认证公开接口
+        "/iam/console/v1/auth/login",
+        "/iam/console/v1/auth/register",
+        "/iam/console/v1/auth/token/refresh",
+        "/iam/console/v1/oauth/",
+        # 内部接口豁免（模块间调用）
+        "/iam/inner/",
+        "/ai/inner/",
+        "/tenant/inner/",
     }
 
     async def dispatch(self, request: Request, call_next):
@@ -47,7 +53,11 @@ class IAMAuthMiddleware(BaseHTTPMiddleware):
         if getattr(request.state, "authenticated", False):
             return await call_next(request)
 
-        # 检查是否需要认证
+        # 检查是否在认证路径范围内
+        if not self._is_auth_path(request.url.path):
+            return await call_next(request)
+
+        # 检查是否为豁免路径
         if self._is_exempt_path(request.url.path):
             return await call_next(request)
 
@@ -88,6 +98,13 @@ class IAMAuthMiddleware(BaseHTTPMiddleware):
         # request.state.permissions = ctx.permissions
 
         return await call_next(request)
+
+    def _is_auth_path(self, path: str) -> bool:
+        """检查是否在认证路径范围内"""
+        for prefix in self.PATH_PREFIXES:
+            if path.startswith(prefix):
+                return True
+        return False
 
     def _is_exempt_path(self, path: str) -> bool:
         """检查是否为豁免路径"""

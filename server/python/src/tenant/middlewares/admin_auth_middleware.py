@@ -24,14 +24,8 @@ if TYPE_CHECKING:
 
 _logger = logger.bind(name=__name__)
 
-# 管理后台路径前缀
-ADMIN_PATH_PREFIX = "/admin/"
-
-# 租户级管理 API 路径前缀（使用租户用户 JWT token，而非管理员 token）
-TENANT_ADMIN_API_PREFIXES = [
-    "/admin/v1/iam",
-    "/admin/v1/system-settings",
-]
+# 管理后台路径前缀（模块优先路由：/tenant/admin/*）
+ADMIN_PATH_PREFIX = "/tenant/admin/"
 
 # Token 存储简化版（生产环境应使用 Redis）
 _admin_tokens: dict[str, dict] = {}
@@ -126,13 +120,8 @@ class AdminAuthMiddleware(BaseHTTPMiddleware):
         if not request.url.path.startswith(ADMIN_PATH_PREFIX):
             return await call_next(request)
 
-        # 租户级管理 API 跳过管理员认证（由 IAMAuthMiddleware 处理）
-        for prefix in TENANT_ADMIN_API_PREFIXES:
-            if request.url.path.startswith(prefix):
-                return await call_next(request)
-
         # 登录接口跳过认证，标记为已认证
-        if request.url.path == "/admin/v1/auth/login":
+        if request.url.path == "/tenant/admin/v1/auth/login":
             request.state.authenticated = True
             return await call_next(request)
 

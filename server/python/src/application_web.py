@@ -200,7 +200,10 @@ def create_app(module_names: list[str] | None = None) -> FastAPI:
     register_exception_handlers(app)
 
     # 注册中间件（注意：中间件执行顺序为栈结构，后注册的先执行）
-    # 执行顺序：TenantMiddleware -> IAMAuthMiddleware -> TestUserMiddleware
+    # 执行顺序：AdminAuthMiddleware → TestUserMiddleware → IAMAuthMiddleware → TenantMiddleware
+    # - AdminAuthMiddleware: 处理 /tenant/admin/* 路径的管理员认证
+    # - IAMAuthMiddleware: 处理 /iam/*、/ai/*、/tenant/console/* 路径的用户认证
+    # - TenantMiddleware: 解析租户信息并注入上下文
 
     # 1. 注册租户中间件（解析租户并注入上下文）
     app.add_middleware(TenantMiddleware)
