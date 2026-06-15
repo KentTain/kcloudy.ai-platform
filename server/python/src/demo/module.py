@@ -1,12 +1,4 @@
-"""
-Demo 模块声明
-
-定义 Demo 模块的注册信息，包括路由、中间件、生命周期钩子、任务和监听器。
-"""
-
-from typing import Callable
-
-from demo.models import Base
+﻿from framework.module.definition import ModuleDefinition
 
 
 class DemoModule:
@@ -79,3 +71,11 @@ class DemoModule:
         from demo.listeners.setup import setup_listeners, cleanup_listeners
 
         return (setup_listeners, cleanup_listeners)
+
+    def get_module_definition(self) -> ModuleDefinition | None:
+        """
+        返回模块定义（可选）
+
+        Demo 模块暂无菜单/权限/角色声明。
+        """
+        return None

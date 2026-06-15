@@ -65,17 +65,19 @@ class StartupTimer:
             key=lambda item: item[1].order if item[1].order is not None else item[0],
         )
         for i, (_, phase) in enumerate(ordered_phases, 1):
-            print(f"  {Color.WHITE}阶段{i} ({phase.name}):{Color.RESET} {phase.duration:.3f}秒")
+            # 将详情压缩到一行显示
             if phase.details:
-                for key, value in phase.details.items():
-                    print(f"    - {key}: {value}")
+                details_str = ", ".join(f"{k}={v}" for k, v in phase.details.items())
+                print(f"  阶段{i} ({phase.name}): {phase.duration:.3f}秒 | {details_str}")
+            else:
+                print(f"  阶段{i} ({phase.name}): {phase.duration:.3f}秒")
 
         print(f"{Color.CYAN}完成时间:{Color.RESET} {format_timestamp()}")
 
         if modules:
-            print(f"{Color.CYAN}🔌 已加载模块:{Color.RESET} {len(modules)} 个")
-            for name in modules:
-                print(f"   - {name}")
+            # 模块列表压缩到一行显示
+            modules_str = ", ".join(modules)
+            print(f"{Color.CYAN}🔌 已加载模块:{Color.RESET} {len(modules)} 个 [{modules_str}]")
 
         if extra_info:
             for key, value in extra_info.items():
