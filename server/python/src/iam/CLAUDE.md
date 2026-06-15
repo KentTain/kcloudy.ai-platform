@@ -25,11 +25,28 @@ IAM ──▶ tenant（通过 inner 接口获取租户信息）
 
 ## 接口分层
 
-| 前缀 | 用途 | 权限 |
+IAM 模块 API 路由遵循 `/{模块}/{类型}/v1/{功能}` 格式：
+
+| 类型 | 路由前缀 | 用途 | 权限 |
+|------|---------|------|------|
+| admin | `/iam/admin/v1/users` | 管理后台用户管理 | JWT Token + 管理员权限 |
+| console | `/iam/console/v1/users` | 用户端接口（个人中心） | JWT Token |
+| inner | `/iam/inner/v1/users` | 内部接口，供模块间调用 | 无认证 |
+
+### 完整路由表
+
+| 方法 | 路径 | 说明 |
 |------|------|------|
-| /admin/v1/users | 管理后台用户管理 | 系统管理员 |
-| /console/v1/users | 用户端接口（个人中心） | 登录用户 |
-| /inner/v1/users | 内部接口，供模块间调用 | 无 |
+| POST | `/iam/console/v1/auth/login` | 用户登录 |
+| POST | `/iam/console/v1/auth/logout` | 用户登出 |
+| POST | `/iam/console/v1/auth/refresh` | 刷新 Token |
+| GET | `/iam/console/v1/users/me` | 获取当前用户信息 |
+| GET | `/iam/admin/v1/users` | 获取用户列表 |
+| POST | `/iam/admin/v1/users` | 创建用户 |
+| GET | `/iam/admin/v1/users/{id}` | 获取用户详情 |
+| PUT | `/iam/admin/v1/users/{id}` | 更新用户 |
+| DELETE | `/iam/admin/v1/users/{id}` | 删除用户 |
+| GET | `/iam/inner/v1/users/{id}` | 内部接口：获取用户信息 |
 
 ## 核心能力
 

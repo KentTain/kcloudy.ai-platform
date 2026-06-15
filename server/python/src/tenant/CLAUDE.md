@@ -28,11 +28,25 @@ Tenant ──X──▶ IAM / Demo
 
 ## 接口分层
 
-| 前缀 | 用途 | 权限 |
+Tenant 模块 API 路由遵循 `/{模块}/{类型}/v1/{功能}` 格式：
+
+| 类型 | 路由前缀 | 用途 | 权限 |
+|------|---------|------|------|
+| admin | `/tenant/admin/v1/tenants` | 管理后台租户 CRUD | 租户管理员 Token |
+| console | `/tenant/console/v1/tenants` | 用户端租户接口 | JWT Token |
+| inner | `/tenant/inner/v1/tenants` | 内部接口，供模块间调用 | 无认证 |
+
+### 完整路由表
+
+| 方法 | 路径 | 说明 |
 |------|------|------|
-| /admin/v1/tenants | 管理后台租户 CRUD | 租户管理员 |
-| /console/v1/tenants | 用户端租户接口 | 登录用户 |
-| /inner/v1/tenants | 内部接口，供模块间调用 | 无 |
+| GET | `/tenant/admin/v1/tenants` | 获取租户列表 |
+| POST | `/tenant/admin/v1/tenants` | 创建租户 |
+| GET | `/tenant/admin/v1/tenants/{id}` | 获取租户详情 |
+| PUT | `/tenant/admin/v1/tenants/{id}` | 更新租户 |
+| DELETE | `/tenant/admin/v1/tenants/{id}` | 删除租户 |
+| GET | `/tenant/console/v1/tenants/current` | 获取当前租户信息 |
+| GET | `/tenant/inner/v1/tenants/{id}` | 内部接口：获取租户信息 |
 
 ## 数据库模型
 

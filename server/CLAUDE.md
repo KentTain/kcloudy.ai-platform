@@ -230,3 +230,46 @@ GET /health → {"status": "healthy", "timestamp": "..."}
 | .NET | 8.0+ | dotnet cli |
 
 公共依赖：PostgreSQL 14+、Redis 6+、MinIO（可选）
+
+## API 路由规范
+
+### 路由格式
+
+**统一格式**：`/{模块}/{类型}/v1/{功能}/{其他}`
+
+| 组成部分 | 说明 | 可选值 |
+|---------|------|--------|
+| 模块 | 业务模块标识 | `tenant`、`iam`、`ai` |
+| 类型 | 接口类型 | `admin`（管理端）、`console`（用户端）、`inner`（内部接口） |
+| v1 | API 版本号 | 固定为 `v1` |
+| 功能 | 资源名称 | `users`、`tenants`、`chat-messages` 等 |
+
+### 路由示例
+
+| 模块 | 类型 | 功能 | 完整路径 |
+|------|------|------|---------|
+| tenant | admin | tenants | `/tenant/admin/v1/tenants` |
+| tenant | console | tenants | `/tenant/console/v1/tenants` |
+| iam | admin | users | `/iam/admin/v1/users` |
+| iam | console | auth/login | `/iam/console/v1/auth/login` |
+| ai | admin | models | `/ai/admin/v1/models` |
+| ai | console | chat-messages | `/ai/console/v1/chat-messages` |
+| tenant | inner | tenants | `/tenant/inner/v1/tenants` |
+
+### 中间件策略
+
+| 路径前缀 | 认证方式 | 说明 |
+|---------|---------|------|
+| `/tenant/admin/*` | AdminAuthMiddleware | 租户管理员 Token 认证 |
+| `/tenant/console/*` | IAMAuthMiddleware | JWT Token 认证 |
+| `/iam/*` | IAMAuthMiddleware | JWT Token 认证 |
+| `/ai/*` | IAMAuthMiddleware | JWT Token 认证 |
+| `/*/inner/*` | 无认证 | 模块间内部调用 |
+
+### 接口类型说明
+
+| 类型 | 用途 | 权限 |
+|------|------|------|
+| admin | 管理后台接口 | 需要管理员权限 |
+| console | 用户端接口 | 需要登录用户权限 |
+| inner | 内部接口 | 无认证，仅供模块间调用 |

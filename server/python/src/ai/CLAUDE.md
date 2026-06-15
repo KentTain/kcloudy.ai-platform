@@ -27,11 +27,26 @@ ai ──▶ tenant（通过 inner 接口获取租户信息）
 
 ## 接口分层
 
-| 前缀 | 用途 | 权限 |
+AI 模块 API 路由遵循 `/{模块}/{类型}/v1/{功能}` 格式：
+
+| 类型 | 路由前缀 | 用途 | 权限 |
+|------|---------|------|------|
+| admin | `/ai/admin/v1/models` | 管理后台模型管理 | JWT Token + 管理员权限 |
+| console | `/ai/console/v1/chat-messages` | 用户端 AI 接口 | JWT Token |
+| inner | `/ai/inner/v1/models` | 内部接口，供模块间调用 | 无认证 |
+
+### 完整路由表
+
+| 方法 | 路径 | 说明 |
 |------|------|------|
-| /admin/v1/models | 管理后台模型管理 | 系统管理员 |
-| /console/v1/models | 用户端接口 | 登录用户 |
-| /inner/v1/models | 内部接口，供模块间调用 | 无（模块内部调用） |
+| GET | `/ai/admin/v1/models` | 获取模型列表 |
+| POST | `/ai/admin/v1/models` | 创建模型配置 |
+| GET | `/ai/admin/v1/models/{id}` | 获取模型详情 |
+| PUT | `/ai/admin/v1/models/{id}` | 更新模型配置 |
+| DELETE | `/ai/admin/v1/models/{id}` | 删除模型配置 |
+| POST | `/ai/console/v1/chat-messages` | 发送聊天消息 |
+| GET | `/ai/console/v1/chat-messages` | 获取聊天历史 |
+| GET | `/ai/inner/v1/models/{id}` | 内部接口：获取模型配置 |
 
 ## 核心组件
 

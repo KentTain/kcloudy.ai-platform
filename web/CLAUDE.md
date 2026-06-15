@@ -212,6 +212,37 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 | 依赖边界 | 业务模块可依赖 framework，反向禁止 |
 | 跨模块通信 | 通过 Pinia Store、EventBus 或 API 调用 |
 
+## API 调用规范
+
+### 路由格式
+
+后端 API 路由遵循 `/{模块}/{类型}/v1/{功能}` 格式：
+
+| 模块 | 类型 | 功能示例 | 完整路径 |
+|------|------|---------|---------|
+| tenant | admin | tenants | `/tenant/admin/v1/tenants` |
+| tenant | console | tenants | `/tenant/console/v1/tenants` |
+| iam | console | auth/login | `/iam/console/v1/auth/login` |
+| ai | console | chat-messages | `/ai/console/v1/chat-messages` |
+
+### API 客户端配置
+
+API 客户端位于 `framework/api/client.ts`，自动处理：
+
+- Token 注入（JWT Token）
+- 请求/响应拦截
+- 错误处理
+- 租户上下文注入
+
+### 认证策略
+
+| 路径前缀 | 认证方式 |
+|---------|---------|
+| `/tenant/admin/*` | 租户管理员 Token |
+| `/tenant/console/*` | JWT Token |
+| `/iam/*` | JWT Token |
+| `/ai/*` | JWT Token |
+
 ## UI 组件技术选型
 
 所有前端技术栈采用统一的 UI 组件技术方案：

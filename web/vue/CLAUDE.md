@@ -75,6 +75,54 @@ pnpm check:fix
 - 组件语法：`<script setup lang="ts">`
 - API 请求使用 `@/framework/api/client` 封装
 
+## API 调用规范
+
+### baseURL 配置
+
+开发环境通过 Vite 代理配置 API 基础路径：
+
+```typescript
+// vite.config.ts
+export default defineConfig({
+  server: {
+    proxy: {
+      '/tenant': 'http://localhost:8000',
+      '/iam': 'http://localhost:8000',
+      '/ai': 'http://localhost:8000',
+    }
+  }
+})
+```
+
+### 路由格式
+
+后端 API 路由遵循 `/{模块}/{类型}/v1/{功能}` 格式：
+
+| 模块 | 类型 | 完整路径示例 |
+|------|------|-------------|
+| tenant | admin | `/tenant/admin/v1/tenants` |
+| tenant | console | `/tenant/console/v1/tenants` |
+| iam | console | `/iam/console/v1/auth/login` |
+| ai | console | `/ai/console/v1/chat-messages` |
+
+### API 调用示例
+
+```typescript
+// src/iam/api/auth.ts
+import { client } from '@/framework/api/client'
+
+export const authApi = {
+  login: (data: LoginRequest) =>
+    client.post('/iam/console/v1/auth/login', data),
+
+  logout: () =>
+    client.post('/iam/console/v1/auth/logout'),
+
+  refresh: () =>
+    client.post('/iam/console/v1/auth/refresh'),
+}
+```
+
 ## 测试
 
 测试文件位于 `tests/` 目录，按模块组织，每个模块下按测试类型划分 `unit/` 和 `e2e/` 目录。
