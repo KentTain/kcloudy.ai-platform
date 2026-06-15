@@ -6,9 +6,9 @@
 
 ## 2. 重构 TreeNodeVo
 
-- [ ] 2.1 修改 `framework/schemas/tree.py` 中的 `TreeNodeVo`，改为继承 `VoMixin, TreeNodeVoMixin`
-- [ ] 2.2 确保 `TreeNodeVo` 包含 `id` 字段
-- [ ] 2.3 验证 `TreeNodeTreeVo` 继承链正确
+- [x] 2.1 修改 `framework/schemas/tree.py` 中的 `TreeNodeVo`，改为继承 `VoMixin, TreeNodeVoMixin`
+- [x] 2.2 确保 `TreeNodeVo` 包含 `id` 字段
+- [x] 2.3 验证 `TreeNodeTreeVo` 继承链正确
 
 ## 3. 更新导出
 

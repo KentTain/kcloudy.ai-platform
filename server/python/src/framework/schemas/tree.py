@@ -4,27 +4,24 @@
 提供统一的树节点响应格式。
 """
 
-from typing import Any
-from pydantic import BaseModel, ConfigDict
+from pydantic import Field
+
+from framework.common.schemas import TreeNodeVoMixin, VoMixin
 
 
-class TreeNodeVo(BaseModel):
+class TreeNodeVo(VoMixin, TreeNodeVoMixin):
     """
     树节点 VO 基类
 
-    提供统一的树节点字段，用于 API 响应。
+    继承 VoMixin 和 TreeNodeVoMixin，提供统一的树节点字段，用于 API 响应。
     """
 
-    model_config = ConfigDict(from_attributes=True)
-
     id: str
-    parent_id: str | None = None
-    tree_level: int = 0
-    tree_leaf: bool = True
-    tree_sort: int = 0
-    tree_sorts: str = ""
-    tree_names: str = ""
-    parent_ids: str = ""
+    # 覆盖默认值以保持 API 兼容性
+    parent_ids: str = Field(default="", description="全父级id")
+    tree_leaf: bool = Field(default=True, description="是否叶末")
+    tree_sorts: str = Field(default="", description="多级排序号")
+    tree_names: str = Field(default="", description="全节点名")
 
 
 class TreeNodeTreeVo(TreeNodeVo):
