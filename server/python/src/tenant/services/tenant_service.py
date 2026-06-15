@@ -280,7 +280,16 @@ class TenantService:
                 encryption_key=encrypted_tenant_key,
             )
             session.add(tenant)
-            await session.commit()
+            await session.flush()  # 获取 tenant.id，但不提交
+
+            # 自动分配活跃模块（通过 Protocol，避免 Tenant → IAM 依赖）
+            from framework.tenant.protocols import get_module_auto_assigner
+
+            assigner = get_module_auto_assigner()
+            if assigner:
+                await assigner.auto_assign(session, tenant.id)
+
+            await session.commit()  # 原子提交
             await session.refresh(tenant)
 
             _logger.info(f"创建租户: {tenant.id} ({tenant.code})")
