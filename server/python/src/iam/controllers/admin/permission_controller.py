@@ -12,7 +12,7 @@ from iam.services import permission_service
 router = APIRouter()
 
 
-@router.get("")
+@router.get("/permissions")
 async def list_permissions() -> ORJSONResponse:
     """获取所有权限列表"""
     permissions = await permission_service.get_all_permissions()
@@ -35,7 +35,7 @@ async def list_permissions() -> ORJSONResponse:
     )
 
 
-@router.get("/grouped")
+@router.get("/permissions/grouped")
 async def get_permissions_grouped() -> ORJSONResponse:
     """获取按资源分组的权限"""
     grouped = await permission_service.get_permissions_grouped()

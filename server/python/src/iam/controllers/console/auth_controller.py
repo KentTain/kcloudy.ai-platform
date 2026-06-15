@@ -14,7 +14,7 @@ from iam.services import auth_service
 router = APIRouter()
 
 
-@router.post("/login")
+@router.post("/auth/login")
 async def login(request: Request, data: LoginRequest) -> ORJSONResponse:
     """
     用户登录
@@ -39,7 +39,7 @@ async def login(request: Request, data: LoginRequest) -> ORJSONResponse:
         raise HTTPException(status_code=401, detail=str(e))
 
 
-@router.post("/logout")
+@router.post("/auth/logout")
 async def logout(request: Request) -> ORJSONResponse:
     """
     用户登出
@@ -61,7 +61,7 @@ async def logout(request: Request) -> ORJSONResponse:
     )
 
 
-@router.post("/token/refresh")
+@router.post("/auth/token/refresh")
 async def refresh_token(data: TokenRefreshRequest) -> ORJSONResponse:
     """
     刷新 Token

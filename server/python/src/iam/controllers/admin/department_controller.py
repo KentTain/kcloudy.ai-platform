@@ -1,4 +1,4 @@
-﻿"""
+"""
 部门控制器
 
 提供部门管理接口。
@@ -18,7 +18,7 @@ from framework.tenant.context import get_tenant_id
 router = APIRouter()
 
 
-@router.get("")
+@router.get("/departments")
 async def list_departments() -> ORJSONResponse:
     """获取部门列表"""
     tenant_id = get_tenant_id()
@@ -43,7 +43,7 @@ async def list_departments() -> ORJSONResponse:
     )
 
 
-@router.get("/tree")
+@router.get("/departments/tree")
 async def get_department_tree() -> ORJSONResponse:
     """获取部门树形结构"""
     tenant_id = get_tenant_id()
@@ -57,7 +57,7 @@ async def get_department_tree() -> ORJSONResponse:
     )
 
 
-@router.post("")
+@router.post("/departments")
 async def create_department(data: DepartmentCreateRequest) -> ORJSONResponse:
     """创建部门"""
     tenant_id = get_tenant_id()
@@ -82,7 +82,7 @@ async def create_department(data: DepartmentCreateRequest) -> ORJSONResponse:
     )
 
 
-@router.put("/{department_id}")
+@router.put("/departments/{department_id}")
 async def update_department(department_id: str, data: DepartmentUpdateRequest) -> ORJSONResponse:
     """更新部门"""
     try:
@@ -108,7 +108,7 @@ async def update_department(department_id: str, data: DepartmentUpdateRequest) -
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.delete("/{department_id}")
+@router.delete("/departments/{department_id}")
 async def delete_department(department_id: str) -> ORJSONResponse:
     """删除部门"""
     try:
@@ -124,7 +124,7 @@ async def delete_department(department_id: str) -> ORJSONResponse:
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.get("/{department_id}/users")
+@router.get("/departments/{department_id}/users")
 async def get_department_users(department_id: str) -> ORJSONResponse:
     """获取部门用户列表"""
     users = await department_service.get_department_users(department_id)
@@ -137,7 +137,7 @@ async def get_department_users(department_id: str) -> ORJSONResponse:
     )
 
 
-@router.post("/{department_id}/users")
+@router.post("/departments/{department_id}/users")
 async def add_user_to_department(department_id: str, data: UserDepartmentRequest) -> ORJSONResponse:
     """添加用户到部门"""
     try:
@@ -157,7 +157,7 @@ async def add_user_to_department(department_id: str, data: UserDepartmentRequest
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.delete("/{department_id}/users/{user_id}")
+@router.delete("/departments/{department_id}/users/{user_id}")
 async def remove_user_from_department(
     department_id: str,
     user_id: str,

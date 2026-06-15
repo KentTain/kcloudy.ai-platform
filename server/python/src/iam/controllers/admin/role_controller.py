@@ -18,7 +18,7 @@ from iam.services import permission_service, role_service
 router = APIRouter()
 
 
-@router.get("")
+@router.get("/roles")
 async def list_roles(tenant_id: str | None = None, page: int = 1, page_size: int = 20) -> ORJSONResponse:
     """获取角色列表"""
     roles, total = await role_service.list_roles(
@@ -36,7 +36,7 @@ async def list_roles(tenant_id: str | None = None, page: int = 1, page_size: int
     )
 
 
-@router.post("")
+@router.post("/roles")
 async def create_role(data: RoleCreateRequest) -> ORJSONResponse:
     """创建角色"""
     try:
@@ -56,7 +56,7 @@ async def create_role(data: RoleCreateRequest) -> ORJSONResponse:
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.get("/{role_id}")
+@router.get("/roles/{role_id}")
 async def get_role(role_id: str) -> ORJSONResponse:
     """获取角色详情"""
     role = await role_service.get_by_id(role_id)
@@ -71,7 +71,7 @@ async def get_role(role_id: str) -> ORJSONResponse:
     )
 
 
-@router.put("/{role_id}")
+@router.put("/roles/{role_id}")
 async def update_role(role_id: str, data: RoleUpdateRequest) -> ORJSONResponse:
     """更新角色"""
     try:
@@ -91,7 +91,7 @@ async def update_role(role_id: str, data: RoleUpdateRequest) -> ORJSONResponse:
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.delete("/{role_id}")
+@router.delete("/roles/{role_id}")
 async def delete_role(role_id: str) -> ORJSONResponse:
     """删除角色"""
     try:
@@ -107,7 +107,7 @@ async def delete_role(role_id: str) -> ORJSONResponse:
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.get("/{role_id}/permissions")
+@router.get("/roles/{role_id}/permissions")
 async def get_role_permissions(role_id: str) -> ORJSONResponse:
     """获取角色的权限列表"""
     permissions = await role_service.get_role_permissions(role_id)
@@ -129,7 +129,7 @@ async def get_role_permissions(role_id: str) -> ORJSONResponse:
     )
 
 
-@router.post("/{role_id}/permissions")
+@router.post("/roles/{role_id}/permissions")
 async def assign_permissions(role_id: str, data: RolePermissionRequest) -> ORJSONResponse:
     """为角色分配权限"""
     await role_service.assign_permissions(role_id, data.permission_ids)

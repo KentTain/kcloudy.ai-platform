@@ -15,29 +15,29 @@ import type {
  * 用户登录
  */
 export const login = (data: LoginRequest) =>
-  post<ApiResponse<LoginResponse>>("/v1/iam/auth/login", data);
+  post<ApiResponse<LoginResponse>>("/console/v1/iam/auth/login", data);
 
 /**
  * 用户登出
  */
-export const logout = () => post<ApiResponse<void>>("/v1/iam/auth/logout");
+export const logout = () => post<ApiResponse<void>>("/console/v1/iam/auth/logout");
 
 /**
  * 刷新 Token
  */
 export const refreshToken = (refresh_token: string) =>
-  post<ApiResponse<LoginResponse>>("/v1/iam/auth/token/refresh", { refresh_token });
+  post<ApiResponse<LoginResponse>>("/console/v1/iam/auth/token/refresh", { refresh_token });
 
 /**
  * 获取当前用户信息
  */
-export const getCurrentUser = () => get<ApiResponse<User>>("/v1/iam/user/me");
+export const getCurrentUser = () => get<ApiResponse<User>>("/console/v1/iam/users/me");
 
 /**
  * 更新当前用户资料
  */
 export const updateCurrentUser = (data: UpdateUserParams) =>
-  put<ApiResponse<User>>("/v1/iam/user/me", data);
+  put<ApiResponse<User>>("/console/v1/iam/users/me", data);
 
 export const updateProfile = updateCurrentUser;
 
@@ -45,7 +45,7 @@ export const updateProfile = updateCurrentUser;
  * 修改密码
  */
 export const changePassword = (old_password: string, new_password: string) =>
-  put<ApiResponse<void>>("/v1/iam/user/password", {
+  put<ApiResponse<void>>("/console/v1/iam/users/password", {
     old_password,
     new_password,
   });
@@ -59,4 +59,4 @@ export const resetPassword = resetUserPassword;
  * 获取登录历史
  */
 export const getLoginHistory = (params?: LoginHistoryQueryParams) =>
-  get<ApiResponse<PageResult<LoginHistory>>>("/v1/iam/auth/login-history", params as Record<string, unknown>);
+  get<ApiResponse<PageResult<LoginHistory>>>("/console/v1/iam/auth/login-history", params as Record<string, unknown>);

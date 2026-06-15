@@ -1,4 +1,4 @@
-﻿"""
+"""
 OAuth 控制器
 
 提供第三方 OAuth2 登录接口。
@@ -15,7 +15,7 @@ from framework.utils.jwt import generate_access_token, generate_refresh_token
 router = APIRouter()
 
 
-@router.get("/{provider}")
+@router.get("/oauth/{provider}")
 async def get_oauth_authorize(provider: str, redirect_uri: str | None = None) -> ORJSONResponse:
     """
     获取 OAuth 授权链接
@@ -35,7 +35,7 @@ async def get_oauth_authorize(provider: str, redirect_uri: str | None = None) ->
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.get("/{provider}/callback")
+@router.get("/oauth/{provider}/callback")
 async def oauth_callback(provider: str, code: str, state: str) -> ORJSONResponse:
     """
     OAuth 回调处理
@@ -51,7 +51,7 @@ async def oauth_callback(provider: str, code: str, state: str) -> ORJSONResponse
 
         # 创建会话并生成 Token
         from framework.utils.session import create_session
-        
+
         session_id = await create_session(
             user_id=user.id,
             tenant_id=None,
@@ -92,7 +92,7 @@ async def oauth_callback(provider: str, code: str, state: str) -> ORJSONResponse
         raise HTTPException(status_code=401, detail=str(e))
 
 
-@router.post("/complete-profile")
+@router.post("/oauth/complete-profile")
 async def complete_oauth_profile(
     data: OAuthCompleteProfileRequest,
     user_id: str = Depends(get_current_user_id),

@@ -41,21 +41,41 @@ class IAMModule:
 
         格式: [(router, prefix, tags), ...]
         """
-        from iam.controllers import router as iam_router
+        # Admin 层
+        from iam.controllers.admin.user_controller import router as admin_user_router
+        from iam.controllers.admin.role_controller import router as admin_role_router
+        from iam.controllers.admin.permission_controller import router as admin_permission_router
+        from iam.controllers.admin.department_controller import router as admin_department_router
+        from iam.controllers.admin.menu_controller import router as admin_menu_router
         from iam.controllers.admin.system_setting_controller import router as admin_system_setting_router
+
+        # Console 层
+        from iam.controllers.console.auth_controller import router as console_auth_router
+        from iam.controllers.console.oauth_controller import router as console_oauth_router
+        from iam.controllers.console.user_controller import router as console_user_router
         from iam.controllers.console.system_setting_controller import router as console_system_setting_router
+
+        # Inner 层
         from iam.controllers.inner.user_controller import router as inner_user_router
         from iam.controllers.inner.department_controller import router as inner_department_router
         from iam.controllers.inner.tenant_menu_controller import router as inner_tenant_menu_router
         from iam.controllers.inner.tenant_permission_controller import router as inner_tenant_permission_router
         from iam.controllers.inner.tenant_role_controller import router as inner_tenant_role_router
-        from iam.controllers.user_menu_controller import router as user_menu_router
 
         return [
-            (iam_router, "/api/v1", ["IAM"]),
-            (user_menu_router, "/api/v1/user", ["User Menu"]),
+            # Admin 层路由
+            (admin_user_router, "/admin/v1/iam", ["Admin - User"]),
+            (admin_role_router, "/admin/v1/iam", ["Admin - Role"]),
+            (admin_permission_router, "/admin/v1/iam", ["Admin - Permission"]),
+            (admin_department_router, "/admin/v1/iam", ["Admin - Department"]),
+            (admin_menu_router, "/admin/v1/iam", ["Admin - Menu"]),
             (admin_system_setting_router, "/admin/v1/system-settings", ["Admin - SystemSetting"]),
+            # Console 层路由
+            (console_auth_router, "/console/v1/iam", ["Console - Auth"]),
+            (console_oauth_router, "/console/v1/iam", ["Console - OAuth"]),
+            (console_user_router, "/console/v1/iam", ["Console - User"]),
             (console_system_setting_router, "/console/v1/system-settings", ["Console - SystemSetting"]),
+            # Inner 层路由
             (inner_user_router, "/inner/v1", ["Inner - User"]),
             (inner_department_router, "/inner/v1", ["Inner - Department"]),
             (inner_tenant_menu_router, "/inner/v1/iam", ["Inner - Tenant Menu"]),

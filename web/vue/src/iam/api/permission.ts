@@ -12,7 +12,7 @@ export interface PermissionQueryParams {
  * 获取权限列表
  */
 export const getPermissions = (params?: PermissionQueryParams) =>
-  get<ApiResponse<PageResult<Permission>>>("/v1/iam/permission", { params });
+  get<ApiResponse<PageResult<Permission>>>("/admin/v1/iam/permissions", { params });
 
 /**
  * 获取所有权限（不分页）
@@ -29,7 +29,7 @@ export const getAllPermissions = async () => {
  * 按资源分组获取权限
  */
 export const getPermissionsByResource = () =>
-  get<ApiResponse<PermissionGroup[]>>("/v1/iam/permission/grouped");
+  get<ApiResponse<PermissionGroup[]>>("/admin/v1/iam/permissions/grouped");
 
 /**
  * 获取权限详情
