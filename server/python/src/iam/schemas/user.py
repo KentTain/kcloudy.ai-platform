@@ -2,11 +2,17 @@
 用户相关 Pydantic Schemas
 """
 
+from __future__ import annotations
+
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
 from framework.schemas.base import BaseQuery, BasePaginatedQuery
+
+if TYPE_CHECKING:
+    from iam.models import Role
 
 
 class UserRegisterRequest(BaseModel):
@@ -245,3 +251,47 @@ class UserPaginatedListResponse(BaseModel):
     page: int
     page_size: int
     items: list[UserResponse]
+
+
+class UserRoleItem(BaseModel):
+    """用户角色项"""
+
+    id: str = Field(..., description="角色 ID")
+    code: str = Field(..., description="角色编码")
+    name: str = Field(..., description="角色名称")
+    description: str | None = Field(None, description="角色描述")
+
+    @classmethod
+    def from_role(cls, role: "Role") -> "UserRoleItem":
+        """从 Role 实体构建 UserRoleItem
+
+        Args:
+            role: Role 实体对象
+
+        Returns:
+            UserRoleItem 实例
+        """
+        return cls(
+            id=role.id,
+            code=role.code,
+            name=role.name,
+            description=role.description,
+        )
+
+
+class UserRolesResponse(BaseModel):
+    """用户角色列表响应"""
+
+    roles: list[UserRoleItem] = Field(default_factory=list, description="角色列表")
+
+    @classmethod
+    def from_roles(cls, roles: list["Role"]) -> "UserRolesResponse":
+        """从 Role 列表构建 UserRolesResponse
+
+        Args:
+            roles: Role 实体列表
+
+        Returns:
+            UserRolesResponse 实例
+        """
+        return cls(roles=[UserRoleItem.from_role(r) for r in roles])
