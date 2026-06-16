@@ -15,10 +15,29 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
+import { useMenuStore, type UserMenuItem } from "@/framework/stores/menu";
 
 const route = useRoute();
+const menuStore = useMenuStore();
 
-// 面包屑数据从 route.matched 提取
+/**
+ * 从用户菜单中查找当前路由对应的模块名
+ */
+function findModuleByPath(menus: UserMenuItem[], currentPath: string): string | null {
+  for (const module of menus) {
+    // 检查模块本身的路径是否匹配
+    if (module.path === currentPath) {
+      return module.name;
+    }
+    // 检查子菜单中是否有匹配的路径
+    if (module.children?.some((child) => child.path === currentPath)) {
+      return module.name;
+    }
+  }
+  return null;
+}
+
+// 面包屑数据
 const breadcrumbs = computed(() => {
   // 特殊处理首页
   if (route.path === "/") {
@@ -32,11 +51,28 @@ const breadcrumbs = computed(() => {
     return [];
   }
 
-  return matched.map((item) => ({
-    title: item.meta?.title as string,
-    path: item.path,
-  }));
+  // 从菜单数据中查找当前路由对应的模块名
+  const moduleName = findModuleByPath(menuStore.userMenus, route.path);
+
+  // 构建面包屑
+  const items: { title: string; path?: string }[] = [];
+
+  // 如果找到模块名且不是首页，添加模块作为第一级
+  if (moduleName && route.path !== "/") {
+    items.push({ title: moduleName });
+  }
+
+  // 添加当前页面的面包屑
+  for (const item of matched) {
+    items.push({
+      title: item.meta?.title as string,
+      path: item.path,
+    });
+  }
+
+  return items;
 });
+
 
 </script>
 

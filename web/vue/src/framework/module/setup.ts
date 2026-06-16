@@ -3,7 +3,7 @@ import type { Router } from "vue-router";
 import type { Pinia } from "pinia";
 import type { ModuleDescriptor } from "./types";
 import { ModuleRegistry } from "./registry";
-import { EventBus, ModuleEvents, getEventBus } from "@/framework/events";
+import { ModuleEvents, getEventBus } from "@/framework/events";
 
 /**
  * 框架设置选项
@@ -19,6 +19,19 @@ export interface SetupFrameworkOptions {
  * 全局模块注册中心实例
  */
 let globalRegistry: ModuleRegistry | null = null;
+
+/**
+ * 动态路由是否已准备好
+ * 用于刷新页面时判断路由是否已注册
+ */
+let dynamicRoutesReady = false;
+
+/**
+ * 检查动态路由是否已准备好
+ */
+export function isDynamicRoutesReady(): boolean {
+  return dynamicRoutesReady;
+}
 
 /**
  * 获取全局模块注册中心
@@ -72,6 +85,10 @@ export async function setupFramework(options: SetupFrameworkOptions): Promise<vo
   const moduleRoutes = globalRegistry.getRoutes();
   console.log("[setupFramework] Module routes to register:", moduleRoutes.map(r => r.path));
   registerRoutes(router, moduleRoutes);
+
+  // 标记动态路由已准备好
+  dynamicRoutesReady = true;
+  console.log("[setupFramework] Dynamic routes ready");
 }
 
 /**
