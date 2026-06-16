@@ -1,5 +1,5 @@
 ﻿import type { RouteRecordRaw } from "vue-router";
-import AdminConsoleLayout from "@/tenant/layouts/AdminConsoleLayout.vue";
+import AdminLayout from "@/tenant/layouts/AdminLayout.vue";
 
 /**
  * Tenant 模块路由配置 - 管理后台
@@ -15,7 +15,7 @@ export const adminRoutes: RouteRecordRaw[] = [
   {
     path: "/admin",
     name: "AdminRoot",
-    component: AdminConsoleLayout,
+    component: AdminLayout,
     meta: { requiresAdminAuth: true },
     children: [
       {
