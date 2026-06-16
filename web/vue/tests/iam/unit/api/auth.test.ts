@@ -171,8 +171,10 @@ describe("Auth API", () => {
       const result = await getLoginHistory({ page: 1, page_size: 20 });
 
       expect(client.get).toHaveBeenCalledWith("/iam/console/v1/auth/login-history", {
-        page: 1,
-        page_size: 20,
+        params: {
+          page: 1,
+          page_size: 20,
+        },
       });
       expect(result).toEqual(mockResponse);
     });
