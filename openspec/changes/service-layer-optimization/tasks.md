@@ -29,27 +29,27 @@
 
 ## 5. AI 模块 ConversationService 创建
 
-- [ ] 5.1 创建 `ai/services/conversation_service.py` 文件
-- [ ] 5.2 实现 `ConversationService.list_with_message_count()` 聚合方法
-- [ ] 5.3 实现 `ConversationService.get_or_create()` 聚合方法
-- [ ] 5.4 实现 `ConversationService.soft_delete()` 聚合方法
-- [ ] 5.5 实现 `ConversationService.update_name()` 聚合方法
-- [ ] 5.6 添加 ConversationService 单元测试
+- [x] 5.1 创建 `ai/services/conversation_service.py` 文件
+- [x] 5.2 实现 `ConversationService.list_with_message_count()` 聚合方法
+- [x] 5.3 实现 `ConversationService.get_or_create()` 聚合方法
+- [x] 5.4 实现 `ConversationService.soft_delete()` 聚合方法
+- [x] 5.5 实现 `ConversationService.update_name()` 聚合方法
+- [x] 5.6 添加 ConversationService 单元测试
 
 ## 6. AI 模块 ChatService 创建
 
-- [ ] 6.1 创建 `ai/services/chat_service.py` 文件
-- [ ] 6.2 实现 `ChatService.create_messages()` 聚合方法
-- [ ] 6.3 实现 `ChatService.update_assistant_message()` 聚合方法
-- [ ] 6.4 实现 `ChatService.update_conversation_name()` 聚合方法
-- [ ] 6.5 添加 ChatService 单元测试
+- [x] 6.1 创建 `ai/services/chat_service.py` 文件
+- [x] 6.2 实现 `ChatService.create_messages()` 聚合方法
+- [x] 6.3 实现 `ChatService.update_assistant_message()` 聚合方法
+- [x] 6.4 实现 `ChatService.update_conversation_name()` 聚合方法
+- [x] 6.5 添加 ChatService 单元测试
 
 ## 7. AI 模块 Controller 层重构
 
-- [ ] 7.1 重构 `conversation.py` Controller 使用 `ConversationService`
-- [ ] 7.2 重构 `llm.py` Controller 使用 `ConversationService` 和 `ChatService`
-- [ ] 7.3 移除 Controller 中的直接数据库操作代码
-- [ ] 7.4 验证 AI 模块流式响应完整性
+- [x] 7.1 重构 `conversation.py` Controller 使用 `ConversationService`
+- [x] 7.2 重构 `llm.py` Controller 使用 `ConversationService` 和 `ChatService`
+- [x] 7.3 移除 Controller 中的直接数据库操作代码
+- [x] 7.4 验证 AI 模块流式响应完整性
 
 ## 8. 测试验证与文档更新
 

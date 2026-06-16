@@ -7,7 +7,6 @@ import asyncio
 import time
 import uuid
 from collections.abc import AsyncGenerator
-from datetime import datetime
 from typing import Any
 
 import orjson
@@ -21,16 +20,14 @@ from ai.listeners.services.pubsub.memory_task.constants import (
     TASK_TYPE_GENERATE_LLM,
 )
 from ai.listeners.services.pubsub.memory_task.helpers import stop_task_by_id
-from ai.models.conversation import Conversation
-from ai.models.enums import ConversationMode, ConversationStatus, MessageStatus
-from ai.models.message import Message
+from ai.models.enums import MessageStatus
 from ai.schemas.chat import AIChatRequest, TextPart, UIMessage
 from ai.schemas.completion import ErrorCode
+from ai.services import chat_service, conversation_service
 from extended.langchain.agents.agent_factory import AgentFactory
 from extended.langchain.callbacks import UIMessageChunkCallbackHandler
 from extended.langchain.models.alon_chat import AlonChatModel
 from framework.common.ctx import get_tenant_id, get_user_id
-from framework.database.core.engine import get_session
 
 _logger = logger.bind(name=__name__)
 
@@ -184,23 +181,6 @@ async def _sse_generator(
     yield "data: [DONE]\n\n"
 
 
-async def _update_message_status(
-    message_id: str, status: MessageStatus, error_msg: str | None = None
-) -> None:
-    """更新消息状态"""
-    try:
-        async with get_session() as session:
-            message = await session.get(Message, message_id)
-            if message:
-                message.status = status
-                if error_msg:
-                    message.message_metadata = {"error": error_msg}
-                await session.commit()
-                _logger.info(f"消息状态已更新为 {status.value}: {message_id}")
-    except Exception:
-        _logger.exception(f"更新消息状态失败: {message_id}")
-
-
 router = APIRouter(prefix="/chat-messages", tags=["LLM对话"])
 
 
@@ -234,69 +214,23 @@ async def chat_messages(
 
     try:
         # 创建或恢复会话
-        is_new_conversation = False
-        async with get_session() as session:
-            # 如果前端未传 id，说明是新会话，直接创建
-            if chat_request.id is None:
-                conversation = Conversation(
-                    id=conversation_id,
-                    tenant_id=tenant_id,
-                    app_id=DEFAULT_APP_ID,
-                    name="新对话",
-                    status=ConversationStatus.NORMAL,
-                    mode=ConversationMode.CHAT,
-                )
-                session.add(conversation)
-                await session.commit()
-                is_new_conversation = True
-            else:
-                # 检查会话是否已存在
-                existing_conversation = await Conversation.one_by_conditions(
-                    session,
-                    conditions=[
-                        Conversation.id == conversation_id,
-                        Conversation.tenant_id == tenant_id,
-                    ],
-                )
-                if existing_conversation:
-                    # 恢复已有会话
-                    conversation = existing_conversation
-                else:
-                    # 创建新会话
-                    conversation = Conversation(
-                        id=conversation_id,
-                        tenant_id=tenant_id,
-                        app_id=DEFAULT_APP_ID,
-                        name="新对话",
-                        status=ConversationStatus.NORMAL,
-                        mode=ConversationMode.CHAT,
-                    )
-                    session.add(conversation)
-                    await session.commit()
-                    is_new_conversation = True
+        conversation, is_new_conversation = await conversation_service.get_or_create(
+            conversation_id=chat_request.id,
+            tenant_id=tenant_id,
+            user_id=user_id,
+            app_id=DEFAULT_APP_ID,
+        )
+        # 使用返回的 conversation_id（可能是新生成的）
+        conversation_id = str(conversation.id)
 
         # 创建初始消息记录（状态为 pending）
-        async with get_session() as session:
-            user_message = Message(
-                id=str(uuid.uuid4()),
-                tenant_id=tenant_id,
-                app_id=DEFAULT_APP_ID,
-                conversation_id=conversation_id,
-                role="user",
-                content=query,
-                status=MessageStatus.PENDING,
-            )
-            assistant_message = Message(
-                id=message_id,
-                tenant_id=tenant_id,
-                app_id=DEFAULT_APP_ID,
-                conversation_id=conversation_id,
-                role="assistant",
-                status=MessageStatus.PENDING,
-            )
-            session.add(user_message)
-            session.add(assistant_message)
-            await session.commit()
+        user_message, assistant_message = await chat_service.create_messages(
+            tenant_id=tenant_id,
+            conversation_id=conversation_id,
+            user_query=query,
+            assistant_message_id=message_id,
+            app_id=DEFAULT_APP_ID,
+        )
 
         # 创建 AlonChatModel
         model_config = chat_request.body.model
@@ -358,40 +292,39 @@ async def chat_messages(
 
                 # 更新会话名称（新会话）
                 if is_new_conversation:
-                    async with get_session() as session:
-                        new_name = f"对话 {datetime.now().strftime('%Y-%m-%d %H:%M')}"
-                        await Conversation.update_by_id(
-                            session,
-                            conversation_id,
-                            {
-                                "name": new_name[:50]
-                                if len(full_content) > 50
-                                else f"对话：{full_content[:30]}"
-                            },
-                        )
-                        await session.commit()
+                    await chat_service.update_conversation_name(
+                        conversation_id, full_content
+                    )
 
                 # 更新消息状态为正常并保存内容
-                async with get_session() as session:
-                    message = await session.get(Message, message_id)
-                    if message:
-                        message.content = full_content
-                        message.status = MessageStatus.NORMAL
-                        message.token_count = prompt_tokens + completion_tokens
-                        await session.commit()
+                await chat_service.update_assistant_message(
+                    message_id=message_id,
+                    content=full_content,
+                    status=MessageStatus.COMPLETED,
+                    token_count=prompt_tokens + completion_tokens,
+                )
 
                 await event_queue.put(None)
 
             except asyncio.CancelledError:
                 _logger.info(f"对话任务 {task_id} 被取消")
                 # 更新消息状态为已停止
-                await _update_message_status(message_id, MessageStatus.STOPPED)
+                await chat_service.update_assistant_message(
+                    message_id=message_id,
+                    content="",
+                    status=MessageStatus.STOPPED,
+                )
                 await event_queue.put(None)
                 raise
             except Exception as e:
                 _logger.exception("对话任务出错")
                 # 更新消息状态为错误
-                await _update_message_status(message_id, MessageStatus.ERROR, str(e))
+                await chat_service.update_assistant_message(
+                    message_id=message_id,
+                    content="",
+                    status=MessageStatus.ERROR,
+                    error_msg=str(e),
+                )
                 await event_queue.put(
                     {
                         "type": EventType.ERROR,
@@ -443,20 +376,11 @@ async def stop_chat_messages(conversation_id: str) -> dict:
     if not tenant_id:
         raise HTTPException(status_code=401, detail="未授权访问")
 
-    # 验证会话存在
-    conversation = None
-    async with get_session() as session:
-        conversation = await Conversation.one_by_conditions(
-            session,
-            conditions=[Conversation.id == conversation_id],
-        )
+    # 验证会话存在且属于当前租户
+    conversation = await conversation_service.get_by_id(conversation_id, tenant_id)
 
     if not conversation:
         raise HTTPException(status_code=404, detail="会话不存在")
-
-    # 检查租户归属
-    if conversation.tenant_id != tenant_id:
-        raise HTTPException(status_code=403, detail="无权访问此会话")
 
     # 查找活跃任务
     task_id = None
