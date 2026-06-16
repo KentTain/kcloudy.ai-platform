@@ -193,6 +193,10 @@ class TenantSettings(BaseSettings):
     default_cache_config_id: str | None = Field(default=None, description="默认租户缓存配置ID")
     default_queue_config_id: str | None = Field(default=None, description="默认租户队列配置ID")
     default_pubsub_config_id: str | None = Field(default=None, description="默认租户发布订阅配置ID")
+    # 跳过租户中间件的路径前缀（支持个性化配置）
+    skip_tenant_setting_path: list[str] = Field(
+        default_factory=list, description="跳过租户中间件的路径前缀列表"
+    )
 
 
 class JWTSettings(BaseSettings):

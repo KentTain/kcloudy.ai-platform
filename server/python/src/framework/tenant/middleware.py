@@ -58,9 +58,16 @@ class TenantMiddleware(BaseHTTPMiddleware):
     注意：用户信息由 IAMAuthMiddleware 设置，不再在此处理测试用户。
     """
 
-    def __init__(self, app: "ASGIApp", *, skip_paths: list[str] | None = None):
+    def __init__(self, app: "ASGIApp", *, extra_skip_paths: list[str] | None = None):
+        """初始化租户中间件
+
+        Args:
+            app: ASGI 应用
+            extra_skip_paths: 扩展的跳过路径列表（追加到内置 SKIP_PATHS 之后）
+        """
         super().__init__(app)
-        self.skip_paths = skip_paths or SKIP_PATHS
+        # 合并内置路径和扩展路径
+        self.skip_paths = SKIP_PATHS + (extra_skip_paths or [])
 
     async def dispatch(self, request: "Request", call_next: Callable):
         """处理请求"""

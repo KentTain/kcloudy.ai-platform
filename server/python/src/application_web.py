@@ -206,7 +206,9 @@ def create_app(module_names: list[str] | None = None) -> FastAPI:
     # - TenantMiddleware: 解析租户信息并注入上下文
 
     # 1. 注册租户中间件（解析租户并注入上下文）
-    app.add_middleware(TenantMiddleware)
+    # 从配置读取扩展的跳过路径，追加到内置 SKIP_PATHS 之后
+    extra_skip_paths = settings.tenant.skip_tenant_setting_path
+    app.add_middleware(TenantMiddleware, extra_skip_paths=extra_skip_paths if extra_skip_paths else None)
 
     # 2. 注册认证中间件（验证 JWT 并同步用户信息到 Context）
     app.add_middleware(IAMAuthMiddleware)

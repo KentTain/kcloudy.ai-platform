@@ -58,6 +58,17 @@ logging:
   # 是否启用压缩（轮转后的日志文件）
   compression: "gz" # 可选: null, "gz", "bz2", "xz"
 
+# 租户配置
+tenant:
+  # 扩展的跳过租户中间件路径前缀列表（追加到系统内置路径之后）
+  # 系统内置路径包括：/health、/docs、/redoc、/openapi.json、/tenant/admin/、/iam/console/v1/auth/* 等
+  # 如需添加额外的跳过路径，在此配置
+  skip-tenant-setting-path: []
+  # 示例：添加自定义跳过路径
+  # skip-tenant-setting-path:
+  #   - "/api/public/"
+  #   - "/webhook/"
+
 # 数据库配置
 sqlalchemy:
   # 数据库连接URL

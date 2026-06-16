@@ -473,11 +473,17 @@ prompt-completion:
 tenant:
   request-header: "X-Alon-TenantId"
   default-tenant-id: "00000000-0000-0000-0000-000000000000"
-  default-workspace-id: "42fd6df4-d488-43af-a389-1fb9696ae6cd"
-  default-dataset-path: "/app/知识库/"
   default-admin-ids:
     - "2d1319f1-78f6-4408-ab90-1e7e4745b12b"
     - "6c4287df-76fd-42ef-9eaa-12fae4917318"
+  # 扩展的跳过租户中间件路径前缀列表（追加到系统内置路径之后）
+  # 系统内置路径包括：/health、/docs、/redoc、/openapi.json、/tenant/admin/、/iam/console/v1/auth/* 等
+  # 如需添加额外的跳过路径，在此配置
+  skip-tenant-setting-path: []
+  # 示例：添加自定义跳过路径
+  # skip-tenant-setting-path:
+  #   - "/api/public/"
+  #   - "/webhook/"
   # 默认租户资源配置（可选；留空表示逻辑隔离）
   default-db-type: null
   default-db-host: null

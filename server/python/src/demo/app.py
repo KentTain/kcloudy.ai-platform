@@ -106,7 +106,10 @@ def create_app() -> FastAPI:
     )
 
     # 注册租户中间件
-    app.add_middleware(TenantMiddleware)
+    from framework.configs import get_settings
+    settings = get_settings()
+    extra_skip_paths = settings.tenant.skip_tenant_setting_path
+    app.add_middleware(TenantMiddleware, extra_skip_paths=extra_skip_paths if extra_skip_paths else None)
 
     # 注册 Demo 路由
     from demo.controllers.dataset import router as dataset_router
