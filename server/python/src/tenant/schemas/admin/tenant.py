@@ -2,10 +2,20 @@
 管理后台租户 Schema
 """
 
+from __future__ import annotations
+
 from datetime import datetime
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, Field
+
+if TYPE_CHECKING:
+    from tenant.models import Tenant
+    from tenant.models.cache_config import CacheConfig
+    from tenant.models.database_config import DatabaseConfig
+    from tenant.models.pubsub_config import PubSubConfig
+    from tenant.models.queue_config import QueueConfig
+    from tenant.models.storage_config import StorageConfig
 
 
 # ============== 请求 Schema ==============
@@ -57,6 +67,23 @@ class ResourceConfigReferenceResponse(BaseModel):
     id: str = Field(..., description="配置ID")
     name: str = Field(..., description="配置名称")
 
+    @classmethod
+    def from_config(
+        cls,
+        config: "DatabaseConfig | StorageConfig | CacheConfig | QueueConfig | PubSubConfig | None",
+    ) -> "ResourceConfigReferenceResponse | None":
+        """从配置对象构建响应
+
+        Args:
+            config: 配置对象，包含 id 和 name 属性
+
+        Returns:
+            ResourceConfigReferenceResponse 或 None（当 config 为 None 时）
+        """
+        if config is None:
+            return None
+        return cls(id=config.id, name=config.name)
+
 
 class TenantResponse(BaseModel):
     """租户响应"""
@@ -78,6 +105,48 @@ class TenantResponse(BaseModel):
     # 时间
     created_at: datetime = Field(..., description="创建时间")
     updated_at: datetime = Field(..., description="更新时间")
+
+    @classmethod
+    def from_tenant(
+        cls,
+        tenant: "Tenant",
+        db_config: "ResourceConfigReferenceResponse | None" = None,
+        storage_config: "ResourceConfigReferenceResponse | None" = None,
+        cache_config: "ResourceConfigReferenceResponse | None" = None,
+        queue_config: "ResourceConfigReferenceResponse | None" = None,
+        pubsub_config: "ResourceConfigReferenceResponse | None" = None,
+    ) -> "TenantResponse":
+        """从租户对象和资源配置构建响应
+
+        Args:
+            tenant: 租户对象
+            db_config: 数据库配置引用
+            storage_config: 存储配置引用
+            cache_config: 缓存配置引用
+            queue_config: 队列配置引用
+            pubsub_config: 发布订阅配置引用
+
+        Returns:
+            TenantResponse
+        """
+        return cls(
+            id=tenant.id,
+            name=tenant.name,
+            code=tenant.code,
+            status=tenant.status,
+            contact_name=tenant.contact_name,
+            contact_email=tenant.contact_email,
+            contact_phone=tenant.contact_phone,
+            expired_at=tenant.expired_at,
+            settings=tenant.settings or {},
+            db_config=db_config,
+            storage_config=storage_config,
+            cache_config=cache_config,
+            queue_config=queue_config,
+            pubsub_config=pubsub_config,
+            created_at=tenant.created_at,
+            updated_at=tenant.updated_at,
+        )
 
 
 class TenantPaginatedListResponse(BaseModel):

@@ -45,9 +45,7 @@ async def _get_resource_ref(
     if not config_id:
         return None
     config = await service.get_by_id(config_id)
-    if config:
-        return ResourceConfigReferenceResponse(id=config.id, name=config.name)
-    return None
+    return ResourceConfigReferenceResponse.from_config(config)
 
 
 async def build_tenant_vo(tenant: Tenant) -> TenantResponse:
@@ -69,23 +67,13 @@ async def build_tenant_vo(tenant: Tenant) -> TenantResponse:
         _get_resource_ref(tenant.pubsub_config_id, PubSubConfigService),
     )
 
-    return TenantResponse(
-        id=tenant.id,
-        name=tenant.name,
-        code=tenant.code,
-        status=tenant.status,
-        contact_name=tenant.contact_name,
-        contact_email=tenant.contact_email,
-        contact_phone=tenant.contact_phone,
-        expired_at=tenant.expired_at,
-        settings=tenant.settings or {},
+    return TenantResponse.from_tenant(
+        tenant=tenant,
         db_config=db_ref,
         storage_config=storage_ref,
         cache_config=cache_ref,
         queue_config=queue_ref,
         pubsub_config=pubsub_ref,
-        created_at=tenant.created_at,
-        updated_at=tenant.updated_at,
     )
 
 
