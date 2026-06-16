@@ -90,6 +90,27 @@ web/{技术栈}/
         └── e2e/
 ```
 
+## 统一架构及UI组件选型
+
+### 架构规则
+
+| 规则 | 说明 |
+|------|------|
+| 分层架构 | Screens → Components → Stores → API |
+| 模块隔离 | 每个业务模块独立路由和状态 |
+| 依赖边界 | 业务模块可依赖 framework，反向禁止 |
+| 跨模块通信 | 通过 Pinia Store、EventBus 或 API 调用 |
+
+### UI 组件技术选型
+
+所有前端技术栈采用统一的 UI 组件技术方案：
+
+| 技术层 | Vue | React | 说明 |
+|--------|-----|-------|------|
+| 组件库 | shadcn-vue | shadcn/ui | 基于 Radix + Tailwind 的组件集 |
+| 无样式原语 | Radix Vue | Radix UI | 提供可访问性的底层原语 |
+| 样式方案 | Tailwind CSS v4 | Tailwind CSS v4 | 原子化 CSS |
+
 ## 层次职责
 
 ### 基础设施层（framework/）
@@ -222,15 +243,6 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { ScrollArea } from '@/components/ui/scroll-area'
 ```
 
-## 架构规则
-
-| 规则 | 说明 |
-|------|------|
-| 分层架构 | Screens → Components → Stores → API |
-| 模块隔离 | 每个业务模块独立路由和状态 |
-| 依赖边界 | 业务模块可依赖 framework，反向禁止 |
-| 跨模块通信 | 通过 Pinia Store、EventBus 或 API 调用 |
-
 ## API 调用规范
 
 ### 路由格式
@@ -261,16 +273,6 @@ API 客户端位于 `framework/api/client.ts`，自动处理：
 | `/tenant/console/*` | JWT Token |
 | `/iam/*` | JWT Token |
 | `/ai/*` | JWT Token |
-
-## UI 组件技术选型
-
-所有前端技术栈采用统一的 UI 组件技术方案：
-
-| 技术层 | Vue | React | 说明 |
-|--------|-----|-------|------|
-| 组件库 | shadcn-vue | shadcn/ui | 基于 Radix + Tailwind 的组件集 |
-| 无样式原语 | Radix Vue | Radix UI | 提供可访问性的底层原语 |
-| 样式方案 | Tailwind CSS v4 | Tailwind CSS v4 | 原子化 CSS |
 
 ## 测试
 
