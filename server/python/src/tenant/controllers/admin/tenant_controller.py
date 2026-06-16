@@ -495,8 +495,8 @@ async def update_tenant_resources(
 # ============== 管理后台菜单 API ==============
 
 
-def _build_menu_tree_response(menu_dict: dict[str, Any]) -> ModuleMenuTreeResponse | None:
-    """将菜单 dict 递归转换为 ModuleMenuTreeResponse，递归过滤不可见子菜单"""
+def _build_menu_item_from_dict(menu_dict: dict[str, Any]) -> ModuleMenuTreeResponse | None:
+    """将菜单 dict 转换为 ModuleMenuTreeResponse（仅处理二级菜单项）"""
     if not menu_dict.get("is_visible", True):
         return None
 
@@ -512,11 +512,7 @@ def _build_menu_tree_response(menu_dict: dict[str, Any]) -> ModuleMenuTreeRespon
         is_visible=menu_dict["is_visible"],
         created_at=menu_dict["created_at"],
         updated_at=menu_dict["updated_at"],
-        children=[
-            r for r in (
-                _build_menu_tree_response(child) for child in menu_dict.get("children", [])
-            ) if r is not None
-        ],
+        children=[],  # 二级菜单无子菜单
     )
 
 
@@ -525,31 +521,56 @@ async def get_admin_menus(
     admin: dict = Depends(get_current_admin),
 ) -> ORJSONResponse:
     """
-    获取管理员菜单
+    获取管理员菜单（二级结构）
 
-    从 Tenant 模块（code='tenant'）的 module_menus 获取菜单树。
-    管理员具有 Tenant 模块下所有菜单及功能的权限。
+    菜单结构：
+    - 一级菜单：模块菜单（来自 modules 表，无路由，不可点击）
+    - 二级菜单：功能菜单（来自 module_menus 表，有路由）
 
     场景：成功获取菜单
     WHEN 管理员请求 GET /tenant/admin/v1/admin/menus
-    THEN 返回 Tenant 模块下所有可见菜单的树形结构
+    THEN 返回所有活跃模块及其功能菜单的树形结构
 
-    场景：模块不存在时的处理
-    WHEN 数据库中不存在 code='tenant' 的模块
+    场景：无活跃模块
+    WHEN 数据库中没有活跃模块
     THEN 返回空数组
     """
-    # 查找 Tenant 模块
-    tenant_module = await ModuleService.get_by_code("tenant")
-    if not tenant_module:
+    from tenant.models import Module
+
+    # 获取所有活跃模块（一级菜单）
+    modules = await ModuleService.list_active_modules()
+    if not modules:
         return ORJSONResponse(content=Success([]))
 
-    # 获取模块菜单并构建树形结构
-    menus = await ModuleMenuService.list_menus(tenant_module.id)
-    menu_tree = ModuleMenuService.build_tree(menus)
+    result: list[ModuleMenuTreeResponse] = []
 
-    # 转换为响应模型（递归过滤不可见菜单）
-    result = [
-        r for r in (_build_menu_tree_response(item) for item in menu_tree) if r is not None
-    ]
+    # 为每个模块构建菜单树
+    for module in modules:
+        # 获取该模块的功能菜单（二级菜单）
+        menus = await ModuleMenuService.list_menus(module.id)
+
+        # 过滤不可见菜单，转换为响应模型
+        visible_menus = [
+            _build_menu_item_from_dict(m) for m in menus
+        ]
+        visible_menus = [m for m in visible_menus if m is not None]
+
+        # 构建一级模块菜单
+        module_menu = ModuleMenuTreeResponse(
+            id=module.id,
+            module_id=module.id,
+            parent_id=None,
+            code=module.code,
+            name=module.name,
+            path="",  # 模块菜单无路由
+            icon=module.icon,
+            sort_order=0,
+            is_visible=True,
+            created_at=module.created_at,
+            updated_at=module.updated_at,
+            children=visible_menus,
+        )
+
+        result.append(module_menu)
 
     return ORJSONResponse(content=Success([r.model_dump() for r in result]))

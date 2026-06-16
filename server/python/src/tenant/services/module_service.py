@@ -81,6 +81,25 @@ class ModuleService:
             return result.scalar_one_or_none()
 
     @staticmethod
+    async def list_active_modules() -> list[Module]:
+        """
+        获取所有活跃模块列表
+
+        用于构建管理后台的一级模块菜单。
+
+        Returns:
+            活跃模块列表
+        """
+        async with async_session() as session:
+            stmt = (
+                select(Module)
+                .where(Module.is_active == True)
+                .order_by(Module.created_at.asc())
+            )
+            result = await session.execute(stmt)
+            return list(result.scalars().all())
+
+    @staticmethod
     async def create(
         code: str,
         name: str,
