@@ -12,7 +12,7 @@ describe("Permission API", () => {
   });
 
   describe("getPermissions", () => {
-    it("calls GET /v1/iam/permission with params", async () => {
+    it("calls GET /iam/admin/v1/permissions with params", async () => {
       const mockResponse = {
         code: 0,
         msg: "success",
@@ -22,11 +22,11 @@ describe("Permission API", () => {
 
       const result = await getPermissions({ page: 1, keyword: "user" });
 
-      expect(client.get).toHaveBeenCalledWith("/v1/iam/permission", { params: { page: 1, keyword: "user" } });
+      expect(client.get).toHaveBeenCalledWith("/iam/admin/v1/permissions", { params: { page: 1, keyword: "user" } });
       expect(result).toEqual(mockResponse);
     });
 
-    it("calls GET /v1/iam/permission with resource filter", async () => {
+    it("calls GET /iam/admin/v1/permissions with resource filter", async () => {
       const mockResponse = {
         code: 0,
         msg: "success",
@@ -50,13 +50,13 @@ describe("Permission API", () => {
 
       const result = await getPermissions({ resource: "user" });
 
-      expect(client.get).toHaveBeenCalledWith("/v1/iam/permission", { params: { resource: "user" } });
+      expect(client.get).toHaveBeenCalledWith("/iam/admin/v1/permissions", { params: { resource: "user" } });
       expect(result).toEqual(mockResponse);
     });
   });
 
   describe("getAllPermissions", () => {
-    it("calls GET /v1/iam/permission and returns all items", async () => {
+    it("calls GET /iam/admin/v1/permissions and returns all items", async () => {
       const mockResponse = {
         code: 0,
         msg: "success",
@@ -80,13 +80,13 @@ describe("Permission API", () => {
 
       const result = await getAllPermissions();
 
-      expect(client.get).toHaveBeenCalledWith("/v1/iam/permission", { params: { page: 1, page_size: 1000 } });
+      expect(client.get).toHaveBeenCalledWith("/iam/admin/v1/permissions", { params: { page: 1, page_size: 1000 } });
       expect(result.data).toEqual(mockResponse.data.items);
     });
   });
 
   describe("getPermissionsByResource", () => {
-    it("calls GET /v1/iam/permission/grouped", async () => {
+    it("calls GET /iam/admin/v1/permissions/grouped", async () => {
       const mockResponse = {
         code: 0,
         msg: "success",
@@ -110,7 +110,7 @@ describe("Permission API", () => {
 
       const result = await getPermissionsByResource();
 
-      expect(client.get).toHaveBeenCalledWith("/v1/iam/permission/grouped");
+      expect(client.get).toHaveBeenCalledWith("/iam/admin/v1/permissions/grouped");
       expect(result).toEqual(mockResponse);
     });
   });

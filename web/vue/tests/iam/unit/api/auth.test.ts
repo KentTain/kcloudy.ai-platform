@@ -23,7 +23,7 @@ describe("Auth API", () => {
   });
 
   describe("login", () => {
-    it("calls POST /v1/iam/auth/login with credentials", async () => {
+    it("calls POST /iam/console/v1/auth/login with credentials", async () => {
       const mockResponse = {
         code: 0,
         msg: "success",
@@ -38,7 +38,7 @@ describe("Auth API", () => {
 
       const result = await login({ account: "admin", password: "password" });
 
-      expect(client.post).toHaveBeenCalledWith("/v1/iam/auth/login", {
+      expect(client.post).toHaveBeenCalledWith("/iam/console/v1/auth/login", {
         account: "admin",
         password: "password",
       });
@@ -47,19 +47,19 @@ describe("Auth API", () => {
   });
 
   describe("logout", () => {
-    it("calls POST /v1/iam/auth/logout", async () => {
+    it("calls POST /iam/console/v1/auth/logout", async () => {
       const mockResponse = { code: 0, msg: "success", data: undefined };
       vi.mocked(client.post).mockResolvedValue(mockResponse);
 
       const result = await logout();
 
-      expect(client.post).toHaveBeenCalledWith("/v1/iam/auth/logout");
+      expect(client.post).toHaveBeenCalledWith("/iam/console/v1/auth/logout");
       expect(result).toEqual(mockResponse);
     });
   });
 
   describe("refreshToken", () => {
-    it("calls POST /v1/iam/auth/token/refresh with refresh token", async () => {
+    it("calls POST /iam/console/v1/auth/token/refresh with refresh token", async () => {
       const mockResponse = {
         code: 0,
         msg: "success",
@@ -74,7 +74,7 @@ describe("Auth API", () => {
 
       const result = await refreshToken("old-refresh-token");
 
-      expect(client.post).toHaveBeenCalledWith("/v1/iam/auth/token/refresh", {
+      expect(client.post).toHaveBeenCalledWith("/iam/console/v1/auth/token/refresh", {
         refresh_token: "old-refresh-token",
       });
       expect(result).toEqual(mockResponse);
@@ -82,7 +82,7 @@ describe("Auth API", () => {
   });
 
   describe("getCurrentUser", () => {
-    it("calls GET /v1/iam/user/me", async () => {
+    it("calls GET /iam/console/v1/users/me", async () => {
       const mockResponse = {
         code: 0,
         msg: "success",
@@ -97,13 +97,13 @@ describe("Auth API", () => {
 
       const result = await getCurrentUser();
 
-      expect(client.get).toHaveBeenCalledWith("/v1/iam/user/me");
+      expect(client.get).toHaveBeenCalledWith("/iam/console/v1/users/me");
       expect(result).toEqual(mockResponse);
     });
   });
 
   describe("updateCurrentUser", () => {
-    it("calls PUT /v1/iam/user/me with update data", async () => {
+    it("calls PUT /iam/console/v1/users/me with update data", async () => {
       const mockResponse = {
         code: 0,
         msg: "success",
@@ -123,7 +123,7 @@ describe("Auth API", () => {
         email: "admin@example.com",
       });
 
-      expect(client.put).toHaveBeenCalledWith("/v1/iam/user/me", {
+      expect(client.put).toHaveBeenCalledWith("/iam/console/v1/users/me", {
         nickname: "Admin User",
         email: "admin@example.com",
       });
@@ -132,13 +132,13 @@ describe("Auth API", () => {
   });
 
   describe("changePassword", () => {
-    it("calls PUT /v1/iam/user/password with passwords", async () => {
+    it("calls PUT /iam/console/v1/users/password with passwords", async () => {
       const mockResponse = { code: 0, msg: "success", data: undefined };
       vi.mocked(client.put).mockResolvedValue(mockResponse);
 
       const result = await changePassword("old-pass", "new-pass");
 
-      expect(client.put).toHaveBeenCalledWith("/v1/iam/user/password", {
+      expect(client.put).toHaveBeenCalledWith("/iam/console/v1/users/password", {
         old_password: "old-pass",
         new_password: "new-pass",
       });
@@ -147,7 +147,7 @@ describe("Auth API", () => {
   });
 
   describe("getLoginHistory", () => {
-    it("calls GET /v1/iam/auth/login-history with params", async () => {
+    it("calls GET /iam/console/v1/auth/login-history with params", async () => {
       const mockResponse = {
         code: 0,
         msg: "success",
@@ -170,7 +170,7 @@ describe("Auth API", () => {
 
       const result = await getLoginHistory({ page: 1, page_size: 20 });
 
-      expect(client.get).toHaveBeenCalledWith("/v1/iam/auth/login-history", {
+      expect(client.get).toHaveBeenCalledWith("/iam/console/v1/auth/login-history", {
         page: 1,
         page_size: 20,
       });

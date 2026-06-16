@@ -23,7 +23,7 @@ describe("Role API", () => {
   });
 
   describe("getRoles", () => {
-    it("calls GET /v1/iam/role with params", async () => {
+    it("calls GET /iam/admin/v1/roles with params", async () => {
       const mockResponse = {
         code: 0,
         msg: "success",
@@ -33,13 +33,13 @@ describe("Role API", () => {
 
       const result = await getRoles({ page: 1, keyword: "admin" });
 
-      expect(client.get).toHaveBeenCalledWith("/v1/iam/role", { params: { page: 1, keyword: "admin" } });
+      expect(client.get).toHaveBeenCalledWith("/iam/admin/v1/roles", { params: { page: 1, keyword: "admin" } });
       expect(result).toEqual(mockResponse);
     });
   });
 
   describe("getRole", () => {
-    it("calls GET /v1/iam/role/:id", async () => {
+    it("calls GET /iam/admin/v1/roles/:id", async () => {
       const mockResponse = {
         code: 0,
         msg: "success",
@@ -49,13 +49,13 @@ describe("Role API", () => {
 
       const result = await getRole("1");
 
-      expect(client.get).toHaveBeenCalledWith("/v1/iam/role/1");
+      expect(client.get).toHaveBeenCalledWith("/iam/admin/v1/roles/1");
       expect(result).toEqual(mockResponse);
     });
   });
 
   describe("createRole", () => {
-    it("calls POST /v1/iam/role with role data", async () => {
+    it("calls POST /iam/admin/v1/roles with role data", async () => {
       const mockResponse = {
         code: 0,
         msg: "success",
@@ -69,7 +69,7 @@ describe("Role API", () => {
         description: "编辑角色",
       });
 
-      expect(client.post).toHaveBeenCalledWith("/v1/iam/role", {
+      expect(client.post).toHaveBeenCalledWith("/iam/admin/v1/roles", {
         code: "editor",
         name: "编辑",
         description: "编辑角色",
@@ -79,7 +79,7 @@ describe("Role API", () => {
   });
 
   describe("updateRole", () => {
-    it("calls PUT /v1/iam/role/:id with update data", async () => {
+    it("calls PUT /iam/admin/v1/roles/:id with update data", async () => {
       const mockResponse = {
         code: 0,
         msg: "success",
@@ -89,25 +89,25 @@ describe("Role API", () => {
 
       const result = await updateRole("1", { name: "高级编辑" });
 
-      expect(client.put).toHaveBeenCalledWith("/v1/iam/role/1", { name: "高级编辑" });
+      expect(client.put).toHaveBeenCalledWith("/iam/admin/v1/roles/1", { name: "高级编辑" });
       expect(result).toEqual(mockResponse);
     });
   });
 
   describe("deleteRole", () => {
-    it("calls DELETE /v1/iam/role/:id", async () => {
+    it("calls DELETE /iam/admin/v1/roles/:id", async () => {
       const mockResponse = { code: 0, msg: "success", data: undefined };
       vi.mocked(client.del).mockResolvedValue(mockResponse);
 
       const result = await deleteRole("1");
 
-      expect(client.del).toHaveBeenCalledWith("/v1/iam/role/1");
+      expect(client.del).toHaveBeenCalledWith("/iam/admin/v1/roles/1");
       expect(result).toEqual(mockResponse);
     });
   });
 
   describe("getRolePermissions", () => {
-    it("calls GET /v1/iam/role/:id/permissions", async () => {
+    it("calls GET /iam/admin/v1/roles/:id/permissions", async () => {
       const mockResponse = {
         code: 0,
         msg: "success",
@@ -119,19 +119,19 @@ describe("Role API", () => {
 
       const result = await getRolePermissions("1");
 
-      expect(client.get).toHaveBeenCalledWith("/v1/iam/role/1/permissions");
+      expect(client.get).toHaveBeenCalledWith("/iam/admin/v1/roles/1/permissions");
       expect(result).toEqual(mockResponse);
     });
   });
 
   describe("assignRolePermissions", () => {
-    it("calls POST /v1/iam/role/:id/permissions with permission ids", async () => {
+    it("calls POST /iam/admin/v1/roles/:id/permissions with permission ids", async () => {
       const mockResponse = { code: 0, msg: "success", data: undefined };
       vi.mocked(client.post).mockResolvedValue(mockResponse);
 
       const result = await assignRolePermissions("1", { permission_ids: ["perm-1", "perm-2"] });
 
-      expect(client.post).toHaveBeenCalledWith("/v1/iam/role/1/permissions", {
+      expect(client.post).toHaveBeenCalledWith("/iam/admin/v1/roles/1/permissions", {
         permission_ids: ["perm-1", "perm-2"],
       });
       expect(result).toEqual(mockResponse);
