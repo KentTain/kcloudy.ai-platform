@@ -2,6 +2,8 @@
 管理后台租户控制器
 """
 
+from typing import Any
+
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import ORJSONResponse
 from sqlalchemy import select
@@ -9,6 +11,7 @@ from sqlalchemy import select
 from framework.database.core.engine import async_session
 from tenant.middlewares.admin_auth_middleware import AdminAuthService, get_current_admin
 from tenant.models import Tenant
+from tenant.schemas.admin.module import ModuleMenuTreeResponse
 from tenant.schemas.admin.tenant import (
     AdminLoginRequest,
     AdminLoginResponse,
@@ -22,6 +25,8 @@ from tenant.schemas.admin.tenant import (
     TenantUpdate,
     TenantResponse,
 )
+from tenant.services.module_menu_service import ModuleMenuService
+from tenant.services.module_service import ModuleService
 from tenant.services.tenant_service import TenantService
 
 router = APIRouter()
@@ -485,3 +490,66 @@ async def update_tenant_resources(
             ).model_dump()
         )
     )
+
+
+# ============== 管理后台菜单 API ==============
+
+
+def _build_menu_tree_response(menu_dict: dict[str, Any]) -> ModuleMenuTreeResponse | None:
+    """将菜单 dict 递归转换为 ModuleMenuTreeResponse，递归过滤不可见子菜单"""
+    if not menu_dict.get("is_visible", True):
+        return None
+
+    return ModuleMenuTreeResponse(
+        id=menu_dict["id"],
+        module_id=menu_dict["module_id"],
+        parent_id=menu_dict["parent_id"],
+        code=menu_dict["code"],
+        name=menu_dict["name"],
+        path=menu_dict["path"],
+        icon=menu_dict["icon"],
+        sort_order=menu_dict["sort_order"],
+        is_visible=menu_dict["is_visible"],
+        created_at=menu_dict["created_at"],
+        updated_at=menu_dict["updated_at"],
+        children=[
+            r for r in (
+                _build_menu_tree_response(child) for child in menu_dict.get("children", [])
+            ) if r is not None
+        ],
+    )
+
+
+@router.get("/admin/menus")
+async def get_admin_menus(
+    admin: dict = Depends(get_current_admin),
+) -> ORJSONResponse:
+    """
+    获取管理员菜单
+
+    从 Tenant 模块（code='tenant'）的 module_menus 获取菜单树。
+    管理员具有 Tenant 模块下所有菜单及功能的权限。
+
+    场景：成功获取菜单
+    WHEN 管理员请求 GET /tenant/admin/v1/admin/menus
+    THEN 返回 Tenant 模块下所有可见菜单的树形结构
+
+    场景：模块不存在时的处理
+    WHEN 数据库中不存在 code='tenant' 的模块
+    THEN 返回空数组
+    """
+    # 查找 Tenant 模块
+    tenant_module = await ModuleService.get_by_code("tenant")
+    if not tenant_module:
+        return ORJSONResponse(content=Success([]))
+
+    # 获取模块菜单并构建树形结构
+    menus = await ModuleMenuService.list_menus(tenant_module.id)
+    menu_tree = ModuleMenuService.build_tree(menus)
+
+    # 转换为响应模型（递归过滤不可见菜单）
+    result = [
+        r for r in (_build_menu_tree_response(item) for item in menu_tree) if r is not None
+    ]
+
+    return ORJSONResponse(content=Success([r.model_dump() for r in result]))
