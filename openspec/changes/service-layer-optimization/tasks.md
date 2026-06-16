@@ -53,10 +53,10 @@
 
 ## 8. 测试验证与文档更新
 
-- [ ] 8.1 运行全量测试套件验证功能正确性
-- [ ] 8.2 更新 `server/python/CLAUDE.md` 开发规范文档
-- [ ] 8.3 更新 `server/CLAUDE.md` Service 层规范说明
-- [ ] 8.4 提交代码并创建 commit message
+- [x] 8.1 运行全量测试套件验证功能正确性
+- [x] 8.2 更新 `server/python/CLAUDE.md` 开发规范文档
+- [x] 8.3 更新 `server/CLAUDE.md` Service 层规范说明
+- [x] 8.4 提交代码并创建 commit message
 
 ## 任务依赖关系
 
