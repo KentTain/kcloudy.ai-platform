@@ -24,7 +24,7 @@ describe("User API", () => {
   });
 
   describe("getUsers", () => {
-    it("calls GET /v1/iam/user with params", async () => {
+    it("calls GET /iam/admin/v1/users with params", async () => {
       const mockResponse = {
         code: 0,
         msg: "success",
@@ -34,13 +34,13 @@ describe("User API", () => {
 
       const result = await getUsers({ page: 1, keyword: "admin" });
 
-      expect(client.get).toHaveBeenCalledWith("/v1/iam/user", { params: { page: 1, keyword: "admin" } });
+      expect(client.get).toHaveBeenCalledWith("/iam/admin/v1/users", { params: { page: 1, keyword: "admin" } });
       expect(result).toEqual(mockResponse);
     });
   });
 
   describe("getUser", () => {
-    it("calls GET /v1/iam/user/:id", async () => {
+    it("calls GET /iam/admin/v1/users/:id", async () => {
       const mockResponse = {
         code: 0,
         msg: "success",
@@ -50,13 +50,13 @@ describe("User API", () => {
 
       const result = await getUser("1");
 
-      expect(client.get).toHaveBeenCalledWith("/v1/iam/user/1");
+      expect(client.get).toHaveBeenCalledWith("/iam/admin/v1/users/1");
       expect(result).toEqual(mockResponse);
     });
   });
 
   describe("createUser", () => {
-    it("calls POST /v1/iam/user with user data", async () => {
+    it("calls POST /iam/admin/v1/users with user data", async () => {
       const mockResponse = {
         code: 0,
         msg: "success",
@@ -70,7 +70,7 @@ describe("User API", () => {
         email: "new@example.com",
       });
 
-      expect(client.post).toHaveBeenCalledWith("/v1/iam/user", {
+      expect(client.post).toHaveBeenCalledWith("/iam/admin/v1/users", {
         username: "newuser",
         password: "password",
         email: "new@example.com",
@@ -80,7 +80,7 @@ describe("User API", () => {
   });
 
   describe("updateUser", () => {
-    it("calls PUT /v1/iam/user/:id with update data", async () => {
+    it("calls PUT /iam/admin/v1/users/:id with update data", async () => {
       const mockResponse = {
         code: 0,
         msg: "success",
@@ -90,31 +90,31 @@ describe("User API", () => {
 
       const result = await updateUser("1", { nickname: "Admin" });
 
-      expect(client.put).toHaveBeenCalledWith("/v1/iam/user/1", { nickname: "Admin" });
+      expect(client.put).toHaveBeenCalledWith("/iam/admin/v1/users/1", { nickname: "Admin" });
       expect(result).toEqual(mockResponse);
     });
   });
 
   describe("deleteUser", () => {
-    it("calls DELETE /v1/iam/user/:id", async () => {
+    it("calls DELETE /iam/admin/v1/users/:id", async () => {
       const mockResponse = { code: 0, msg: "success", data: undefined };
       vi.mocked(client.del).mockResolvedValue(mockResponse);
 
       const result = await deleteUser("1");
 
-      expect(client.del).toHaveBeenCalledWith("/v1/iam/user/1");
+      expect(client.del).toHaveBeenCalledWith("/iam/admin/v1/users/1");
       expect(result).toEqual(mockResponse);
     });
   });
 
   describe("assignUserRoles", () => {
-    it("calls POST /v1/iam/user/:id/roles with role ids", async () => {
+    it("calls POST /iam/admin/v1/users/:id/roles with role ids", async () => {
       const mockResponse = { code: 0, msg: "success", data: undefined };
       vi.mocked(client.post).mockResolvedValue(mockResponse);
 
       const result = await assignUserRoles("1", ["role-1", "role-2"]);
 
-      expect(client.post).toHaveBeenCalledWith("/v1/iam/user/1/roles", {
+      expect(client.post).toHaveBeenCalledWith("/iam/admin/v1/users/1/roles", {
         role_ids: ["role-1", "role-2"],
       });
       expect(result).toEqual(mockResponse);
@@ -122,13 +122,13 @@ describe("User API", () => {
   });
 
   describe("assignUserDepartments", () => {
-    it("calls POST /v1/iam/user/:id/departments with department ids", async () => {
+    it("calls POST /iam/admin/v1/users/:id/departments with department ids", async () => {
       const mockResponse = { code: 0, msg: "success", data: undefined };
       vi.mocked(client.post).mockResolvedValue(mockResponse);
 
       const result = await assignUserDepartments("1", ["dept-1"]);
 
-      expect(client.post).toHaveBeenCalledWith("/v1/iam/user/1/departments", {
+      expect(client.post).toHaveBeenCalledWith("/iam/admin/v1/users/1/departments", {
         department_ids: ["dept-1"],
       });
       expect(result).toEqual(mockResponse);
@@ -136,7 +136,7 @@ describe("User API", () => {
   });
 
   describe("resetUserPassword", () => {
-    it("calls POST /v1/iam/user/:id/reset-password", async () => {
+    it("calls POST /iam/admin/v1/users/:id/reset-password", async () => {
       const mockResponse = {
         code: 0,
         msg: "success",
@@ -146,7 +146,7 @@ describe("User API", () => {
 
       const result = await resetUserPassword("1");
 
-      expect(client.post).toHaveBeenCalledWith("/v1/iam/user/1/reset-password", {});
+      expect(client.post).toHaveBeenCalledWith("/iam/admin/v1/users/1/reset-password", {});
       expect(result).toEqual(mockResponse);
     });
   });

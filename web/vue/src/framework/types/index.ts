@@ -32,7 +32,23 @@ export interface ApiResponse<T = unknown> {
 }
 
 /**
+ * 列表查询基类（非分页）
+ */
+export interface BaseQuery {
+  keyword?: string;
+}
+
+/**
+ * 分页查询基类
+ */
+export interface BasePaginatedQuery extends BaseQuery {
+  page: number;
+  page_size: number;
+}
+
+/**
  * 分页请求参数
+ * @deprecated 使用 BasePaginatedQuery 替代
  */
 export interface PageParams {
   page: number;
@@ -40,16 +56,22 @@ export interface PageParams {
 }
 
 /**
- * 分页响应数据
+ * 分页列表响应
  *
  * 与后端 `TenantListVo` 等分页响应格式对齐
  */
-export interface PageResult<T> {
+export interface PaginatedListResponse<T> {
   items: T[];
   total: number;
   page: number;
   page_size: number;
 }
+
+/**
+ * 分页响应数据
+ * @deprecated 使用 PaginatedListResponse<T> 替代
+ */
+export type PageResult<T> = PaginatedListResponse<T>;
 
 // 树节点类型
 export type { TreeNode, TreeNodeTree, TreeAction, TreeSelectNode } from './tree'
