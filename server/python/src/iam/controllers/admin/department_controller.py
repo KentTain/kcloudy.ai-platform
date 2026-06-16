@@ -21,24 +21,17 @@ router = APIRouter()
 @router.get("/departments")
 async def list_departments() -> ORJSONResponse:
     """获取部门列表"""
+    from iam.schemas.department import DepartmentListItem
+
     tenant_id = get_tenant_id()
     departments = await department_service.list_by_tenant(tenant_id)
+    # 使用 Schema 转换方法，但保持原始数组格式
+    items = [DepartmentListItem.from_department(d).model_dump() for d in departments]
     return ORJSONResponse(
         content={
             "code": 200,
             "msg": "success",
-            "data": [
-                {
-                    "id": d.id,
-                    "name": d.name,
-                    "code": d.code,
-                    "parent_id": d.parent_id,
-                    "sort_order": d.sort_order,
-                    "leader_id": d.leader_id,
-                    "status": d.status,
-                }
-                for d in departments
-            ],
+            "data": items,
         }
     )
 

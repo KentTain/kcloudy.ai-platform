@@ -271,20 +271,16 @@ async def get_user_roles(user_id: str) -> ORJSONResponse:
 
     返回用户已分配的角色。
     """
+    from iam.schemas.user import UserRoleItem
+
     roles = await user_roles_service.get_user_roles(user_id)
+    # 使用 Schema 转换方法，但保持原始数组格式
+    items = [UserRoleItem.from_role(r).model_dump() for r in roles]
     return ORJSONResponse(
         content={
             "code": 200,
             "msg": "success",
-            "data": [
-                {
-                    "id": r.id,
-                    "code": r.code,
-                    "name": r.name,
-                    "description": r.description,
-                }
-                for r in roles
-            ],
+            "data": items,
         }
     )
 
