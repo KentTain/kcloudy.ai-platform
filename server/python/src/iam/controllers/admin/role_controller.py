@@ -4,7 +4,7 @@
 提供角色管理接口。
 """
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import ORJSONResponse
 
 from iam.schemas.role import (
@@ -12,6 +12,8 @@ from iam.schemas.role import (
     RolePermissionRequest,
     RoleUpdate,
     RoleResponse,
+    RolePaginatedListResponse,
+    RolePaginatedQuery,
 )
 from iam.services import permission_service, role_service
 
@@ -19,19 +21,26 @@ router = APIRouter()
 
 
 @router.get("/roles")
-async def list_roles(tenant_id: str | None = None, page: int = 1, page_size: int = 20) -> ORJSONResponse:
+async def list_roles(
+    query: RolePaginatedQuery = Depends(),
+    tenant_id: str | None = None,
+) -> ORJSONResponse:
     """获取角色列表"""
     roles, total = await role_service.list_roles(
         tenant_id=tenant_id,
-        page=page,
-        page_size=page_size,
+        page=query.page,
+        page_size=query.page_size,
     )
     return ORJSONResponse(
         content={
             "code": 200,
             "msg": "success",
-            "data": [RoleResponse.model_validate(r).model_dump() for r in roles],
-            "total": total,
+            "data": RolePaginatedListResponse(
+                total=total,
+                page=query.page,
+                page_size=query.page_size,
+                items=[RoleResponse.model_validate(r) for r in roles],
+            ).model_dump(),
         }
     )
 

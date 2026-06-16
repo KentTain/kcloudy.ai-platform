@@ -6,7 +6,19 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field
 
-from framework.schemas import PropertyAttributeVoMixin, PropertyVoMixin
+from framework.schemas import PropertyAttributeVoMixin, PropertyVoMixin, BaseQuery, BasePaginatedQuery
+
+
+class ConsoleSystemSettingQuery(BaseQuery):
+    """用户端系统设置查询参数"""
+
+    pass
+
+
+class ConsoleSystemSettingPaginatedQuery(ConsoleSystemSettingQuery, BasePaginatedQuery):
+    """用户端系统设置分页查询参数"""
+
+    pass
 
 
 class ConsoleSystemSettingAttributeResponse(PropertyAttributeVoMixin):
@@ -30,10 +42,12 @@ class ConsoleSystemSettingResponse(PropertyVoMixin):
     created_at: datetime = Field(..., description="创建时间")
 
 
-class ConsoleSystemSettingListResponse(BaseModel):
-    """用户端系统设置列表响应"""
+class ConsoleSystemSettingPaginatedListResponse(BaseModel):
+    """用户端系统设置分页列表响应"""
 
     items: list[ConsoleSystemSettingResponse] = Field(
         default_factory=list, description="设置列表"
     )
     total: int = Field(..., description="总数")
+    page: int = Field(..., description="页码")
+    page_size: int = Field(..., description="每页数量")

@@ -6,14 +6,18 @@ from iam.schemas.admin.system_setting import (
     SystemSettingAttributeCreate,
     SystemSettingAttributeResponse,
     SystemSettingCreate,
-    SystemSettingListResponse,
+    SystemSettingPaginatedListResponse,
     SystemSettingResponse,
     SystemSettingUpdate,
+    SystemSettingQuery,
+    SystemSettingPaginatedQuery,
 )
 from iam.schemas.console.system_setting import (
     ConsoleSystemSettingAttributeResponse,
-    ConsoleSystemSettingListResponse,
+    ConsoleSystemSettingPaginatedListResponse,
     ConsoleSystemSettingResponse,
+    ConsoleSystemSettingQuery,
+    ConsoleSystemSettingPaginatedQuery,
 )
 from iam.schemas.department import (
     DepartmentCreate,
@@ -41,16 +45,20 @@ from iam.schemas.oauth import (
 )
 from iam.schemas.permission import (
     PermissionGroupResponse,
-    PermissionListResponse,
+    PermissionPaginatedListResponse,
     PermissionResponse,
+    PermissionQuery,
+    PermissionPaginatedQuery,
 )
 from iam.schemas.role import (
     RoleCreate,
-    RoleListResponse,
+    RolePaginatedListResponse,
     RolePermissionRequest,
     RoleUpdate,
     RoleResponse,
     RoleWithPermissionsResponse,
+    RoleQuery,
+    RolePaginatedQuery,
 )
 from iam.schemas.token import (
     TokenPayload,
@@ -61,10 +69,12 @@ from iam.schemas.user import (
     PasswordChangeRequest,
     PasswordResetCodeRequest,
     PasswordResetRequest,
-    UserListResponse,
+    UserPaginatedListResponse,
     UserRegisterRequest,
     UserUpdate,
     UserResponse,
+    UserQuery,
+    UserPaginatedQuery,
 )
 
 __all__ = [
@@ -87,17 +97,23 @@ __all__ = [
     "PasswordResetCodeRequest",
     "PasswordResetRequest",
     "UserResponse",
-    "UserListResponse",
+    "UserQuery",
+    "UserPaginatedQuery",
+    "UserPaginatedListResponse",
     # 角色
     "RoleCreate",
     "RoleUpdate",
     "RolePermissionRequest",
     "RoleResponse",
-    "RoleListResponse",
+    "RoleQuery",
+    "RolePaginatedQuery",
+    "RolePaginatedListResponse",
     "RoleWithPermissionsResponse",
     # 权限
     "PermissionResponse",
-    "PermissionListResponse",
+    "PermissionQuery",
+    "PermissionPaginatedQuery",
+    "PermissionPaginatedListResponse",
     "PermissionGroupResponse",
     # 部门
     "DepartmentCreate",
@@ -115,11 +131,15 @@ __all__ = [
     "SystemSettingCreate",
     "SystemSettingUpdate",
     "SystemSettingResponse",
-    "SystemSettingListResponse",
+    "SystemSettingQuery",
+    "SystemSettingPaginatedQuery",
+    "SystemSettingPaginatedListResponse",
     "SystemSettingAttributeCreate",
     "SystemSettingAttributeResponse",
     # 系统设置 - Console
     "ConsoleSystemSettingResponse",
-    "ConsoleSystemSettingListResponse",
+    "ConsoleSystemSettingQuery",
+    "ConsoleSystemSettingPaginatedQuery",
+    "ConsoleSystemSettingPaginatedListResponse",
     "ConsoleSystemSettingAttributeResponse",
 ]

@@ -6,11 +6,12 @@
 
 from typing import Any
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import func, select
 
 from framework.database.core.engine import async_session
 from iam.models import Role, Permission, RolePermission
+from iam.schemas.role import RolePaginatedQuery
 
 router = APIRouter(prefix="/tenants/{tenant_id}", tags=["Tenant Role"])
 
@@ -18,8 +19,7 @@ router = APIRouter(prefix="/tenants/{tenant_id}", tags=["Tenant Role"])
 @router.get("/roles")
 async def get_tenant_roles(
     tenant_id: str,
-    page: int = 1,
-    page_size: int = 20,
+    query: RolePaginatedQuery = Depends(),
 ) -> dict[str, Any]:
     """
     获取租户角色列表
@@ -28,8 +28,7 @@ async def get_tenant_roles(
 
     Args:
         tenant_id: 租户 ID
-        page: 页码
-        page_size: 每页数量
+        query: 分页查询参数
 
     Returns:
         角色列表和总数
@@ -43,13 +42,13 @@ async def get_tenant_roles(
         total = total_result.scalar() or 0
 
         # 查询列表
-        offset = (page - 1) * page_size
+        offset = (query.page - 1) * query.page_size
         stmt = (
             select(Role)
             .where(Role.tenant_id == tenant_id)
             .order_by(Role.created_at.desc())
             .offset(offset)
-            .limit(page_size)
+            .limit(query.page_size)
         )
         result = await session.execute(stmt)
         roles = list(result.scalars().all())
@@ -70,8 +69,8 @@ async def get_tenant_roles(
                 for r in roles
             ],
             "total": total,
-            "page": page,
-            "page_size": page_size,
+            "page": query.page,
+            "page_size": query.page_size,
         }
 
 

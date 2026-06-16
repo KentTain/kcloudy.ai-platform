@@ -8,9 +8,10 @@ from fastapi.responses import ORJSONResponse
 from tenant.middlewares.admin_auth_middleware import get_current_admin
 from iam.schemas.admin.system_setting import (
     SystemSettingCreate,
-    SystemSettingListResponse,
+    SystemSettingPaginatedListResponse,
     SystemSettingResponse,
     SystemSettingUpdate,
+    SystemSettingPaginatedQuery,
 )
 from iam.services.system_setting_service import system_setting_service
 
@@ -29,9 +30,7 @@ def build_setting_response(setting) -> SystemSettingResponse:
 
 @router.get("")
 async def list_settings(
-    page: int = 1,
-    page_size: int = 20,
-    keyword: str | None = None,
+    query: SystemSettingPaginatedQuery = Depends(),
     admin: dict = Depends(get_current_admin),
 ) -> ORJSONResponse:
     """
@@ -44,20 +43,20 @@ async def list_settings(
     tenant_id = "platform"  # 系统设置为平台级配置
     settings, total = await system_setting_service.list_settings(
         tenant_id=tenant_id,
-        page=page,
-        page_size=page_size,
-        keyword=keyword,
+        page=query.page,
+        page_size=query.page_size,
+        keyword=query.keyword,
     )
 
     return ORJSONResponse(
         content={
             "code": 200,
             "msg": "success",
-            "data": SystemSettingListResponse(
+            "data": SystemSettingPaginatedListResponse(
                 items=[build_setting_response(s) for s in settings],
                 total=total,
-                page=page,
-                page_size=page_size,
+                page=query.page,
+                page_size=query.page_size,
             ).model_dump(),
         }
     )

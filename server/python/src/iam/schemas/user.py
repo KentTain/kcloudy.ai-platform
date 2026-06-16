@@ -6,6 +6,8 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
+from framework.schemas.base import BaseQuery, BasePaginatedQuery
+
 
 class UserRegisterRequest(BaseModel):
     """用户注册请求"""
@@ -129,6 +131,18 @@ class AdminPasswordResetResponse(BaseModel):
     password: str
 
 
+class UserQuery(BaseQuery):
+    """用户列表查询参数"""
+
+    status: str | None = Field(default=None, description="状态过滤")
+
+
+class UserPaginatedQuery(UserQuery, BasePaginatedQuery):
+    """用户分页查询参数"""
+
+    pass
+
+
 class UserTenantResponse(BaseModel):
     """用户租户视图对象"""
 
@@ -161,8 +175,10 @@ class UserResponse(BaseModel):
     tenants: list[UserTenantResponse] = Field(default_factory=list, description="用户所属租户列表")
 
 
-class UserListResponse(BaseModel):
-    """用户列表响应"""
+class UserPaginatedListResponse(BaseModel):
+    """用户分页列表响应"""
 
     total: int
+    page: int
+    page_size: int
     items: list[UserResponse]

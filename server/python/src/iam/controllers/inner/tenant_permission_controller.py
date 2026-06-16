@@ -6,11 +6,12 @@
 
 from typing import Any
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import func, select
 
 from framework.database.core.engine import async_session
 from iam.models import Permission
+from iam.schemas.permission import PermissionPaginatedQuery
 
 router = APIRouter(prefix="/tenants/{tenant_id}", tags=["Tenant Permission"])
 
@@ -18,8 +19,7 @@ router = APIRouter(prefix="/tenants/{tenant_id}", tags=["Tenant Permission"])
 @router.get("/permissions")
 async def get_tenant_permissions(
     tenant_id: str,
-    page: int = 1,
-    page_size: int = 20,
+    query: PermissionPaginatedQuery = Depends(),
 ) -> dict[str, Any]:
     """
     获取租户权限列表
@@ -28,8 +28,7 @@ async def get_tenant_permissions(
 
     Args:
         tenant_id: 租户 ID
-        page: 页码
-        page_size: 每页数量
+        query: 分页查询参数
 
     Returns:
         权限列表和总数
@@ -43,13 +42,13 @@ async def get_tenant_permissions(
         total = total_result.scalar() or 0
 
         # 查询列表
-        offset = (page - 1) * page_size
+        offset = (query.page - 1) * query.page_size
         stmt = (
             select(Permission)
             .where(Permission.tenant_id == tenant_id)
             .order_by(Permission.created_at.desc())
             .offset(offset)
-            .limit(page_size)
+            .limit(query.page_size)
         )
         result = await session.execute(stmt)
         permissions = list(result.scalars().all())
@@ -71,8 +70,8 @@ async def get_tenant_permissions(
                 for p in permissions
             ],
             "total": total,
-            "page": page,
-            "page_size": page_size,
+            "page": query.page,
+            "page_size": query.page_size,
         }
 
 

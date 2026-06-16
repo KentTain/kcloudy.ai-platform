@@ -2,11 +2,12 @@
 用户端系统设置控制器
 """
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import ORJSONResponse
 
 from iam.schemas.console.system_setting import (
-    ConsoleSystemSettingListResponse,
+    ConsoleSystemSettingPaginatedListResponse,
+    ConsoleSystemSettingPaginatedQuery,
     ConsoleSystemSettingResponse,
 )
 from iam.services.system_setting_service import system_setting_service
@@ -25,7 +26,10 @@ def build_setting_response(setting) -> ConsoleSystemSettingResponse:
 
 
 @router.get("")
-async def list_settings(tenant_id: str = "default") -> ORJSONResponse:
+async def list_settings(
+    query: ConsoleSystemSettingPaginatedQuery = Depends(),
+    tenant_id: str = "default",
+) -> ORJSONResponse:
     """
     列出本租户配置
 
@@ -33,13 +37,20 @@ async def list_settings(tenant_id: str = "default") -> ORJSONResponse:
     WHEN 用户发送 GET /console/v1/system-settings
     THEN 返回本租户的所有配置列表
     """
-    settings, total = await system_setting_service.list_settings(tenant_id=tenant_id)
+    settings, total = await system_setting_service.list_settings(
+        tenant_id=tenant_id,
+        page=query.page,
+        page_size=query.page_size,
+        keyword=query.keyword,
+    )
 
     return ORJSONResponse(
         content=Success(
-            ConsoleSystemSettingListResponse(
+            ConsoleSystemSettingPaginatedListResponse(
                 items=[build_setting_response(s) for s in settings],
                 total=total,
+                page=query.page,
+                page_size=query.page_size,
             ).model_dump()
         )
     )

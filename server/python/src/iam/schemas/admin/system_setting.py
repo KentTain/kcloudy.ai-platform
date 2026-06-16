@@ -7,8 +7,23 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from framework.schemas import PropertyAttributeVoMixin, PropertyVoMixin
+from framework.schemas import PropertyAttributeVoMixin, PropertyVoMixin, BaseQuery, BasePaginatedQuery
 from framework.database import AttributeDataType
+
+
+# ============== 查询参数 Schema ==============
+
+
+class SystemSettingQuery(BaseQuery):
+    """系统设置查询参数"""
+
+    pass
+
+
+class SystemSettingPaginatedQuery(SystemSettingQuery, BasePaginatedQuery):
+    """系统设置分页查询参数"""
+
+    pass
 
 
 # ============== 属性值 Schema ==============
@@ -90,8 +105,8 @@ class SystemSettingResponse(PropertyVoMixin):
     updated_at: datetime = Field(..., description="更新时间")
 
 
-class SystemSettingListResponse(BaseModel):
-    """系统设置列表响应"""
+class SystemSettingPaginatedListResponse(BaseModel):
+    """系统设置分页列表响应"""
 
     items: list[SystemSettingResponse] = Field(
         default_factory=list, description="设置列表"

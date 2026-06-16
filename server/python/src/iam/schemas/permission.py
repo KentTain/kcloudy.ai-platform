@@ -6,6 +6,20 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field
 
+from framework.schemas.base import BaseQuery, BasePaginatedQuery
+
+
+class PermissionQuery(BaseQuery):
+    """权限列表查询参数"""
+
+    pass
+
+
+class PermissionPaginatedQuery(PermissionQuery, BasePaginatedQuery):
+    """权限分页查询参数"""
+
+    pass
+
 
 class PermissionResponse(BaseModel):
     """权限视图对象"""
@@ -19,10 +33,12 @@ class PermissionResponse(BaseModel):
     created_at: datetime
 
 
-class PermissionListResponse(BaseModel):
-    """权限列表响应"""
+class PermissionPaginatedListResponse(BaseModel):
+    """权限分页列表响应"""
 
     total: int
+    page: int
+    page_size: int
     items: list[PermissionResponse]
 
 

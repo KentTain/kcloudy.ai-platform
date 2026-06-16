@@ -4,7 +4,7 @@
 提供用户管理、角色分配、部门分配等管理员接口。
 """
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import ORJSONResponse
 from sqlalchemy import select
 
@@ -15,7 +15,8 @@ from iam.schemas.user import (
     AdminUserCreate,
     AdminUserUpdate,
     UserDepartmentAssignRequest,
-    UserListResponse,
+    UserPaginatedListResponse,
+    UserPaginatedQuery,
     UserRoleAssignRequest,
     UserStatusUpdateRequest,
     UserResponse,
@@ -29,12 +30,7 @@ router = APIRouter()
 
 
 @router.get("/users")
-async def list_users(
-    page: int = 1,
-    page_size: int = 20,
-    keyword: str | None = None,
-    status: str | None = None,
-) -> ORJSONResponse:
+async def list_users(query: UserPaginatedQuery = Depends()) -> ORJSONResponse:
     """
     获取用户列表
 
@@ -44,17 +40,19 @@ async def list_users(
 
     users, total = await user_service.list_users(
         tenant_id=tenant_id,
-        page=page,
-        page_size=page_size,
-        keyword=keyword,
-        status=status,
+        page=query.page,
+        page_size=query.page_size,
+        keyword=query.keyword,
+        status=query.status,
     )
     return ORJSONResponse(
         content={
             "code": 200,
             "msg": "success",
-            "data": UserListResponse(
+            "data": UserPaginatedListResponse(
                 total=total,
+                page=query.page,
+                page_size=query.page_size,
                 items=[UserResponse.model_validate(u) for u in users],
             ).model_dump(),
         }

@@ -6,6 +6,8 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from framework.schemas.base import BaseQuery, BasePaginatedQuery
+
 
 class RoleCreate(BaseModel):
     """角色创建请求"""
@@ -28,6 +30,18 @@ class RolePermissionRequest(BaseModel):
     permission_ids: list[str] = Field(..., description="权限 ID 列表")
 
 
+class RoleQuery(BaseQuery):
+    """角色列表查询参数"""
+
+    pass
+
+
+class RolePaginatedQuery(RoleQuery, BasePaginatedQuery):
+    """角色分页查询参数"""
+
+    pass
+
+
 class RoleResponse(BaseModel):
     """角色视图对象"""
 
@@ -42,10 +56,12 @@ class RoleResponse(BaseModel):
     created_at: datetime
 
 
-class RoleListResponse(BaseModel):
-    """角色列表响应"""
+class RolePaginatedListResponse(BaseModel):
+    """角色分页列表响应"""
 
     total: int
+    page: int
+    page_size: int
     items: list[RoleResponse]
 
 
