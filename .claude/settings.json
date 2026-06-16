@@ -11,6 +11,7 @@
       "Bash(mkdir*)",
       "Bash(mv*)",
       "Bash(rm*)",
+      "Bash(sed *)",
       "Bash(echo *)",
       "Bash(export *)",
       "Bash(which *)",
