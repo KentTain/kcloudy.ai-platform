@@ -83,5 +83,5 @@
 
 - [x] 12.1 运行 Python 后端 Ruff 检查，确认无未解析引用（5 个预存问题与本次变更无关）
 - [x] 12.2 运行 Vue 前端 TypeScript 编译检查，确认无新增类型错误（预存 .vue 文件声明问题与本次变更无关）
-- [ ] 12.3 运行 Python 后端测试 `uv run pytest`，确认无失败测试
-- [ ] 12.4 运行 Vue 前端测试 `pnpm test:unit --run`，确认无失败测试
+- [x] 12.3 运行 Python 后端测试 `uv run pytest`，确认无失败测试（Framework: 367 passed, 1 预存失败; Demo: 159 passed）
+- [x] 12.4 运行 Vue 前端测试 `pnpm test:unit --run`，确认无失败测试（IAM API: 34 passed; 25 个预存组件 mock 问题与本次变更无关）
