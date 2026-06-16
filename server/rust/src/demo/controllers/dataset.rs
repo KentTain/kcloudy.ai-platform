@@ -9,22 +9,22 @@ use validator::Validate;
 
 use super::AppState;
 use crate::common::error::{ApiResponse, Error, Result};
-use crate::schemas::{DatasetCreate, DatasetUpdate, DatasetVo, PageRequest, PageResponse};
+use crate::schemas::{DatasetCreate, DatasetUpdate, DatasetVo, BasePaginatedQuery, PaginatedListResponse};
 
 /// 获取知识库列表
 #[utoipa::path(
     get,
     path = "/api/v1/datasets",
-    params(PageRequest),
+    params(BasePaginatedQuery),
     responses(
-        (status = 200, description = "获取成功", body = ApiResponse<PageResponse<DatasetVo>>)
+        (status = 200, description = "获取成功", body = ApiResponse<PaginatedListResponse<DatasetVo>>)
     ),
     tag = "Dataset"
 )]
 pub async fn list_datasets(
     State(state): State<AppState>,
-    Query(params): Query<PageRequest>,
-) -> Result<Json<ApiResponse<PageResponse<DatasetVo>>>> {
+    Query(params): Query<BasePaginatedQuery>,
+) -> Result<Json<ApiResponse<PaginatedListResponse<DatasetVo>>>> {
     let result = state.dataset_service.list(params.page, params.page_size).await?;
     Ok(Json(ApiResponse::success(result)))
 }

@@ -5,7 +5,7 @@ use uuid::Uuid;
 use crate::common::error::{Error, Result};
 use crate::db::Database;
 use crate::models::Dataset;
-use crate::schemas::{DatasetCreate, DatasetUpdate, DatasetVo, PageResponse};
+use crate::schemas::{DatasetCreate, DatasetUpdate, DatasetVo, PaginatedListResponse};
 
 /// 知识库服务
 #[derive(Clone)]
@@ -24,7 +24,7 @@ impl DatasetService {
         &self,
         page: u32,
         page_size: u32,
-    ) -> Result<PageResponse<DatasetVo>> {
+    ) -> Result<PaginatedListResponse<DatasetVo>> {
         let pool = self.db.pool();
         let offset = (page.saturating_sub(1)) * page_size;
 
@@ -47,7 +47,7 @@ impl DatasetService {
         .await
         .map_err(Error::Database)?;
 
-        Ok(PageResponse::new(
+        Ok(PaginatedListResponse::new(
             items.into_iter().map(DatasetVo::from).collect(),
             total as u64,
             page,

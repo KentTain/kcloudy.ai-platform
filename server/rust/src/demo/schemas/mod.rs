@@ -9,7 +9,7 @@ use utoipa::{IntoParams, ToSchema};
 
 /// 分页请求参数
 #[derive(Debug, Clone, Deserialize, IntoParams, ToSchema)]
-pub struct PageRequest {
+pub struct BasePaginatedQuery {
     /// 当前页码
     #[serde(default = "default_page")]
     pub page: u32,
@@ -27,7 +27,7 @@ fn default_page_size() -> u32 {
     10
 }
 
-impl Default for PageRequest {
+impl Default for BasePaginatedQuery {
     fn default() -> Self {
         Self {
             page: default_page(),
@@ -38,7 +38,7 @@ impl Default for PageRequest {
 
 /// 分页响应
 #[derive(Debug, Clone, Serialize, ToSchema)]
-pub struct PageResponse<T> {
+pub struct PaginatedListResponse<T> {
     /// 数据列表
     pub items: Vec<T>,
     /// 总数
@@ -49,7 +49,7 @@ pub struct PageResponse<T> {
     pub page_size: u32,
 }
 
-impl<T> PageResponse<T> {
+impl<T> PaginatedListResponse<T> {
     /// 创建分页响应
     pub fn new(items: Vec<T>, total: u64, page: u32, page_size: u32) -> Self {
         Self {
