@@ -1,0 +1,4 @@
+allowBuilds:
+  esbuild: true
+  vue-demi: true
+storeDir: D:\DevTool\nodejs-24.14.1\.pnpm-store
