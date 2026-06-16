@@ -34,12 +34,16 @@ describe('PermissionTree', () => {
   })
 
   describe('按资源分组展示', () => {
+    function getCheckboxTreeData(wrapper: ReturnType<typeof mount>) {
+      const checkboxTree = wrapper.findComponent({ name: 'CheckboxTree' })
+      return checkboxTree.props('data') as any[]
+    }
+
     it('权限按资源分组转换为 TreeNode', () => {
       const wrapper = mount(PermissionTree, {
         props: { permissions: mockPermissions, modelValue: [] },
       })
-      const treeData = wrapper.vm.treeData
-      expect(treeData).toBeDefined()
+      const treeData = getCheckboxTreeData(wrapper)
       expect(treeData.length).toBe(2)
     })
 
@@ -47,7 +51,7 @@ describe('PermissionTree', () => {
       const wrapper = mount(PermissionTree, {
         props: { permissions: mockPermissions, modelValue: [] },
       })
-      const treeData = wrapper.vm.treeData
+      const treeData = getCheckboxTreeData(wrapper)
       const userGroup = treeData.find((g: any) => g.id === 'resource-user')
       expect(userGroup).toBeDefined()
       expect(userGroup.name).toBe('user')
@@ -58,7 +62,7 @@ describe('PermissionTree', () => {
       const wrapper = mount(PermissionTree, {
         props: { permissions: mockPermissions, modelValue: [] },
       })
-      const treeData = wrapper.vm.treeData
+      const treeData = getCheckboxTreeData(wrapper)
       const roleGroup = treeData.find((g: any) => g.id === 'resource-role')
       expect(roleGroup).toBeDefined()
       expect(roleGroup.name).toBe('role')
@@ -78,14 +82,21 @@ describe('PermissionTree', () => {
       const wrapper = mount(PermissionTree, {
         props: { permissions: mockPermissions, modelValue: [] },
       })
-      // 模拟 CheckboxTree 返回包含 resource ID 的值
-      wrapper.vm.handleUpdate(['resource-user', 'perm-1', 'perm-2', 'resource-role', 'perm-4'])
-      // 只有权限 ID 被传递给 emit
+      // 模拟 CheckboxTree 触发 update:model-value，包含 resource ID
+      const checkboxTree = wrapper.findComponent({ name: 'CheckboxTree' })
+      // 直接调用 CheckboxTree 的 update:model-value emit
+      checkboxTree.vm.$emit('update:model-value', ['resource-user', 'perm-1', 'perm-2', 'resource-role', 'perm-4'])
+      // 等待下一个 tick 让 handleUpdate 处理
+      await new Promise(resolve => setTimeout(resolve, 0))
+      // 只有权限 ID 被传递给 emit（resource 节点 ID 被过滤掉）
       const lastEmit = wrapper.emitted('update:modelValue')
       if (lastEmit) {
         const value = lastEmit[lastEmit.length - 1][0] as string[]
         expect(value).not.toContain('resource-user')
+        expect(value).not.toContain('resource-role')
         expect(value).toContain('perm-1')
+        expect(value).toContain('perm-2')
+        expect(value).toContain('perm-4')
       }
     })
   })

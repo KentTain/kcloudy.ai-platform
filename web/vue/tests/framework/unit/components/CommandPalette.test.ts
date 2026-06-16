@@ -17,6 +17,11 @@ vi.mock("@/framework/composables/useCommandPalette", () => ({
   }),
 }));
 
+// jsdom 不实现 scrollIntoView，reka-ui ListboxRoot 依赖它
+beforeEach(() => {
+  Element.prototype.scrollIntoView = vi.fn();
+});
+
 describe("CommandPalette", () => {
   let router: ReturnType<typeof createRouter>;
 
