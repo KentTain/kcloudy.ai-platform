@@ -110,12 +110,11 @@ class TestStartupTimer:
         assert "总启动耗时" in output
         assert "阶段1 (配置加载)" in output
         assert "阶段2 (基础组件)" in output
-        assert "数据库: PostgreSQL" in output
-        # 更新断言以匹配实际输出（包含 emoji）
+        assert "数据库=PostgreSQL" in output  # 详情格式为 k=v
+        # 模块列表格式为单行 [demo, iam]
         assert "已加载模块" in output
         assert "2 个" in output
-        assert "- demo" in output
-        assert "- iam" in output
+        assert "[demo, iam]" in output
         assert "http://127.0.0.1:8000" in output
         assert "http://127.0.0.1:8000/docs" in output
 
