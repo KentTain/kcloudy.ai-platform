@@ -1,4 +1,8 @@
-## ADDED Requirements
+## 目的
+
+定义租户管理后台 API 规范，提供租户的创建、查询、更新、删除及资源绑定管理功能。
+
+## Requirements
 
 ### Requirement: 独立认证体系
 
@@ -71,6 +75,26 @@
 #### Scenario: 更新租户
 - **WHEN** 管理员请求 `PUT /admin/v1/tenants/{id}` 并提供更新数据
 - **THEN** 更新租户信息并返回更新后的数据
+
+### Requirement: 租户资源绑定查询
+
+系统 SHALL 支持查询租户的资源绑定情况。
+
+#### Scenario: 查询资源绑定
+- **WHEN** 管理员请求 `GET /admin/v1/tenants/{id}/resources`
+- **THEN** 返回租户当前的资源绑定情况
+
+### Requirement: 租户资源绑定更新
+
+系统 SHALL 支持更新租户的资源绑定。
+
+#### Scenario: 资源绑定
+- **WHEN** 管理员请求 `PUT /admin/v1/tenants/{id}/resources` 并提供配置 ID
+- **THEN** 更新租户的资源绑定
+
+#### Scenario: 解绑资源
+- **WHEN** 管理员将某个配置设为 null
+- **THEN** 解除该资源的绑定
 
 ### Requirement: 租户删除
 
