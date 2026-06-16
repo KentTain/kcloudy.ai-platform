@@ -184,14 +184,16 @@ web/{技术栈}/
 
 | 分类 | 命名模式 | 示例 |
 |------|----------|------|
-| 查询（列表/分页参数） | `{Entity}Query` | `TenantQuery` |
+| 非分页查询 | `{Entity}Query` | `DepartmentQuery` |
+| 分页查询 | `{Entity}PaginatedQuery` | `TenantPaginatedQuery` |
 | 新增（创建参数） | `{Entity}Create` | `TenantCreate` |
 | 编辑（更新参数） | `{Entity}Update` | `TenantUpdate` |
 | 保存（新增或编辑） | `{Entity}Save` | `ConfigSave` |
 | 导入 | `{Entity}Import` | `UserImport` |
 | 导出 | `{Entity}Export` | `UserExport` |
 | 基本响应 | `{Entity}Response` | `TenantResponse` |
-| 列表响应 | `{Entity}ListResponse` | `TenantListResponse` |
+| 全量列表响应 | `{Entity}ListResponse` | `MenuListResponse` |
+| 分页列表响应 | `{Entity}PaginatedListResponse` | `TenantPaginatedListResponse` |
 | 树结构响应 | `{Entity}TreeResponse` | `MenuTreeResponse` |
 | 属性/配置响应 | `{Entity}PropertyResponse` | `CachePropertyResponse` |
 

@@ -173,7 +173,7 @@ server/{技术栈}/
 
 | 分类 | 命名模式 | 示例 |
 |------|----------|------|
-| 列表查询 | `{Entity}Query` | `TenantQuery` |
+| 非分页查询 | `{Entity}Query` | `DepartmentQuery` |
 | 分页查询 | `{Entity}PaginatedQuery` | `TenantPaginatedQuery` |
 | 新增（创建） | `{Entity}Create` | `TenantCreate` |
 | 编辑（更新） | `{Entity}Update` | `TenantUpdate` |
@@ -181,7 +181,7 @@ server/{技术栈}/
 | 导入 | `{Entity}Import` | `UserImport` |
 | 导出 | `{Entity}Export` | `UserExport` |
 | 基本响应 | `{Entity}Response` | `TenantResponse` |
-| 列表响应 | `{Entity}ListResponse` | `TenantListResponse` |
+| 全量列表响应 | `{Entity}ListResponse` | `MenuListResponse` |
 | 分页列表响应 | `{Entity}PaginatedListResponse` | `TenantPaginatedListResponse` |
 | 树结构响应 | `{Entity}TreeResponse` | `ModuleMenuTreeResponse` |
 | 属性/配置响应 | `{Entity}PropertyResponse` | `CachePropertyResponse` |
