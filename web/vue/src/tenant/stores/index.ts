@@ -3,3 +3,4 @@
  */
 export * from "./tenant";
 export { useAdminAuthStore } from "./adminAuth";
+export { useAdminMenuStore } from "./adminMenu";
