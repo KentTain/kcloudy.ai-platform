@@ -2,6 +2,7 @@
 管理后台租户控制器
 """
 
+import asyncio
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -59,11 +60,14 @@ async def build_tenant_vo(tenant: Tenant) -> TenantResponse:
         PubSubConfigService,
     )
 
-    db_ref = await _get_resource_ref(tenant.db_config_id, DatabaseConfigService)
-    storage_ref = await _get_resource_ref(tenant.storage_config_id, StorageConfigService)
-    cache_ref = await _get_resource_ref(tenant.cache_config_id, CacheConfigService)
-    queue_ref = await _get_resource_ref(tenant.queue_config_id, QueueConfigService)
-    pubsub_ref = await _get_resource_ref(tenant.pubsub_config_id, PubSubConfigService)
+    # 使用 asyncio.gather 并行查询 5 个资源配置
+    db_ref, storage_ref, cache_ref, queue_ref, pubsub_ref = await asyncio.gather(
+        _get_resource_ref(tenant.db_config_id, DatabaseConfigService),
+        _get_resource_ref(tenant.storage_config_id, StorageConfigService),
+        _get_resource_ref(tenant.cache_config_id, CacheConfigService),
+        _get_resource_ref(tenant.queue_config_id, QueueConfigService),
+        _get_resource_ref(tenant.pubsub_config_id, PubSubConfigService),
+    )
 
     return TenantResponse(
         id=tenant.id,
@@ -159,7 +163,6 @@ async def list_tenants(
     )
 
     # 并行构建 TenantResponse
-    import asyncio
     tenant_vos = await asyncio.gather(*[build_tenant_vo(t) for t in tenants])
 
     return ORJSONResponse(
@@ -398,11 +401,14 @@ async def get_tenant_resources(
         PubSubConfigService,
     )
 
-    db_ref = await _get_resource_ref(tenant.db_config_id, DatabaseConfigService)
-    storage_ref = await _get_resource_ref(tenant.storage_config_id, StorageConfigService)
-    cache_ref = await _get_resource_ref(tenant.cache_config_id, CacheConfigService)
-    queue_ref = await _get_resource_ref(tenant.queue_config_id, QueueConfigService)
-    pubsub_ref = await _get_resource_ref(tenant.pubsub_config_id, PubSubConfigService)
+    # 使用 asyncio.gather 并行查询 5 个资源配置
+    db_ref, storage_ref, cache_ref, queue_ref, pubsub_ref = await asyncio.gather(
+        _get_resource_ref(tenant.db_config_id, DatabaseConfigService),
+        _get_resource_ref(tenant.storage_config_id, StorageConfigService),
+        _get_resource_ref(tenant.cache_config_id, CacheConfigService),
+        _get_resource_ref(tenant.queue_config_id, QueueConfigService),
+        _get_resource_ref(tenant.pubsub_config_id, PubSubConfigService),
+    )
 
     return ORJSONResponse(
         content=Success(
@@ -453,11 +459,14 @@ async def update_tenant_resources(
                     detail=f"{config_type}配置不存在: {config_id}",
                 )
 
-    await _validate_config(data.db_config_id, DatabaseConfigService, "数据库")
-    await _validate_config(data.storage_config_id, StorageConfigService, "存储")
-    await _validate_config(data.cache_config_id, CacheConfigService, "缓存")
-    await _validate_config(data.queue_config_id, QueueConfigService, "队列")
-    await _validate_config(data.pubsub_config_id, PubSubConfigService, "发布订阅")
+    # 使用 asyncio.gather 并行校验 5 个配置
+    await asyncio.gather(
+        _validate_config(data.db_config_id, DatabaseConfigService, "数据库"),
+        _validate_config(data.storage_config_id, StorageConfigService, "存储"),
+        _validate_config(data.cache_config_id, CacheConfigService, "缓存"),
+        _validate_config(data.queue_config_id, QueueConfigService, "队列"),
+        _validate_config(data.pubsub_config_id, PubSubConfigService, "发布订阅"),
+    )
 
     # 更新资源绑定
     tenant = await TenantService.update_resource_bindings(
@@ -472,11 +481,14 @@ async def update_tenant_resources(
     if not tenant:
         raise HTTPException(status_code=404, detail="租户不存在")
 
-    db_ref = await _get_resource_ref(tenant.db_config_id, DatabaseConfigService)
-    storage_ref = await _get_resource_ref(tenant.storage_config_id, StorageConfigService)
-    cache_ref = await _get_resource_ref(tenant.cache_config_id, CacheConfigService)
-    queue_ref = await _get_resource_ref(tenant.queue_config_id, QueueConfigService)
-    pubsub_ref = await _get_resource_ref(tenant.pubsub_config_id, PubSubConfigService)
+    # 使用 asyncio.gather 并行查询 5 个资源配置
+    db_ref, storage_ref, cache_ref, queue_ref, pubsub_ref = await asyncio.gather(
+        _get_resource_ref(tenant.db_config_id, DatabaseConfigService),
+        _get_resource_ref(tenant.storage_config_id, StorageConfigService),
+        _get_resource_ref(tenant.cache_config_id, CacheConfigService),
+        _get_resource_ref(tenant.queue_config_id, QueueConfigService),
+        _get_resource_ref(tenant.pubsub_config_id, PubSubConfigService),
+    )
 
     return ORJSONResponse(
         content=Success(
