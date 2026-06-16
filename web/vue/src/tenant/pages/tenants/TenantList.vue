@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useTenantStore } from '@/tenant/stores/tenant'
@@ -48,7 +48,7 @@ const loadTenants = async () => {
     page: pagination.value.page,
     page_size: pagination.value.pageSize,
     keyword: searchForm.value.keyword || undefined,
-    status: searchForm.value.status || undefined,
+    status: searchForm.value.status === 'all' ? undefined : searchForm.value.status || undefined,
   })
 }
 
@@ -142,7 +142,7 @@ onMounted(() => {
             <SelectValue placeholder="全部" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">全部</SelectItem>
+            <SelectItem value="all">全部</SelectItem>
             <SelectItem v-for="opt in statusOptions" :key="opt.value" :value="opt.value">
               {{ opt.label }}
             </SelectItem>

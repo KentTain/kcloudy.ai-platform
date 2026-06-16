@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { ref, onMounted, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useTenantStore } from '@/tenant/stores/tenant'
@@ -238,11 +238,11 @@ const handleSaveResources = async () => {
   resourceSaving.value = true
   try {
     await updateTenantResources(tenantId.value, {
-      database_id: resourceForm.value.database_id || undefined,
-      storage_id: resourceForm.value.storage_id || undefined,
-      cache_id: resourceForm.value.cache_id || undefined,
-      queue_id: resourceForm.value.queue_id || undefined,
-      pubsub_id: resourceForm.value.pubsub_id || undefined,
+      database_id: resourceForm.value.database_id === 'none' ? undefined : resourceForm.value.database_id || undefined,
+      storage_id: resourceForm.value.storage_id === 'none' ? undefined : resourceForm.value.storage_id || undefined,
+      cache_id: resourceForm.value.cache_id === 'none' ? undefined : resourceForm.value.cache_id || undefined,
+      queue_id: resourceForm.value.queue_id === 'none' ? undefined : resourceForm.value.queue_id || undefined,
+      pubsub_id: resourceForm.value.pubsub_id === 'none' ? undefined : resourceForm.value.pubsub_id || undefined,
     })
     notifySuccess('资源绑定保存成功')
     await loadTenantResources()
@@ -458,7 +458,7 @@ onMounted(() => {
                       <SelectValue :placeholder="`选择${resourceType.label}配置`" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">不绑定</SelectItem>
+                      <SelectItem value="none">不绑定</SelectItem>
                       <SelectItem
                         v-for="config in resourceType.configs.value"
                         :key="config.id"
@@ -653,3 +653,4 @@ onMounted(() => {
     </Dialog>
   </AppPage>
 </template>
+

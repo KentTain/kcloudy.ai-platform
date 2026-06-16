@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getModule, getModuleMenus, createModuleMenu, updateModuleMenu, deleteModuleMenu, getModulePermissions, createModulePermission, updateModulePermission, deleteModulePermission, getModuleRoles, createModuleRole, updateModuleRole, deleteModuleRole, updateRolePermissions } from '@/tenant/api/module'
@@ -290,7 +290,7 @@ const saveMenu = async () => {
       name: menuForm.value.name.trim(),
       code: menuForm.value.code.trim(),
       path: menuForm.value.path.trim(),
-      parent_id: menuForm.value.parent_id || undefined,
+      parent_id: menuForm.value.parent_id === 'none' ? undefined : menuForm.value.parent_id || undefined,
       icon: menuForm.value.icon.trim() || undefined,
       sort: menuForm.value.sort,
     }
@@ -1126,7 +1126,7 @@ onMounted(() => {
                 <SelectValue placeholder="请选择父菜单（不选则为顶级菜单）" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">无（顶级菜单）</SelectItem>
+                <SelectItem value="none">无（顶级菜单）</SelectItem>
                 <SelectItem
                   v-for="option in parentMenuOptions"
                   :key="option.id"

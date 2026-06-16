@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { getModules, deleteModule } from '@/tenant/api/module'
@@ -59,7 +59,7 @@ const loadData = async () => {
       page: pagination.value.page,
       page_size: pagination.value.pageSize,
       keyword: searchForm.value.keyword || undefined,
-      is_active: searchForm.value.is_active ? searchForm.value.is_active === 'true' : undefined,
+      is_active: searchForm.value.is_active === 'all' ? undefined : searchForm.value.is_active === 'true' || undefined,
     })
 
     if (response.data) {
@@ -218,7 +218,7 @@ onMounted(() => {
                 <SelectValue placeholder="模块状态" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">全部状态</SelectItem>
+                <SelectItem value="all">全部状态</SelectItem>
                 <SelectItem value="true">启用</SelectItem>
                 <SelectItem value="false">停用</SelectItem>
               </SelectContent>
