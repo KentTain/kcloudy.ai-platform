@@ -10,17 +10,17 @@ from fastapi.responses import ORJSONResponse
 from tenant.middlewares.admin_auth_middleware import get_current_admin
 from tenant.schemas.admin.module import (
     ModuleCreate,
-    ModuleListResponse,
+    ModulePaginatedListResponse,
     ModuleMenuCreate,
     ModuleMenuListResponse,
     ModuleMenuUpdate,
     ModuleMenuTreeResponse,
     ModulePermissionCreate,
-    ModulePermissionListResponse,
+    ModulePermissionPaginatedListResponse,
     ModulePermissionUpdate,
     ModulePermissionResponse,
     ModuleRoleCreate,
-    ModuleRoleListResponse,
+    ModuleRolePaginatedListResponse,
     ModuleRolePermissionUpdateRequest,
     ModuleRoleUpdate,
     ModuleRoleResponse,
@@ -143,9 +143,11 @@ async def list_modules(
         content={
             "code": 200,
             "msg": "success",
-            "data": ModuleListResponse(
+            "data": ModulePaginatedListResponse(
                 items=[build_module_vo(m) for m in modules],
                 total=total,
+                page=page,
+                page_size=page_size,
             ).model_dump(),
         }
     )
@@ -451,9 +453,11 @@ async def list_module_permissions(
         content={
             "code": 200,
             "msg": "success",
-            "data": ModulePermissionListResponse(
+            "data": ModulePermissionPaginatedListResponse(
                 items=[build_permission_vo(p) for p in permissions],
                 total=total,
+                page=page,
+                page_size=page_size,
             ).model_dump(),
         }
     )
@@ -605,9 +609,11 @@ async def list_module_roles(
         content={
             "code": 200,
             "msg": "success",
-            "data": ModuleRoleListResponse(
+            "data": ModuleRolePaginatedListResponse(
                 items=role_vos,
                 total=total,
+                page=page,
+                page_size=page_size,
             ).model_dump(),
         }
     )

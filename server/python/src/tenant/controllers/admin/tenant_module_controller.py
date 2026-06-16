@@ -11,7 +11,7 @@ from tenant.middlewares.admin_auth_middleware import get_current_admin
 from tenant.models import Module, TenantModule
 from tenant.schemas.admin.tenant_module import (
     AssignModuleRequest,
-    TenantModuleListResponse,
+    TenantModulePaginatedListResponse,
     TenantModuleResponse,
 )
 from tenant.services.tenant_module_service import TenantModuleService
@@ -78,9 +78,11 @@ async def list_tenant_modules(
         content={
             "code": 200,
             "msg": "success",
-            "data": TenantModuleListResponse(
+            "data": TenantModulePaginatedListResponse(
                 items=items,
                 total=total,
+                page=page,
+                page_size=page_size,
             ).model_dump(),
         }
     )

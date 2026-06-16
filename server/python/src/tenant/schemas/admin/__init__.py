@@ -4,17 +4,17 @@ Tenant 模块管理后台 Schemas
 
 from .module import (
     ModuleCreate,
-    ModuleListResponse,
+    ModulePaginatedListResponse,
     ModuleMenuCreate,
     ModuleMenuListResponse,
     ModuleMenuUpdate,
     ModuleMenuTreeResponse,
     ModulePermissionCreate,
-    ModulePermissionListResponse,
+    ModulePermissionPaginatedListResponse,
     ModulePermissionUpdate,
     ModulePermissionResponse,
     ModuleRoleCreate,
-    ModuleRoleListResponse,
+    ModuleRolePaginatedListResponse,
     ModuleRolePermissionUpdateRequest,
     ModuleRoleUpdate,
     ModuleRoleResponse,
@@ -23,7 +23,7 @@ from .module import (
 )
 from .tenant_module import (
     AssignModuleRequest,
-    TenantModuleListResponse,
+    TenantModulePaginatedListResponse,
     TenantModuleResponse,
 )
 
@@ -32,7 +32,7 @@ __all__ = [
     "ModuleCreate",
     "ModuleUpdate",
     "ModuleResponse",
-    "ModuleListResponse",
+    "ModulePaginatedListResponse",
     # 模块菜单
     "ModuleMenuCreate",
     "ModuleMenuUpdate",
@@ -42,15 +42,15 @@ __all__ = [
     "ModulePermissionCreate",
     "ModulePermissionUpdate",
     "ModulePermissionResponse",
-    "ModulePermissionListResponse",
+    "ModulePermissionPaginatedListResponse",
     # 模块角色
     "ModuleRoleCreate",
     "ModuleRoleUpdate",
     "ModuleRolePermissionUpdateRequest",
     "ModuleRoleResponse",
-    "ModuleRoleListResponse",
+    "ModuleRolePaginatedListResponse",
     # 租户模块分配
     "AssignModuleRequest",
     "TenantModuleResponse",
-    "TenantModuleListResponse",
+    "TenantModulePaginatedListResponse",
 ]

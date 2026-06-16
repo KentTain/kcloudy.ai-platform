@@ -53,11 +53,13 @@ class ModuleResponse(BaseModel):
     updated_at: datetime = Field(..., description="更新时间")
 
 
-class ModuleListResponse(BaseModel):
-    """模块列表响应"""
+class ModulePaginatedListResponse(BaseModel):
+    """模块分页列表响应"""
 
     items: list[ModuleResponse] = Field(default_factory=list, description="模块列表")
     total: int = Field(..., description="总数")
+    page: int = Field(..., description="页码")
+    page_size: int = Field(..., description="每页数量")
 
 
 # =============================================================================
@@ -149,11 +151,13 @@ class ModulePermissionResponse(BaseModel):
     updated_at: datetime = Field(..., description="更新时间")
 
 
-class ModulePermissionListResponse(BaseModel):
-    """模块权限列表响应"""
+class ModulePermissionPaginatedListResponse(BaseModel):
+    """模块权限分页列表响应"""
 
     items: list[ModulePermissionResponse] = Field(default_factory=list, description="权限列表")
     total: int = Field(..., description="总数")
+    page: int = Field(..., description="页码")
+    page_size: int = Field(..., description="每页数量")
 
 
 # =============================================================================
@@ -197,8 +201,10 @@ class ModuleRoleResponse(BaseModel):
     permissions: list[ModulePermissionResponse] = Field(default_factory=list, description="权限列表")
 
 
-class ModuleRoleListResponse(BaseModel):
-    """模块角色列表响应"""
+class ModuleRolePaginatedListResponse(BaseModel):
+    """模块角色分页列表响应"""
 
     items: list[ModuleRoleResponse] = Field(default_factory=list, description="角色列表")
     total: int = Field(..., description="总数")
+    page: int = Field(..., description="页码")
+    page_size: int = Field(..., description="每页数量")

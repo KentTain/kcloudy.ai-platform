@@ -17,7 +17,7 @@ from tenant.schemas.admin.tenant import (
     ResourceConfigReferenceResponse,
     ResourceValidateResponse,
     TenantCreate,
-    TenantListResponse,
+    TenantPaginatedListResponse,
     TenantStatsVo,
     TenantUpdate,
     TenantResponse,
@@ -161,7 +161,7 @@ async def list_tenants(
         content={
             "code": 200,
             "msg": "success",
-            "data": TenantListResponse(
+            "data": TenantPaginatedListResponse(
                 items=tenant_vos,
                 total=total,
                 page=page,

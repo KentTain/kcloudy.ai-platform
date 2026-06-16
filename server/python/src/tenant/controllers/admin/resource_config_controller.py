@@ -13,30 +13,31 @@ from tenant.schemas.admin.resource_config import (
     DatabaseConfigCreate,
     DatabaseConfigUpdate,
     DatabasePropertyResponse,
-    DatabasePropertyListResponse,
+    DatabasePropertyPaginatedListResponse,
     # 存储
     StorageConfigCreate,
     StorageConfigUpdate,
     StoragePropertyResponse,
-    StoragePropertyListResponse,
+    StoragePropertyPaginatedListResponse,
     # 缓存
     CacheConfigCreate,
     CacheConfigUpdate,
     CachePropertyResponse,
-    CachePropertyListResponse,
+    CachePropertyPaginatedListResponse,
     # 队列
     QueueConfigCreate,
     QueueConfigUpdate,
     QueuePropertyResponse,
-    QueuePropertyListResponse,
+    QueuePropertyPaginatedListResponse,
     # 发布订阅
     PubSubConfigCreate,
     PubSubConfigUpdate,
     PubSubPropertyResponse,
-    PubSubPropertyListResponse,
+    PubSubPropertyPaginatedListResponse,
     # 通用
     ConnectionTestResult,
     ResourceQuery,
+    ResourcePaginatedQuery,
 )
 from tenant.services.database_config_service import DatabaseConfigService
 from tenant.services.storage_config_service import StorageConfigService
@@ -74,7 +75,7 @@ async def list_database_configs(
     )
     return ORJSONResponse(
         content=Success(
-            DatabasePropertyListResponse(
+            DatabasePropertyPaginatedListResponse(
                 items=[
                     DatabasePropertyResponse(**DatabaseConfigService.build_response(item))
                     for item in items
@@ -200,7 +201,7 @@ async def list_storage_configs(
     )
     return ORJSONResponse(
         content=Success(
-            StoragePropertyListResponse(
+            StoragePropertyPaginatedListResponse(
                 items=[
                     StoragePropertyResponse(**StorageConfigService.build_response(item))
                     for item in items
@@ -315,7 +316,7 @@ async def list_cache_configs(
     )
     return ORJSONResponse(
         content=Success(
-            CachePropertyListResponse(
+            CachePropertyPaginatedListResponse(
                 items=[
                     CachePropertyResponse(**CacheConfigService.build_response(item))
                     for item in items
@@ -424,7 +425,7 @@ async def list_queue_configs(
     )
     return ORJSONResponse(
         content=Success(
-            QueuePropertyListResponse(
+            QueuePropertyPaginatedListResponse(
                 items=[
                     QueuePropertyResponse(**QueueConfigService.build_response(item))
                     for item in items
@@ -533,7 +534,7 @@ async def list_pubsub_configs(
     )
     return ORJSONResponse(
         content=Success(
-            PubSubPropertyListResponse(
+            PubSubPropertyPaginatedListResponse(
                 items=[
                     PubSubPropertyResponse(**PubSubConfigService.build_response(item))
                     for item in items

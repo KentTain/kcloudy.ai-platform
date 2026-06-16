@@ -7,6 +7,7 @@
 from datetime import datetime
 from typing import Any
 
+from framework.schemas.base import BasePaginatedQuery, BaseQuery
 from pydantic import BaseModel, Field
 
 
@@ -15,12 +16,16 @@ from pydantic import BaseModel, Field
 # =============================================================================
 
 
-class ResourceQuery(BaseModel):
-    """资源列表查询参数"""
+class ResourceQuery(BaseQuery):
+    """资源列表查询参数（非分页）"""
 
-    page: int = Field(1, ge=1, description="页码")
-    page_size: int = Field(20, ge=1, le=100, description="每页数量")
     keyword: str | None = Field(None, max_length=100, description="搜索关键词")
+
+
+class ResourcePaginatedQuery(ResourceQuery, BasePaginatedQuery):
+    """资源列表查询参数（分页）"""
+
+    pass
 
 
 class ConnectionTestResult(BaseModel):
@@ -75,8 +80,8 @@ class DatabasePropertyResponse(BaseModel):
     updated_at: datetime = Field(..., description="更新时间")
 
 
-class DatabasePropertyListResponse(BaseModel):
-    """数据库配置列表响应"""
+class DatabasePropertyPaginatedListResponse(BaseModel):
+    """数据库配置分页列表响应"""
 
     items: list[DatabasePropertyResponse] = Field(
         default_factory=list, description="配置列表"
@@ -127,8 +132,8 @@ class StoragePropertyResponse(BaseModel):
     updated_at: datetime = Field(..., description="更新时间")
 
 
-class StoragePropertyListResponse(BaseModel):
-    """存储配置列表响应"""
+class StoragePropertyPaginatedListResponse(BaseModel):
+    """存储配置分页列表响应"""
 
     items: list[StoragePropertyResponse] = Field(
         default_factory=list, description="配置列表"
@@ -179,8 +184,8 @@ class CachePropertyResponse(BaseModel):
     updated_at: datetime = Field(..., description="更新时间")
 
 
-class CachePropertyListResponse(BaseModel):
-    """缓存配置列表响应"""
+class CachePropertyPaginatedListResponse(BaseModel):
+    """缓存配置分页列表响应"""
 
     items: list[CachePropertyResponse] = Field(
         default_factory=list, description="配置列表"
@@ -234,8 +239,8 @@ class QueuePropertyResponse(BaseModel):
     updated_at: datetime = Field(..., description="更新时间")
 
 
-class QueuePropertyListResponse(BaseModel):
-    """队列配置列表响应"""
+class QueuePropertyPaginatedListResponse(BaseModel):
+    """队列配置分页列表响应"""
 
     items: list[QueuePropertyResponse] = Field(
         default_factory=list, description="配置列表"
@@ -286,8 +291,8 @@ class PubSubPropertyResponse(BaseModel):
     updated_at: datetime = Field(..., description="更新时间")
 
 
-class PubSubPropertyListResponse(BaseModel):
-    """发布订阅配置列表响应"""
+class PubSubPropertyPaginatedListResponse(BaseModel):
+    """发布订阅配置分页列表响应"""
 
     items: list[PubSubPropertyResponse] = Field(
         default_factory=list, description="配置列表"

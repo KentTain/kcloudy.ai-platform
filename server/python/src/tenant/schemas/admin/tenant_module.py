@@ -37,8 +37,10 @@ class TenantModuleResponse(BaseModel):
     updated_at: datetime = Field(..., description="更新时间")
 
 
-class TenantModuleListResponse(BaseModel):
-    """租户模块列表响应"""
+class TenantModulePaginatedListResponse(BaseModel):
+    """租户模块分页列表响应"""
 
     items: list[TenantModuleResponse] = Field(default_factory=list, description="模块列表")
     total: int = Field(..., description="总数")
+    page: int = Field(..., description="页码")
+    page_size: int = Field(..., description="每页数量")
