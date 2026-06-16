@@ -7,7 +7,8 @@ from fastapi import APIRouter
 from loguru import logger
 
 from ai.components.model.internal.model_provider_factory import ModelProviderFactory
-from ai.schemas.model import ModelListResponse
+from ai.schemas.model import ModelListResponse, ProviderItem
+from ai_plugin.sdk.entities.model import ModelType
 from framework.common.ctx import get_tenant_id
 
 _logger = logger.bind(name=__name__)
@@ -24,7 +25,6 @@ async def list_models() -> ModelListResponse:
     """
     tenant_id = get_tenant_id()
     if not tenant_id:
-        # 未登录时返回空列表
         return ModelListResponse(providers=[])
 
     try:
@@ -33,39 +33,22 @@ async def list_models() -> ModelListResponse:
 
         provider_items = []
         for provider in providers:
-            # 只处理有模型的提供商
             if not provider.models:
                 continue
 
-            model_items = []
-            for model in provider.models:
-                # 只处理 LLM 类型模型
-                from ai_plugin.sdk.entities.model import ModelType
+            # 过滤 LLM 类型模型
+            llm_models = [
+                model for model in provider.models
+                if model.model_type == ModelType.LLM
+            ]
 
-                if model.model_type != ModelType.LLM:
-                    continue
-
-                # 获取模型描述（优先使用中文标签）
-                description = model.label.zh_Hans or model.label.en_US
-
-                model_items.append(
-                    {
-                        "id": f"{provider.provider}/{model.model}",
-                        "name": model.model,
-                        "description": description,
-                    }
-                )
-
-            if model_items:
-                # 获取提供商显示名称（优先使用中文标签）
-                provider_name = provider.label.zh_Hans or provider.label.en_US
-
+            if llm_models:
                 provider_items.append(
-                    {
-                        "id": provider.provider,
-                        "name": provider_name,
-                        "models": model_items,
-                    }
+                    ProviderItem.from_entity(
+                        provider_id=provider.provider,
+                        provider_label=provider.label,
+                        models=llm_models,
+                    )
                 )
 
         return ModelListResponse(providers=provider_items)

@@ -175,6 +175,69 @@ class UserResponse(BaseModel):
     tenants: list[UserTenantResponse] = Field(default_factory=list, description="用户所属租户列表")
 
 
+class UserDetailResponse(BaseModel):
+    """用户详情聚合响应 Schema
+
+    聚合用户基础信息、角色、权限和租户列表的完整响应对象。
+    由 Service 层聚合方法返回，Controller 直接使用。
+    """
+
+    id: str
+    tenant_id: str
+    username: str
+    email: str | None
+    phone: str | None
+    nickname: str | None
+    avatar: str | None
+    status: str
+    profile_completed: bool
+    is_email_verified: bool
+    is_phone_verified: bool
+    last_login_at: datetime | None
+    created_at: datetime
+    roles: list[str] = Field(default_factory=list, description="用户角色编码列表")
+    permissions: list[str] = Field(default_factory=list, description="用户权限编码列表")
+    tenants: list[UserTenantResponse] = Field(default_factory=list, description="用户所属租户列表")
+
+    @classmethod
+    def from_user(
+        cls,
+        user: "User",
+        role_codes: list[str],
+        permissions: list[str],
+        tenants: list[UserTenantResponse],
+    ) -> "UserDetailResponse":
+        """从 User 实体和相关数据构建 UserDetailResponse
+
+        Args:
+            user: User 实体对象
+            role_codes: 用户角色编码列表
+            permissions: 用户权限编码列表
+            tenants: 用户租户列表
+
+        Returns:
+            UserDetailResponse 实例
+        """
+        return cls(
+            id=user.id,
+            tenant_id=user.tenant_id,
+            username=user.username,
+            email=user.email,
+            phone=user.phone,
+            nickname=user.nickname,
+            avatar=user.avatar,
+            status=user.status,
+            profile_completed=user.profile_completed,
+            is_email_verified=user.is_email_verified,
+            is_phone_verified=user.is_phone_verified,
+            last_login_at=user.last_login_at,
+            created_at=user.created_at,
+            roles=role_codes,
+            permissions=permissions,
+            tenants=tenants,
+        )
+
+
 class UserPaginatedListResponse(BaseModel):
     """用户分页列表响应"""
 

@@ -142,6 +142,106 @@ server/{技术栈}/
 | `migrations/` | 数据库迁移 | Alembic 迁移版本、种子数据 |
 | `module.*` | 模块声明 | 实现 ModuleDescriptor 协议 |
 
+## Service 层职责规范
+
+### 核心职责
+
+Service 层是业务逻辑的核心，负责：
+
+| 职责 | 说明 |
+|------|------|
+| 事务边界 | 管理数据库事务的生命周期 |
+| 业务校验 | 执行业务规则验证 |
+| 跨模型协作 | 协调多个 Model 的操作 |
+| 数据聚合 | 组合多个数据源返回完整响应 |
+
+### 聚合方法规范
+
+Service 层提供聚合方法，用于组合多个数据源并返回完整的响应 Schema 对象。
+
+**命名规范**：
+- 聚合方法命名为 `get_<entity>_detail()` 或 `get_<entity>_full()`
+- 返回类型为对应的响应 Schema 类型，如 `UserDetailResponse | None`
+
+**并行查询优化**：
+```python
+async def get_user_detail(self, user_id: str) -> UserDetailResponse | None:
+    # 并行查询独立数据源
+    roles_task = user_roles_service.get_user_roles(user_id)
+    permissions_task = permission_check_service.get_user_permissions(user_id)
+    tenants_task = self._get_user_tenants_with_detail(user_id)
+
+    roles, permissions, tenants = await asyncio.gather(
+        roles_task, permissions_task, tenants_task
+    )
+
+    return UserDetailResponse.from_user(user, roles, permissions, tenants)
+```
+
+### Service 调用规则
+
+| 场景 | 规则 | 示例 |
+|------|------|------|
+| 同模块 Service 调用 | ✅ 直接导入调用 | `user_roles_service.get_user_roles(user_id)` |
+| 跨模块 Service 调用 | ⚠️ 通过 Inner 接口 | `tenant_service.get_tenants_by_ids(tenant_ids)` |
+
+**跨模块调用原则**：
+- 禁止直接导入其他模块的 Service
+- 通过 `/{module}/inner/v1` 接口或框架机制调用
+- 明确模块依赖方向，避免循环依赖
+
+## Schema 层转换规范
+
+### 转换方法规则
+
+Schema 层提供 `from_entity()` 类方法，用于处理复杂转换逻辑。
+
+**简单转换**：使用 Pydantic 的 `from_attributes=True` 自动映射
+```python
+class UserResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: str
+    username: str
+```
+
+**复杂转换**：提供 `from_entity()` 类方法
+```python
+class ModelItem(BaseModel):
+    id: str
+    name: str
+    description: str | None
+
+    @classmethod
+    def from_entity(cls, provider: str, model: ProviderModel) -> "ModelItem":
+        return cls(
+            id=f"{provider}/{model.model}",  # 计算字段
+            name=model.model,
+            description=model.label.zh_Hans or model.label.en_US,
+        )
+```
+
+### 转换方法参数规范
+
+| 场景 | 方法签名 |
+|------|----------|
+| 单实体转换 | `from_entity(cls, entity: EntityType) -> SchemaType` |
+| 多数据源转换 | `from_user(cls, user: User, roles: list[Role], ...) -> SchemaType` |
+
+### 转换方法禁止事项
+
+| 禁止 | 说明 |
+|------|------|
+| 数据库查询 | 转换方法不得执行数据库查询，所需数据由 Service 传入 |
+| 业务规则验证 | 业务规则在 Service 层处理，Schema 只负责数据转换 |
+| 副作用操作 | 转换方法必须是纯函数，无副作用 |
+
+### 响应 Schema 命名规范
+
+| 分类 | 命名模式 | 示例 |
+|------|----------|------|
+| 简单响应 | `{Entity}Response` | `UserResponse` |
+| 聚合响应 | `{Entity}DetailResponse` | `UserDetailResponse` |
+
 ## 命名规范
 
 ### 文件命名

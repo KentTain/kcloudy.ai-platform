@@ -4,6 +4,7 @@
 提供用户注册、信息管理、密码管理等功能。
 """
 
+import asyncio
 import secrets
 import string
 from datetime import datetime, timezone
@@ -19,7 +20,7 @@ from framework.utils.crypto import (
 )
 from framework.utils.session import delete_user_sessions
 from iam.models import User, UserDepartment, UserStatus, UserTenant
-from iam.schemas.user import UserResponse
+from iam.schemas.user import UserDetailResponse, UserResponse, UserTenantResponse
 
 _logger = logger.bind(name=__name__)
 
@@ -703,6 +704,84 @@ class UserService:
                 }
                 for ut in user_tenants
             ]
+
+    @staticmethod
+    async def get_user_detail(user_id: str) -> UserDetailResponse | None:
+        """
+        获取用户详情聚合数据
+
+        聚合用户基础信息、角色、权限和租户列表。
+        使用 asyncio.gather 并行查询优化性能。
+
+        Args:
+            user_id: 用户 ID
+
+        Returns:
+            UserDetailResponse | None: 用户详情聚合响应，用户不存在时返回 None
+        """
+        # 获取用户基础信息
+        user = await UserService.get_by_id(user_id)
+        if not user:
+            return None
+
+        # 并行查询角色、权限、租户
+        from iam.services.role_service import user_role_service as user_roles_service
+        from iam.services.permission_service import permission_check_service
+
+        roles_task = user_roles_service.get_user_roles(user_id)
+        permissions_task = permission_check_service.get_user_permissions(user_id)
+        tenants_task = UserService._get_user_tenants_with_detail(user_id)
+
+        roles, permissions, tenants = await asyncio.gather(
+            roles_task, permissions_task, tenants_task
+        )
+
+        # 构建响应
+        role_codes = [r.code for r in roles]
+        return UserDetailResponse.from_user(
+            user=user,
+            role_codes=role_codes,
+            permissions=permissions,
+            tenants=tenants,
+        )
+
+    @staticmethod
+    async def _get_user_tenants_with_detail(user_id: str) -> list[UserTenantResponse]:
+        """
+        获取用户租户列表（包含租户详细信息）
+
+        内部方法，用于聚合查询。跨模块调用 tenant_service。
+
+        Args:
+            user_id: 用户 ID
+
+        Returns:
+            list[UserTenantResponse]: 用户租户响应列表
+        """
+        # 获取用户租户关联
+        user_tenants = await UserService.get_user_tenants_detail(user_id)
+        if not user_tenants:
+            return []
+
+        # 获取租户详细信息（跨模块调用通过 inner 接口）
+        tenant_ids = [ut["tenant_id"] for ut in user_tenants]
+        from tenant.services.tenant_service import tenant_service
+        tenants_info = await tenant_service.get_tenants_by_ids(tenant_ids)
+
+        # 构建租户响应列表
+        tenants_vo = []
+        for ut in user_tenants:
+            tenant_info = tenants_info.get(ut["tenant_id"])
+            if tenant_info:
+                tenants_vo.append(
+                    UserTenantResponse(
+                        id=ut["tenant_id"],
+                        name=tenant_info.name,
+                        code=tenant_info.code,
+                        is_default=ut["is_default"],
+                    )
+                )
+        return tenants_vo
 
 
 # 服务单例
