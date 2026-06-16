@@ -35,8 +35,10 @@ class DatasetResponse(BaseModel):
     updated_at: datetime
 
 
-class DatasetListResponse(BaseModel):
-    """知识库列表响应"""
+class DatasetPaginatedListResponse(BaseModel):
+    """知识库分页列表响应"""
 
     total: int
+    page: int
+    page_size: int
     items: list[DatasetResponse]
