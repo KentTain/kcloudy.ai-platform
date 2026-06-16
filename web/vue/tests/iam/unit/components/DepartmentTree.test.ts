@@ -65,20 +65,23 @@ describe('DepartmentTree', () => {
       const wrapper = mount(DepartmentTree, {
         props: { departments: mockDepartments, modelValue: '' },
       })
-      const treeData = wrapper.vm.treeData
-      expect(treeData).toBeDefined()
-      expect(treeData.length).toBe(1)
-      expect(treeData[0].name).toBe('总公司')
-      expect(treeData[0].children?.length).toBe(2)
+      const checkboxTree = wrapper.findComponent({ name: 'CheckboxTree' })
+      expect(checkboxTree.exists()).toBe(true)
+      expect(checkboxTree.props('data')).toBeDefined()
+      const data = checkboxTree.props('data') as any[]
+      expect(data.length).toBe(1)
+      expect(data[0].name).toBe('总公司')
+      expect(data[0].children?.length).toBe(2)
     })
 
     it('展示部门名称', () => {
       const wrapper = mount(DepartmentTree, {
         props: { departments: mockDepartments, modelValue: '' },
       })
-      const treeData = wrapper.vm.treeData
-      expect(treeData[0].id).toBe('dept-1')
-      expect(treeData[0].name).toBe('总公司')
+      const checkboxTree = wrapper.findComponent({ name: 'CheckboxTree' })
+      const data = checkboxTree.props('data') as any[]
+      expect(data[0].id).toBe('dept-1')
+      expect(data[0].name).toBe('总公司')
     })
   })
 
