@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { mount } from "@vue/test-utils";
 import { createPinia, setActivePinia } from "pinia";
-import AppContentHeader from "@/framework/layouts/components/AppContentHeader.vue";
+import AppHeaderLeft from "@/framework/layouts/components/AppHeaderLeft.vue";
 
 // Mock vue-router
 vi.mock("vue-router", () => ({
@@ -41,13 +41,13 @@ vi.mock("@/components/ui/separator", () => ({
   },
 }));
 
-describe("AppContentHeader", () => {
+describe("AppHeaderLeft", () => {
   beforeEach(() => {
     setActivePinia(createPinia());
   });
 
   it("shows '首页' when on root path with no matched routes", async () => {
-    const wrapper = mount(AppContentHeader, {
+    const wrapper = mount(AppHeaderLeft, {
       global: {
         plugins: [createPinia()],
       },

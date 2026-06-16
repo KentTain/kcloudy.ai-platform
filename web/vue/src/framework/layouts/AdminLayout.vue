@@ -7,9 +7,9 @@ import { onMounted } from "vue";
 import { SidebarProvider, Sidebar, SidebarInset, SidebarContent, SidebarHeader } from "@/components/ui/sidebar";
 import AppTenantSwitcher from "./components/AppTenantSwitcher.vue";
 import AppNavMain from "./components/AppNavMain.vue";
-import AppSearchBox from "./components/AppSearchBox.vue";
+import AppHeaderLeft from "./components/AppHeaderLeft.vue";
+import AppHeaderSearchBox from "./components/AppHeaderSearchBox.vue";
 import AppHeaderRight from "./components/AppHeaderRight.vue";
-import AppContentHeader from "./components/AppContentHeader.vue";
 import AppMain from "./components/AppMain.vue";
 import { useNotificationStore } from "@/framework/stores/notification";
 
@@ -40,15 +40,13 @@ onMounted(() => {
     <SidebarInset class="flex flex-col">
       <!-- 上半部分：顶部导航栏 -->
       <header class="flex items-center gap-4 px-5 h-14 bg-background border-b shrink-0">
-        <AppSearchBox />
+        <AppHeaderLeft />
+        <AppHeaderSearchBox />
         <AppHeaderRight />
       </header>
 
       <!-- 下半部分：内容区 -->
       <div class="flex-1 flex flex-col overflow-hidden">
-        <!-- 内容页导航栏 -->
-        <AppContentHeader />
-
         <!-- 内容页 -->
         <AppMain />
       </div>

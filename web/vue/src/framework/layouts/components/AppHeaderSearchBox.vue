@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * AppSearchBox 搜索框组件
+ * AppHeaderSearchBox 头部搜索框组件
  * 支持动态展开和搜索结果面板
  */
 import { ref, onMounted, onUnmounted } from "vue";
