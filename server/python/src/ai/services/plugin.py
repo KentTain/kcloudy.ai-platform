@@ -27,7 +27,7 @@ from ai.schemas.plugin import (
     PluginCredentialVo,
     PluginInfoVo,
     PluginInstallResponseVo,
-    PluginListResponseVo,
+    PluginPaginatedListResponseVo,
     PluginOperationResponseVo,
     UpdatePluginCredential,
 )
@@ -51,7 +51,7 @@ class PluginManagementService:
         plugin_type: str | None = None,
         limit: int = 50,
         offset: int = 0,
-    ) -> PluginListResponseVo:
+    ) -> PluginPaginatedListResponseVo:
         """获取插件列表"""
         tenant_id = get_tenant_id()
         if not tenant_id:
@@ -98,7 +98,7 @@ class PluginManagementService:
                 plugin_vo = await self._convert_installation_to_vo(installation)
                 plugin_vos.append(plugin_vo)
 
-            return PluginListResponseVo(plugins=plugin_vos, total=total)
+            return PluginPaginatedListResponseVo(plugins=plugin_vos, total=total)
 
     async def get_plugin_info(self, plugin_id: str) -> PluginInfoVo:
         """获取插件详细信息"""

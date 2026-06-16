@@ -124085,7 +124085,7 @@
           "data": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/PluginListResponseVo"
+                "$ref": "#/components/schemas/PluginPaginatedListResponseVo"
               },
               {
                 "type": "null"
@@ -129049,7 +129049,7 @@
         "title": "PluginInvokeRequest",
         "description": "插件调用请求"
       },
-      "PluginListResponseVo": {
+      "PluginPaginatedListResponseVo": {
         "properties": {
           "plugins": {
             "items": {
@@ -129068,8 +129068,8 @@
         },
         "type": "object",
         "required": ["plugins", "total"],
-        "title": "PluginListResponseVo",
-        "description": "插件列表响应"
+        "title": "PluginPaginatedListResponseVo",
+        "description": "插件分页列表响应"
       },
       "PluginModelVo": {
         "properties": {

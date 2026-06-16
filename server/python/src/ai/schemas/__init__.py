@@ -29,7 +29,7 @@ from .plugin import (
     PluginInstallResponseVo,
     PluginInvokeRequest,
     PluginInvokeResponseVo,
-    PluginListResponseVo,
+    PluginPaginatedListResponseVo,
     PluginOperationResponseVo,
     SavePluginCredentialSuccessRespModel,
     StartPluginSuccessRespModel,
@@ -55,7 +55,7 @@ __all__ = [
     "PluginConfig",
     # 插件信息
     "PluginInfoVo",
-    "PluginListResponseVo",
+    "PluginPaginatedListResponseVo",
     "PluginInstallResponseVo",
     "PluginOperationResponseVo",
     "PluginInvokeRequest",

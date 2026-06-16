@@ -63,8 +63,8 @@ class PluginInfoVo(BaseModel):
     last_error: str | None = Field(default=None, description="最后错误信息")
 
 
-class PluginListResponseVo(BaseModel):
-    """插件列表响应"""
+class PluginPaginatedListResponseVo(BaseModel):
+    """插件分页列表响应"""
 
     plugins: list[PluginInfoVo] = Field(description="插件列表")
     total: int = Field(description="总数量", examples=[10])
@@ -178,7 +178,7 @@ class SuccessRespModel(BaseModel):
 
 
 class GetPluginListSuccessRespModel(SuccessRespModel):
-    data: PluginListResponseVo | None = Field(default=None, description="插件列表")
+    data: PluginPaginatedListResponseVo | None = Field(default=None, description="插件列表")
 
 
 class InstallPluginSuccessRespModel(SuccessRespModel):
