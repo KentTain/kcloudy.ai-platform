@@ -65,6 +65,14 @@ class BaseQueryParams(BaseModel):
     page: int = Field(default=1, description="页码")
     page_size: int = Field(default=20, description="每页条数")
 
+    def __init__(self, **data):
+        warnings.warn(
+            "BaseQueryParams 已废弃，请使用 BaseQuery 或 BasePaginatedQuery 替代",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        super().__init__(**data)
+
     def __init_subclass__(cls, **kwargs):
         warnings.warn(
             "BaseQueryParams 已废弃，请使用 BaseQuery 或 BasePaginatedQuery 替代",
