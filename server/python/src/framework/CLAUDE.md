@@ -58,12 +58,14 @@ framework ──X──▶ demo / iam / ai
 ### 物理隔离 vs 逻辑隔离
 
 **物理隔离**：每个租户使用完全独立的资源实例。
+
 - Redis：独立的 host/port，完全隔离的 Redis 服务
 - MinIO：独立的 endpoint，完全隔离的存储服务
 - 优势：数据安全性最高，资源可独立扩缩容
 - 适用场景：企业级租户、合规要求高的场景
 
 **逻辑隔离**：多个租户共享同一资源实例，通过命名区分。
+
 - Redis：共享实例，通过 DB 编号（0-15）或 Key 前缀区分
 - MinIO：共享服务，通过 Bucket 名称或路径前缀区分
 - 优势：资源利用率高、运维成本低
@@ -354,7 +356,7 @@ class ModuleDefinition:
 def get_module_definition(self) -> ModuleDefinition:
     return ModuleDefinition(
         code="iam",
-        name="身份与访问管理",
+        name="系统管理",
         description="用户认证、授权、角色权限管理",
         icon="Shield",
         version="1.0.0",

@@ -94,17 +94,6 @@ export default defineConfig({
 })
 ```
 
-### 路由格式
-
-后端 API 路由遵循 `/{模块}/{类型}/v1/{功能}` 格式：
-
-| 模块 | 类型 | 完整路径示例 |
-|------|------|-------------|
-| tenant | admin | `/tenant/admin/v1/tenants` |
-| tenant | console | `/tenant/console/v1/tenants` |
-| iam | console | `/iam/console/v1/auth/login` |
-| ai | console | `/ai/console/v1/chat-messages` |
-
 ### API 调用示例
 
 ```typescript
