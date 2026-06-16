@@ -8,9 +8,9 @@ import type {
   Module,
   ModuleMenu,
   ModulePermission,
-  ModuleQuery,
+  ModulePaginatedQuery,
   ModuleRole,
-  PageResult,
+  PaginatedListResponse,
   MenuUpdate,
   ModuleUpdate,
   PermissionUpdate,
@@ -22,8 +22,8 @@ import type {
 /**
  * 获取模块列表
  */
-export const getModules = (params?: ModuleQuery) =>
-  rawGet<ApiResponse<PageResult<Module>>>("/tenant/admin/v1/modules", { params });
+export const getModules = (params?: ModulePaginatedQuery) =>
+  rawGet<ApiResponse<PaginatedListResponse<Module>>>("/tenant/admin/v1/modules", { params });
 
 /**
  * 获取模块详情

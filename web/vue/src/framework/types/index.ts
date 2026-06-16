@@ -40,10 +40,13 @@ export interface BaseQuery {
 
 /**
  * 分页查询基类
+ *
+ * 与后端 `framework.schemas.base.BasePaginatedQuery` 对齐
+ * page 和 page_size 有默认值，因此为可选字段
  */
 export interface BasePaginatedQuery extends BaseQuery {
-  page: number;
-  page_size: number;
+  page?: number;
+  page_size?: number;
 }
 
 /**

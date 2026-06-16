@@ -2,6 +2,8 @@
  * 管理员认证类型定义
  */
 
+import type { BasePaginatedQuery } from "@/framework/types";
+
 // 管理员登录请求
 export interface AdminLoginRequest {
   username: string;
@@ -120,10 +122,7 @@ export interface TenantResource {
 }
 
 // 模块查询参数
-export interface ModuleQuery {
-  page?: number;
-  page_size?: number;
-  keyword?: string;
+export interface ModulePaginatedQuery extends BasePaginatedQuery {
   is_active?: boolean;
 }
 

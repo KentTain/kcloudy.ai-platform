@@ -2,10 +2,10 @@ import { rawDel, rawGet, rawPost, rawPut } from "@/framework/api/client";
 import type {
   ApiResponse,
   TenantCreate,
-  PageResult,
+  PaginatedListResponse,
   SwitchTenantResponse,
   Tenant,
-  TenantQuery,
+  TenantPaginatedQuery,
   TenantStatsResponse,
   TenantUpdate,
   UserTenantResponse,
@@ -14,8 +14,8 @@ import type {
 /**
  * 获取租户列表（管理员）
  */
-export const getTenants = (params?: TenantQuery) =>
-  rawGet<ApiResponse<PageResult<Tenant>>>("/tenant/admin/v1/tenants", { params });
+export const getTenants = (params?: TenantPaginatedQuery) =>
+  rawGet<ApiResponse<PaginatedListResponse<Tenant>>>("/tenant/admin/v1/tenants", { params });
 
 /**
  * 获取租户详情（管理员）

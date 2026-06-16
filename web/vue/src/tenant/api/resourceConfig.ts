@@ -5,10 +5,10 @@ import type {
   ConnectionTestResult,
   ResourceCreate,
   DatabaseConfig,
-  PageResult,
+  PaginatedListResponse,
   PubsubConfig,
   QueueConfig,
-  ResourceQuery,
+  ResourcePaginatedQuery,
   StorageConfig,
   ResourceUpdate,
 } from "@/tenant/types";
@@ -18,8 +18,8 @@ import type {
 /**
  * 获取数据库配置列表
  */
-export const getDatabaseConfigs = (params?: ResourceQuery) =>
-  rawGet<ApiResponse<PageResult<DatabaseConfig>>>("/tenant/admin/v1/resource-configs/databases", {
+export const getDatabaseConfigs = (params?: ResourcePaginatedQuery) =>
+  rawGet<ApiResponse<PaginatedListResponse<DatabaseConfig>>>("/tenant/admin/v1/resource-configs/databases", {
     params,
   });
 
@@ -60,8 +60,8 @@ export const testDatabaseConnection = (id: string) =>
 /**
  * 获取存储配置列表
  */
-export const getStorageConfigs = (params?: ResourceQuery) =>
-  rawGet<ApiResponse<PageResult<StorageConfig>>>("/tenant/admin/v1/resource-configs/storages", { params });
+export const getStorageConfigs = (params?: ResourcePaginatedQuery) =>
+  rawGet<ApiResponse<PaginatedListResponse<StorageConfig>>>("/tenant/admin/v1/resource-configs/storages", { params });
 
 /**
  * 获取存储配置详情
@@ -100,8 +100,8 @@ export const testStorageConnection = (id: string) =>
 /**
  * 获取缓存配置列表
  */
-export const getCacheConfigs = (params?: ResourceQuery) =>
-  rawGet<ApiResponse<PageResult<CacheConfig>>>("/tenant/admin/v1/resource-configs/caches", { params });
+export const getCacheConfigs = (params?: ResourcePaginatedQuery) =>
+  rawGet<ApiResponse<PaginatedListResponse<CacheConfig>>>("/tenant/admin/v1/resource-configs/caches", { params });
 
 /**
  * 获取缓存配置详情
@@ -140,8 +140,8 @@ export const testCacheConnection = (id: string) =>
 /**
  * 获取队列配置列表
  */
-export const getQueueConfigs = (params?: ResourceQuery) =>
-  rawGet<ApiResponse<PageResult<QueueConfig>>>("/tenant/admin/v1/resource-configs/queues", { params });
+export const getQueueConfigs = (params?: ResourcePaginatedQuery) =>
+  rawGet<ApiResponse<PaginatedListResponse<QueueConfig>>>("/tenant/admin/v1/resource-configs/queues", { params });
 
 /**
  * 获取队列配置详情
@@ -180,8 +180,8 @@ export const testQueueConnection = (id: string) =>
 /**
  * 获取发布订阅配置列表
  */
-export const getPubsubConfigs = (params?: ResourceQuery) =>
-  rawGet<ApiResponse<PageResult<PubsubConfig>>>("/tenant/admin/v1/resource-configs/pubsubs", { params });
+export const getPubsubConfigs = (params?: ResourcePaginatedQuery) =>
+  rawGet<ApiResponse<PaginatedListResponse<PubsubConfig>>>("/tenant/admin/v1/resource-configs/pubsubs", { params });
 
 /**
  * 获取发布订阅配置详情

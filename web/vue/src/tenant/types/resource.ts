@@ -2,6 +2,8 @@
  * 资源配置类型定义
  */
 
+import type { BasePaginatedQuery } from "@/framework/types";
+
 // 资源配置基础接口
 export interface ResourceConfig {
   id: string;
@@ -82,11 +84,7 @@ export interface ConnectionTestResult {
 }
 
 // 资源配置查询参数
-export interface ResourceQuery {
-  page?: number;
-  page_size?: number;
-  keyword?: string;
-}
+export interface ResourcePaginatedQuery extends BasePaginatedQuery {}
 
 // 创建资源配置参数
 export interface ResourceCreate {

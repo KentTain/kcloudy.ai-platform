@@ -2,8 +2,11 @@
  * Tenant 模块类型定义
  */
 
-// 从 framework 导入统一类型并重新导出
-export type { ApiResponse, PageResult } from "@/framework/types";
+// 从 framework 导入统一类型
+import type { ApiResponse, PaginatedListResponse, BasePaginatedQuery } from "@/framework/types";
+
+// 重新导出统一类型
+export type { ApiResponse, PaginatedListResponse, BasePaginatedQuery };
 
 // 导出管理员类型
 export type {
@@ -21,7 +24,7 @@ export type {
   QueueConfig,
   PubsubConfig,
   ConnectionTestResult,
-  ResourceQuery,
+  ResourcePaginatedQuery,
   ResourceCreate,
   ResourceUpdate,
 } from "./resource";
@@ -35,7 +38,7 @@ export type {
   ModuleRole,
   TenantModule,
   TenantResource,
-  ModuleQuery,
+  ModulePaginatedQuery,
   ModuleCreate,
   ModuleUpdate,
   MenuCreate,
@@ -92,10 +95,7 @@ export interface SwitchTenantResponse {
 }
 
 // 租户查询参数
-export interface TenantQuery {
-  page?: number;
-  page_size?: number;
-  keyword?: string;
+export interface TenantPaginatedQuery extends BasePaginatedQuery {
   status?: string;
 }
 
