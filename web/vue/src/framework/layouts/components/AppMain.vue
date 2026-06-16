@@ -12,7 +12,7 @@
 
 <style scoped>
 .app-main {
-  padding: 1rem;
+  /* padding: 1rem; */
   background-color: var(--color-surface);
   min-height: 0;
 }

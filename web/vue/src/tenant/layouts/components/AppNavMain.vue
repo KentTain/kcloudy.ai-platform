@@ -36,7 +36,7 @@ const DEFAULT_ICON = LucideIcons.Folder
  */
 function getIconComponent(iconName: string | null | undefined): FunctionalComponent | undefined {
   if (!iconName) return undefined
-  const icon = (LucideIcons as Record<string, FunctionalComponent>)[iconName]
+  const icon = (LucideIcons as unknown as Record<string, FunctionalComponent>)[iconName]
   return icon || DEFAULT_ICON
 }
 

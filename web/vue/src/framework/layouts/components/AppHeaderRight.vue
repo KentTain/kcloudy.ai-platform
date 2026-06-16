@@ -7,6 +7,7 @@ import { computed } from "vue";
 import { useRouter } from "vue-router";
 import { Moon, Sun, User, LogOut, HelpCircle, ClipboardList } from "@lucide/vue";
 import { Button } from "@/components";
+import { Separator } from "@/components/ui/separator";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -61,7 +62,7 @@ function handleLogout() {
     </Button>
 
     <!-- 分隔线 -->
-    <div class="w-px h-6 bg-border mx-1" />
+    <Separator orientation="vertical" class="mt-2 mr-2 h-10" />
 
     <!-- 用户面板 -->
     <DropdownMenu>

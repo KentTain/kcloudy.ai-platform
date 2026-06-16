@@ -18,7 +18,6 @@ import { Separator } from "@/components/ui/separator";
 import {
   Breadcrumb,
   BreadcrumbItem,
-  BreadcrumbLink,
   BreadcrumbList,
   BreadcrumbPage,
   BreadcrumbSeparator,
@@ -26,22 +25,59 @@ import {
 import AppBrandHeader from "./components/AppBrandHeader.vue";
 import AppNavMain from "./components/AppNavMain.vue";
 import AppNavUser from "./components/AppNavUser.vue";
+import { useAdminMenuStore, type AdminMenuItem } from "@/tenant/stores/adminMenu";
+import { onMounted } from "vue";
 
 const route = useRoute();
+const adminMenuStore = useAdminMenuStore();
 
-const breadcrumbItems = computed(() => {
-  const items: { title: string; url?: string }[] = [];
-  const meta = route.meta;
+// 组件挂载时获取菜单数据
+onMounted(() => {
+  if (adminMenuStore.adminMenus.length === 0) {
+    adminMenuStore.fetchAdminMenus();
+  }
+});
 
-  if (meta?.title) {
-    items.push({ title: "管理后台", url: "/admin" });
-
-    if (route.path !== "/admin") {
-      items.push({ title: meta.title as string });
+/**
+ * 从管理员菜单中查找当前路由对应的菜单项
+ * 返回面包屑路径：[模块名, 菜单项]
+ */
+function findMenuBreadcrumb(
+  menus: AdminMenuItem[],
+  currentPath: string
+): { moduleName: string; menuName: string } | null {
+  for (const module of menus) {
+    // 在模块的子菜单中查找匹配的路由
+    const menuItem = module.children?.find((item) => item.path === currentPath);
+    if (menuItem) {
+      return {
+        moduleName: module.name,
+        menuName: menuItem.name,
+      };
     }
   }
+  return null;
+}
 
-  return items;
+const breadcrumbItems = computed(() => {
+  const meta = route.meta;
+
+  if (!meta?.title) {
+    return [];
+  }
+
+  // 从菜单数据中查找当前路由对应的模块和菜单
+  const menuBreadcrumb = findMenuBreadcrumb(adminMenuStore.adminMenus, route.path);
+
+  if (menuBreadcrumb) {
+    return [
+      { title: menuBreadcrumb.moduleName }, // 第一级：模块名，不可点击
+      { title: menuBreadcrumb.menuName }, // 第二级：当前菜单，不可点击
+    ];
+  }
+
+  // 降级处理：如果没有找到菜单数据，使用路由标题
+  return [{ title: meta.title as string }];
 });
 </script>
 
@@ -70,14 +106,12 @@ const breadcrumbItems = computed(() => {
       <!-- 顶部导航栏 -->
       <header class="flex items-center gap-2 px-4 h-14 shrink-0 border-b">
         <SidebarTrigger class="-ml-1" />
-        <Separator orientation="vertical" class="mr-2 h-4" />
+        <Separator orientation="vertical" class="mt-2 mr-2 h-10" />
         <Breadcrumb>
           <BreadcrumbList>
             <template v-for="(item, index) in breadcrumbItems" :key="item.title">
               <BreadcrumbItem v-if="index < breadcrumbItems.length - 1">
-                <BreadcrumbLink as-child>
-                  <router-link :to="item.url || '#'">{{ item.title }}</router-link>
-                </BreadcrumbLink>
+                <span class="text-muted-foreground">{{ item.title }}</span>
               </BreadcrumbItem>
               <BreadcrumbSeparator v-if="index < breadcrumbItems.length - 1" />
               <BreadcrumbItem v-if="index === breadcrumbItems.length - 1">
@@ -89,7 +123,7 @@ const breadcrumbItems = computed(() => {
       </header>
 
       <!-- 内容区 -->
-      <div class="flex-1 flex flex-col overflow-hidden p-4">
+      <div class="flex-1 flex flex-col overflow-hidden">
         <router-view />
       </div>
     </SidebarInset>

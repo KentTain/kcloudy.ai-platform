@@ -40,7 +40,7 @@ function getIconComponent(iconName: string | null | undefined): FunctionalCompon
   if (!iconName) return undefined;
 
   // 尝试从 Lucide 图标库获取
-  const icon = (LucideIcons as Record<string, FunctionalComponent>)[iconName];
+  const icon = (LucideIcons as unknown as Record<string, FunctionalComponent>)[iconName];
   return icon || DEFAULT_ICON;
 }
 
