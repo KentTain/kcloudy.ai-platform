@@ -166,24 +166,29 @@ vi.mock("@/components/ui/collapsible", () => ({
   },
 }));
 
-// Mock Lucide icons
-vi.mock("@lucide/vue", () => ({
-  ChevronRight: { name: "ChevronRight", template: "<span>chevron</span>" },
-  Home: { name: "Home", template: "<span>home-icon</span>" },
-  Activity: { name: "Activity", template: "<span>activity-icon</span>" },
-  Database: { name: "Database", template: "<span>database-icon</span>" },
-  Settings: { name: "Settings", template: "<span>settings-icon</span>" },
-  Users: { name: "Users", template: "<span>users-icon</span>" },
-  Shield: { name: "Shield", template: "<span>shield-icon</span>" },
-  Badge: { name: "Badge", template: "<span>badge-icon</span>" },
-  Building: { name: "Building", template: "<span>building-icon</span>" },
-  Key: { name: "Key", template: "<span>key-icon</span>" },
-  Package: { name: "Package", template: "<span>package-icon</span>" },
-  Puzzle: { name: "Puzzle", template: "<span>puzzle-icon</span>" },
-  SearchIcon: { name: "SearchIcon", template: "<span>search-icon</span>" },
-  ClipboardCheckIcon: { name: "ClipboardCheckIcon", template: "<span>clipboard-icon</span>" },
-  BellIcon: { name: "BellIcon", template: "<span>bell-icon</span>" },
-}));
+// Mock Lucide icons - 使用 importOriginal 部分覆盖
+vi.mock("@lucide/vue", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@lucide/vue")>();
+  return {
+    ...actual,
+    ChevronRight: { name: "ChevronRight", template: "<span>chevron</span>" },
+    Home: { name: "Home", template: "<span>home-icon</span>" },
+    Activity: { name: "Activity", template: "<span>activity-icon</span>" },
+    Database: { name: "Database", template: "<span>database-icon</span>" },
+    Settings: { name: "Settings", template: "<span>settings-icon</span>" },
+    Users: { name: "Users", template: "<span>users-icon</span>" },
+    Shield: { name: "Shield", template: "<span>shield-icon</span>" },
+    Badge: { name: "Badge", template: "<span>badge-icon</span>" },
+    Building: { name: "Building", template: "<span>building-icon</span>" },
+    Key: { name: "Key", template: "<span>key-icon</span>" },
+    Package: { name: "Package", template: "<span>package-icon</span>" },
+    Puzzle: { name: "Puzzle", template: "<span>puzzle-icon</span>" },
+    SearchIcon: { name: "SearchIcon", template: "<span>search-icon</span>" },
+    ClipboardCheckIcon: { name: "ClipboardCheckIcon", template: "<span>clipboard-icon</span>" },
+    BellIcon: { name: "BellIcon", template: "<span>bell-icon</span>" },
+    Folder: { name: "Folder", template: "<span>folder-icon</span>" },
+  };
+});
 
 describe("Layout Components", () => {
   beforeEach(() => {

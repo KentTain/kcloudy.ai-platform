@@ -15,10 +15,14 @@ describe("useMenuPermission", () => {
       expect(hasPermissionKey(undefined)).toBe(true);
     });
 
-    it("returns true when user has no permissions (default show all)", () => {
+    it("returns true for any permission key (backend handles filtering)", () => {
+      // 注意：后端 user_menu_service 已经根据用户权限过滤了菜单
+      // 前端不需要再次进行权限过滤，直接显示后端返回的菜单即可
       const { hasPermissionKey } = useMenuPermission();
 
       expect(hasPermissionKey("iam.users")).toBe(true);
+      expect(hasPermissionKey("iam.roles")).toBe(true);
+      expect(hasPermissionKey("any.permission")).toBe(true);
     });
 
     it("returns true when user has exact permission", () => {
@@ -37,25 +41,8 @@ describe("useMenuPermission", () => {
       expect(hasPermissionKey("iam.roles")).toBe(true);
     });
 
-    it("returns true when user has parent permission (hierarchical)", () => {
-      const userStore = useUserStore();
-      userStore.setUserInfo({
-        id: "1",
-        username: "test",
-        nickname: "Test User",
-        roles: ["admin"],
-        permissions: ["iam"],
-      });
-
-      const { hasPermissionKey } = useMenuPermission();
-
-      // Parent permission should cover children
-      expect(hasPermissionKey("iam.users")).toBe(true);
-      expect(hasPermissionKey("iam.roles")).toBe(true);
-      expect(hasPermissionKey("iam.departments")).toBe(true);
-    });
-
-    it("returns false when user lacks permission", () => {
+    it("returns true even when user lacks permission (backend filtering)", () => {
+      // 注意：前端不再进行权限检查，始终返回 true
       const userStore = useUserStore();
       userStore.setUserInfo({
         id: "1",
@@ -67,8 +54,9 @@ describe("useMenuPermission", () => {
 
       const { hasPermissionKey } = useMenuPermission();
 
-      expect(hasPermissionKey("iam.roles")).toBe(false);
-      expect(hasPermissionKey("iam.departments")).toBe(false);
+      // 前端不再过滤，由后端负责
+      expect(hasPermissionKey("iam.roles")).toBe(true);
+      expect(hasPermissionKey("iam.departments")).toBe(true);
     });
   });
 
@@ -80,7 +68,8 @@ describe("useMenuPermission", () => {
       expect(filterMenuItem(item)).toEqual(item);
     });
 
-    it("returns null when permission check fails", () => {
+    it("returns item even when permission check would fail (backend filtering)", () => {
+      // 注意：前端不再进行权限过滤
       const userStore = useUserStore();
       userStore.setUserInfo({
         id: "1",
@@ -93,10 +82,11 @@ describe("useMenuPermission", () => {
       const { filterMenuItem } = useMenuPermission();
 
       const item = { title: "用户管理", url: "/iam/users", permissionKey: "iam.users" };
-      expect(filterMenuItem(item)).toBeNull();
+      // 前端不再过滤，返回原始项
+      expect(filterMenuItem(item)).toEqual(item);
     });
 
-    it("filters sub-items when parent has no permission", () => {
+    it("returns item with sub-items (backend filtering)", () => {
       const userStore = useUserStore();
       userStore.setUserInfo({
         id: "1",
@@ -116,19 +106,34 @@ describe("useMenuPermission", () => {
         ],
       };
 
+      // 前端不再过滤，返回原始项
+      const result = filterMenuItem(item);
+      expect(result).not.toBeNull();
+      expect(result?.title).toBe("IAM");
+      expect(result?.items).toHaveLength(1);
+    });
+
+    it("returns null when item has empty sub-items", () => {
+      const { filterMenuItem } = useMenuPermission();
+
+      const item = {
+        title: "Empty",
+        items: [],
+      };
+
       expect(filterMenuItem(item)).toBeNull();
     });
   });
 
   describe("filterMenuGroups", () => {
-    it("returns all items when user has no permissions set (backward compatible)", () => {
+    it("returns all items (backend handles filtering)", () => {
       const userStore = useUserStore();
       userStore.setUserInfo({
         id: "1",
         username: "test",
         nickname: "Test User",
         roles: ["user"],
-        permissions: [], // Empty permissions = show all (backward compatible)
+        permissions: [],
       });
 
       const { filterMenuGroups } = useMenuPermission();
@@ -142,11 +147,11 @@ describe("useMenuPermission", () => {
         },
       ];
 
-      // When permissions array is empty, all items are shown
+      // 前端不再过滤，返回所有项
       expect(filterMenuGroups(groups)).toHaveLength(1);
     });
 
-    it("filters items when user has specific permissions", () => {
+    it("returns all items regardless of permissions (backend filtering)", () => {
       const userStore = useUserStore();
       userStore.setUserInfo({
         id: "1",
@@ -170,11 +175,11 @@ describe("useMenuPermission", () => {
 
       const result = filterMenuGroups(groups);
       expect(result).toHaveLength(1);
-      expect(result[0].items).toHaveLength(1);
-      expect(result[0].items[0].title).toBe("首页");
+      // 前端不再过滤，返回所有项
+      expect(result[0].items).toHaveLength(2);
     });
 
-    it("preserves groups with accessible items", () => {
+    it("preserves all groups with items", () => {
       const userStore = useUserStore();
       userStore.setUserInfo({
         id: "1",
@@ -199,7 +204,8 @@ describe("useMenuPermission", () => {
 
       const result = filterMenuGroups(groups);
       expect(result).toHaveLength(1);
-      expect(result[0].items).toHaveLength(2);
+      // 前端不再过滤，返回所有项
+      expect(result[0].items).toHaveLength(3);
     });
   });
 });

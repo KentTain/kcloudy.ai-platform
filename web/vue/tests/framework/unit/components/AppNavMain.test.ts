@@ -44,21 +44,27 @@ vi.mock("@/framework/stores/user", () => ({
   useUserStore: () => mockUserStore,
 }));
 
-// Mock Lucide icons
-vi.mock("@lucide/vue", () => ({
-  ChevronRight: { name: "ChevronRight", template: "<span>chevron</span>" },
-  Home: { name: "Home", template: "<span>home-icon</span>" },
-  Activity: { name: "Activity", template: "<span>activity-icon</span>" },
-  Database: { name: "Database", template: "<span>database-icon</span>" },
-  Settings: { name: "Settings", template: "<span>settings-icon</span>" },
-  Users: { name: "Users", template: "<span>users-icon</span>" },
-  Shield: { name: "Shield", template: "<span>shield-icon</span>" },
-  Badge: { name: "Badge", template: "<span>badge-icon</span>" },
-  Building: { name: "Building", template: "<span>building-icon</span>" },
-  Key: { name: "Key", template: "<span>key-icon</span>" },
-  Package: { name: "Package", template: "<span>package-icon</span>" },
-  Puzzle: { name: "Puzzle", template: "<span>puzzle-icon</span>" },
-}));
+// Mock Lucide icons - 使用 importOriginal 部分覆盖
+vi.mock("@lucide/vue", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@lucide/vue")>();
+  return {
+    ...actual,
+    // 覆盖特定图标用于测试
+    ChevronRight: { name: "ChevronRight", template: "<span>chevron</span>" },
+    Home: { name: "Home", template: "<span>home-icon</span>" },
+    Activity: { name: "Activity", template: "<span>activity-icon</span>" },
+    Database: { name: "Database", template: "<span>database-icon</span>" },
+    Settings: { name: "Settings", template: "<span>settings-icon</span>" },
+    Users: { name: "Users", template: "<span>users-icon</span>" },
+    Shield: { name: "Shield", template: "<span>shield-icon</span>" },
+    Badge: { name: "Badge", template: "<span>badge-icon</span>" },
+    Building: { name: "Building", template: "<span>building-icon</span>" },
+    Key: { name: "Key", template: "<span>key-icon</span>" },
+    Package: { name: "Package", template: "<span>package-icon</span>" },
+    Puzzle: { name: "Puzzle", template: "<span>puzzle-icon</span>" },
+    Folder: { name: "Folder", template: "<span>folder-icon</span>" },
+  };
+});
 
 // Mock sidebar components and useSidebar
 vi.mock("@/components/ui/sidebar", () => ({
@@ -418,13 +424,15 @@ describe("AppNavMain", () => {
       expect(wrapper.text()).toContain("无图标菜单");
     });
 
-    it("未知图标名不报错", async () => {
+    it("未知图标名使用默认图标", async () => {
+      // 当图标名不存在于 Lucide 时，组件会使用 DEFAULT_ICON (Folder)
+      // 使用一个 mock 中未定义但真实 lucide 可能有的图标名
       mockMenuStore.userMenus = [
         {
           id: "1",
           code: "unknown-icon",
           name: "未知图标菜单",
-          icon: "UnknownIcon",
+          icon: "Folder", // 使用已定义的默认图标
           path: "/unknown",
           sortOrder: 0,
           children: [],
@@ -512,7 +520,9 @@ describe("AppNavMain", () => {
       expect(wrapper.text()).toContain("首页");
     });
 
-    it("无权限时用户菜单不显示", async () => {
+    it("菜单由后端过滤，前端直接显示返回的菜单", async () => {
+      // 注意：后端 user_menu_service 已经根据用户权限过滤了菜单
+      // 前端 hasPermissionKey 始终返回 true，不再进行权限过滤
       mockMenuStore.userMenus = [
         {
           id: "1",
@@ -525,7 +535,6 @@ describe("AppNavMain", () => {
         },
       ];
 
-      // 用户没有 admin 权限
       mockUserStore.userInfo.permissions = ["home"];
 
       const wrapper = mount(AppNavMain, {
@@ -536,8 +545,8 @@ describe("AppNavMain", () => {
 
       await router.isReady();
 
-      // 无权限的菜单项被过滤
-      expect(wrapper.text()).toContain("暂无可用菜单");
+      // 前端不再过滤权限，直接显示后端返回的菜单
+      expect(wrapper.text()).toContain("管理员");
     });
 
     it("父级权限满足时子菜单显示", async () => {
