@@ -227,6 +227,7 @@ GET /health → {"status": "healthy", "timestamp": "..."}
 - URL 设计：资源导向，小写连字符分隔
 - HTTP 方法：GET 查询、POST 创建、PUT 更新、DELETE 删除
 - 响应格式：统一 JSON 结构，包含 `code`、`message`、`data` 字段
+- API 路由规范：遵循 `/{模块}/{类型}/v1/{功能}` 格式
 
 ### 响应结构
 
@@ -260,11 +261,9 @@ GET /health → {"status": "healthy", "timestamp": "..."}
 |------|------|------|---------|
 | tenant | admin | tenants | `/tenant/admin/v1/tenants` |
 | tenant | console | tenants | `/tenant/console/v1/tenants` |
+| tenant | inner | tenants | `/tenant/inner/v1/tenants` |
 | iam | admin | users | `/iam/admin/v1/users` |
 | iam | console | auth/login | `/iam/console/v1/auth/login` |
-| ai | admin | models | `/ai/admin/v1/models` |
-| ai | console | chat-messages | `/ai/console/v1/chat-messages` |
-| tenant | inner | tenants | `/tenant/inner/v1/tenants` |
 
 ### 中间件策略
 
@@ -273,7 +272,6 @@ GET /health → {"status": "healthy", "timestamp": "..."}
 | `/tenant/admin/*` | AdminAuthMiddleware | 租户管理员 Token 认证 |
 | `/tenant/console/*` | IAMAuthMiddleware | JWT Token 认证 |
 | `/iam/*` | IAMAuthMiddleware | JWT Token 认证 |
-| `/ai/*` | IAMAuthMiddleware | JWT Token 认证 |
 | `/*/inner/*` | 无认证 | 模块间内部调用 |
 
 ### 接口类型说明

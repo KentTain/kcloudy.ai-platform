@@ -11,7 +11,7 @@ import {
   updateUser,
 } from "../api/user";
 import { getErrorMessage, notifyError, notifySuccess } from "@/framework/utils/feedback";
-import type { UserCreate, UserUpdate, User, UserQuery } from "../types";
+import type { UserCreate, UserUpdate, User, UserPaginatedQuery } from "../types";
 
 export const useUserStore = defineStore("iam-user", () => {
   const users = ref<User[]>([]);
@@ -19,7 +19,7 @@ export const useUserStore = defineStore("iam-user", () => {
   const loading = ref(false);
   const total = ref(0);
 
-  const fetchUsers = async (params?: UserQuery) => {
+  const fetchUsers = async (params?: UserPaginatedQuery) => {
     loading.value = true;
     try {
       const response = await getUsers(params);

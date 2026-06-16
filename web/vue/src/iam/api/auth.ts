@@ -3,10 +3,10 @@ import { resetUserPassword } from "./user";
 import type {
   ApiResponse,
   LoginHistory,
-  LoginHistoryQuery,
+  LoginHistoryPaginatedQuery,
   LoginRequest,
   LoginResponse,
-  PageResult,
+  PaginatedListResponse,
   UserUpdate,
   User,
 } from "../types";
@@ -58,5 +58,5 @@ export const resetPassword = resetUserPassword;
 /**
  * 获取登录历史
  */
-export const getLoginHistory = (params?: LoginHistoryQuery) =>
-  get<ApiResponse<PageResult<LoginHistory>>>("/iam/console/v1/auth/login-history", params as Record<string, unknown>);
+export const getLoginHistory = (params?: LoginHistoryPaginatedQuery) =>
+  get<ApiResponse<PaginatedListResponse<LoginHistory>>>("/iam/console/v1/auth/login-history", { params });

@@ -10,7 +10,7 @@ import {
   updateRole,
 } from "../api/role";
 import { getErrorMessage, notifyError, notifySuccess } from "@/framework/utils/feedback";
-import type { RoleCreate, Permission, Role, RoleUpdate } from "../types";
+import type { RoleCreate, Permission, Role, RoleUpdate, RolePaginatedQuery } from "../types";
 
 export const useRoleStore = defineStore("iam-role", () => {
   const roles = ref<Role[]>([]);
@@ -19,7 +19,7 @@ export const useRoleStore = defineStore("iam-role", () => {
   const loading = ref(false);
   const total = ref(0);
 
-  const fetchRoles = async (params?: { page?: number; page_size?: number; keyword?: string }) => {
+  const fetchRoles = async (params?: RolePaginatedQuery) => {
     loading.value = true;
     try {
       const response = await getRoles(params);

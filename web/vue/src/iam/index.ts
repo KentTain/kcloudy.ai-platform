@@ -30,17 +30,19 @@ export type {
   LoginRequest,
   LoginResponse,
   ApiResponse,
+  PaginatedListResponse,
   PageResult,
   UserCreate,
   UserUpdate,
-  UserQuery,
+  UserPaginatedQuery,
   RoleCreate,
   RoleUpdate,
-  RoleQuery,
-  PermissionQuery,
+  RolePaginatedQuery,
+  PermissionPaginatedQuery,
   DepartmentCreate,
   DepartmentUpdate,
   DepartmentQuery,
+  LoginHistoryPaginatedQuery,
 } from "./types";
 
 // 导出认证 API

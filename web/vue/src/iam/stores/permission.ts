@@ -1,7 +1,7 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
 import { getAllPermissions, getPermissions, getPermissionsByResource } from "../api/permission";
-import type { Permission, PermissionGroup } from "../types";
+import type { Permission, PermissionGroup, PermissionPaginatedQuery } from "../types";
 
 export const usePermissionStore = defineStore("iam-permission", () => {
   const permissions = ref<Permission[]>([]);
@@ -9,7 +9,7 @@ export const usePermissionStore = defineStore("iam-permission", () => {
   const loading = ref(false);
   const total = ref(0);
 
-  const fetchPermissions = async (params?: { page?: number; page_size?: number; resource?: string }) => {
+  const fetchPermissions = async (params?: PermissionPaginatedQuery) => {
     loading.value = true;
     try {
       const response = await getPermissions(params);

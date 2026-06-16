@@ -1,14 +1,6 @@
 import { del, get, post, put } from "@/framework/api/client";
-import type { ApiResponse, PageResult, User, Role, Department } from "../types";
-
-export interface UserQuery {
-  page?: number;
-  page_size?: number;
-  keyword?: string;
-  status?: string;
-  department_id?: string;
-  role_id?: string;
-}
+import type { ApiResponse, PaginatedListResponse, User, Role, Department } from "../types";
+import type { UserPaginatedQuery } from "../types";
 
 export interface UserCreate {
   username: string;
@@ -28,8 +20,8 @@ export interface UserUpdate {
 /**
  * 获取用户列表
  */
-export const getUsers = (params?: UserQuery) =>
-  get<ApiResponse<PageResult<User>>>("/iam/admin/v1/users", { params });
+export const getUsers = (params?: UserPaginatedQuery) =>
+  get<ApiResponse<PaginatedListResponse<User>>>("/iam/admin/v1/users", { params });
 
 /**
  * 获取用户详情

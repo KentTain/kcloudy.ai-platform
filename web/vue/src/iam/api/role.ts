@@ -1,12 +1,6 @@
 import { del, get, post, put } from "@/framework/api/client";
-import type { ApiResponse, PageResult, Permission, Role } from "../types";
-
-export interface RoleQuery {
-  page?: number;
-  page_size?: number;
-  keyword?: string;
-  include_system?: boolean;
-}
+import type { ApiResponse, PaginatedListResponse, Permission, Role } from "../types";
+import type { RolePaginatedQuery } from "../types";
 
 export interface RoleCreate {
   code: string;
@@ -26,8 +20,8 @@ export interface AssignPermissionsParams {
 /**
  * 获取角色列表
  */
-export const getRoles = (params?: RoleQuery) =>
-  get<ApiResponse<PageResult<Role>>>("/iam/admin/v1/roles", { params });
+export const getRoles = (params?: RolePaginatedQuery) =>
+  get<ApiResponse<PaginatedListResponse<Role>>>("/iam/admin/v1/roles", { params });
 
 /**
  * 获取角色详情（含权限）

@@ -84,39 +84,6 @@ uv run pytest tests/demo/ -v
 - 异步测试：使用 `pytest.mark.asyncio`
 - API 路由：遵循 `/{模块}/{类型}/v1/{功能}` 格式
 
-## API 路由规范
-
-### 路由格式
-
-**统一格式**：`/{模块}/{类型}/v1/{功能}`
-
-| 模块 | 类型 | 功能示例 | 完整路径 |
-|------|------|---------|---------|
-| tenant | admin | tenants | `/tenant/admin/v1/tenants` |
-| tenant | console | tenants | `/tenant/console/v1/tenants` |
-| iam | admin | users | `/iam/admin/v1/users` |
-| iam | console | auth/login | `/iam/console/v1/auth/login` |
-| ai | admin | models | `/ai/admin/v1/models` |
-| ai | console | chat-messages | `/ai/console/v1/chat-messages` |
-
-### 中间件策略
-
-| 路径前缀 | 认证方式 |
-|---------|---------|
-| `/tenant/admin/*` | AdminAuthMiddleware（租户管理员 Token） |
-| `/tenant/console/*` | IAMAuthMiddleware（JWT Token） |
-| `/iam/*` | IAMAuthMiddleware（JWT Token） |
-| `/ai/*` | IAMAuthMiddleware（JWT Token） |
-| `/*/inner/*` | 无认证（模块间内部调用） |
-
-### 接口类型
-
-| 类型 | 用途 | 权限要求 |
-|------|------|---------|
-| admin | 管理后台接口 | 需要管理员权限 |
-| console | 用户端接口 | 需要登录用户权限 |
-| inner | 内部接口 | 无认证，仅供模块间调用 |
-
 ## 测试
 
 测试文件位于 `tests/` 目录，详见 [tests/CLAUDE.md](tests/CLAUDE.md)。

@@ -1,10 +1,6 @@
 import { del, get, post, put } from "@/framework/api/client";
 import type { ApiResponse, Department, DepartmentUser } from "../types";
-
-export interface DepartmentQuery {
-  keyword?: string;
-  status?: string;
-}
+import type { DepartmentQuery } from "../types";
 
 export interface DepartmentCreate {
   name: string;

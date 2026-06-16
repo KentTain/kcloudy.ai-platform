@@ -1,9 +1,23 @@
-﻿/**
+/**
  * IAM 模块类型定义
  */
 
-// 从 framework 导入统一类型并重新导出
-export type { ApiResponse, PageResult } from "@/framework/types";
+// 从 framework 导入统一类型
+import type {
+  ApiResponse as ApiResponseBase,
+  BaseQuery,
+  BasePaginatedQuery,
+  PaginatedListResponse,
+} from "@/framework/types";
+
+// 重新导出统一类型
+export type { BaseQuery, BasePaginatedQuery, PaginatedListResponse };
+export type ApiResponse<T = unknown> = ApiResponseBase<T>;
+
+/**
+ * @deprecated 使用 PaginatedListResponse<T> 替代
+ */
+export type PageResult<T> = PaginatedListResponse<T>;
 
 // 用户类型
 export interface User {
@@ -118,10 +132,10 @@ export interface UserUpdate {
   status?: "active" | "inactive" | "locked";
 }
 
-export interface UserQuery {
-  page?: number;
-  page_size?: number;
-  keyword?: string;
+/**
+ * 用户分页查询参数
+ */
+export interface UserPaginatedQuery extends BasePaginatedQuery {
   status?: string;
   department_id?: string;
   role_id?: string;
@@ -141,17 +155,17 @@ export interface RoleUpdate {
   permission_ids?: string[];
 }
 
-export interface RoleQuery {
-  page?: number;
-  page_size?: number;
-  keyword?: string;
+/**
+ * 角色分页查询参数
+ */
+export interface RolePaginatedQuery extends BasePaginatedQuery {
+  include_system?: boolean;
 }
 
-// 权限相关类型
-export interface PermissionQuery {
-  page?: number;
-  page_size?: number;
-  keyword?: string;
+/**
+ * 权限分页查询参数
+ */
+export interface PermissionPaginatedQuery extends BasePaginatedQuery {
   resource?: string;
 }
 
@@ -173,10 +187,10 @@ export interface DepartmentUpdate {
   status?: "active" | "inactive";
 }
 
-export interface DepartmentQuery {
-  page?: number;
-  page_size?: number;
-  keyword?: string;
+/**
+ * 部门查询参数（非分页）
+ */
+export interface DepartmentQuery extends BaseQuery {
   status?: string;
   parent_id?: string;
 }
@@ -195,16 +209,17 @@ export interface LoginHistory {
   location?: string;
 }
 
-// 登录历史查询参数
-export interface LoginHistoryQuery {
-  page?: number;
-  page_size?: number;
+/**
+ * 登录历史分页查询参数
+ */
+export interface LoginHistoryPaginatedQuery extends BasePaginatedQuery {
   start_date?: string;
   end_date?: string;
 }
 
 // 菜单类型（从 framework 导入并重新导出）
-export type { MenuTreeNode } from "@/framework/stores/menu";
+import type { MenuTreeNode } from "@/framework/stores/menu";
+export type { MenuTreeNode };
 
 // 菜单列表响应
 export interface MenuListResponse {
