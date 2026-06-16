@@ -35,7 +35,7 @@ SKIP_PATHS = [
     "/docs",
     "/redoc",
     "/openapi.json",
-    "/admin/",  # 管理后台不经过租户中间件
+    "/tenant/admin/",  # 管理后台不经过租户中间件
     # IAM Console 层公开接口
     "/iam/console/v1/auth/login",
     "/iam/console/v1/auth/register",
