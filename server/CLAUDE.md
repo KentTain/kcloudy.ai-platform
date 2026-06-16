@@ -86,6 +86,25 @@ server/{技术栈}/
         └── integration/           # 集成测试
 ```
 
+## 统一基础设施及架构
+
+### 基础设施
+
+| 组件 | 用途 |
+|------|------|
+| PostgreSQL + pgvector | 主数据库：关系数据存储 + 向量检索 |
+| Redis | 缓存 / 队列 / 发布订阅 |
+| MinIO | 对象存储：文件、图片等非结构化数据 |
+
+### 架构规则
+
+| 规则 | 说明 |
+|------|------|
+| 分层架构 | Controller → Service → Model |
+| Schema 隔离 | 每个模块独立 PostgreSQL schema |
+| 依赖边界 | 业务模块可依赖 framework，反向禁止 |
+| 跨模块调用 | 通过 inner 接口或事件总线，禁止直接依赖 |
+
 ## 层次职责
 
 ### 基础设施层（framework/）
@@ -150,11 +169,12 @@ server/{技术栈}/
 
 #### 通信对象（DTO）命名规范
 
-前后端通信对象（Schema 类）命名遵循以下统一规范：
+前后端通信对象（Schema 类）命名遵循以下统一规范，{Entity}{Action}
 
 | 分类 | 命名模式 | 示例 |
 |------|----------|------|
-| 查询（列表/分页） | `{Entity}Query` | `TenantQuery` |
+| 列表查询 | `{Entity}Query` | `TenantQuery` |
+| 分页查询 | `{Entity}PaginatedQuery` | `TenantPaginatedQuery` |
 | 新增（创建） | `{Entity}Create` | `TenantCreate` |
 | 编辑（更新） | `{Entity}Update` | `TenantUpdate` |
 | 保存（新增或编辑） | `{Entity}Save` | `ConfigSave` |
@@ -162,6 +182,7 @@ server/{技术栈}/
 | 导出 | `{Entity}Export` | `UserExport` |
 | 基本响应 | `{Entity}Response` | `TenantResponse` |
 | 列表响应 | `{Entity}ListResponse` | `TenantListResponse` |
+| 分页列表响应 | `{Entity}PaginatedListResponse` | `TenantPaginatedListResponse` |
 | 树结构响应 | `{Entity}TreeResponse` | `ModuleMenuTreeResponse` |
 | 属性/配置响应 | `{Entity}PropertyResponse` | `CachePropertyResponse` |
 
@@ -190,23 +211,6 @@ server/{技术栈}/
 | `updated_at` | 更新时间 | `updated_at: datetime` |
 | `created_by` | 创建人 | `created_by: str` |
 | `updated_by` | 更新人 | `updated_by: str` |
-
-## 架构规则
-
-| 规则 | 说明 |
-|------|------|
-| 分层架构 | Controller → Service → Model |
-| Schema 隔离 | 每个模块独立 PostgreSQL schema |
-| 依赖边界 | 业务模块可依赖 framework，反向禁止 |
-| 跨模块调用 | 通过 inner 接口或事件总线，禁止直接依赖 |
-
-## 统一基础设施
-
-| 组件 | 用途 |
-|------|------|
-| PostgreSQL + pgvector | 主数据库：关系数据存储 + 向量检索 |
-| Redis | 缓存 / 队列 / 发布订阅 |
-| MinIO | 对象存储：文件、图片等非结构化数据 |
 
 ## API 规范
 
