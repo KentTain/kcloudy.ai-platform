@@ -21,32 +21,8 @@ MODULE_SCHEMA = "tenant"
 
 
 def upgrade() -> None:
-    # 添加资源配置关联字段
-    op.add_column(
-        "tenants",
-        sa.Column("db_config_id", sa.String(36), nullable=True, comment="数据库配置ID"),
-        schema=MODULE_SCHEMA,
-    )
-    op.add_column(
-        "tenants",
-        sa.Column("storage_config_id", sa.String(36), nullable=True, comment="存储配置ID"),
-        schema=MODULE_SCHEMA,
-    )
-    op.add_column(
-        "tenants",
-        sa.Column("cache_config_id", sa.String(36), nullable=True, comment="缓存配置ID"),
-        schema=MODULE_SCHEMA,
-    )
-    op.add_column(
-        "tenants",
-        sa.Column("queue_config_id", sa.String(36), nullable=True, comment="队列配置ID"),
-        schema=MODULE_SCHEMA,
-    )
-    op.add_column(
-        "tenants",
-        sa.Column("pubsub_config_id", sa.String(36), nullable=True, comment="发布订阅配置ID"),
-        schema=MODULE_SCHEMA,
-    )
+    # 注意：db_config_id 等 5 个资源配置关联字段已在 002_tenant_module_system.py 中添加
+    # 这里只需删除内嵌配置字段
 
     # 删除内嵌配置字段
     op.drop_column("tenants", "cache_db", schema=MODULE_SCHEMA)
@@ -108,9 +84,5 @@ def downgrade() -> None:
         schema=MODULE_SCHEMA,
     )
 
-    # 删除资源配置关联字段
-    op.drop_column("tenants", "pubsub_config_id", schema=MODULE_SCHEMA)
-    op.drop_column("tenants", "queue_config_id", schema=MODULE_SCHEMA)
-    op.drop_column("tenants", "cache_config_id", schema=MODULE_SCHEMA)
-    op.drop_column("tenants", "storage_config_id", schema=MODULE_SCHEMA)
-    op.drop_column("tenants", "db_config_id", schema=MODULE_SCHEMA)
+    # 注意：不删除 db_config_id 等 5 个资源配置关联字段
+    # 这些字段在 002_tenant_module_system.py 中添加，应在那里删除

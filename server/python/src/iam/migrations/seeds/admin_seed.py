@@ -36,7 +36,7 @@ async def run(*, dry_run: bool = False) -> int:
         existing = result.scalar_one_or_none()
 
         if existing:
-            write_info("默认管理员已存在，跳过初始化")
+            write_warning("默认管理员已存在，跳过初始化")
             return 0
 
         # 创建默认管理员

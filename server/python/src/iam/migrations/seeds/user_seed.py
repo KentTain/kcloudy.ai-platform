@@ -46,7 +46,7 @@ async def run(*, dry_run: bool = False) -> int:
         existing = result.scalar_one_or_none()
 
         if existing:
-            write_info("    默认系统管理员已存在，跳过初始化")
+            write_warning("默认系统管理员已存在，跳过初始化")
             return 0
 
         # 获取默认租户 ID

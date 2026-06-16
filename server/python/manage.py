@@ -54,7 +54,6 @@ if str(src_path) not in sys.path:
 import click
 
 from framework.utils.log_util import (
-    Color,
     write_empty_line,
     write_error,
     write_info,
@@ -167,7 +166,8 @@ def runserver(host, port, reload, module):
 
     from demo.configs import settings
 
-    write_info("正在启动 Web 服务器...")
+    write_title("正在启动 Web 服务器...")
+    write_empty_line()
 
     # 如果指定了模块，通过环境变量传递
     if module:
@@ -193,24 +193,34 @@ def runserver(host, port, reload, module):
 @click.option("--module", default=None, help="指定加载的模块（逗号分隔）")
 def runtask(module):
     """启动定时任务调度器"""
-    write_info("正在启动定时任务调度器...")
+
+    write_title("正在启动定时任务调度器...")
+    write_empty_line()
+
     if module:
         os.environ["LOAD_MODULES"] = module
     from application_task import main
 
     main(module)
 
+    write_separator()
+
 
 @cli.command()
 @click.option("--module", default=None, help="指定加载的模块（逗号分隔）")
 def runlistener(module):
     """启动监听器服务"""
-    write_info("正在启动监听器服务...")
+
+    write_title("正在启动监听器服务...")
+    write_empty_line()
+
     if module:
         os.environ["LOAD_MODULES"] = module
     from application_listener import main
 
     main(module)
+
+    write_separator()
 
 
 # ────────────────────────────────────────────────────────────────────
@@ -249,7 +259,7 @@ def makemigrations(ctx, message, module):
     database_url = ctx.obj.get("database_url") if ctx.obj else None
 
     for m in modules:
-        write_info(f"  {Color.CYAN}[{m.name}] 生成迁移...{Color.RESET}")
+        write_info(f"[{m.name}] 生成迁移...")
         config = get_module_alembic_config(m, database_url)
         migration_message = message or f"{m.name}_auto_migration"
 
@@ -270,11 +280,14 @@ def migrate(ctx, module, all_modules, sql, yes):
     """应用数据库迁移"""
     from alembic import command
 
+    write_title("应用数据库迁移...")
+    write_empty_line()
+
     modules = resolve_target_modules(module, all_modules)
     database_url = ctx.obj.get("database_url") if ctx.obj else None
 
     for m in modules:
-        print(f"  {Color.CYAN}[{m.name}] 应用迁移...{Color.RESET}")
+        write_info(f"[{m.name}] 应用迁移...")
         config = get_module_alembic_config(m, database_url)
 
         try:
@@ -292,6 +305,8 @@ def migrate(ctx, module, all_modules, sql, yes):
         except Exception as e:
             write_error(f"[{m.name}] 数据库迁移失败: {e}")
 
+    write_separator()
+
 
 @db.command(name="current")
 @click.option("--module", default=None, help="指定模块查看版本")
@@ -303,11 +318,11 @@ def show_current(ctx, module):
     modules = resolve_target_modules(module)
     database_url = ctx.obj.get("database_url") if ctx.obj else None
 
-    print(f"{Color.CYAN}当前数据库版本:{Color.RESET}")
+    write_info("当前数据库版本:")
     for m in modules:
         config = get_module_alembic_config(m, database_url)
         try:
-            print(f"  {Color.WHITE}[{m.name}]{Color.RESET}")
+            write_info(f"[{m.name}]")
             command.current(config, verbose=True)
         except Exception as e:
             write_error(f"[{m.name}] 获取当前版本失败: {e}")
@@ -323,11 +338,11 @@ def history(ctx, module):
     modules = resolve_target_modules(module)
     database_url = ctx.obj.get("database_url") if ctx.obj else None
 
-    print(f"{Color.CYAN}迁移历史:{Color.RESET}")
+    write_info("迁移历史:")
     for m in modules:
         config = get_module_alembic_config(m, database_url)
         try:
-            print(f"  {Color.WHITE}[{m.name}]{Color.RESET}")
+            write_info(f"[{m.name}]")
             command.history(config, verbose=True)
         except Exception as e:
             write_error(f"[{m.name}] 获取迁移历史失败: {e}")
@@ -342,6 +357,9 @@ def downgrade(ctx, module, revision, yes):
     """回滚数据库迁移"""
     from alembic import command
 
+    write_title("回滚数据库迁移...")
+    write_empty_line()
+
     modules = resolve_target_modules(module)
     database_url = ctx.obj.get("database_url") if ctx.obj else None
 
@@ -353,12 +371,14 @@ def downgrade(ctx, module, revision, yes):
             continue
 
         config = get_module_alembic_config(m, database_url)
-        print(f"  {Color.CYAN}[{m.name}] 正在回滚到版本: {revision}...{Color.RESET}")
+        write_info(f"[{m.name}] 正在回滚到版本: {revision}...")
         try:
             command.downgrade(config, revision)
             write_success(f"[{m.name}] 成功回滚")
         except Exception as e:
             write_error(f"[{m.name}] 回滚失败: {e}")
+
+    write_separator()
 
 
 @db.command()
@@ -373,18 +393,20 @@ def rebuild(ctx, module, all_modules, yes, dry_run):
 
     modules = resolve_target_modules(module, all_modules)
 
-    write_separator()
+    write_title("重建数据库")
+    write_empty_line()
+
     if dry_run:
-        print(f"{Color.YELLOW}[DRY-RUN] 预览模式，不会实际执行{Color.RESET}")
+        write_warning("[DRY-RUN] 预览模式，不会实际执行")
     write_title("重建数据库 Schema")
     write_empty_line()
 
     for m in modules:
-        print(f"  {Color.CYAN}[{m.name}] 将执行:{Color.RESET}")
-        print(f"    1. DROP SCHEMA IF EXISTS {m.schema} CASCADE")
-        print(f"    2. CREATE SCHEMA {m.schema}")
-        print(f"    3. alembic upgrade head")
-        print(f"    4. run seeds")
+        write_info(f"[{m.name}] 将执行:")
+        write_info(f"    1. DROP SCHEMA IF EXISTS {m.schema} CASCADE")
+        write_info(f"    2. CREATE SCHEMA {m.schema}")
+        write_info(f"    3. alembic upgrade head")
+        write_info(f"    4. run seeds")
         write_empty_line()
 
     if not dry_run:
@@ -405,9 +427,7 @@ def rebuild(ctx, module, all_modules, yes, dry_run):
 
         for m in modules:
             if dry_run:
-                print(
-                    f"  {Color.CYAN}[{m.name}] [DRY-RUN] DROP + CREATE SCHEMA{Color.RESET}"
-                )
+                write_warning(f"[{m.name}] [DRY-RUN] DROP + CREATE SCHEMA")
                 continue
 
             async with get_session() as session:
@@ -435,9 +455,7 @@ def rebuild(ctx, module, all_modules, yes, dry_run):
             seeds = m.get_seeds()
             for seed_name, seed_func in seeds.items():
                 if dry_run:
-                    print(
-                        f"  {Color.CYAN}[{m.name}/{seed_name}] [DRY-RUN] 预览 seed{Color.RESET}"
-                    )
+                    write_warning(f"[{m.name}/{seed_name}] [DRY-RUN] 预览 seed")
                     continue
 
                 try:
@@ -453,9 +471,11 @@ def rebuild(ctx, module, all_modules, yes, dry_run):
 
     write_empty_line()
     if dry_run:
-        print(f"{Color.YELLOW}[DRY-RUN] 预览完成{Color.RESET}")
+        write_warning("[DRY-RUN] 预览完成")
     else:
         write_success("重建完成")
+
+    write_separator()
 
 
 # ────────────────────────────────────────────────────────────────────
@@ -473,7 +493,6 @@ def seed(dry_run, module):
     # 加载模块
     modules = resolve_target_modules(module)
 
-    write_separator()
     write_title("数据初始化")
     write_empty_line()
 
@@ -496,7 +515,7 @@ def seed(dry_run, module):
             safe_url = parts[0].rsplit(":", 1)[0] + ":***@" + parts[1]
         else:
             safe_url = db_url
-        print(f"{Color.CYAN}数据库:{Color.RESET} {safe_url}")
+        write_info(f"数据库: {safe_url}")
 
     except Exception as e:
         write_error(f"数据库连接失败: {e}")
@@ -505,7 +524,7 @@ def seed(dry_run, module):
     write_empty_line()
 
     if dry_run:
-        print(f"{Color.YELLOW}[DRY-RUN] 预览模式，不会实际写入数据库{Color.RESET}")
+        write_warning("[DRY-RUN] 预览模式，不会实际写入数据库")
         write_empty_line()
 
     # 运行种子脚本
@@ -514,18 +533,18 @@ def seed(dry_run, module):
         for m in modules:
             seeds = m.get_seeds()
             if not seeds:
-                print(f"  {Color.GRAY}[{m.name}] 无 seed 数据{Color.RESET}")
+                write_warning(f"[{m.name}] 无 seed 数据")
                 continue
 
             for seed_name, seed_func in seeds.items():
-                print(f"  {Color.CYAN}[{m.name}/{seed_name}] 初始化中...{Color.RESET}")
+                write_info(f"[{m.name}/{seed_name}] 初始化中...")
                 try:
                     count = await seed_func(dry_run=dry_run)
                     if count > 0:
-                        status = (
-                            f"{Color.YELLOW}[DRY-RUN] {Color.RESET}" if dry_run else ""
+                        status = "[DRY-RUN] " if dry_run else ""
+                        write_info(
+                            f"  {status}[{m.name}/{seed_name}] 初始化 {count} 条记录"
                         )
-                        print(f"  {status}[{m.name}/{seed_name}] 初始化 {count} 条记录")
                     total += count
                 except Exception as e:
                     write_error(f"[{m.name}/{seed_name}] {e}")
@@ -535,9 +554,11 @@ def seed(dry_run, module):
 
     write_empty_line()
     if dry_run:
-        print(f"{Color.YELLOW}[DRY-RUN] 完成: 预览 {total} 条记录{Color.RESET}")
+        write_warning(f"[DRY-RUN] 完成: 预览 {total} 条记录")
     else:
         write_success(f"完成: 初始化 {total} 条记录")
+
+    write_separator()
 
 
 if __name__ == "__main__":

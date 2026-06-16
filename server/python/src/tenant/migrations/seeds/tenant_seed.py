@@ -90,6 +90,6 @@ async def run(*, dry_run: bool = False) -> int:
             write_success(f"已为默认租户分配活跃模块")
 
         if not created_count and not assigned_count:
-            write_info("默认租户已初始化且模块已分配，无需变更")
+            write_warning("默认租户已初始化且模块已分配，无需变更")
 
         return created_count + (1 if assigned_count else 0)
