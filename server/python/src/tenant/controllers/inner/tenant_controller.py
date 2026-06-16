@@ -267,13 +267,13 @@ async def get_tenant(tenant_id: str) -> ORJSONResponse:
     获取单个租户（含完整资源配置）
 
     场景：获取单个租户
-    WHEN 请求 GET /inner/v1/tenants/{tenant_id}
+    WHEN 请求 GET /tenant/inner/v1/tenants/{tenant_id}
     THEN 返回指定租户的详细信息
     AND 不依赖 Token 认证
     AND tenant_id 由调用方显式传入
 
     场景：租户不存在
-    WHEN 请求 GET /inner/v1/tenants/nonexistent
+    WHEN 请求 GET /tenant/inner/v1/tenants/nonexistent
     THEN 返回 HTTP 404
     AND 响应体包含错误信息
     """
@@ -293,7 +293,7 @@ async def get_tenant_basic(tenant_id: str) -> ORJSONResponse:
     获取租户基础信息（不含资源配置详情）
 
     场景：获取租户基础信息
-    WHEN 请求 GET /inner/v1/tenants/{tenant_id}/basic
+    WHEN 请求 GET /tenant/inner/v1/tenants/{tenant_id}/basic
     THEN 返回租户基础信息和资源配置 ID
     """
     tenant = await TenantService.get_resource_bindings(tenant_id)
@@ -312,7 +312,7 @@ async def get_tenants_batch(data: BatchTenantsRequest) -> ORJSONResponse:
     批量获取租户
 
     场景：批量获取租户
-    WHEN 请求 POST /inner/v1/tenants/batch
+    WHEN 请求 POST /tenant/inner/v1/tenants/batch
     WITH 请求体 {"tenant_ids": ["id1", "id2"]}
     THEN 返回多个租户的信息列表
     AND 返回顺序与请求顺序一致
@@ -336,7 +336,7 @@ async def get_tenants_batch_full(data: BatchTenantsRequest) -> ORJSONResponse:
     批量获取租户完整信息（含资源配置详情）
 
     场景：批量获取租户完整信息
-    WHEN 请求 POST /inner/v1/tenants/batch-full
+    WHEN 请求 POST /tenant/inner/v1/tenants/batch-full
     WITH 请求体 {"tenant_ids": ["id1", "id2"]}
     THEN 返回多个租户的完整信息列表（含资源配置）
     """
@@ -360,7 +360,7 @@ async def validate_tenant_access(
     验证租户访问权限
 
     场景：验证租户访问权限
-    WHEN 请求 GET /inner/v1/tenants/{tenant_id}/validate?user_id={user_id}
+    WHEN 请求 GET /tenant/inner/v1/tenants/{tenant_id}/validate?user_id={user_id}
     THEN 返回布尔值表示用户是否有权访问该租户
     """
     simple_tenant = await TenantService.get_by_id(tenant_id)

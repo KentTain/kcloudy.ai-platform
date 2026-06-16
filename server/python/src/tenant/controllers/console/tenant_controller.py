@@ -24,11 +24,11 @@ async def list_user_tenants(user_id: str = "test_user") -> ORJSONResponse:
     获取用户可用租户列表
 
     场景：获取用户可用租户列表
-    WHEN 用户请求 GET /console/v1/tenants
+    WHEN 用户请求 GET /tenant/console/v1/tenants
     THEN 返回用户所属的所有租户列表
 
     场景：用户不属于任何租户
-    WHEN 用户不属于任何租户时请求 GET /console/v1/tenants
+    WHEN 用户不属于任何租户时请求 GET /tenant/console/v1/tenants
     THEN 返回空列表
     """
 
@@ -69,11 +69,11 @@ async def get_current_tenant_info() -> ORJSONResponse:
     获取当前租户信息
 
     场景：获取当前租户信息
-    WHEN 用户请求 GET /console/v1/tenants/current
+    WHEN 用户请求 GET /tenant/console/v1/tenants/current
     THEN 返回当前租户的详细信息
 
     场景：未设置租户上下文
-    WHEN 用户未设置租户上下文时请求 GET /console/v1/tenants/current
+    WHEN 用户未设置租户上下文时请求 GET /tenant/console/v1/tenants/current
     THEN 返回 HTTP 400 错误
     """
     tenant_id = get_tenant_id()
@@ -105,12 +105,12 @@ async def switch_tenant(
     切换租户
 
     场景：切换到有权限的租户
-    WHEN 用户请求 POST /console/v1/tenants/{id}/switch 且用户属于该租户
+    WHEN 用户请求 POST /tenant/console/v1/tenants/{id}/switch 且用户属于该租户
     THEN 返回包含新租户信息的 Token
     AND 后续请求使用新租户上下文
 
     场景：切换到无权限的租户
-    WHEN 用户请求 POST /console/v1/tenants/{id}/switch 且用户不属于该租户
+    WHEN 用户请求 POST /tenant/console/v1/tenants/{id}/switch 且用户不属于该租户
     THEN 返回 HTTP 403 错误，消息为 "无权访问该租户"
 
     场景：切换到不存在的租户

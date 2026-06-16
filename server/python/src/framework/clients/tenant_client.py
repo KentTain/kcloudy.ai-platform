@@ -46,7 +46,7 @@ class TenantClient:
                 base_url=inner_url,
                 timeout=inner_timeout,
                 service_name="tenant",
-                health_path="/inner/v1/tenant/health",
+                health_path="/tenant/inner/v1/health",
             )
 
     async def get_tenant(self, tenant_id: str) -> TenantInfo | None:
@@ -62,7 +62,7 @@ class TenantClient:
         if self._http_client:
             # 微服务模式
             data = await self._http_client.get(
-                f"/inner/v1/tenants/{tenant_id}",
+                f"/tenant/inner/v1/tenants/{tenant_id}",
                 response_model=TenantInfo,
             )
             return data
@@ -110,7 +110,7 @@ class TenantClient:
                 items: list[TenantInfo]
 
             data = await self._http_client.post(
-                "/inner/v1/tenants/batch",
+                "/tenant/inner/v1/tenants/batch",
                 json={"tenant_ids": tenant_ids},
             )
             if data and isinstance(data, list):
@@ -145,7 +145,7 @@ class TenantClient:
         if self._http_client:
             # 微服务模式
             data = await self._http_client.get(
-                f"/inner/v1/tenants/{tenant_id}/validate",
+                f"/tenant/inner/v1/tenants/{tenant_id}/validate",
             )
             if data and isinstance(data, dict):
                 return data.get("valid", False)

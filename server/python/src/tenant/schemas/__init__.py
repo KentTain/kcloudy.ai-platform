@@ -41,9 +41,9 @@ from .admin.tenant import (
     AdminInfoResponse,
 )
 from .console.tenant import (
-    UserTenantVo,
-    CurrentTenantVo,
-    SwitchTenantVo,
+    UserTenantResponse,
+    CurrentTenantResponse,
+    SwitchTenantResponse,
 )
 
 __all__ = [
@@ -91,7 +91,7 @@ __all__ = [
     "AdminLoginResponse",
     "AdminInfoResponse",
     # 用户端
-    "UserTenantVo",
-    "CurrentTenantVo",
-    "SwitchTenantVo",
+    "UserTenantResponse",
+    "CurrentTenantResponse",
+    "SwitchTenantResponse",
 ]

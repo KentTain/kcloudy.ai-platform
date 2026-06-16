@@ -60,7 +60,7 @@ async def list_tenant_modules(
     获取租户已分配的模块列表
 
     场景：查询租户模块列表
-    WHEN 管理员请求 GET /admin/v1/tenants/{id}/modules
+    WHEN 管理员请求 GET /tenant/admin/v1/tenants/{id}/modules
     THEN 返回该租户已分配的所有模块列表
     """
     tenant_modules, total = await TenantModuleService.list_tenant_modules(
@@ -98,7 +98,7 @@ async def assign_module(
     为租户分配模块
 
     场景：分配模块
-    WHEN 管理员请求 POST /admin/v1/tenants/{id}/modules 并提供模块 ID
+    WHEN 管理员请求 POST /tenant/admin/v1/tenants/{id}/modules 并提供模块 ID
     THEN 为租户分配该模块并返回分配记录
 
     场景：分配已启用的模块
@@ -145,7 +145,7 @@ async def unassign_module(
     取消租户的模块分配
 
     场景：取消模块分配
-    WHEN 管理员请求 DELETE /admin/v1/tenants/{id}/modules/{moduleId}
+    WHEN 管理员请求 DELETE /tenant/admin/v1/tenants/{id}/modules/{moduleId}
     THEN 取消租户的模块分配
 
     场景：取消必须模块

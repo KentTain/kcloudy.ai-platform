@@ -21,7 +21,7 @@ from tenant.schemas.admin.tenant import (
     ResourceValidateResponse,
     TenantCreate,
     TenantPaginatedListResponse,
-    TenantStatsVo,
+    TenantStatsResponse,
     TenantUpdate,
     TenantResponse,
 )
@@ -144,11 +144,11 @@ async def list_tenants(
     查询租户列表
 
     场景：查询租户列表
-    WHEN 管理员请求 GET /admin/v1/tenants
+    WHEN 管理员请求 GET /tenant/admin/v1/tenants
     THEN 返回所有租户列表（分页）
 
     场景：搜索租户
-    WHEN 管理员请求 GET /admin/v1/tenants?keyword=acme
+    WHEN 管理员请求 GET /tenant/admin/v1/tenants?keyword=acme
     THEN 返回名称或编码包含 "acme" 的租户列表
     """
     tenants, total = await TenantService.list_tenants(
@@ -185,7 +185,7 @@ async def create_tenant(
     创建租户
 
     场景：创建租户
-    WHEN 管理员请求 POST /admin/v1/tenants 并提供名称、编码
+    WHEN 管理员请求 POST /tenant/admin/v1/tenants 并提供名称、编码
     THEN 创建新租户并返回租户信息
 
     场景：创建重复编码租户
@@ -224,11 +224,11 @@ async def get_tenant(
     查询租户详情
 
     场景：查询租户详情
-    WHEN 管理员请求 GET /admin/v1/tenants/{id}
+    WHEN 管理员请求 GET /tenant/admin/v1/tenants/{id}
     THEN 返回租户详细信息
 
     场景：查询不存在的租户
-    WHEN 管理员请求 GET /admin/v1/tenants/nonexistent
+    WHEN 管理员请求 GET /tenant/admin/v1/tenants/nonexistent
     THEN 返回 HTTP 404 错误
     """
     tenant = await TenantService.get_by_id(tenant_id, use_cache=False)
@@ -250,7 +250,7 @@ async def update_tenant(
     更新租户
 
     场景：更新租户
-    WHEN 管理员请求 PUT /admin/v1/tenants/{id} 并提供更新数据
+    WHEN 管理员请求 PUT /tenant/admin/v1/tenants/{id} 并提供更新数据
     THEN 更新租户信息并返回更新后的数据
     """
     tenant = await TenantService.update(
@@ -278,7 +278,7 @@ async def delete_tenant(
     删除租户
 
     场景：删除租户
-    WHEN 管理员请求 DELETE /admin/v1/tenants/{id}
+    WHEN 管理员请求 DELETE /tenant/admin/v1/tenants/{id}
     THEN 删除租户（软删除）
 
     场景：删除有用户的租户
@@ -309,7 +309,7 @@ async def activate_tenant(
     激活租户
 
     场景：激活租户
-    WHEN 管理员请求 POST /admin/v1/tenants/{id}/activate
+    WHEN 管理员请求 POST /tenant/admin/v1/tenants/{id}/activate
     THEN 租户状态变为 `active`
     """
     tenant = await TenantService.activate(tenant_id)
@@ -328,7 +328,7 @@ async def deactivate_tenant(
     停用租户
 
     场景：停用租户
-    WHEN 管理员请求 POST /admin/v1/tenants/{id}/deactivate
+    WHEN 管理员请求 POST /tenant/admin/v1/tenants/{id}/deactivate
     THEN 租户状态变为 `inactive`
     """
     tenant = await TenantService.deactivate(tenant_id)
@@ -347,7 +347,7 @@ async def get_tenant_stats(
     查询租户统计
 
     场景：查询租户统计
-    WHEN 管理员请求 GET /admin/v1/tenants/{id}/stats
+    WHEN 管理员请求 GET /tenant/admin/v1/tenants/{id}/stats
     THEN 返回租户统计信息（用户数、存储用量等）
     """
     tenant = await TenantService.get_by_id(tenant_id, use_cache=False)
@@ -361,7 +361,7 @@ async def get_tenant_stats(
     user_ids = await iam_client.get_tenant_user_ids(tenant_id)
     user_count = len(user_ids)
 
-    stats = TenantStatsVo(
+    stats = TenantStatsResponse(
         tenant_id=tenant_id,
         user_count=user_count,
         storage_usage=0,  # TODO: 实现存储用量统计
@@ -383,7 +383,7 @@ async def get_tenant_resources(
     获取租户资源绑定
 
     场景：查询资源绑定
-    WHEN 管理员请求 GET /admin/v1/tenants/{id}/resources
+    WHEN 管理员请求 GET /tenant/admin/v1/tenants/{id}/resources
     THEN 返回租户当前的资源绑定情况
     """
     tenant = await TenantService.get_resource_bindings(tenant_id)
@@ -428,7 +428,7 @@ async def update_tenant_resources(
     更新租户资源绑定
 
     场景：资源绑定
-    WHEN 管理员请求 PUT /admin/v1/tenants/{id}/resources 并提供配置 ID
+    WHEN 管理员请求 PUT /tenant/admin/v1/tenants/{id}/resources 并提供配置 ID
     THEN 更新租户的资源绑定
 
     场景：解绑资源

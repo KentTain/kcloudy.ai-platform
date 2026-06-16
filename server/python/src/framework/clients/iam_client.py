@@ -73,7 +73,7 @@ class IamClient:
                 base_url=inner_url,
                 timeout=inner_timeout,
                 service_name="iam",
-                health_path="/inner/v1/iam/health",
+                health_path="/iam/inner/v1/health",
             )
 
     async def get_user(self, user_id: str) -> UserInfo | None:
@@ -89,7 +89,7 @@ class IamClient:
         if self._http_client:
             # 微服务模式
             data = await self._http_client.get(
-                f"/inner/v1/users/{user_id}",
+                f"/iam/inner/v1/users/{user_id}",
                 response_model=UserInfo,
             )
             return data
@@ -142,7 +142,7 @@ class IamClient:
         if self._http_client:
             # 微服务模式
             data = await self._http_client.post(
-                "/inner/v1/users/batch",
+                "/iam/inner/v1/users/batch",
                 json={"user_ids": user_ids},
             )
             if data and isinstance(data, list):
@@ -194,7 +194,7 @@ class IamClient:
         if self._http_client:
             # 微服务模式
             data = await self._http_client.get(
-                f"/inner/v1/users/{user_id}/departments",
+                f"/iam/inner/v1/users/{user_id}/departments",
             )
             if data and isinstance(data, dict) and "departments" in data:
                 return [DepartmentInfo.model_validate(d) for d in data["departments"]]
@@ -240,7 +240,7 @@ class IamClient:
         if self._http_client:
             # 微服务模式
             data = await self._http_client.get(
-                f"/inner/v1/users/{user_id}/tenants",
+                f"/iam/inner/v1/users/{user_id}/tenants",
             )
             if data and isinstance(data, dict) and "tenants" in data:
                 return [UserTenantInfo.model_validate(t) for t in data["tenants"]]
@@ -278,7 +278,7 @@ class IamClient:
         if self._http_client:
             # 微服务模式
             data = await self._http_client.get(
-                f"/inner/v1/tenants/{tenant_id}/users",
+                f"/iam/inner/v1/tenants/{tenant_id}/users",
             )
             if data and isinstance(data, dict) and "user_ids" in data:
                 return data["user_ids"]
@@ -315,7 +315,7 @@ class IamClient:
         if self._http_client:
             # 微服务模式
             data = await self._http_client.post(
-                f"/inner/v1/tenants/{tenant_id}/module-roles/usage",
+                f"/iam/inner/v1/tenants/{tenant_id}/module-roles/usage",
                 json={"module_role_ids": module_role_ids},
             )
             if data and isinstance(data, dict) and "roles" in data:
