@@ -8,8 +8,8 @@ from fastapi import APIRouter, HTTPException
 from fastapi.responses import ORJSONResponse
 
 from iam.schemas.department import (
-    DepartmentCreateRequest,
-    DepartmentUpdateRequest,
+    DepartmentCreate,
+    DepartmentUpdate,
     UserDepartmentRequest,
 )
 from iam.services import department_service
@@ -58,7 +58,7 @@ async def get_department_tree() -> ORJSONResponse:
 
 
 @router.post("/departments")
-async def create_department(data: DepartmentCreateRequest) -> ORJSONResponse:
+async def create_department(data: DepartmentCreate) -> ORJSONResponse:
     """创建部门"""
     tenant_id = get_tenant_id()
     dept = await department_service.create(
@@ -83,7 +83,7 @@ async def create_department(data: DepartmentCreateRequest) -> ORJSONResponse:
 
 
 @router.put("/departments/{department_id}")
-async def update_department(department_id: str, data: DepartmentUpdateRequest) -> ORJSONResponse:
+async def update_department(department_id: str, data: DepartmentUpdate) -> ORJSONResponse:
     """更新部门"""
     try:
         dept = await department_service.update(

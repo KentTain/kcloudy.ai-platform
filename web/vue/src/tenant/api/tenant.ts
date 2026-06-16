@@ -1,20 +1,20 @@
 import { rawDel, rawGet, rawPost, rawPut } from "@/framework/api/client";
 import type {
   ApiResponse,
-  CreateTenantParams,
+  TenantCreate,
   PageResult,
-  SwitchTenantVo,
+  SwitchTenantResponse,
   Tenant,
-  TenantQueryParams,
-  TenantStatsVo,
-  UpdateTenantParams,
-  UserTenantVo,
+  TenantQuery,
+  TenantStatsResponse,
+  TenantUpdate,
+  UserTenantResponse,
 } from "../types";
 
 /**
  * 获取租户列表（管理员）
  */
-export const getTenants = (params?: TenantQueryParams) =>
+export const getTenants = (params?: TenantQuery) =>
   rawGet<ApiResponse<PageResult<Tenant>>>("/tenant/admin/v1/tenants", { params });
 
 /**
@@ -25,13 +25,13 @@ export const getTenant = (id: string) => rawGet<ApiResponse<Tenant>>(`/tenant/ad
 /**
  * 创建租户（管理员）
  */
-export const createTenant = (data: CreateTenantParams) =>
+export const createTenant = (data: TenantCreate) =>
   rawPost<ApiResponse<Tenant>>("/tenant/admin/v1/tenants", data);
 
 /**
  * 更新租户（管理员）
  */
-export const updateTenant = (id: string, data: UpdateTenantParams) =>
+export const updateTenant = (id: string, data: TenantUpdate) =>
   rawPut<ApiResponse<Tenant>>(`/tenant/admin/v1/tenants/${id}`, data);
 
 /**
@@ -55,7 +55,7 @@ export const deactivateTenant = (id: string) =>
  * 获取租户统计
  */
 export const getTenantStats = (id: string) =>
-  rawGet<ApiResponse<TenantStatsVo>>(`/tenant/admin/v1/tenants/${id}/stats`);
+  rawGet<ApiResponse<TenantStatsResponse>>(`/tenant/admin/v1/tenants/${id}/stats`);
 
 /**
  * 获取当前租户（控制台）
@@ -65,10 +65,10 @@ export const getCurrentTenant = () => rawGet<ApiResponse<Tenant>>("/tenant/conso
 /**
  * 获取用户可切换的租户列表
  */
-export const getMyTenants = () => rawGet<ApiResponse<UserTenantVo[]>>("/tenant/console/v1/tenants");
+export const getMyTenants = () => rawGet<ApiResponse<UserTenantResponse[]>>("/tenant/console/v1/tenants");
 
 /**
  * 切换当前租户
  */
 export const switchTenant = (tenant_id: string) =>
-  rawPost<ApiResponse<SwitchTenantVo>>(`/tenant/console/v1/tenants/${tenant_id}/switch`);
+  rawPost<ApiResponse<SwitchTenantResponse>>(`/tenant/console/v1/tenants/${tenant_id}/switch`);

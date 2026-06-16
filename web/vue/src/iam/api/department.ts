@@ -1,12 +1,12 @@
 import { del, get, post, put } from "@/framework/api/client";
 import type { ApiResponse, Department, DepartmentUser } from "../types";
 
-export interface DepartmentQueryParams {
+export interface DepartmentQuery {
   keyword?: string;
   status?: string;
 }
 
-export interface CreateDepartmentParams {
+export interface DepartmentCreate {
   name: string;
   code?: string;
   parent_id?: string;
@@ -14,7 +14,7 @@ export interface CreateDepartmentParams {
   leader_id?: string;
 }
 
-export interface UpdateDepartmentParams {
+export interface DepartmentUpdate {
   name?: string;
   code?: string;
   sort_order?: number;
@@ -25,7 +25,7 @@ export interface UpdateDepartmentParams {
 /**
  * 获取部门列表
  */
-export const getDepartments = (params?: DepartmentQueryParams) =>
+export const getDepartments = (params?: DepartmentQuery) =>
   get<ApiResponse<Department[]>>("/iam/admin/v1/departments", { params });
 
 /**
@@ -43,13 +43,13 @@ export const getDepartment = (id: string) =>
 /**
  * 创建部门
  */
-export const createDepartment = (data: CreateDepartmentParams) =>
+export const createDepartment = (data: DepartmentCreate) =>
   post<ApiResponse<Department>>("/iam/admin/v1/departments", data);
 
 /**
  * 更新部门
  */
-export const updateDepartment = (id: string, data: UpdateDepartmentParams) =>
+export const updateDepartment = (id: string, data: DepartmentUpdate) =>
   put<ApiResponse<Department>>(`/iam/admin/v1/departments/${id}`, data);
 
 /**

@@ -10,7 +10,7 @@ from pydantic import BaseModel, Field
 
 # ============== 请求 Schema ==============
 
-class TenantCreateRequest(BaseModel):
+class TenantCreate(BaseModel):
     """创建租户请求"""
     name: str = Field(..., min_length=1, max_length=100, description="租户名称")
     code: str = Field(..., min_length=1, max_length=50, description="租户编码")
@@ -27,7 +27,7 @@ class TenantCreateRequest(BaseModel):
     pubsub_config_id: str | None = Field(None, description="发布订阅配置ID")
 
 
-class TenantUpdateRequest(BaseModel):
+class TenantUpdate(BaseModel):
     """更新租户请求"""
     name: str | None = Field(None, min_length=1, max_length=100, description="租户名称")
     contact_name: str | None = Field(None, max_length=100, description="联系人姓名")
@@ -43,7 +43,7 @@ class AdminLoginRequest(BaseModel):
     password: str = Field(..., min_length=1, max_length=100, description="密码")
 
 
-class ResourceValidateVo(BaseModel):
+class ResourceValidateResponse(BaseModel):
     """资源验证响应"""
     valid: bool = Field(..., description="是否有效")
     message: str = Field(..., description="验证消息")
@@ -51,14 +51,14 @@ class ResourceValidateVo(BaseModel):
 
 # ============== 响应 Schema ==============
 
-class ResourceConfigReferenceVo(BaseModel):
+class ResourceConfigReferenceResponse(BaseModel):
     """资源配置引用响应"""
 
     id: str = Field(..., description="配置ID")
     name: str = Field(..., description="配置名称")
 
 
-class TenantVo(BaseModel):
+class TenantResponse(BaseModel):
     """租户响应"""
     id: str = Field(..., description="租户ID")
     name: str = Field(..., description="租户名称")
@@ -70,25 +70,25 @@ class TenantVo(BaseModel):
     expired_at: datetime | None = Field(None, description="过期时间")
     settings: dict[str, Any] = Field(default_factory=dict, description="扩展设置")
     # 资源配置关联
-    db_config: ResourceConfigReferenceVo | None = Field(None, description="数据库配置")
-    storage_config: ResourceConfigReferenceVo | None = Field(None, description="存储配置")
-    cache_config: ResourceConfigReferenceVo | None = Field(None, description="缓存配置")
-    queue_config: ResourceConfigReferenceVo | None = Field(None, description="队列配置")
-    pubsub_config: ResourceConfigReferenceVo | None = Field(None, description="发布订阅配置")
+    db_config: ResourceConfigReferenceResponse | None = Field(None, description="数据库配置")
+    storage_config: ResourceConfigReferenceResponse | None = Field(None, description="存储配置")
+    cache_config: ResourceConfigReferenceResponse | None = Field(None, description="缓存配置")
+    queue_config: ResourceConfigReferenceResponse | None = Field(None, description="队列配置")
+    pubsub_config: ResourceConfigReferenceResponse | None = Field(None, description="发布订阅配置")
     # 时间
     created_at: datetime = Field(..., description="创建时间")
     updated_at: datetime = Field(..., description="更新时间")
 
 
-class TenantListVo(BaseModel):
+class TenantListResponse(BaseModel):
     """租户列表响应"""
-    items: list[TenantVo] = Field(default_factory=list, description="租户列表")
+    items: list[TenantResponse] = Field(default_factory=list, description="租户列表")
     total: int = Field(..., description="总数")
     page: int = Field(..., description="页码")
     page_size: int = Field(..., description="每页数量")
 
 
-class TenantStatsVo(BaseModel):
+class TenantStatsResponse(BaseModel):
     """租户统计响应"""
     tenant_id: str = Field(..., description="租户ID")
     user_count: int = Field(0, description="用户数")
@@ -96,14 +96,14 @@ class TenantStatsVo(BaseModel):
     active_users: int = Field(0, description="活跃用户数")
 
 
-class AdminLoginVo(BaseModel):
+class AdminLoginResponse(BaseModel):
     """管理员登录响应"""
     token: str = Field(..., description="访问令牌")
     username: str = Field(..., description="用户名")
     is_default: bool = Field(..., description="是否默认管理员")
 
 
-class AdminInfoVo(BaseModel):
+class AdminInfoResponse(BaseModel):
     """管理员信息响应"""
     id: str = Field(..., description="管理员ID")
     username: str = Field(..., description="用户名")
@@ -129,8 +129,8 @@ class ResourceBindingResponse(BaseModel):
     """资源绑定响应"""
 
     tenant_id: str = Field(..., description="租户ID")
-    db_config: ResourceConfigReferenceVo | None = Field(None, description="数据库配置")
-    storage_config: ResourceConfigReferenceVo | None = Field(None, description="存储配置")
-    cache_config: ResourceConfigReferenceVo | None = Field(None, description="缓存配置")
-    queue_config: ResourceConfigReferenceVo | None = Field(None, description="队列配置")
-    pubsub_config: ResourceConfigReferenceVo | None = Field(None, description="发布订阅配置")
+    db_config: ResourceConfigReferenceResponse | None = Field(None, description="数据库配置")
+    storage_config: ResourceConfigReferenceResponse | None = Field(None, description="存储配置")
+    cache_config: ResourceConfigReferenceResponse | None = Field(None, description="缓存配置")
+    queue_config: ResourceConfigReferenceResponse | None = Field(None, description="队列配置")
+    pubsub_config: ResourceConfigReferenceResponse | None = Field(None, description="发布订阅配置")

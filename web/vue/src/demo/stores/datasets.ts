@@ -1,7 +1,7 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
 import { createDataset, deleteDataset, getDatasets, updateDataset } from "@/demo/api/datasets";
-import type { CreateDatasetParams, Dataset, UpdateDatasetParams } from "@/demo/api/datasets";
+import type { DatasetCreate, Dataset, DatasetUpdate } from "@/demo/api/datasets";
 
 /**
  * 知识库状态管理
@@ -24,13 +24,13 @@ export const useDatasetStore = defineStore("dataset", () => {
     }
   };
 
-  const addDataset = async (params: CreateDatasetParams) => {
+  const addDataset = async (params: DatasetCreate) => {
     const dataset = await createDataset(params);
     datasets.value.push(dataset);
     return dataset;
   };
 
-  const editDataset = async (id: string, params: UpdateDatasetParams) => {
+  const editDataset = async (id: string, params: DatasetUpdate) => {
     const dataset = await updateDataset(id, params);
     const index = datasets.value.findIndex((d) => d.id === id);
     if (index !== -1) {

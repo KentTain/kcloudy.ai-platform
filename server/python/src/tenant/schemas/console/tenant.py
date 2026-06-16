@@ -7,7 +7,7 @@ from datetime import datetime
 from pydantic import BaseModel, Field
 
 
-class UserTenantVo(BaseModel):
+class UserTenantResponse(BaseModel):
     """用户租户响应"""
     id: str = Field(..., description="租户ID")
     name: str = Field(..., description="租户名称")
@@ -17,7 +17,7 @@ class UserTenantVo(BaseModel):
     is_default: bool = Field(..., description="是否默认租户")
 
 
-class CurrentTenantVo(BaseModel):
+class CurrentTenantResponse(BaseModel):
     """当前租户响应"""
     id: str = Field(..., description="租户ID")
     name: str = Field(..., description="租户名称")
@@ -25,7 +25,7 @@ class CurrentTenantVo(BaseModel):
     status: str = Field(..., description="状态")
 
 
-class SwitchTenantVo(BaseModel):
+class SwitchTenantResponse(BaseModel):
     """切换租户响应"""
     tenant_id: str = Field(..., description="租户ID")
     tenant_name: str = Field(..., description="租户名称")

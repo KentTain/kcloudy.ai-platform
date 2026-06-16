@@ -25,10 +25,10 @@ class TestUserTenantAPI:
 
     def test_schema_validation(self):
         """测试 Schema 验证"""
-        from tenant.schemas.console.tenant import UserTenantVo, CurrentTenantVo, SwitchTenantVo
+        from tenant.schemas.console.tenant import UserTenantResponse, CurrentTenantVo, SwitchTenantVo
 
         # 用户租户 VO
-        vo = UserTenantVo(
+        vo = UserTenantResponse(
             id="t001",
             name="测试租户",
             code="test",

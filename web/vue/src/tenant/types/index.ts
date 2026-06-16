@@ -21,9 +21,9 @@ export type {
   QueueConfig,
   PubsubConfig,
   ConnectionTestResult,
-  ResourceConfigQueryParams,
-  CreateResourceConfigParams,
-  UpdateResourceConfigParams,
+  ResourceQuery,
+  ResourceCreate,
+  ResourceUpdate,
 } from "./resource";
 
 // 导出模块管理类型
@@ -35,15 +35,15 @@ export type {
   ModuleRole,
   TenantModule,
   TenantResource,
-  ModuleQueryParams,
-  CreateModuleParams,
-  UpdateModuleParams,
-  CreateMenuParams,
-  UpdateMenuParams,
-  CreatePermissionParams,
-  UpdatePermissionParams,
-  CreateRoleParams,
-  UpdateRoleParams,
+  ModuleQuery,
+  ModuleCreate,
+  ModuleUpdate,
+  MenuCreate,
+  MenuUpdate,
+  PermissionCreate,
+  PermissionUpdate,
+  RoleCreate,
+  RoleUpdate,
   AssignModuleParams,
 } from "./admin";
 
@@ -63,7 +63,7 @@ export interface Tenant {
 }
 
 // 租户统计
-export interface TenantStatsVo {
+export interface TenantStatsResponse {
   tenant_id: string;
   user_count: number;
   storage_usage: number;
@@ -71,7 +71,7 @@ export interface TenantStatsVo {
 }
 
 // 用户租户信息
-export interface UserTenantVo {
+export interface UserTenantResponse {
   tenant_id: string;
   tenant_name: string;
   tenant_code: string;
@@ -83,7 +83,7 @@ export interface UserTenantVo {
 }
 
 // 切换租户响应
-export interface SwitchTenantVo {
+export interface SwitchTenantResponse {
   tenant_id: string;
   tenant_name: string;
   access_token: string;
@@ -92,7 +92,7 @@ export interface SwitchTenantVo {
 }
 
 // 租户查询参数
-export interface TenantQueryParams {
+export interface TenantQuery {
   page?: number;
   page_size?: number;
   keyword?: string;
@@ -100,7 +100,7 @@ export interface TenantQueryParams {
 }
 
 // 创建租户参数
-export interface CreateTenantParams {
+export interface TenantCreate {
   name: string;
   code: string;
   contact_name?: string;
@@ -111,7 +111,7 @@ export interface CreateTenantParams {
 }
 
 // 更新租户参数
-export interface UpdateTenantParams {
+export interface TenantUpdate {
   name?: string;
   contact_name?: string;
   contact_email?: string;

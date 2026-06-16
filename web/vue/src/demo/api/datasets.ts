@@ -9,12 +9,12 @@ export interface Dataset {
   updatedAt: string;
 }
 
-export interface CreateDatasetParams {
+export interface DatasetCreate {
   name: string;
   description?: string;
 }
 
-export interface UpdateDatasetParams {
+export interface DatasetUpdate {
   name?: string;
   description?: string;
 }
@@ -34,13 +34,13 @@ export const getDataset = (id: string): Promise<Dataset> =>
 /**
  * 创建知识库
  */
-export const createDataset = (params: CreateDatasetParams): Promise<Dataset> =>
+export const createDataset = (params: DatasetCreate): Promise<Dataset> =>
   post<ApiResponse<Dataset>>("/v1/datasets", params).then((res) => res.data);
 
 /**
  * 更新知识库
  */
-export const updateDataset = (id: string, params: UpdateDatasetParams): Promise<Dataset> =>
+export const updateDataset = (id: string, params: DatasetUpdate): Promise<Dataset> =>
   put<ApiResponse<Dataset>>(`/v1/datasets/${id}`, params).then((res) => res.data);
 
 /**

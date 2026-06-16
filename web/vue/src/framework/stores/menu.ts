@@ -1,7 +1,7 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
 import { get } from "@/framework/api/client";
-import type { UserMenuVo } from "@/framework/api/menu";
+import type { UserMenuTreeResponse } from "@/framework/api/menu";
 
 /**
  * 菜单树节点
@@ -94,9 +94,9 @@ export const useMenuStore = defineStore("menu", () => {
   }
 
   /**
-   * 将 UserMenuVo 转换为 UserMenuItem
+   * 将 UserMenuTreeResponse 转换为 UserMenuItem
    */
-  function convertToUserMenuItem(vo: UserMenuVo): UserMenuItem {
+  function convertToUserMenuItem(vo: UserMenuTreeResponse): UserMenuItem {
     return {
       id: vo.id,
       code: vo.code,

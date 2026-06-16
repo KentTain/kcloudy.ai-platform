@@ -9,7 +9,7 @@ from pydantic import BaseModel, Field
 from framework.schemas.tree import TreeNodeVo, TreeNodeTreeVo
 
 
-class DepartmentCreateRequest(BaseModel):
+class DepartmentCreate(BaseModel):
     """部门创建请求"""
 
     name: str = Field(..., min_length=1, max_length=100, description="部门名称")
@@ -19,7 +19,7 @@ class DepartmentCreateRequest(BaseModel):
     leader_id: str | None = Field(None, description="部门负责人 ID")
 
 
-class DepartmentUpdateRequest(BaseModel):
+class DepartmentUpdate(BaseModel):
     """部门更新请求"""
 
     name: str | None = Field(None, max_length=100, description="部门名称")
@@ -30,7 +30,7 @@ class DepartmentUpdateRequest(BaseModel):
     status: str | None = Field(None, description="状态")
 
 
-class DepartmentVo(TreeNodeVo):
+class DepartmentResponse(TreeNodeVo):
     """部门视图对象"""
 
     tenant_id: str
@@ -42,7 +42,7 @@ class DepartmentVo(TreeNodeVo):
     created_at: datetime
 
 
-class DepartmentTreeVo(TreeNodeTreeVo):
+class DepartmentTreeResponse(TreeNodeTreeVo):
     """部门树形视图对象"""
 
     tenant_id: str
@@ -60,7 +60,7 @@ class UserDepartmentRequest(BaseModel):
     is_leader: bool = Field(default=False, description="是否部门负责人")
 
 
-class DepartmentUserVo(BaseModel):
+class DepartmentUserResponse(BaseModel):
     """部门用户视图对象"""
 
     id: str

@@ -11,8 +11,8 @@ from tenant.middlewares.admin_auth_middleware import get_current_admin
 from tenant.models import Module, TenantModule
 from tenant.schemas.admin.tenant_module import (
     AssignModuleRequest,
-    TenantModuleListVo,
-    TenantModuleVo,
+    TenantModuleListResponse,
+    TenantModuleResponse,
 )
 from tenant.services.tenant_module_service import TenantModuleService
 
@@ -24,7 +24,7 @@ def Success(data=None, msg: str = "success") -> dict:
     return {"code": 200, "msg": msg, "data": data}
 
 
-async def build_tenant_module_vo(tenant_module: TenantModule) -> TenantModuleVo:
+async def build_tenant_module_vo(tenant_module: TenantModule) -> TenantModuleResponse:
     """构建租户模块响应对象"""
     async with async_session() as session:
         stmt = select(Module).where(Module.id == tenant_module.module_id)
@@ -34,7 +34,7 @@ async def build_tenant_module_vo(tenant_module: TenantModule) -> TenantModuleVo:
         if not module:
             raise ValueError(f"模块不存在: {tenant_module.module_id}")
 
-        return TenantModuleVo(
+        return TenantModuleResponse(
             id=tenant_module.id,
             tenant_id=tenant_module.tenant_id,
             module_id=tenant_module.module_id,
@@ -78,7 +78,7 @@ async def list_tenant_modules(
         content={
             "code": 200,
             "msg": "success",
-            "data": TenantModuleListVo(
+            "data": TenantModuleListResponse(
                 items=items,
                 total=total,
             ).model_dump(),

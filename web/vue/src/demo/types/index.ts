@@ -3,5 +3,5 @@
  */
 
 // 重新导出 API 类型
-export type { Dataset, CreateDatasetParams, UpdateDatasetParams } from "../api/datasets";
+export type { Dataset, DatasetCreate, DatasetUpdate } from "../api/datasets";
 export type { HealthStatus } from "../api/health";

@@ -9,23 +9,23 @@ from fastapi.responses import ORJSONResponse
 
 from tenant.middlewares.admin_auth_middleware import get_current_admin
 from tenant.schemas.admin.module import (
-    ModuleCreateRequest,
-    ModuleListVo,
-    ModuleMenuCreateRequest,
-    ModuleMenuListVo,
-    ModuleMenuUpdateRequest,
-    ModuleMenuVo,
-    ModulePermissionCreateRequest,
-    ModulePermissionListVo,
-    ModulePermissionUpdateRequest,
-    ModulePermissionVo,
-    ModuleRoleCreateRequest,
-    ModuleRoleListVo,
+    ModuleCreate,
+    ModuleListResponse,
+    ModuleMenuCreate,
+    ModuleMenuListResponse,
+    ModuleMenuUpdate,
+    ModuleMenuTreeResponse,
+    ModulePermissionCreate,
+    ModulePermissionListResponse,
+    ModulePermissionUpdate,
+    ModulePermissionResponse,
+    ModuleRoleCreate,
+    ModuleRoleListResponse,
     ModuleRolePermissionUpdateRequest,
-    ModuleRoleUpdateRequest,
-    ModuleRoleVo,
-    ModuleUpdateRequest,
-    ModuleVo,
+    ModuleRoleUpdate,
+    ModuleRoleResponse,
+    ModuleUpdate,
+    ModuleResponse,
 )
 from tenant.services import (
     ModuleMenuService,
@@ -42,9 +42,9 @@ def Success(data=None, msg: str = "success") -> dict:
     return {"code": 200, "msg": msg, "data": data}
 
 
-def build_module_vo(module) -> ModuleVo:
+def build_module_vo(module) -> ModuleResponse:
     """构建模块响应对象"""
-    return ModuleVo(
+    return ModuleResponse(
         id=module.id,
         code=module.code,
         name=module.name,
@@ -58,9 +58,9 @@ def build_module_vo(module) -> ModuleVo:
     )
 
 
-def build_menu_vo(menu, children: list = None) -> ModuleMenuVo:
+def build_menu_vo(menu, children: list = None) -> ModuleMenuTreeResponse:
     """构建菜单响应对象"""
-    return ModuleMenuVo(
+    return ModuleMenuTreeResponse(
         id=menu.id,
         module_id=menu.module_id,
         parent_id=menu.parent_id,
@@ -76,9 +76,9 @@ def build_menu_vo(menu, children: list = None) -> ModuleMenuVo:
     )
 
 
-def build_permission_vo(perm) -> ModulePermissionVo:
+def build_permission_vo(perm) -> ModulePermissionResponse:
     """构建权限响应对象"""
-    return ModulePermissionVo(
+    return ModulePermissionResponse(
         id=perm.id,
         module_id=perm.module_id,
         code=perm.code,
@@ -91,9 +91,9 @@ def build_permission_vo(perm) -> ModulePermissionVo:
     )
 
 
-def build_role_vo(role, permissions: list = None) -> ModuleRoleVo:
+def build_role_vo(role, permissions: list = None) -> ModuleRoleResponse:
     """构建角色响应对象"""
-    return ModuleRoleVo(
+    return ModuleRoleResponse(
         id=role.id,
         module_id=role.module_id,
         code=role.code,
@@ -143,7 +143,7 @@ async def list_modules(
         content={
             "code": 200,
             "msg": "success",
-            "data": ModuleListVo(
+            "data": ModuleListResponse(
                 items=[build_module_vo(m) for m in modules],
                 total=total,
             ).model_dump(),
@@ -153,7 +153,7 @@ async def list_modules(
 
 @router.post("/modules")
 async def create_module(
-    data: ModuleCreateRequest,
+    data: ModuleCreate,
     admin: dict = Depends(get_current_admin),
 ) -> ORJSONResponse:
     """
@@ -211,7 +211,7 @@ async def get_module(
 @router.put("/modules/{module_id}")
 async def update_module(
     module_id: str,
-    data: ModuleUpdateRequest,
+    data: ModuleUpdate,
     admin: dict = Depends(get_current_admin),
 ) -> ORJSONResponse:
     """
@@ -289,14 +289,14 @@ async def list_module_menus(
     tree = ModuleMenuService.build_tree(menus)
 
     return ORJSONResponse(
-        content=Success(ModuleMenuListVo(items=tree).model_dump())
+        content=Success(ModuleMenuListResponse(items=tree).model_dump())
     )
 
 
 @router.post("/modules/{module_id}/menus")
 async def create_module_menu(
     module_id: str,
-    data: ModuleMenuCreateRequest,
+    data: ModuleMenuCreate,
     admin: dict = Depends(get_current_admin),
 ) -> ORJSONResponse:
     """
@@ -346,7 +346,7 @@ async def create_module_menu(
 async def update_module_menu(
     module_id: str,
     menu_id: str,
-    data: ModuleMenuUpdateRequest,
+    data: ModuleMenuUpdate,
     admin: dict = Depends(get_current_admin),
 ) -> ORJSONResponse:
     """
@@ -451,7 +451,7 @@ async def list_module_permissions(
         content={
             "code": 200,
             "msg": "success",
-            "data": ModulePermissionListVo(
+            "data": ModulePermissionListResponse(
                 items=[build_permission_vo(p) for p in permissions],
                 total=total,
             ).model_dump(),
@@ -462,7 +462,7 @@ async def list_module_permissions(
 @router.post("/modules/{module_id}/permissions")
 async def create_module_permission(
     module_id: str,
-    data: ModulePermissionCreateRequest,
+    data: ModulePermissionCreate,
     admin: dict = Depends(get_current_admin),
 ) -> ORJSONResponse:
     """
@@ -506,7 +506,7 @@ async def create_module_permission(
 async def update_module_permission(
     module_id: str,
     permission_id: str,
-    data: ModulePermissionUpdateRequest,
+    data: ModulePermissionUpdate,
     admin: dict = Depends(get_current_admin),
 ) -> ORJSONResponse:
     """
@@ -605,7 +605,7 @@ async def list_module_roles(
         content={
             "code": 200,
             "msg": "success",
-            "data": ModuleRoleListVo(
+            "data": ModuleRoleListResponse(
                 items=role_vos,
                 total=total,
             ).model_dump(),
@@ -616,7 +616,7 @@ async def list_module_roles(
 @router.post("/modules/{module_id}/roles")
 async def create_module_role(
     module_id: str,
-    data: ModuleRoleCreateRequest,
+    data: ModuleRoleCreate,
     admin: dict = Depends(get_current_admin),
 ) -> ORJSONResponse:
     """
@@ -655,7 +655,7 @@ async def create_module_role(
 async def update_module_role(
     module_id: str,
     role_id: str,
-    data: ModuleRoleUpdateRequest,
+    data: ModuleRoleUpdate,
     admin: dict = Depends(get_current_admin),
 ) -> ORJSONResponse:
     """

@@ -5,7 +5,7 @@ import { toTypedSchema } from '@vee-validate/zod'
 import { useForm } from 'vee-validate'
 import * as z from 'zod'
 import { useUserStore } from '@/iam/stores/user'
-import type { CreateUserParams, UpdateUserParams } from '@/iam/types'
+import type { UserCreate, UserUpdate } from '@/iam/types'
 import AppPage from '@/framework/layouts/components/AppPage.vue'
 import { Button, Input } from '@/components'
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components'
@@ -41,10 +41,10 @@ const onSubmit = handleSubmit(async (values) => {
   loading.value = true
   try {
     if (isEdit.value) {
-      const submitData: UpdateUserParams = values
+      const submitData: UserUpdate = values
       await userStore.editUser(userId.value, submitData)
     } else {
-      const submitData: CreateUserParams = values as CreateUserParams
+      const submitData: UserCreate = values as UserCreate
       await userStore.addUser(submitData)
     }
     router.back()

@@ -7,7 +7,7 @@
 from pydantic import BaseModel, Field
 
 
-class UserMenuVo(BaseModel):
+class UserMenuTreeResponse(BaseModel):
     """
     用户菜单视图对象
 
@@ -20,7 +20,7 @@ class UserMenuVo(BaseModel):
     icon: str | None = Field(None, description="图标标识")
     path: str | None = Field(None, description="前端路由路径")
     sort_order: int = Field(0, description="排序号")
-    children: list["UserMenuVo"] = Field(default_factory=list, description="子菜单列表")
+    children: list["UserMenuTreeResponse"] = Field(default_factory=list, description="子菜单列表")
 
 
 class UserMenuListResponse(BaseModel):
@@ -30,4 +30,4 @@ class UserMenuListResponse(BaseModel):
     返回当前用户有权限的菜单树。
     """
 
-    data: list[UserMenuVo] = Field(default_factory=list, description="菜单树列表")
+    data: list[UserMenuTreeResponse] = Field(default_factory=list, description="菜单树列表")

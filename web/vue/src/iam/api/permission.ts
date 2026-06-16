@@ -1,7 +1,7 @@
 import { get } from "@/framework/api/client";
 import type { ApiResponse, PageResult, Permission, PermissionGroup } from "../types";
 
-export interface PermissionQueryParams {
+export interface PermissionQuery {
   page?: number;
   page_size?: number;
   resource?: string;
@@ -11,7 +11,7 @@ export interface PermissionQueryParams {
 /**
  * 获取权限列表
  */
-export const getPermissions = (params?: PermissionQueryParams) =>
+export const getPermissions = (params?: PermissionQuery) =>
   get<ApiResponse<PageResult<Permission>>>("/iam/admin/v1/permissions", { params });
 
 /**

@@ -82,20 +82,20 @@ export interface ConnectionTestResult {
 }
 
 // 资源配置查询参数
-export interface ResourceConfigQueryParams {
+export interface ResourceQuery {
   page?: number;
   page_size?: number;
   keyword?: string;
 }
 
 // 创建资源配置参数
-export interface CreateResourceConfigParams {
+export interface ResourceCreate {
   name: string;
   config: Record<string, any>;
 }
 
 // 更新资源配置参数
-export interface UpdateResourceConfigParams {
+export interface ResourceUpdate {
   name?: string;
   config?: Record<string, any>;
 }

@@ -10,33 +10,33 @@ from fastapi.responses import ORJSONResponse
 from tenant.middlewares.admin_auth_middleware import get_current_admin
 from tenant.schemas.admin.resource_config import (
     # 数据库
-    DatabaseConfigCreateRequest,
-    DatabaseConfigUpdateRequest,
-    DatabaseConfigResponse,
-    DatabaseConfigListResponse,
+    DatabaseConfigCreate,
+    DatabaseConfigUpdate,
+    DatabasePropertyResponse,
+    DatabasePropertyListResponse,
     # 存储
-    StorageConfigCreateRequest,
-    StorageConfigUpdateRequest,
-    StorageConfigResponse,
-    StorageConfigListResponse,
+    StorageConfigCreate,
+    StorageConfigUpdate,
+    StoragePropertyResponse,
+    StoragePropertyListResponse,
     # 缓存
-    CacheConfigCreateRequest,
-    CacheConfigUpdateRequest,
-    CacheConfigResponse,
-    CacheConfigListResponse,
+    CacheConfigCreate,
+    CacheConfigUpdate,
+    CachePropertyResponse,
+    CachePropertyListResponse,
     # 队列
-    QueueConfigCreateRequest,
-    QueueConfigUpdateRequest,
-    QueueConfigResponse,
-    QueueConfigListResponse,
+    QueueConfigCreate,
+    QueueConfigUpdate,
+    QueuePropertyResponse,
+    QueuePropertyListResponse,
     # 发布订阅
-    PubSubConfigCreateRequest,
-    PubSubConfigUpdateRequest,
-    PubSubConfigResponse,
-    PubSubConfigListResponse,
+    PubSubConfigCreate,
+    PubSubConfigUpdate,
+    PubSubPropertyResponse,
+    PubSubPropertyListResponse,
     # 通用
     ConnectionTestResult,
-    ResourceListQuery,
+    ResourceQuery,
 )
 from tenant.services.database_config_service import DatabaseConfigService
 from tenant.services.storage_config_service import StorageConfigService
@@ -74,9 +74,9 @@ async def list_database_configs(
     )
     return ORJSONResponse(
         content=Success(
-            DatabaseConfigListResponse(
+            DatabasePropertyListResponse(
                 items=[
-                    DatabaseConfigResponse(**DatabaseConfigService.build_response(item))
+                    DatabasePropertyResponse(**DatabaseConfigService.build_response(item))
                     for item in items
                 ],
                 total=total,
@@ -89,7 +89,7 @@ async def list_database_configs(
 
 @router.post(DB_PREFIX)
 async def create_database_config(
-    data: DatabaseConfigCreateRequest,
+    data: DatabaseConfigCreate,
     admin: dict = Depends(get_current_admin),
 ) -> ORJSONResponse:
     """
@@ -98,7 +98,7 @@ async def create_database_config(
     config = await DatabaseConfigService.create(**data.model_dump())
     return ORJSONResponse(
         content=Success(
-            DatabaseConfigResponse(
+            DatabasePropertyResponse(
                 **DatabaseConfigService.build_response(config)
             ).model_dump()
         )
@@ -118,7 +118,7 @@ async def get_database_config(
         raise HTTPException(status_code=404, detail="数据库配置不存在")
     return ORJSONResponse(
         content=Success(
-            DatabaseConfigResponse(
+            DatabasePropertyResponse(
                 **DatabaseConfigService.build_response(config)
             ).model_dump()
         )
@@ -128,7 +128,7 @@ async def get_database_config(
 @router.put(f"{DB_PREFIX}/{{config_id}}")
 async def update_database_config(
     config_id: str,
-    data: DatabaseConfigUpdateRequest,
+    data: DatabaseConfigUpdate,
     admin: dict = Depends(get_current_admin),
 ) -> ORJSONResponse:
     """
@@ -141,7 +141,7 @@ async def update_database_config(
         raise HTTPException(status_code=404, detail="数据库配置不存在")
     return ORJSONResponse(
         content=Success(
-            DatabaseConfigResponse(
+            DatabasePropertyResponse(
                 **DatabaseConfigService.build_response(config)
             ).model_dump()
         )
@@ -200,9 +200,9 @@ async def list_storage_configs(
     )
     return ORJSONResponse(
         content=Success(
-            StorageConfigListResponse(
+            StoragePropertyListResponse(
                 items=[
-                    StorageConfigResponse(**StorageConfigService.build_response(item))
+                    StoragePropertyResponse(**StorageConfigService.build_response(item))
                     for item in items
                 ],
                 total=total,
@@ -215,14 +215,14 @@ async def list_storage_configs(
 
 @router.post(STORAGE_PREFIX)
 async def create_storage_config(
-    data: StorageConfigCreateRequest,
+    data: StorageConfigCreate,
     admin: dict = Depends(get_current_admin),
 ) -> ORJSONResponse:
     """创建存储配置"""
     config = await StorageConfigService.create(**data.model_dump())
     return ORJSONResponse(
         content=Success(
-            StorageConfigResponse(
+            StoragePropertyResponse(
                 **StorageConfigService.build_response(config)
             ).model_dump()
         )
@@ -240,7 +240,7 @@ async def get_storage_config(
         raise HTTPException(status_code=404, detail="存储配置不存在")
     return ORJSONResponse(
         content=Success(
-            StorageConfigResponse(
+            StoragePropertyResponse(
                 **StorageConfigService.build_response(config)
             ).model_dump()
         )
@@ -250,7 +250,7 @@ async def get_storage_config(
 @router.put(f"{STORAGE_PREFIX}/{{config_id}}")
 async def update_storage_config(
     config_id: str,
-    data: StorageConfigUpdateRequest,
+    data: StorageConfigUpdate,
     admin: dict = Depends(get_current_admin),
 ) -> ORJSONResponse:
     """更新存储配置"""
@@ -260,7 +260,7 @@ async def update_storage_config(
         raise HTTPException(status_code=404, detail="存储配置不存在")
     return ORJSONResponse(
         content=Success(
-            StorageConfigResponse(
+            StoragePropertyResponse(
                 **StorageConfigService.build_response(config)
             ).model_dump()
         )
@@ -315,9 +315,9 @@ async def list_cache_configs(
     )
     return ORJSONResponse(
         content=Success(
-            CacheConfigListResponse(
+            CachePropertyListResponse(
                 items=[
-                    CacheConfigResponse(**CacheConfigService.build_response(item))
+                    CachePropertyResponse(**CacheConfigService.build_response(item))
                     for item in items
                 ],
                 total=total,
@@ -330,14 +330,14 @@ async def list_cache_configs(
 
 @router.post(CACHE_PREFIX)
 async def create_cache_config(
-    data: CacheConfigCreateRequest,
+    data: CacheConfigCreate,
     admin: dict = Depends(get_current_admin),
 ) -> ORJSONResponse:
     """创建缓存配置"""
     config = await CacheConfigService.create(**data.model_dump())
     return ORJSONResponse(
         content=Success(
-            CacheConfigResponse(**CacheConfigService.build_response(config)).model_dump()
+            CachePropertyResponse(**CacheConfigService.build_response(config)).model_dump()
         )
     )
 
@@ -353,7 +353,7 @@ async def get_cache_config(
         raise HTTPException(status_code=404, detail="缓存配置不存在")
     return ORJSONResponse(
         content=Success(
-            CacheConfigResponse(**CacheConfigService.build_response(config)).model_dump()
+            CachePropertyResponse(**CacheConfigService.build_response(config)).model_dump()
         )
     )
 
@@ -361,7 +361,7 @@ async def get_cache_config(
 @router.put(f"{CACHE_PREFIX}/{{config_id}}")
 async def update_cache_config(
     config_id: str,
-    data: CacheConfigUpdateRequest,
+    data: CacheConfigUpdate,
     admin: dict = Depends(get_current_admin),
 ) -> ORJSONResponse:
     """更新缓存配置"""
@@ -371,7 +371,7 @@ async def update_cache_config(
         raise HTTPException(status_code=404, detail="缓存配置不存在")
     return ORJSONResponse(
         content=Success(
-            CacheConfigResponse(**CacheConfigService.build_response(config)).model_dump()
+            CachePropertyResponse(**CacheConfigService.build_response(config)).model_dump()
         )
     )
 
@@ -424,9 +424,9 @@ async def list_queue_configs(
     )
     return ORJSONResponse(
         content=Success(
-            QueueConfigListResponse(
+            QueuePropertyListResponse(
                 items=[
-                    QueueConfigResponse(**QueueConfigService.build_response(item))
+                    QueuePropertyResponse(**QueueConfigService.build_response(item))
                     for item in items
                 ],
                 total=total,
@@ -439,14 +439,14 @@ async def list_queue_configs(
 
 @router.post(QUEUE_PREFIX)
 async def create_queue_config(
-    data: QueueConfigCreateRequest,
+    data: QueueConfigCreate,
     admin: dict = Depends(get_current_admin),
 ) -> ORJSONResponse:
     """创建队列配置"""
     config = await QueueConfigService.create(**data.model_dump())
     return ORJSONResponse(
         content=Success(
-            QueueConfigResponse(**QueueConfigService.build_response(config)).model_dump()
+            QueuePropertyResponse(**QueueConfigService.build_response(config)).model_dump()
         )
     )
 
@@ -462,7 +462,7 @@ async def get_queue_config(
         raise HTTPException(status_code=404, detail="队列配置不存在")
     return ORJSONResponse(
         content=Success(
-            QueueConfigResponse(**QueueConfigService.build_response(config)).model_dump()
+            QueuePropertyResponse(**QueueConfigService.build_response(config)).model_dump()
         )
     )
 
@@ -470,7 +470,7 @@ async def get_queue_config(
 @router.put(f"{QUEUE_PREFIX}/{{config_id}}")
 async def update_queue_config(
     config_id: str,
-    data: QueueConfigUpdateRequest,
+    data: QueueConfigUpdate,
     admin: dict = Depends(get_current_admin),
 ) -> ORJSONResponse:
     """更新队列配置"""
@@ -480,7 +480,7 @@ async def update_queue_config(
         raise HTTPException(status_code=404, detail="队列配置不存在")
     return ORJSONResponse(
         content=Success(
-            QueueConfigResponse(**QueueConfigService.build_response(config)).model_dump()
+            QueuePropertyResponse(**QueueConfigService.build_response(config)).model_dump()
         )
     )
 
@@ -533,9 +533,9 @@ async def list_pubsub_configs(
     )
     return ORJSONResponse(
         content=Success(
-            PubSubConfigListResponse(
+            PubSubPropertyListResponse(
                 items=[
-                    PubSubConfigResponse(**PubSubConfigService.build_response(item))
+                    PubSubPropertyResponse(**PubSubConfigService.build_response(item))
                     for item in items
                 ],
                 total=total,
@@ -548,14 +548,14 @@ async def list_pubsub_configs(
 
 @router.post(PUBSUB_PREFIX)
 async def create_pubsub_config(
-    data: PubSubConfigCreateRequest,
+    data: PubSubConfigCreate,
     admin: dict = Depends(get_current_admin),
 ) -> ORJSONResponse:
     """创建发布订阅配置"""
     config = await PubSubConfigService.create(**data.model_dump())
     return ORJSONResponse(
         content=Success(
-            PubSubConfigResponse(
+            PubSubPropertyResponse(
                 **PubSubConfigService.build_response(config)
             ).model_dump()
         )
@@ -573,7 +573,7 @@ async def get_pubsub_config(
         raise HTTPException(status_code=404, detail="发布订阅配置不存在")
     return ORJSONResponse(
         content=Success(
-            PubSubConfigResponse(
+            PubSubPropertyResponse(
                 **PubSubConfigService.build_response(config)
             ).model_dump()
         )
@@ -583,7 +583,7 @@ async def get_pubsub_config(
 @router.put(f"{PUBSUB_PREFIX}/{{config_id}}")
 async def update_pubsub_config(
     config_id: str,
-    data: PubSubConfigUpdateRequest,
+    data: PubSubConfigUpdate,
     admin: dict = Depends(get_current_admin),
 ) -> ORJSONResponse:
     """更新发布订阅配置"""
@@ -593,7 +593,7 @@ async def update_pubsub_config(
         raise HTTPException(status_code=404, detail="发布订阅配置不存在")
     return ORJSONResponse(
         content=Success(
-            PubSubConfigResponse(
+            PubSubPropertyResponse(
                 **PubSubConfigService.build_response(config)
             ).model_dump()
         )

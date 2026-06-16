@@ -178,6 +178,23 @@ web/{技术栈}/
 | `created_at` | 创建时间 | `created_at: string` |
 | `updated_at` | 更新时间 | `updated_at: string` |
 
+### 通信对象（DTO）类型命名规范
+
+前后端通信对象的 TypeScript 类型命名遵循以下统一规范：
+
+| 分类 | 命名模式 | 示例 |
+|------|----------|------|
+| 查询（列表/分页参数） | `{Entity}Query` | `TenantQuery` |
+| 新增（创建参数） | `{Entity}Create` | `TenantCreate` |
+| 编辑（更新参数） | `{Entity}Update` | `TenantUpdate` |
+| 保存（新增或编辑） | `{Entity}Save` | `ConfigSave` |
+| 导入 | `{Entity}Import` | `UserImport` |
+| 导出 | `{Entity}Export` | `UserExport` |
+| 基本响应 | `{Entity}Response` | `TenantResponse` |
+| 列表响应 | `{Entity}ListResponse` | `TenantListResponse` |
+| 树结构响应 | `{Entity}TreeResponse` | `MenuTreeResponse` |
+| 属性/配置响应 | `{Entity}PropertyResponse` | `CachePropertyResponse` |
+
 ## 组件导入规范
 
 ### 统一入口优先

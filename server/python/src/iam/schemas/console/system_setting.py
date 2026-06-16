@@ -30,7 +30,7 @@ class ConsoleSystemSettingResponse(PropertyVoMixin):
     created_at: datetime = Field(..., description="创建时间")
 
 
-class ConsoleSystemSettingListVo(BaseModel):
+class ConsoleSystemSettingListResponse(BaseModel):
     """用户端系统设置列表响应"""
 
     items: list[ConsoleSystemSettingResponse] = Field(

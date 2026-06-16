@@ -2,7 +2,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getModule, getModuleMenus, createModuleMenu, updateModuleMenu, deleteModuleMenu, getModulePermissions, createModulePermission, updateModulePermission, deleteModulePermission, getModuleRoles, createModuleRole, updateModuleRole, deleteModuleRole, updateRolePermissions } from '@/tenant/api/module'
-import type { Module, ModuleMenu, ModulePermission, ModuleRole, CreateMenuParams, UpdateMenuParams, CreatePermissionParams, UpdatePermissionParams, CreateRoleParams, UpdateRoleParams } from '@/tenant/types/admin'
+import type { Module, ModuleMenu, ModulePermission, ModuleRole, MenuCreate, MenuUpdate, PermissionCreate, PermissionUpdate, RoleCreate, RoleUpdate } from '@/tenant/types/admin'
 import { notifyError, notifySuccess, notifyWarning } from '@/framework/utils/feedback'
 import { Button, Input, Label, Card, Badge, Skeleton, Checkbox, Textarea } from '@/components'
 import {
@@ -286,7 +286,7 @@ const saveMenu = async () => {
   }
 
   try {
-    const params: CreateMenuParams | UpdateMenuParams = {
+    const params: MenuCreate | MenuUpdate = {
       name: menuForm.value.name.trim(),
       code: menuForm.value.code.trim(),
       path: menuForm.value.path.trim(),
@@ -296,12 +296,12 @@ const saveMenu = async () => {
     }
 
     if (menuDialogMode.value === 'create') {
-      await createModuleMenu(moduleId.value, params as CreateMenuParams)
+      await createModuleMenu(moduleId.value, params as MenuCreate)
       notifySuccess('菜单创建成功')
     } else if (selectedMenuId.value) {
       // 编辑模式下不修改 code
       delete params.code
-      await updateModuleMenu(moduleId.value, selectedMenuId.value, params as UpdateMenuParams)
+      await updateModuleMenu(moduleId.value, selectedMenuId.value, params as MenuUpdate)
       notifySuccess('菜单更新成功')
     }
 
@@ -443,7 +443,7 @@ const savePermission = async () => {
   }
 
   try {
-    const params: CreatePermissionParams | UpdatePermissionParams = {
+    const params: PermissionCreate | PermissionUpdate = {
       name: permissionForm.value.name.trim(),
       code: permissionForm.value.code.trim(),
       resource: permissionForm.value.resource.trim(),
@@ -452,12 +452,12 @@ const savePermission = async () => {
     }
 
     if (permissionDialogMode.value === 'create') {
-      await createModulePermission(moduleId.value, params as CreatePermissionParams)
+      await createModulePermission(moduleId.value, params as PermissionCreate)
       notifySuccess('权限创建成功')
     } else if (selectedPermissionId.value) {
       // 编辑模式下不修改 code
       delete params.code
-      await updateModulePermission(moduleId.value, selectedPermissionId.value, params as UpdatePermissionParams)
+      await updateModulePermission(moduleId.value, selectedPermissionId.value, params as PermissionUpdate)
       notifySuccess('权限更新成功')
     }
 
@@ -571,7 +571,7 @@ const saveRole = async () => {
 
   try {
     if (roleDialogMode.value === 'create') {
-      const params: CreateRoleParams = {
+      const params: RoleCreate = {
         name: roleForm.value.name.trim(),
         code: roleForm.value.code.trim(),
         description: roleForm.value.description.trim() || undefined,
@@ -579,7 +579,7 @@ const saveRole = async () => {
       await createModuleRole(moduleId.value, params)
       notifySuccess('角色创建成功')
     } else if (selectedRoleId.value) {
-      const params: UpdateRoleParams = {
+      const params: RoleUpdate = {
         name: roleForm.value.name.trim(),
         description: roleForm.value.description.trim() || undefined,
       }

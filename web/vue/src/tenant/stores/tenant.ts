@@ -13,12 +13,12 @@ import {
   updateTenant,
 } from "../api/tenant";
 import { getErrorMessage, notifyError, notifySuccess } from "@/framework/utils/feedback";
-import type { CreateTenantParams, Tenant, UpdateTenantParams, UserTenantVo } from "../types";
+import type { TenantCreate, Tenant, TenantUpdate, UserTenantResponse } from "../types";
 
 export const useTenantStore = defineStore("tenant", () => {
   const tenants = ref<Tenant[]>([]);
   const currentTenant = ref<Tenant | null>(null);
-  const myTenants = ref<UserTenantVo[]>([]);
+  const myTenants = ref<UserTenantResponse[]>([]);
   const loading = ref(false);
   const total = ref(0);
 
@@ -58,7 +58,7 @@ export const useTenantStore = defineStore("tenant", () => {
   };
 
   // 管理员：创建租户
-  const addTenant = async (data: CreateTenantParams) => {
+  const addTenant = async (data: TenantCreate) => {
     loading.value = true;
     try {
       const response = await createTenant(data);
@@ -75,7 +75,7 @@ export const useTenantStore = defineStore("tenant", () => {
   };
 
   // 管理员：更新租户
-  const editTenant = async (id: string, data: UpdateTenantParams) => {
+  const editTenant = async (id: string, data: TenantUpdate) => {
     loading.value = true;
     try {
       const response = await updateTenant(id, data);

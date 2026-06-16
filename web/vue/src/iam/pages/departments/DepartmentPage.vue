@@ -3,7 +3,7 @@ import { computed, onMounted, ref } from 'vue'
 import { addDepartmentUser, removeDepartmentUser } from '@/iam/api/department'
 import { useDepartmentStore } from '@/iam/stores/department'
 import DepartmentTree from '@/iam/components/DepartmentTree.vue'
-import type { CreateDepartmentParams, Department, UpdateDepartmentParams } from '@/iam/types'
+import type { DepartmentCreate, Department, DepartmentUpdate } from '@/iam/types'
 import { confirmAction, getErrorMessage, notifyError, notifySuccess } from '@/framework/utils/feedback'
 import AppPage from '@/framework/layouts/components/AppPage.vue'
 import { Button, Input, Badge, Checkbox, Skeleton, DescriptionList, type DescriptionItem, Pagination, Table } from '@/components'
@@ -137,7 +137,7 @@ const handleDelete = async () => {
 
 const onSubmitForm = handleFormSubmit(async (values) => {
   try {
-    const formValues: CreateDepartmentParams & UpdateDepartmentParams = values
+    const formValues: DepartmentCreate & DepartmentUpdate = values
     if (isEdit.value && currentDepartmentId.value) {
       await departmentStore.editDepartment(currentDepartmentId.value, formValues)
       leaderId.value = formValues.leader_id || ''

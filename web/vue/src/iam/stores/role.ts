@@ -10,7 +10,7 @@ import {
   updateRole,
 } from "../api/role";
 import { getErrorMessage, notifyError, notifySuccess } from "@/framework/utils/feedback";
-import type { CreateRoleParams, Permission, Role, UpdateRoleParams } from "../types";
+import type { RoleCreate, Permission, Role, RoleUpdate } from "../types";
 
 export const useRoleStore = defineStore("iam-role", () => {
   const roles = ref<Role[]>([]);
@@ -47,7 +47,7 @@ export const useRoleStore = defineStore("iam-role", () => {
     }
   };
 
-  const addRole = async (data: CreateRoleParams) => {
+  const addRole = async (data: RoleCreate) => {
     loading.value = true;
     try {
       const response = await createRole(data);
@@ -63,7 +63,7 @@ export const useRoleStore = defineStore("iam-role", () => {
     }
   };
 
-  const editRole = async (id: string, data: UpdateRoleParams) => {
+  const editRole = async (id: string, data: RoleUpdate) => {
     loading.value = true;
     try {
       const response = await updateRole(id, data);

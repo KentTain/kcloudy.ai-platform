@@ -1,20 +1,20 @@
 import { rawDel, rawGet, rawPost, rawPut } from "@/framework/api/client";
 import type {
   ApiResponse,
-  CreateMenuParams,
-  CreateModuleParams,
-  CreatePermissionParams,
-  CreateRoleParams,
+  MenuCreate,
+  ModuleCreate,
+  PermissionCreate,
+  RoleCreate,
   Module,
   ModuleMenu,
   ModulePermission,
-  ModuleQueryParams,
+  ModuleQuery,
   ModuleRole,
   PageResult,
-  UpdateMenuParams,
-  UpdateModuleParams,
-  UpdatePermissionParams,
-  UpdateRoleParams,
+  MenuUpdate,
+  ModuleUpdate,
+  PermissionUpdate,
+  RoleUpdate,
 } from "@/tenant/types";
 
 // ==================== 模块管理 ====================
@@ -22,7 +22,7 @@ import type {
 /**
  * 获取模块列表
  */
-export const getModules = (params?: ModuleQueryParams) =>
+export const getModules = (params?: ModuleQuery) =>
   rawGet<ApiResponse<PageResult<Module>>>("/tenant/admin/v1/modules", { params });
 
 /**
@@ -33,13 +33,13 @@ export const getModule = (id: string) => rawGet<ApiResponse<Module>>(`/tenant/ad
 /**
  * 创建模块
  */
-export const createModule = (data: CreateModuleParams) =>
+export const createModule = (data: ModuleCreate) =>
   rawPost<ApiResponse<Module>>("/tenant/admin/v1/modules", data);
 
 /**
  * 更新模块
  */
-export const updateModule = (id: string, data: UpdateModuleParams) =>
+export const updateModule = (id: string, data: ModuleUpdate) =>
   rawPut<ApiResponse<Module>>(`/tenant/admin/v1/modules/${id}`, data);
 
 /**
@@ -58,13 +58,13 @@ export const getModuleMenus = (moduleId: string) =>
 /**
  * 创建模块菜单
  */
-export const createModuleMenu = (moduleId: string, data: CreateMenuParams) =>
+export const createModuleMenu = (moduleId: string, data: MenuCreate) =>
   rawPost<ApiResponse<ModuleMenu>>(`/tenant/admin/v1/modules/${moduleId}/menus`, data);
 
 /**
  * 更新模块菜单
  */
-export const updateModuleMenu = (moduleId: string, menuId: string, data: UpdateMenuParams) =>
+export const updateModuleMenu = (moduleId: string, menuId: string, data: MenuUpdate) =>
   rawPut<ApiResponse<ModuleMenu>>(`/tenant/admin/v1/modules/${moduleId}/menus/${menuId}`, data);
 
 /**
@@ -84,7 +84,7 @@ export const getModulePermissions = (moduleId: string) =>
 /**
  * 创建模块权限
  */
-export const createModulePermission = (moduleId: string, data: CreatePermissionParams) =>
+export const createModulePermission = (moduleId: string, data: PermissionCreate) =>
   rawPost<ApiResponse<ModulePermission>>(`/tenant/admin/v1/modules/${moduleId}/permissions`, data);
 
 /**
@@ -93,7 +93,7 @@ export const createModulePermission = (moduleId: string, data: CreatePermissionP
 export const updateModulePermission = (
   moduleId: string,
   permissionId: string,
-  data: UpdatePermissionParams
+  data: PermissionUpdate
 ) =>
   rawPut<ApiResponse<ModulePermission>>(
     `/tenant/admin/v1/modules/${moduleId}/permissions/${permissionId}`,
@@ -123,13 +123,13 @@ export const getModuleRole = (moduleId: string, roleId: string) =>
 /**
  * 创建模块角色
  */
-export const createModuleRole = (moduleId: string, data: CreateRoleParams) =>
+export const createModuleRole = (moduleId: string, data: RoleCreate) =>
   rawPost<ApiResponse<ModuleRole>>(`/tenant/admin/v1/modules/${moduleId}/roles`, data);
 
 /**
  * 更新模块角色
  */
-export const updateModuleRole = (moduleId: string, roleId: string, data: UpdateRoleParams) =>
+export const updateModuleRole = (moduleId: string, roleId: string, data: RoleUpdate) =>
   rawPut<ApiResponse<ModuleRole>>(`/tenant/admin/v1/modules/${moduleId}/roles/${roleId}`, data);
 
 /**

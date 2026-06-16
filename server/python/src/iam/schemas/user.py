@@ -26,7 +26,7 @@ class UserRegisterRequest(BaseModel):
         return v
 
 
-class UserUpdateRequest(BaseModel):
+class UserUpdate(BaseModel):
     """用户更新请求"""
 
     nickname: str | None = Field(None, max_length=100, description="昵称")
@@ -80,7 +80,7 @@ class PasswordResetRequest(BaseModel):
         return v
 
 
-class AdminUserCreateRequest(BaseModel):
+class AdminUserCreate(BaseModel):
     """管理员创建用户请求"""
 
     username: str = Field(..., min_length=3, max_length=50)
@@ -90,7 +90,7 @@ class AdminUserCreateRequest(BaseModel):
     nickname: str | None = Field(None, max_length=100)
 
 
-class AdminUserUpdateRequest(BaseModel):
+class AdminUserUpdate(BaseModel):
     """管理员更新用户请求"""
 
     nickname: str | None = Field(None, max_length=100)
@@ -123,13 +123,13 @@ class AdminPasswordResetRequest(BaseModel):
     new_password: str | None = Field(None, min_length=8, max_length=32)
 
 
-class AdminPasswordResetVo(BaseModel):
+class AdminPasswordResetResponse(BaseModel):
     """管理员重置密码响应"""
 
     password: str
 
 
-class UserTenantVo(BaseModel):
+class UserTenantResponse(BaseModel):
     """用户租户视图对象"""
 
     id: str = Field(..., description="租户 ID")
@@ -138,7 +138,7 @@ class UserTenantVo(BaseModel):
     is_default: bool = Field(False, description="是否默认租户")
 
 
-class UserVo(BaseModel):
+class UserResponse(BaseModel):
     """用户视图对象"""
 
     model_config = ConfigDict(from_attributes=True)
@@ -158,11 +158,11 @@ class UserVo(BaseModel):
     created_at: datetime
     roles: list[str] = Field(default_factory=list, description="用户角色编码列表")
     permissions: list[str] = Field(default_factory=list, description="用户权限编码列表")
-    tenants: list[UserTenantVo] = Field(default_factory=list, description="用户所属租户列表")
+    tenants: list[UserTenantResponse] = Field(default_factory=list, description="用户所属租户列表")
 
 
-class UserListVo(BaseModel):
+class UserListResponse(BaseModel):
     """用户列表响应"""
 
     total: int
-    items: list[UserVo]
+    items: list[UserResponse]

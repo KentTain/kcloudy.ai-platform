@@ -14,10 +14,10 @@ from iam.schemas.user import (
     PasswordResetCodeRequest,
     PasswordResetRequest,
     UserRegisterRequest,
-    UserUpdateRequest,
-    UserVo,
+    UserUpdate,
+    UserResponse,
 )
-from iam.schemas.user_menu import UserMenuVo
+from iam.schemas.user_menu import UserMenuTreeResponse
 from iam.services import auth_service, permission_check_service, user_service
 from iam.services.role_service import user_role_service as user_roles_service
 from iam.services.user_menu_service import user_menu_service
@@ -57,7 +57,7 @@ async def register(data: UserRegisterRequest) -> ORJSONResponse:
                 "code": 200,
                 "msg": "注册成功",
                 "data": {
-                    "user": UserVo.model_validate(user).model_dump(),
+                    "user": UserResponse.model_validate(user).model_dump(),
                     "access_token": login_result.access_token,
                     "refresh_token": login_result.refresh_token,
                     "expires_in": login_result.expires_in,
@@ -99,8 +99,8 @@ async def get_current_user(user_id: str = Depends(get_current_user_id)) -> ORJSO
     for ut in user_tenants:
         tenant_info = tenants_info.get(ut["tenant_id"])
         if tenant_info:
-            from iam.schemas.user import UserTenantVo
-            tenants_vo.append(UserTenantVo(
+            from iam.schemas.user import UserTenantResponse
+            tenants_vo.append(UserTenantResponse(
                 id=ut["tenant_id"],
                 name=tenant_info.name,
                 code=tenant_info.code,
@@ -108,7 +108,7 @@ async def get_current_user(user_id: str = Depends(get_current_user_id)) -> ORJSO
             ))
 
     # 构建响应
-    user_vo = UserVo.model_validate(user)
+    user_vo = UserResponse.model_validate(user)
     user_vo.roles = role_codes
     user_vo.permissions = permissions
     user_vo.tenants = tenants_vo
@@ -124,7 +124,7 @@ async def get_current_user(user_id: str = Depends(get_current_user_id)) -> ORJSO
 
 @router.put("/users/me")
 async def update_current_user(
-    data: UserUpdateRequest,
+    data: UserUpdate,
     user_id: str = Depends(get_current_user_id),
 ) -> ORJSONResponse:
     """
@@ -144,7 +144,7 @@ async def update_current_user(
             content={
                 "code": 200,
                 "msg": "修改成功",
-                "data": UserVo.model_validate(user).model_dump(),
+                "data": UserResponse.model_validate(user).model_dump(),
             }
         )
     except ValueError as e:
@@ -247,9 +247,9 @@ async def get_user_menus(
     tenant_id = get_tenant_id()
     menus = await user_menu_service.get_user_menus(user_id, tenant_id)
 
-    # 转换为 UserMenuVo 格式
-    def to_vo(menu_dict: dict) -> UserMenuVo:
-        return UserMenuVo(
+    # 转换为 UserMenuTreeResponse 格式
+    def to_vo(menu_dict: dict) -> UserMenuTreeResponse:
+        return UserMenuTreeResponse(
             id=menu_dict["id"],
             code=menu_dict["code"],
             name=menu_dict["name"],

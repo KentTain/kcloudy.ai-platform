@@ -98,7 +98,7 @@ export interface LoginResponse {
 }
 
 // 用户相关类型
-export interface CreateUserParams {
+export interface UserCreate {
   username: string;
   email?: string;
   phone?: string;
@@ -108,7 +108,7 @@ export interface CreateUserParams {
   department_id?: string;
 }
 
-export interface UpdateUserParams {
+export interface UserUpdate {
   email?: string;
   phone?: string;
   nickname?: string;
@@ -118,7 +118,7 @@ export interface UpdateUserParams {
   status?: "active" | "inactive" | "locked";
 }
 
-export interface UserQueryParams {
+export interface UserQuery {
   page?: number;
   page_size?: number;
   keyword?: string;
@@ -128,27 +128,27 @@ export interface UserQueryParams {
 }
 
 // 角色相关类型
-export interface CreateRoleParams {
+export interface RoleCreate {
   name: string;
   code: string;
   description?: string;
   permission_ids?: string[];
 }
 
-export interface UpdateRoleParams {
+export interface RoleUpdate {
   name?: string;
   description?: string;
   permission_ids?: string[];
 }
 
-export interface RoleQueryParams {
+export interface RoleQuery {
   page?: number;
   page_size?: number;
   keyword?: string;
 }
 
 // 权限相关类型
-export interface PermissionQueryParams {
+export interface PermissionQuery {
   page?: number;
   page_size?: number;
   keyword?: string;
@@ -156,7 +156,7 @@ export interface PermissionQueryParams {
 }
 
 // 部门相关类型
-export interface CreateDepartmentParams {
+export interface DepartmentCreate {
   name: string;
   code?: string;
   parent_id?: string;
@@ -164,7 +164,7 @@ export interface CreateDepartmentParams {
   leader_id?: string;
 }
 
-export interface UpdateDepartmentParams {
+export interface DepartmentUpdate {
   name?: string;
   code?: string;
   parent_id?: string;
@@ -173,7 +173,7 @@ export interface UpdateDepartmentParams {
   status?: "active" | "inactive";
 }
 
-export interface DepartmentQueryParams {
+export interface DepartmentQuery {
   page?: number;
   page_size?: number;
   keyword?: string;
@@ -196,7 +196,7 @@ export interface LoginHistory {
 }
 
 // 登录历史查询参数
-export interface LoginHistoryQueryParams {
+export interface LoginHistoryQuery {
   page?: number;
   page_size?: number;
   start_date?: string;

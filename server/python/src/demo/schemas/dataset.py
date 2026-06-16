@@ -23,7 +23,7 @@ class DatasetUpdate(BaseModel):
     description: str | None = Field(None, description="知识库描述")
 
 
-class DatasetVo(BaseModel):
+class DatasetResponse(BaseModel):
     """知识库视图对象"""
 
     model_config = ConfigDict(from_attributes=True)
@@ -35,8 +35,8 @@ class DatasetVo(BaseModel):
     updated_at: datetime
 
 
-class DatasetListVo(BaseModel):
+class DatasetListResponse(BaseModel):
     """知识库列表响应"""
 
     total: int
-    items: list[DatasetVo]
+    items: list[DatasetResponse]

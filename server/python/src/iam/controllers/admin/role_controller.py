@@ -8,10 +8,10 @@ from fastapi import APIRouter, HTTPException
 from fastapi.responses import ORJSONResponse
 
 from iam.schemas.role import (
-    RoleCreateRequest,
+    RoleCreate,
     RolePermissionRequest,
-    RoleUpdateRequest,
-    RoleVo,
+    RoleUpdate,
+    RoleResponse,
 )
 from iam.services import permission_service, role_service
 
@@ -30,14 +30,14 @@ async def list_roles(tenant_id: str | None = None, page: int = 1, page_size: int
         content={
             "code": 200,
             "msg": "success",
-            "data": [RoleVo.model_validate(r).model_dump() for r in roles],
+            "data": [RoleResponse.model_validate(r).model_dump() for r in roles],
             "total": total,
         }
     )
 
 
 @router.post("/roles")
-async def create_role(data: RoleCreateRequest) -> ORJSONResponse:
+async def create_role(data: RoleCreate) -> ORJSONResponse:
     """创建角色"""
     try:
         role = await role_service.create(
@@ -49,7 +49,7 @@ async def create_role(data: RoleCreateRequest) -> ORJSONResponse:
             content={
                 "code": 200,
                 "msg": "创建成功",
-                "data": RoleVo.model_validate(role).model_dump(),
+                "data": RoleResponse.model_validate(role).model_dump(),
             }
         )
     except ValueError as e:
@@ -66,13 +66,13 @@ async def get_role(role_id: str) -> ORJSONResponse:
         content={
             "code": 200,
             "msg": "success",
-            "data": RoleVo.model_validate(role).model_dump(),
+            "data": RoleResponse.model_validate(role).model_dump(),
         }
     )
 
 
 @router.put("/roles/{role_id}")
-async def update_role(role_id: str, data: RoleUpdateRequest) -> ORJSONResponse:
+async def update_role(role_id: str, data: RoleUpdate) -> ORJSONResponse:
     """更新角色"""
     try:
         role = await role_service.update(
@@ -84,7 +84,7 @@ async def update_role(role_id: str, data: RoleUpdateRequest) -> ORJSONResponse:
             content={
                 "code": 200,
                 "msg": "更新成功",
-                "data": RoleVo.model_validate(role).model_dump(),
+                "data": RoleResponse.model_validate(role).model_dump(),
             }
         )
     except ValueError as e:

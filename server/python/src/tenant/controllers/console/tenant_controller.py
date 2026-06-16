@@ -7,7 +7,7 @@ from fastapi.responses import ORJSONResponse
 
 from framework.tenant.context import TenantContext, get_tenant_id
 from tenant.models import TenantStatus
-from tenant.schemas.console.tenant import CurrentTenantVo, SwitchTenantVo, UserTenantVo
+from tenant.schemas.console.tenant import CurrentTenantResponse, SwitchTenantResponse, UserTenantResponse
 from tenant.services.tenant_service import TenantService
 
 router = APIRouter()
@@ -50,7 +50,7 @@ async def list_user_tenants(user_id: str = "test_user") -> ORJSONResponse:
     for tenant in tenants:
         ut = user_tenant_map.get(tenant.id)
         items.append(
-            UserTenantVo(
+            UserTenantResponse(
                 id=tenant.id,
                 name=tenant.name,
                 code=tenant.code,
@@ -86,7 +86,7 @@ async def get_current_tenant_info() -> ORJSONResponse:
 
     return ORJSONResponse(
         content=Success(
-            CurrentTenantVo(
+            CurrentTenantResponse(
                 id=tenant.id,
                 name=tenant.name,
                 code=tenant.code,
@@ -144,7 +144,7 @@ async def switch_tenant(
 
     return ORJSONResponse(
         content=Success(
-            SwitchTenantVo(
+            SwitchTenantResponse(
                 tenant_id=tenant.id,
                 tenant_name=tenant.name,
                 message="租户切换成功",

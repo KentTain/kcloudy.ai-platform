@@ -21,7 +21,7 @@ class AssignModuleRequest(BaseModel):
 # ============== 响应 Schema ==============
 
 
-class TenantModuleVo(BaseModel):
+class TenantModuleResponse(BaseModel):
     """租户模块响应"""
 
     id: str = Field(..., description="分配记录ID")
@@ -37,8 +37,8 @@ class TenantModuleVo(BaseModel):
     updated_at: datetime = Field(..., description="更新时间")
 
 
-class TenantModuleListVo(BaseModel):
+class TenantModuleListResponse(BaseModel):
     """租户模块列表响应"""
 
-    items: list[TenantModuleVo] = Field(default_factory=list, description="模块列表")
+    items: list[TenantModuleResponse] = Field(default_factory=list, description="模块列表")
     total: int = Field(..., description="总数")

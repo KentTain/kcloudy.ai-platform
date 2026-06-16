@@ -120,7 +120,7 @@ export interface TenantResource {
 }
 
 // 模块查询参数
-export interface ModuleQueryParams {
+export interface ModuleQuery {
   page?: number;
   page_size?: number;
   keyword?: string;
@@ -128,7 +128,7 @@ export interface ModuleQueryParams {
 }
 
 // 创建模块参数
-export interface CreateModuleParams {
+export interface ModuleCreate {
   name: string;
   code: string;
   description?: string;
@@ -138,7 +138,7 @@ export interface CreateModuleParams {
 }
 
 // 更新模块参数
-export interface UpdateModuleParams {
+export interface ModuleUpdate {
   name?: string;
   description?: string;
   icon?: string;
@@ -146,7 +146,7 @@ export interface UpdateModuleParams {
 }
 
 // 创建菜单参数
-export interface CreateMenuParams {
+export interface MenuCreate {
   parent_id?: string;
   name: string;
   code: string;
@@ -156,7 +156,7 @@ export interface CreateMenuParams {
 }
 
 // 更新菜单参数
-export interface UpdateMenuParams {
+export interface MenuUpdate {
   parent_id?: string;
   name?: string;
   code?: string;
@@ -166,7 +166,7 @@ export interface UpdateMenuParams {
 }
 
 // 创建权限参数
-export interface CreatePermissionParams {
+export interface PermissionCreate {
   name: string;
   code: string;
   resource: string;
@@ -175,7 +175,7 @@ export interface CreatePermissionParams {
 }
 
 // 更新权限参数
-export interface UpdatePermissionParams {
+export interface PermissionUpdate {
   name?: string;
   code?: string;
   resource?: string;
@@ -184,7 +184,7 @@ export interface UpdatePermissionParams {
 }
 
 // 创建角色参数
-export interface CreateRoleParams {
+export interface RoleCreate {
   name: string;
   code: string;
   description?: string;
@@ -192,7 +192,7 @@ export interface CreateRoleParams {
 }
 
 // 更新角色参数
-export interface UpdateRoleParams {
+export interface RoleUpdate {
   name?: string;
   description?: string;
   permission_ids?: string[];

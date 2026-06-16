@@ -15,7 +15,7 @@ from pydantic import BaseModel, Field
 # =============================================================================
 
 
-class ResourceListQuery(BaseModel):
+class ResourceQuery(BaseModel):
     """资源列表查询参数"""
 
     page: int = Field(1, ge=1, description="页码")
@@ -36,7 +36,7 @@ class ConnectionTestResult(BaseModel):
 # =============================================================================
 
 
-class DatabaseConfigCreateRequest(BaseModel):
+class DatabaseConfigCreate(BaseModel):
     """创建数据库配置请求"""
 
     name: str = Field(..., min_length=1, max_length=100, description="配置名称")
@@ -48,7 +48,7 @@ class DatabaseConfigCreateRequest(BaseModel):
     password: str = Field(..., min_length=1, description="数据库密码")
 
 
-class DatabaseConfigUpdateRequest(BaseModel):
+class DatabaseConfigUpdate(BaseModel):
     """更新数据库配置请求"""
 
     name: str | None = Field(None, min_length=1, max_length=100, description="配置名称")
@@ -60,7 +60,7 @@ class DatabaseConfigUpdateRequest(BaseModel):
     password: str | None = Field(None, min_length=1, description="数据库密码")
 
 
-class DatabaseConfigResponse(BaseModel):
+class DatabasePropertyResponse(BaseModel):
     """数据库配置响应"""
 
     id: str = Field(..., description="配置 ID")
@@ -75,10 +75,10 @@ class DatabaseConfigResponse(BaseModel):
     updated_at: datetime = Field(..., description="更新时间")
 
 
-class DatabaseConfigListResponse(BaseModel):
+class DatabasePropertyListResponse(BaseModel):
     """数据库配置列表响应"""
 
-    items: list[DatabaseConfigResponse] = Field(
+    items: list[DatabasePropertyResponse] = Field(
         default_factory=list, description="配置列表"
     )
     total: int = Field(..., description="总数")
@@ -91,7 +91,7 @@ class DatabaseConfigListResponse(BaseModel):
 # =============================================================================
 
 
-class StorageConfigCreateRequest(BaseModel):
+class StorageConfigCreate(BaseModel):
     """创建存储配置请求"""
 
     name: str = Field(..., min_length=1, max_length=100, description="配置名称")
@@ -102,7 +102,7 @@ class StorageConfigCreateRequest(BaseModel):
     secret_key: str | None = Field(None, description="私密密钥")
 
 
-class StorageConfigUpdateRequest(BaseModel):
+class StorageConfigUpdate(BaseModel):
     """更新存储配置请求"""
 
     name: str | None = Field(None, min_length=1, max_length=100, description="配置名称")
@@ -113,7 +113,7 @@ class StorageConfigUpdateRequest(BaseModel):
     secret_key: str | None = Field(None, description="私密密钥")
 
 
-class StorageConfigResponse(BaseModel):
+class StoragePropertyResponse(BaseModel):
     """存储配置响应"""
 
     id: str = Field(..., description="配置 ID")
@@ -127,10 +127,10 @@ class StorageConfigResponse(BaseModel):
     updated_at: datetime = Field(..., description="更新时间")
 
 
-class StorageConfigListResponse(BaseModel):
+class StoragePropertyListResponse(BaseModel):
     """存储配置列表响应"""
 
-    items: list[StorageConfigResponse] = Field(
+    items: list[StoragePropertyResponse] = Field(
         default_factory=list, description="配置列表"
     )
     total: int = Field(..., description="总数")
@@ -143,7 +143,7 @@ class StorageConfigListResponse(BaseModel):
 # =============================================================================
 
 
-class CacheConfigCreateRequest(BaseModel):
+class CacheConfigCreate(BaseModel):
     """创建缓存配置请求"""
 
     name: str = Field(..., min_length=1, max_length=100, description="配置名称")
@@ -154,7 +154,7 @@ class CacheConfigCreateRequest(BaseModel):
     prefix: str | None = Field(None, max_length=50, description="键前缀")
 
 
-class CacheConfigUpdateRequest(BaseModel):
+class CacheConfigUpdate(BaseModel):
     """更新缓存配置请求"""
 
     name: str | None = Field(None, min_length=1, max_length=100, description="配置名称")
@@ -165,7 +165,7 @@ class CacheConfigUpdateRequest(BaseModel):
     prefix: str | None = Field(None, max_length=50, description="键前缀")
 
 
-class CacheConfigResponse(BaseModel):
+class CachePropertyResponse(BaseModel):
     """缓存配置响应"""
 
     id: str = Field(..., description="配置 ID")
@@ -179,10 +179,10 @@ class CacheConfigResponse(BaseModel):
     updated_at: datetime = Field(..., description="更新时间")
 
 
-class CacheConfigListResponse(BaseModel):
+class CachePropertyListResponse(BaseModel):
     """缓存配置列表响应"""
 
-    items: list[CacheConfigResponse] = Field(
+    items: list[CachePropertyResponse] = Field(
         default_factory=list, description="配置列表"
     )
     total: int = Field(..., description="总数")
@@ -195,7 +195,7 @@ class CacheConfigListResponse(BaseModel):
 # =============================================================================
 
 
-class QueueConfigCreateRequest(BaseModel):
+class QueueConfigCreate(BaseModel):
     """创建队列配置请求"""
 
     name: str = Field(..., min_length=1, max_length=100, description="配置名称")
@@ -207,7 +207,7 @@ class QueueConfigCreateRequest(BaseModel):
     vhost: str | None = Field(None, max_length=100, description="虚拟主机")
 
 
-class QueueConfigUpdateRequest(BaseModel):
+class QueueConfigUpdate(BaseModel):
     """更新队列配置请求"""
 
     name: str | None = Field(None, min_length=1, max_length=100, description="配置名称")
@@ -219,7 +219,7 @@ class QueueConfigUpdateRequest(BaseModel):
     vhost: str | None = Field(None, max_length=100, description="虚拟主机")
 
 
-class QueueConfigResponse(BaseModel):
+class QueuePropertyResponse(BaseModel):
     """队列配置响应"""
 
     id: str = Field(..., description="配置 ID")
@@ -234,10 +234,10 @@ class QueueConfigResponse(BaseModel):
     updated_at: datetime = Field(..., description="更新时间")
 
 
-class QueueConfigListResponse(BaseModel):
+class QueuePropertyListResponse(BaseModel):
     """队列配置列表响应"""
 
-    items: list[QueueConfigResponse] = Field(
+    items: list[QueuePropertyResponse] = Field(
         default_factory=list, description="配置列表"
     )
     total: int = Field(..., description="总数")
@@ -250,7 +250,7 @@ class QueueConfigListResponse(BaseModel):
 # =============================================================================
 
 
-class PubSubConfigCreateRequest(BaseModel):
+class PubSubConfigCreate(BaseModel):
     """创建发布订阅配置请求"""
 
     name: str = Field(..., min_length=1, max_length=100, description="配置名称")
@@ -261,7 +261,7 @@ class PubSubConfigCreateRequest(BaseModel):
     password: str | None = Field(None, description="密码")
 
 
-class PubSubConfigUpdateRequest(BaseModel):
+class PubSubConfigUpdate(BaseModel):
     """更新发布订阅配置请求"""
 
     name: str | None = Field(None, min_length=1, max_length=100, description="配置名称")
@@ -272,7 +272,7 @@ class PubSubConfigUpdateRequest(BaseModel):
     password: str | None = Field(None, description="密码")
 
 
-class PubSubConfigResponse(BaseModel):
+class PubSubPropertyResponse(BaseModel):
     """发布订阅配置响应"""
 
     id: str = Field(..., description="配置 ID")
@@ -286,10 +286,10 @@ class PubSubConfigResponse(BaseModel):
     updated_at: datetime = Field(..., description="更新时间")
 
 
-class PubSubConfigListResponse(BaseModel):
+class PubSubPropertyListResponse(BaseModel):
     """发布订阅配置列表响应"""
 
-    items: list[PubSubConfigResponse] = Field(
+    items: list[PubSubPropertyResponse] = Field(
         default_factory=list, description="配置列表"
     )
     total: int = Field(..., description="总数")

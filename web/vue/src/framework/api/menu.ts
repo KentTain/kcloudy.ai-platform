@@ -5,16 +5,16 @@ import { get } from "@/framework/api/client";
 
 /**
  * 用户菜单响应类型
- * 与后端 UserMenuVo 对齐
+ * 与后端 UserMenuTreeResponse 对齐
  */
-export interface UserMenuVo {
+export interface UserMenuTreeResponse {
   id: string;
   code: string;
   name: string;
   icon: string | null;
   path: string | null;
   sort_order: number;
-  children: UserMenuVo[];
+  children: UserMenuTreeResponse[];
 }
 
 /**
@@ -24,7 +24,7 @@ export interface UserMenuVo {
 interface UserMenusResponse {
   code: number;
   msg: string;
-  data: UserMenuVo[];
+  data: UserMenuTreeResponse[];
 }
 
 /**

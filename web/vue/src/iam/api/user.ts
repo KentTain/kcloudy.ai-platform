@@ -1,7 +1,7 @@
 import { del, get, post, put } from "@/framework/api/client";
 import type { ApiResponse, PageResult, User, Role, Department } from "../types";
 
-export interface UserQueryParams {
+export interface UserQuery {
   page?: number;
   page_size?: number;
   keyword?: string;
@@ -10,7 +10,7 @@ export interface UserQueryParams {
   role_id?: string;
 }
 
-export interface CreateUserParams {
+export interface UserCreate {
   username: string;
   password: string;
   email?: string;
@@ -18,7 +18,7 @@ export interface CreateUserParams {
   nickname?: string;
 }
 
-export interface UpdateUserParams {
+export interface UserUpdate {
   nickname?: string;
   avatar?: string;
   email?: string;
@@ -28,7 +28,7 @@ export interface UpdateUserParams {
 /**
  * 获取用户列表
  */
-export const getUsers = (params?: UserQueryParams) =>
+export const getUsers = (params?: UserQuery) =>
   get<ApiResponse<PageResult<User>>>("/iam/admin/v1/users", { params });
 
 /**
@@ -40,13 +40,13 @@ export const getUser = (id: string) =>
 /**
  * 创建用户
  */
-export const createUser = (data: CreateUserParams) =>
+export const createUser = (data: UserCreate) =>
   post<ApiResponse<User>>("/iam/admin/v1/users", data);
 
 /**
  * 更新用户
  */
-export const updateUser = (id: string, data: UpdateUserParams) =>
+export const updateUser = (id: string, data: UserUpdate) =>
   put<ApiResponse<User>>(`/iam/admin/v1/users/${id}`, data);
 
 /**

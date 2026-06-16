@@ -6,7 +6,7 @@ from fastapi import APIRouter, HTTPException
 from fastapi.responses import ORJSONResponse
 
 from iam.schemas.console.system_setting import (
-    ConsoleSystemSettingListVo,
+    ConsoleSystemSettingListResponse,
     ConsoleSystemSettingResponse,
 )
 from iam.services.system_setting_service import system_setting_service
@@ -37,7 +37,7 @@ async def list_settings(tenant_id: str = "default") -> ORJSONResponse:
 
     return ORJSONResponse(
         content=Success(
-            ConsoleSystemSettingListVo(
+            ConsoleSystemSettingListResponse(
                 items=[build_setting_response(s) for s in settings],
                 total=total,
             ).model_dump()

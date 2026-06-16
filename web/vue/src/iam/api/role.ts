@@ -1,20 +1,20 @@
 import { del, get, post, put } from "@/framework/api/client";
 import type { ApiResponse, PageResult, Permission, Role } from "../types";
 
-export interface RoleQueryParams {
+export interface RoleQuery {
   page?: number;
   page_size?: number;
   keyword?: string;
   include_system?: boolean;
 }
 
-export interface CreateRoleParams {
+export interface RoleCreate {
   code: string;
   name: string;
   description?: string;
 }
 
-export interface UpdateRoleParams {
+export interface RoleUpdate {
   name?: string;
   description?: string;
 }
@@ -26,7 +26,7 @@ export interface AssignPermissionsParams {
 /**
  * 获取角色列表
  */
-export const getRoles = (params?: RoleQueryParams) =>
+export const getRoles = (params?: RoleQuery) =>
   get<ApiResponse<PageResult<Role>>>("/iam/admin/v1/roles", { params });
 
 /**
@@ -38,13 +38,13 @@ export const getRole = (id: string) =>
 /**
  * 创建角色
  */
-export const createRole = (data: CreateRoleParams) =>
+export const createRole = (data: RoleCreate) =>
   post<ApiResponse<Role>>("/iam/admin/v1/roles", data);
 
 /**
  * 更新角色
  */
-export const updateRole = (id: string, data: UpdateRoleParams) =>
+export const updateRole = (id: string, data: RoleUpdate) =>
   put<ApiResponse<Role>>(`/iam/admin/v1/roles/${id}`, data);
 
 /**

@@ -7,7 +7,7 @@ from datetime import datetime
 from pydantic import BaseModel, Field
 
 
-class PermissionVo(BaseModel):
+class PermissionResponse(BaseModel):
     """权限视图对象"""
 
     id: str
@@ -19,15 +19,15 @@ class PermissionVo(BaseModel):
     created_at: datetime
 
 
-class PermissionListVo(BaseModel):
+class PermissionListResponse(BaseModel):
     """权限列表响应"""
 
     total: int
-    items: list[PermissionVo]
+    items: list[PermissionResponse]
 
 
-class PermissionGroupVo(BaseModel):
+class PermissionGroupResponse(BaseModel):
     """按资源分组的权限视图对象"""
 
     resource: str = Field(..., description="资源名称")
-    permissions: list[PermissionVo] = Field(..., description="该资源的权限列表")
+    permissions: list[PermissionResponse] = Field(..., description="该资源的权限列表")

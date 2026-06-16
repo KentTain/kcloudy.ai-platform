@@ -7,7 +7,7 @@ from datetime import datetime
 from pydantic import BaseModel, ConfigDict, Field
 
 
-class RoleCreateRequest(BaseModel):
+class RoleCreate(BaseModel):
     """角色创建请求"""
 
     code: str = Field(..., min_length=1, max_length=50, description="角色编码")
@@ -15,7 +15,7 @@ class RoleCreateRequest(BaseModel):
     description: str | None = Field(None, description="角色描述")
 
 
-class RoleUpdateRequest(BaseModel):
+class RoleUpdate(BaseModel):
     """角色更新请求"""
 
     name: str | None = Field(None, max_length=100, description="角色名称")
@@ -28,7 +28,7 @@ class RolePermissionRequest(BaseModel):
     permission_ids: list[str] = Field(..., description="权限 ID 列表")
 
 
-class RoleVo(BaseModel):
+class RoleResponse(BaseModel):
     """角色视图对象"""
 
     model_config = ConfigDict(from_attributes=True)
@@ -42,14 +42,14 @@ class RoleVo(BaseModel):
     created_at: datetime
 
 
-class RoleListVo(BaseModel):
+class RoleListResponse(BaseModel):
     """角色列表响应"""
 
     total: int
-    items: list[RoleVo]
+    items: list[RoleResponse]
 
 
-class RoleWithPermissionsVo(BaseModel):
+class RoleWithPermissionsResponse(BaseModel):
     """角色及其权限视图对象"""
 
     model_config = ConfigDict(from_attributes=True)

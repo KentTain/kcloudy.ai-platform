@@ -5,7 +5,7 @@ import { toTypedSchema } from '@vee-validate/zod'
 import { useForm } from 'vee-validate'
 import * as z from 'zod'
 import { useTenantStore } from '@/tenant/stores/tenant'
-import type { CreateTenantParams, UpdateTenantParams } from '@/tenant/types'
+import type { TenantCreate, TenantUpdate } from '@/tenant/types'
 import AppPage from '@/framework/layouts/components/AppPage.vue'
 import { Button, Input, DateInput } from '@/components'
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components'
@@ -36,7 +36,7 @@ const expiredAt = ref<string | undefined>(undefined)
 const onSubmit = handleSubmit(async (values) => {
   loading.value = true
   try {
-    const submitData: CreateTenantParams & UpdateTenantParams = {
+    const submitData: TenantCreate & TenantUpdate = {
       ...values,
       expired_at: expiredAt.value,
     }

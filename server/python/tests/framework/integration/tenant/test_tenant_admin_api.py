@@ -58,10 +58,10 @@ class TestTenantAdminAPI:
 
     def test_schema_validation(self):
         """测试 Schema 验证"""
-        from tenant.schemas.admin.tenant import TenantCreateRequest
+        from tenant.schemas.admin.tenant import TenantCreate
 
         # 创建请求
-        req = TenantCreateRequest(
+        req = TenantCreate(
             name="测试租户",
             code="test_tenant",
         )
@@ -70,10 +70,10 @@ class TestTenantAdminAPI:
 
     def test_tenant_vo(self):
         """测试租户 VO"""
-        from tenant.schemas.admin.tenant import TenantVo
+        from tenant.schemas.admin.tenant import TenantResponse
         from datetime import datetime
 
-        vo = TenantVo(
+        vo = TenantResponse(
             id="t001",
             name="测试租户",
             code="test",

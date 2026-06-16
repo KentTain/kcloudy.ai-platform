@@ -11,7 +11,7 @@ import {
   updateDepartment,
 } from "../api/department";
 import { getErrorMessage, notifyError, notifySuccess } from "@/framework/utils/feedback";
-import type { CreateDepartmentParams, Department, DepartmentUser, UpdateDepartmentParams } from "../types";
+import type { DepartmentCreate, Department, DepartmentUser, DepartmentUpdate } from "../types";
 
 export const useDepartmentStore = defineStore("iam-department", () => {
   const departments = ref<Department[]>([]);
@@ -60,7 +60,7 @@ export const useDepartmentStore = defineStore("iam-department", () => {
     }
   };
 
-  const addDepartment = async (data: CreateDepartmentParams) => {
+  const addDepartment = async (data: DepartmentCreate) => {
     loading.value = true;
     try {
       const response = await createDepartment(data);
@@ -75,7 +75,7 @@ export const useDepartmentStore = defineStore("iam-department", () => {
     }
   };
 
-  const editDepartment = async (id: string, data: UpdateDepartmentParams) => {
+  const editDepartment = async (id: string, data: DepartmentUpdate) => {
     loading.value = true;
     try {
       const response = await updateDepartment(id, data);

@@ -1,12 +1,12 @@
-"""UserVo 角色权限字段测试"""
+"""UserResponse 角色权限字段测试"""
 
 import pytest
-from iam.schemas.user import UserVo
+from iam.schemas.user import UserResponse
 
 
 def test_user_vo_has_roles_and_permissions():
-    """UserVo 应包含 roles 和 permissions 字段"""
-    user_vo = UserVo(
+    """UserResponse 应包含 roles 和 permissions 字段"""
+    user_vo = UserResponse(
         id="test-id",
         tenant_id="tenant-id",
         username="testuser",

@@ -34,8 +34,8 @@ import type {
   CacheConfig,
   QueueConfig,
   PubsubConfig,
-  CreateResourceConfigParams,
-  UpdateResourceConfigParams,
+  ResourceCreate,
+  ResourceUpdate,
 } from '@/tenant/types/resource'
 import { notifySuccess, notifyError } from '@/framework/utils/feedback'
 import { Button, Input, Label, Card, Badge, Skeleton, Pagination } from '@/components'
@@ -348,13 +348,13 @@ const handleSave = async () => {
 
   formLoading.value = true
   try {
-    const payload: CreateResourceConfigParams = {
+    const payload: ResourceCreate = {
       name: form.value.name,
       config: form.value.config,
     }
 
     if (editingId.value) {
-      const updatePayload: UpdateResourceConfigParams = {
+      const updatePayload: ResourceUpdate = {
         name: form.value.name,
         config: form.value.config,
       }

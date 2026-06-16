@@ -90,7 +90,7 @@ class SystemSettingResponse(PropertyVoMixin):
     updated_at: datetime = Field(..., description="更新时间")
 
 
-class SystemSettingListVo(BaseModel):
+class SystemSettingListResponse(BaseModel):
     """系统设置列表响应"""
 
     items: list[SystemSettingResponse] = Field(

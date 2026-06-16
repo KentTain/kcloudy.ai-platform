@@ -5,7 +5,7 @@ Dataset Controller
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import ORJSONResponse
 
-from demo.schemas.dataset import DatasetCreate, DatasetUpdate, DatasetVo
+from demo.schemas.dataset import DatasetCreate, DatasetUpdate, DatasetResponse
 from demo.services.dataset import dataset_service
 
 router = APIRouter()
@@ -24,7 +24,7 @@ async def list_datasets(page: int = 1, page_size: int = 10) -> ORJSONResponse:
         content={
             "code": 200,
             "msg": "success",
-            "data": [DatasetVo.model_validate(d).model_dump() for d in datasets],
+            "data": [DatasetResponse.model_validate(d).model_dump() for d in datasets],
             "total": total,
             "page": page,
             "page_size": page_size,
@@ -40,7 +40,7 @@ async def create_dataset(data: DatasetCreate) -> ORJSONResponse:
         content={
             "code": 200,
             "msg": "success",
-            "data": DatasetVo.model_validate(dataset).model_dump(),
+            "data": DatasetResponse.model_validate(dataset).model_dump(),
         }
     )
 
@@ -55,7 +55,7 @@ async def get_dataset(dataset_id: str) -> ORJSONResponse:
         content={
             "code": 200,
             "msg": "success",
-            "data": DatasetVo.model_validate(dataset).model_dump(),
+            "data": DatasetResponse.model_validate(dataset).model_dump(),
         }
     )
 
@@ -70,7 +70,7 @@ async def update_dataset(dataset_id: str, data: DatasetUpdate) -> ORJSONResponse
         content={
             "code": 200,
             "msg": "success",
-            "data": DatasetVo.model_validate(dataset).model_dump(),
+            "data": DatasetResponse.model_validate(dataset).model_dump(),
         }
     )
 

@@ -143,10 +143,27 @@ server/{技术栈}/
 |------|------|------|
 | 模型类 | 大驼峰 | `Dataset`, `User` |
 | 混入类 | 大驼峰 + Mixin | `TreeNodeMixin`, `TenantMixin` |
-| Schema 类 | 大驼峰 + 用途后缀 | `DatasetVo`, `DatasetCreate`, `DatasetUpdate` |
+| Schema 类 | 大驼峰 + DTO 后缀 | 详见下节「通信对象（DTO）命名规范」 |
 | 服务类 | 大驼峰 + Service | `DatasetService` |
 | 处理器类 | 大驼峰 + Handler | `HeartbeatHandler`, `DatasetNotifyHandler` |
 | 工厂函数 | get_xxx_provider | `get_cache_provider`, `get_storage_provider` |
+
+#### 通信对象（DTO）命名规范
+
+前后端通信对象（Schema 类）命名遵循以下统一规范：
+
+| 分类 | 命名模式 | 示例 |
+|------|----------|------|
+| 查询（列表/分页） | `{Entity}Query` | `TenantQuery` |
+| 新增（创建） | `{Entity}Create` | `TenantCreate` |
+| 编辑（更新） | `{Entity}Update` | `TenantUpdate` |
+| 保存（新增或编辑） | `{Entity}Save` | `ConfigSave` |
+| 导入 | `{Entity}Import` | `UserImport` |
+| 导出 | `{Entity}Export` | `UserExport` |
+| 基本响应 | `{Entity}Response` | `TenantResponse` |
+| 列表响应 | `{Entity}ListResponse` | `TenantListResponse` |
+| 树结构响应 | `{Entity}TreeResponse` | `ModuleMenuTreeResponse` |
+| 属性/配置响应 | `{Entity}PropertyResponse` | `CachePropertyResponse` |
 
 ### 变量命名
 

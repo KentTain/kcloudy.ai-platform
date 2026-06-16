@@ -15,7 +15,7 @@ from pydantic import BaseModel, Field
 # =============================================================================
 
 
-class ModuleCreateRequest(BaseModel):
+class ModuleCreate(BaseModel):
     """创建模块请求"""
 
     code: str = Field(..., min_length=1, max_length=50, description="模块编码")
@@ -27,7 +27,7 @@ class ModuleCreateRequest(BaseModel):
     is_need: bool = Field(False, description="是否必须模块")
 
 
-class ModuleUpdateRequest(BaseModel):
+class ModuleUpdate(BaseModel):
     """更新模块请求"""
 
     name: str | None = Field(None, min_length=1, max_length=100, description="模块名称")
@@ -38,7 +38,7 @@ class ModuleUpdateRequest(BaseModel):
     is_need: bool | None = Field(None, description="是否必须模块")
 
 
-class ModuleVo(BaseModel):
+class ModuleResponse(BaseModel):
     """模块响应"""
 
     id: str = Field(..., description="模块ID")
@@ -53,10 +53,10 @@ class ModuleVo(BaseModel):
     updated_at: datetime = Field(..., description="更新时间")
 
 
-class ModuleListVo(BaseModel):
+class ModuleListResponse(BaseModel):
     """模块列表响应"""
 
-    items: list[ModuleVo] = Field(default_factory=list, description="模块列表")
+    items: list[ModuleResponse] = Field(default_factory=list, description="模块列表")
     total: int = Field(..., description="总数")
 
 
@@ -65,7 +65,7 @@ class ModuleListVo(BaseModel):
 # =============================================================================
 
 
-class ModuleMenuCreateRequest(BaseModel):
+class ModuleMenuCreate(BaseModel):
     """创建模块菜单请求"""
 
     parent_id: str | None = Field(None, description="父菜单ID")
@@ -77,7 +77,7 @@ class ModuleMenuCreateRequest(BaseModel):
     is_visible: bool = Field(True, description="是否显示")
 
 
-class ModuleMenuUpdateRequest(BaseModel):
+class ModuleMenuUpdate(BaseModel):
     """更新模块菜单请求"""
 
     parent_id: str | None = Field(None, description="父菜单ID")
@@ -88,7 +88,7 @@ class ModuleMenuUpdateRequest(BaseModel):
     is_visible: bool | None = Field(None, description="是否显示")
 
 
-class ModuleMenuVo(BaseModel):
+class ModuleMenuTreeResponse(BaseModel):
     """模块菜单响应"""
 
     id: str = Field(..., description="菜单ID")
@@ -102,13 +102,13 @@ class ModuleMenuVo(BaseModel):
     is_visible: bool = Field(..., description="是否显示")
     created_at: datetime = Field(..., description="创建时间")
     updated_at: datetime = Field(..., description="更新时间")
-    children: list["ModuleMenuVo"] = Field(default_factory=list, description="子菜单列表")
+    children: list["ModuleMenuTreeResponse"] = Field(default_factory=list, description="子菜单列表")
 
 
-class ModuleMenuListVo(BaseModel):
+class ModuleMenuListResponse(BaseModel):
     """模块菜单列表响应（树形）"""
 
-    items: list[ModuleMenuVo] = Field(default_factory=list, description="菜单树")
+    items: list[ModuleMenuTreeResponse] = Field(default_factory=list, description="菜单树")
 
 
 # =============================================================================
@@ -116,7 +116,7 @@ class ModuleMenuListVo(BaseModel):
 # =============================================================================
 
 
-class ModulePermissionCreateRequest(BaseModel):
+class ModulePermissionCreate(BaseModel):
     """创建模块权限请求"""
 
     code: str = Field(..., min_length=1, max_length=100, description="权限编码")
@@ -126,7 +126,7 @@ class ModulePermissionCreateRequest(BaseModel):
     description: str | None = Field(None, max_length=500, description="权限描述")
 
 
-class ModulePermissionUpdateRequest(BaseModel):
+class ModulePermissionUpdate(BaseModel):
     """更新模块权限请求"""
 
     name: str | None = Field(None, min_length=1, max_length=100, description="权限名称")
@@ -135,7 +135,7 @@ class ModulePermissionUpdateRequest(BaseModel):
     description: str | None = Field(None, max_length=500, description="权限描述")
 
 
-class ModulePermissionVo(BaseModel):
+class ModulePermissionResponse(BaseModel):
     """模块权限响应"""
 
     id: str = Field(..., description="权限ID")
@@ -149,10 +149,10 @@ class ModulePermissionVo(BaseModel):
     updated_at: datetime = Field(..., description="更新时间")
 
 
-class ModulePermissionListVo(BaseModel):
+class ModulePermissionListResponse(BaseModel):
     """模块权限列表响应"""
 
-    items: list[ModulePermissionVo] = Field(default_factory=list, description="权限列表")
+    items: list[ModulePermissionResponse] = Field(default_factory=list, description="权限列表")
     total: int = Field(..., description="总数")
 
 
@@ -161,7 +161,7 @@ class ModulePermissionListVo(BaseModel):
 # =============================================================================
 
 
-class ModuleRoleCreateRequest(BaseModel):
+class ModuleRoleCreate(BaseModel):
     """创建模块角色请求"""
 
     code: str = Field(..., min_length=1, max_length=50, description="角色编码")
@@ -170,7 +170,7 @@ class ModuleRoleCreateRequest(BaseModel):
     is_system: bool = Field(False, description="是否系统内置角色")
 
 
-class ModuleRoleUpdateRequest(BaseModel):
+class ModuleRoleUpdate(BaseModel):
     """更新模块角色请求"""
 
     name: str | None = Field(None, min_length=1, max_length=100, description="角色名称")
@@ -183,7 +183,7 @@ class ModuleRolePermissionUpdateRequest(BaseModel):
     permission_ids: list[str] = Field(default_factory=list, description="权限ID列表")
 
 
-class ModuleRoleVo(BaseModel):
+class ModuleRoleResponse(BaseModel):
     """模块角色响应"""
 
     id: str = Field(..., description="角色ID")
@@ -194,11 +194,11 @@ class ModuleRoleVo(BaseModel):
     is_system: bool = Field(..., description="是否系统内置角色")
     created_at: datetime = Field(..., description="创建时间")
     updated_at: datetime = Field(..., description="更新时间")
-    permissions: list[ModulePermissionVo] = Field(default_factory=list, description="权限列表")
+    permissions: list[ModulePermissionResponse] = Field(default_factory=list, description="权限列表")
 
 
-class ModuleRoleListVo(BaseModel):
+class ModuleRoleListResponse(BaseModel):
     """模块角色列表响应"""
 
-    items: list[ModuleRoleVo] = Field(default_factory=list, description="角色列表")
+    items: list[ModuleRoleResponse] = Field(default_factory=list, description="角色列表")
     total: int = Field(..., description="总数")

@@ -11,14 +11,14 @@ from sqlalchemy import select
 from iam.models import UserDepartment
 from iam.schemas.user import (
     AdminPasswordResetRequest,
-    AdminPasswordResetVo,
-    AdminUserCreateRequest,
-    AdminUserUpdateRequest,
+    AdminPasswordResetResponse,
+    AdminUserCreate,
+    AdminUserUpdate,
     UserDepartmentAssignRequest,
-    UserListVo,
+    UserListResponse,
     UserRoleAssignRequest,
     UserStatusUpdateRequest,
-    UserVo,
+    UserResponse,
 )
 from iam.services import department_service, user_service
 from iam.services.role_service import user_role_service as user_roles_service
@@ -53,16 +53,16 @@ async def list_users(
         content={
             "code": 200,
             "msg": "success",
-            "data": UserListVo(
+            "data": UserListResponse(
                 total=total,
-                items=[UserVo.model_validate(u) for u in users],
+                items=[UserResponse.model_validate(u) for u in users],
             ).model_dump(),
         }
     )
 
 
 @router.post("/users")
-async def create_user(data: AdminUserCreateRequest) -> ORJSONResponse:
+async def create_user(data: AdminUserCreate) -> ORJSONResponse:
     """
     管理员创建用户
 
@@ -85,7 +85,7 @@ async def create_user(data: AdminUserCreateRequest) -> ORJSONResponse:
             content={
                 "code": 200,
                 "msg": "创建成功",
-                "data": UserVo.model_validate(user).model_dump(),
+                "data": UserResponse.model_validate(user).model_dump(),
             }
         )
     except ValueError as e:
@@ -107,13 +107,13 @@ async def get_user(user_id: str) -> ORJSONResponse:
         content={
             "code": 200,
             "msg": "success",
-            "data": UserVo.model_validate(user).model_dump(),
+            "data": UserResponse.model_validate(user).model_dump(),
         }
     )
 
 
 @router.put("/users/{user_id}")
-async def update_user(user_id: str, data: AdminUserUpdateRequest) -> ORJSONResponse:
+async def update_user(user_id: str, data: AdminUserUpdate) -> ORJSONResponse:
     """
     更新用户信息
 
@@ -131,7 +131,7 @@ async def update_user(user_id: str, data: AdminUserUpdateRequest) -> ORJSONRespo
             content={
                 "code": 200,
                 "msg": "更新成功",
-                "data": UserVo.model_validate(user).model_dump(),
+                "data": UserResponse.model_validate(user).model_dump(),
             }
         )
     except ValueError as e:
@@ -171,7 +171,7 @@ async def enable_user(user_id: str) -> ORJSONResponse:
             content={
                 "code": 200,
                 "msg": "激活成功",
-                "data": UserVo.model_validate(user).model_dump(),
+                "data": UserResponse.model_validate(user).model_dump(),
             }
         )
     except ValueError as e:
@@ -191,7 +191,7 @@ async def disable_user(user_id: str) -> ORJSONResponse:
             content={
                 "code": 200,
                 "msg": "停用成功",
-                "data": UserVo.model_validate(user).model_dump(),
+                "data": UserResponse.model_validate(user).model_dump(),
             }
         )
     except ValueError as e:
@@ -211,7 +211,7 @@ async def lock_user(user_id: str) -> ORJSONResponse:
             content={
                 "code": 200,
                 "msg": "锁定成功",
-                "data": UserVo.model_validate(user).model_dump(),
+                "data": UserResponse.model_validate(user).model_dump(),
             }
         )
     except ValueError as e:
@@ -233,7 +233,7 @@ async def update_user_status(
             content={
                 "code": 200,
                 "msg": "状态更新成功",
-                "data": UserVo.model_validate(user).model_dump(),
+                "data": UserResponse.model_validate(user).model_dump(),
             }
         )
     except ValueError as e:
@@ -259,7 +259,7 @@ async def reset_user_password(
             content={
                 "code": 200,
                 "msg": "密码重置成功",
-                "data": AdminPasswordResetVo(password=password).model_dump(),
+                "data": AdminPasswordResetResponse(password=password).model_dump(),
             }
         )
     except ValueError as e:

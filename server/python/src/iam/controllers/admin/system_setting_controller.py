@@ -8,7 +8,7 @@ from fastapi.responses import ORJSONResponse
 from tenant.middlewares.admin_auth_middleware import get_current_admin
 from iam.schemas.admin.system_setting import (
     SystemSettingCreate,
-    SystemSettingListVo,
+    SystemSettingListResponse,
     SystemSettingResponse,
     SystemSettingUpdate,
 )
@@ -53,7 +53,7 @@ async def list_settings(
         content={
             "code": 200,
             "msg": "success",
-            "data": SystemSettingListVo(
+            "data": SystemSettingListResponse(
                 items=[build_setting_response(s) for s in settings],
                 total=total,
                 page=page,

@@ -11,16 +11,16 @@ from tenant.middlewares.admin_auth_middleware import AdminAuthService, get_curre
 from tenant.models import Tenant
 from tenant.schemas.admin.tenant import (
     AdminLoginRequest,
-    AdminLoginVo,
+    AdminLoginResponse,
     ResourceBindingRequest,
     ResourceBindingResponse,
-    ResourceConfigReferenceVo,
-    ResourceValidateVo,
-    TenantCreateRequest,
-    TenantListVo,
+    ResourceConfigReferenceResponse,
+    ResourceValidateResponse,
+    TenantCreate,
+    TenantListResponse,
     TenantStatsVo,
-    TenantUpdateRequest,
-    TenantVo,
+    TenantUpdate,
+    TenantResponse,
 )
 from tenant.services.tenant_service import TenantService
 
@@ -34,17 +34,17 @@ def Success(data=None, msg: str = "success") -> dict:
 
 async def _get_resource_ref(
     config_id: str | None, service
-) -> ResourceConfigReferenceVo | None:
+) -> ResourceConfigReferenceResponse | None:
     """获取资源配置引用"""
     if not config_id:
         return None
     config = await service.get_by_id(config_id)
     if config:
-        return ResourceConfigReferenceVo(id=config.id, name=config.name)
+        return ResourceConfigReferenceResponse(id=config.id, name=config.name)
     return None
 
 
-async def build_tenant_vo(tenant: Tenant) -> TenantVo:
+async def build_tenant_vo(tenant: Tenant) -> TenantResponse:
     """构建租户响应对象"""
     from tenant.services import (
         DatabaseConfigService,
@@ -60,7 +60,7 @@ async def build_tenant_vo(tenant: Tenant) -> TenantVo:
     queue_ref = await _get_resource_ref(tenant.queue_config_id, QueueConfigService)
     pubsub_ref = await _get_resource_ref(tenant.pubsub_config_id, PubSubConfigService)
 
-    return TenantVo(
+    return TenantResponse(
         id=tenant.id,
         name=tenant.name,
         code=tenant.code,
@@ -99,7 +99,7 @@ async def admin_login(data: AdminLoginRequest) -> ORJSONResponse:
     token, admin = result
     return ORJSONResponse(
         content=Success(
-            AdminLoginVo(
+            AdminLoginResponse(
                 token=token,
                 username=admin.username,
                 is_default=admin.is_default,
@@ -153,7 +153,7 @@ async def list_tenants(
         status=status,
     )
 
-    # 并行构建 TenantVo
+    # 并行构建 TenantResponse
     import asyncio
     tenant_vos = await asyncio.gather(*[build_tenant_vo(t) for t in tenants])
 
@@ -161,7 +161,7 @@ async def list_tenants(
         content={
             "code": 200,
             "msg": "success",
-            "data": TenantListVo(
+            "data": TenantListResponse(
                 items=tenant_vos,
                 total=total,
                 page=page,
@@ -173,7 +173,7 @@ async def list_tenants(
 
 @router.post("/tenants")
 async def create_tenant(
-    data: TenantCreateRequest,
+    data: TenantCreate,
     admin: dict = Depends(get_current_admin),
 ) -> ORJSONResponse:
     """
@@ -238,7 +238,7 @@ async def get_tenant(
 @router.put("/tenants/{tenant_id}")
 async def update_tenant(
     tenant_id: str,
-    data: TenantUpdateRequest,
+    data: TenantUpdate,
     admin: dict = Depends(get_current_admin),
 ) -> ORJSONResponse:
     """

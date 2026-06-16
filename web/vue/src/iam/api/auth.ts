@@ -3,11 +3,11 @@ import { resetUserPassword } from "./user";
 import type {
   ApiResponse,
   LoginHistory,
-  LoginHistoryQueryParams,
+  LoginHistoryQuery,
   LoginRequest,
   LoginResponse,
   PageResult,
-  UpdateUserParams,
+  UserUpdate,
   User,
 } from "../types";
 
@@ -36,7 +36,7 @@ export const getCurrentUser = () => get<ApiResponse<User>>("/iam/console/v1/user
 /**
  * 更新当前用户资料
  */
-export const updateCurrentUser = (data: UpdateUserParams) =>
+export const updateCurrentUser = (data: UserUpdate) =>
   put<ApiResponse<User>>("/iam/console/v1/users/me", data);
 
 export const updateProfile = updateCurrentUser;
@@ -58,5 +58,5 @@ export const resetPassword = resetUserPassword;
 /**
  * 获取登录历史
  */
-export const getLoginHistory = (params?: LoginHistoryQueryParams) =>
+export const getLoginHistory = (params?: LoginHistoryQuery) =>
   get<ApiResponse<PageResult<LoginHistory>>>("/iam/console/v1/auth/login-history", params as Record<string, unknown>);

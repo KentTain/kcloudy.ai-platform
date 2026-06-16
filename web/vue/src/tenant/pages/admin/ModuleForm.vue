@@ -2,7 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getModule, createModule, updateModule } from '@/tenant/api/module'
-import type { CreateModuleParams, UpdateModuleParams } from '@/tenant/types/admin'
+import type { ModuleCreate, ModuleUpdate } from '@/tenant/types/admin'
 import { notifySuccess, notifyError } from '@/framework/utils/feedback'
 import { Button, Input, Label, Card, Switch } from '@/components'
 import { ArrowLeft, Save } from '@lucide/vue'
@@ -78,7 +78,7 @@ const handleSave = async () => {
   saving.value = true
   try {
     if (isEdit.value) {
-      const payload: UpdateModuleParams = {
+      const payload: ModuleUpdate = {
         name: form.value.name,
         description: form.value.description || undefined,
         icon: form.value.icon || undefined,
@@ -87,7 +87,7 @@ const handleSave = async () => {
       await updateModule(moduleId.value, payload)
       notifySuccess('模块已更新')
     } else {
-      const payload: CreateModuleParams = {
+      const payload: ModuleCreate = {
         name: form.value.name,
         code: form.value.code,
         description: form.value.description || undefined,

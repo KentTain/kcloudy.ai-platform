@@ -6,21 +6,21 @@ from iam.schemas.admin.system_setting import (
     SystemSettingAttributeCreate,
     SystemSettingAttributeResponse,
     SystemSettingCreate,
-    SystemSettingListVo,
+    SystemSettingListResponse,
     SystemSettingResponse,
     SystemSettingUpdate,
 )
 from iam.schemas.console.system_setting import (
     ConsoleSystemSettingAttributeResponse,
-    ConsoleSystemSettingListVo,
+    ConsoleSystemSettingListResponse,
     ConsoleSystemSettingResponse,
 )
 from iam.schemas.department import (
-    DepartmentCreateRequest,
-    DepartmentTreeVo,
-    DepartmentUpdateRequest,
-    DepartmentUserVo,
-    DepartmentVo,
+    DepartmentCreate,
+    DepartmentTreeResponse,
+    DepartmentUpdate,
+    DepartmentUserResponse,
+    DepartmentResponse,
     UserDepartmentRequest,
 )
 from iam.schemas.login import (
@@ -40,17 +40,17 @@ from iam.schemas.oauth import (
     OAuthCompleteProfileRequest,
 )
 from iam.schemas.permission import (
-    PermissionGroupVo,
-    PermissionListVo,
-    PermissionVo,
+    PermissionGroupResponse,
+    PermissionListResponse,
+    PermissionResponse,
 )
 from iam.schemas.role import (
-    RoleCreateRequest,
-    RoleListVo,
+    RoleCreate,
+    RoleListResponse,
     RolePermissionRequest,
-    RoleUpdateRequest,
-    RoleVo,
-    RoleWithPermissionsVo,
+    RoleUpdate,
+    RoleResponse,
+    RoleWithPermissionsResponse,
 )
 from iam.schemas.token import (
     TokenPayload,
@@ -61,10 +61,10 @@ from iam.schemas.user import (
     PasswordChangeRequest,
     PasswordResetCodeRequest,
     PasswordResetRequest,
-    UserListVo,
+    UserListResponse,
     UserRegisterRequest,
-    UserUpdateRequest,
-    UserVo,
+    UserUpdate,
+    UserResponse,
 )
 
 __all__ = [
@@ -82,30 +82,30 @@ __all__ = [
     "TokenPayload",
     # 用户
     "UserRegisterRequest",
-    "UserUpdateRequest",
+    "UserUpdate",
     "PasswordChangeRequest",
     "PasswordResetCodeRequest",
     "PasswordResetRequest",
-    "UserVo",
-    "UserListVo",
+    "UserResponse",
+    "UserListResponse",
     # 角色
-    "RoleCreateRequest",
-    "RoleUpdateRequest",
+    "RoleCreate",
+    "RoleUpdate",
     "RolePermissionRequest",
-    "RoleVo",
-    "RoleListVo",
-    "RoleWithPermissionsVo",
+    "RoleResponse",
+    "RoleListResponse",
+    "RoleWithPermissionsResponse",
     # 权限
-    "PermissionVo",
-    "PermissionListVo",
-    "PermissionGroupVo",
+    "PermissionResponse",
+    "PermissionListResponse",
+    "PermissionGroupResponse",
     # 部门
-    "DepartmentCreateRequest",
-    "DepartmentUpdateRequest",
-    "DepartmentVo",
-    "DepartmentTreeVo",
+    "DepartmentCreate",
+    "DepartmentUpdate",
+    "DepartmentResponse",
+    "DepartmentTreeResponse",
     "UserDepartmentRequest",
-    "DepartmentUserVo",
+    "DepartmentUserResponse",
     # OAuth
     "OAuthAuthorizeResponse",
     "OAuthCallbackRequest",
@@ -115,11 +115,11 @@ __all__ = [
     "SystemSettingCreate",
     "SystemSettingUpdate",
     "SystemSettingResponse",
-    "SystemSettingListVo",
+    "SystemSettingListResponse",
     "SystemSettingAttributeCreate",
     "SystemSettingAttributeResponse",
     # 系统设置 - Console
     "ConsoleSystemSettingResponse",
-    "ConsoleSystemSettingListVo",
+    "ConsoleSystemSettingListResponse",
     "ConsoleSystemSettingAttributeResponse",
 ]

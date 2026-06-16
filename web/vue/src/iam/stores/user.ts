@@ -11,7 +11,7 @@ import {
   updateUser,
 } from "../api/user";
 import { getErrorMessage, notifyError, notifySuccess } from "@/framework/utils/feedback";
-import type { CreateUserParams, UpdateUserParams, User, UserQueryParams } from "../types";
+import type { UserCreate, UserUpdate, User, UserQuery } from "../types";
 
 export const useUserStore = defineStore("iam-user", () => {
   const users = ref<User[]>([]);
@@ -19,7 +19,7 @@ export const useUserStore = defineStore("iam-user", () => {
   const loading = ref(false);
   const total = ref(0);
 
-  const fetchUsers = async (params?: UserQueryParams) => {
+  const fetchUsers = async (params?: UserQuery) => {
     loading.value = true;
     try {
       const response = await getUsers(params);
@@ -47,7 +47,7 @@ export const useUserStore = defineStore("iam-user", () => {
     }
   };
 
-  const addUser = async (data: CreateUserParams) => {
+  const addUser = async (data: UserCreate) => {
     loading.value = true;
     try {
       const response = await createUser(data);
@@ -63,7 +63,7 @@ export const useUserStore = defineStore("iam-user", () => {
     }
   };
 
-  const editUser = async (id: string, data: UpdateUserParams) => {
+  const editUser = async (id: string, data: UserUpdate) => {
     loading.value = true;
     try {
       const response = await updateUser(id, data);
