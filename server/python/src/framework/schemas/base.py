@@ -4,6 +4,7 @@
 提供统一的 Pydantic 模型基类。
 """
 
+import warnings
 from datetime import UTC, datetime, timedelta, timezone
 from enum import Enum
 from typing import Any
@@ -39,11 +40,38 @@ class BaseModel(PydanticBaseModel):
     )
 
 
+
+class BaseQuery(BaseModel):
+    """列表查询基类，仅包含通用过滤字段"""
+
+    keyword: str | None = Field(default=None, description="搜索关键词")
+
+
+class BasePaginatedQuery(BaseQuery):
+    """分页查询基类，继承 BaseQuery 并添加分页参数"""
+
+    page: int = Field(default=1, ge=1, description="页码")
+    page_size: int = Field(default=20, ge=1, le=100, description="每页条数")
+
+
 class BaseQueryParams(BaseModel):
-    """基础查询参数Schema"""
+    """基础查询参数Schema
+
+    .. deprecated::
+        使用 BaseQuery 或 BasePaginatedQuery 替代。
+        BaseQueryParams 将在未来版本中移除。
+    """
 
     page: int = Field(default=1, description="页码")
     page_size: int = Field(default=20, description="每页条数")
+
+    def __init_subclass__(cls, **kwargs):
+        warnings.warn(
+            "BaseQueryParams 已废弃，请使用 BaseQuery 或 BasePaginatedQuery 替代",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        super().__init_subclass__(**kwargs)
 
 
 class VoMixin(BaseModel):
@@ -246,7 +274,9 @@ class I18nConvertibleBaseModel(BaseModel):
 
 __all__ = [
     "BaseModel",
-    "BaseQueryParams",
+    "BaseQuery",
+    "BasePaginatedQuery",
+    "BaseQueryParams",  # deprecated, use BaseQuery or BasePaginatedQuery
     "VoMixin",
     "TreeNodeVoMixin",
     "AuditedOperatorVoMixin",

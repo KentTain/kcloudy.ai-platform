@@ -7,6 +7,8 @@
 from framework.schemas.base import (
     AuditedOperatorVoMixin,
     BaseModel,
+    BasePaginatedQuery,
+    BaseQuery,
     BaseQueryParams,
     I18nConvertibleBaseModel,
     PropertyAttributeVoMixin,
@@ -18,7 +20,9 @@ from framework.schemas.tree import TreeNodeTreeVo, TreeNodeVo, TreeNodeVoMixin
 __all__ = [
     # 基类
     "BaseModel",
-    "BaseQueryParams",
+    "BaseQuery",
+    "BasePaginatedQuery",
+    "BaseQueryParams",  # deprecated
     "VoMixin",
     # Mixin
     "TreeNodeVoMixin",
