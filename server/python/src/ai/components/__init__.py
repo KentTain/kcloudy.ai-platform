@@ -13,6 +13,10 @@ from ai.components.encryption.exceptions import (
     EncryptionKeyError,
     DecryptionError,
 )
+from ai.components.datasource.base import DBType, DbInfo
+from ai.components.datasource.interfaces import BaseConnect
+from ai.components.datasource.rdbms.base import RDBMSDatabase
+from ai.components.datasource.rdbms.conn_mysql import MySQLConnect
 
 __all__ = [
     # Encryption
@@ -25,4 +29,10 @@ __all__ = [
     "EncryptionAlgorithmError",
     "EncryptionKeyError",
     "DecryptionError",
+    # Datasource
+    "DBType",
+    "DbInfo",
+    "BaseConnect",
+    "RDBMSDatabase",
+    "MySQLConnect",
 ]
