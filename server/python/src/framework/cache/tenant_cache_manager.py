@@ -329,7 +329,7 @@ class TenantCacheManager:
         """设置键值对"""
         client = await self.get_client(tenant_id, config)
         actual_key = self._build_key(key, tenant_id, config, skip_tenant)
-        return await client.set(actual_key, value, ex=ttl, nx=nx)
+        return await client.set(actual_key, value, ttl=ttl, nx=nx)
 
     async def get(
         self,
@@ -473,7 +473,7 @@ class TenantCacheManager:
                         tenant_id=actual_tenant_id,
                         lock_key=lock_key,
                     )
-        return await client.set(actual_key, "1", ex=ttl, nx=True)
+        return await client.set(actual_key, "1", ttl=ttl, nx=True)
 
     async def release_lock(
         self,
