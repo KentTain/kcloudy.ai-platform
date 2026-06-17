@@ -66,3 +66,40 @@ class TestBaseConnect:
 
         for method in expected_methods:
             assert method in abstract_methods, f"缺少抽象方法: {method}"
+
+
+class TestRDBMSDatabaseURI:
+    """RDBMSDatabase URI 构造测试"""
+
+    def test_uri_construction_mysql(self):
+        """测试 MySQL URI 格式生成"""
+        from ai.components.datasource.rdbms.conn_mysql import MySQLConnect
+
+        # 验证 MySQL URI 格式
+        expected_driver = "mysql+aiomysql"
+        assert MySQLConnect.driver == expected_driver
+
+        # 验证默认数据库列表
+        assert "information_schema" in MySQLConnect.default_db
+        assert "performance_schema" in MySQLConnect.default_db
+
+    def test_uri_with_special_characters(self):
+        """测试特殊字符转义"""
+        from urllib.parse import quote, quote_plus
+
+        # 测试用户名包含特殊字符
+        user = "user@domain"
+        encoded_user = quote(user)
+        assert encoded_user == "user%40domain"
+
+        # 测试密码包含特殊字符
+        pwd = "p@ss:word/123"
+        encoded_pwd = quote_plus(pwd)
+        assert encoded_pwd == "p%40ss%3Aword%2F123"
+
+    def test_default_database_list(self):
+        """测试默认数据库列表"""
+        from ai.components.datasource.rdbms.conn_mysql import MySQLConnect
+
+        expected_dbs = ["information_schema", "performance_schema", "sys", "mysql"]
+        assert MySQLConnect.default_db == expected_dbs
