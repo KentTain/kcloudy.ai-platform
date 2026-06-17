@@ -73,11 +73,22 @@ class TestModuleSyncService:
         role_perm_result = MagicMock()
         role_perm_result.scalars.return_value.all.return_value = [mock_role_perm]
 
+        # 空的已存在检查结果（首次同步没有历史数据）
+        empty_existing = MagicMock()
+        empty_existing.scalars.return_value.all.return_value = []
+
+        # 提供充足的 side_effect 条目（sync_module_assigned 含 8+ 次 execute 调用）
         mock_session.execute.side_effect = [
-            menu_result,
-            perm_result,
-            role_result,
-            role_perm_result,
+            menu_result,        # 1: ModuleMenu 查询
+            perm_result,        # 2: ModulePermission 查询
+            role_result,        # 3: ModuleRole 查询
+            role_perm_result,   # 4: ModuleRolePermission 查询
+            empty_existing,     # 5: 已存在 Menu 检查
+            empty_existing,     # 6: 已存在 Permission 检查
+            empty_existing,     # 7: 已存在 Role 检查
+            empty_existing,     # 8: 已存在 RolePermission 检查
+            empty_existing,     # 9: 额外备用
+            empty_existing,     # 10: 额外备用
         ]
         mock_session.flush = AsyncMock()
         mock_session.add = MagicMock()

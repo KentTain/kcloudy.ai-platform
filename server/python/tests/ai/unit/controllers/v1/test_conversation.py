@@ -16,6 +16,7 @@ from ai.controllers.v1.conversation import (
 )
 from ai.schemas.conversation import (
     ConversationDeleteResponse,
+    ConversationListItem,
     ConversationListResponse,
 )
 
@@ -40,18 +41,13 @@ class TestListConversations:
         """测试正常返回会话列表"""
         tenant_id = str(uuid.uuid4())
 
-        # 模拟数据库查询结果
-        mock_row = MagicMock()
-        mock_row.id = uuid.uuid4()
-        mock_row.name = "测试会话"
-        mock_row.created_at = datetime.now()
-        mock_row.message_count = 5
-
-        mock_result = MagicMock()
-        mock_result.all.return_value = [mock_row]
-
-        mock_session = AsyncMock()
-        mock_session.execute.return_value = mock_result
+        # 模拟 conversation_service 返回 ConversationListItem 对象
+        mock_item = ConversationListItem(
+            id=str(uuid.uuid4()),
+            name="测试会话",
+            created_at=datetime.now(),
+            message_count=5,
+        )
 
         with (
             patch(
@@ -59,8 +55,9 @@ class TestListConversations:
                 return_value=tenant_id,
             ),
             patch(
-                "ai.controllers.v1.conversation.get_session",
-                return_value=AsyncMock(__aenter__=AsyncMock(return_value=mock_session)),
+                "ai.controllers.v1.conversation.conversation_service.list_with_message_count",
+                new_callable=AsyncMock,
+                return_value=[mock_item],
             ),
         ):
             result = await list_conversations()
@@ -75,20 +72,15 @@ class TestListConversations:
         """测试空会话列表"""
         tenant_id = str(uuid.uuid4())
 
-        mock_result = MagicMock()
-        mock_result.all.return_value = []
-
-        mock_session = AsyncMock()
-        mock_session.execute.return_value = mock_result
-
         with (
             patch(
                 "ai.controllers.v1.conversation.get_tenant_id",
                 return_value=tenant_id,
             ),
             patch(
-                "ai.controllers.v1.conversation.get_session",
-                return_value=AsyncMock(__aenter__=AsyncMock(return_value=mock_session)),
+                "ai.controllers.v1.conversation.conversation_service.list_with_message_count",
+                new_callable=AsyncMock,
+                return_value=[],
             ),
         ):
             result = await list_conversations()
@@ -101,17 +93,15 @@ class TestListConversations:
         """测试数据库异常处理"""
         tenant_id = str(uuid.uuid4())
 
-        mock_session = AsyncMock()
-        mock_session.execute.side_effect = Exception("数据库连接失败")
-
         with (
             patch(
                 "ai.controllers.v1.conversation.get_tenant_id",
                 return_value=tenant_id,
             ),
             patch(
-                "ai.controllers.v1.conversation.get_session",
-                return_value=AsyncMock(__aenter__=AsyncMock(return_value=mock_session)),
+                "ai.controllers.v1.conversation.conversation_service.list_with_message_count",
+                new_callable=AsyncMock,
+                side_effect=Exception("数据库连接失败"),
             ),
         ):
             with pytest.raises(HTTPException) as exc_info:
@@ -146,12 +136,9 @@ class TestDeleteConversation:
                 return_value=tenant_id,
             ),
             patch(
-                "ai.controllers.v1.conversation.get_session",
-                return_value=AsyncMock(__aenter__=AsyncMock(return_value=AsyncMock())),
-            ),
-            patch(
-                "ai.controllers.v1.conversation.Conversation.one_by_conditions",
-                return_value=None,
+                "ai.controllers.v1.conversation.conversation_service.soft_delete",
+                new_callable=AsyncMock,
+                return_value=False,  # 不存在
             ),
         ):
             with pytest.raises(HTTPException) as exc_info:
@@ -164,12 +151,7 @@ class TestDeleteConversation:
     async def test_delete_conversation_cross_tenant(self):
         """测试跨租户删除返回 404"""
         tenant_id = str(uuid.uuid4())
-        other_tenant_id = str(uuid.uuid4())
         conversation_id = str(uuid.uuid4())
-
-        # 会话属于其他租户
-        mock_conversation = MagicMock()
-        mock_conversation.tenant_id = other_tenant_id
 
         with (
             patch(
@@ -177,12 +159,9 @@ class TestDeleteConversation:
                 return_value=tenant_id,
             ),
             patch(
-                "ai.controllers.v1.conversation.get_session",
-                return_value=AsyncMock(__aenter__=AsyncMock(return_value=AsyncMock())),
-            ),
-            patch(
-                "ai.controllers.v1.conversation.Conversation.one_by_conditions",
-                return_value=None,  # 查询条件包含 tenant_id，跨租户查不到
+                "ai.controllers.v1.conversation.conversation_service.soft_delete",
+                new_callable=AsyncMock,
+                return_value=False,  # 跨租户查不到
             ),
         ):
             with pytest.raises(HTTPException) as exc_info:
@@ -196,36 +175,21 @@ class TestDeleteConversation:
         tenant_id = str(uuid.uuid4())
         conversation_id = str(uuid.uuid4())
 
-        mock_conversation = MagicMock()
-        mock_conversation.id = conversation_id
-        mock_conversation.tenant_id = tenant_id
-
-        mock_session = AsyncMock()
-        mock_session.commit = AsyncMock()
-
         with (
             patch(
                 "ai.controllers.v1.conversation.get_tenant_id",
                 return_value=tenant_id,
             ),
             patch(
-                "ai.controllers.v1.conversation.get_session",
-                return_value=AsyncMock(__aenter__=AsyncMock(return_value=mock_session)),
-            ),
-            patch(
-                "ai.controllers.v1.conversation.Conversation.one_by_conditions",
-                return_value=mock_conversation,
+                "ai.controllers.v1.conversation.conversation_service.soft_delete",
+                new_callable=AsyncMock,
+                return_value=True,  # 删除成功
             ),
         ):
             result = await delete_conversation(conversation_id)
 
             assert isinstance(result, ConversationDeleteResponse)
             assert result.success is True
-            # 验证状态被更新为 DELETED
-            from ai.models.enums import ConversationStatus
-
-            assert mock_conversation.status == ConversationStatus.DELETED
-            mock_session.commit.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_delete_conversation_exception(self):
@@ -239,13 +203,8 @@ class TestDeleteConversation:
                 return_value=tenant_id,
             ),
             patch(
-                "ai.controllers.v1.conversation.get_session",
-                return_value=AsyncMock(
-                    __aenter__=AsyncMock(return_value=AsyncMock())
-                ),
-            ),
-            patch(
-                "ai.controllers.v1.conversation.Conversation.one_by_conditions",
+                "ai.controllers.v1.conversation.conversation_service.soft_delete",
+                new_callable=AsyncMock,
                 side_effect=Exception("数据库错误"),
             ),
         ):

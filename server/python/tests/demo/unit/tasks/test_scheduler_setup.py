@@ -12,15 +12,15 @@ class TestSetupScheduler:
     async def test_setup_registers_local_tasks(self):
         """WHEN: 调用 setup_scheduler()
         THEN: 本地任务注册到本地调度器"""
-        mock_settings = MagicMock()
-
         with (
             patch("demo.tasks.setup.AsyncIOScheduler") as mock_sched_cls,
-            patch("demo.tasks.setup.init_settings", return_value=mock_settings),
+            patch("demo.tasks.setup.settings") as mock_settings,
         ):
             mock_local = MagicMock()
             mock_cluster = MagicMock()
             mock_sched_cls.side_effect = [mock_local, mock_cluster]
+
+            mock_settings.redis = MagicMock()
 
             from demo.tasks.setup import setup_scheduler
 
@@ -33,16 +33,16 @@ class TestSetupScheduler:
     async def test_setup_registers_cluster_tasks(self):
         """WHEN: 调用 setup_scheduler()
         THEN: 集群任务注册到集群调度器"""
-        mock_settings = MagicMock()
-
         with (
             patch("demo.tasks.setup.AsyncIOScheduler") as mock_sched_cls,
-            patch("demo.tasks.setup.init_settings", return_value=mock_settings),
+            patch("demo.tasks.setup.settings") as mock_settings,
             patch("demo.tasks.setup.RedisJobStore", return_value=MagicMock()),
         ):
             mock_local = MagicMock()
             mock_cluster = MagicMock()
             mock_sched_cls.side_effect = [mock_local, mock_cluster]
+
+            mock_settings.redis = MagicMock()
 
             from demo.tasks.setup import setup_scheduler
 

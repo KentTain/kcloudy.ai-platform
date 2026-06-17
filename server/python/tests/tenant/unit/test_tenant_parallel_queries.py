@@ -3,6 +3,7 @@
 测试 asyncio.gather 并行查询的正确性。
 """
 
+from datetime import datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -30,8 +31,8 @@ class TestBuildTenantVoParallel:
         mock_tenant.cache_config_id = "cache-1"
         mock_tenant.queue_config_id = "queue-1"
         mock_tenant.pubsub_config_id = "pubsub-1"
-        mock_tenant.created_at = None
-        mock_tenant.updated_at = None
+        mock_tenant.created_at = datetime.now()
+        mock_tenant.updated_at = datetime.now()
 
         # Mock 资源配置
         mock_db_config = MagicMock()
@@ -111,8 +112,8 @@ class TestBuildTenantVoParallel:
         mock_tenant.cache_config_id = None
         mock_tenant.queue_config_id = None
         mock_tenant.pubsub_config_id = None
-        mock_tenant.created_at = None
-        mock_tenant.updated_at = None
+        mock_tenant.created_at = datetime.now()
+        mock_tenant.updated_at = datetime.now()
 
         # 使用 patch 模拟服务（返回 None）
         with patch(

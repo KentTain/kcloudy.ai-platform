@@ -296,11 +296,16 @@ class TestTenantCacheInstanceManagement:
     async def test_release_idle_instances(self, cache_manager, unique_tenant_id):
         """释放空闲实例客户端"""
         # 创建实例客户端
+        from datetime import datetime, timedelta
         config = TenantCacheConfig(host="localhost", port=6379, password="XdA9caoq", db=13)
         await cache_manager.get_client(unique_tenant_id, config)
 
         # 验证实例存在
         assert len(cache_manager._instance_clients) > 0
+
+        # 将访问时间设置为过去，确保 release_idle_instances 能释放
+        for key in cache_manager._instance_access_times:
+            cache_manager._instance_access_times[key] = datetime.now() - timedelta(seconds=10)
 
         # 释放空闲实例（超时=0，立即释放所有）
         released = await cache_manager.release_idle_instances(timeout=0)

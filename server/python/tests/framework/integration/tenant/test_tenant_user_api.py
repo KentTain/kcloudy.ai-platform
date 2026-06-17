@@ -25,7 +25,7 @@ class TestUserTenantAPI:
 
     def test_schema_validation(self):
         """测试 Schema 验证"""
-        from tenant.schemas.console.tenant import UserTenantResponse, CurrentTenantVo, SwitchTenantVo
+        from tenant.schemas.console.tenant import UserTenantResponse, CurrentTenantResponse, SwitchTenantResponse
 
         # 用户租户 VO
         vo = UserTenantResponse(
@@ -40,7 +40,7 @@ class TestUserTenantAPI:
         assert vo.role == "admin"
 
         # 当前租户 VO
-        current = CurrentTenantVo(
+        current = CurrentTenantResponse(
             id="t001",
             name="测试租户",
             code="test",
@@ -49,7 +49,7 @@ class TestUserTenantAPI:
         assert current.id == "t001"
 
         # 切换租户 VO
-        switch = SwitchTenantVo(
+        switch = SwitchTenantResponse(
             tenant_id="t001",
             tenant_name="测试租户",
             message="切换成功",

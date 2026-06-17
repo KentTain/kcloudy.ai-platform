@@ -11,7 +11,7 @@ async def test_mysql_connection():
     try:
         import aiomysql
     except ImportError:
-        raise Exception("MySQL驱动未安装，请安装aiomysql")
+        pytest.skip("MySQL驱动未安装，跳过测试")
     loop = asyncio.get_event_loop()
 
     conn = None

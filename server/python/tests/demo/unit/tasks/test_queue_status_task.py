@@ -27,9 +27,6 @@ class TestQueueStatusTask:
             patch(
                 "demo.tasks.services.queue_status_task._logger"
             ) as mock_logger,
-            patch(
-                "demo.tasks.services.queue_status_task.init_settings"
-            ) as mock_settings,
         ):
             await queue_status_task()
             mock_logger.info.assert_called_once()
@@ -55,9 +52,6 @@ class TestQueueStatusTask:
             patch(
                 "demo.tasks.services.queue_status_task._logger"
             ) as mock_logger,
-            patch(
-                "demo.tasks.services.queue_status_task.init_settings"
-            ) as mock_settings,
         ):
             await queue_status_task()
             mock_logger.info.assert_called_once()
@@ -80,9 +74,6 @@ class TestQueueStatusTask:
             patch(
                 "demo.tasks.services.queue_status_task._logger"
             ) as mock_logger,
-            patch(
-                "demo.tasks.services.queue_status_task.init_settings"
-            ) as mock_settings,
         ):
             await queue_status_task()
             mock_logger.exception.assert_called_once()

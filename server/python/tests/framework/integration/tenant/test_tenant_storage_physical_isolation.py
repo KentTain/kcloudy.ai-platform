@@ -330,12 +330,13 @@ class TestTenantStorageInstanceManagement:
     async def test_release_idle_instances(self, storage_manager):
         """释放空闲实例客户端"""
         # 模拟实例客户端
-        from datetime import datetime
+        from datetime import datetime, timedelta
         storage_manager._instance_storages["https://test.example.com"] = storage_manager._default_storage
-        storage_manager._instance_access_times["https://test.example.com"] = datetime.now()
+        # 将访问时间设置为过去，确保 release_idle_instances 能释放
+        storage_manager._instance_access_times["https://test.example.com"] = datetime.now() - timedelta(seconds=10)
 
         # 释放空闲实例（超时=0）
-        released = storage_manager.release_idle_instances(timeout=0)
+        released = await storage_manager.release_idle_instances(timeout=0)
 
         assert released == 1
         assert len(storage_manager._instance_storages) == 0
