@@ -167,6 +167,7 @@ class TestTenantQueueOperations:
             type=QueueType.REDIS,
             host="localhost",  # 使用本地 Redis 模拟
             port=6379,
+            password="XdA9caoq",
         )
 
         # 构建队列名

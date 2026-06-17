@@ -102,8 +102,6 @@ class TenantQueueManager:
         Returns:
             str: 消息 ID
         """
-        actual_stream = self._build_queue_name(queue_name, tenant_id, config, skip_tenant)
-
         from framework.tenant.protocols import TenantCacheConfig
 
         cache_config = None
@@ -115,13 +113,15 @@ class TenantQueueManager:
                 password=config.password,
             )
 
+        # 使用默认 Redis 实例时，传递原始队列名，让 cache_manager 构建完整 key
+        # 使用物理隔离实例时，传递原始队列名
         return await self._cache_manager.xadd(
-            queue_name=actual_stream.replace("queue:", ""),
+            queue_name=queue_name,
             fields=fields,
             tenant_id=tenant_id,
             config=cache_config,
             id=id,
-            skip_tenant=True,  # queue name already built
+            skip_tenant=False,  # 让 cache_manager 构建队列名
         )
 
     async def xreadgroup(
@@ -151,8 +151,6 @@ class TenantQueueManager:
         Returns:
             list: 消息列表
         """
-        actual_stream = self._build_queue_name(queue_name, tenant_id, config, skip_tenant)
-
         from framework.tenant.protocols import TenantCacheConfig
 
         cache_config = None
@@ -164,15 +162,17 @@ class TenantQueueManager:
                 password=config.password,
             )
 
+        # 使用默认 Redis 实例时，传递原始队列名
+        # 使用物理隔离实例时，传递原始队列名
         return await self._cache_manager.xreadgroup(
             groupname=groupname,
             consumername=consumername,
-            queue_name=actual_stream.replace("queue:", ""),
+            queue_name=queue_name,
             tenant_id=tenant_id,
             config=cache_config,
             count=count,
             block=block,
-            skip_tenant=True,
+            skip_tenant=False,  # 让 cache_manager 构建队列名
         )
 
     async def xack(
@@ -198,8 +198,6 @@ class TenantQueueManager:
         Returns:
             int: 确认的消息数
         """
-        actual_stream = self._build_queue_name(queue_name, tenant_id, config, skip_tenant)
-
         from framework.tenant.protocols import TenantCacheConfig
 
         cache_config = None
@@ -211,13 +209,15 @@ class TenantQueueManager:
                 password=config.password,
             )
 
+        # 使用默认 Redis 实例时，传递原始队列名
+        # 使用物理隔离实例时，传递原始队列名
         return await self._cache_manager.xack(
-            actual_stream.replace("queue:", ""),
+            queue_name,
             group,
             *ids,
             tenant_id=tenant_id,
             config=cache_config,
-            skip_tenant=True,
+            skip_tenant=False,  # 让 cache_manager 构建队列名
         )
 
 

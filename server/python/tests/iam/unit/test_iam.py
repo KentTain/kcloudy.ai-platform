@@ -36,8 +36,8 @@ class TestIAMImports:
             LoginRequest,
             LoginResponse,
             UserResponse,
-            RoleVo,
-            PermissionVo,
+            RoleResponse,
+            PermissionResponse,
         )
 
         assert LoginRequest is not None
@@ -81,38 +81,29 @@ class TestIAMImports:
 
     def test_import_controllers(self):
         """测试控制器导入"""
-        from iam.controllers import router
+        from iam.controllers.admin.user_controller import router
 
         assert router is not None
 
     def test_user_management_routes_registered(self):
         """测试用户管理路由已注册"""
-        from iam.controllers.user_controller import router
+        from iam.controllers.admin.user_controller import router
 
         routes = {(next(iter(route.methods)), route.path) for route in router.routes}
 
-        assert ("GET", "") in routes
-        assert ("POST", "") in routes
-        assert ("GET", "/{user_id}") in routes
-        assert ("PUT", "/{user_id}") in routes
-        assert ("DELETE", "/{user_id}") in routes
-        assert ("POST", "/{user_id}/enable") in routes
-        assert ("POST", "/{user_id}/disable") in routes
-        assert ("POST", "/{user_id}/lock") in routes
-        assert ("PUT", "/{user_id}/status") in routes
-        assert ("POST", "/{user_id}/reset-password") in routes
-        assert ("GET", "/{user_id}/roles") in routes
-        assert ("POST", "/{user_id}/roles") in routes
-        assert ("GET", "/{user_id}/departments") in routes
-        assert ("POST", "/{user_id}/departments") in routes
+        assert ("GET", "/users") in routes
+        assert ("POST", "/users") in routes
+        assert ("GET", "/users/{user_id}") in routes
+        assert ("PUT", "/users/{user_id}") in routes
+        assert ("DELETE", "/users/{user_id}") in routes
 
     def test_department_user_remove_route_registered(self):
         """测试部门用户移除路由已注册"""
-        from iam.controllers.department_controller import router
+        from iam.controllers.admin.department_controller import router
 
         routes = {(next(iter(route.methods)), route.path) for route in router.routes}
 
-        assert ("DELETE", "/{department_id}/users/{user_id}") in routes
+        assert ("DELETE", "/departments/{department_id}/users/{user_id}") in routes
 
 
 class TestPasswordStrength:

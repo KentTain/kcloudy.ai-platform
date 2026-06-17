@@ -353,6 +353,11 @@ class RedisUtil:
         return await cls.get_client().publish(channel, message)
 
     @classmethod
+    def pubsub(cls):
+        """获取 PubSub 对象"""
+        return cls.get_client().pubsub()
+
+    @classmethod
     async def pubsub_numsub(cls, *channels: str) -> dict[str, int]:
         """获取频道订阅者数量"""
         result = await cls.get_client().pubsub_numsub(*channels)
