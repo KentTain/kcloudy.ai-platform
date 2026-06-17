@@ -72,7 +72,7 @@ tenant:
 # 数据库配置
 sqlalchemy:
   # 数据库连接URL
-  url: "postgresql+asyncpg://user:password@localhost:5432/alon"
+  url: "postgresql+asyncpg://user:password@localhost:5432/ai_platform"
   # 是否启用SQL语句日志
   echo: false
   pool:
