@@ -149,12 +149,21 @@ class TenantResponse(BaseModel):
         )
 
 
+class TenantListStats(BaseModel):
+    """租户列表统计"""
+
+    total_count: int = Field(..., description="租户总数")
+    inactive_count: int = Field(..., description="未激活租户数")
+    expired_count: int = Field(..., description="已过期租户数")
+
+
 class TenantPaginatedListResponse(BaseModel):
     """租户分页列表响应"""
     items: list[TenantResponse] = Field(default_factory=list, description="租户列表")
     total: int = Field(..., description="总数")
     page: int = Field(..., description="页码")
     page_size: int = Field(..., description="每页数量")
+    stats: TenantListStats = Field(..., description="租户统计")
 
 
 class TenantStatsResponse(BaseModel):

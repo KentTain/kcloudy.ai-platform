@@ -20,6 +20,7 @@ from tenant.schemas.admin.tenant import (
     ResourceConfigReferenceResponse,
     ResourceValidateResponse,
     TenantCreate,
+    TenantListStats,
     TenantPaginatedListResponse,
     TenantResponse,
     TenantStatsResponse,
@@ -142,12 +143,17 @@ async def list_tenants(
     WHEN 管理员请求 GET /tenant/admin/v1/tenants?keyword=acme
     THEN 返回名称或编码包含 "acme" 的租户列表
     """
-    tenants, total = await TenantService.list_tenants(
-        page=page,
-        page_size=page_size,
-        keyword=keyword,
-        status=status,
+    # 并行查询租户列表和统计数据
+    result, stats = await asyncio.gather(
+        TenantService.list_tenants(
+            page=page,
+            page_size=page_size,
+            keyword=keyword,
+            status=status,
+        ),
+        TenantService.get_tenant_stats(),
     )
+    tenants, total = result
 
     # 并行构建 TenantResponse
     tenant_vos = await asyncio.gather(*[build_tenant_vo(t) for t in tenants])
@@ -161,6 +167,7 @@ async def list_tenants(
                 total=total,
                 page=page,
                 page_size=page_size,
+                stats=TenantListStats(**stats),
             ).model_dump(),
         }
     )

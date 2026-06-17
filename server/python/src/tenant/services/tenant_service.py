@@ -8,7 +8,7 @@ from datetime import datetime
 from typing import Any, TypeAlias
 
 from loguru import logger
-from sqlalchemy import select, func, delete as sql_delete
+from sqlalchemy import select, func, delete as sql_delete, case, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from tenant.models import (
@@ -446,6 +446,38 @@ class TenantService:
             raise TenantExpiredError(tenant_id)
 
         return tenant
+
+    @staticmethod
+    async def get_tenant_stats() -> dict[str, int]:
+        """
+        获取租户统计数据
+
+        使用单次 SQL 查询计算：
+        - total_count: 租户总数
+        - inactive_count: 状态为 inactive 的租户数
+        - expired_count: 已过期的租户数
+
+        Returns:
+            dict[str, int]: 统计数据
+        """
+        async with async_session() as session:
+            result = await session.execute(
+                select(
+                    func.count().label("total_count"),
+                    func.count(case((Tenant.status == TenantStatus.INACTIVE, 1))).label(
+                        "inactive_count"
+                    ),
+                    func.count(
+                        case((and_(Tenant.expired_at.is_not(None), Tenant.expired_at < datetime.now()), 1))
+                    ).label("expired_count"),
+                )
+            )
+            row = result.one()
+            return {
+                "total_count": row.total_count,
+                "inactive_count": row.inactive_count,
+                "expired_count": row.expired_count,
+            }
 
     @staticmethod
     async def list_tenants(
