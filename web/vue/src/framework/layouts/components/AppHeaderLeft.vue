@@ -21,17 +21,21 @@ const route = useRoute();
 const menuStore = useMenuStore();
 
 /**
- * 从用户菜单中查找当前路由对应的模块名
+ * 从用户菜单中查找当前路由对应的模块信息和菜单项
+ * 返回模块名、模块路径和匹配的菜单项
  */
-function findModuleByPath(menus: UserMenuItem[], currentPath: string): string | null {
+function findModuleByPath(menus: UserMenuItem[], currentPath: string): { moduleName: string; modulePath: string | null } | null {
   for (const module of menus) {
     // 检查模块本身的路径是否匹配
     if (module.path === currentPath) {
-      return module.name;
+      return { moduleName: module.name, modulePath: module.path };
     }
     // 检查子菜单中是否有匹配的路径
-    if (module.children?.some((child) => child.path === currentPath)) {
-      return module.name;
+    const matchedChild = module.children?.find((child) => child.path === currentPath);
+    if (matchedChild) {
+      // 模块路径：优先使用模块自身的 path，否则使用第一个可见子菜单的 path
+      const modulePath = module.path || (module.children?.find((child) => child.path)?.path) || null;
+      return { moduleName: module.name, modulePath };
     }
   }
   return null;
@@ -51,15 +55,19 @@ const breadcrumbs = computed(() => {
     return [];
   }
 
-  // 从菜单数据中查找当前路由对应的模块名
-  const moduleName = findModuleByPath(menuStore.userMenus, route.path);
+  // 从菜单数据中查找当前路由对应的模块信息
+  const moduleInfo = findModuleByPath(menuStore.userMenus, route.path);
 
   // 构建面包屑
   const items: { title: string; path?: string }[] = [];
 
-  // 如果找到模块名且不是首页，添加模块作为第一级
-  if (moduleName && route.path !== "/") {
-    items.push({ title: moduleName });
+  // 如果找到模块信息且不是首页，添加模块作为第一级
+  if (moduleInfo && route.path !== "/") {
+    items.push({
+      title: moduleInfo.moduleName,
+      // 只有模块有有效路径时才添加
+      ...(moduleInfo.modulePath ? { path: moduleInfo.modulePath } : {})
+    });
   }
 
   // 添加当前页面的面包屑
@@ -86,11 +94,13 @@ const breadcrumbs = computed(() => {
   <!-- 面包屑 -->
   <Breadcrumb v-if="breadcrumbs.length > 0">
     <BreadcrumbList>
-      <template v-for="(item, index) in breadcrumbs" :key="item.path">
+      <template v-for="(item, index) in breadcrumbs" :key="index">
         <BreadcrumbItem v-if="index < breadcrumbs.length - 1">
-          <BreadcrumbLink as-child>
+          <!-- 有路径时渲染为链接，无路径时渲染为纯文本 -->
+          <BreadcrumbLink v-if="item.path" as-child>
             <RouterLink :to="item.path">{{ item.title }}</RouterLink>
           </BreadcrumbLink>
+          <span v-else class="text-muted-foreground">{{ item.title }}</span>
         </BreadcrumbItem>
         <BreadcrumbSeparator v-if="index < breadcrumbs.length - 1" />
         <BreadcrumbItem v-if="index === breadcrumbs.length - 1">
