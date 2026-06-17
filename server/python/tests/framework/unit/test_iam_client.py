@@ -132,7 +132,7 @@ class TestIamClientGetUserTenantsMicroservice:
         assert result[0].is_default is True
 
         # 验证调用了正确的接口
-        mock_http_client.get.assert_called_once_with("/inner/v1/users/user-1/tenants")
+        mock_http_client.get.assert_called_once_with("/iam/inner/v1/users/user-1/tenants")
 
     @pytest.mark.asyncio
     async def test_microservice_mode_returns_empty_list(self):
@@ -165,7 +165,7 @@ class TestIamClientGetTenantUserIdsMicroservice:
         result = await client.get_tenant_user_ids("tenant-1")
 
         assert result == ["user-1", "user-2"]
-        mock_http_client.get.assert_called_once_with("/inner/v1/tenants/tenant-1/users")
+        mock_http_client.get.assert_called_once_with("/iam/inner/v1/tenants/tenant-1/users")
 
     @pytest.mark.asyncio
     async def test_microservice_mode_returns_empty_list(self):
