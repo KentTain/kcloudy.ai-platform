@@ -103,3 +103,51 @@ class TestRDBMSDatabaseURI:
 
         expected_dbs = ["information_schema", "performance_schema", "sys", "mysql"]
         assert MySQLConnect.default_db == expected_dbs
+
+
+class TestSQLParsing:
+    """SQL 解析功能测试"""
+
+    def test_sqlparse_format(self):
+        """测试 SQL 格式化"""
+        import sqlparse
+
+        sql = "select * from users where id=1"
+        formatted = sqlparse.format(sql, reindent=True, keyword_case='upper')
+
+        # 验证关键字被大写
+        assert "SELECT" in formatted
+        assert "FROM" in formatted
+        assert "WHERE" in formatted
+
+    def test_sqlparse_split(self):
+        """测试 SQL 拆分"""
+        import sqlparse
+
+        sql = "SELECT * FROM users; INSERT INTO users VALUES (1);"
+        statements = sqlparse.split(sql)
+
+        # 验证拆分为多条语句
+        assert len(statements) == 2
+        assert "SELECT" in statements[0]
+        assert "INSERT" in statements[1]
+
+    def test_regex_patterns(self):
+        """测试正则表达式功能"""
+        import regex
+
+        # 测试基本正则匹配
+        pattern = r'\b\w+@\w+\.\w+\b'
+        text = "联系邮箱: test@example.com 和 admin@site.org"
+        matches = regex.findall(pattern, text)
+
+        assert len(matches) == 2
+        assert "test@example.com" in matches
+        assert "admin@site.org" in matches
+
+        # 测试 Unicode 支持
+        chinese_pattern = r'[\p{Han}]+'
+        chinese_text = "这是中文测试"
+        chinese_matches = regex.findall(chinese_pattern, chinese_text)
+
+        assert len(chinese_matches) > 0
