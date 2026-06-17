@@ -103,6 +103,7 @@ class TestTenantCachePhysicalIsolation:
         config = TenantCacheConfig(
             host="localhost",
             port=6379,
+            password="XdA9caoq",
             db=10,  # 使用不同的 DB 模拟隔离
         )
 
@@ -161,6 +162,7 @@ class TestTenantCachePhysicalIsolation:
         config = TenantCacheConfig(
             host="localhost",
             port=6379,
+            password="XdA9caoq",
             db=11,  # 使用独立 DB 避免冲突
         )
 
@@ -282,7 +284,7 @@ class TestTenantCacheInstanceManagement:
         config3 = TenantCacheConfig(host="redis-b.com", port=6379)  # 不同实例
 
         # 模拟客户端创建（使用本地 Redis）
-        config_local = TenantCacheConfig(host="localhost", port=6379, db=12)
+        config_local = TenantCacheConfig(host="localhost", port=6379, password="XdA9caoq", db=12)
 
         client1 = await cache_manager.get_client(unique_tenant_id, config_local)
         client2 = await cache_manager.get_client(unique_tenant_id, config_local)
@@ -294,7 +296,7 @@ class TestTenantCacheInstanceManagement:
     async def test_release_idle_instances(self, cache_manager, unique_tenant_id):
         """释放空闲实例客户端"""
         # 创建实例客户端
-        config = TenantCacheConfig(host="localhost", port=6379, db=13)
+        config = TenantCacheConfig(host="localhost", port=6379, password="XdA9caoq", db=13)
         await cache_manager.get_client(unique_tenant_id, config)
 
         # 验证实例存在

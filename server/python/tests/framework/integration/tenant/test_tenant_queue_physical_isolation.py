@@ -252,6 +252,7 @@ class TestTenantQueueOperations:
             type=QueueType.REDIS,
             host="localhost",
             port=6379,
+            password="XdA9caoq",
         )
 
         # 构建队列名
@@ -362,6 +363,7 @@ class TestTenantQueueOperations:
             type=QueueType.REDIS,
             host="localhost",
             port=6379,
+            password="XdA9caoq",
         )
 
         # 构建队列名

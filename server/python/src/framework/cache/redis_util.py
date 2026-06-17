@@ -325,6 +325,11 @@ class RedisUtil:
         return await cls.get_client().xack(stream, group, *ids)
 
     @classmethod
+    async def xlen(cls, stream: str) -> int:
+        """获取 Stream 消息数量"""
+        return await cls.get_client().xlen(stream)
+
+    @classmethod
     async def xgroup_create(cls, stream: str, group: str, id: str = "0", mkstream: bool = False) -> bool:
         """创建消费者组"""
         try:

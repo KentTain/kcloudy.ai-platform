@@ -143,6 +143,7 @@ class TestTenantPubSubOperations:
             type=PubSubType.REDIS,
             host="localhost",
             port=6379,
+            password="XdA9caoq",
         )
 
         # 构建频道名
@@ -219,6 +220,7 @@ class TestTenantPubSubOperations:
             type=PubSubType.REDIS,
             host="localhost",
             port=6379,
+            password="XdA9caoq",
         )
 
         # 订阅频道

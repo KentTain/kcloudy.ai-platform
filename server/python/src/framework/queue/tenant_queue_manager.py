@@ -212,8 +212,8 @@ class TenantQueueManager:
             )
 
         return await self._cache_manager.xack(
-            queue_name=actual_stream.replace("queue:", ""),
-            group=group,
+            actual_stream.replace("queue:", ""),
+            group,
             *ids,
             tenant_id=tenant_id,
             config=cache_config,
