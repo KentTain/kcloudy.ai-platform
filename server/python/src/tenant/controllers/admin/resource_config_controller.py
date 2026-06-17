@@ -57,7 +57,7 @@ def Success(data=None, msg: str = "success") -> dict:
 # 数据库配置端点
 # =============================================================================
 
-DB_PREFIX = "/resource-configs/databases"
+DB_PREFIX = "/resources/databases"
 
 
 @router.get(DB_PREFIX)
@@ -185,7 +185,7 @@ async def test_database_connection(
 # 存储配置端点
 # =============================================================================
 
-STORAGE_PREFIX = "/resource-configs/storages"
+STORAGE_PREFIX = "/resources/storages"
 
 
 @router.get(STORAGE_PREFIX)
@@ -300,7 +300,7 @@ async def test_storage_connection(
 # 缓存配置端点
 # =============================================================================
 
-CACHE_PREFIX = "/resource-configs/caches"
+CACHE_PREFIX = "/resources/caches"
 
 
 @router.get(CACHE_PREFIX)
@@ -409,7 +409,7 @@ async def test_cache_connection(
 # 队列配置端点
 # =============================================================================
 
-QUEUE_PREFIX = "/resource-configs/queues"
+QUEUE_PREFIX = "/resources/queues"
 
 
 @router.get(QUEUE_PREFIX)
@@ -518,7 +518,7 @@ async def test_queue_connection(
 # 发布订阅配置端点
 # =============================================================================
 
-PUBSUB_PREFIX = "/resource-configs/pubsubs"
+PUBSUB_PREFIX = "/resources/pubsubs"
 
 
 @router.get(PUBSUB_PREFIX)

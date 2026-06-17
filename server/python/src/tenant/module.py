@@ -102,7 +102,7 @@ class TenantModule:
             menus=[
                 MenuDef(code="tenant.modules", name="模块管理", path="/admin/modules", icon="Puzzle", sort_order=1),
                 MenuDef(code="tenant.tenants", name="租户管理", path="/admin/tenants", icon="Organization", sort_order=2),
-                MenuDef(code="tenant.resources", name="资源配置", path="/admin/resource-configs", icon="Settings", sort_order=3),
+                MenuDef(code="tenant.resources", name="资源配置", path="/admin/resources", icon="Settings", sort_order=3),
             ],
             permissions=[
                 # 模块权限
