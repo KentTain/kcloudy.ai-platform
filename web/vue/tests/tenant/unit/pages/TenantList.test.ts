@@ -32,10 +32,18 @@ const mockDeactivate = vi.fn(() => Promise.resolve());
 
 vi.mock("@/tenant/stores/tenant", () => ({
   useTenantStore: vi.fn(() => ({
-    tenants: mockTenants.value,
-    loading: mockLoading.value,
-    total: mockTotal.value,
-    stats: mockStats.value,
+    get tenants() {
+      return mockTenants.value;
+    },
+    get loading() {
+      return mockLoading.value;
+    },
+    get total() {
+      return mockTotal.value;
+    },
+    get stats() {
+      return mockStats.value;
+    },
     fetchTenants: mockFetchTenants,
     removeTenant: mockRemoveTenant,
     activate: mockActivate,
@@ -208,7 +216,8 @@ describe("TenantList", () => {
 
       await nextTick();
 
-      const skeletons = wrapper.findAllComponents({ name: "Skeleton" });
+      // Skeleton 被 stub 了，所以查找 stub 元素
+      const skeletons = wrapper.findAll(".skeleton-stub");
       expect(skeletons.length).toBeGreaterThan(0);
     });
 

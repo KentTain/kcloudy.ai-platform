@@ -5,16 +5,29 @@
 """
 
 import pytest
-from unittest.mock import MagicMock, patch, call
-from sqlalchemy import text
+from unittest.mock import MagicMock, patch
+from pathlib import Path
+import importlib.util
 
-# 导入迁移脚本
-from iam.migrations.versions.007_update_menu_paths_to_resources import (
-    upgrade,
-    downgrade,
-    revision,
-    down_revision,
+# 动态导入迁移脚本（文件名以数字开头）
+migration_path = (
+    Path(__file__).parent.parent.parent.parent
+    / "src" / "iam" / "migrations" / "versions"
+    / "007_update_menu_paths_to_resources.py"
 )
+
+spec = importlib.util.spec_from_file_location(
+    "migration_007",
+    migration_path
+)
+migration = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(migration)
+
+# 提取迁移函数和元数据
+upgrade = migration.upgrade
+downgrade = migration.downgrade
+revision = migration.revision
+down_revision = migration.down_revision
 
 
 class TestMigrationMetadata:
@@ -43,12 +56,9 @@ class TestUpgrade:
     def test_upgrade_updates_tenant_module_menus(self):
         """测试 upgrade 更新 tenant.module_menus 表"""
         mock_op = MagicMock()
-        mock_connection = MagicMock()
 
-        with patch("iam.migrations.versions.007_update_menu_paths_to_resources.op", mock_op):
-            # 模拟 op.execute 返回
+        with patch.object(migration, "op", mock_op):
             mock_op.execute.return_value = None
-
             upgrade()
 
         # 验证 op.execute 被调用两次（tenant.module_menus 和 iam.menus）
@@ -69,7 +79,7 @@ class TestUpgrade:
         """测试 upgrade 更新 iam.menus 表"""
         mock_op = MagicMock()
 
-        with patch("iam.migrations.versions.007_update_menu_paths_to_resources.op", mock_op):
+        with patch.object(migration, "op", mock_op):
             mock_op.execute.return_value = None
             upgrade()
 
@@ -87,7 +97,7 @@ class TestUpgrade:
         """测试 upgrade 将路径从 /admin/resource-configs 改为 /admin/resources"""
         mock_op = MagicMock()
 
-        with patch("iam.migrations.versions.007_update_menu_paths_to_resources.op", mock_op):
+        with patch.object(migration, "op", mock_op):
             mock_op.execute.return_value = None
             upgrade()
 
@@ -104,7 +114,7 @@ class TestUpgrade:
         """测试 upgrade 只更新 code = 'tenant.resources' 的菜单"""
         mock_op = MagicMock()
 
-        with patch("iam.migrations.versions.007_update_menu_paths_to_resources.op", mock_op):
+        with patch.object(migration, "op", mock_op):
             mock_op.execute.return_value = None
             upgrade()
 
@@ -123,7 +133,7 @@ class TestDowngrade:
         """测试 downgrade 回滚 tenant.module_menus 表"""
         mock_op = MagicMock()
 
-        with patch("iam.migrations.versions.007_update_menu_paths_to_resources.op", mock_op):
+        with patch.object(migration, "op", mock_op):
             mock_op.execute.return_value = None
             downgrade()
 
@@ -143,7 +153,7 @@ class TestDowngrade:
         """测试 downgrade 回滚 iam.menus 表"""
         mock_op = MagicMock()
 
-        with patch("iam.migrations.versions.007_update_menu_paths_to_resources.op", mock_op):
+        with patch.object(migration, "op", mock_op):
             mock_op.execute.return_value = None
             downgrade()
 
@@ -160,7 +170,7 @@ class TestDowngrade:
         """测试 downgrade 将路径从 /admin/resources 改回 /admin/resource-configs"""
         mock_op = MagicMock()
 
-        with patch("iam.migrations.versions.007_update_menu_paths_to_resources.op", mock_op):
+        with patch.object(migration, "op", mock_op):
             mock_op.execute.return_value = None
             downgrade()
 
@@ -177,7 +187,7 @@ class TestDowngrade:
         """测试 downgrade 只更新 code = 'tenant.resources' 的菜单"""
         mock_op = MagicMock()
 
-        with patch("iam.migrations.versions.007_update_menu_paths_to_resources.op", mock_op):
+        with patch.object(migration, "op", mock_op):
             mock_op.execute.return_value = None
             downgrade()
 
@@ -197,7 +207,7 @@ class TestUpgradeDowngradeSymmetry:
         mock_op = MagicMock()
 
         # 执行 upgrade
-        with patch("iam.migrations.versions.007_update_menu_paths_to_resources.op", mock_op):
+        with patch.object(migration, "op", mock_op):
             mock_op.execute.return_value = None
             upgrade()
             upgrade_calls = list(mock_op.execute.call_args_list)
@@ -206,7 +216,7 @@ class TestUpgradeDowngradeSymmetry:
         mock_op.reset_mock()
 
         # 执行 downgrade
-        with patch("iam.migrations.versions.007_update_menu_paths_to_resources.op", mock_op):
+        with patch.object(migration, "op", mock_op):
             mock_op.execute.return_value = None
             downgrade()
             downgrade_calls = list(mock_op.execute.call_args_list)
