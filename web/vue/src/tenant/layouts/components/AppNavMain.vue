@@ -1,28 +1,22 @@
 <script setup lang="ts">
 /**
  * AppNavMain 管理员菜单组件
- * 从 useAdminMenuStore 获取动态菜单数据，支持平铺菜单和二级子菜单展开
+ * 从 useAdminMenuStore 获取动态菜单数据
+ * 一级菜单显示为分组标签（不可点击），二级菜单作为可点击菜单项平铺
  */
 import type { FunctionalComponent } from 'vue'
-import { onMounted, ref } from 'vue'
+import { onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import * as LucideIcons from '@lucide/vue'
-import { ChevronRight } from '@lucide/vue'
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@/components/ui/collapsible'
 import {
   SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarMenuSub,
-  SidebarMenuSubButton,
-  SidebarMenuSubItem,
 } from '@/components/ui/sidebar'
-import { useAdminMenuStore, type AdminMenuItem } from '@/tenant/stores/adminMenu'
+import { useAdminMenuStore } from '@/tenant/stores/adminMenu'
 
 /**
  * 默认图标（当指定图标不存在时使用）
@@ -44,34 +38,12 @@ const route = useRoute()
 const router = useRouter()
 const adminMenuStore = useAdminMenuStore()
 
-/** 手动展开的菜单项 ID 集合 */
-const expandedMenus = ref<Set<string>>(new Set())
-
 /**
  * 判断菜单项是否为激活态
  */
 const isItemActive = (path: string | undefined): boolean | undefined => {
   if (!path) return undefined
   return route.path === path
-}
-
-/**
- * 判断菜单项是否有子菜单处于激活态
- */
-const isSubActive = (item: AdminMenuItem): boolean =>
-  item.children?.some((child) => child.path && route.path === child.path) ?? false
-
-/**
- * 切换菜单项的展开/折叠
- */
-const toggleExpand = (id: string) => {
-  const newSet = new Set(expandedMenus.value)
-  if (newSet.has(id)) {
-    newSet.delete(id)
-  } else {
-    newSet.add(id)
-  }
-  expandedMenus.value = newSet
 }
 
 /**
@@ -100,60 +72,26 @@ onMounted(() => {
     暂无可用菜单
   </div>
 
-  <!-- 菜单列表 -->
-  <SidebarGroup v-else>
-    <SidebarMenu>
-      <template v-for="item in adminMenuStore.adminMenus" :key="item.id">
-        <!-- 有子菜单的菜单项：使用 Collapsible 展开/折叠 -->
-        <SidebarMenuItem v-if="item.children && item.children.length > 0">
-          <Collapsible
-            :open="expandedMenus.has(item.id) || isSubActive(item)"
-            @update:open="toggleExpand(item.id)"
-          >
-            <CollapsibleTrigger as-child>
-              <SidebarMenuButton
-                :tooltip="item.name"
-                class="h-10 hover:bg-accent-foreground/5"
-              >
-                <component :is="getIconComponent(item.icon)" v-if="item.icon" />
-                <span>{{ item.name }}</span>
-                <ChevronRight
-                  class="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90"
-                />
-              </SidebarMenuButton>
-            </CollapsibleTrigger>
-            <CollapsibleContent>
-              <SidebarMenuSub>
-                <SidebarMenuSubItem
-                  v-for="child in item.children"
-                  :key="child.id"
-                >
-                  <SidebarMenuSubButton
-                    :is-active="isItemActive(child.path)"
-                    @click="child.path && handleNavigate(child.path)"
-                  >
-                    <span>{{ child.name }}</span>
-                  </SidebarMenuSubButton>
-                </SidebarMenuSubItem>
-              </SidebarMenuSub>
-            </CollapsibleContent>
-          </Collapsible>
-        </SidebarMenuItem>
-
-        <!-- 无子菜单的菜单项：直接导航 -->
-        <SidebarMenuItem v-else>
-          <SidebarMenuButton
-            :tooltip="item.name"
-            :is-active="isItemActive(item.path)"
-            class="h-10 hover:bg-accent-foreground/5"
-            :class="isItemActive(item.path) ? 'bg-white! text-primary!' : ''"
-            @click="item.path && handleNavigate(item.path)"
-          >
-            <component :is="getIconComponent(item.icon)" v-if="item.icon" />
-            <span>{{ item.name }}</span>
-          </SidebarMenuButton>
-        </SidebarMenuItem>
-      </template>
-    </SidebarMenu>
-  </SidebarGroup>
+  <!-- 一级菜单作为分组标签，二级菜单平铺 -->
+  <template v-else>
+    <SidebarGroup v-for="item in adminMenuStore.adminMenus" :key="item.id">
+      <SidebarGroupLabel class="mb-3 h-5 text-gray-500">{{ item.name }}</SidebarGroupLabel>
+      <SidebarGroupContent>
+        <SidebarMenu>
+          <SidebarMenuItem v-for="child in item.children" :key="child.id">
+            <SidebarMenuButton
+              :tooltip="child.name"
+              :is-active="isItemActive(child.path)"
+              class="h-10 hover:bg-accent-foreground/5"
+              :class="isItemActive(child.path) ? 'bg-white! text-primary!' : ''"
+              @click="child.path && handleNavigate(child.path)"
+            >
+              <component :is="getIconComponent(child.icon)" v-if="child.icon" />
+              <span>{{ child.name }}</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarGroupContent>
+    </SidebarGroup>
+  </template>
 </template>

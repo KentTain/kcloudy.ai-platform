@@ -4,7 +4,7 @@
  * 左右结构：左侧侧边栏（支持折叠图标模式），右侧上下结构（顶部导航 + 内容区）
  */
 import { computed } from "vue";
-import { useRoute } from "vue-router";
+import { useRoute, RouterLink } from "vue-router";
 import {
   SidebarProvider,
   Sidebar,
@@ -18,6 +18,7 @@ import { Separator } from "@/components/ui/separator";
 import {
   Breadcrumb,
   BreadcrumbItem,
+  BreadcrumbLink,
   BreadcrumbList,
   BreadcrumbPage,
   BreadcrumbSeparator,
@@ -26,17 +27,9 @@ import AppBrandHeader from "./components/AppBrandHeader.vue";
 import AppNavMain from "./components/AppNavMain.vue";
 import AppNavUser from "./components/AppNavUser.vue";
 import { useAdminMenuStore, type AdminMenuItem } from "@/tenant/stores/adminMenu";
-import { onMounted } from "vue";
 
 const route = useRoute();
 const adminMenuStore = useAdminMenuStore();
-
-// 组件挂载时获取菜单数据
-onMounted(() => {
-  if (adminMenuStore.adminMenus.length === 0) {
-    adminMenuStore.fetchAdminMenus();
-  }
-});
 
 /**
  * 从管理员菜单中查找当前路由对应的菜单项
@@ -45,7 +38,7 @@ onMounted(() => {
 function findMenuBreadcrumb(
   menus: AdminMenuItem[],
   currentPath: string
-): { moduleName: string; menuName: string } | null {
+): { moduleName: string; menuName: string; menuPath: string } | null {
   for (const module of menus) {
     // 在模块的子菜单中查找匹配的路由
     const menuItem = module.children?.find((item) => item.path === currentPath);
@@ -53,6 +46,7 @@ function findMenuBreadcrumb(
       return {
         moduleName: module.name,
         menuName: menuItem.name,
+        menuPath: menuItem.path,
       };
     }
   }
@@ -72,7 +66,7 @@ const breadcrumbItems = computed(() => {
   if (menuBreadcrumb) {
     return [
       { title: menuBreadcrumb.moduleName }, // 第一级：模块名，不可点击
-      { title: menuBreadcrumb.menuName }, // 第二级：当前菜单，不可点击
+      { title: menuBreadcrumb.menuName, path: menuBreadcrumb.menuPath }, // 第二级：可点击导航
     ];
   }
 
@@ -115,7 +109,10 @@ const breadcrumbItems = computed(() => {
               </BreadcrumbItem>
               <BreadcrumbSeparator v-if="index < breadcrumbItems.length - 1" />
               <BreadcrumbItem v-if="index === breadcrumbItems.length - 1">
-                <BreadcrumbPage>{{ item.title }}</BreadcrumbPage>
+                <BreadcrumbLink v-if="item.path" as-child>
+                  <RouterLink :to="item.path">{{ item.title }}</RouterLink>
+                </BreadcrumbLink>
+                <BreadcrumbPage v-else>{{ item.title }}</BreadcrumbPage>
               </BreadcrumbItem>
             </template>
           </BreadcrumbList>

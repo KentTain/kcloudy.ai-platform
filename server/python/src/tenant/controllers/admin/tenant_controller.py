@@ -3,7 +3,6 @@
 """
 
 import asyncio
-from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import ORJSONResponse
@@ -11,7 +10,7 @@ from sqlalchemy import select
 
 from framework.database.core.engine import async_session
 from tenant.middlewares.admin_auth_middleware import AdminAuthService, get_current_admin
-from tenant.models import Tenant
+from tenant.models import ModuleMenu, Tenant
 from tenant.schemas.admin.module import ModuleMenuTreeResponse
 from tenant.schemas.admin.tenant import (
     AdminLoginRequest,
@@ -22,9 +21,9 @@ from tenant.schemas.admin.tenant import (
     ResourceValidateResponse,
     TenantCreate,
     TenantPaginatedListResponse,
+    TenantResponse,
     TenantStatsResponse,
     TenantUpdate,
-    TenantResponse,
 )
 from tenant.services.module_menu_service import ModuleMenuService
 from tenant.services.module_service import ModuleService
@@ -51,11 +50,11 @@ async def _get_resource_ref(
 async def build_tenant_vo(tenant: Tenant) -> TenantResponse:
     """构建租户响应对象"""
     from tenant.services import (
-        DatabaseConfigService,
-        StorageConfigService,
         CacheConfigService,
-        QueueConfigService,
+        DatabaseConfigService,
         PubSubConfigService,
+        QueueConfigService,
+        StorageConfigService,
     )
 
     # 使用 asyncio.gather 并行查询 5 个资源配置
@@ -228,7 +227,9 @@ async def get_tenant(
 
     # get_by_id 返回的是 SimpleTenant，需要重新获取 ORM 模型来构建完整的 VO
     tenant_model = await TenantService.get_resource_bindings(tenant_id)
-    return ORJSONResponse(content=Success((await build_tenant_vo(tenant_model)).model_dump()))
+    return ORJSONResponse(
+        content=Success((await build_tenant_vo(tenant_model)).model_dump())
+    )
 
 
 @router.put("/tenants/{tenant_id}")
@@ -382,11 +383,11 @@ async def get_tenant_resources(
         raise HTTPException(status_code=404, detail="租户不存在")
 
     from tenant.services import (
-        DatabaseConfigService,
-        StorageConfigService,
         CacheConfigService,
-        QueueConfigService,
+        DatabaseConfigService,
         PubSubConfigService,
+        QueueConfigService,
+        StorageConfigService,
     )
 
     # 使用 asyncio.gather 并行查询 5 个资源配置
@@ -430,11 +431,11 @@ async def update_tenant_resources(
     THEN 解除该资源的绑定
     """
     from tenant.services import (
-        DatabaseConfigService,
-        StorageConfigService,
         CacheConfigService,
-        QueueConfigService,
+        DatabaseConfigService,
         PubSubConfigService,
+        QueueConfigService,
+        StorageConfigService,
     )
 
     # 引用校验：绑定的配置 ID 必须存在
@@ -495,23 +496,23 @@ async def update_tenant_resources(
 # ============== 管理后台菜单 API ==============
 
 
-def _build_menu_item_from_dict(menu_dict: dict[str, Any]) -> ModuleMenuTreeResponse | None:
-    """将菜单 dict 转换为 ModuleMenuTreeResponse（仅处理二级菜单项）"""
-    if not menu_dict.get("is_visible", True):
+def _build_menu_item_from_dict(menu: ModuleMenu) -> ModuleMenuTreeResponse | None:
+    """将菜单 ModuleMenu 对象转换为 ModuleMenuTreeResponse（仅处理二级菜单项）"""
+    if not menu.is_visible:
         return None
 
     return ModuleMenuTreeResponse(
-        id=menu_dict["id"],
-        module_id=menu_dict["module_id"],
-        parent_id=menu_dict["parent_id"],
-        code=menu_dict["code"],
-        name=menu_dict["name"],
-        path=menu_dict["path"],
-        icon=menu_dict["icon"],
-        sort_order=menu_dict["sort_order"],
-        is_visible=menu_dict["is_visible"],
-        created_at=menu_dict["created_at"],
-        updated_at=menu_dict["updated_at"],
+        id=menu.id,
+        module_id=menu.module_id,
+        parent_id=menu.parent_id,
+        code=menu.code,
+        name=menu.name,
+        path=menu.path,
+        icon=menu.icon,
+        sort_order=menu.sort_order,
+        is_visible=menu.is_visible,
+        created_at=menu.created_at,
+        updated_at=menu.updated_at,
         children=[],  # 二级菜单无子菜单
     )
 
@@ -537,40 +538,37 @@ async def get_admin_menus(
     """
     from tenant.models import Module
 
-    # 获取所有活跃模块（一级菜单）
-    modules = await ModuleService.list_active_modules()
-    if not modules:
+    # 获取租户模块（一级菜单）
+    module = await ModuleService.get_by_code("tenant")
+
+    if not module:
         return ORJSONResponse(content=Success([]))
 
     result: list[ModuleMenuTreeResponse] = []
 
-    # 为每个模块构建菜单树
-    for module in modules:
-        # 获取该模块的功能菜单（二级菜单）
-        menus = await ModuleMenuService.list_menus(module.id)
+    # 获取该模块的功能菜单（二级菜单）
+    menus = await ModuleMenuService.list_menus(module.id)
 
-        # 过滤不可见菜单，转换为响应模型
-        visible_menus = [
-            _build_menu_item_from_dict(m) for m in menus
-        ]
-        visible_menus = [m for m in visible_menus if m is not None]
+    # 过滤不可见菜单，转换为响应模型
+    visible_menus = [_build_menu_item_from_dict(m) for m in menus]
+    visible_menus = [m for m in visible_menus if m is not None]
 
-        # 构建一级模块菜单
-        module_menu = ModuleMenuTreeResponse(
-            id=module.id,
-            module_id=module.id,
-            parent_id=None,
-            code=module.code,
-            name=module.name,
-            path="",  # 模块菜单无路由
-            icon=module.icon,
-            sort_order=0,
-            is_visible=True,
-            created_at=module.created_at,
-            updated_at=module.updated_at,
-            children=visible_menus,
-        )
+    # 构建一级模块菜单
+    module_menu = ModuleMenuTreeResponse(
+        id=module.id,
+        module_id=module.id,
+        parent_id=None,
+        code=module.code,
+        name=module.name,
+        path="",  # 模块菜单无路由
+        icon=module.icon,
+        sort_order=0,
+        is_visible=True,
+        created_at=module.created_at,
+        updated_at=module.updated_at,
+        children=visible_menus,
+    )
 
-        result.append(module_menu)
+    result.append(module_menu)
 
     return ORJSONResponse(content=Success([r.model_dump() for r in result]))
