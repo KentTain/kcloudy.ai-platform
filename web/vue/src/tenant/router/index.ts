@@ -48,10 +48,10 @@ export const adminRoutes: RouteRecordRaw[] = [
         meta: { title: "编辑租户", hidden: true, requiresAdminAuth: true },
       },
       {
-        path: "resource-configs",
-        name: "AdminResourceConfig",
+        path: "resources",
+        name: "AdminResources",
         component: () => import("@/tenant/pages/admin/ResourceConfigList.vue"),
-        meta: { title: "资源配置", requiresAdminAuth: true },
+        meta: { title: "资源管理", requiresAdminAuth: true },
       },
       {
         path: "modules",
