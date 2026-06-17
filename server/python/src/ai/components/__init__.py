@@ -30,6 +30,7 @@ from ai.components.code_executor import (
     Python3CodeProvider,
     JavascriptCodeProvider,
 )
+from ai.components.graphrag import GraphRAGClient, GraphData
 
 __all__ = [
     # Encryption
@@ -60,4 +61,7 @@ __all__ = [
     "Jinja2TemplateTransformer",
     "Python3CodeProvider",
     "JavascriptCodeProvider",
+    # GraphRAG
+    "GraphRAGClient",
+    "GraphData",
 ]
