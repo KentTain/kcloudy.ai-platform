@@ -259,3 +259,48 @@ def main(arg1: str, arg2: str) -> dict:
             )
 
         assert "Unsupported language" in str(exc_info.value)
+
+
+class TestCodeExecutorImports:
+    """Code Executor 导入测试"""
+
+    def test_import_all_exports(self):
+        """测试导入所有导出类"""
+        from ai.components.code_executor import (
+            CodeExecutor,
+            CodeExecutionError,
+            CodeExecutionResponse,
+            CodeLanguage,
+            CodeNodeProvider,
+            TemplateTransformer,
+            Python3TemplateTransformer,
+            NodeJsTemplateTransformer,
+            Jinja2TemplateTransformer,
+            Python3CodeProvider,
+            JavascriptCodeProvider,
+        )
+
+        # 验证所有类都已导入
+        assert CodeExecutor is not None
+        assert CodeExecutionError is not None
+        assert CodeExecutionResponse is not None
+        assert CodeLanguage is not None
+        assert CodeNodeProvider is not None
+        assert TemplateTransformer is not None
+        assert Python3TemplateTransformer is not None
+        assert NodeJsTemplateTransformer is not None
+        assert Jinja2TemplateTransformer is not None
+        assert Python3CodeProvider is not None
+        assert JavascriptCodeProvider is not None
+
+    def test_code_language_enum(self):
+        """测试语言枚举"""
+        from ai.components.code_executor import CodeLanguage
+
+        # 验证枚举值
+        assert CodeLanguage.PYTHON3.value == "python3"
+        assert CodeLanguage.JAVASCRIPT.value == "javascript"
+        assert CodeLanguage.JINJA2.value == "jinja2"
+
+        # 验证枚举成员
+        assert len(list(CodeLanguage)) >= 3
