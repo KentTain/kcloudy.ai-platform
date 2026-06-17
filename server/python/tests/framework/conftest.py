@@ -23,6 +23,19 @@ os.environ["TZ"] = "Asia/Shanghai"
 
 
 # =============================================================================
+# Event Loop (Session Scope)
+# =============================================================================
+
+@pytest.fixture(scope="session")
+def event_loop():
+    """创建 session 作用域的事件循环"""
+    import asyncio
+    loop = asyncio.new_event_loop()
+    yield loop
+    loop.close()
+
+
+# =============================================================================
 # 配置加载
 # =============================================================================
 
@@ -37,7 +50,8 @@ def integration_settings():
 
     # conftest.py 在 server/python/tests/framework/
     # 配置在 server/config/
-    config_dir = Path(__file__).parent.parent.parent.parent.parent / "config"
+    # 路径: conftest.py -> tests -> python -> server
+    config_dir = Path(__file__).resolve().parent.parent.parent.parent / "config"
     settings = init_settings(config_dir)
 
     return settings
