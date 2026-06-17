@@ -57,6 +57,97 @@ AI 模块 API 路由遵循 `/{模块}/{类型}/v1/{功能}` 格式：
 | RerankService | components/model/services/ | 重排序服务 |
 | PluginManager | components/plugin/engine/ | 插件生命周期管理 |
 | ModelInstanceFactory | components/model/internal/ | 模型实例创建工厂 |
+| EncryptionManager | components/encryption/ | 加密管理器 |
+| GraphRAGClient | components/graphrag/ | 图谱检索增强生成客户端 |
+| CodeExecutor | components/code_executor/ | 代码执行器 |
+| MySQLConnect | components/datasource/ | MySQL 数据源连接 |
+
+## AI 组件模块
+
+AI 组件位于 `components/` 目录下，提供可复用的 AI 能力封装：
+
+| 组件 | 说明 | 主要类 |
+|------|------|--------|
+| encryption | 加密组件 | AESEncryption, RSAEncryption, EncryptionManager |
+| datasource | 数据源组件 | BaseConnect, RDBMSDatabase, MySQLConnect |
+| code_executor | 代码执行器 | CodeExecutor, Python3TemplateTransformer, NodeJsTemplateTransformer |
+| graphrag | 图谱检索增强生成 | GraphRAGClient, GraphData |
+| model | 模型管理 | LLMService, EmbeddingService, RerankService |
+| plugin | 插件系统 | PluginManager, PluginInstance |
+
+### 加密组件 (encryption)
+
+提供 AES-256-CBC 和 RSA 加密算法实现：
+
+```python
+from ai.components import EncryptionManager, get_encryption_manager
+
+# 初始化加密管理器
+await init_encryption_manager(config)
+
+# 获取加密实例
+encryption = get_encryption_manager().get_instance("default")
+encrypted = encryption.encrypt("sensitive data")
+decrypted = encryption.decrypt(encrypted)
+```
+
+### 数据源组件 (datasource)
+
+提供统一的数据库连接和查询接口：
+
+```python
+from ai.components import MySQLConnect
+
+# 创建 MySQL 连接
+conn = MySQLConnect(host="localhost", port=3306, database="test")
+await conn.connect()
+
+# 执行查询
+results = await conn.run("SELECT * FROM users")
+df = await conn.run_to_df("SELECT * FROM orders")
+```
+
+### 代码执行器 (code_executor)
+
+支持 Python3、JavaScript、Jinja2 代码执行（依赖 dify-sandbox）：
+
+```python
+from ai.components import CodeExecutor, CodeLanguage
+
+result = await CodeExecutor.execute_workflow_code_template(
+    language=CodeLanguage.PYTHON3,
+    code="def main(x, y): return {'result': x + y}",
+    inputs={"x": 1, "y": 2}
+)
+```
+
+### GraphRAG 组件 (graphrag)
+
+提供图谱检索增强生成能力：
+
+```python
+from ai.components import GraphRAGClient
+
+client = GraphRAGClient()
+
+# 创建索引任务
+task = await client.create_index_build_task(
+    namespace="dataset_123",
+    kb_code="kb_001",
+    filename="document.pdf",
+    docs=["文档内容..."]
+)
+
+# 搜索
+result = await client.search(
+    namespace="dataset_123",
+    kb_code="kb_001",
+    filename="document.pdf",
+    query="查询内容",
+    query_method="local",
+    score_threshold=0.5
+)
+```
 
 ## 插件系统
 
