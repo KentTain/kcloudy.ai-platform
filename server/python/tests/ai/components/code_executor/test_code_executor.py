@@ -304,3 +304,28 @@ class TestCodeExecutorImports:
 
         # 验证枚举成员
         assert len(list(CodeLanguage)) >= 3
+
+
+class TestCodeNodeProvider:
+    """CodeNodeProvider 基类测试"""
+
+    def test_base_provider_inheritance(self):
+        """测试基类继承自 BaseModel"""
+        from ai.components.code_executor import CodeNodeProvider
+        from pydantic import BaseModel
+
+        assert issubclass(CodeNodeProvider, BaseModel)
+
+    def test_base_provider_methods(self):
+        """测试基类方法定义"""
+        from ai.components.code_executor import CodeNodeProvider
+
+        # 验证抽象方法存在
+        assert hasattr(CodeNodeProvider, 'get_language')
+        assert hasattr(CodeNodeProvider, 'get_default_code')
+        assert hasattr(CodeNodeProvider, 'is_accept_language')
+        assert hasattr(CodeNodeProvider, 'get_default_config')
+
+        # 验证 get_language 是抽象方法
+        assert getattr(CodeNodeProvider.get_language, '__isabstractmethod__', False)
+        assert getattr(CodeNodeProvider.get_default_code, '__isabstractmethod__', False)
