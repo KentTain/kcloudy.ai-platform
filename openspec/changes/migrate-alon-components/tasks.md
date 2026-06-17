@@ -1,15 +1,15 @@
 ## 1. 基础设施准备
 
-- [ ] 1.1 创建 `framework/configs/encryption.py`，迁移 EncryptionSettings 配置模型
-- [ ] 1.2 在 `framework/common/exceptions.py` 中添加 BadRequestError 异常类
-- [ ] 1.3 更新 `server/python/pyproject.toml`，添加依赖：pycryptodome、datashaper、tiktoken、aiolimiter、json-repair
-- [ ] 1.4 在 `docker/docker-compose.backend.yml` 中添加 sandbox 服务定义
+- [x] 1.1 创建 `framework/configs/encryption.py`，迁移 EncryptionSettings 配置模型
+- [x] 1.2 在 `framework/common/exceptions.py` 中添加 BadRequestError 异常类
+- [x] 1.3 更新 `server/python/pyproject.toml`，添加依赖：pycryptodome、datashaper、tiktoken、aiolimiter、json-repair
+- [x] 1.4 在 `docker/docker-compose.backend.yml` 中添加 sandbox 服务定义
 
 ## 2. encryption 组件迁移
 
-- [ ] 2.1 迁移 encryption 组件代码（10 个文件）至 `server/python/src/ai/components/encryption/`
-- [ ] 2.2 重写导入路径：`alon.configs.infrastructure.encryption` → `framework.configs.encryption`
-- [ ] 2.3 重写导入路径：`alon.configs.settings` → 适配本项目配置注入方式
+- [x] 2.1 迁移 encryption 组件代码（10 个文件）至 `server/python/src/ai/components/encryption/`
+- [x] 2.2 重写导入路径：`alon.configs.infrastructure.encryption` → `framework.configs.encryption`
+- [x] 2.3 重写导入路径：`alon.configs.settings` → 适配本项目配置注入方式
 - [ ] 2.4 创建 `tests/ai/unit/components/encryption/` 测试目录
 - [ ] 2.5 编写 `test_aes_encryption.py`：测试 AES 加密/解密功能
 - [ ] 2.6 编写 `test_rsa_encryption.py`：测试 RSA 加密/解密功能
@@ -47,7 +47,7 @@
 - [ ] 6.3 运行全部单元测试：`pdm run pytest tests/ai/unit/components/`
 - [ ] 6.4 验证 encryption 配置加载正确
 - [ ] 6.5 验证 code_executor 与 sandbox 服务连通性
-- [ ] 6.6 更新 `server/python/src/ai/components/__init__.py` 导出新组件
+- [x] 6.6 更新 `server/python/src/ai/components/__init__.py` 导出新组件
 
 ## 7. 文档更新
 

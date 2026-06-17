@@ -10,6 +10,7 @@ from typing import Any
 from pydantic import Field
 
 from framework.configs.base import BaseSettings
+from framework.configs.encryption import EncryptionSettings
 
 # ==============================================================================
 # 基础设施配置
@@ -376,6 +377,11 @@ class Settings(BaseSettings):
     # 插件系统配置
     plugin: PluginSettings = Field(
         default_factory=PluginSettings, description="插件系统配置"
+    )
+
+    # 加密配置
+    encryption: EncryptionSettings | None = Field(
+        default=None, description="加密配置"
     )
 
     # 日志配置

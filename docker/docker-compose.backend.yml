@@ -298,6 +298,18 @@ services:
       retries: 3
       start_period: 30s
 
+  # ============================================
+  # Infrastructure Services
+  # ============================================
+  sandbox:
+    image: langgenius/dify-sandbox:0.2.12
+    container_name: kcloudy-sandbox
+    restart: unless-stopped
+    ports:
+      - "${SANDBOX_PORT:-8194}:8194"
+    networks:
+      - kcloudy-network
+
 networks:
   kcloudy-network:
     name: kcloudy-network
