@@ -10,7 +10,7 @@ async def start_plugin_engine() -> None:
     logger.info("启动插件引擎")
 
     if not os.environ.get("TIKTOKEN_CACHE_DIR"):
-        from alon.core.common.path import WORKSPACE_ROOT_DIR
+        from demo.core.common.path import WORKSPACE_ROOT_DIR
 
         cache_dir = os.path.join(WORKSPACE_ROOT_DIR, ".cache/tiktoken")
         logger.info(f"设置TIKTOKEN_CACHE_DIR: {cache_dir}")

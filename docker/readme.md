@@ -91,6 +91,7 @@ docker compose \
 | sqlserver | kcloudy-sqlserver | 1433 | SQL Server 2019 |
 | redis | kcloudy-redis | 6379 | Redis 7 缓存 |
 | minio | kcloudy-minio | 9000, 9001 | MinIO 对象存储 |
+| sandbox | kcloudy-sandbox | 8194 | 代码沙箱服务 (dify-sandbox) |
 | nexus | kcloudy-nexus | 9090-9092 | Maven/Docker 私有仓库 |
 | claude-code-hub | kcloudy-claude-hub | 23000 | Claude Code Hub |
 
