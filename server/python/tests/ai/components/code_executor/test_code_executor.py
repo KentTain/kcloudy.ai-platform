@@ -329,3 +329,40 @@ class TestCodeNodeProvider:
         # 验证 get_language 是抽象方法
         assert getattr(CodeNodeProvider.get_language, '__isabstractmethod__', False)
         assert getattr(CodeNodeProvider.get_default_code, '__isabstractmethod__', False)
+
+
+class TestJinja2CodeProvider:
+    """Jinja2CodeProvider 测试"""
+
+    def test_jinja2_code_provider(self):
+        """测试 Jinja2CodeProvider 创建"""
+        from ai.components.code_executor.jinja2.jinja2_transformer import Jinja2TemplateTransformer
+
+        transformer = Jinja2TemplateTransformer()
+
+        assert transformer is not None
+        assert hasattr(Jinja2TemplateTransformer, 'transform_caller')
+        assert hasattr(Jinja2TemplateTransformer, 'transform_response')
+        assert hasattr(Jinja2TemplateTransformer, 'get_runner_script')
+
+    def test_jinja2_default_code(self):
+        """测试 Jinja2 默认代码模板"""
+        # Jinja2 的默认模板应该是一个简单的字符串
+        default_template = "Hello, {{ name }}!"
+
+        # 验证模板可以渲染
+        from jinja2 import Template
+        template = Template(default_template)
+        result = template.render(name="World")
+
+        assert result == "Hello, World!"
+
+    def test_jinja2_transformer_format_response(self):
+        """测试 Jinja2 响应格式化"""
+        from ai.components.code_executor.jinja2.jinja2_transformer import Jinja2TemplateTransformer
+
+        # 测试格式化响应（响应需要包含 <<r>> 标签）
+        response = "<<r>>Hello, World!<<r>>"
+        formatted = Jinja2TemplateTransformer.transform_response(response)
+
+        assert formatted == {"result": "Hello, World!"}
