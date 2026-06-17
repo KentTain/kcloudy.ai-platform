@@ -331,6 +331,16 @@ class PluginSettings(BaseSettings):
     no_proxy: str | None = Field(default=None, description="不使用代理的地址")
 
 
+class CodeSandboxSettings(BaseSettings):
+    """代码沙箱配置"""
+
+    endpoint: str = Field(default="http://localhost:8194", description="代码沙箱端点")
+    api_key: str = Field(default="", description="API密钥")
+    connect_timeout: int = Field(default=10, description="连接超时时间（秒）")
+    read_timeout: int = Field(default=60, description="读取超时时间（秒）")
+    write_timeout: int = Field(default=60, description="写入超时时间（秒）")
+
+
 # ==============================================================================
 # 主配置类
 # ==============================================================================
@@ -382,6 +392,11 @@ class Settings(BaseSettings):
     # 加密配置
     encryption: EncryptionSettings | None = Field(
         default=None, description="加密配置"
+    )
+
+    # 代码沙箱配置
+    code_sandbox: CodeSandboxSettings = Field(
+        default_factory=CodeSandboxSettings, description="代码沙箱配置"
     )
 
     # 日志配置

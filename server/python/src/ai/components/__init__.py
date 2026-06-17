@@ -17,6 +17,19 @@ from ai.components.datasource.base import DBType, DbInfo
 from ai.components.datasource.interfaces import BaseConnect
 from ai.components.datasource.rdbms.base import RDBMSDatabase
 from ai.components.datasource.rdbms.conn_mysql import MySQLConnect
+from ai.components.code_executor import (
+    CodeExecutor,
+    CodeExecutionError,
+    CodeExecutionResponse,
+    CodeLanguage,
+    CodeNodeProvider,
+    TemplateTransformer,
+    Python3TemplateTransformer,
+    NodeJsTemplateTransformer,
+    Jinja2TemplateTransformer,
+    Python3CodeProvider,
+    JavascriptCodeProvider,
+)
 
 __all__ = [
     # Encryption
@@ -35,4 +48,16 @@ __all__ = [
     "BaseConnect",
     "RDBMSDatabase",
     "MySQLConnect",
+    # Code Executor
+    "CodeExecutor",
+    "CodeExecutionError",
+    "CodeExecutionResponse",
+    "CodeLanguage",
+    "CodeNodeProvider",
+    "TemplateTransformer",
+    "Python3TemplateTransformer",
+    "NodeJsTemplateTransformer",
+    "Jinja2TemplateTransformer",
+    "Python3CodeProvider",
+    "JavascriptCodeProvider",
 ]
