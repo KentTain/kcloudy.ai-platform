@@ -2,7 +2,7 @@
 缓存配置模型
 """
 
-from sqlalchemy import Index, String, Text
+from sqlalchemy import Boolean, Index, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from . import BaseModel
@@ -22,6 +22,9 @@ class CacheConfig(BaseModel):
     db: Mapped[int] = mapped_column(nullable=False, default=0, comment="数据库编号")
     prefix: Mapped[str | None] = mapped_column(
         String(50), nullable=True, comment="键前缀"
+    )
+    is_default: Mapped[bool] = mapped_column(Boolean,
+        nullable=False, server_default="false", comment="是否为默认配置"
     )
 
     __table_args__ = (

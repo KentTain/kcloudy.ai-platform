@@ -2,7 +2,7 @@
 存储配置模型
 """
 
-from sqlalchemy import Index, String, Text
+from sqlalchemy import Boolean, Index, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from . import BaseModel
@@ -28,6 +28,9 @@ class StorageConfig(BaseModel):
     )
     secret_key: Mapped[str | None] = mapped_column(
         Text, nullable=True, comment="私密密钥（加密）"
+    )
+    is_default: Mapped[bool] = mapped_column(Boolean,
+        nullable=False, server_default="false", comment="是否为默认配置"
     )
 
     __table_args__ = (
