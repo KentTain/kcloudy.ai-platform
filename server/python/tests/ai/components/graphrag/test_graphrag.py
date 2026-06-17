@@ -56,3 +56,41 @@ class TestGraphData:
         data = GraphData(degree="5")  # 字符串应该被转换为整数
         assert data.degree == 5
         assert isinstance(data.degree, int)
+
+
+class TestGraphRAGClient:
+    """GraphRAGClient 基础测试"""
+
+    def test_client_initialization(self):
+        """测试客户端初始化"""
+        from ai.components.graphrag.client import GraphRAGClient
+
+        client = GraphRAGClient()
+        assert client is not None
+
+    def test_client_has_required_methods(self):
+        """测试客户端有必需的方法"""
+        from ai.components.graphrag.client import GraphRAGClient
+
+        client = GraphRAGClient()
+
+        # 验证关键方法存在
+        assert hasattr(client, 'create_index_build_task')
+        assert hasattr(client, 'search')
+        assert callable(client.create_index_build_task)
+        assert callable(client.search)
+
+    def test_graph_data_model_import(self):
+        """测试 GraphData 模型可从客户端导入"""
+        from ai.components.graphrag.client import GraphData
+
+        # 验证可以创建 GraphData 实例
+        data = GraphData(title="导入测试")
+        assert data.title == "导入测试"
+
+    def test_graph_data_inheritance(self):
+        """测试 GraphData 继承自 BaseModel"""
+        from ai.components.graphrag.client import GraphData
+        from pydantic import BaseModel
+
+        assert issubclass(GraphData, BaseModel)
