@@ -3,7 +3,7 @@ import { useUserStore, usePermissionStore } from "@/framework/stores";
 import { useMenuStore } from "@/framework/stores/menu";
 import { useAdminAuthStore } from "@/tenant/stores/adminAuth";
 import { getCurrentUser } from "@/iam/api/auth";
-import { isDynamicRoutesReady } from "@/framework/module";
+import { isDynamicRoutesReady, waitForDynamicRoutes } from "@/framework/module";
 
 // 白名单路由
 const whiteList = ["/login", "/admin/login", "/403", "/404"];
@@ -19,11 +19,13 @@ export const setupRouterGuards = (router: Router) => {
     // 如果路由未匹配且动态路由未准备好，等待后重新导航
     if (to.matched.length === 0 && !isDynamicRoutesReady()) {
       console.log("[RouterGuard] Route not matched, waiting for dynamic routes...");
-      // 等待一小段时间后重试（动态路由在 setupFramework 中注册）
-      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      // 等待动态路由注册完成
+      await waitForDynamicRoutes();
+
+      console.log("[RouterGuard] Dynamic routes ready, retrying navigation to:", to.fullPath);
       // 重新导航到目标路由（保留查询参数）
-      const newPath = to.fullPath;
-      router.replace(newPath);
+      next({ path: to.fullPath, replace: true });
       return;
     }
 

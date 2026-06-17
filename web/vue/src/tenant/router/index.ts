@@ -20,6 +20,7 @@ export const adminRoutes: RouteRecordRaw[] = [
     children: [
       {
         path: "",
+        name: "AdminRootRedirect",
         redirect: "/admin/tenants",
       },
       {

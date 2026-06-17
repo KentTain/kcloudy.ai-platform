@@ -8,6 +8,7 @@ export {
   getModuleRegistry,
   getEventBus,
   isDynamicRoutesReady,
+  waitForDynamicRoutes,
   type SetupFrameworkOptions,
 } from "./setup";
 export { EventBus, ModuleEvents } from "@/framework/events";

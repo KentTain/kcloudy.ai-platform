@@ -63,15 +63,10 @@ adminRoutes.forEach((route) => router.addRoute(route));
 
 console.log("[main.ts] After adminRoutes, router has:", router.getRoutes().map(r => ({ name: r.name, path: r.path })));
 
-// 安装路由插件
-app.use(router);
-
-console.log("[main.ts] Router installed, current route:", router.currentRoute.value.path, router.currentRoute.value.name);
-
 // 权限指令
 setupPermissionDirective(app);
 
-// 设置框架并注册模块路由
+// 设置框架并注册模块路由（必须在 app.use(router) 之前完成）
 console.log("[main.ts] Starting setupFramework...");
 setupFramework({
   app,
@@ -86,6 +81,10 @@ setupFramework({
     // 最后注册 404 路由（确保它是最后一个匹配的路由）
     router.addRoute(notFoundRoute);
     console.log("[main.ts] 404 route registered");
+
+    // 安装路由插件（在所有路由注册完成后）
+    app.use(router);
+    console.log("[main.ts] Router installed, current route:", router.currentRoute.value.path, router.currentRoute.value.name);
 
     // 等待路由准备好
     await router.isReady();

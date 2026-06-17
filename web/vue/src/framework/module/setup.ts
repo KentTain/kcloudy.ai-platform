@@ -27,10 +27,39 @@ let globalRegistry: ModuleRegistry | null = null;
 let dynamicRoutesReady = false;
 
 /**
+ * 动态路由准备完成的 Promise resolve 函数
+ */
+let dynamicRoutesReadyResolve: (() => void) | null = null;
+
+/**
+ * 动态路由准备完成的 Promise
+ */
+let dynamicRoutesReadyPromise: Promise<void> | null = null;
+
+/**
  * 检查动态路由是否已准备好
  */
 export function isDynamicRoutesReady(): boolean {
   return dynamicRoutesReady;
+}
+
+/**
+ * 等待动态路由准备好
+ * 用于路由守卫中等待路由注册完成
+ */
+export function waitForDynamicRoutes(): Promise<void> {
+  if (dynamicRoutesReady) {
+    return Promise.resolve();
+  }
+
+  // 如果还没有创建 Promise，创建一个
+  if (!dynamicRoutesReadyPromise) {
+    dynamicRoutesReadyPromise = new Promise<void>((resolve) => {
+      dynamicRoutesReadyResolve = resolve;
+    });
+  }
+
+  return dynamicRoutesReadyPromise;
 }
 
 /**
@@ -89,6 +118,11 @@ export async function setupFramework(options: SetupFrameworkOptions): Promise<vo
   // 标记动态路由已准备好
   dynamicRoutesReady = true;
   console.log("[setupFramework] Dynamic routes ready");
+
+  // resolve 等待中的 Promise
+  if (dynamicRoutesReadyResolve) {
+    dynamicRoutesReadyResolve();
+  }
 }
 
 /**
