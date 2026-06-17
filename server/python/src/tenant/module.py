@@ -72,10 +72,15 @@ class TenantModule:
         返回 seed 注册表
 
         格式: {seed_name: seed_func}
+
+        注意：Python 3.7+ 字典保持插入顺序，resource_config 必须在 tenant 之前执行，
+        因为 tenant_seed 可能需要引用默认资源配置。
         """
+        from tenant.migrations.seeds.resource_config_seed import run as resource_config_seed_run
         from tenant.migrations.seeds.tenant_seed import run as tenant_seed_run
 
         return {
+            "resource_config": resource_config_seed_run,
             "tenant": tenant_seed_run,
         }
 

@@ -20,11 +20,11 @@
 
 ## 3. Schema 响应模型修改
 
-- [ ] 3.1 为 `DatabaseConfigResponse` 添加 `is_default: bool` 字段
-- [ ] 3.2 为 `CacheConfigResponse` 添加 `is_default: bool` 字段
-- [ ] 3.3 为 `StorageConfigResponse` 添加 `is_default: bool` 字段
-- [ ] 3.4 为 `QueueConfigResponse` 添加 `is_default: bool` 字段
-- [ ] 3.5 为 `PubSubConfigResponse` 添加 `is_default: bool` 字段
+- [x] 3.1 为 `DatabasePropertyResponse` 添加 `is_default: bool` 字段
+- [x] 3.2 为 `CachePropertyResponse` 添加 `is_default: bool` 字段
+- [x] 3.3 为 `StoragePropertyResponse` 添加 `is_default: bool` 字段
+- [x] 3.4 为 `QueuePropertyResponse` 添加 `is_default: bool` 字段
+- [x] 3.5 为 `PubSubPropertyResponse` 添加 `is_default: bool` 字段
 
 ## 4. 种子数据脚本
 
