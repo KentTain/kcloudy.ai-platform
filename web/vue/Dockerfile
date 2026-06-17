@@ -13,7 +13,7 @@ RUN corepack enable && corepack prepare pnpm@11.7.0 --activate && \
     pnpm config set registry https://registry.npmmirror.com
 
 # Copy package files first for better cache
-COPY package.json pnpm-lock.yaml .pnpm-allowlist.json ./
+COPY package.json pnpm-lock.yaml ./
 
 # Install dependencies (ignore build scripts for faster install)
 RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
