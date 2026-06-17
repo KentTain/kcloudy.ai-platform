@@ -2,21 +2,21 @@
 
 ## 1. 数据库模型修改
 
-- [ ] 1.1 为 `DatabaseConfig` 模型添加 `is_default` 字段（`Mapped[bool]`，默认 `False`）
-- [ ] 1.2 为 `CacheConfig` 模型添加 `is_default` 字段（`Mapped[bool]`，默认 `False`）
-- [ ] 1.3 为 `StorageConfig` 模型添加 `is_default` 字段（`Mapped[bool]`，默认 `False`）
-- [ ] 1.4 为 `QueueConfig` 模型添加 `is_default` 字段（`Mapped[bool]`，默认 `False`）
-- [ ] 1.5 为 `PubSubConfig` 模型添加 `is_default` 字段（`Mapped[bool]`，默认 `False`）
+- [x] 1.1 为 `DatabaseConfig` 模型添加 `is_default` 字段（`Mapped[bool]`，默认 `False`）
+- [x] 1.2 为 `CacheConfig` 模型添加 `is_default` 字段（`Mapped[bool]`，默认 `False`）
+- [x] 1.3 为 `StorageConfig` 模型添加 `is_default` 字段（`Mapped[bool]`，默认 `False`）
+- [x] 1.4 为 `QueueConfig` 模型添加 `is_default` 字段（`Mapped[bool]`，默认 `False`）
+- [x] 1.5 为 `PubSubConfig` 模型添加 `is_default` 字段（`Mapped[bool]`，默认 `False`）
 
 ## 2. 数据库迁移
 
-- [ ] 2.1 创建迁移脚本 `XXX_add_is_default_to_resource_configs.py`
-- [ ] 2.2 添加 `is_default` 字段到五个资源配置表（非空，默认 `False`）
-- [ ] 2.3 创建部分唯一索引 `uix_database_configs_default`（WHERE is_default = TRUE）
-- [ ] 2.4 创建部分唯一索引 `uix_cache_configs_default`
-- [ ] 2.5 创建部分唯一索引 `uix_storage_configs_default`
-- [ ] 2.6 创建部分唯一索引 `uix_queue_configs_default`
-- [ ] 2.7 创建部分唯一索引 `uix_pubsub_configs_default`
+- [x] 2.1 创建迁移脚本 `004_add_is_default_to_resource_configs.py`
+- [x] 2.2 添加 `is_default` 字段到五个资源配置表（非空，默认 `False`）
+- [x] 2.3 创建部分唯一索引 `uix_database_configs_default`（WHERE is_default = TRUE）
+- [x] 2.4 创建部分唯一索引 `uix_cache_configs_default`
+- [x] 2.5 创建部分唯一索引 `uix_storage_configs_default`
+- [x] 2.6 创建部分唯一索引 `uix_queue_configs_default`
+- [x] 2.7 创建部分唯一索引 `uix_pubsub_configs_default`
 
 ## 3. Schema 响应模型修改
 
