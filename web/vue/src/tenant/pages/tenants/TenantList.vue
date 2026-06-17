@@ -22,7 +22,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { Plus, Search, RotateCcw, Pencil, Trash2, ShieldCheck, ShieldOff } from '@lucide/vue'
+import { Card } from '@/components/ui/card'
+import { Plus, Search, RotateCcw, Pencil, Trash2, ShieldCheck, ShieldOff, Building2, UserX, Clock } from '@lucide/vue'
 
 const router = useRouter()
 const tenantStore = useTenantStore()
@@ -123,6 +124,53 @@ onMounted(() => {
         新建租户
       </Button>
     </template>
+
+    <!-- 统计卡片区 -->
+    <div class="grid gap-4 md:grid-cols-3">
+      <template v-if="tenantStore.loading">
+        <Card class="gap-2 px-5 py-4">
+          <Skeleton class="h-4 w-20" />
+          <Skeleton class="h-8 w-16" />
+          <Skeleton class="h-3 w-32" />
+        </Card>
+        <Card class="gap-2 px-5 py-4">
+          <Skeleton class="h-4 w-20" />
+          <Skeleton class="h-8 w-16" />
+          <Skeleton class="h-3 w-32" />
+        </Card>
+        <Card class="gap-2 px-5 py-4">
+          <Skeleton class="h-4 w-20" />
+          <Skeleton class="h-8 w-16" />
+          <Skeleton class="h-3 w-32" />
+        </Card>
+      </template>
+      <template v-else>
+        <Card class="gap-2 px-5 py-4">
+          <div class="flex items-center gap-2">
+            <Building2 class="text-muted-foreground h-4 w-4" />
+            <span class="text-muted-foreground text-sm">租户总数</span>
+          </div>
+          <div class="text-2xl font-semibold">{{ tenantStore.stats.total_count }}</div>
+          <div class="text-muted-foreground text-xs">系统中的租户总数</div>
+        </Card>
+        <Card class="gap-2 px-5 py-4">
+          <div class="flex items-center gap-2">
+            <UserX class="text-muted-foreground h-4 w-4" />
+            <span class="text-muted-foreground text-sm">未激活数</span>
+          </div>
+          <div class="text-2xl font-semibold">{{ tenantStore.stats.inactive_count }}</div>
+          <div class="text-muted-foreground text-xs">状态为停用的租户数量</div>
+        </Card>
+        <Card class="gap-2 px-5 py-4">
+          <div class="flex items-center gap-2">
+            <Clock class="text-muted-foreground h-4 w-4" />
+            <span class="text-muted-foreground text-sm">过期数</span>
+          </div>
+          <div class="text-2xl font-semibold">{{ tenantStore.stats.expired_count }}</div>
+          <div class="text-muted-foreground text-xs">已过期的租户数量</div>
+        </Card>
+      </template>
+    </div>
 
     <!-- 搜索筛选区 -->
     <div class="flex flex-wrap items-end gap-3">

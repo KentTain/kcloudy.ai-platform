@@ -65,12 +65,24 @@ export interface Tenant {
   updated_at?: string;
 }
 
-// 租户统计
+// 租户统计（单个租户详情）
 export interface TenantStatsResponse {
   tenant_id: string;
   user_count: number;
   storage_usage: number;
   active_users: number;
+}
+
+// 租户列表统计
+export interface TenantListStats {
+  total_count: number;
+  inactive_count: number;
+  expired_count: number;
+}
+
+// 带统计的分页响应
+export interface TenantPaginatedListResponse extends PaginatedListResponse<Tenant> {
+  stats: TenantListStats;
 }
 
 // 用户租户信息

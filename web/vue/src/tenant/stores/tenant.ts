@@ -13,7 +13,7 @@ import {
   updateTenant,
 } from "../api/tenant";
 import { getErrorMessage, notifyError, notifySuccess } from "@/framework/utils/feedback";
-import type { TenantCreate, Tenant, TenantUpdate, UserTenantResponse } from "../types";
+import type { TenantCreate, Tenant, TenantListStats, TenantUpdate, UserTenantResponse } from "../types";
 
 export const useTenantStore = defineStore("tenant", () => {
   const tenants = ref<Tenant[]>([]);
@@ -21,6 +21,11 @@ export const useTenantStore = defineStore("tenant", () => {
   const myTenants = ref<UserTenantResponse[]>([]);
   const loading = ref(false);
   const total = ref(0);
+  const stats = ref<TenantListStats>({
+    total_count: 0,
+    inactive_count: 0,
+    expired_count: 0,
+  });
 
   // 管理员：获取租户列表
   const fetchTenants = async (params?: {
@@ -34,6 +39,11 @@ export const useTenantStore = defineStore("tenant", () => {
       const response = await getTenants(params);
       tenants.value = response.data.items ?? [];
       total.value = response.data.total ?? 0;
+      stats.value = response.data.stats ?? {
+        total_count: 0,
+        inactive_count: 0,
+        expired_count: 0,
+      };
     } catch (error: unknown) {
       notifyError(getErrorMessage(error, "获取租户列表失败"));
       console.error("fetchTenants error:", error);
@@ -199,6 +209,7 @@ export const useTenantStore = defineStore("tenant", () => {
     myTenants,
     loading,
     total,
+    stats,
     fetchTenants,
     fetchTenant,
     addTenant,
