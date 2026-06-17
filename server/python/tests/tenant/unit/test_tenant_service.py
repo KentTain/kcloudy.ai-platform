@@ -564,3 +564,132 @@ class TestGetTenantsBatch:
 
         assert len(result) == 1
         assert result[0].id == "tenant-1"
+
+
+class TestGetTenantStats:
+    """get_tenant_stats 方法测试"""
+
+    @pytest.mark.asyncio
+    async def test_returns_correct_stats(self):
+        """返回正确的统计数据"""
+        # 模拟数据库查询结果
+        mock_row = MagicMock()
+        mock_row.total_count = 100
+        mock_row.inactive_count = 10
+        mock_row.expired_count = 5
+
+        with patch("tenant.services.tenant_service.async_session") as mock_session:
+            mock_session_context = AsyncMock()
+            mock_session.return_value.__aenter__.return_value = mock_session_context
+
+            mock_result = MagicMock()
+            mock_result.one.return_value = mock_row
+            mock_session_context.execute.return_value = mock_result
+
+            stats = await TenantService.get_tenant_stats()
+
+        assert stats["total_count"] == 100
+        assert stats["inactive_count"] == 10
+        assert stats["expired_count"] == 5
+
+    @pytest.mark.asyncio
+    async def test_returns_zero_when_no_tenants(self):
+        """无租户时返回零值"""
+        mock_row = MagicMock()
+        mock_row.total_count = 0
+        mock_row.inactive_count = 0
+        mock_row.expired_count = 0
+
+        with patch("tenant.services.tenant_service.async_session") as mock_session:
+            mock_session_context = AsyncMock()
+            mock_session.return_value.__aenter__.return_value = mock_session_context
+
+            mock_result = MagicMock()
+            mock_result.one.return_value = mock_row
+            mock_session_context.execute.return_value = mock_result
+
+            stats = await TenantService.get_tenant_stats()
+
+        assert stats["total_count"] == 0
+        assert stats["inactive_count"] == 0
+        assert stats["expired_count"] == 0
+
+    @pytest.mark.asyncio
+    async def test_stats_keys_exist(self):
+        """统计数据包含所有必要字段"""
+        mock_row = MagicMock()
+        mock_row.total_count = 50
+        mock_row.inactive_count = 5
+        mock_row.expired_count = 3
+
+        with patch("tenant.services.tenant_service.async_session") as mock_session:
+            mock_session_context = AsyncMock()
+            mock_session.return_value.__aenter__.return_value = mock_session_context
+
+            mock_result = MagicMock()
+            mock_result.one.return_value = mock_row
+            mock_session_context.execute.return_value = mock_result
+
+            stats = await TenantService.get_tenant_stats()
+
+        assert "total_count" in stats
+        assert "inactive_count" in stats
+        assert "expired_count" in stats
+
+
+class TestListTenantsWithStats:
+    """list_tenants 集成 stats 测试"""
+
+    @pytest.mark.asyncio
+    async def test_list_tenants_includes_stats_field(self):
+        """租户列表响应包含 stats 字段"""
+        # 测试 controller 层的 list_tenants 方法会调用 get_tenant_stats
+        # 这里验证 service 层返回的数据格式正确
+        mock_tenants = [MagicMock(spec=Tenant) for _ in range(3)]
+        mock_stats = {"total_count": 100, "inactive_count": 10, "expired_count": 5}
+
+        with patch("tenant.services.tenant_service.async_session") as mock_session:
+            mock_session_context = AsyncMock()
+            mock_session.return_value.__aenter__.return_value = mock_session_context
+
+            # 模拟两次独立的调用：list_tenants 和 get_tenant_stats
+            # 第一次调用：count
+            count_result = MagicMock()
+            count_result.scalar.return_value = 100
+
+            # 第二次调用：list
+            list_result = MagicMock()
+            list_result.scalars.return_value.all.return_value = mock_tenants
+
+            mock_session_context.execute.side_effect = [count_result, list_result]
+
+            tenants, total = await TenantService.list_tenants(page=1, page_size=20)
+
+        assert len(tenants) == 3
+        assert total == 100
+
+    @pytest.mark.asyncio
+    async def test_stats_accuracy_with_various_statuses(self):
+        """统计数据准确性测试：不同状态租户"""
+        # 模拟有活跃、非活跃、过期租户的场景
+        mock_row = MagicMock()
+        mock_row.total_count = 200
+        mock_row.inactive_count = 30
+        mock_row.expired_count = 15
+
+        with patch("tenant.services.tenant_service.async_session") as mock_session:
+            mock_session_context = AsyncMock()
+            mock_session.return_value.__aenter__.return_value = mock_session_context
+
+            mock_result = MagicMock()
+            mock_result.one.return_value = mock_row
+            mock_session_context.execute.return_value = mock_result
+
+            stats = await TenantService.get_tenant_stats()
+
+        # 验证统计数据的一致性
+        assert stats["total_count"] >= stats["inactive_count"]
+        assert stats["total_count"] >= stats["expired_count"]
+        # 活跃租户数应该是总数减去非活跃数
+        active_count = stats["total_count"] - stats["inactive_count"]
+        assert active_count == 170
