@@ -173,10 +173,38 @@ result = await client.search(
 
 ## 测试
 
-AI 相关能力主要通过 framework 租户集成测试和 AI 服务/控制器测试覆盖。
+AI 模块测试位于 `tests/ai/` 目录下，采用分层测试策略。
+
+### 测试覆盖情况
+
+| 组件 | 测试文件 | 测试用例数 | 覆盖内容 |
+|------|---------|-----------|---------|
+| encryption | test_encryption.py | 35+ | AES/RSA 加密、密钥管理、异常处理 |
+| datasource | test_*.py | 44+ | 接口定义、URI 构造、SQL 解析、数据库连接 |
+| code_executor | test_*.py | 85+ | 代码执行、模板转换、Provider 实现 |
+| graphrag | test_*.py | 38+ | GraphData 模型、GraphRAGClient 客户端 |
+| model | test_*.py | - | LLM 服务、模型工厂、Provider 管理 |
+
+**总计**：216+ 测试用例，覆盖所有核心组件
+
+### 运行测试
 
 ```bash
-uv run pytest tests/ai/ -v
+# 运行所有 AI 组件测试
+uv run pytest tests/ai/components -v
+
+# 运行特定组件测试
+uv run pytest tests/ai/components/encryption -v
+uv run pytest tests/ai/components/datasource -v
+uv run pytest tests/ai/components/code_executor -v
+uv run pytest tests/ai/components/graphrag -v
 ```
+
+### 测试特点
+
+1. **隔离性**：所有测试使用 mock 隔离外部依赖（数据库、Redis、MinIO）
+2. **快速执行**：单元测试不依赖真实服务，执行速度快
+3. **中文文档**：所有测试用例使用中文文档字符串
+4. **TDD 实践**：新增功能先编写测试，再实现功能
 
 详细插件系统说明、API 端点见 [README.md](README.md)。
