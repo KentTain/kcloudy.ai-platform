@@ -16,8 +16,8 @@ services:
       args:
         BUILD_MODULES: demo,iam,tenant
         APP_ROLE: web
-    image: init-project-backend-platform:${VERSION:-latest}
-    container_name: init-project-backend-platform-api
+    image: ai-platform-backend-platform:${VERSION:-latest}
+    container_name: ai-platform-backend-platform-api
     restart: unless-stopped
     ports:
       - "${BACKEND_PORT:-8000}:8000"
@@ -37,7 +37,13 @@ services:
     networks:
       - kcloudy-network
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=5)"]
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=5)",
+        ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -50,8 +56,8 @@ services:
       args:
         BUILD_MODULES: demo,iam,tenant
         APP_ROLE: task
-    image: init-project-backend-platform:${VERSION:-latest}
-    container_name: init-project-backend-platform-task
+    image: ai-platform-backend-platform:${VERSION:-latest}
+    container_name: ai-platform-backend-platform-task
     restart: unless-stopped
     environment:
       - PYTHON_SERVICE_ENV=${PYTHON_SERVICE_ENV:-local}
@@ -82,8 +88,8 @@ services:
       args:
         BUILD_MODULES: demo,iam,tenant
         APP_ROLE: listener
-    image: init-project-backend-platform:${VERSION:-latest}
-    container_name: init-project-backend-platform-listener
+    image: ai-platform-backend-platform:${VERSION:-latest}
+    container_name: ai-platform-backend-platform-listener
     restart: unless-stopped
     environment:
       - PYTHON_SERVICE_ENV=${PYTHON_SERVICE_ENV:-local}
@@ -117,8 +123,8 @@ services:
       args:
         BUILD_MODULES: demo
         APP_ROLE: web
-    image: init-project-backend-demo:${VERSION:-latest}
-    container_name: init-project-backend-demo-api
+    image: ai-platform-backend-demo:${VERSION:-latest}
+    container_name: ai-platform-backend-demo-api
     restart: unless-stopped
     ports:
       - "${BACKEND_DEMO_PORT:-8010}:8000"
@@ -140,7 +146,13 @@ services:
     profiles:
       - standalone
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=5)"]
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=5)",
+        ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -153,8 +165,8 @@ services:
       args:
         BUILD_MODULES: demo
         APP_ROLE: task
-    image: init-project-backend-demo:${VERSION:-latest}
-    container_name: init-project-backend-demo-task
+    image: ai-platform-backend-demo:${VERSION:-latest}
+    container_name: ai-platform-backend-demo-task
     restart: unless-stopped
     environment:
       - PYTHON_SERVICE_ENV=${PYTHON_SERVICE_ENV:-local}
@@ -181,8 +193,8 @@ services:
       args:
         BUILD_MODULES: demo
         APP_ROLE: listener
-    image: init-project-backend-demo:${VERSION:-latest}
-    container_name: init-project-backend-demo-listener
+    image: ai-platform-backend-demo:${VERSION:-latest}
+    container_name: ai-platform-backend-demo-listener
     restart: unless-stopped
     environment:
       - PYTHON_SERVICE_ENV=${PYTHON_SERVICE_ENV:-local}
@@ -209,8 +221,8 @@ services:
       args:
         BUILD_MODULES: iam
         APP_ROLE: web
-    image: init-project-backend-iam:${VERSION:-latest}
-    container_name: init-project-backend-iam-api
+    image: ai-platform-backend-iam:${VERSION:-latest}
+    container_name: ai-platform-backend-iam-api
     restart: unless-stopped
     ports:
       - "${BACKEND_IAM_PORT:-8020}:8000"
@@ -232,7 +244,13 @@ services:
     profiles:
       - standalone
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=5)"]
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=5)",
+        ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -245,8 +263,8 @@ services:
       args:
         BUILD_MODULES: tenant
         APP_ROLE: web
-    image: init-project-backend-tenant:${VERSION:-latest}
-    container_name: init-project-backend-tenant-api
+    image: ai-platform-backend-tenant:${VERSION:-latest}
+    container_name: ai-platform-backend-tenant-api
     restart: unless-stopped
     ports:
       - "${BACKEND_TENANT_PORT:-8030}:8000"
@@ -268,7 +286,13 @@ services:
     profiles:
       - standalone
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=5)"]
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=5)",
+        ]
       interval: 30s
       timeout: 10s
       retries: 3

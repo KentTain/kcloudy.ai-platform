@@ -55,6 +55,16 @@ async def run_listener(module_names: list[str] | None = None) -> None:
             phase.details["数据库"] = "PostgreSQL"
         except Exception:
             _logger.exception("数据库引擎初始化失败")
+
+        # 初始化 Redis 客户端
+        try:
+            from framework.cache.redis_util import RedisUtil
+
+            await RedisUtil.init(settings.redis)
+            phase.details["Redis"] = "已初始化"
+        except Exception:
+            _logger.exception("Redis 客户端初始化失败")
+
         provider = _get_tenant_provider()
         if provider:
             register_tenant_provider(provider)
@@ -121,6 +131,15 @@ async def run_listener(module_names: list[str] | None = None) -> None:
                 await cleanup_func()
             except Exception:
                 _logger.exception(f"监听器清理失败 [{module_name}]")
+
+        # 关闭 Redis 连接
+        try:
+            from framework.cache.redis_util import RedisUtil
+
+            await RedisUtil.close()
+        except Exception:
+            _logger.exception("Redis 连接关闭失败")
+
         write_info("所有监听器已停止")
 
 

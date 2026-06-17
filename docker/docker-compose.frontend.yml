@@ -11,8 +11,8 @@ services:
       dockerfile: Dockerfile
       args:
         BUILD_MODULES: demo,iam,tenant
-    image: init-project-platform:${VERSION:-latest}
-    container_name: init-project-platform
+    image: ai-platform-platform:${VERSION:-latest}
+    container_name: ai-platform-platform
     restart: unless-stopped
     ports:
       - "${PLATFORM_PORT:-3000}:80"
@@ -40,8 +40,8 @@ services:
       dockerfile: Dockerfile
       args:
         BUILD_MODULES: demo
-    image: init-project-demo:${VERSION:-latest}
-    container_name: init-project-demo
+    image: ai-platform-demo:${VERSION:-latest}
+    container_name: ai-platform-demo
     restart: unless-stopped
     ports:
       - "${DEMO_PORT:-3010}:80"
@@ -67,8 +67,8 @@ services:
       dockerfile: Dockerfile
       args:
         BUILD_MODULES: iam
-    image: init-project-iam:${VERSION:-latest}
-    container_name: init-project-iam
+    image: ai-platform-iam:${VERSION:-latest}
+    container_name: ai-platform-iam
     restart: unless-stopped
     ports:
       - "${IAM_PORT:-3020}:80"
@@ -94,8 +94,8 @@ services:
       dockerfile: Dockerfile
       args:
         BUILD_MODULES: tenant
-    image: init-project-tenant:${VERSION:-latest}
-    container_name: init-project-tenant
+    image: ai-platform-tenant:${VERSION:-latest}
+    container_name: ai-platform-tenant
     restart: unless-stopped
     ports:
       - "${TENANT_PORT:-3030}:80"

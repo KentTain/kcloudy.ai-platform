@@ -4,7 +4,7 @@ from apscheduler.jobstores.redis import RedisJobStore
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from loguru import logger
 
-from framework.configs import init_settings
+from demo.configs import settings
 from demo.tasks.services.heartbeat_task import heartbeat_task
 from demo.tasks.services.queue_status_task import queue_status_task
 
@@ -34,8 +34,6 @@ async def setup_scheduler() -> None:
     """注册并启动所有调度器"""
     global _local_scheduler, _cluster_scheduler
 
-    settings = init_settings()
-
     # 本地调度器（使用默认 MemoryJobStore）
     _local_scheduler = AsyncIOScheduler(
         timezone="Asia/Shanghai",
@@ -59,7 +57,8 @@ async def setup_scheduler() -> None:
 
     # 集群调度器
     try:
-        redis_config = settings.messaging.connections.get("redis", {})
+        # 使用 settings.redis 配置，而不是 messaging.connections
+        redis_config = settings.redis
         jobstore = _create_redis_jobstore(redis_config)
 
         _cluster_scheduler = AsyncIOScheduler(
@@ -95,12 +94,26 @@ async def cleanup_scheduler() -> None:
     _logger.info("调度器已停止")
 
 
-def _create_redis_jobstore(redis_config: dict) -> RedisJobStore:
-    """从配置创建 RedisJobStore"""
-    host = redis_config.get("host", "localhost")
-    port = redis_config.get("port", 6379)
-    password = redis_config.get("password") or None
-    db = redis_config.get("db", 0)
+def _create_redis_jobstore(redis_config) -> RedisJobStore:
+    """从配置创建 RedisJobStore
+
+    Args:
+        redis_config: RedisSettings 对象或 dict
+    """
+    # 支持 RedisSettings 对象和 dict
+    if hasattr(redis_config, "single"):
+        # RedisSettings 对象
+        single = redis_config.single
+        host = single.host
+        port = single.port
+        password = single.password or None
+        db = single.db
+    else:
+        # dict 格式（向后兼容）
+        host = redis_config.get("host", "localhost")
+        port = redis_config.get("port", 6379)
+        password = redis_config.get("password") or None
+        db = redis_config.get("db", 0)
 
     return RedisJobStore(
         host=host,
