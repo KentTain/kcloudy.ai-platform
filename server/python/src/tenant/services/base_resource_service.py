@@ -251,7 +251,7 @@ class BaseResourceService(ABC):
         """
         删除配置
 
-        如果配置已被租户引用，抛出 ConflictError 异常。
+        如果配置是默认配置或已被租户引用，抛出 ConflictError 异常。
 
         Args:
             config_id: 配置 ID
@@ -260,13 +260,30 @@ class BaseResourceService(ABC):
             bool: 是否删除成功
 
         Raises:
-            ConflictError: 配置已被租户引用
+            ConflictError: 配置是默认配置或已被租户引用
         """
-        # 引用检查
-        if cls._reference_field:
-            from tenant.models import Tenant
+        async with async_session() as session:
+            # 先查询配置是否存在及其状态
+            stmt = select(cls.model_class).where(cls.model_class.id == config_id)
+            result = await session.execute(stmt)
+            config = result.scalar_one_or_none()
 
-            async with async_session() as session:
+            if not config:
+                return False
+
+            # 检查是否为默认配置
+            if config.is_default:
+                _logger.warning(
+                    f"删除 {cls.model_class.__name__} 配置失败: {config_id} 是默认配置"
+                )
+                raise ConflictError(
+                    "此配置是默认配置，删除后新租户将无法自动关联配置"
+                )
+
+            # 引用检查
+            if cls._reference_field:
+                from tenant.models import Tenant
+
                 ref_field = getattr(Tenant, cls._reference_field)
                 stmt = select(func.count(Tenant.id)).where(ref_field == config_id)
                 result = await session.execute(stmt)
@@ -277,11 +294,10 @@ class BaseResourceService(ABC):
                         f"删除 {cls.model_class.__name__} 配置失败: {config_id} 被 {ref_count} 个租户引用"
                     )
                     raise ConflictError(
-                        f"无法删除：该配置已被 {ref_count} 个租户引用，请先解除绑定"
+                        f"此配置被租户使用，无法删除"
                     )
 
-        # 执行删除
-        async with async_session() as session:
+            # 执行删除
             stmt = sql_delete(cls.model_class).where(cls.model_class.id == config_id)
             result = await session.execute(stmt)
             await session.commit()
