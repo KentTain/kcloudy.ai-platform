@@ -11,6 +11,9 @@ from iam.schemas.department import (
     DepartmentCreate,
     DepartmentUpdate,
     UserDepartmentRequest,
+    DepartmentUserBatchRequest,
+    DepartmentDetailResponse,
+    MemberInfo,
 )
 from iam.services import department_service
 from framework.tenant.context import get_tenant_id
@@ -172,3 +175,109 @@ async def remove_user_from_department(
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.get("/departments/{department_id}/detail")
+async def get_department_detail(department_id: str) -> ORJSONResponse:
+    """
+    获取部门详情（含统计信息）
+
+    返回部门基本信息 + 直属成员数 + 累计成员数 + 组织路径
+    """
+    dept = await department_service.get_by_id(department_id)
+    if not dept:
+        raise HTTPException(status_code=404, detail="部门不存在")
+
+    stats = await department_service.get_department_stats(department_id)
+
+    return ORJSONResponse(
+        content={
+            "code": 200,
+            "msg": "success",
+            "data": DepartmentDetailResponse(
+                id=dept.id,
+                name=dept.name,
+                code=dept.code,
+                parent_id=dept.parent_id,
+                sort_order=dept.sort_order,
+                leader_id=dept.leader_id,
+                status=dept.status,
+                created_at=dept.created_at,
+                path=stats.get("path", ""),
+                direct_member_count=stats.get("direct_member_count", 0),
+                total_member_count=stats.get("total_member_count", 0),
+                children_count=stats.get("children_count", 0),
+            ).model_dump(),
+        }
+    )
+
+
+@router.post("/departments/{department_id}/users/batch")
+async def batch_add_users_to_department(
+    department_id: str,
+    data: DepartmentUserBatchRequest,
+) -> ORJSONResponse:
+    """批量添加用户到部门"""
+    try:
+        added = await department_service.batch_add_users(
+            department_id=department_id,
+            user_ids=data.user_ids,
+        )
+        return ORJSONResponse(
+            content={
+                "code": 200,
+                "msg": f"成功添加 {added} 个成员",
+                "data": {"added": added},
+            }
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post("/departments/{department_id}/users/{user_id}/enable")
+async def enable_department_user(department_id: str, user_id: str) -> ORJSONResponse:
+    """启用部门成员"""
+    from iam.services.user_service import UserService
+
+    try:
+        user = await UserService.set_status(user_id, "active")
+        return ORJSONResponse(
+            content={
+                "code": 200,
+                "msg": "用户已启用",
+                "data": {"user_id": user.id, "status": user.status},
+            }
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post("/departments/{department_id}/users/{user_id}/disable")
+async def disable_department_user(department_id: str, user_id: str) -> ORJSONResponse:
+    """停用部门成员"""
+    from iam.services.user_service import UserService
+
+    try:
+        user = await UserService.set_status(user_id, "inactive")
+        return ORJSONResponse(
+            content={
+                "code": 200,
+                "msg": "用户已停用",
+                "data": {"user_id": user.id, "status": user.status},
+            }
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.get("/departments/{department_id}/members")
+async def get_department_members(department_id: str) -> ORJSONResponse:
+    """获取部门成员列表（详细版）"""
+    users = await department_service.get_department_users(department_id)
+    return ORJSONResponse(
+        content={
+            "code": 200,
+            "msg": "success",
+            "data": users,
+        }
+    )

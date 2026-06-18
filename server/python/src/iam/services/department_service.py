@@ -232,6 +232,112 @@ class DepartmentService:
                 })
             return users
 
+    @staticmethod
+    async def batch_add_users(department_id: str, user_ids: list[str]) -> int:
+        """
+        批量添加用户到部门
+
+        Args:
+            department_id: 部门 ID
+            user_ids: 用户 ID 列表
+
+        Returns:
+            成功添加的数量
+        """
+        async with async_session() as session:
+            # 获取部门的 tenant_id
+            stmt = select(Department).where(Department.id == department_id)
+            result = await session.execute(stmt)
+            dept = result.scalar_one_or_none()
+            if not dept:
+                raise ValueError("部门不存在")
+
+            tenant_id = dept.tenant_id
+            added = 0
+
+            for user_id in user_ids:
+                # 检查是否已在部门中
+                stmt = select(UserDepartment).where(
+                    UserDepartment.department_id == department_id,
+                    UserDepartment.user_id == user_id,
+                )
+                result = await session.execute(stmt)
+                if result.scalar_one_or_none():
+                    continue  # 跳过已存在的
+
+                ud = UserDepartment(
+                    department_id=department_id,
+                    user_id=user_id,
+                    is_leader=False,
+                    tenant_id=tenant_id,
+                )
+                session.add(ud)
+                added += 1
+
+            await session.commit()
+            _logger.info(f"批量添加用户到部门: {department_id} -> {added} 人")
+            return added
+
+    @staticmethod
+    async def get_department_stats(department_id: str) -> dict:
+        """
+        获取部门统计信息（直属成员数、总成员数、路径等）
+
+        Args:
+            department_id: 部门 ID
+
+        Returns:
+            dict: 包含 direct_member_count, total_member_count, path, children_count 等
+        """
+        async with async_session() as session:
+            # 获取部门基本信息
+            stmt = select(Department).where(Department.id == department_id)
+            result = await session.execute(stmt)
+            dept = result.scalar_one_or_none()
+            if not dept:
+                raise ValueError("部门不存在")
+
+            # 直属成员数
+            stmt = select(func.count(UserDepartment.id)).where(
+                UserDepartment.department_id == department_id
+            )
+            result = await session.execute(stmt)
+            direct_member_count = result.scalar() or 0
+
+            # 下级部门 ID（通过 parent_ids 前缀匹配）
+            stmt = select(Department.id).where(
+                Department.tenant_id == dept.tenant_id,
+                Department.parent_ids.like(f"{dept.parent_ids}{dept.id}/%"),
+            )
+            result = await session.execute(stmt)
+            child_dept_ids = [row[0] for row in result.fetchall()]
+            child_dept_ids.append(department_id)
+
+            # 总成员数（含下级部门）
+            stmt = select(func.count(UserDepartment.id.distinct())).where(
+                UserDepartment.department_id.in_(child_dept_ids)
+            )
+            result = await session.execute(stmt)
+            total_member_count = result.scalar() or 0
+
+            # 直接子组织数
+            stmt = select(func.count(Department.id)).where(
+                Department.parent_id == department_id,
+                Department.tenant_id == dept.tenant_id,
+            )
+            result = await session.execute(stmt)
+            children_count = result.scalar() or 0
+
+            # 组织路径
+            path = dept.tree_names if dept.tree_names else dept.name
+
+            return {
+                "direct_member_count": direct_member_count,
+                "total_member_count": total_member_count,
+                "children_count": children_count,
+                "path": path,
+            }
+
 
 # 服务单例
 department_service = DepartmentService()

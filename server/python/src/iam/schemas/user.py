@@ -146,7 +146,8 @@ class UserQuery(BaseQuery):
 class UserPaginatedQuery(UserQuery, BasePaginatedQuery):
     """用户分页查询参数"""
 
-    pass
+    dept_id: str | None = Field(default=None, description="按部门 ID 筛选")
+    include_children: bool = Field(default=False, description="是否包含下级部门用户")
 
 
 class UserTenantResponse(BaseModel):
@@ -295,3 +296,12 @@ class UserRolesResponse(BaseModel):
             UserRolesResponse 实例
         """
         return cls(roles=[UserRoleItem.from_role(r) for r in roles])
+
+
+class UserStatsResponse(BaseModel):
+    """用户统计响应"""
+
+    total: int = Field(0, description="用户总数")
+    enabled: int = Field(0, description="启用用户数")
+    disabled: int = Field(0, description="停用用户数")
+    multi_role: int = Field(0, description="多角色用户数")

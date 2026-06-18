@@ -34,7 +34,7 @@ async def list_users(query: UserPaginatedQuery = Depends()) -> ORJSONResponse:
     """
     获取用户列表
 
-    支持分页、关键词搜索、状态过滤。
+    支持分页、关键词搜索、状态过滤、部门筛选。
     """
     tenant_id = get_tenant_id()
 
@@ -44,6 +44,8 @@ async def list_users(query: UserPaginatedQuery = Depends()) -> ORJSONResponse:
         page_size=query.page_size,
         keyword=query.keyword,
         status=query.status,
+        dept_id=query.dept_id,
+        include_children=query.include_children,
     )
     return ORJSONResponse(
         content={
@@ -55,6 +57,27 @@ async def list_users(query: UserPaginatedQuery = Depends()) -> ORJSONResponse:
                 page_size=query.page_size,
                 items=[UserResponse.model_validate(u) for u in users],
             ).model_dump(),
+        }
+    )
+
+
+@router.get("/users/stats")
+async def get_user_stats() -> ORJSONResponse:
+    """
+    获取用户统计
+
+    返回用户总数、启用数、停用数、多角色用户数。
+    """
+    from iam.schemas.user import UserStatsResponse
+
+    tenant_id = get_tenant_id()
+    stats = await user_service.get_user_stats(tenant_id)
+
+    return ORJSONResponse(
+        content={
+            "code": 200,
+            "msg": "success",
+            "data": UserStatsResponse(**stats).model_dump(),
         }
     )
 

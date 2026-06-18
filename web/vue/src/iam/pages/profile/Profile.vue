@@ -1,14 +1,38 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
-import { changePassword, getLoginHistory, updateCurrentUser } from '@/iam/api/auth'
-import { useTenantStore } from '@/tenant/stores/tenant'
-import { getErrorMessage, notifyError, notifySuccess } from '@/framework/utils/feedback'
-import { useUserStore } from '@/framework/stores'
-import type { LoginHistory } from '@/iam/types'
-import AppPage from '@/framework/layouts/components/AppPage.vue'
-import { Button, Input, Badge, Skeleton, DateInput, DescriptionList, type DescriptionItem, Pagination } from '@/components'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components'
-import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components'
+/**
+ * Profile — 账户管理页面
+ *
+ * 布局：
+ * - 头部：头像区（圆形头像 + 用户名 + 描述）
+ * - Tabs：个人信息、安全设置
+ */
+
+import { computed, onMounted, ref, watch } from "vue"
+import { changePassword, getLoginHistory, updateCurrentUser } from "@/iam/api/auth"
+import { useTenantStore } from "@/tenant/stores/tenant"
+import { getErrorMessage, notifyError, notifySuccess } from "@/framework/utils/feedback"
+import { useUserStore } from "@/framework/stores"
+import type { LoginHistory } from "@/iam/types"
+import AppPage from "@/framework/layouts/components/AppPage.vue"
+import {
+  Button,
+  Input,
+  Badge,
+  Skeleton,
+  DateInput,
+  Card,
+  Pagination,
+} from "@/components"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components"
 import {
   Table,
   TableBody,
@@ -16,31 +40,29 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table'
-import { toTypedSchema } from '@vee-validate/zod'
-import { useForm } from 'vee-validate'
-import * as z from 'zod'
-import { Save, KeyRound, ArrowRightLeft } from '@lucide/vue'
+} from "@/components/ui/table"
+import { toTypedSchema } from "@vee-validate/zod"
+import { useForm } from "vee-validate"
+import * as z from "zod"
+import { Save, KeyRound, User, Shield, Eye, EyeOff } from "@lucide/vue"
 
 const frameworkUserStore = useUserStore()
 const tenantStore = useTenantStore()
 
-const activeTab = ref('profile')
+const activeTab = ref("profile")
 
-// 个人资料
-const profileSchema = toTypedSchema(z.object({
-  nickname: z.string().optional(),
-  email: z.string().email('请输入有效的邮箱').optional().or(z.literal('')),
-  phone: z.string().optional(),
-}))
+// ========== 个人资料 ==========
 
-const { handleSubmit: handleProfileSubmit } = useForm({
+const profileSchema = toTypedSchema(
+  z.object({
+    nickname: z.string().max(100, "昵称不能超过 100 个字符").optional().or(z.literal("")),
+    email: z.string().email("请输入有效的邮箱").optional().or(z.literal("")),
+    phone: z.string().max(20, "手机号格式不正确").optional().or(z.literal("")),
+  })
+)
+
+const { handleSubmit: handleProfileSubmit, setValues } = useForm({
   validationSchema: profileSchema,
-  initialValues: {
-    nickname: frameworkUserStore.userInfo?.nickname || '',
-    email: frameworkUserStore.userInfo?.email || '',
-    phone: '',
-  },
 })
 
 const profileLoading = ref(false)
@@ -48,7 +70,11 @@ const profileLoading = ref(false)
 const onProfileSubmit = handleProfileSubmit(async (values) => {
   profileLoading.value = true
   try {
-    const response = await updateCurrentUser(values)
+    const response = await updateCurrentUser({
+      nickname: values.nickname || undefined,
+      email: values.email || undefined,
+      phone: values.phone || undefined,
+    })
     const currentUserInfo = frameworkUserStore.userInfo
     if (currentUserInfo) {
       frameworkUserStore.setUserInfo({
@@ -61,59 +87,82 @@ const onProfileSubmit = handleProfileSubmit(async (values) => {
         permissions: currentUserInfo.permissions,
       })
     }
-    notifySuccess('资料更新成功')
+    notifySuccess("资料更新成功")
   } catch (error) {
-    notifyError(getErrorMessage(error, '资料更新失败'))
+    notifyError(getErrorMessage(error, "资料更新失败"))
   } finally {
     profileLoading.value = false
   }
 })
 
-// 修改密码
-const passwordSchema = toTypedSchema(z.object({
-  old_password: z.string().min(1, '请输入原密码'),
-  new_password: z.string().min(8, '密码长度为 8-32 个字符').max(32, '密码长度为 8-32 个字符'),
-  confirm_password: z.string().min(1, '请输入确认密码'),
-}).refine(data => data.new_password === data.confirm_password, {
-  message: '两次输入的密码不一致',
-  path: ['confirm_password'],
-}))
-
-const { handleSubmit: handlePasswordSubmit } = useForm({
-  validationSchema: passwordSchema,
-})
-
-const loading = ref(false)
-
-const onPasswordSubmit = handlePasswordSubmit(async (values) => {
-  loading.value = true
-  try {
-    await changePassword(values.old_password, values.new_password)
-    notifySuccess('密码修改成功')
-  } catch (error) {
-    notifyError(getErrorMessage(error, '密码修改失败'))
-  } finally {
-    loading.value = false
-  }
-})
-
-// 租户切换
-const handleSwitchTenant = async (tenantId: string) => {
-  try {
-    await tenantStore.switchTenant(tenantId)
-    notifySuccess('租户切换成功')
-    window.location.reload()
-  } catch (error) {
-    notifyError(getErrorMessage(error, '租户切换失败'))
+// 初始化表单值
+function initProfileForm() {
+  const user = frameworkUserStore.userInfo
+  if (user) {
+    setValues({
+      nickname: user.nickname || "",
+      email: user.email || "",
+      phone: user.phone || "",
+    })
   }
 }
 
-// 登录历史
+watch(
+  () => frameworkUserStore.userInfo,
+  () => initProfileForm(),
+  { immediate: true }
+)
+
+// ========== 修改密码弹窗 ==========
+
+const passwordDialogOpen = ref(false)
+const showOldPassword = ref(false)
+const showNewPassword = ref(false)
+const showConfirmPassword = ref(false)
+
+const passwordSchema = toTypedSchema(
+  z
+    .object({
+      old_password: z.string().min(1, "请输入原密码"),
+      new_password: z
+        .string()
+        .min(8, "密码长度为 8-32 个字符")
+        .max(32, "密码长度为 8-32 个字符"),
+      confirm_password: z.string().min(1, "请输入确认密码"),
+    })
+    .refine((data) => data.new_password === data.confirm_password, {
+      message: "两次输入的密码不一致",
+      path: ["confirm_password"],
+    })
+)
+
+const { handleSubmit: handlePasswordSubmit, resetForm: resetPasswordForm } = useForm({
+  validationSchema: passwordSchema,
+})
+
+const passwordLoading = ref(false)
+
+const onPasswordSubmit = handlePasswordSubmit(async (values) => {
+  passwordLoading.value = true
+  try {
+    await changePassword(values.old_password, values.new_password)
+    notifySuccess("密码修改成功")
+    passwordDialogOpen.value = false
+    resetPasswordForm()
+  } catch (error) {
+    notifyError(getErrorMessage(error, "密码修改失败"))
+  } finally {
+    passwordLoading.value = false
+  }
+})
+
+// ========== 登录历史 ==========
+
 const loginHistory = ref<LoginHistory[]>([])
 const loginHistoryLoading = ref(false)
 const loginHistoryTotal = ref(0)
 const loginHistoryPage = ref(1)
-const loginHistoryPageSize = ref(20)
+const loginHistoryPageSize = ref(10)
 const dateRange = ref<string | [string, string] | undefined>(undefined)
 
 const loadLoginHistory = async () => {
@@ -131,7 +180,7 @@ const loadLoginHistory = async () => {
     loginHistory.value = response.data.items
     loginHistoryTotal.value = response.data.total
   } catch (error) {
-    notifyError(getErrorMessage(error, '获取登录历史失败'))
+    notifyError(getErrorMessage(error, "获取登录历史失败"))
   } finally {
     loginHistoryLoading.value = false
   }
@@ -144,34 +193,28 @@ watch(dateRange, () => {
 })
 
 watch(activeTab, (newTab) => {
-  if (newTab === 'login-history') {
+  if (newTab === "security") {
     loadLoginHistory()
   }
 })
 
+// ========== 格式化函数 ==========
+
 const formatDateTime = (dateStr: string) => {
-  if (!dateStr) return '--'
-  return new Date(dateStr).toLocaleString('zh-CN')
+  if (!dateStr) return "--"
+  return new Date(dateStr).toLocaleString("zh-CN")
 }
 
 const formatDeviceType = (type?: string) => {
-  const typeMap: Record<string, string> = { desktop: '桌面端', mobile: '移动端', tablet: '平板' }
-  return type ? typeMap[type] || type : '--'
+  const typeMap: Record<string, string> = { desktop: "桌面端", mobile: "移动端", tablet: "平板" }
+  return type ? typeMap[type] || type : "--"
 }
 
-const formatLoginStatus = (status: string) => status === 'success' ? '成功' : '失败'
+const formatLoginStatus = (status: string) => (status === "success" ? "成功" : "失败")
 
-// 个人信息描述列表
-const profileDescriptionItems = computed<DescriptionItem[]>(() => {
-  const user = frameworkUserStore.userInfo
-  if (!user) return []
-  return [
-    { label: '用户名', value: user.username },
-    { label: '昵称', value: user.nickname },
-    { label: '邮箱', value: user.email },
-    { label: '当前租户', value: tenantStore.currentTenant?.name || '默认租户' },
-  ]
-})
+// ========== 用户信息 ==========
+
+const userInfo = computed(() => frameworkUserStore.userInfo)
 
 onMounted(async () => {
   await tenantStore.fetchMyTenants()
@@ -179,26 +222,40 @@ onMounted(async () => {
 </script>
 
 <template>
-  <AppPage title="个人中心" variant="list">
-    <Tabs v-model="activeTab" class="w-full">
+  <AppPage title="账户管理" variant="list">
+    <!-- 头像区 -->
+    <div class="flex items-center gap-4 pb-4 border-b">
+      <div class="flex items-center justify-center w-16 h-16 rounded-full bg-primary text-primary-foreground text-xl font-bold">
+        {{ userInfo?.nickname?.charAt(0) || userInfo?.username?.charAt(0) || "U" }}
+      </div>
+      <div>
+        <h2 class="text-xl font-semibold">{{ userInfo?.nickname || userInfo?.username || "用户" }}</h2>
+        <p class="text-sm text-muted-foreground">{{ userInfo?.email || "管理您的账户信息和安全设置" }}</p>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <Tabs v-model="activeTab" class="mt-4">
       <TabsList>
-        <TabsTrigger value="profile">个人资料</TabsTrigger>
-        <TabsTrigger value="password">修改密码</TabsTrigger>
-        <TabsTrigger value="tenant">切换租户</TabsTrigger>
-        <TabsTrigger value="login-history">登录历史</TabsTrigger>
+        <TabsTrigger value="profile">
+          <User class="h-4 w-4 mr-1" />
+          个人信息
+        </TabsTrigger>
+        <TabsTrigger value="security">
+          <Shield class="h-4 w-4 mr-1" />
+          安全设置
+        </TabsTrigger>
       </TabsList>
 
-      <!-- 个人资料 Tab -->
-      <TabsContent value="profile">
-        <div class="flex flex-col gap-6 max-w-[600px]">
-          <DescriptionList :items="profileDescriptionItems" :columns="2" bordered />
-
+      <!-- 个人信息 Tab -->
+      <TabsContent value="profile" class="mt-4">
+        <Card class="p-6 max-w-[600px]">
           <form @submit="onProfileSubmit" class="flex flex-col gap-4">
             <FormField v-slot="{ componentField }" name="nickname">
               <FormItem>
                 <FormLabel>昵称</FormLabel>
                 <FormControl>
-                  <Input v-bind="componentField" />
+                  <Input v-bind="componentField" placeholder="请输入昵称" />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -208,7 +265,7 @@ onMounted(async () => {
               <FormItem>
                 <FormLabel>邮箱</FormLabel>
                 <FormControl>
-                  <Input v-bind="componentField" />
+                  <Input v-bind="componentField" type="email" placeholder="请输入邮箱" />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -218,28 +275,136 @@ onMounted(async () => {
               <FormItem>
                 <FormLabel>手机号</FormLabel>
                 <FormControl>
-                  <Input v-bind="componentField" />
+                  <Input v-bind="componentField" placeholder="请输入手机号" />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             </FormField>
 
-            <Button type="submit" :disabled="profileLoading">
-              <Save class="mr-1 h-4 w-4" />
-              保存
-            </Button>
+            <div class="flex justify-end pt-2">
+              <Button type="submit" :disabled="profileLoading">
+                <Save class="mr-1 h-4 w-4" />
+                保存修改
+              </Button>
+            </div>
           </form>
-        </div>
+        </Card>
       </TabsContent>
 
-      <!-- 修改密码 Tab -->
-      <TabsContent value="password">
-        <form @submit="onPasswordSubmit" class="max-w-[500px] flex flex-col gap-4">
+      <!-- 安全设置 Tab -->
+      <TabsContent value="security" class="mt-4">
+        <div class="max-w-[800px] space-y-4">
+          <!-- 密码项 -->
+          <Card class="p-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <h3 class="font-medium">密码</h3>
+                <p class="text-sm text-muted-foreground">定期更换密码可以提高账户安全性</p>
+              </div>
+              <Button variant="outline" @click="passwordDialogOpen = true">
+                <KeyRound class="mr-1 h-4 w-4" />
+                修改密码
+              </Button>
+            </div>
+          </Card>
+
+          <!-- 登录历史 -->
+          <Card class="p-4">
+            <div class="mb-4">
+              <h3 class="font-medium">登录历史</h3>
+              <p class="text-sm text-muted-foreground">查看最近的登录记录</p>
+            </div>
+
+            <div class="mb-3">
+              <DateInput
+                v-model="dateRange"
+                type="range"
+                placeholder="选择日期范围"
+                class="w-[280px]"
+              />
+            </div>
+
+            <div class="rounded-lg border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead class="w-[160px]">登录时间</TableHead>
+                    <TableHead class="w-[120px]">IP 地址</TableHead>
+                    <TableHead class="w-[80px]">设备</TableHead>
+                    <TableHead class="w-[80px]">状态</TableHead>
+                    <TableHead>位置</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  <TableRow v-if="loginHistoryLoading">
+                    <TableCell v-for="n in 5" :key="n">
+                      <Skeleton class="h-5 w-full" />
+                    </TableCell>
+                  </TableRow>
+                  <TableRow v-else-if="!loginHistory.length">
+                    <TableCell colspan="5" class="h-16 text-center text-muted-foreground">
+                      暂无登录记录
+                    </TableCell>
+                  </TableRow>
+                  <TableRow v-else v-for="row in loginHistory" :key="row.id">
+                    <TableCell>{{ formatDateTime(row.login_at) }}</TableCell>
+                    <TableCell>{{ row.ip_address }}</TableCell>
+                    <TableCell>{{ formatDeviceType(row.device_type) }}</TableCell>
+                    <TableCell>
+                      <Badge :variant="row.status === 'success' ? 'default' : 'destructive'" size="sm">
+                        {{ formatLoginStatus(row.status) }}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>{{ row.location || "--" }}</TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
+            </div>
+
+            <Pagination
+              v-if="loginHistoryTotal > loginHistoryPageSize"
+              :total="loginHistoryTotal"
+              :page="loginHistoryPage"
+              :page-size="loginHistoryPageSize"
+              class="mt-3"
+              @update:page="(p: number) => (loginHistoryPage = p)"
+              @update:page-size="(s: number) => { loginHistoryPageSize = s; loginHistoryPage = 1 }"
+            />
+          </Card>
+        </div>
+      </TabsContent>
+    </Tabs>
+
+    <!-- 修改密码弹窗 -->
+    <Dialog v-model:open="passwordDialogOpen">
+      <DialogContent class="sm:max-w-[400px]">
+        <DialogHeader>
+          <DialogTitle>修改密码</DialogTitle>
+          <DialogDescription>请输入原密码和新密码</DialogDescription>
+        </DialogHeader>
+
+        <form @submit="onPasswordSubmit" class="flex flex-col gap-4">
           <FormField v-slot="{ componentField }" name="old_password">
             <FormItem>
               <FormLabel>原密码</FormLabel>
               <FormControl>
-                <Input v-bind="componentField" type="password" />
+                <div class="relative">
+                  <Input
+                    v-bind="componentField"
+                    :type="showOldPassword ? 'text' : 'password'"
+                    placeholder="请输入原密码"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    class="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                    @click="showOldPassword = !showOldPassword"
+                  >
+                    <Eye v-if="!showOldPassword" class="h-4 w-4 text-muted-foreground" />
+                    <EyeOff v-else class="h-4 w-4 text-muted-foreground" />
+                  </Button>
+                </div>
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -249,7 +414,23 @@ onMounted(async () => {
             <FormItem>
               <FormLabel>新密码</FormLabel>
               <FormControl>
-                <Input v-bind="componentField" type="password" />
+                <div class="relative">
+                  <Input
+                    v-bind="componentField"
+                    :type="showNewPassword ? 'text' : 'password'"
+                    placeholder="请输入新密码（8-32位）"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    class="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                    @click="showNewPassword = !showNewPassword"
+                  >
+                    <Eye v-if="!showNewPassword" class="h-4 w-4 text-muted-foreground" />
+                    <EyeOff v-else class="h-4 w-4 text-muted-foreground" />
+                  </Button>
+                </div>
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -259,124 +440,38 @@ onMounted(async () => {
             <FormItem>
               <FormLabel>确认密码</FormLabel>
               <FormControl>
-                <Input v-bind="componentField" type="password" />
+                <div class="relative">
+                  <Input
+                    v-bind="componentField"
+                    :type="showConfirmPassword ? 'text' : 'password'"
+                    placeholder="请再次输入新密码"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    class="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                    @click="showConfirmPassword = !showConfirmPassword"
+                  >
+                    <Eye v-if="!showConfirmPassword" class="h-4 w-4 text-muted-foreground" />
+                    <EyeOff v-else class="h-4 w-4 text-muted-foreground" />
+                  </Button>
+                </div>
               </FormControl>
               <FormMessage />
             </FormItem>
           </FormField>
 
-          <Button type="submit" :disabled="loading">
-            <KeyRound class="mr-1 h-4 w-4" />
-            修改密码
-          </Button>
+          <DialogFooter>
+            <Button variant="outline" type="button" @click="passwordDialogOpen = false">
+              取消
+            </Button>
+            <Button type="submit" :disabled="passwordLoading">
+              {{ passwordLoading ? "修改中..." : "确定" }}
+            </Button>
+          </DialogFooter>
         </form>
-      </TabsContent>
-
-      <!-- 切换租户 Tab -->
-      <TabsContent value="tenant">
-        <div class="rounded-lg border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>租户名称</TableHead>
-                <TableHead>租户编码</TableHead>
-                <TableHead>我的角色</TableHead>
-                <TableHead class="w-[100px]">操作</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              <TableRow v-if="tenantStore.loading">
-                <TableCell v-for="n in 4" :key="n">
-                  <Skeleton class="h-5 w-full" />
-                </TableCell>
-              </TableRow>
-              <TableRow v-else-if="!tenantStore.myTenants.length">
-                <TableCell colspan="4" class="h-24 text-center text-muted-foreground">暂无租户</TableCell>
-              </TableRow>
-              <TableRow v-else v-for="tenant in tenantStore.myTenants" :key="tenant.tenant_id">
-                <TableCell>{{ tenant.tenant_name }}</TableCell>
-                <TableCell>{{ tenant.tenant_code }}</TableCell>
-                <TableCell>
-                  <div class="flex flex-wrap gap-1">
-                    <Badge v-for="role in tenant.role_names" :key="role" variant="secondary">{{ role }}</Badge>
-                    <Badge v-if="!tenant.role_names?.length" variant="outline">成员</Badge>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <Button size="sm" :disabled="tenant.is_current" @click="handleSwitchTenant(tenant.tenant_id)">
-                    <ArrowRightLeft class="mr-1 h-3.5 w-3.5" />
-                    切换
-                  </Button>
-                </TableCell>
-              </TableRow>
-            </TableBody>
-          </Table>
-        </div>
-      </TabsContent>
-
-      <!-- 登录历史 Tab -->
-      <TabsContent value="login-history">
-        <div class="flex flex-col gap-4">
-          <div class="flex items-end gap-3">
-            <div class="flex flex-col gap-1.5">
-              <span class="text-sm text-muted-foreground">日期范围</span>
-              <DateInput
-                v-model="dateRange"
-                type="range"
-                placeholder="选择日期范围"
-                class="w-[280px]"
-              />
-            </div>
-          </div>
-
-          <div class="rounded-lg border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead class="w-[180px]">登录时间</TableHead>
-                  <TableHead class="w-[140px]">IP 地址</TableHead>
-                  <TableHead class="w-[100px]">设备类型</TableHead>
-                  <TableHead class="w-[120px]">浏览器</TableHead>
-                  <TableHead class="w-[120px]">操作系统</TableHead>
-                  <TableHead class="w-[80px]">状态</TableHead>
-                  <TableHead>位置</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                <TableRow v-if="loginHistoryLoading">
-                  <TableCell v-for="n in 7" :key="n">
-                    <Skeleton class="h-5 w-full" />
-                  </TableCell>
-                </TableRow>
-                <TableRow v-else-if="!loginHistory.length">
-                  <TableCell colspan="7" class="h-24 text-center text-muted-foreground">暂无数据</TableCell>
-                </TableRow>
-                <TableRow v-else v-for="row in loginHistory" :key="row.id">
-                  <TableCell>{{ formatDateTime(row.login_at) }}</TableCell>
-                  <TableCell>{{ row.ip_address }}</TableCell>
-                  <TableCell>{{ formatDeviceType(row.device_type) }}</TableCell>
-                  <TableCell>{{ row.browser || '--' }}</TableCell>
-                  <TableCell>{{ row.os || '--' }}</TableCell>
-                  <TableCell>
-                    <Badge :variant="row.status === 'success' ? 'default' : 'destructive'" size="sm">
-                      {{ formatLoginStatus(row.status) }}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>{{ row.location || '--' }}</TableCell>
-                </TableRow>
-              </TableBody>
-            </Table>
-          </div>
-
-          <Pagination
-            :total="loginHistoryTotal"
-            :page="loginHistoryPage"
-            :page-size="loginHistoryPageSize"
-            @update:page="(p: number) => loginHistoryPage = p"
-            @update:page-size="(s: number) => { loginHistoryPageSize = s; loginHistoryPage = 1 }"
-          />
-        </div>
-      </TabsContent>
-    </Tabs>
+      </DialogContent>
+    </Dialog>
   </AppPage>
 </template>

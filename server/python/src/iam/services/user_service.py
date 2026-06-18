@@ -19,7 +19,7 @@ from framework.utils.crypto import (
     verify_password,
 )
 from framework.utils.session import delete_user_sessions
-from iam.models import User, UserDepartment, UserStatus, UserTenant
+from iam.models import User, UserDepartment, UserRole, UserStatus, UserTenant
 from iam.schemas.user import UserDetailResponse, UserResponse, UserTenantResponse
 
 _logger = logger.bind(name=__name__)
@@ -334,6 +334,8 @@ class UserService:
         page_size: int = 20,
         keyword: str | None = None,
         status: str | None = None,
+        dept_id: str | None = None,
+        include_children: bool = False,
     ) -> tuple[list[User], int]:
         """
         获取用户列表
@@ -344,6 +346,8 @@ class UserService:
             page_size: 每页数量
             keyword: 搜索关键词
             status: 状态过滤
+            dept_id: 部门 ID 筛选
+            include_children: 是否包含下级部门用户
 
         Returns:
             tuple[list[User], int]
@@ -360,11 +364,43 @@ class UserService:
                     or_(
                         User.username.ilike(f"%{keyword}%"),
                         User.nickname.ilike(f"%{keyword}%"),
-                        User.email.ilike(f"%{keyword}%"),
+                        User.phone.ilike(f"%{keyword}%"),
                     )
                 )
             if status:
                 conditions.append(User.status == status)
+
+            # 按部门筛选
+            if dept_id:
+                if include_children:
+                    # 包含下级部门：获取所有下级部门 ID
+                    from iam.models import Department
+                    stmt = select(Department).where(Department.id == dept_id)
+                    result = await session.execute(stmt)
+                    dept = result.scalar_one_or_none()
+                    if dept:
+                        # 通过 parent_ids 前缀匹配获取所有下级部门
+                        child_stmt = select(Department.id).where(
+                            Department.tenant_id == dept.tenant_id,
+                            Department.parent_ids.like(f"{dept.parent_ids}{dept.id}/%") | (Department.id == dept_id),
+                        )
+                        child_result = await session.execute(child_stmt)
+                        dept_ids = [row[0] for row in child_result.fetchall()]
+                        # 查询这些部门的用户
+                        user_stmt = select(UserDepartment.user_id).where(
+                            UserDepartment.department_id.in_(dept_ids)
+                        ).distinct()
+                        user_result = await session.execute(user_stmt)
+                        user_ids = [row[0] for row in user_result.fetchall()]
+                        conditions.append(User.id.in_(user_ids))
+                else:
+                    # 仅直属成员
+                    stmt = select(UserDepartment.user_id).where(
+                        UserDepartment.department_id == dept_id
+                    )
+                    result = await session.execute(stmt)
+                    user_ids = [row[0] for row in result.fetchall()]
+                    conditions.append(User.id.in_(user_ids))
 
             # 查询总数
             count_stmt = select(func.count(User.id))
@@ -782,6 +818,59 @@ class UserService:
                     )
                 )
         return tenants_vo
+
+    @staticmethod
+    async def get_user_stats(tenant_id: str) -> dict:
+        """
+        获取用户统计数据
+
+        Args:
+            tenant_id: 租户 ID
+
+        Returns:
+            dict: 包含 total, enabled, disabled, multi_role 统计
+        """
+        from sqlalchemy import func, distinct
+
+        async with async_session() as session:
+            # 总数
+            stmt = select(func.count(User.id)).where(User.tenant_id == tenant_id)
+            result = await session.execute(stmt)
+            total = result.scalar() or 0
+
+            # 启用数
+            stmt = select(func.count(User.id)).where(
+                User.tenant_id == tenant_id,
+                User.status == UserStatus.ACTIVE,
+            )
+            result = await session.execute(stmt)
+            enabled = result.scalar() or 0
+
+            # 停用数
+            stmt = select(func.count(User.id)).where(
+                User.tenant_id == tenant_id,
+                User.status == UserStatus.INACTIVE,
+            )
+            result = await session.execute(stmt)
+            disabled = result.scalar() or 0
+
+            # 多角色用户数（拥有 2 个以上角色的用户）
+            stmt = (
+                select(func.count(distinct(UserRole.user_id)))
+                .join(User, UserRole.user_id == User.id)
+                .where(User.tenant_id == tenant_id)
+                .group_by(UserRole.user_id)
+                .having(func.count(UserRole.role_id) > 1)
+            )
+            result = await session.execute(stmt)
+            multi_role = len(result.scalars().all())
+
+            return {
+                "total": total,
+                "enabled": enabled,
+                "disabled": disabled,
+                "multi_role": multi_role,
+            }
 
 
 # 服务单例

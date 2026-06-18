@@ -78,3 +78,35 @@ class RoleWithPermissionsResponse(BaseModel):
     is_system: bool
     permissions: list["PermissionVo"]
     created_at: datetime
+
+
+class RoleOptionResponse(BaseModel):
+    """角色选项视图对象（下拉列表用）"""
+
+    id: str
+    code: str
+    name: str
+    description: str | None
+
+
+class RoleMemberAssignRequest(BaseModel):
+    """角色成员分配请求"""
+
+    user_ids: list[str] = Field(..., min_length=1, description="用户 ID 列表")
+
+
+class RoleMenuAssignRequest(BaseModel):
+    """角色菜单分配请求"""
+
+    menu_ids: list[str] = Field(..., description="菜单 ID 列表")
+
+
+class RoleMemberResponse(BaseModel):
+    """角色成员视图对象"""
+
+    user_id: str
+    username: str
+    nickname: str | None
+    email: str | None
+    phone: str | None
+    status: str

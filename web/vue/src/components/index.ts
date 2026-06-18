@@ -48,10 +48,17 @@ export {
   Modal,
   MessageBox,
   SmartTooltip,
+  PeopleSelectDialog,
+  PeopleSelectView,
+  usePeopleTree,
   type MessageBoxOptions,
   type MessageBoxType,
   type MessageBoxAction,
   type BeforeCloseCallback,
+  type OrgTreeNode,
+  type PeopleItem,
+  type PeopleSelectEvent,
+  type PeopleSelectOptions,
 } from "./common/feedback";
 
 // 导航组件

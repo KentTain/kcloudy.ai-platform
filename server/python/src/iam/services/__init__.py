@@ -16,8 +16,10 @@ from iam.services.permission_service import (
 from iam.services.role_service import (
     RoleService,
     UserRoleService,
+    RoleMemberService,
     role_service,
     user_role_service,
+    role_member_service,
 )
 from iam.services.user_service import UserService, user_service
 
@@ -33,6 +35,8 @@ __all__ = [
     "role_service",
     "UserRoleService",
     "user_role_service",
+    "RoleMemberService",
+    "role_member_service",
     # 权限管理
     "PermissionService",
     "permission_service",
