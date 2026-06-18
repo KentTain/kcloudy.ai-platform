@@ -12,9 +12,6 @@ from loguru import logger
 from sqlalchemy import and_, desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from framework.common.ctx import get_tenant_id, get_user_id
-from framework.common.exceptions import BadRequestError
-
 from ai.models.plugin import (
     CredentialScope,
     PluginCredential,
@@ -27,11 +24,13 @@ from ai.schemas.plugin import (
     PluginCredentialVo,
     PluginInfoVo,
     PluginInstallResponseVo,
-    PluginPaginatedListResponseVo,
     PluginOperationResponseVo,
+    PluginPaginatedListResponseVo,
     UpdatePluginCredential,
 )
 from ai.services.credential_service import credential_service
+from framework.common.ctx import get_tenant_id, get_user_id
+from framework.common.exceptions import BadRequestError
 
 _logger = logger.bind(name=__name__)
 
@@ -403,7 +402,9 @@ class PluginManagementService:
         return PluginCredentialVo(
             id=str(record.id),
             plugin_id=record.plugin_id,
-            scope=record.scope.value if hasattr(record.scope, "value") else str(record.scope),
+            scope=record.scope.value
+            if hasattr(record.scope, "value")
+            else str(record.scope),
             name=record.name,
             provider_name=record.provider_name,
             created_at=record.created_at.isoformat() if record.created_at else None,
@@ -428,7 +429,9 @@ class PluginManagementService:
 
         try:
             # 获取插件管理器
-            from ai.components.plugin.engine.core.plugin_manager import PluginManagerFactory
+            from ai.components.plugin.engine.core.plugin_manager import (
+                PluginManagerFactory,
+            )
 
             plugin_manager = await PluginManagerFactory.get_manager(tenant_id, session)
 
@@ -456,14 +459,18 @@ class PluginManagementService:
             _logger.exception("插件安装失败")
             raise ValueError(f"插件安装失败: {str(e)}")
 
-    async def start_plugin(self, session: AsyncSession, plugin_id: str) -> PluginOperationResponseVo:
+    async def start_plugin(
+        self, session: AsyncSession, plugin_id: str
+    ) -> PluginOperationResponseVo:
         """启动插件"""
         tenant_id = get_tenant_id()
         if not tenant_id:
             raise ValueError("租户ID不能为空")
 
         try:
-            from ai.components.plugin.engine.core.plugin_manager import PluginManagerFactory
+            from ai.components.plugin.engine.core.plugin_manager import (
+                PluginManagerFactory,
+            )
 
             plugin_manager = await PluginManagerFactory.get_manager(tenant_id, session)
 
@@ -494,14 +501,18 @@ class PluginManagementService:
                 success=False,
             )
 
-    async def stop_plugin(self, session: AsyncSession, plugin_id: str) -> PluginOperationResponseVo:
+    async def stop_plugin(
+        self, session: AsyncSession, plugin_id: str
+    ) -> PluginOperationResponseVo:
         """停止插件"""
         tenant_id = get_tenant_id()
         if not tenant_id:
             raise ValueError("租户ID不能为空")
 
         try:
-            from ai.components.plugin.engine.core.plugin_manager import PluginManagerFactory
+            from ai.components.plugin.engine.core.plugin_manager import (
+                PluginManagerFactory,
+            )
 
             plugin_manager = await PluginManagerFactory.get_manager(tenant_id, session)
 
@@ -543,7 +554,9 @@ class PluginManagementService:
             raise ValueError("租户ID不能为空")
 
         try:
-            from ai.components.plugin.engine.core.plugin_manager import PluginManagerFactory
+            from ai.components.plugin.engine.core.plugin_manager import (
+                PluginManagerFactory,
+            )
 
             plugin_manager = await PluginManagerFactory.get_manager(tenant_id, session)
 
@@ -616,7 +629,11 @@ class PluginManagementService:
     # ==================== 插件调用 ====================
 
     async def invoke_plugin_stream(
-        self, session: AsyncSession, plugin_id: str, parameters: dict[str, Any], timeout: int
+        self,
+        session: AsyncSession,
+        plugin_id: str,
+        parameters: dict[str, Any],
+        timeout: int,
     ):
         """流式调用插件方法"""
         tenant_id = get_tenant_id()
@@ -624,7 +641,9 @@ class PluginManagementService:
             raise ValueError("租户ID不能为空")
 
         try:
-            from ai.components.plugin.engine.core.plugin_manager import PluginManagerFactory
+            from ai.components.plugin.engine.core.plugin_manager import (
+                PluginManagerFactory,
+            )
 
             plugin_manager = await PluginManagerFactory.get_manager(tenant_id, session)
 
@@ -659,9 +678,15 @@ class PluginManagementService:
             author=plugin_config.get("author", "unknown"),
             description=plugin_config.get("description", {}).get("zh_Hans", ""),
             icon=plugin_config.get("icon"),
-            status=installation.status.value if hasattr(installation.status, "value") else str(installation.status),
-            plugin_type=installation.plugin_type.value if hasattr(installation.plugin_type, "value") else str(installation.plugin_type),
-            runtime_type=installation.runtime_type.value if hasattr(installation.runtime_type, "value") else str(installation.runtime_type),
+            status=installation.status.value
+            if hasattr(installation.status, "value")
+            else str(installation.status),
+            plugin_type=installation.plugin_type.value
+            if hasattr(installation.plugin_type, "value")
+            else str(installation.plugin_type),
+            runtime_type=installation.runtime_type.value
+            if hasattr(installation.runtime_type, "value")
+            else str(installation.runtime_type),
             auto_start=installation.auto_start,
             installed_at=installation.installed_at.isoformat()
             if installation.installed_at
@@ -707,14 +732,18 @@ class PluginManagementService:
 
     # ==================== 插件资源文件 ====================
 
-    async def get_plugin_asset(self, session: AsyncSession, plugin_id: str, asset_path: str) -> bytes:
+    async def get_plugin_asset(
+        self, session: AsyncSession, plugin_id: str, asset_path: str
+    ) -> bytes:
         """获取插件资源文件内容"""
         tenant_id = get_tenant_id()
         if not tenant_id:
             raise ValueError("租户ID不能为空")
 
         try:
-            from ai.components.plugin.engine.core.plugin_manager import PluginManagerFactory
+            from ai.components.plugin.engine.core.plugin_manager import (
+                PluginManagerFactory,
+            )
 
             plugin_manager = await PluginManagerFactory.get_manager(tenant_id, session)
 
