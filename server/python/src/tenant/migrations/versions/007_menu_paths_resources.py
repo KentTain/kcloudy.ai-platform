@@ -17,7 +17,7 @@ from sqlalchemy import text
 
 # revision identifiers, used by Alembic.
 revision: str = "007_menu_paths_resources"
-down_revision: Union[str, None] = "003_tenant_resource_ref"
+down_revision: Union[str, None] = "004_resource_default"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

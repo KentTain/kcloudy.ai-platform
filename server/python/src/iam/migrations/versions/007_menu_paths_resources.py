@@ -1,6 +1,6 @@
 """更新菜单路径以匹配统一 API 路由规范
 
-Revision ID: 007_update_menu_paths_to_resources
+Revision ID: 007_menu_paths_resources
 Revises: 006_update_menu_paths
 Create Date: 2026-06-17
 
@@ -16,7 +16,7 @@ from alembic import op
 from sqlalchemy import text
 
 # revision identifiers, used by Alembic.
-revision: str = "007_update_menu_paths_to_resources"
+revision: str = "007_menu_paths_resources"
 down_revision: Union[str, None] = "006_update_menu_paths"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
