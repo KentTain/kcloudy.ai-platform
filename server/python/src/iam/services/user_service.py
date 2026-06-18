@@ -19,7 +19,7 @@ from framework.utils.crypto import (
     verify_password,
 )
 from framework.utils.session import delete_user_sessions
-from iam.models import User, UserDepartment, UserStatus, UserTenant
+from iam.models import User, UserDepartment, UserRole, UserStatus, UserTenant
 from iam.schemas.user import UserDetailResponse, UserResponse, UserTenantResponse
 
 _logger = logger.bind(name=__name__)

@@ -20,7 +20,7 @@ from iam.schemas.role import (
     RoleMemberResponse,
 )
 from iam.services import permission_service, role_service
-from iam.services.role_service import role_member_service
+from iam.services.role_service import role_member_service, user_role_service
 
 router = APIRouter()
 
@@ -159,7 +159,7 @@ async def assign_permissions(role_id: str, data: RolePermissionRequest) -> ORJSO
 @router.get("/roles/options")
 async def get_role_options() -> ORJSONResponse:
     """获取角色选项列表（不分页，供下拉选择用）"""
-    roles = await role_service.get_role_options()
+    roles = await user_role_service.get_role_options()
     return ORJSONResponse(
         content={
             "code": 200,

@@ -66,13 +66,13 @@
 
 ## 8. 角色管理页面改造
 
-- [ ] 8.1 重写 `iam/pages/roles/RoleList.vue`：左侧角色列表 + 右侧 Tabs（角色成员、权限列表）
-- [ ] 8.2 实现"角色成员"Tab（成员表格 + 添加成员 PeopleSelectDialog + 移除成员）
-- [ ] 8.3 实现"权限列表"Tab（按资源分组的权限展示 + 分配权限弹窗）
+- [x] 8.1 重写 `iam/pages/roles/RoleList.vue`：左侧角色列表 + 右侧 Tabs（角色成员、权限列表）
+- [x] 8.2 实现"角色成员"Tab（成员表格 + 添加成员 PeopleSelectDialog + 移除成员）
+- [x] 8.3 实现"权限列表"Tab（按资源分组的权限展示 + 分配权限弹窗）
 
 ## 9. 测试
 
-- [ ] 9.1 后端单元测试：新增 API 端点的请求/响应测试
-- [ ] 9.2 后端单元测试：Service 层新方法测试（batch_add_users、get_user_stats 等）
-- [ ] 9.3 前端组件测试：PeopleSelectDialog 组件测试（单选、多选、禁用、搜索）
-- [ ] 9.4 前端页面测试：DepartmentPage 重写后的关键交互测试
+- [x] 9.1 后端单元测试：新增 API 端点的请求/响应测试
+- [x] 9.2 后端单元测试：Service 层新方法测试（batch_add_users、get_user_stats 等）
+- [x] 9.3 前端组件测试：PeopleSelectDialog 组件测试（单选、多选、禁用、搜索）
+- [x] 9.4 前端页面测试：DepartmentPage 重写后的关键交互测试
