@@ -20,13 +20,13 @@ import {
   Button,
   Badge,
   Skeleton,
-  Table,
   Input,
   Checkbox,
 } from "@/components"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import {
+  Table,
   TableBody,
   TableCell,
   TableHead,
@@ -43,8 +43,8 @@ import {
 } from "@/components"
 import { notifySuccess, notifyError, getErrorMessage } from "@/framework/utils/feedback"
 import type { Permission, Role, PermissionGroup, MenuTreeNode } from "@/iam/types"
+import { getPermissions } from "@/iam/api/permission"
 import {
-  getPermissions,
   getRoles,
   getRolePermissions,
   assignRolePermissions,

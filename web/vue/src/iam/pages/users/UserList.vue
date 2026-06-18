@@ -5,10 +5,10 @@
  * 布局：
  * - 顶部统计卡片（人员总数、启用账号数、当前部门人数、多角色成员数）
  * - 左侧 300px 部门树筛选
- * - 右侧 DataTable 人员列表 + 多条件筛选 + 行内操作
+ * - 右侧 Table 人员列表 + 多条件筛选 + 行内操作
  */
 
-import { ref, computed, onMounted, watch } from "vue"
+import { ref, computed, onMounted } from "vue"
 import {
   Users,
   UserCheck,
@@ -27,13 +27,9 @@ import AppPage from "@/framework/layouts/components/AppPage.vue"
 import {
   Button,
   Badge,
-  Skeleton,
-  DataTable,
-  DataTablePagination,
-  useDataTable,
-  type DescriptionItem,
+  Table,
+  Pagination,
   Input,
-  TreeSelect,
 } from "@/components"
 import {
   Select,
@@ -45,7 +41,6 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { confirmAction, notifySuccess, notifyError, getErrorMessage } from "@/framework/utils/feedback"
 import type { User, UserStats, Department, RoleOption } from "@/iam/types"
-import type { TreeSelectNode } from "@/framework/types/tree"
 import {
   getUsers,
   getUserStats,
@@ -79,8 +74,8 @@ const roleOptions = ref<RoleOption[]>([])
 // 筛选条件
 const filters = ref({
   keyword: "",
-  status: "",
-  role_id: "",
+  status: "__all__",
+  role_id: "__all__",
   dept_id: "",
   include_children: true,
 })
@@ -97,19 +92,6 @@ const formDialogMode = ref<"create" | "edit">("create")
 const currentUser = ref<User | null>(null)
 
 // ========== 计算属性 ==========
-
-// 将 Department 转换为 TreeSelectNode
-const treeSelectData = computed<TreeSelectNode[]>(() => {
-  function toNodes(depts: Department[]): TreeSelectNode[] {
-    return depts.map((d) => ({
-      id: d.id,
-      name: d.name,
-      children: d.children ? toNodes(d.children) : undefined,
-      isLeaf: !d.children || d.children.length === 0,
-    }))
-  }
-  return toNodes(departmentTree.value)
-})
 
 // 统计卡片数据
 const statCards = computed(() => [
@@ -145,31 +127,23 @@ const statCards = computed(() => [
 
 // 状态选项
 const statusOptions = [
-  { label: "全部", value: "" },
+  { label: "全部", value: "__all__" },
   { label: "启用", value: "active" },
   { label: "停用", value: "inactive" },
   { label: "锁定", value: "locked" },
 ]
 
-// ========== DataTable 配置 ==========
+// ========== 表格配置 ==========
 
 const columns = [
-  { key: "username", header: "用户名", width: "120px" },
-  { key: "nickname", header: "昵称", width: "100px" },
-  { key: "dept_name", header: "部门", width: "140px" },
-  { key: "email", header: "邮箱", width: "160px" },
-  { key: "phone", header: "手机号", width: "120px" },
-  { key: "status", header: "状态", width: "80px" },
-  { key: "actions", header: "操作", width: "200px" },
+  { key: "username", title: "用户名", width: "120px" },
+  { key: "nickname", title: "昵称", width: "100px" },
+  { key: "dept_name", title: "部门", width: "140px" },
+  { key: "email", title: "邮箱", width: "160px" },
+  { key: "phone", title: "手机号", width: "120px" },
+  { key: "status", title: "状态", width: "80px" },
+  { key: "actions", title: "操作", width: "200px" },
 ]
-
-const { dataTable } = useDataTable({
-  columns,
-  data: users,
-  total,
-  pageSize: pagination.value.pageSize,
-  getRowId: (row) => row.id,
-})
 
 // ========== 方法 ==========
 
@@ -207,11 +181,14 @@ async function loadStats() {
 async function loadUsers() {
   loading.value = true
   try {
+    const roleId = filters.value.role_id === "__all__" ? undefined : filters.value.role_id
+    const status = filters.value.status === "__all__" ? undefined : filters.value.status
     const res = await getUsers({
       page: pagination.value.page,
       page_size: pagination.value.pageSize,
       keyword: filters.value.keyword || undefined,
-      status: filters.value.status || undefined,
+      status: status,
+      role_id: roleId,
       dept_id: filters.value.dept_id || undefined,
       include_children: filters.value.include_children,
     })
@@ -257,7 +234,7 @@ function handleSearch() {
 
 /** 重置筛选 */
 function handleReset() {
-  filters.value = { keyword: "", status: "", role_id: "", dept_id: "", include_children: true }
+  filters.value = { keyword: "", status: "__all__", role_id: "__all__", dept_id: "", include_children: true }
   pagination.value.page = 1
   selectedDeptName.value = ""
   loadUsers()
@@ -355,18 +332,6 @@ async function handleDelete(user: User) {
   } catch (error) {
     notifyError(getErrorMessage(error, "删除失败"))
   }
-}
-
-/** 分页变化 */
-function handlePageChange(page: number) {
-  pagination.value.page = page
-  loadUsers()
-}
-
-function handlePageSizeChange(pageSize: number) {
-  pagination.value.pageSize = pageSize
-  pagination.value.page = 1
-  loadUsers()
 }
 
 /** 状态 Badge 样式 */
@@ -503,7 +468,7 @@ onMounted(() => {
                   <SelectValue placeholder="全部角色" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">全部角色</SelectItem>
+                  <SelectItem value="__all__">全部角色</SelectItem>
                   <SelectItem v-for="role in roleOptions" :key="role.id" :value="role.id">
                     {{ role.name }}
                   </SelectItem>
@@ -521,39 +486,44 @@ onMounted(() => {
           </div>
         </div>
 
-        <!-- DataTable -->
+        <!-- 用户列表 -->
         <div class="flex-1 overflow-auto">
-          <DataTable :data-table="dataTable">
-            <template #cell-username="{ row }">
+          <Table
+            :columns="columns"
+            :data="users"
+            :loading="loading"
+            stripe
+          >
+            <template #username="{ row }">
               <span class="font-medium">{{ row.username }}</span>
             </template>
-            <template #cell-nickname="{ row }">
+            <template #nickname="{ row }">
               {{ row.nickname || "--" }}
             </template>
-            <template #cell-dept_name="{ row }">
+            <template #dept_name="{ row }">
               {{ row.dept_name || "--" }}
             </template>
-            <template #cell-email="{ row }">
+            <template #email="{ row }">
               {{ row.email || "--" }}
             </template>
-            <template #cell-phone="{ row }">
+            <template #phone="{ row }">
               {{ row.phone || "--" }}
             </template>
-            <template #cell-status="{ row }">
+            <template #status="{ row }">
               <Badge :variant="getStatusBadgeVariant(row.status)">
                 {{ getStatusLabel(row.status) }}
               </Badge>
             </template>
-            <template #cell-actions="{ row }">
+            <template #actions="{ row }">
               <div class="flex items-center gap-1">
-                <Button variant="ghost" size="sm" @click="handleEdit(row)">
+                <Button variant="ghost" size="sm" @click="handleEdit(row as User)">
                   <Pencil class="h-3.5 w-3.5" />
                 </Button>
                 <Button
                   v-if="row.status === 'active'"
                   variant="ghost"
                   size="sm"
-                  @click="handleDisable(row)"
+                  @click="handleDisable(row as User)"
                 >
                   <ShieldOff class="h-3.5 w-3.5" />
                 </Button>
@@ -561,32 +531,33 @@ onMounted(() => {
                   v-else
                   variant="ghost"
                   size="sm"
-                  @click="handleEnable(row)"
+                  @click="handleEnable(row as User)"
                 >
                   <ShieldCheck class="h-3.5 w-3.5" />
                 </Button>
-                <Button variant="ghost" size="sm" @click="handleResetPassword(row)">
+                <Button variant="ghost" size="sm" @click="handleResetPassword(row as User)">
                   <KeyRound class="h-3.5 w-3.5" />
                 </Button>
                 <Button
                   variant="ghost"
                   size="sm"
                   class="text-destructive hover:text-destructive"
-                  @click="handleDelete(row)"
+                  @click="handleDelete(row as User)"
                 >
                   <Trash2 class="h-3.5 w-3.5" />
                 </Button>
               </div>
             </template>
-          </DataTable>
+          </Table>
         </div>
 
         <!-- 分页 -->
         <div class="p-3 border-t">
-          <DataTablePagination
-            :table="dataTable.table"
-            @page-change="handlePageChange"
-            @page-size-change="handlePageSizeChange"
+          <Pagination
+            :total="total"
+            v-model:page="pagination.page"
+            v-model:page-size="pagination.pageSize"
+            @update:page="loadUsers"
           />
         </div>
       </div>

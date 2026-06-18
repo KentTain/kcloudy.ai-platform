@@ -70,6 +70,22 @@ async def create_role(data: RoleCreate) -> ORJSONResponse:
         raise HTTPException(status_code=400, detail=str(e))
 
 
+@router.get("/roles/options")
+async def get_role_options() -> ORJSONResponse:
+    """获取角色选项列表（不分页，供下拉选择用）"""
+    roles = await user_role_service.get_role_options()
+    return ORJSONResponse(
+        content={
+            "code": 200,
+            "msg": "success",
+            "data": [
+                RoleOptionResponse.model_validate(r).model_dump()
+                for r in roles
+            ],
+        }
+    )
+
+
 @router.get("/roles/{role_id}")
 async def get_role(role_id: str) -> ORJSONResponse:
     """获取角色详情"""
@@ -152,22 +168,6 @@ async def assign_permissions(role_id: str, data: RolePermissionRequest) -> ORJSO
             "code": 200,
             "msg": "分配成功",
             "data": None,
-        }
-    )
-
-
-@router.get("/roles/options")
-async def get_role_options() -> ORJSONResponse:
-    """获取角色选项列表（不分页，供下拉选择用）"""
-    roles = await user_role_service.get_role_options()
-    return ORJSONResponse(
-        content={
-            "code": 200,
-            "msg": "success",
-            "data": [
-                RoleOptionResponse.model_validate(r).model_dump()
-                for r in roles
-            ],
         }
     )
 

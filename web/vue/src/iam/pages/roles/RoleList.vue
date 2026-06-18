@@ -7,7 +7,7 @@
  * - 右侧：Tabs（角色成员、权限列表）
  */
 
-import { ref, computed, onMounted } from "vue"
+import { ref, computed, onMounted, onUnmounted } from "vue"
 import {
   Shield,
   Users,
@@ -24,7 +24,6 @@ import {
   Button,
   Badge,
   Skeleton,
-  Table,
   Checkbox,
   PeopleSelectDialog,
   Input,
@@ -32,6 +31,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import {
+  Table,
   TableBody,
   TableCell,
   TableHead,
@@ -66,6 +66,7 @@ import { getUsers } from "@/iam/api/user"
 
 // ========== 状态 ==========
 
+const isUnmounted = ref(false)
 const loading = ref(false)
 const roles = ref<Role[]>([])
 const selectedRole = ref<Role | null>(null)
@@ -140,8 +141,10 @@ async function loadRoles() {
   loading.value = true
   try {
     const res = await getRoles({ page: 1, page_size: 100 })
+    if (isUnmounted.value) return
     roles.value = res.data?.items || []
   } catch (error) {
+    if (isUnmounted.value) return
     notifyError(getErrorMessage(error, "加载角色列表失败"))
   } finally {
     loading.value = false
@@ -153,6 +156,7 @@ async function selectRole(role: Role) {
   selectedRole.value = role
   activeTab.value = "members"
   await loadRoleMembers()
+  if (isUnmounted.value) return
   await loadRolePermissions()
 }
 
@@ -162,8 +166,10 @@ async function loadRoleMembers() {
   membersLoading.value = true
   try {
     const res = await getRoleMembers(selectedRole.value.id)
+    if (isUnmounted.value) return
     members.value = res.data || []
   } catch (error) {
+    if (isUnmounted.value) return
     notifyError(getErrorMessage(error, "加载角色成员失败"))
     members.value = []
   } finally {
@@ -176,6 +182,7 @@ async function loadRolePermissions() {
   if (!selectedRole.value) return
   try {
     const res = await getRolePermissions(selectedRole.value.id)
+    if (isUnmounted.value) return
     rolePermissions.value = res.data || []
   } catch {
     rolePermissions.value = []
@@ -369,6 +376,11 @@ async function loadOrgPeopleCallback(orgId: string): Promise<PeopleItem[]> {
 // 初始化
 onMounted(() => {
   loadRoles()
+})
+
+// 清理
+onUnmounted(() => {
+  isUnmounted.value = true
 })
 </script>
 
@@ -663,7 +675,7 @@ onMounted(() => {
           <DialogTitle>
             {{ formDialogMode === "create" ? "新建角色" : "编辑角色" }}
           </DialogTitle>
-          <DialogDescription v-if="formDialogMode === "create"">
+          <DialogDescription v-if="formDialogMode === 'create'">
             创建一个新的角色
           </DialogDescription>
         </DialogHeader>
