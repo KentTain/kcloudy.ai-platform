@@ -9,25 +9,26 @@ from fastapi.responses import ORJSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from framework.database.dependencies import get_db_session
+from framework.schemas.base import Success, SuccessExtra
 from tenant.middlewares.admin_auth_middleware import get_current_admin
 from tenant.schemas.admin.module import (
     ModuleCreate,
-    ModulePaginatedListResponse,
     ModuleMenuCreate,
     ModuleMenuListResponse,
-    ModuleMenuUpdate,
     ModuleMenuTreeResponse,
+    ModuleMenuUpdate,
+    ModulePaginatedListResponse,
     ModulePermissionCreate,
     ModulePermissionPaginatedListResponse,
-    ModulePermissionUpdate,
     ModulePermissionResponse,
+    ModulePermissionUpdate,
+    ModuleResponse,
     ModuleRoleCreate,
     ModuleRolePaginatedListResponse,
     ModuleRolePermissionUpdateRequest,
-    ModuleRoleUpdate,
     ModuleRoleResponse,
+    ModuleRoleUpdate,
     ModuleUpdate,
-    ModuleResponse,
 )
 from tenant.services import (
     ModuleMenuService,
@@ -37,11 +38,6 @@ from tenant.services import (
 )
 
 router = APIRouter()
-
-
-def Success(data=None, msg: str = "success") -> dict:
-    """成功响应"""
-    return {"code": 200, "msg": msg, "data": data}
 
 
 def build_module_vo(module) -> ModuleResponse:
@@ -104,9 +100,7 @@ def build_role_vo(role, permissions: list = None) -> ModuleRoleResponse:
         is_system=role.is_system,
         created_at=role.created_at,
         updated_at=role.updated_at,
-        permissions=[
-            build_permission_vo(p) for p in (permissions or [])
-        ],
+        permissions=[build_permission_vo(p) for p in (permissions or [])],
     )
 
 
@@ -143,17 +137,11 @@ async def list_modules(
         is_active=is_active,
     )
 
-    return ORJSONResponse(
-        content={
-            "code": 200,
-            "msg": "success",
-            "data": ModulePaginatedListResponse(
-                items=[build_module_vo(m) for m in modules],
-                total=total,
-                page=page,
-                page_size=page_size,
-            ).model_dump(),
-        }
+    return SuccessExtra(
+        data=[build_module_vo(m) for m in modules],
+        total=total,
+        page=page,
+        page_size=page_size,
     )
 
 
@@ -190,7 +178,7 @@ async def create_module(
         is_need=data.is_need,
     )
 
-    return ORJSONResponse(content=Success(build_module_vo(module).model_dump()))
+    return Success(data=build_module_vo(module).model_dump())
 
 
 @router.get("/modules/{module_id}")
@@ -214,7 +202,7 @@ async def get_module(
     if not module:
         raise HTTPException(status_code=404, detail="模块不存在")
 
-    return ORJSONResponse(content=Success(build_module_vo(module).model_dump()))
+    return Success(data=build_module_vo(module).model_dump())
 
 
 @router.put("/modules/{module_id}")
@@ -245,7 +233,7 @@ async def update_module(
     if not module:
         raise HTTPException(status_code=404, detail="模块不存在")
 
-    return ORJSONResponse(content=Success(build_module_vo(module).model_dump()))
+    return Success(data=build_module_vo(module).model_dump())
 
 
 @router.delete("/modules/{module_id}")
@@ -272,7 +260,7 @@ async def delete_module(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-    return ORJSONResponse(content=Success())
+    return Success()
 
 
 # =============================================================================
@@ -301,9 +289,7 @@ async def list_module_menus(
     menus = await ModuleMenuService.list_menus(session, module_id)
     tree = ModuleMenuService.build_tree(menus)
 
-    return ORJSONResponse(
-        content=Success(ModuleMenuListResponse(items=tree).model_dump())
-    )
+    return Success(data=ModuleMenuListResponse(items=tree).model_dump())
 
 
 @router.post("/modules/{module_id}/menus")
@@ -354,7 +340,7 @@ async def create_module_menu(
         is_visible=data.is_visible,
     )
 
-    return ORJSONResponse(content=Success(build_menu_vo(menu).model_dump()))
+    return Success(data=build_menu_vo(menu).model_dump())
 
 
 @router.put("/modules/{module_id}/menus/{menu_id}")
@@ -393,7 +379,7 @@ async def update_module_menu(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-    return ORJSONResponse(content=Success(build_menu_vo(menu).model_dump()))
+    return Success(data=build_menu_vo(menu).model_dump())
 
 
 @router.delete("/modules/{module_id}/menus/{menu_id}")
@@ -428,7 +414,7 @@ async def delete_module_menu(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-    return ORJSONResponse(content=Success())
+    return Success()
 
 
 # =============================================================================
@@ -523,7 +509,7 @@ async def create_module_permission(
         description=data.description,
     )
 
-    return ORJSONResponse(content=Success(build_permission_vo(permission).model_dump()))
+    return Success(data=build_permission_vo(permission).model_dump())
 
 
 @router.put("/modules/{module_id}/permissions/{permission_id}")
@@ -561,7 +547,7 @@ async def update_module_permission(
         description=data.description,
     )
 
-    return ORJSONResponse(content=Success(build_permission_vo(permission).model_dump()))
+    return Success(data=build_permission_vo(permission).model_dump())
 
 
 @router.delete("/modules/{module_id}/permissions/{permission_id}")
@@ -589,7 +575,7 @@ async def delete_module_permission(
     if not success:
         raise HTTPException(status_code=404, detail="权限不存在")
 
-    return ORJSONResponse(content=Success())
+    return Success()
 
 
 # =============================================================================
@@ -681,7 +667,7 @@ async def create_module_role(
         is_system=data.is_system,
     )
 
-    return ORJSONResponse(content=Success(build_role_vo(role).model_dump()))
+    return Success(data=build_role_vo(role).model_dump())
 
 
 @router.put("/modules/{module_id}/roles/{role_id}")
@@ -721,7 +707,7 @@ async def update_module_role(
         raise HTTPException(status_code=400, detail=str(e))
 
     permissions = await ModuleRoleService.get_role_permissions(session, role.id)
-    return ORJSONResponse(content=Success(build_role_vo(role, permissions).model_dump()))
+    return Success(data=build_role_vo(role, permissions).model_dump())
 
 
 @router.delete("/modules/{module_id}/roles/{role_id}")
@@ -756,7 +742,7 @@ async def delete_module_role(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-    return ORJSONResponse(content=Success())
+    return Success()
 
 
 @router.put("/modules/{module_id}/roles/{role_id}/permissions")
@@ -794,4 +780,4 @@ async def update_role_permissions(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-    return ORJSONResponse(content=Success(build_role_vo(role, permissions).model_dump()))
+    return Success(data=build_role_vo(role, permissions).model_dump())
