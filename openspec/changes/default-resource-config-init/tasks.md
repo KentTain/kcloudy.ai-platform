@@ -51,11 +51,7 @@
 
 ## 7. API 控制器修改
 
-- [ ] 7.1 修改数据库配置查询接口，按 `is_default` 降序排序
-- [ ] 7.2 修改缓存配置查询接口，按 `is_default` 降序排序
-- [ ] 7.3 修改存储配置查询接口，按 `is_default` 降序排序
-- [ ] 7.4 修改队列配置查询接口，按 `is_default` 降序排序
-- [ ] 7.5 修改发布订阅配置查询接口，按 `is_default` 降序排序
+- [x] 7.1 修改 `BaseResourceService.list_configs()` 按 `is_default` 降序排序（适用于所有 5 种配置）
 
 ## 8. 前端类型定义修改
 
