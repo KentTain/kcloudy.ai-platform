@@ -12,6 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from framework.database.core.engine import async_session
 from iam.models import Menu, MenuPermission, Permission, Role, RolePermission
+from iam.services.permission_service import PermissionCheckService
 
 _logger = logging.getLogger(__name__)
 
@@ -1016,6 +1017,10 @@ class ModuleSyncService:
             session.add(role_permission)
             created_count += 1
 
+        # 触发权限缓存失效
+        for tenant_id in tenant_ids:
+            await PermissionCheckService.invalidate_tenant_permission_cache(tenant_id)
+
         _logger.info(
             f"模块角色权限关联创建同步完成: "
             f"module_role_permission_id={module_role_permission_id}, "
@@ -1097,6 +1102,10 @@ class ModuleSyncService:
                     )
                     session.add(role_permission)
 
+        # 触发权限缓存失效
+        for tenant_id in tenant_ids:
+            await PermissionCheckService.invalidate_tenant_permission_cache(tenant_id)
+
         _logger.info(
             f"模块角色权限变更同步完成: module_role_id={module_role_id}, tenants={len(tenant_ids)}"
         )
@@ -1155,6 +1164,11 @@ class ModuleSyncService:
             )
             deleted_result = await session.execute(deleted_stmt)
             deleted_count += deleted_result.rowcount
+
+        # 触发权限缓存失效
+        affected_tenant_ids = {role_tenant_id for _, role_tenant_id in role_rows}
+        for tenant_id in affected_tenant_ids:
+            await PermissionCheckService.invalidate_tenant_permission_cache(tenant_id)
 
         _logger.info(
             f"模块角色权限关联删除同步完成: "

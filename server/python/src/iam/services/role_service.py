@@ -9,6 +9,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import selectinload
 
 from iam.models import Permission, Role, RolePermission, UserRole
+from iam.services.permission_service import PermissionCheckService
 from framework.database.core.engine import async_session
 
 _logger = logger.bind(name=__name__)
@@ -193,6 +194,10 @@ class RoleService:
             await session.commit()
             _logger.info(f"角色分配权限: {role_id} -> {len(permission_ids)} permissions")
 
+        # 触发权限缓存失效
+        if actual_tenant_id:
+            await PermissionCheckService.invalidate_tenant_permission_cache(actual_tenant_id)
+
     @staticmethod
     async def get_role_permissions(role_id: str) -> list[Permission]:
         """获取角色的权限列表"""
@@ -245,6 +250,9 @@ class UserRoleService:
 
             await session.commit()
             _logger.info(f"用户分配角色: {user_id} -> {len(role_ids)} roles")
+
+        # 触发权限缓存失效
+        await PermissionCheckService.invalidate_user_permission_cache(user_id)
 
     @staticmethod
     async def get_user_roles(user_id: str) -> list[Role]:
