@@ -11,7 +11,7 @@ from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from framework.database.core.engine import async_session
-from iam.models import Menu, Permission, Role, RolePermission
+from iam.models import Menu, MenuPermission, Permission, Role, RolePermission
 
 _logger = logging.getLogger(__name__)
 
@@ -44,6 +44,7 @@ class ModuleSyncService:
         # 导入模块定义层模型
         from tenant.models import (
             ModuleMenu,
+            ModuleMenuPermission,
             ModulePermission,
             ModuleRole,
             ModuleRolePermission,
@@ -77,6 +78,13 @@ class ModuleSyncService:
         role_perms_map: dict[str, list[str]] = defaultdict(list)
         for mrp in module_role_permissions:
             role_perms_map[mrp.module_role_id].append(mrp.module_permission_id)
+
+        # 查询模块菜单权限关联
+        menu_perm_stmt = select(ModuleMenuPermission).where(
+            ModuleMenuPermission.module_menu_id.in_([m.id for m in module_menus])
+        )
+        menu_perm_result = await session.execute(menu_perm_stmt)
+        module_menu_permissions = list(menu_perm_result.scalars().all())
 
         # 4. 创建租户实例层的菜单（先处理 parent_id 映射）
         menu_id_map: dict[str, str] = {}  # module_menu_id -> tenant_menu_id
@@ -254,10 +262,33 @@ class ModuleSyncService:
                 )
                 session.add(role_permission)
 
+        # 8. 创建租户实例层的菜单权限关联
+        for mmp in module_menu_permissions:
+            tenant_menu_id = menu_id_map.get(mmp.module_menu_id)
+            tenant_perm_id = perm_id_map.get(mmp.module_permission_id)
+
+            if not tenant_menu_id or not tenant_perm_id:
+                continue
+
+            # 幂等检查
+            existing_mp_stmt = select(MenuPermission).where(
+                MenuPermission.menu_id == tenant_menu_id,
+                MenuPermission.permission_id == tenant_perm_id,
+            )
+            mp_result = await session.execute(existing_mp_stmt)
+            if mp_result.scalar_one_or_none():
+                continue
+
+            menu_permission = MenuPermission(
+                menu_id=tenant_menu_id,
+                permission_id=tenant_perm_id,
+            )
+            session.add(menu_permission)
+
         _logger.info(
             f"模块分配同步完成: tenant_id={tenant_id}, module={module_code}, "
             f"menus={len(module_menus)}, permissions={len(module_permissions)}, "
-            f"roles={len(module_roles)}"
+            f"roles={len(module_roles)}, menu_permissions={len(module_menu_permissions)}"
         )
 
     @staticmethod
@@ -899,6 +930,99 @@ class ModuleSyncService:
         )
 
     @staticmethod
+    async def sync_module_role_permission_created(
+        session: AsyncSession,
+        module_role_permission_id: str,
+        module_id: str,
+    ) -> None:
+        """
+        同步模块角色权限关联创建事件
+
+        为所有已分配该模块的租户创建 RolePermission 记录。
+
+        Args:
+            session: 数据库会话
+            module_role_permission_id: ModuleRolePermission ID
+            module_id: 模块 ID
+        """
+        from tenant.models import ModuleRolePermission, TenantModule
+
+        # 1. 获取模块角色权限关联信息
+        mrp_stmt = select(ModuleRolePermission).where(
+            ModuleRolePermission.id == module_role_permission_id
+        )
+        mrp_result = await session.execute(mrp_stmt)
+        module_role_perm = mrp_result.scalar_one_or_none()
+        if not module_role_perm:
+            _logger.warning(f"模块角色权限关联不存在: {module_role_permission_id}")
+            return
+
+        # 2. 查询所有已分配该模块的租户
+        tm_stmt = select(TenantModule.tenant_id).where(
+            TenantModule.module_id == module_id
+        )
+        tm_result = await session.execute(tm_stmt)
+        tenant_ids = [row[0] for row in tm_result.all()]
+
+        # 3. 为每个租户创建角色权限关联
+        created_count = 0
+        for tenant_id in tenant_ids:
+            # 查找租户角色（通过 ref_id）
+            tenant_role_stmt = select(Role.id).where(
+                Role.tenant_id == tenant_id,
+                Role.ref_id == module_role_perm.module_role_id,
+            )
+            tenant_role_result = await session.execute(tenant_role_stmt)
+            tenant_role_id = tenant_role_result.scalar_one_or_none()
+
+            if not tenant_role_id:
+                _logger.warning(
+                    f"租户角色不存在: tenant_id={tenant_id}, "
+                    f"module_role_id={module_role_perm.module_role_id}"
+                )
+                continue
+
+            # 查找租户权限（通过 ref_id）
+            tenant_perm_stmt = select(Permission.id).where(
+                Permission.tenant_id == tenant_id,
+                Permission.ref_id == module_role_perm.module_permission_id,
+            )
+            tenant_perm_result = await session.execute(tenant_perm_stmt)
+            tenant_perm_id = tenant_perm_result.scalar_one_or_none()
+
+            if not tenant_perm_id:
+                _logger.warning(
+                    f"租户权限不存在: tenant_id={tenant_id}, "
+                    f"module_permission_id={module_role_perm.module_permission_id}"
+                )
+                continue
+
+            # 幂等检查：查询是否已存在
+            existing_rp_stmt = select(RolePermission).where(
+                RolePermission.tenant_id == tenant_id,
+                RolePermission.role_id == tenant_role_id,
+                RolePermission.permission_id == tenant_perm_id,
+            )
+            existing_rp_result = await session.execute(existing_rp_stmt)
+            if existing_rp_result.scalar_one_or_none():
+                continue
+
+            # 创建角色权限关联
+            role_permission = RolePermission(
+                tenant_id=tenant_id,
+                role_id=tenant_role_id,
+                permission_id=tenant_perm_id,
+            )
+            session.add(role_permission)
+            created_count += 1
+
+        _logger.info(
+            f"模块角色权限关联创建同步完成: "
+            f"module_role_permission_id={module_role_permission_id}, "
+            f"tenants={len(tenant_ids)}, created={created_count}"
+        )
+
+    @staticmethod
     async def sync_module_role_permission_changed(
         session: AsyncSession,
         module_role_id: str,
@@ -975,6 +1099,213 @@ class ModuleSyncService:
 
         _logger.info(
             f"模块角色权限变更同步完成: module_role_id={module_role_id}, tenants={len(tenant_ids)}"
+        )
+
+    @staticmethod
+    async def sync_module_role_permission_deleted(
+        session: AsyncSession,
+        module_role_id: str,
+        module_permission_id: str,
+    ) -> None:
+        """
+        同步模块角色权限关联删除事件
+
+        删除所有已分配该模块的租户对应的 RolePermission 记录。
+
+        Args:
+            session: 数据库会话
+            module_role_id: 模块角色 ID
+            module_permission_id: 模块权限 ID
+        """
+        # 1. 查找所有租户实例层中 ref_id=module_role_id 的 Role（含 tenant_id）
+        role_stmt = select(Role.id, Role.tenant_id).where(
+            Role.ref_id == module_role_id
+        )
+        role_result = await session.execute(role_stmt)
+        role_rows = role_result.all()
+
+        if not role_rows:
+            _logger.warning(f"租户角色不存在: module_role_id={module_role_id}")
+            return
+
+        # 2. 逐租户删除对应的 RolePermission 记录
+        deleted_count = 0
+        for role_id, role_tenant_id in role_rows:
+            # 查找该租户下 ref_id=module_permission_id 的 Permission
+            # 通过 tenant_id 关联，确保删除的是同一租户的记录
+            perm_stmt = select(Permission.id).where(
+                Permission.tenant_id == role_tenant_id,
+                Permission.ref_id == module_permission_id,
+            )
+            perm_result = await session.execute(perm_stmt)
+            tenant_perm_id = perm_result.scalar_one_or_none()
+
+            if not tenant_perm_id:
+                _logger.warning(
+                    f"租户权限不存在: tenant_id={role_tenant_id}, "
+                    f"module_permission_id={module_permission_id}"
+                )
+                continue
+
+            # 删除 RolePermission 记录
+            deleted_stmt = delete(RolePermission).where(
+                RolePermission.tenant_id == role_tenant_id,
+                RolePermission.role_id == role_id,
+                RolePermission.permission_id == tenant_perm_id,
+            )
+            deleted_result = await session.execute(deleted_stmt)
+            deleted_count += deleted_result.rowcount
+
+        _logger.info(
+            f"模块角色权限关联删除同步完成: "
+            f"module_role_id={module_role_id}, "
+            f"module_permission_id={module_permission_id}, "
+            f"tenants={len(role_rows)}, deleted={deleted_count}"
+        )
+
+    @staticmethod
+    async def sync_module_menu_permission_created(
+        session: AsyncSession,
+        module_menu_permission_id: str,
+        module_id: str,
+    ) -> None:
+        """
+        同步模块菜单权限关联创建事件
+
+        为所有已分配该模块的租户创建 MenuPermission 记录。
+
+        Args:
+            session: 数据库会话
+            module_menu_permission_id: ModuleMenuPermission ID
+            module_id: 模块 ID
+        """
+        from tenant.models import ModuleMenuPermission, TenantModule
+
+        # 1. 获取模块菜单权限关联信息
+        mmp_stmt = select(ModuleMenuPermission).where(
+            ModuleMenuPermission.id == module_menu_permission_id
+        )
+        mmp_result = await session.execute(mmp_stmt)
+        module_menu_perm = mmp_result.scalar_one_or_none()
+        if not module_menu_perm:
+            _logger.warning(f"模块菜单权限关联不存在: {module_menu_permission_id}")
+            return
+
+        # 2. 查询所有已分配该模块的租户
+        tm_stmt = select(TenantModule.tenant_id).where(
+            TenantModule.module_id == module_id
+        )
+        tm_result = await session.execute(tm_stmt)
+        tenant_ids = [row[0] for row in tm_result.all()]
+
+        # 3. 为每个租户创建菜单权限关联
+        created_count = 0
+        for tenant_id in tenant_ids:
+            # 查找租户菜单（通过 ref_id）
+            tenant_menu_stmt = select(Menu.id).where(
+                Menu.tenant_id == tenant_id,
+                Menu.ref_id == module_menu_perm.module_menu_id,
+            )
+            tenant_menu_result = await session.execute(tenant_menu_stmt)
+            tenant_menu_id = tenant_menu_result.scalar_one_or_none()
+
+            if not tenant_menu_id:
+                _logger.warning(
+                    f"租户菜单不存在: tenant_id={tenant_id}, "
+                    f"module_menu_id={module_menu_perm.module_menu_id}"
+                )
+                continue
+
+            # 查找租户权限（通过 ref_id）
+            tenant_perm_stmt = select(Permission.id).where(
+                Permission.tenant_id == tenant_id,
+                Permission.ref_id == module_menu_perm.module_permission_id,
+            )
+            tenant_perm_result = await session.execute(tenant_perm_stmt)
+            tenant_perm_id = tenant_perm_result.scalar_one_or_none()
+
+            if not tenant_perm_id:
+                _logger.warning(
+                    f"租户权限不存在: tenant_id={tenant_id}, "
+                    f"module_permission_id={module_menu_perm.module_permission_id}"
+                )
+                continue
+
+            # 幂等检查：通过 menu_id + permission_id 查询（MenuPermission 无 tenant_id）
+            existing_mp_stmt = select(MenuPermission).where(
+                MenuPermission.menu_id == tenant_menu_id,
+                MenuPermission.permission_id == tenant_perm_id,
+            )
+            existing_mp_result = await session.execute(existing_mp_stmt)
+            if existing_mp_result.scalar_one_or_none():
+                continue
+
+            # 创建菜单权限关联
+            menu_permission = MenuPermission(
+                menu_id=tenant_menu_id,
+                permission_id=tenant_perm_id,
+            )
+            session.add(menu_permission)
+            created_count += 1
+
+        _logger.info(
+            f"模块菜单权限关联创建同步完成: "
+            f"module_menu_permission_id={module_menu_permission_id}, "
+            f"tenants={len(tenant_ids)}, created={created_count}"
+        )
+
+    @staticmethod
+    async def sync_module_menu_permission_deleted(
+        session: AsyncSession,
+        module_menu_id: str,
+        module_permission_id: str,
+    ) -> None:
+        """
+        同步模块菜单权限关联删除事件
+
+        删除所有已分配该模块的租户对应的 MenuPermission 记录。
+
+        Args:
+            session: 数据库会话
+            module_menu_id: 模块菜单 ID
+            module_permission_id: 模块权限 ID
+        """
+        # 1. 查找所有租户实例层中 ref_id = module_menu_id 的 Menu（含 tenant_id）
+        tenant_menus_stmt = select(Menu.id, Menu.tenant_id).where(
+            Menu.ref_id == module_menu_id
+        )
+        tenant_menus_result = await session.execute(tenant_menus_stmt)
+        tenant_menus_by_tenant: dict[str, list[str]] = defaultdict(list)
+        for menu_id, tenant_id in tenant_menus_result.all():
+            tenant_menus_by_tenant[tenant_id].append(menu_id)
+
+        # 2. 查找所有租户实例层中 ref_id = module_permission_id 的 Permission（含 tenant_id）
+        tenant_perms_stmt = select(Permission.id, Permission.tenant_id).where(
+            Permission.ref_id == module_permission_id
+        )
+        tenant_perms_result = await session.execute(tenant_perms_stmt)
+        tenant_perms_by_tenant: dict[str, list[str]] = defaultdict(list)
+        for perm_id, tenant_id in tenant_perms_result.all():
+            tenant_perms_by_tenant[tenant_id].append(perm_id)
+
+        # 3. 按租户删除对应的 MenuPermission 记录
+        deleted_count = 0
+        for tenant_id, menu_ids in tenant_menus_by_tenant.items():
+            perm_ids = tenant_perms_by_tenant.get(tenant_id, [])
+            for menu_id in menu_ids:
+                for perm_id in perm_ids:
+                    delete_stmt = delete(MenuPermission).where(
+                        MenuPermission.menu_id == menu_id,
+                        MenuPermission.permission_id == perm_id,
+                    )
+                    result = await session.execute(delete_stmt)
+                    deleted_count += result.rowcount
+
+        _logger.info(
+            f"模块菜单权限关联删除同步完成: "
+            f"module_menu_id={module_menu_id}, "
+            f"module_permission_id={module_permission_id}, "
+            f"deleted={deleted_count}"
         )
 
 
