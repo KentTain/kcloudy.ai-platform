@@ -67,8 +67,8 @@
 
 ## 10. 文档更新
 
-- [ ] 10.1 更新 `server/python/README.md` 说明默认配置初始化机制
-- [ ] 10.2 更新 API 文档说明 `is_default` 字段
+- [x] 10.1 更新 `server/python/README.md` 说明默认配置初始化机制
+- [x] 10.2 更新 API 文档说明 `is_default` 字段（Pydantic Schema 中已包含 description）
 
 ## 11. 测试
 
