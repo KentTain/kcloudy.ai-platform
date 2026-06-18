@@ -18,7 +18,7 @@ from framework.middlewares.test_user_middleware import TestUserMiddleware
 from framework.module import get_registry, load_modules
 from framework.module.sync_service import ModuleDefinitionSyncService
 from framework.tenant.middleware import TenantMiddleware
-from framework.tenant.protocols import register_module_auto_assigner, register_tenant_provider
+from framework.tenant.protocols import register_module_auto_assigner, register_tenant_provider, register_tenant_role_creator
 from framework.utils.log_util import (
     write_error,
     write_info,
@@ -71,6 +71,16 @@ async def lifespan(app: FastAPI):
         except ImportError as e:
             _logger.exception(f"ModuleAutoAssigner 注册失败: {e}")
             phase.details["ModuleAutoAssigner"] = "不可用"
+
+        # 注册 TenantRoleCreator（由 IAM 模块实现）
+        try:
+            from iam.services.tenant_role_creator import IAMTenantRoleCreator
+
+            register_tenant_role_creator(IAMTenantRoleCreator())
+            phase.details["TenantRoleCreator"] = "已注册"
+        except ImportError as e:
+            _logger.exception(f"TenantRoleCreator 注册失败: {e}")
+            phase.details["TenantRoleCreator"] = "不可用"
 
     with timer.phase("模块定义同步", order=3) as phase:
         # 同步模块定义（菜单、权限、角色）到数据库

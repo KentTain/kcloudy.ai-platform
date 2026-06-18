@@ -292,3 +292,61 @@ def get_module_auto_assigner() -> ModuleAutoAssigner | None:
         ModuleAutoAssigner 实例或 None
     """
     return _module_auto_assigner
+
+
+# ============== TenantRoleCreator Protocol ==============
+
+
+class TenantRoleCreator(Protocol):
+    """
+    租户角色创建器协议
+
+    在租户创建时自动创建租户级角色（owner/admin/member）。
+    通过依赖倒置避免 Tenant → IAM 循环依赖。
+    """
+
+    async def create_roles(
+        self,
+        session: AsyncSession,
+        tenant_id: str,
+        creator_user_id: str | None = None,
+    ) -> None:
+        """
+        为租户创建默认角色
+
+        Args:
+            session: 当前数据库会话
+            tenant_id: 租户 ID
+            creator_user_id: 创建者用户 ID（用于自动分配 owner 角色）
+        """
+        ...
+
+
+# ============== 全局注册 ==============
+
+_tenant_role_creator: TenantRoleCreator | None = None
+
+
+def register_tenant_role_creator(creator: TenantRoleCreator) -> None:
+    """
+    注册租户角色创建器
+
+    应用启动时调用，注入 IAM 模块的实现。
+
+    Args:
+        creator: TenantRoleCreator 实现实例
+    """
+    global _tenant_role_creator
+    _tenant_role_creator = creator
+
+
+def get_tenant_role_creator() -> TenantRoleCreator | None:
+    """
+    获取租户角色创建器
+
+    返回 None 表示未注册（没有 IAM 模块时降级）。
+
+    Returns:
+        TenantRoleCreator 实例或 None
+    """
+    return _tenant_role_creator

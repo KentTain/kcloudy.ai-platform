@@ -234,6 +234,7 @@ class TenantService:
         contact_phone: str | None = None,
         expired_at: datetime | None = None,
         settings: dict[str, Any] | None = None,
+        creator_user_id: str | None = None,
         # 资源配置关联
         db_config_id: str | None = None,
         storage_config_id: str | None = None,
@@ -252,6 +253,7 @@ class TenantService:
             contact_phone: 联系人电话
             expired_at: 过期时间
             settings: 扩展设置
+            creator_user_id: 创建者用户 ID（用于自动分配 owner 角色）
             db_config_id: 数据库配置 ID
             storage_config_id: 存储配置 ID
             cache_config_id: 缓存配置 ID
@@ -319,11 +321,16 @@ class TenantService:
             await session.flush()  # 获取 tenant.id，但不提交
 
             # 自动分配活跃模块（通过 Protocol，避免 Tenant → IAM 依赖）
-            from framework.tenant.protocols import get_module_auto_assigner
+            from framework.tenant.protocols import get_module_auto_assigner, get_tenant_role_creator
 
             assigner = get_module_auto_assigner()
             if assigner:
                 await assigner.auto_assign(session, tenant.id)
+
+            # 创建租户级角色（通过 Protocol，避免 Tenant → IAM 依赖）
+            role_creator = get_tenant_role_creator()
+            if role_creator:
+                await role_creator.create_roles(session, tenant.id, creator_user_id)
 
             await session.commit()  # 原子提交
             await session.refresh(tenant)
