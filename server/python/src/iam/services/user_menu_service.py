@@ -8,9 +8,9 @@ from typing import Any
 
 from loguru import logger
 from sqlalchemy import select, and_
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
-from framework.database.core.engine import async_session
 from iam.models import Menu, MenuPermission, Permission, Role, RolePermission, UserRole
 from tenant.models import Module, TenantModule
 
@@ -24,7 +24,7 @@ class UserMenuService:
     """用户菜单服务"""
 
     @staticmethod
-    async def get_user_menus(user_id: str, tenant_id: str | None = None) -> list[MenuTreeDict]:
+    async def get_user_menus(session: AsyncSession, user_id: str, tenant_id: str | None = None) -> list[MenuTreeDict]:
         """
         获取用户可见菜单树
 
@@ -43,59 +43,59 @@ class UserMenuService:
         THEN 所有登录用户可见此菜单（is_visible = true 时）
 
         Args:
+            session: 数据库会话
             user_id: 用户 ID
             tenant_id: 租户 ID（可选）
 
         Returns:
             list[MenuTreeDict]: 菜单树列表
         """
-        async with async_session() as session:
-            # 1. 获取租户已分配且启用的模块
-            enabled_module_ids = await UserMenuService._get_enabled_modules(
-                session, tenant_id
-            )
+        # 1. 获取租户已分配且启用的模块
+        enabled_module_ids = await UserMenuService._get_enabled_modules(
+            session, tenant_id
+        )
 
-            if not enabled_module_ids:
-                _logger.info(f"租户 {tenant_id} 无已分配的启用模块")
-                return []
+        if not enabled_module_ids:
+            _logger.info(f"租户 {tenant_id} 无已分配的启用模块")
+            return []
 
-            # 2. 获取用户的所有权限 ID
-            user_permission_ids = await UserMenuService._get_user_permissions(
-                session, user_id, tenant_id
-            )
+        # 2. 获取用户的所有权限 ID
+        user_permission_ids = await UserMenuService._get_user_permissions(
+            session, user_id, tenant_id
+        )
 
-            # 3. 查询所有可见菜单（按树排序）
-            all_menus = await UserMenuService._get_visible_menus(
-                session, tenant_id, enabled_module_ids
-            )
+        # 3. 查询所有可见菜单（按树排序）
+        all_menus = await UserMenuService._get_visible_menus(
+            session, tenant_id, enabled_module_ids
+        )
 
-            if not all_menus:
-                return []
+        if not all_menus:
+            return []
 
-            # 4. 获取菜单的权限关联
-            menu_ids = [m.id for m in all_menus]
-            menu_permission_map = await UserMenuService._get_menu_permissions(
-                session, menu_ids
-            )
+        # 4. 获取菜单的权限关联
+        menu_ids = [m.id for m in all_menus]
+        menu_permission_map = await UserMenuService._get_menu_permissions(
+            session, menu_ids
+        )
 
-            # 5. 过滤菜单：无权限限制 OR 用户拥有任一权限
-            visible_menu_ids = UserMenuService._filter_visible_menus(
-                all_menus, menu_permission_map, user_permission_ids
-            )
+        # 5. 过滤菜单：无权限限制 OR 用户拥有任一权限
+        visible_menu_ids = UserMenuService._filter_visible_menus(
+            all_menus, menu_permission_map, user_permission_ids
+        )
 
-            # 6. 包含父菜单（子菜单有权限时，父菜单也需要显示）
-            visible_menu_ids = UserMenuService._include_parent_menus(
-                all_menus, visible_menu_ids
-            )
+        # 6. 包含父菜单（子菜单有权限时，父菜单也需要显示）
+        visible_menu_ids = UserMenuService._include_parent_menus(
+            all_menus, visible_menu_ids
+        )
 
-            # 7. 获取模块信息（用于构建模块级顶级节点）
-            modules_info = await UserMenuService._get_modules_info(
-                session, enabled_module_ids
-            )
+        # 7. 获取模块信息（用于构建模块级顶级节点）
+        modules_info = await UserMenuService._get_modules_info(
+            session, enabled_module_ids
+        )
 
-            # 8. 构建菜单树
-            visible_menus = [m for m in all_menus if m.id in visible_menu_ids]
-            return UserMenuService._build_menu_tree(visible_menus, modules_info)
+        # 8. 构建菜单树
+        visible_menus = [m for m in all_menus if m.id in visible_menu_ids]
+        return UserMenuService._build_menu_tree(visible_menus, modules_info)
 
     @staticmethod
     async def _get_enabled_modules(session, tenant_id: str | None) -> set[str]:

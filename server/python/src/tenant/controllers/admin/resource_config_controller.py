@@ -6,7 +6,9 @@
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import ORJSONResponse
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from framework.database.dependencies import get_db_session
 from tenant.middlewares.admin_auth_middleware import get_current_admin
 from tenant.schemas.admin.resource_config import (
     # 数据库
@@ -66,12 +68,13 @@ async def list_database_configs(
     page_size: int = 20,
     keyword: str | None = None,
     admin: dict = Depends(get_current_admin),
+    session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """
     查询数据库配置列表
     """
     items, total = await DatabaseConfigService.list_configs(
-        page=page, page_size=page_size, keyword=keyword
+        session, page=page, page_size=page_size, keyword=keyword
     )
     return ORJSONResponse(
         content=Success(
@@ -92,11 +95,12 @@ async def list_database_configs(
 async def create_database_config(
     data: DatabaseConfigCreate,
     admin: dict = Depends(get_current_admin),
+    session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """
     创建数据库配置
     """
-    config = await DatabaseConfigService.create(**data.model_dump())
+    config = await DatabaseConfigService.create(session, **data.model_dump())
     return ORJSONResponse(
         content=Success(
             DatabasePropertyResponse(
@@ -110,11 +114,12 @@ async def create_database_config(
 async def get_database_config(
     config_id: str,
     admin: dict = Depends(get_current_admin),
+    session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """
     获取单个数据库配置
     """
-    config = await DatabaseConfigService.get_by_id(config_id)
+    config = await DatabaseConfigService.get_by_id(session, config_id)
     if not config:
         raise HTTPException(status_code=404, detail="数据库配置不存在")
     return ORJSONResponse(
@@ -131,13 +136,14 @@ async def update_database_config(
     config_id: str,
     data: DatabaseConfigUpdate,
     admin: dict = Depends(get_current_admin),
+    session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """
     更新数据库配置
     """
     # 只传递非 None 的字段
     update_data = {k: v for k, v in data.model_dump().items() if v is not None}
-    config = await DatabaseConfigService.update(config_id, **update_data)
+    config = await DatabaseConfigService.update(session, config_id, **update_data)
     if not config:
         raise HTTPException(status_code=404, detail="数据库配置不存在")
     return ORJSONResponse(
@@ -153,11 +159,12 @@ async def update_database_config(
 async def delete_database_config(
     config_id: str,
     admin: dict = Depends(get_current_admin),
+    session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """
     删除数据库配置
     """
-    success = await DatabaseConfigService.delete(config_id)
+    success = await DatabaseConfigService.delete(session, config_id)
     if not success:
         raise HTTPException(status_code=404, detail="数据库配置不存在")
     return ORJSONResponse(content=Success())
@@ -194,10 +201,11 @@ async def list_storage_configs(
     page_size: int = 20,
     keyword: str | None = None,
     admin: dict = Depends(get_current_admin),
+    session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """查询存储配置列表"""
     items, total = await StorageConfigService.list_configs(
-        page=page, page_size=page_size, keyword=keyword
+        session, page=page, page_size=page_size, keyword=keyword
     )
     return ORJSONResponse(
         content=Success(
@@ -218,9 +226,10 @@ async def list_storage_configs(
 async def create_storage_config(
     data: StorageConfigCreate,
     admin: dict = Depends(get_current_admin),
+    session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """创建存储配置"""
-    config = await StorageConfigService.create(**data.model_dump())
+    config = await StorageConfigService.create(session, **data.model_dump())
     return ORJSONResponse(
         content=Success(
             StoragePropertyResponse(
@@ -234,9 +243,10 @@ async def create_storage_config(
 async def get_storage_config(
     config_id: str,
     admin: dict = Depends(get_current_admin),
+    session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """获取单个存储配置"""
-    config = await StorageConfigService.get_by_id(config_id)
+    config = await StorageConfigService.get_by_id(session, config_id)
     if not config:
         raise HTTPException(status_code=404, detail="存储配置不存在")
     return ORJSONResponse(
@@ -253,10 +263,11 @@ async def update_storage_config(
     config_id: str,
     data: StorageConfigUpdate,
     admin: dict = Depends(get_current_admin),
+    session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """更新存储配置"""
     update_data = {k: v for k, v in data.model_dump().items() if v is not None}
-    config = await StorageConfigService.update(config_id, **update_data)
+    config = await StorageConfigService.update(session, config_id, **update_data)
     if not config:
         raise HTTPException(status_code=404, detail="存储配置不存在")
     return ORJSONResponse(
@@ -272,9 +283,10 @@ async def update_storage_config(
 async def delete_storage_config(
     config_id: str,
     admin: dict = Depends(get_current_admin),
+    session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """删除存储配置"""
-    success = await StorageConfigService.delete(config_id)
+    success = await StorageConfigService.delete(session, config_id)
     if not success:
         raise HTTPException(status_code=404, detail="存储配置不存在")
     return ORJSONResponse(content=Success())
@@ -309,10 +321,11 @@ async def list_cache_configs(
     page_size: int = 20,
     keyword: str | None = None,
     admin: dict = Depends(get_current_admin),
+    session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """查询缓存配置列表"""
     items, total = await CacheConfigService.list_configs(
-        page=page, page_size=page_size, keyword=keyword
+        session, page=page, page_size=page_size, keyword=keyword
     )
     return ORJSONResponse(
         content=Success(
@@ -333,9 +346,10 @@ async def list_cache_configs(
 async def create_cache_config(
     data: CacheConfigCreate,
     admin: dict = Depends(get_current_admin),
+    session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """创建缓存配置"""
-    config = await CacheConfigService.create(**data.model_dump())
+    config = await CacheConfigService.create(session, **data.model_dump())
     return ORJSONResponse(
         content=Success(
             CachePropertyResponse(**CacheConfigService.build_response(config)).model_dump()
@@ -347,9 +361,10 @@ async def create_cache_config(
 async def get_cache_config(
     config_id: str,
     admin: dict = Depends(get_current_admin),
+    session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """获取单个缓存配置"""
-    config = await CacheConfigService.get_by_id(config_id)
+    config = await CacheConfigService.get_by_id(session, config_id)
     if not config:
         raise HTTPException(status_code=404, detail="缓存配置不存在")
     return ORJSONResponse(
@@ -364,10 +379,11 @@ async def update_cache_config(
     config_id: str,
     data: CacheConfigUpdate,
     admin: dict = Depends(get_current_admin),
+    session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """更新缓存配置"""
     update_data = {k: v for k, v in data.model_dump().items() if v is not None}
-    config = await CacheConfigService.update(config_id, **update_data)
+    config = await CacheConfigService.update(session, config_id, **update_data)
     if not config:
         raise HTTPException(status_code=404, detail="缓存配置不存在")
     return ORJSONResponse(
@@ -381,9 +397,10 @@ async def update_cache_config(
 async def delete_cache_config(
     config_id: str,
     admin: dict = Depends(get_current_admin),
+    session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """删除缓存配置"""
-    success = await CacheConfigService.delete(config_id)
+    success = await CacheConfigService.delete(session, config_id)
     if not success:
         raise HTTPException(status_code=404, detail="缓存配置不存在")
     return ORJSONResponse(content=Success())
@@ -418,10 +435,11 @@ async def list_queue_configs(
     page_size: int = 20,
     keyword: str | None = None,
     admin: dict = Depends(get_current_admin),
+    session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """查询队列配置列表"""
     items, total = await QueueConfigService.list_configs(
-        page=page, page_size=page_size, keyword=keyword
+        session, page=page, page_size=page_size, keyword=keyword
     )
     return ORJSONResponse(
         content=Success(
@@ -442,9 +460,10 @@ async def list_queue_configs(
 async def create_queue_config(
     data: QueueConfigCreate,
     admin: dict = Depends(get_current_admin),
+    session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """创建队列配置"""
-    config = await QueueConfigService.create(**data.model_dump())
+    config = await QueueConfigService.create(session, **data.model_dump())
     return ORJSONResponse(
         content=Success(
             QueuePropertyResponse(**QueueConfigService.build_response(config)).model_dump()
@@ -456,9 +475,10 @@ async def create_queue_config(
 async def get_queue_config(
     config_id: str,
     admin: dict = Depends(get_current_admin),
+    session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """获取单个队列配置"""
-    config = await QueueConfigService.get_by_id(config_id)
+    config = await QueueConfigService.get_by_id(session, config_id)
     if not config:
         raise HTTPException(status_code=404, detail="队列配置不存在")
     return ORJSONResponse(
@@ -473,10 +493,11 @@ async def update_queue_config(
     config_id: str,
     data: QueueConfigUpdate,
     admin: dict = Depends(get_current_admin),
+    session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """更新队列配置"""
     update_data = {k: v for k, v in data.model_dump().items() if v is not None}
-    config = await QueueConfigService.update(config_id, **update_data)
+    config = await QueueConfigService.update(session, config_id, **update_data)
     if not config:
         raise HTTPException(status_code=404, detail="队列配置不存在")
     return ORJSONResponse(
@@ -490,9 +511,10 @@ async def update_queue_config(
 async def delete_queue_config(
     config_id: str,
     admin: dict = Depends(get_current_admin),
+    session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """删除队列配置"""
-    success = await QueueConfigService.delete(config_id)
+    success = await QueueConfigService.delete(session, config_id)
     if not success:
         raise HTTPException(status_code=404, detail="队列配置不存在")
     return ORJSONResponse(content=Success())
@@ -527,10 +549,11 @@ async def list_pubsub_configs(
     page_size: int = 20,
     keyword: str | None = None,
     admin: dict = Depends(get_current_admin),
+    session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """查询发布订阅配置列表"""
     items, total = await PubSubConfigService.list_configs(
-        page=page, page_size=page_size, keyword=keyword
+        session, page=page, page_size=page_size, keyword=keyword
     )
     return ORJSONResponse(
         content=Success(
@@ -551,9 +574,10 @@ async def list_pubsub_configs(
 async def create_pubsub_config(
     data: PubSubConfigCreate,
     admin: dict = Depends(get_current_admin),
+    session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """创建发布订阅配置"""
-    config = await PubSubConfigService.create(**data.model_dump())
+    config = await PubSubConfigService.create(session, **data.model_dump())
     return ORJSONResponse(
         content=Success(
             PubSubPropertyResponse(
@@ -567,9 +591,10 @@ async def create_pubsub_config(
 async def get_pubsub_config(
     config_id: str,
     admin: dict = Depends(get_current_admin),
+    session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """获取单个发布订阅配置"""
-    config = await PubSubConfigService.get_by_id(config_id)
+    config = await PubSubConfigService.get_by_id(session, config_id)
     if not config:
         raise HTTPException(status_code=404, detail="发布订阅配置不存在")
     return ORJSONResponse(
@@ -586,10 +611,11 @@ async def update_pubsub_config(
     config_id: str,
     data: PubSubConfigUpdate,
     admin: dict = Depends(get_current_admin),
+    session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """更新发布订阅配置"""
     update_data = {k: v for k, v in data.model_dump().items() if v is not None}
-    config = await PubSubConfigService.update(config_id, **update_data)
+    config = await PubSubConfigService.update(session, config_id, **update_data)
     if not config:
         raise HTTPException(status_code=404, detail="发布订阅配置不存在")
     return ORJSONResponse(
@@ -605,9 +631,10 @@ async def update_pubsub_config(
 async def delete_pubsub_config(
     config_id: str,
     admin: dict = Depends(get_current_admin),
+    session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """删除发布订阅配置"""
-    success = await PubSubConfigService.delete(config_id)
+    success = await PubSubConfigService.delete(session, config_id)
     if not success:
         raise HTTPException(status_code=404, detail="发布订阅配置不存在")
     return ORJSONResponse(content=Success())

@@ -4,9 +4,11 @@
 提供用户注册、个人信息管理、密码管理、菜单查询等接口。
 """
 
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import ORJSONResponse
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from framework.database.dependencies import get_db_session
 from framework.tenant.context import get_tenant_id
 from iam.dependencies import get_current_user_id
 from iam.schemas.user import (
@@ -25,7 +27,10 @@ router = APIRouter()
 
 
 @router.post("/users/register")
-async def register(data: UserRegisterRequest) -> ORJSONResponse:
+async def register(
+    data: UserRegisterRequest,
+    session: AsyncSession = Depends(get_db_session),
+) -> ORJSONResponse:
     """
     用户注册
 
@@ -38,6 +43,7 @@ async def register(data: UserRegisterRequest) -> ORJSONResponse:
 
     try:
         user = await user_service.register(
+            session,
             username=data.username,
             password=data.password,
             tenant_id=tenant_id,
@@ -47,6 +53,7 @@ async def register(data: UserRegisterRequest) -> ORJSONResponse:
 
         # 自动登录，生成 Token
         login_result = await auth_service.login(
+            session,
             account=data.username,
             password=data.password,
         )
@@ -68,13 +75,16 @@ async def register(data: UserRegisterRequest) -> ORJSONResponse:
 
 
 @router.get("/users/me")
-async def get_current_user(user_id: str = Depends(get_current_user_id)) -> ORJSONResponse:
+async def get_current_user(
+    user_id: str = Depends(get_current_user_id),
+    session: AsyncSession = Depends(get_db_session),
+) -> ORJSONResponse:
     """
     获取当前用户信息
 
     返回当前登录用户的详细信息，包括角色、权限和租户列表。
     """
-    user_detail = await user_service.get_user_detail(user_id)
+    user_detail = await user_service.get_user_detail(session, user_id)
     if not user_detail:
         raise HTTPException(status_code=404, detail="用户不存在")
 
@@ -91,6 +101,7 @@ async def get_current_user(user_id: str = Depends(get_current_user_id)) -> ORJSO
 async def update_current_user(
     data: UserUpdate,
     user_id: str = Depends(get_current_user_id),
+    session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """
     修改当前用户信息
@@ -99,6 +110,7 @@ async def update_current_user(
     """
     try:
         user = await user_service.update_profile(
+            session,
             user_id=user_id,
             nickname=data.nickname,
             avatar=data.avatar,
@@ -120,6 +132,7 @@ async def update_current_user(
 async def change_password(
     data: PasswordChangeRequest,
     user_id: str = Depends(get_current_user_id),
+    session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """
     修改密码
@@ -128,6 +141,7 @@ async def change_password(
     """
     try:
         await user_service.change_password(
+            session,
             user_id=user_id,
             old_password=data.old_password,
             new_password=data.new_password,
@@ -144,7 +158,10 @@ async def change_password(
 
 
 @router.post("/users/password/reset-code")
-async def send_reset_code(data: PasswordResetCodeRequest) -> ORJSONResponse:
+async def send_reset_code(
+    data: PasswordResetCodeRequest,
+    session: AsyncSession = Depends(get_db_session),
+) -> ORJSONResponse:
     """
     发送密码重置验证码
 
@@ -161,7 +178,10 @@ async def send_reset_code(data: PasswordResetCodeRequest) -> ORJSONResponse:
 
 
 @router.post("/users/password/reset")
-async def reset_password(data: PasswordResetRequest) -> ORJSONResponse:
+async def reset_password(
+    data: PasswordResetRequest,
+    session: AsyncSession = Depends(get_db_session),
+) -> ORJSONResponse:
     """
     重置密码
 
@@ -169,6 +189,7 @@ async def reset_password(data: PasswordResetRequest) -> ORJSONResponse:
     """
     try:
         await user_service.reset_password(
+            session,
             email=data.email,
             phone=data.phone,
             code=data.code,
@@ -188,6 +209,7 @@ async def reset_password(data: PasswordResetRequest) -> ORJSONResponse:
 @router.get("/users/menus")
 async def get_user_menus(
     user_id: str = Depends(get_current_user_id),
+    session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """
     获取当前用户菜单树
@@ -210,7 +232,7 @@ async def get_user_menus(
         ORJSONResponse: 菜单树响应
     """
     tenant_id = get_tenant_id()
-    menus = await user_menu_service.get_user_menus(user_id, tenant_id)
+    menus = await user_menu_service.get_user_menus(session, user_id, tenant_id)
 
     # 转换为 UserMenuTreeResponse 格式
     def to_vo(menu_dict: dict) -> UserMenuTreeResponse:

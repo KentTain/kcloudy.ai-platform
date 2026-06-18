@@ -178,12 +178,53 @@ def create_session() -> AsyncSession:
 
 
 class _SessionProxy:
-    """会话代理类，支持延迟初始化"""
+    """
+    会话代理类（多租户感知）
 
-    def __call__(self, *args, **kwargs) -> AsyncSession:
-        """创建新的数据库会话"""
-        return create_session()
+    .. deprecated::
+        此代理已废弃，将在未来版本移除。请使用以下替代方案：
+
+        - Controller: 使用 ``session: AsyncSession = Depends(get_db_session)``
+        - Listener: 使用 ``async with get_listener_session() as session:``
+        - Task: 使用 ``async with get_task_session() as session:``
+        - Service: 接收 ``session: AsyncSession`` 参数
+
+    此代理保持向后兼容，内部使用 DatabaseEnginePool 实现多租户支持。
+    """
+
+    @asynccontextmanager
+    async def __call__(self) -> AsyncGenerator[AsyncSession, None]:
+        """
+        获取数据库会话（多租户感知）
+
+        自动根据 TenantContext 选择正确的数据库引擎：
+        - 逻辑隔离：使用默认引擎，通过 tenant_id 字段过滤
+        - 物理隔离：使用租户专属引擎
+
+        Yields:
+            AsyncSession: 数据库会话
+        """
+        from framework.database.core.engine_pool import get_engine_pool
+        from framework.tenant.context import TenantContext
+
+        tenant_id = TenantContext.get_tenant_id()
+        db_config = TenantContext.get_database_config()
+
+        pool = get_engine_pool()
+        async with pool.session(tenant_id, db_config) as session:
+            try:
+                yield session
+            except Exception:
+                raise
 
 
 async_session = _SessionProxy()
-"""异步会话工厂（代理模式）"""
+"""
+异步会话工厂（代理模式，多租户感知）
+
+.. deprecated::
+    已废弃，请使用依赖注入模式。
+    - Controller: 使用 Depends(get_db_session)
+    - Listener: 使用 get_listener_session()
+    - Task: 使用 get_task_session()
+"""

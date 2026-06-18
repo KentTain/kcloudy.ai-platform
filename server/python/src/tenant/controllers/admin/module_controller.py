@@ -6,7 +6,9 @@
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import ORJSONResponse
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from framework.database.dependencies import get_db_session
 from tenant.middlewares.admin_auth_middleware import get_current_admin
 from tenant.schemas.admin.module import (
     ModuleCreate,
@@ -120,6 +122,7 @@ async def list_modules(
     keyword: str | None = None,
     is_active: bool | None = None,
     admin: dict = Depends(get_current_admin),
+    session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """
     查询模块列表
@@ -133,6 +136,7 @@ async def list_modules(
     THEN 返回名称或编码包含 "iam" 的模块列表
     """
     modules, total = await ModuleService.list_modules(
+        session,
         page=page,
         page_size=page_size,
         keyword=keyword,
@@ -157,6 +161,7 @@ async def list_modules(
 async def create_module(
     data: ModuleCreate,
     admin: dict = Depends(get_current_admin),
+    session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """
     创建模块
@@ -170,11 +175,12 @@ async def create_module(
     THEN 返回 HTTP 400 错误，消息为 "模块编码已存在"
     """
     # 检查编码是否已存在
-    existing = await ModuleService.get_by_code(data.code)
+    existing = await ModuleService.get_by_code(session, data.code)
     if existing:
         raise HTTPException(status_code=400, detail="模块编码已存在")
 
     module = await ModuleService.create(
+        session,
         code=data.code,
         name=data.name,
         description=data.description,
@@ -191,6 +197,7 @@ async def create_module(
 async def get_module(
     module_id: str,
     admin: dict = Depends(get_current_admin),
+    session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """
     查询模块详情
@@ -203,7 +210,7 @@ async def get_module(
     WHEN 管理员请求 GET /admin/v1/modules/nonexistent
     THEN 返回 HTTP 404 错误
     """
-    module = await ModuleService.get_by_id(module_id)
+    module = await ModuleService.get_by_id(session, module_id)
     if not module:
         raise HTTPException(status_code=404, detail="模块不存在")
 
@@ -215,6 +222,7 @@ async def update_module(
     module_id: str,
     data: ModuleUpdate,
     admin: dict = Depends(get_current_admin),
+    session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """
     更新模块
@@ -224,6 +232,7 @@ async def update_module(
     THEN 更新模块信息并返回更新后的数据
     """
     module = await ModuleService.update(
+        session,
         module_id=module_id,
         name=data.name,
         description=data.description,
@@ -243,6 +252,7 @@ async def update_module(
 async def delete_module(
     module_id: str,
     admin: dict = Depends(get_current_admin),
+    session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """
     删除模块
@@ -256,7 +266,7 @@ async def delete_module(
     THEN 返回 HTTP 400 错误，消息为 "模块已被租户分配，无法删除"
     """
     try:
-        success = await ModuleService.delete(module_id)
+        success = await ModuleService.delete(session, module_id)
         if not success:
             raise HTTPException(status_code=404, detail="模块不存在")
     except ValueError as e:
@@ -274,6 +284,7 @@ async def delete_module(
 async def list_module_menus(
     module_id: str,
     admin: dict = Depends(get_current_admin),
+    session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """
     查询模块菜单列表（树形）
@@ -283,11 +294,11 @@ async def list_module_menus(
     THEN 返回模块的菜单树形结构
     """
     # 检查模块是否存在
-    module = await ModuleService.get_by_id(module_id)
+    module = await ModuleService.get_by_id(session, module_id)
     if not module:
         raise HTTPException(status_code=404, detail="模块不存在")
 
-    menus = await ModuleMenuService.list_menus(module_id)
+    menus = await ModuleMenuService.list_menus(session, module_id)
     tree = ModuleMenuService.build_tree(menus)
 
     return ORJSONResponse(
@@ -300,6 +311,7 @@ async def create_module_menu(
     module_id: str,
     data: ModuleMenuCreate,
     admin: dict = Depends(get_current_admin),
+    session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """
     创建模块菜单
@@ -313,24 +325,25 @@ async def create_module_menu(
     THEN 返回 HTTP 400 错误，消息为 "菜单编码已存在"
     """
     # 检查模块是否存在
-    module = await ModuleService.get_by_id(module_id)
+    module = await ModuleService.get_by_id(session, module_id)
     if not module:
         raise HTTPException(status_code=404, detail="模块不存在")
 
     # 检查编码是否已存在
-    existing = await ModuleMenuService.get_by_code(data.code)
+    existing = await ModuleMenuService.get_by_code(session, data.code)
     if existing:
         raise HTTPException(status_code=400, detail="菜单编码已存在")
 
     # 检查父菜单是否存在
     if data.parent_id:
-        parent = await ModuleMenuService.get_by_id(data.parent_id)
+        parent = await ModuleMenuService.get_by_id(session, data.parent_id)
         if not parent:
             raise HTTPException(status_code=400, detail="父菜单不存在")
         if parent.module_id != module_id:
             raise HTTPException(status_code=400, detail="父菜单不属于该模块")
 
     menu = await ModuleMenuService.create(
+        session,
         module_id=module_id,
         code=data.code,
         name=data.name,
@@ -350,6 +363,7 @@ async def update_module_menu(
     menu_id: str,
     data: ModuleMenuUpdate,
     admin: dict = Depends(get_current_admin),
+    session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """
     更新模块菜单
@@ -359,7 +373,7 @@ async def update_module_menu(
     THEN 更新菜单信息并返回更新后的数据
     """
     # 检查菜单是否存在且属于该模块
-    menu = await ModuleMenuService.get_by_id(menu_id)
+    menu = await ModuleMenuService.get_by_id(session, menu_id)
     if not menu:
         raise HTTPException(status_code=404, detail="菜单不存在")
     if menu.module_id != module_id:
@@ -367,6 +381,7 @@ async def update_module_menu(
 
     try:
         menu = await ModuleMenuService.update(
+            session,
             menu_id=menu_id,
             name=data.name,
             path=data.path,
@@ -386,6 +401,7 @@ async def delete_module_menu(
     module_id: str,
     menu_id: str,
     admin: dict = Depends(get_current_admin),
+    session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """
     删除模块菜单
@@ -399,14 +415,14 @@ async def delete_module_menu(
     THEN 返回 HTTP 400 错误，消息为 "菜单有子菜单，无法删除"
     """
     # 检查菜单是否存在且属于该模块
-    menu = await ModuleMenuService.get_by_id(menu_id)
+    menu = await ModuleMenuService.get_by_id(session, menu_id)
     if not menu:
         raise HTTPException(status_code=404, detail="菜单不存在")
     if menu.module_id != module_id:
         raise HTTPException(status_code=400, detail="菜单不属于该模块")
 
     try:
-        success = await ModuleMenuService.delete(menu_id)
+        success = await ModuleMenuService.delete(session, menu_id)
         if not success:
             raise HTTPException(status_code=404, detail="菜单不存在")
     except ValueError as e:
@@ -428,6 +444,7 @@ async def list_module_permissions(
     resource: str | None = None,
     action: str | None = None,
     admin: dict = Depends(get_current_admin),
+    session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """
     查询模块权限列表
@@ -437,11 +454,12 @@ async def list_module_permissions(
     THEN 返回模块的权限列表
     """
     # 检查模块是否存在
-    module = await ModuleService.get_by_id(module_id)
+    module = await ModuleService.get_by_id(session, module_id)
     if not module:
         raise HTTPException(status_code=404, detail="模块不存在")
 
     permissions, total = await ModulePermissionService.list_permissions(
+        session,
         module_id=module_id,
         page=page,
         page_size=page_size,
@@ -468,6 +486,7 @@ async def create_module_permission(
     module_id: str,
     data: ModulePermissionCreate,
     admin: dict = Depends(get_current_admin),
+    session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """
     创建模块权限
@@ -481,12 +500,12 @@ async def create_module_permission(
     THEN 返回 HTTP 400 错误，消息为 "权限编码已存在"
     """
     # 检查模块是否存在
-    module = await ModuleService.get_by_id(module_id)
+    module = await ModuleService.get_by_id(session, module_id)
     if not module:
         raise HTTPException(status_code=404, detail="模块不存在")
 
     # 检查编码是否已存在
-    existing = await ModulePermissionService.get_by_code(data.code)
+    existing = await ModulePermissionService.get_by_code(session, data.code)
     if existing:
         raise HTTPException(status_code=400, detail="权限编码已存在")
 
@@ -495,6 +514,7 @@ async def create_module_permission(
         raise HTTPException(status_code=400, detail="操作类型必须是 read/write/delete")
 
     permission = await ModulePermissionService.create(
+        session,
         module_id=module_id,
         code=data.code,
         name=data.name,
@@ -512,6 +532,7 @@ async def update_module_permission(
     permission_id: str,
     data: ModulePermissionUpdate,
     admin: dict = Depends(get_current_admin),
+    session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """
     更新模块权限
@@ -521,7 +542,7 @@ async def update_module_permission(
     THEN 更新权限信息并返回更新后的数据
     """
     # 检查权限是否存在且属于该模块
-    permission = await ModulePermissionService.get_by_id(permission_id)
+    permission = await ModulePermissionService.get_by_id(session, permission_id)
     if not permission:
         raise HTTPException(status_code=404, detail="权限不存在")
     if permission.module_id != module_id:
@@ -532,6 +553,7 @@ async def update_module_permission(
         raise HTTPException(status_code=400, detail="操作类型必须是 read/write/delete")
 
     permission = await ModulePermissionService.update(
+        session,
         permission_id=permission_id,
         name=data.name,
         resource=data.resource,
@@ -547,6 +569,7 @@ async def delete_module_permission(
     module_id: str,
     permission_id: str,
     admin: dict = Depends(get_current_admin),
+    session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """
     删除模块权限
@@ -556,13 +579,13 @@ async def delete_module_permission(
     THEN 删除权限
     """
     # 检查权限是否存在且属于该模块
-    permission = await ModulePermissionService.get_by_id(permission_id)
+    permission = await ModulePermissionService.get_by_id(session, permission_id)
     if not permission:
         raise HTTPException(status_code=404, detail="权限不存在")
     if permission.module_id != module_id:
         raise HTTPException(status_code=400, detail="权限不属于该模块")
 
-    success = await ModulePermissionService.delete(permission_id)
+    success = await ModulePermissionService.delete(session, permission_id)
     if not success:
         raise HTTPException(status_code=404, detail="权限不存在")
 
@@ -580,6 +603,7 @@ async def list_module_roles(
     page: int = 1,
     page_size: int = 100,
     admin: dict = Depends(get_current_admin),
+    session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """
     查询模块角色列表
@@ -589,11 +613,12 @@ async def list_module_roles(
     THEN 返回模块的角色列表（包含权限信息）
     """
     # 检查模块是否存在
-    module = await ModuleService.get_by_id(module_id)
+    module = await ModuleService.get_by_id(session, module_id)
     if not module:
         raise HTTPException(status_code=404, detail="模块不存在")
 
     roles, total = await ModuleRoleService.list_roles(
+        session,
         module_id=module_id,
         page=page,
         page_size=page_size,
@@ -602,7 +627,7 @@ async def list_module_roles(
     # 构建响应（包含权限信息）
     role_vos = []
     for role in roles:
-        permissions = await ModuleRoleService.get_role_permissions(role.id)
+        permissions = await ModuleRoleService.get_role_permissions(session, role.id)
         role_vos.append(build_role_vo(role, permissions))
 
     return ORJSONResponse(
@@ -624,6 +649,7 @@ async def create_module_role(
     module_id: str,
     data: ModuleRoleCreate,
     admin: dict = Depends(get_current_admin),
+    session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """
     创建模块角色
@@ -637,16 +663,17 @@ async def create_module_role(
     THEN 返回 HTTP 400 错误，消息为 "角色编码已存在"
     """
     # 检查模块是否存在
-    module = await ModuleService.get_by_id(module_id)
+    module = await ModuleService.get_by_id(session, module_id)
     if not module:
         raise HTTPException(status_code=404, detail="模块不存在")
 
     # 检查编码是否已存在
-    existing = await ModuleRoleService.get_by_code(module_id, data.code)
+    existing = await ModuleRoleService.get_by_code(session, module_id, data.code)
     if existing:
         raise HTTPException(status_code=400, detail="角色编码已存在")
 
     role = await ModuleRoleService.create(
+        session,
         module_id=module_id,
         code=data.code,
         name=data.name,
@@ -663,6 +690,7 @@ async def update_module_role(
     role_id: str,
     data: ModuleRoleUpdate,
     admin: dict = Depends(get_current_admin),
+    session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """
     更新模块角色
@@ -676,7 +704,7 @@ async def update_module_role(
     THEN 返回 HTTP 400 错误，消息为 "系统内置角色禁止修改"
     """
     # 检查角色是否存在且属于该模块
-    role = await ModuleRoleService.get_by_id(role_id)
+    role = await ModuleRoleService.get_by_id(session, role_id)
     if not role:
         raise HTTPException(status_code=404, detail="角色不存在")
     if role.module_id != module_id:
@@ -684,6 +712,7 @@ async def update_module_role(
 
     try:
         role = await ModuleRoleService.update(
+            session,
             role_id=role_id,
             name=data.name,
             description=data.description,
@@ -691,7 +720,7 @@ async def update_module_role(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-    permissions = await ModuleRoleService.get_role_permissions(role.id)
+    permissions = await ModuleRoleService.get_role_permissions(session, role.id)
     return ORJSONResponse(content=Success(build_role_vo(role, permissions).model_dump()))
 
 
@@ -700,6 +729,7 @@ async def delete_module_role(
     module_id: str,
     role_id: str,
     admin: dict = Depends(get_current_admin),
+    session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """
     删除模块角色
@@ -713,14 +743,14 @@ async def delete_module_role(
     THEN 返回 HTTP 400 错误，消息为 "系统内置角色禁止删除"
     """
     # 检查角色是否存在且属于该模块
-    role = await ModuleRoleService.get_by_id(role_id)
+    role = await ModuleRoleService.get_by_id(session, role_id)
     if not role:
         raise HTTPException(status_code=404, detail="角色不存在")
     if role.module_id != module_id:
         raise HTTPException(status_code=400, detail="角色不属于该模块")
 
     try:
-        success = await ModuleRoleService.delete(role_id)
+        success = await ModuleRoleService.delete(session, role_id)
         if not success:
             raise HTTPException(status_code=404, detail="角色不存在")
     except ValueError as e:
@@ -735,6 +765,7 @@ async def update_role_permissions(
     role_id: str,
     data: ModuleRolePermissionUpdateRequest,
     admin: dict = Depends(get_current_admin),
+    session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """
     更新角色权限列表（整体替换）
@@ -748,7 +779,7 @@ async def update_role_permissions(
     THEN 返回 HTTP 400 错误，消息为 "系统内置角色禁止修改权限"
     """
     # 检查角色是否存在且属于该模块
-    role = await ModuleRoleService.get_by_id(role_id)
+    role = await ModuleRoleService.get_by_id(session, role_id)
     if not role:
         raise HTTPException(status_code=404, detail="角色不存在")
     if role.module_id != module_id:
@@ -756,6 +787,7 @@ async def update_role_permissions(
 
     try:
         permissions = await ModuleRoleService.update_role_permissions(
+            session,
             role_id=role_id,
             permission_ids=data.permission_ids,
         )

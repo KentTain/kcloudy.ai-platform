@@ -1,4 +1,8 @@
-"""DatasetService 单元测试"""
+"""
+DatasetService 单元测试
+
+使用依赖注入模式，session 直接传入 Service 方法。
+"""
 
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -17,6 +21,7 @@ def mock_session() -> AsyncMock:
     session.close = AsyncMock()
     session.delete = AsyncMock()
     session.execute = AsyncMock()
+    session.flush = AsyncMock()
     return session
 
 
@@ -51,15 +56,10 @@ class TestDatasetService:
         mock_datasets_result.scalars.return_value.all.return_value = mock_datasets
 
         mock_session.execute.side_effect = [mock_count_result, mock_datasets_result]
-        mock_session.__aenter__ = AsyncMock(return_value=mock_session)
-        mock_session.__aexit__ = AsyncMock(return_value=None)
 
-        with patch("demo.services.dataset.async_session") as mock_factory:
-            mock_factory.return_value.__aenter__ = AsyncMock(return_value=mock_session)
-            mock_factory.return_value.__aexit__ = AsyncMock(return_value=None)
-
-            service = DatasetService()
-            total, datasets = await service.list_datasets(page=1, page_size=10)
+        service = DatasetService()
+        with patch("demo.services.dataset.get_tenant_id", return_value=None):
+            total, datasets = await service.list_datasets(mock_session, page=1, page_size=10)
 
         assert total == 2
         assert len(datasets) == 2
@@ -68,76 +68,37 @@ class TestDatasetService:
     async def test_create_dataset(self, mock_session, mock_dataset):
         """测试创建知识库"""
         data = DatasetCreate(name="测试知识库", description="测试描述")
-        mock_session.__aenter__ = AsyncMock(return_value=mock_session)
-        mock_session.__aexit__ = AsyncMock(return_value=None)
 
-        with patch("demo.services.dataset.async_session") as mock_factory:
-            mock_factory.return_value.__aenter__ = AsyncMock(return_value=mock_session)
-            mock_factory.return_value.__aexit__ = AsyncMock(return_value=None)
-
-            with patch(
-                "demo.services.dataset.Dataset.create", return_value=mock_dataset
-            ):
-                service = DatasetService()
-                result = await service.create_dataset(data)
+        with patch(
+            "demo.services.dataset.Dataset.create", return_value=mock_dataset
+        ), patch("demo.services.dataset.get_tenant_id", return_value=None):
+            service = DatasetService()
+            result = await service.create_dataset(mock_session, data)
 
         assert result == mock_dataset
-        mock_session.commit.assert_called_once()
-
-    @pytest.mark.asyncio
-    async def test_create_dataset_rollback_on_error(self, mock_session):
-        """测试创建知识库时异常回滚"""
-        data = DatasetCreate(name="测试知识库", description="测试描述")
-        mock_session.__aenter__ = AsyncMock(return_value=mock_session)
-        mock_session.__aexit__ = AsyncMock(return_value=None)
-
-        with patch("demo.services.dataset.async_session") as mock_factory:
-            mock_factory.return_value.__aenter__ = AsyncMock(return_value=mock_session)
-            mock_factory.return_value.__aexit__ = AsyncMock(return_value=None)
-
-            with patch(
-                "demo.services.dataset.Dataset.create",
-                side_effect=Exception("DB Error"),
-            ):
-                service = DatasetService()
-                with pytest.raises(Exception, match="DB Error"):
-                    await service.create_dataset(data)
-
-        mock_session.rollback.assert_called_once()
+        mock_session.flush.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_get_dataset_found(self, mock_session, mock_dataset):
         """测试获取知识库 - 存在"""
-        mock_session.__aenter__ = AsyncMock(return_value=mock_session)
-        mock_session.__aexit__ = AsyncMock(return_value=None)
 
-        with patch("demo.services.dataset.async_session") as mock_factory:
-            mock_factory.return_value.__aenter__ = AsyncMock(return_value=mock_session)
-            mock_factory.return_value.__aexit__ = AsyncMock(return_value=None)
-
-            with patch(
-                "demo.services.dataset.Dataset.one_by_id", return_value=mock_dataset
-            ), patch("demo.services.dataset.get_tenant_id", return_value=None):
-                service = DatasetService()
-                result = await service.get_dataset("test-dataset-id")
+        with patch(
+            "demo.services.dataset.Dataset.one_by_id", return_value=mock_dataset
+        ), patch("demo.services.dataset.get_tenant_id", return_value=None):
+            service = DatasetService()
+            result = await service.get_dataset(mock_session, "test-dataset-id")
 
         assert result == mock_dataset
 
     @pytest.mark.asyncio
     async def test_get_dataset_not_found(self, mock_session):
         """测试获取知识库 - 不存在"""
-        mock_session.__aenter__ = AsyncMock(return_value=mock_session)
-        mock_session.__aexit__ = AsyncMock(return_value=None)
 
-        with patch("demo.services.dataset.async_session") as mock_factory:
-            mock_factory.return_value.__aenter__ = AsyncMock(return_value=mock_session)
-            mock_factory.return_value.__aexit__ = AsyncMock(return_value=None)
-
-            with patch("demo.services.dataset.Dataset.one_by_id", return_value=None), patch(
-                "demo.services.dataset.get_tenant_id", return_value=None
-            ):
-                service = DatasetService()
-                result = await service.get_dataset("nonexistent-id")
+        with patch("demo.services.dataset.Dataset.one_by_id", return_value=None), patch(
+            "demo.services.dataset.get_tenant_id", return_value=None
+        ):
+            service = DatasetService()
+            result = await service.get_dataset(mock_session, "nonexistent-id")
 
         assert result is None
 
@@ -147,119 +108,85 @@ class TestDatasetService:
         data = DatasetUpdate(name="更新后的名称", description="更新后的描述")
         mock_dataset.update = AsyncMock()
         mock_dataset.tenant_id = None  # 避免租户隔离检查
-        mock_session.__aenter__ = AsyncMock(return_value=mock_session)
-        mock_session.__aexit__ = AsyncMock(return_value=None)
 
-        with patch("demo.services.dataset.async_session") as mock_factory:
-            mock_factory.return_value.__aenter__ = AsyncMock(return_value=mock_session)
-            mock_factory.return_value.__aexit__ = AsyncMock(return_value=None)
-
-            with patch(
-                "demo.services.dataset.Dataset.one_by_id", return_value=mock_dataset
-            ), patch("demo.services.dataset.get_tenant_id", return_value=None):
-                service = DatasetService()
-                result = await service.update_dataset("test-dataset-id", data)
+        with patch(
+            "demo.services.dataset.Dataset.one_by_id", return_value=mock_dataset
+        ), patch("demo.services.dataset.get_tenant_id", return_value=None):
+            service = DatasetService()
+            result = await service.update_dataset(mock_session, "test-dataset-id", data)
 
         assert result == mock_dataset
-        mock_session.commit.assert_called_once()
+        mock_session.flush.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_update_dataset_not_found(self, mock_session):
         """测试更新知识库 - 不存在"""
         data = DatasetUpdate(name="更新后的名称", description=None)
-        mock_session.__aenter__ = AsyncMock(return_value=mock_session)
-        mock_session.__aexit__ = AsyncMock(return_value=None)
 
-        with patch("demo.services.dataset.async_session") as mock_factory:
-            mock_factory.return_value.__aenter__ = AsyncMock(return_value=mock_session)
-            mock_factory.return_value.__aexit__ = AsyncMock(return_value=None)
-
-            with patch("demo.services.dataset.Dataset.one_by_id", return_value=None), patch(
-                "demo.services.dataset.get_tenant_id", return_value=None
-            ):
-                service = DatasetService()
-                result = await service.update_dataset("nonexistent-id", data)
+        with patch("demo.services.dataset.Dataset.one_by_id", return_value=None), patch(
+            "demo.services.dataset.get_tenant_id", return_value=None
+        ):
+            service = DatasetService()
+            result = await service.update_dataset(mock_session, "nonexistent-id", data)
 
         assert result is None
-
-    @pytest.mark.asyncio
-    async def test_update_dataset_rollback_on_error(self, mock_session, mock_dataset):
-        """测试更新知识库时异常回滚"""
-        data = DatasetUpdate(name="更新后的名称", description=None)
-        mock_dataset.update = AsyncMock(side_effect=Exception("Update Error"))
-        mock_dataset.tenant_id = None  # 避免租户隔离检查
-        mock_session.__aenter__ = AsyncMock(return_value=mock_session)
-        mock_session.__aexit__ = AsyncMock(return_value=None)
-
-        with patch("demo.services.dataset.async_session") as mock_factory:
-            mock_factory.return_value.__aenter__ = AsyncMock(return_value=mock_session)
-            mock_factory.return_value.__aexit__ = AsyncMock(return_value=None)
-
-            with patch(
-                "demo.services.dataset.Dataset.one_by_id", return_value=mock_dataset
-            ), patch("demo.services.dataset.get_tenant_id", return_value=None):
-                service = DatasetService()
-                with pytest.raises(Exception, match="Update Error"):
-                    await service.update_dataset("test-dataset-id", data)
-
-        mock_session.rollback.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_delete_dataset_found(self, mock_session, mock_dataset):
         """测试删除知识库 - 存在"""
         mock_dataset.tenant_id = None  # 避免租户隔离检查
-        mock_session.__aenter__ = AsyncMock(return_value=mock_session)
-        mock_session.__aexit__ = AsyncMock(return_value=None)
 
-        with patch("demo.services.dataset.async_session") as mock_factory:
-            mock_factory.return_value.__aenter__ = AsyncMock(return_value=mock_session)
-            mock_factory.return_value.__aexit__ = AsyncMock(return_value=None)
-
-            with patch(
-                "demo.services.dataset.Dataset.one_by_id", return_value=mock_dataset
-            ), patch("demo.services.dataset.get_tenant_id", return_value=None):
-                service = DatasetService()
-                result = await service.delete_dataset("test-dataset-id")
+        with patch(
+            "demo.services.dataset.Dataset.one_by_id", return_value=mock_dataset
+        ), patch("demo.services.dataset.get_tenant_id", return_value=None):
+            service = DatasetService()
+            result = await service.delete_dataset(mock_session, "test-dataset-id")
 
         assert result is True
         mock_session.delete.assert_called_once_with(mock_dataset)
-        mock_session.commit.assert_called_once()
+        mock_session.flush.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_delete_dataset_not_found(self, mock_session):
         """测试删除知识库 - 不存在"""
-        mock_session.__aenter__ = AsyncMock(return_value=mock_session)
-        mock_session.__aexit__ = AsyncMock(return_value=None)
 
-        with patch("demo.services.dataset.async_session") as mock_factory:
-            mock_factory.return_value.__aenter__ = AsyncMock(return_value=mock_session)
-            mock_factory.return_value.__aexit__ = AsyncMock(return_value=None)
-
-            with patch("demo.services.dataset.Dataset.one_by_id", return_value=None), patch(
-                "demo.services.dataset.get_tenant_id", return_value=None
-            ):
-                service = DatasetService()
-                result = await service.delete_dataset("nonexistent-id")
+        with patch("demo.services.dataset.Dataset.one_by_id", return_value=None), patch(
+            "demo.services.dataset.get_tenant_id", return_value=None
+        ):
+            service = DatasetService()
+            result = await service.delete_dataset(mock_session, "nonexistent-id")
 
         assert result is False
 
     @pytest.mark.asyncio
-    async def test_delete_dataset_rollback_on_error(self, mock_session, mock_dataset):
-        """测试删除知识库时异常回滚"""
-        mock_dataset.tenant_id = None  # 避免租户隔离检查
-        mock_session.delete.side_effect = Exception("Delete Error")
-        mock_session.__aenter__ = AsyncMock(return_value=mock_session)
-        mock_session.__aexit__ = AsyncMock(return_value=None)
+    async def test_list_datasets_with_tenant_filter(self, mock_session):
+        """测试按租户过滤知识库列表"""
+        # Mock execute 返回结果
+        mock_count_result = MagicMock()
+        mock_count_result.scalar.return_value = 1
 
-        with patch("demo.services.dataset.async_session") as mock_factory:
-            mock_factory.return_value.__aenter__ = AsyncMock(return_value=mock_session)
-            mock_factory.return_value.__aexit__ = AsyncMock(return_value=None)
+        mock_datasets_result = MagicMock()
+        mock_datasets = [MagicMock(id="1", tenant_id="tenant-1")]
+        mock_datasets_result.scalars.return_value.all.return_value = mock_datasets
 
-            with patch(
-                "demo.services.dataset.Dataset.one_by_id", return_value=mock_dataset
-            ), patch("demo.services.dataset.get_tenant_id", return_value=None):
-                service = DatasetService()
-                with pytest.raises(Exception, match="Delete Error"):
-                    await service.delete_dataset("test-dataset-id")
+        mock_session.execute.side_effect = [mock_count_result, mock_datasets_result]
 
-        mock_session.rollback.assert_called_once()
+        service = DatasetService()
+        with patch("demo.services.dataset.get_tenant_id", return_value="tenant-1"):
+            total, datasets = await service.list_datasets(mock_session, page=1, page_size=10)
+
+        assert total == 1
+        assert len(datasets) == 1
+
+    @pytest.mark.asyncio
+    async def test_get_dataset_tenant_isolation(self, mock_session, mock_dataset):
+        """测试获取知识库 - 租户隔离"""
+        mock_dataset.tenant_id = "other-tenant"  # 属于其他租户
+
+        with patch(
+            "demo.services.dataset.Dataset.one_by_id", return_value=mock_dataset
+        ), patch("demo.services.dataset.get_tenant_id", return_value="current-tenant"):
+            service = DatasetService()
+            result = await service.get_dataset(mock_session, "test-dataset-id")
+
+        assert result is None  # 因为租户不匹配，返回 None

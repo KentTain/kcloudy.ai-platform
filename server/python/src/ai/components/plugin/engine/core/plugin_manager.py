@@ -20,6 +20,7 @@ from typing import Any
 import psutil  # 添加用于系统监控
 import yaml
 from sqlalchemy import and_, select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from framework.configs.settings import settings
 from framework.storage import get_storage_provider
@@ -46,7 +47,6 @@ from ai.components.plugin.engine.core.warmup.plugin_warmup_manager import (
 from ai.components.plugin.engine.models.plugin import PluginInfo
 from ai.components.plugin.engine.models.request import InstallRequest
 from ai.components.plugin.engine.utils.logger import get_logger
-from framework.database.core.engine import async_session
 from ai.models.plugin import PluginInstallation
 from ai.components.plugin.engine.models.enums import PluginStatus, RuntimeType, SourceType
 from ai.components.plugin.engine.models.enums import PluginType as DBPluginType
@@ -169,7 +169,7 @@ class TenantPluginManager:
 
         self.logger.info(f"租户插件管理器初始化完成: {tenant_id}")
 
-    async def initialize(self):
+    async def initialize(self, session: AsyncSession):
         """初始化插件管理器"""
         if self._initialized:
             return
@@ -177,11 +177,11 @@ class TenantPluginManager:
         self.logger.info("正在初始化插件管理器...")
 
         # 从数据库加载插件元数据（不启动插件）
-        await self._load_plugins_metadata_from_database()
+        await self._load_plugins_metadata_from_database(session)
 
         # 执行启动时预热
         try:
-            warmup_result = await self.warmup_manager.startup_warmup()
+            warmup_result = await self.warmup_manager.startup_warmup(session)
             if warmup_result.status == WarmupStatus.COMPLETED:
                 warmed_count = len(warmup_result.warmed_plugins)
                 self.logger.info(f"启动时预热完成: {warmed_count} 个插件已预热")
@@ -193,46 +193,45 @@ class TenantPluginManager:
             f"插件管理器初始化完成，发现 {len(self.plugins)} 个插件（懒加载模式）"
         )
 
-    async def _load_plugins_metadata_from_database(self):
+    async def _load_plugins_metadata_from_database(self, session: AsyncSession):
         """从数据库加载已安装的插件元数据（不启动插件，直接从数据库读取配置）"""
         self.logger.info(f"从数据库加载租户插件元数据: {self.tenant_id}")
 
-        async with async_session() as session:
-            # 查询当前租户的所有已安装插件
-            result = await session.execute(
-                select(PluginInstallation).where(
-                    and_(
-                        PluginInstallation.tenant_id == self.tenant_id,
-                        PluginInstallation.status != PluginStatus.INACTIVE,
-                    ),
+        # 查询当前租户的所有已安装插件
+        result = await session.execute(
+            select(PluginInstallation).where(
+                and_(
+                    PluginInstallation.tenant_id == self.tenant_id,
+                    PluginInstallation.status != PluginStatus.INACTIVE,
                 ),
-            )
-            installations = result.scalars().all()
+            ),
+        )
+        installations = result.scalars().all()
 
-            loaded_count = 0
-            for installation in installations:
-                try:
-                    # 直接从数据库加载插件配置信息
-                    plugin_info = await self._load_plugin_info_from_installation(
-                        installation
-                    )
-                    if plugin_info:
-                        # 注册到内存
-                        plugin_id = installation.plugin_id
-                        self.plugins[plugin_id] = plugin_info
+        loaded_count = 0
+        for installation in installations:
+            try:
+                # 直接从数据库加载插件配置信息
+                plugin_info = await self._load_plugin_info_from_installation(
+                    installation
+                )
+                if plugin_info:
+                    # 注册到内存
+                    plugin_id = installation.plugin_id
+                    self.plugins[plugin_id] = plugin_info
 
-                        loaded_count += 1
-                        self.logger.debug(f"加载插件元数据: {plugin_id}")
+                    loaded_count += 1
+                    self.logger.debug(f"加载插件元数据: {plugin_id}")
 
-                except Exception as e:
-                    self.logger.exception(
-                        f"加载插件元数据失败 {installation.plugin_id}"
-                    )
-                    # 标记为错误状态
-                    installation.last_error = str(e)
-                    await session.commit()
+            except Exception as e:
+                self.logger.exception(
+                    f"加载插件元数据失败 {installation.plugin_id}"
+                )
+                # 标记为错误状态
+                installation.last_error = str(e)
+                await session.flush()
 
-            self.logger.info(f"从数据库加载插件元数据完成: {loaded_count} 个插件")
+        self.logger.info(f"从数据库加载插件元数据完成: {loaded_count} 个插件")
 
     async def _load_plugin_info_from_installation(
         self, installation: PluginInstallation
@@ -395,54 +394,54 @@ class TenantPluginManager:
             return None
 
     async def _check_duplicate_installation(
-        self, plugin_config: PluginConfig
+        self, session: AsyncSession, plugin_config: PluginConfig
     ) -> PluginInstallation | None:
         """检查是否已经安装了相同或不同版本的插件"""
         plugin_id = (
             f"{plugin_config.configuration.author}/{plugin_config.configuration.name}"
         )
 
-        async with async_session() as session:
-            # 查询是否已安装相同插件ID的插件
-            result = await session.execute(
-                select(PluginInstallation).where(
-                    and_(
-                        PluginInstallation.tenant_id == self.tenant_id,
-                        PluginInstallation.plugin_id == plugin_id,
-                    ),
+        # 查询是否已安装相同插件ID的插件
+        result = await session.execute(
+            select(PluginInstallation).where(
+                and_(
+                    PluginInstallation.tenant_id == self.tenant_id,
+                    PluginInstallation.plugin_id == plugin_id,
                 ),
-            )
-            existing_installation = result.scalar_one_or_none()
+            ),
+        )
+        existing_installation = result.scalar_one_or_none()
 
-            if existing_installation:
-                # 解析现有版本
-                existing_plugin_config = existing_installation.plugin_config
+        if existing_installation:
+            # 解析现有版本
+            existing_plugin_config = existing_installation.plugin_config
 
-                if existing_plugin_config is None:
-                    raise ValueError(f"插件配置不存在: {plugin_id}")
+            if existing_plugin_config is None:
+                raise ValueError(f"插件配置不存在: {plugin_id}")
 
-                existing_version = existing_plugin_config.configuration.version
+            existing_version = existing_plugin_config.configuration.version
 
-                if existing_version == plugin_config.configuration.version:
-                    # 相同版本，完全重复
-                    raise ValueError(
-                        f"插件 {plugin_id} 版本 {plugin_config.configuration.version} 已安装"
-                    )
-                else:
-                    # 不同版本，需要先卸载
-                    raise ValueError(
-                        f"插件 {plugin_id} 的版本 {existing_version} 已安装，"
-                        f"请先卸载现有版本再安装版本 {plugin_config.configuration.version}",
-                    )
+            if existing_version == plugin_config.configuration.version:
+                # 相同版本，完全重复
+                raise ValueError(
+                    f"插件 {plugin_id} 版本 {plugin_config.configuration.version} 已安装"
+                )
+            else:
+                # 不同版本，需要先卸载
+                raise ValueError(
+                    f"插件 {plugin_id} 的版本 {existing_version} 已安装，"
+                    f"请先卸载现有版本再安装版本 {plugin_config.configuration.version}",
+                )
 
-            return None
+        return None
 
     async def _ensure_plugin_ready(
-        self, plugin_id: str, use_cache: bool = True
+        self, session: AsyncSession, plugin_id: str, use_cache: bool = True
     ) -> bool:
         """
         确保插件准备就绪
 
+        :param session: 数据库会话
         :param plugin_id: 插件ID
         :param use_cache: 是否使用缓存，默认True
         :return: 插件是否准备就绪
@@ -485,56 +484,55 @@ class TenantPluginManager:
 
         async with lock:
             # 检查数据库中的插件状态
-            async with async_session() as session:
-                result = await session.execute(
-                    select(PluginInstallation).where(
-                        and_(
-                            PluginInstallation.tenant_id == self.tenant_id,
-                            PluginInstallation.plugin_id == plugin_id,
-                            PluginInstallation.status != PluginStatus.INACTIVE,
-                        ),
+            result = await session.execute(
+                select(PluginInstallation).where(
+                    and_(
+                        PluginInstallation.tenant_id == self.tenant_id,
+                        PluginInstallation.plugin_id == plugin_id,
+                        PluginInstallation.status != PluginStatus.INACTIVE,
                     ),
-                )
-                installation = result.scalar_one_or_none()
+                ),
+            )
+            installation = result.scalar_one_or_none()
 
-                if not installation:
-                    # 检查插件是否已经在运行
-                    if plugin_id in self.running_plugins:
-                        # 如果插件在运行，但是数据库中不存在，则说明插件被卸载了，需要停止该插件
-                        self.logger.warning(
-                            f"插件已在运行: {plugin_id}, 但是数据库中不存在，需要停止该插件"
-                        )
-                        await self.stop_plugin(plugin_id)
-                        # 删除插件目录
-                        if plugin_dir.exists():
-                            shutil.rmtree(plugin_dir)
+            if not installation:
+                # 检查插件是否已经在运行
+                if plugin_id in self.running_plugins:
+                    # 如果插件在运行，但是数据库中不存在，则说明插件被卸载了，需要停止该插件
+                    self.logger.warning(
+                        f"插件已在运行: {plugin_id}, 但是数据库中不存在，需要停止该插件"
+                    )
+                    await self.stop_plugin(plugin_id)
+                    # 删除插件目录
+                    if plugin_dir.exists():
+                        shutil.rmtree(plugin_dir)
 
-                    raise ValueError(f"插件不存在: {plugin_id}")
+                raise ValueError(f"插件不存在: {plugin_id}")
 
-                # 从数据库加载插件配置
-                plugin_info = await self._load_plugin_info_from_installation(
-                    installation
-                )
-                if not plugin_info:
-                    raise ValueError(f"无法加载插件配置: {plugin_id}")
+            # 从数据库加载插件配置
+            plugin_info = await self._load_plugin_info_from_installation(
+                installation
+            )
+            if not plugin_info:
+                raise ValueError(f"无法加载插件配置: {plugin_id}")
 
-                if plugin_id in self.plugins:
-                    # 如果插件已经在内存中，则检查版本是否一致，有可能插件升级了，需要停止旧版本
-                    old_plugin_info = self.plugins[plugin_id]
-                    if (
-                        old_plugin_info.config.configuration.version
-                        != plugin_info.config.configuration.version
-                    ):
-                        self.logger.warning(
-                            f"插件版本不一致: {plugin_id}，旧版本: {old_plugin_info.config.configuration.version}，新版本: {plugin_info.config.configuration.version}",
-                        )
-                        await self.stop_plugin(plugin_id)
-                        # 删除插件目录
-                        if plugin_dir.exists():
-                            shutil.rmtree(plugin_dir)
+            if plugin_id in self.plugins:
+                # 如果插件已经在内存中，则检查版本是否一致，有可能插件升级了，需要停止旧版本
+                old_plugin_info = self.plugins[plugin_id]
+                if (
+                    old_plugin_info.config.configuration.version
+                    != plugin_info.config.configuration.version
+                ):
+                    self.logger.warning(
+                        f"插件版本不一致: {plugin_id}，旧版本: {old_plugin_info.config.configuration.version}，新版本: {plugin_info.config.configuration.version}",
+                    )
+                    await self.stop_plugin(plugin_id)
+                    # 删除插件目录
+                    if plugin_dir.exists():
+                        shutil.rmtree(plugin_dir)
 
-                # 注册到内存, 不管之前是否存在，都注册到内存，确保插件信息是最新的
-                self.plugins[plugin_id] = plugin_info
+            # 注册到内存, 不管之前是否存在，都注册到内存，确保插件信息是最新的
+            self.plugins[plugin_id] = plugin_info
 
             # 检查本地插件文件是否存在
 
@@ -627,7 +625,7 @@ class TenantPluginManager:
             return False
 
     async def install_plugin(
-        self, plugin_package: bytes, install_request: InstallRequest | None = None
+        self, session: AsyncSession, plugin_package: bytes, install_request: InstallRequest | None = None
     ) -> str:
         """安装插件"""
         self.logger.info("开始安装插件")
@@ -640,7 +638,7 @@ class TenantPluginManager:
         await self._validate_plugin(plugin_config)
 
         #  第三阶段：检查重复安装
-        await self._check_duplicate_installation(plugin_config)
+        await self._check_duplicate_installation(session, plugin_config)
 
         # 生成插件ID
         plugin_id = (
@@ -690,6 +688,7 @@ class TenantPluginManager:
             }
             config_override = install_request.config_override if install_request else {}
             await self._register_plugin_installation(
+                session,
                 plugin_config,
                 plugin_id,
                 install_info,
@@ -713,6 +712,7 @@ class TenantPluginManager:
             # 执行完整的回滚操作
             try:
                 await self._rollback_failed_installation(
+                    session,
                     plugin_config if "plugin_config" in locals() else None,
                     plugin_id if "plugin_id" in locals() else None,
                     oss_path if "oss_path" in locals() else None,
@@ -724,6 +724,7 @@ class TenantPluginManager:
 
     async def _rollback_failed_installation(
         self,
+        session: AsyncSession,
         plugin_config: PluginConfig | None,
         plugin_id: str | None,
         oss_path: str | None,
@@ -750,7 +751,7 @@ class TenantPluginManager:
             # 3. 删除数据库记录
             if plugin_id:
                 try:
-                    deleted_count = await self._delete_plugin_installation(plugin_id)
+                    deleted_count = await self._delete_plugin_installation(session, plugin_id)
                     if deleted_count > 0:
                         rollback_steps.append(f"删除数据库记录: {plugin_id}")
                         self.logger.info(f" 已删除数据库记录: {plugin_id}")
@@ -780,9 +781,33 @@ class TenantPluginManager:
         except Exception as e:
             raise e
 
-    async def _delete_plugin_installation(self, plugin_id: str) -> int:
+    async def _delete_plugin_installation(self, session: AsyncSession, plugin_id: str) -> int:
         """删除插件安装记录"""
-        async with async_session() as session:
+        result = await session.execute(
+            select(PluginInstallation).where(
+                and_(
+                    PluginInstallation.tenant_id == self.tenant_id,
+                    PluginInstallation.plugin_id == plugin_id,
+                ),
+            ),
+        )
+        installations = result.scalars().all()
+
+        deleted_count = 0
+        for installation in installations:
+            await session.delete(installation)
+            deleted_count += 1
+
+        await session.flush()
+        return deleted_count
+
+    async def start_plugin(self, plugin_id: str) -> bool:
+        """启动插件（公共接口）"""
+        return await self._start_plugin_internal(plugin_id)
+
+    async def _update_plugin_last_accessed(self, session: AsyncSession, plugin_id: str):
+        """更新插件最后访问时间"""
+        try:
             result = await session.execute(
                 select(PluginInstallation).where(
                     and_(
@@ -791,63 +816,36 @@ class TenantPluginManager:
                     ),
                 ),
             )
-            installations = result.scalars().all()
+            installation = result.scalar_one_or_none()
 
-            deleted_count = 0
-            for installation in installations:
-                await session.delete(installation)
-                deleted_count += 1
-
-            await session.commit()
-            return deleted_count
-
-    async def start_plugin(self, plugin_id: str) -> bool:
-        """启动插件（公共接口）"""
-        return await self._start_plugin_internal(plugin_id)
-
-    async def _update_plugin_last_accessed(self, plugin_id: str):
-        """更新插件最后访问时间"""
-        try:
-            async with async_session() as session:
-                result = await session.execute(
-                    select(PluginInstallation).where(
-                        and_(
-                            PluginInstallation.tenant_id == self.tenant_id,
-                            PluginInstallation.plugin_id == plugin_id,
-                        ),
-                    ),
-                )
-                installation = result.scalar_one_or_none()
-
-                if installation:
-                    installation.last_accessed_at = datetime.now()
-                    await session.commit()
-                    self.logger.debug(f"已更新插件访问时间: {plugin_id}")
+            if installation:
+                installation.last_accessed_at = datetime.now()
+                await session.flush()
+                self.logger.debug(f"已更新插件访问时间: {plugin_id}")
 
         except Exception as e:
             self.logger.exception(f"更新插件访问时间失败: {plugin_id}")
             # 不抛出异常，因为这不是关键功能
 
-    async def _update_plugin_running_by_installation(self, plugin_id: str):
+    async def _update_plugin_running_by_installation(self, session: AsyncSession, plugin_id: str):
         """更新插件运行状态"""
         try:
-            async with async_session() as session:
-                result = await session.execute(
-                    select(PluginInstallation).where(
-                        and_(
-                            PluginInstallation.tenant_id == self.tenant_id,
-                            PluginInstallation.plugin_id == plugin_id,
-                        ),
+            result = await session.execute(
+                select(PluginInstallation).where(
+                    and_(
+                        PluginInstallation.tenant_id == self.tenant_id,
+                        PluginInstallation.plugin_id == plugin_id,
                     ),
-                )
-                installation = result.scalar_one_or_none()
+                ),
+            )
+            installation = result.scalar_one_or_none()
 
-                if installation:
-                    installation.status = PluginStatus.ACTIVE
-                    await session.commit()
-                    self.logger.debug(
-                        f"已更新插件运行状态: {plugin_id}, status: {installation.status}"
-                    )
+            if installation:
+                installation.status = PluginStatus.ACTIVE
+                await session.flush()
+                self.logger.debug(
+                    f"已更新插件运行状态: {plugin_id}, status: {installation.status}"
+                )
 
         except Exception as e:
             self.logger.exception(f"更新插件运行状态失败: {plugin_id}")
@@ -882,11 +880,11 @@ class TenantPluginManager:
             return False
 
     async def invoke_plugin_stream(
-        self, plugin_id: str, invoke_request: dict[str, Any], timeout: int = 60
+        self, session: AsyncSession, plugin_id: str, invoke_request: dict[str, Any], timeout: int = 60
     ):
         """流式调用插件方法（懒加载模式）"""
         # 确保插件准备就绪（懒加载：从OSS下载 + 启动）
-        await self._ensure_plugin_ready(plugin_id)
+        await self._ensure_plugin_ready(session, plugin_id)
 
         # 更新最后访问时间(暂时不更新访问时间，会影响性能，应该改为异步的方式)
         # await self._update_plugin_last_accessed(plugin_id)
@@ -967,31 +965,30 @@ class TenantPluginManager:
                 f"流式插件调用完成: {plugin_id}.{action} (用时: {invoke_time:.3f}秒, 成功: {success}, 数据块数: {chunk_count})",
             )
 
-    async def _update_plugin_status(self, plugin_id: str, status: PluginStatus):
+    async def _update_plugin_status(self, session: AsyncSession, plugin_id: str, status: PluginStatus):
         """更新插件状态"""
         # 更新内存状态
         if plugin_id in self.plugins:
             self.plugins[plugin_id].status = status
 
         # 更新数据库状态
-        async with async_session() as session:
-            result = await session.execute(
-                select(PluginInstallation).where(
-                    and_(
-                        PluginInstallation.tenant_id == self.tenant_id,
-                        PluginInstallation.plugin_id == plugin_id,
-                    ),
+        result = await session.execute(
+            select(PluginInstallation).where(
+                and_(
+                    PluginInstallation.tenant_id == self.tenant_id,
+                    PluginInstallation.plugin_id == plugin_id,
                 ),
-            )
-            installation = result.scalar_one_or_none()
+            ),
+        )
+        installation = result.scalar_one_or_none()
 
-            if installation:
-                installation.status = status
-                if status == PluginStatus.ACTIVE:
-                    installation.last_started_at = datetime.now()
-                elif status == PluginStatus.INACTIVE:
-                    installation.last_stopped_at = datetime.now()
-                await session.commit()
+        if installation:
+            installation.status = status
+            if status == PluginStatus.ACTIVE:
+                installation.last_started_at = datetime.now()
+            elif status == PluginStatus.INACTIVE:
+                installation.last_stopped_at = datetime.now()
+            await session.flush()
 
     async def _parse_plugin_package(self, plugin_package: bytes) -> PluginPackageInfo:
         """解析插件包，提取配置和_assets内容"""
@@ -1150,6 +1147,7 @@ class TenantPluginManager:
 
     async def _register_plugin_installation(
         self,
+        session: AsyncSession,
         plugin_config: PluginConfig,
         plugin_id: str,
         install_info: dict[str, Any],
@@ -1166,6 +1164,7 @@ class TenantPluginManager:
 
             # 保存插件信息到数据库
             await self._save_plugin_installation_to_database(
+                session,
                 plugin_config,
                 plugin_id,
                 install_info,
@@ -1183,6 +1182,7 @@ class TenantPluginManager:
 
     async def _save_plugin_installation_to_database(
         self,
+        session: AsyncSession,
         plugin_config: PluginConfig,
         plugin_id: str,
         install_info: dict[str, Any],
@@ -1190,61 +1190,60 @@ class TenantPluginManager:
         config_override: dict[str, Any],
     ):
         """保存插件安装信息到数据库（包含完整配置信息）"""
-        async with async_session() as session:
-            # 先以传入的覆盖参数为基础，再覆盖我们明确指定的字段，确保以我们指定为准
-            installation_kwargs = dict(config_override or {})
-            installation_kwargs.update(
-                {
-                    "tenant_id": self.tenant_id,
-                    "plugin_id": plugin_id,
-                    "plugin_unique_identifier": f"{plugin_id}@{plugin_config.configuration.version}",
-                    "runtime_type": RuntimeType.LOCAL,
-                    "plugin_type": self.convert_to_plugin_type(plugin_config),
-                    "status": PluginStatus.ACTIVE,
-                    "auto_start": auto_start,
-                    "installed_at": datetime.now(),
-                    "install_config": install_info,
-                    "source": SourceType.PACKAGE,
-                    "plugin_config": plugin_config,
-                },
-            )
+        # 先以传入的覆盖参数为基础，再覆盖我们明确指定的字段，确保以我们指定为准
+        installation_kwargs = dict(config_override or {})
+        installation_kwargs.update(
+            {
+                "tenant_id": self.tenant_id,
+                "plugin_id": plugin_id,
+                "plugin_unique_identifier": f"{plugin_id}@{plugin_config.configuration.version}",
+                "runtime_type": RuntimeType.LOCAL,
+                "plugin_type": self.convert_to_plugin_type(plugin_config),
+                "status": PluginStatus.ACTIVE,
+                "auto_start": auto_start,
+                "installed_at": datetime.now(),
+                "install_config": install_info,
+                "source": SourceType.PACKAGE,
+                "plugin_config": plugin_config,
+            },
+        )
 
-            # 过滤掉模型未定义的字段，避免实例化报错
-            try:
-                from sqlalchemy.inspection import inspect as sqlalchemy_inspect
+        # 过滤掉模型未定义的字段，避免实例化报错
+        try:
+            from sqlalchemy.inspection import inspect as sqlalchemy_inspect
 
-                mapper = sqlalchemy_inspect(PluginInstallation)
-                valid_keys = {prop.key for prop in mapper.attrs}
-                invalid_keys = set(installation_kwargs.keys()) - valid_keys
-                if invalid_keys:
-                    self.logger.warning(f"忽略未识别的安装字段: {invalid_keys}")
-                filtered_kwargs = {
-                    k: v for k, v in installation_kwargs.items() if k in valid_keys
-                }
-            except Exception:
-                # 回退策略：若无法检查映射，直接使用我们明确指定的字段构造
-                self.logger.warning("无法检查PluginInstallation映射，回退到最小字段集")
-                filtered_kwargs = {
-                    "tenant_id": installation_kwargs.get("tenant_id"),
-                    "plugin_id": installation_kwargs.get("plugin_id"),
-                    "plugin_unique_identifier": installation_kwargs.get(
-                        "plugin_unique_identifier"
-                    ),
-                    "runtime_type": installation_kwargs.get("runtime_type"),
-                    "plugin_type": installation_kwargs.get("plugin_type"),
-                    "status": installation_kwargs.get("status"),
-                    "auto_start": installation_kwargs.get("auto_start"),
-                    "installed_at": installation_kwargs.get("installed_at"),
-                    "install_config": installation_kwargs.get("install_config"),
-                    "source": installation_kwargs.get("source"),
-                    "plugin_config": installation_kwargs.get("plugin_config"),
-                    "runtime_config": installation_kwargs.get("runtime_config"),
-                }
+            mapper = sqlalchemy_inspect(PluginInstallation)
+            valid_keys = {prop.key for prop in mapper.attrs}
+            invalid_keys = set(installation_kwargs.keys()) - valid_keys
+            if invalid_keys:
+                self.logger.warning(f"忽略未识别的安装字段: {invalid_keys}")
+            filtered_kwargs = {
+                k: v for k, v in installation_kwargs.items() if k in valid_keys
+            }
+        except Exception:
+            # 回退策略：若无法检查映射，直接使用我们明确指定的字段构造
+            self.logger.warning("无法检查PluginInstallation映射，回退到最小字段集")
+            filtered_kwargs = {
+                "tenant_id": installation_kwargs.get("tenant_id"),
+                "plugin_id": installation_kwargs.get("plugin_id"),
+                "plugin_unique_identifier": installation_kwargs.get(
+                    "plugin_unique_identifier"
+                ),
+                "runtime_type": installation_kwargs.get("runtime_type"),
+                "plugin_type": installation_kwargs.get("plugin_type"),
+                "status": installation_kwargs.get("status"),
+                "auto_start": installation_kwargs.get("auto_start"),
+                "installed_at": installation_kwargs.get("installed_at"),
+                "install_config": installation_kwargs.get("install_config"),
+                "source": installation_kwargs.get("source"),
+                "plugin_config": installation_kwargs.get("plugin_config"),
+                "runtime_config": installation_kwargs.get("runtime_config"),
+            }
 
-            installation = PluginInstallation(**filtered_kwargs)
+        installation = PluginInstallation(**filtered_kwargs)
 
-            session.add(installation)
-            await session.commit()
+        session.add(installation)
+        await session.flush()
 
     def convert_to_plugin_type(self, plugin_config: PluginConfig) -> DBPluginType:
         """将插件配置转换为数据库插件类型"""
@@ -1289,7 +1288,7 @@ class TenantPluginManager:
         return await self.warmup_manager.configure_warmup(config)
 
     async def manual_warmup(
-        self, plugin_ids: list[str] | None = None
+        self, session: AsyncSession, plugin_ids: list[str] | None = None
     ) -> WarmupExecutionResult:
         """手动预热插件"""
         if plugin_ids:
@@ -1298,8 +1297,8 @@ class TenantPluginManager:
             failed_plugins = []
 
             for plugin_id in plugin_ids:
-                success = await self.warmup_manager.warmup_plugin(plugin_id)
-                if success:
+                result = await self.warmup_manager.warmup_plugin(session, plugin_id)
+                if result.result == PluginWarmupResult.SUCCESS:
                     warmed_plugins.append(plugin_id)
                 else:
                     failed_plugins.append(plugin_id)
@@ -1312,7 +1311,7 @@ class TenantPluginManager:
             )
         else:
             # 自动预热
-            return await self.warmup_manager.auto_warmup()
+            return await self.warmup_manager.auto_warmup(session)
 
     async def analyze_warmup_candidates(self) -> list[PluginCandidate]:
         """分析预热候选插件"""
@@ -1397,7 +1396,7 @@ class PluginManagerFactory:
     """子进程级别的插件管理器缓存"""
 
     @classmethod
-    async def get_manager(cls, tenant_id: str) -> TenantPluginManager:
+    async def get_manager(cls, tenant_id: str, session: AsyncSession) -> TenantPluginManager:
         """获取指定租户的插件管理器实例（多进程安全）"""
         current_pid = os.getpid()
 
@@ -1416,7 +1415,7 @@ class PluginManagerFactory:
 
                     # 为子进程创建新的插件管理器实例
                     manager = TenantPluginManager(tenant_id)
-                    await manager.initialize()
+                    await manager.initialize(session)
 
                     # 清理继承的插件运行时状态，因为父进程的插件进程在子进程中不可用
                     manager.running_plugins.clear()
@@ -1429,7 +1428,7 @@ class PluginManagerFactory:
                 # 这是主进程，使用全局实例
                 if tenant_id not in cls._instances:
                     manager = TenantPluginManager(tenant_id)
-                    await manager.initialize()
+                    await manager.initialize(session)
                     cls._instances[tenant_id] = manager
                 return cls._instances[tenant_id]
 

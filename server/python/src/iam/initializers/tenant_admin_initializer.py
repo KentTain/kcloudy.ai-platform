@@ -8,7 +8,7 @@ from loguru import logger
 from sqlalchemy import select
 
 from tenant.models import TenantAdmin
-from framework.database.core.engine import async_session
+from framework.database.dependencies import get_task_session
 from framework.utils.crypto import hash_password, verify_password
 
 _logger = logger.bind(name=__name__)
@@ -39,7 +39,7 @@ class TenantAdminInitializer:
         Returns:
             TenantAdmin | None: 创建或已存在的管理员
         """
-        async with async_session() as session:
+        async with get_task_session() as session:
             # 检查是否已存在默认管理员
             stmt = select(TenantAdmin).where(TenantAdmin.is_default == True)
             result = await session.execute(stmt)
@@ -71,7 +71,7 @@ class TenantAdminInitializer:
     @staticmethod
     async def check_initialized() -> bool:
         """检查是否已初始化"""
-        async with async_session() as session:
+        async with get_task_session() as session:
             stmt = select(TenantAdmin).where(TenantAdmin.is_default == True)
             result = await session.execute(stmt)
             return result.scalar_one_or_none() is not None

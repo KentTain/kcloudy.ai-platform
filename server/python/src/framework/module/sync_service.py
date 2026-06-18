@@ -11,7 +11,6 @@ from sqlalchemy import delete, select, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from framework.database import async_session
 from framework.module.definition import (
     MenuDef,
     ModuleDefinition,
@@ -69,12 +68,15 @@ class ModuleDefinitionSyncService:
     在系统启动时调用，确保数据库中的定义与模块声明一致。
     """
 
-    async def sync_all_modules(self) -> None:
+    async def sync_all_modules(self, session: AsyncSession) -> None:
         """
         同步所有模块的定义到数据库
 
         遍历所有已注册的模块，将模块定义同步到数据库。
         包括菜单、权限、角色的同步，以及孤儿数据清理。
+
+        Args:
+            session: 数据库会话
         """
         registry = get_registry()
         modules = registry.get_all_modules()
@@ -86,76 +88,78 @@ class ModuleDefinitionSyncService:
                 continue
 
             try:
-                await self.sync_module(definition)
+                await self.sync_module(session, definition)
                 write_info(f"模块 {definition.code} 同步完成")
             except Exception as e:
                 _logger.error(f"模块 {definition.code} 同步失败: {e}")
                 write_error(f"模块 {definition.code} 同步失败")
                 raise
 
-    async def sync_module(self, definition: ModuleDefinition) -> None:
+    async def sync_module(
+        self, session: AsyncSession, definition: ModuleDefinition
+    ) -> None:
         """
         同步单个模块定义
 
         将模块定义中的菜单、权限、角色同步到数据库。
 
         Args:
+            session: 数据库会话
             definition: 模块定义实例
         """
-        async with async_session() as session:
-            # 1. Upsert Module 记录
-            stmt = (
-                insert(Module)
-                .values(
-                    code=definition.code,
-                    name=definition.name,
-                    description=definition.description,
-                    icon=definition.icon,
-                    version=definition.version,
-                    is_active=True,
-                    is_need=False,
-                )
-                .on_conflict_do_update(
-                    index_elements=["code"],
-                    set_={
-                        "name": definition.name,
-                        "description": definition.description,
-                        "icon": definition.icon,
-                        "version": definition.version,
-                    },
-                )
-                .returning(Module.id)
+        # 1. Upsert Module 记录
+        stmt = (
+            insert(Module)
+            .values(
+                code=definition.code,
+                name=definition.name,
+                description=definition.description,
+                icon=definition.icon,
+                version=definition.version,
+                is_active=True,
+                is_need=False,
             )
-
-            result = await session.execute(stmt)
-            module_id = result.scalar_one()
-
-            # 2. 同步菜单
-            await self._sync_menus(
-                session, module_id, definition.code, definition.menus
+            .on_conflict_do_update(
+                index_elements=["code"],
+                set_={
+                    "name": definition.name,
+                    "description": definition.description,
+                    "icon": definition.icon,
+                    "version": definition.version,
+                },
             )
+            .returning(Module.id)
+        )
 
-            # 3. 同步权限
-            await self._sync_permissions(
-                session, module_id, definition.code, definition.permissions
-            )
+        result = await session.execute(stmt)
+        module_id = result.scalar_one()
 
-            # 4. 同步角色
-            await self._sync_roles(
-                session, module_id, definition.code, definition.default_roles
-            )
+        # 2. 同步菜单
+        await self._sync_menus(
+            session, module_id, definition.code, definition.menus
+        )
 
-            # 5. 清理孤儿数据
-            await self._cleanup_orphans(
-                session,
-                module_id,
-                definition.code,
-                definition.menus,
-                definition.permissions,
-                definition.default_roles,
-            )
+        # 3. 同步权限
+        await self._sync_permissions(
+            session, module_id, definition.code, definition.permissions
+        )
 
-            await session.commit()
+        # 4. 同步角色
+        await self._sync_roles(
+            session, module_id, definition.code, definition.default_roles
+        )
+
+        # 5. 清理孤儿数据
+        await self._cleanup_orphans(
+            session,
+            module_id,
+            definition.code,
+            definition.menus,
+            definition.permissions,
+            definition.default_roles,
+        )
+
+        await session.commit()
 
     async def _sync_menus(
         self,

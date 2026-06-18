@@ -7,6 +7,7 @@
 import time
 
 from loguru import logger
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from framework.utils.resource_crypto import decrypt_password
 from tenant.models import StorageConfig
@@ -24,19 +25,20 @@ class StorageConfigService(BaseResourceService):
     _reference_field = "storage_config_id"
 
     @classmethod
-    async def test_connection(cls, config_id: str) -> tuple[bool, str, int | None]:
+    async def test_connection(cls, session: AsyncSession, config_id: str) -> tuple[bool, str, int | None]:
         """
         测试存储连通性
 
         检查 bucket 是否存在且可访问，超时 5 秒。
 
         Args:
+            session: 数据库会话
             config_id: 配置 ID
 
         Returns:
             tuple[bool, str, int | None]: 成功/失败、消息、延迟（毫秒）
         """
-        config = await cls.get_by_id(config_id)
+        config = await cls.get_by_id(session, config_id)
         if not config:
             return False, "配置不存在", None
 

@@ -145,6 +145,76 @@ async def get_user_detail(self, user_id: str) -> UserDetailResponse | None:
 | 同模块 Service | 直接导入 | `from iam.services.role_service import user_role_service` |
 | 跨模块 Service | 通过模块入口 | `from tenant.services.tenant_service import tenant_service` |
 
+## Session 使用规范
+
+### 依赖注入模式（必须）
+
+所有模块必须使用依赖注入模式获取数据库 Session，禁止在 Service 层内部创建 Session。
+
+### Controller 层
+
+Controller 通过 FastAPI Depends 注入 Session：
+
+```python
+from fastapi import Depends
+from sqlalchemy.ext.asyncio import AsyncSession
+from framework.database.dependencies import get_db_session
+
+@router.get("/users")
+async def list_users(
+    session: AsyncSession = Depends(get_db_session),
+) -> ORJSONResponse:
+    users = await user_service.list_users(session)
+    return ORJSONResponse(content={"code": 200, "data": users})
+```
+
+### Service 层
+
+Service 方法接收 Session 参数，禁止内部创建：
+
+```python
+class UserService:
+    # ✅ 正确：接收 session 参数
+    async def list_users(self, session: AsyncSession) -> list[User]:
+        result = await session.execute(select(User))
+        return list(result.scalars().all())
+
+    # ❌ 禁止：内部创建 session
+    async def list_users(self) -> list[User]:
+        async with async_session() as session:  # 禁止
+            ...
+```
+
+### Listener 层
+
+Listener 使用 `get_listener_session()` 获取 Session：
+
+```python
+from framework.database.dependencies import get_listener_session
+
+class MyHandler:
+    async def handle(self, message: dict) -> None:
+        TenantContext.set_tenant_id(message["tenant_id"])
+        async with get_listener_session() as session:
+            await my_service.process(session, message)
+```
+
+### Task 层
+
+Task 使用 `get_task_session()` 获取 Session：
+
+```python
+from framework.database.dependencies import get_task_session
+
+async def my_task():
+    async with get_task_session() as session:
+        await my_service.cleanup(session)
+```
+
+### 废弃的 `async_session`
+
+`async_session` 代理已废弃，仅保留向后兼容。新代码禁止使用。
+
 ## Schema 层开发规范
 
 ### Pydantic 配置

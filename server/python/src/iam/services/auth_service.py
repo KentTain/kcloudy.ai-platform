@@ -8,12 +8,12 @@ from datetime import datetime, timezone
 
 from loguru import logger
 from sqlalchemy import or_, select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from iam.models import User, UserStatus, UserTenant
 from iam.schemas.login import LoginResponse
 from iam.schemas.token import TokenRefreshResponse
 from framework.cache.redis_util import RedisUtil
-from framework.database.core.engine import async_session
 from framework.utils.crypto import hash_password, verify_password
 from framework.utils.jwt import (
     decode_token,
@@ -53,11 +53,12 @@ class AuthService:
     """用户认证服务"""
 
     @staticmethod
-    async def login(account: str, password: str, ip: str | None = None) -> LoginResponse:
+    async def login(session: AsyncSession, account: str, password: str, ip: str | None = None) -> LoginResponse:
         """
         用户登录
 
         Args:
+            session: 数据库会话
             account: 账号（用户名/邮箱/手机号）
             password: 密码
             ip: 客户端 IP
@@ -76,16 +77,15 @@ class AuthService:
                 raise ValueError("登录次数过多，请稍后再试")
 
         # 查询用户
-        async with async_session() as session:
-            stmt = select(User).where(
-                or_(
-                    User.username == account,
-                    User.email == account,
-                    User.phone == account,
-                )
+        stmt = select(User).where(
+            or_(
+                User.username == account,
+                User.email == account,
+                User.phone == account,
             )
-            result = await session.execute(stmt)
-            user = result.scalar_one_or_none()
+        )
+        result = await session.execute(stmt)
+        user = result.scalar_one_or_none()
 
         # 验证用户存在性和密码
         if not user or not user.password_hash:
@@ -108,15 +108,14 @@ class AuthService:
 
         # 获取用户默认租户
         tenant_id = None
-        async with async_session() as session:
-            stmt = select(UserTenant).where(
-                UserTenant.user_id == user.id,
-                UserTenant.is_default == True
-            )
-            result = await session.execute(stmt)
-            user_tenant = result.scalar_one_or_none()
-            if user_tenant:
-                tenant_id = user_tenant.tenant_id
+        stmt = select(UserTenant).where(
+            UserTenant.user_id == user.id,
+            UserTenant.is_default == True
+        )
+        result = await session.execute(stmt)
+        user_tenant = result.scalar_one_or_none()
+        if user_tenant:
+            tenant_id = user_tenant.tenant_id
 
         # 创建会话
         session_id = await create_session(
@@ -143,13 +142,9 @@ class AuthService:
         )
 
         # 更新最后登录信息
-        async with async_session() as session:
-            stmt = select(User).where(User.id == user.id)
-            result = await session.execute(stmt)
-            user = result.scalar_one()
-            user.last_login_at = datetime.now(timezone.utc)
-            user.last_login_ip = ip
-            await session.commit()
+        user.last_login_at = datetime.now(timezone.utc)
+        user.last_login_ip = ip
+        await session.flush()
 
         # 清除登录限流记录（仅当 Redis 可用时）
         if ip and _is_redis_available():

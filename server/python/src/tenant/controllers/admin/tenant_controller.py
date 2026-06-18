@@ -7,8 +7,9 @@ import asyncio
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import ORJSONResponse
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from framework.database.core.engine import async_session
+from framework.database.dependencies import get_db_session
 from tenant.middlewares.admin_auth_middleware import AdminAuthService, get_current_admin
 from tenant.models import ModuleMenu, Tenant
 from tenant.schemas.admin.module import ModuleMenuTreeResponse
@@ -39,16 +40,18 @@ def Success(data=None, msg: str = "success") -> dict:
 
 
 async def _get_resource_ref(
-    config_id: str | None, service
+    session: AsyncSession,
+    config_id: str | None,
+    service,
 ) -> ResourceConfigReferenceResponse | None:
     """获取资源配置引用"""
     if not config_id:
         return None
-    config = await service.get_by_id(config_id)
+    config = await service.get_by_id(session, config_id)
     return ResourceConfigReferenceResponse.from_config(config)
 
 
-async def build_tenant_vo(tenant: Tenant) -> TenantResponse:
+async def build_tenant_vo(session: AsyncSession, tenant: Tenant) -> TenantResponse:
     """构建租户响应对象"""
     from tenant.services import (
         CacheConfigService,
@@ -60,11 +63,11 @@ async def build_tenant_vo(tenant: Tenant) -> TenantResponse:
 
     # 使用 asyncio.gather 并行查询 5 个资源配置
     db_ref, storage_ref, cache_ref, queue_ref, pubsub_ref = await asyncio.gather(
-        _get_resource_ref(tenant.db_config_id, DatabaseConfigService),
-        _get_resource_ref(tenant.storage_config_id, StorageConfigService),
-        _get_resource_ref(tenant.cache_config_id, CacheConfigService),
-        _get_resource_ref(tenant.queue_config_id, QueueConfigService),
-        _get_resource_ref(tenant.pubsub_config_id, PubSubConfigService),
+        _get_resource_ref(session, tenant.db_config_id, DatabaseConfigService),
+        _get_resource_ref(session, tenant.storage_config_id, StorageConfigService),
+        _get_resource_ref(session, tenant.cache_config_id, CacheConfigService),
+        _get_resource_ref(session, tenant.queue_config_id, QueueConfigService),
+        _get_resource_ref(session, tenant.pubsub_config_id, PubSubConfigService),
     )
 
     return TenantResponse.from_tenant(
@@ -81,7 +84,10 @@ async def build_tenant_vo(tenant: Tenant) -> TenantResponse:
 
 
 @router.post("/auth/login")
-async def admin_login(data: AdminLoginRequest) -> ORJSONResponse:
+async def admin_login(
+    data: AdminLoginRequest,
+    session: AsyncSession = Depends(get_db_session),
+) -> ORJSONResponse:
     """
     管理员登录
 
@@ -89,7 +95,7 @@ async def admin_login(data: AdminLoginRequest) -> ORJSONResponse:
     WHEN 超级管理员使用正确的用户名和密码登录
     THEN 返回管理员 Token
     """
-    result = await AdminAuthService.login(data.username, data.password)
+    result = await AdminAuthService.login(session, data.username, data.password)
     if not result:
         raise HTTPException(status_code=401, detail="用户名或密码错误")
 
@@ -131,6 +137,7 @@ async def list_tenants(
     keyword: str | None = None,
     status: str | None = None,
     admin: dict = Depends(get_current_admin),
+    session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """
     查询租户列表
@@ -146,17 +153,18 @@ async def list_tenants(
     # 并行查询租户列表和统计数据
     result, stats = await asyncio.gather(
         TenantService.list_tenants(
+            session,
             page=page,
             page_size=page_size,
             keyword=keyword,
             status=status,
         ),
-        TenantService.get_tenant_stats(),
+        TenantService.get_tenant_stats(session),
     )
     tenants, total = result
 
     # 并行构建 TenantResponse
-    tenant_vos = await asyncio.gather(*[build_tenant_vo(t) for t in tenants])
+    tenant_vos = await asyncio.gather(*[build_tenant_vo(session, t) for t in tenants])
 
     return ORJSONResponse(
         content={
@@ -177,6 +185,7 @@ async def list_tenants(
 async def create_tenant(
     data: TenantCreate,
     admin: dict = Depends(get_current_admin),
+    session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """
     创建租户
@@ -190,11 +199,12 @@ async def create_tenant(
     THEN 返回 HTTP 400 错误，消息为 "租户编码已存在"
     """
     # 检查编码是否已存在
-    existing = await TenantService.get_by_code(data.code)
+    existing = await TenantService.get_by_code(session, data.code)
     if existing:
         raise HTTPException(status_code=400, detail="租户编码已存在")
 
     tenant = await TenantService.create(
+        session,
         name=data.name,
         code=data.code,
         contact_name=data.contact_name,
@@ -209,13 +219,14 @@ async def create_tenant(
         pubsub_config_id=data.pubsub_config_id,
     )
 
-    return ORJSONResponse(content=Success((await build_tenant_vo(tenant)).model_dump()))
+    return ORJSONResponse(content=Success((await build_tenant_vo(session, tenant)).model_dump()))
 
 
 @router.get("/tenants/{tenant_id}")
 async def get_tenant(
     tenant_id: str,
     admin: dict = Depends(get_current_admin),
+    session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """
     查询租户详情
@@ -228,14 +239,14 @@ async def get_tenant(
     WHEN 管理员请求 GET /tenant/admin/v1/tenants/nonexistent
     THEN 返回 HTTP 404 错误
     """
-    tenant = await TenantService.get_by_id(tenant_id, use_cache=False)
+    tenant = await TenantService.get_by_id(session, tenant_id, use_cache=False)
     if not tenant:
         raise HTTPException(status_code=404, detail="租户不存在")
 
     # get_by_id 返回的是 SimpleTenant，需要重新获取 ORM 模型来构建完整的 VO
-    tenant_model = await TenantService.get_resource_bindings(tenant_id)
+    tenant_model = await TenantService.get_resource_bindings(session, tenant_id)
     return ORJSONResponse(
-        content=Success((await build_tenant_vo(tenant_model)).model_dump())
+        content=Success((await build_tenant_vo(session, tenant_model)).model_dump())
     )
 
 
@@ -244,6 +255,7 @@ async def update_tenant(
     tenant_id: str,
     data: TenantUpdate,
     admin: dict = Depends(get_current_admin),
+    session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """
     更新租户
@@ -253,6 +265,7 @@ async def update_tenant(
     THEN 更新租户信息并返回更新后的数据
     """
     tenant = await TenantService.update(
+        session,
         tenant_id=tenant_id,
         name=data.name,
         contact_name=data.contact_name,
@@ -265,13 +278,14 @@ async def update_tenant(
     if not tenant:
         raise HTTPException(status_code=404, detail="租户不存在")
 
-    return ORJSONResponse(content=Success((await build_tenant_vo(tenant)).model_dump()))
+    return ORJSONResponse(content=Success((await build_tenant_vo(session, tenant)).model_dump()))
 
 
 @router.delete("/tenants/{tenant_id}")
 async def delete_tenant(
     tenant_id: str,
     admin: dict = Depends(get_current_admin),
+    session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """
     删除租户
@@ -292,7 +306,7 @@ async def delete_tenant(
     if len(user_ids) > 0:
         raise HTTPException(status_code=400, detail="租户下存在用户，无法删除")
 
-    success = await TenantService.delete(tenant_id)
+    success = await TenantService.delete(session, tenant_id)
     if not success:
         raise HTTPException(status_code=404, detail="租户不存在")
 
@@ -303,6 +317,7 @@ async def delete_tenant(
 async def activate_tenant(
     tenant_id: str,
     admin: dict = Depends(get_current_admin),
+    session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """
     激活租户
@@ -311,17 +326,18 @@ async def activate_tenant(
     WHEN 管理员请求 POST /tenant/admin/v1/tenants/{id}/activate
     THEN 租户状态变为 `active`
     """
-    tenant = await TenantService.activate(tenant_id)
+    tenant = await TenantService.activate(session, tenant_id)
     if not tenant:
         raise HTTPException(status_code=404, detail="租户不存在")
 
-    return ORJSONResponse(content=Success((await build_tenant_vo(tenant)).model_dump()))
+    return ORJSONResponse(content=Success((await build_tenant_vo(session, tenant)).model_dump()))
 
 
 @router.post("/tenants/{tenant_id}/deactivate")
 async def deactivate_tenant(
     tenant_id: str,
     admin: dict = Depends(get_current_admin),
+    session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """
     停用租户
@@ -330,17 +346,18 @@ async def deactivate_tenant(
     WHEN 管理员请求 POST /tenant/admin/v1/tenants/{id}/deactivate
     THEN 租户状态变为 `inactive`
     """
-    tenant = await TenantService.deactivate(tenant_id)
+    tenant = await TenantService.deactivate(session, tenant_id)
     if not tenant:
         raise HTTPException(status_code=404, detail="租户不存在")
 
-    return ORJSONResponse(content=Success((await build_tenant_vo(tenant)).model_dump()))
+    return ORJSONResponse(content=Success((await build_tenant_vo(session, tenant)).model_dump()))
 
 
 @router.get("/tenants/{tenant_id}/stats")
 async def get_tenant_stats(
     tenant_id: str,
     admin: dict = Depends(get_current_admin),
+    session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """
     查询租户统计
@@ -349,7 +366,7 @@ async def get_tenant_stats(
     WHEN 管理员请求 GET /tenant/admin/v1/tenants/{id}/stats
     THEN 返回租户统计信息（用户数、存储用量等）
     """
-    tenant = await TenantService.get_by_id(tenant_id, use_cache=False)
+    tenant = await TenantService.get_by_id(session, tenant_id, use_cache=False)
     if not tenant:
         raise HTTPException(status_code=404, detail="租户不存在")
 
@@ -377,6 +394,7 @@ async def get_tenant_stats(
 async def get_tenant_resources(
     tenant_id: str,
     admin: dict = Depends(get_current_admin),
+    session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """
     获取租户资源绑定
@@ -385,7 +403,7 @@ async def get_tenant_resources(
     WHEN 管理员请求 GET /tenant/admin/v1/tenants/{id}/resources
     THEN 返回租户当前的资源绑定情况
     """
-    tenant = await TenantService.get_resource_bindings(tenant_id)
+    tenant = await TenantService.get_resource_bindings(session, tenant_id)
     if not tenant:
         raise HTTPException(status_code=404, detail="租户不存在")
 
@@ -399,11 +417,11 @@ async def get_tenant_resources(
 
     # 使用 asyncio.gather 并行查询 5 个资源配置
     db_ref, storage_ref, cache_ref, queue_ref, pubsub_ref = await asyncio.gather(
-        _get_resource_ref(tenant.db_config_id, DatabaseConfigService),
-        _get_resource_ref(tenant.storage_config_id, StorageConfigService),
-        _get_resource_ref(tenant.cache_config_id, CacheConfigService),
-        _get_resource_ref(tenant.queue_config_id, QueueConfigService),
-        _get_resource_ref(tenant.pubsub_config_id, PubSubConfigService),
+        _get_resource_ref(session, tenant.db_config_id, DatabaseConfigService),
+        _get_resource_ref(session, tenant.storage_config_id, StorageConfigService),
+        _get_resource_ref(session, tenant.cache_config_id, CacheConfigService),
+        _get_resource_ref(session, tenant.queue_config_id, QueueConfigService),
+        _get_resource_ref(session, tenant.pubsub_config_id, PubSubConfigService),
     )
 
     return ORJSONResponse(
@@ -425,6 +443,7 @@ async def update_tenant_resources(
     tenant_id: str,
     data: ResourceBindingRequest,
     admin: dict = Depends(get_current_admin),
+    session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """
     更新租户资源绑定
@@ -446,9 +465,11 @@ async def update_tenant_resources(
     )
 
     # 引用校验：绑定的配置 ID 必须存在
-    async def _validate_config(config_id: str | None, service, config_type: str):
+    async def _validate_config(
+        sess: AsyncSession, config_id: str | None, service, config_type: str
+    ):
         if config_id is not None:
-            config = await service.get_by_id(config_id)
+            config = await service.get_by_id(sess, config_id)
             if not config:
                 raise HTTPException(
                     status_code=404,
@@ -457,15 +478,16 @@ async def update_tenant_resources(
 
     # 使用 asyncio.gather 并行校验 5 个配置
     await asyncio.gather(
-        _validate_config(data.db_config_id, DatabaseConfigService, "数据库"),
-        _validate_config(data.storage_config_id, StorageConfigService, "存储"),
-        _validate_config(data.cache_config_id, CacheConfigService, "缓存"),
-        _validate_config(data.queue_config_id, QueueConfigService, "队列"),
-        _validate_config(data.pubsub_config_id, PubSubConfigService, "发布订阅"),
+        _validate_config(session, data.db_config_id, DatabaseConfigService, "数据库"),
+        _validate_config(session, data.storage_config_id, StorageConfigService, "存储"),
+        _validate_config(session, data.cache_config_id, CacheConfigService, "缓存"),
+        _validate_config(session, data.queue_config_id, QueueConfigService, "队列"),
+        _validate_config(session, data.pubsub_config_id, PubSubConfigService, "发布订阅"),
     )
 
     # 更新资源绑定
     tenant = await TenantService.update_resource_bindings(
+        session,
         tenant_id=tenant_id,
         db_config_id=data.db_config_id,
         storage_config_id=data.storage_config_id,
@@ -479,11 +501,11 @@ async def update_tenant_resources(
 
     # 使用 asyncio.gather 并行查询 5 个资源配置
     db_ref, storage_ref, cache_ref, queue_ref, pubsub_ref = await asyncio.gather(
-        _get_resource_ref(tenant.db_config_id, DatabaseConfigService),
-        _get_resource_ref(tenant.storage_config_id, StorageConfigService),
-        _get_resource_ref(tenant.cache_config_id, CacheConfigService),
-        _get_resource_ref(tenant.queue_config_id, QueueConfigService),
-        _get_resource_ref(tenant.pubsub_config_id, PubSubConfigService),
+        _get_resource_ref(session, tenant.db_config_id, DatabaseConfigService),
+        _get_resource_ref(session, tenant.storage_config_id, StorageConfigService),
+        _get_resource_ref(session, tenant.cache_config_id, CacheConfigService),
+        _get_resource_ref(session, tenant.queue_config_id, QueueConfigService),
+        _get_resource_ref(session, tenant.pubsub_config_id, PubSubConfigService),
     )
 
     return ORJSONResponse(
@@ -527,6 +549,7 @@ def _build_menu_item_from_dict(menu: ModuleMenu) -> ModuleMenuTreeResponse | Non
 @router.get("/admin/menus")
 async def get_admin_menus(
     admin: dict = Depends(get_current_admin),
+    session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """
     获取管理员菜单（二级结构）
@@ -546,7 +569,7 @@ async def get_admin_menus(
     from tenant.models import Module
 
     # 获取租户模块（一级菜单）
-    module = await ModuleService.get_by_code("tenant")
+    module = await ModuleService.get_by_code(session, "tenant")
 
     if not module:
         return ORJSONResponse(content=Success([]))
@@ -554,7 +577,7 @@ async def get_admin_menus(
     result: list[ModuleMenuTreeResponse] = []
 
     # 获取该模块的功能菜单（二级菜单）
-    menus = await ModuleMenuService.list_menus(module.id)
+    menus = await ModuleMenuService.list_menus(session, module.id)
 
     # 过滤不可见菜单，转换为响应模型
     visible_menus = [_build_menu_item_from_dict(m) for m in menus]

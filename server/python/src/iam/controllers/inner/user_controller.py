@@ -4,16 +4,17 @@ IAM 模块内部接口控制器
 提供模块间内部调用接口，不对外暴露。
 """
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import ORJSONResponse
 from pydantic import BaseModel, Field
 from typing import Any
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from iam.models import User, UserTenant
+from framework.database.dependencies import get_db_session
+from iam.models import User, UserTenant, UserDepartment
 from iam.services.user_service import UserService
 from iam.services.department_service import DepartmentService
-from framework.database.core.engine import async_session
-from sqlalchemy import select
 
 router = APIRouter()
 
@@ -111,7 +112,10 @@ async def health_check() -> ORJSONResponse:
 
 
 @router.get("/users/{user_id}")
-async def get_user(user_id: str) -> ORJSONResponse:
+async def get_user(
+    user_id: str,
+    session: AsyncSession = Depends(get_db_session),
+) -> ORJSONResponse:
     """
     获取单个用户
 
@@ -125,22 +129,19 @@ async def get_user(user_id: str) -> ORJSONResponse:
     WHEN 请求 GET /iam/inner/v1/users/nonexistent
     THEN 返回 HTTP 404
     """
-    user = await UserService.get_by_id(user_id)
+    user = await UserService.get_by_id(session, user_id)
 
     if not user:
         raise HTTPException(status_code=404, detail=f"用户 {user_id} 不存在")
 
     # 获取用户的默认租户
-    tenant_id = None
-    async with async_session() as session:
-        stmt = select(UserTenant).where(
-            UserTenant.user_id == user_id,
-            UserTenant.is_default == True
-        )
-        result = await session.execute(stmt)
-        user_tenant = result.scalar_one_or_none()
-        if user_tenant:
-            tenant_id = user_tenant.tenant_id
+    stmt = select(UserTenant).where(
+        UserTenant.user_id == user_id,
+        UserTenant.is_default == True
+    )
+    result = await session.execute(stmt)
+    user_tenant = result.scalar_one_or_none()
+    tenant_id = user_tenant.tenant_id if user_tenant else None
 
     return ORJSONResponse(
         content=Success(build_user_info(user, tenant_id).model_dump())
@@ -148,7 +149,10 @@ async def get_user(user_id: str) -> ORJSONResponse:
 
 
 @router.post("/users/batch")
-async def get_users_batch(data: BatchUsersRequest) -> ORJSONResponse:
+async def get_users_batch(
+    data: BatchUsersRequest,
+    session: AsyncSession = Depends(get_db_session),
+) -> ORJSONResponse:
     """
     批量获取用户
 
@@ -160,18 +164,17 @@ async def get_users_batch(data: BatchUsersRequest) -> ORJSONResponse:
     if not data.user_ids:
         return ORJSONResponse(content=Success([]))
 
-    users = await UserService.get_by_ids(data.user_ids)
+    users = await UserService.get_by_ids(session, data.user_ids)
 
     # 获取用户的默认租户
     user_tenant_map = {}
-    async with async_session() as session:
-        stmt = select(UserTenant).where(
-            UserTenant.user_id.in_(data.user_ids),
-            UserTenant.is_default == True
-        )
-        result = await session.execute(stmt)
-        for ut in result.scalars().all():
-            user_tenant_map[ut.user_id] = ut.tenant_id
+    stmt = select(UserTenant).where(
+        UserTenant.user_id.in_(data.user_ids),
+        UserTenant.is_default == True
+    )
+    result = await session.execute(stmt)
+    for ut in result.scalars().all():
+        user_tenant_map[ut.user_id] = ut.tenant_id
 
     return ORJSONResponse(
         content=Success([build_user_info(u, user_tenant_map.get(u.id)).model_dump() for u in users if u])
@@ -179,7 +182,10 @@ async def get_users_batch(data: BatchUsersRequest) -> ORJSONResponse:
 
 
 @router.get("/users/{user_id}/departments")
-async def get_user_departments(user_id: str) -> ORJSONResponse:
+async def get_user_departments(
+    user_id: str,
+    session: AsyncSession = Depends(get_db_session),
+) -> ORJSONResponse:
     """
     获取用户部门
 
@@ -187,51 +193,51 @@ async def get_user_departments(user_id: str) -> ORJSONResponse:
     WHEN 请求 GET /iam/inner/v1/users/{user_id}/departments
     THEN 返回用户所属的部门列表
     """
-    from iam.models import UserDepartment
+    stmt = select(UserDepartment).where(UserDepartment.user_id == user_id)
+    result = await session.execute(stmt)
+    user_departments = result.scalars().all()
 
-    async with async_session() as session:
-        stmt = select(UserDepartment).where(UserDepartment.user_id == user_id)
-        result = await session.execute(stmt)
-        user_departments = result.scalars().all()
+    department_ids = [ud.department_id for ud in user_departments]
 
-        department_ids = [ud.department_id for ud in user_departments]
-
-        if not department_ids:
-            return ORJSONResponse(
-                content=Success(
-                    UserDepartmentResponse(
-                        user_id=user_id,
-                        departments=[],
-                    ).model_dump()
-                )
-            )
-
-        # 获取部门详情
-        departments = await DepartmentService.get_by_ids(department_ids)
-
-        dept_list = [
-            DepartmentInfoResponse(
-                id=d.id,
-                name=d.name,
-                parent_id=d.parent_id,
-                tree_level=d.tree_level,
-                tree_path=d.tree_path,
-            )
-            for d in departments if d
-        ]
-
+    if not department_ids:
         return ORJSONResponse(
             content=Success(
                 UserDepartmentResponse(
                     user_id=user_id,
-                    departments=dept_list,
+                    departments=[],
                 ).model_dump()
             )
         )
 
+    # 获取部门详情
+    departments = await DepartmentService.get_by_ids(session, department_ids)
+
+    dept_list = [
+        DepartmentInfoResponse(
+            id=d.id,
+            name=d.name,
+            parent_id=d.parent_id,
+            tree_level=d.tree_level,
+            tree_path=d.tree_path,
+        )
+        for d in departments if d
+    ]
+
+    return ORJSONResponse(
+        content=Success(
+            UserDepartmentResponse(
+                user_id=user_id,
+                departments=dept_list,
+            ).model_dump()
+        )
+    )
+
 
 @router.get("/users/{user_id}/tenants")
-async def get_user_tenants(user_id: str) -> ORJSONResponse:
+async def get_user_tenants(
+    user_id: str,
+    session: AsyncSession = Depends(get_db_session),
+) -> ORJSONResponse:
     """
     获取用户租户列表
 
@@ -239,7 +245,7 @@ async def get_user_tenants(user_id: str) -> ORJSONResponse:
     WHEN 请求 GET /iam/inner/v1/users/{user_id}/tenants
     THEN 返回用户所属的租户列表，包含 role 和 is_default
     """
-    tenants = await UserService.get_user_tenants_detail(user_id)
+    tenants = await UserService.get_user_tenants_detail(session, user_id)
 
     return ORJSONResponse(
         content=Success(
@@ -259,7 +265,10 @@ async def get_user_tenants(user_id: str) -> ORJSONResponse:
 
 
 @router.get("/tenants/{tenant_id}/users")
-async def get_tenant_users(tenant_id: str) -> ORJSONResponse:
+async def get_tenant_users(
+    tenant_id: str,
+    session: AsyncSession = Depends(get_db_session),
+) -> ORJSONResponse:
     """
     获取租户下的用户 ID 列表
 
@@ -267,7 +276,7 @@ async def get_tenant_users(tenant_id: str) -> ORJSONResponse:
     WHEN 请求 GET /iam/inner/v1/tenants/{tenant_id}/users
     THEN 返回该租户下所有用户的 ID 列表
     """
-    user_ids = await UserService.get_user_ids_by_tenant_id(tenant_id)
+    user_ids = await UserService.get_user_ids_by_tenant_id(session, tenant_id)
 
     return ORJSONResponse(
         content=Success(

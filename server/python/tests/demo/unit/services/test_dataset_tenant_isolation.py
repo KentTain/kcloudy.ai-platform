@@ -1,4 +1,8 @@
-"""Dataset 租户隔离单元测试"""
+"""
+Dataset 租户隔离单元测试
+
+使用依赖注入模式，session 直接传入 Service 方法。
+"""
 
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -18,10 +22,7 @@ class TestDatasetTenantIsolation:
         tenant_id = "tenant-123"
 
         mock_session = AsyncMock()
-        mock_session.commit = AsyncMock()
-        mock_session.rollback = AsyncMock()
-        mock_session.__aenter__ = AsyncMock(return_value=mock_session)
-        mock_session.__aexit__ = AsyncMock(return_value=None)
+        mock_session.flush = AsyncMock()
 
         mock_dataset = MagicMock()
         mock_dataset.id = "dataset-001"
@@ -29,15 +30,11 @@ class TestDatasetTenantIsolation:
         mock_dataset.tenant_id = tenant_id
 
         # Act: 创建时应该自动注入 tenant_id
-        with patch("demo.services.dataset.async_session") as mock_factory:
-            mock_factory.return_value.__aenter__ = AsyncMock(return_value=mock_session)
-            mock_factory.return_value.__aexit__ = AsyncMock(return_value=None)
-
-            with patch("demo.services.dataset.Dataset.create", return_value=mock_dataset) as mock_create:
-                with patch("demo.services.dataset.get_tenant_id", return_value=tenant_id):
-                    service = DatasetService()
-                    data = DatasetCreate(name="测试知识库", description="描述")
-                    result = await service.create_dataset(data)
+        with patch("demo.services.dataset.Dataset.create", return_value=mock_dataset) as mock_create:
+            with patch("demo.services.dataset.get_tenant_id", return_value=tenant_id):
+                service = DatasetService()
+                data = DatasetCreate(name="测试知识库", description="描述")
+                result = await service.create_dataset(mock_session, data)
 
         # Assert: Dataset.create 应该被调用时包含 tenant_id
         mock_create.assert_called_once()
@@ -62,16 +59,10 @@ class TestDatasetTenantIsolation:
         mock_datasets_result.scalars.return_value.all.return_value = [mock_dataset]
 
         mock_session.execute.side_effect = [mock_count_result, mock_datasets_result]
-        mock_session.__aenter__ = AsyncMock(return_value=mock_session)
-        mock_session.__aexit__ = AsyncMock(return_value=None)
 
-        with patch("demo.services.dataset.async_session") as mock_factory:
-            mock_factory.return_value.__aenter__ = AsyncMock(return_value=mock_session)
-            mock_factory.return_value.__aexit__ = AsyncMock(return_value=None)
-
-            with patch("demo.services.dataset.get_tenant_id", return_value=tenant_id):
-                service = DatasetService()
-                total, datasets = await service.list_datasets(page=1, page_size=10)
+        with patch("demo.services.dataset.get_tenant_id", return_value=tenant_id):
+            service = DatasetService()
+            total, datasets = await service.list_datasets(mock_session, page=1, page_size=10)
 
         # Assert: 结果应该只包含当前租户的数据
         assert total == 1
@@ -87,17 +78,11 @@ class TestDatasetTenantIsolation:
         other_tenant_dataset.tenant_id = "tenant-B"
 
         mock_session = AsyncMock()
-        mock_session.__aenter__ = AsyncMock(return_value=mock_session)
-        mock_session.__aexit__ = AsyncMock(return_value=None)
 
-        with patch("demo.services.dataset.async_session") as mock_factory:
-            mock_factory.return_value.__aenter__ = AsyncMock(return_value=mock_session)
-            mock_factory.return_value.__aexit__ = AsyncMock(return_value=None)
-
-            with patch("demo.services.dataset.Dataset.one_by_id", return_value=other_tenant_dataset):
-                with patch("demo.services.dataset.get_tenant_id", return_value=tenant_id):
-                    service = DatasetService()
-                    result = await service.get_dataset("dataset-B")
+        with patch("demo.services.dataset.Dataset.one_by_id", return_value=other_tenant_dataset):
+            with patch("demo.services.dataset.get_tenant_id", return_value=tenant_id):
+                service = DatasetService()
+                result = await service.get_dataset(mock_session, "dataset-B")
 
         assert result is None
 
@@ -111,19 +96,12 @@ class TestDatasetTenantIsolation:
         other_tenant_dataset.update = AsyncMock()
 
         mock_session = AsyncMock()
-        mock_session.commit = AsyncMock()
-        mock_session.rollback = AsyncMock()
-        mock_session.__aenter__ = AsyncMock(return_value=mock_session)
-        mock_session.__aexit__ = AsyncMock(return_value=None)
+        mock_session.flush = AsyncMock()
 
-        with patch("demo.services.dataset.async_session") as mock_factory:
-            mock_factory.return_value.__aenter__ = AsyncMock(return_value=mock_session)
-            mock_factory.return_value.__aexit__ = AsyncMock(return_value=None)
-
-            with patch("demo.services.dataset.Dataset.one_by_id", return_value=other_tenant_dataset):
-                with patch("demo.services.dataset.get_tenant_id", return_value=tenant_id):
-                    service = DatasetService()
-                    result = await service.update_dataset("dataset-B", DatasetUpdate(name="新名称"))
+        with patch("demo.services.dataset.Dataset.one_by_id", return_value=other_tenant_dataset):
+            with patch("demo.services.dataset.get_tenant_id", return_value=tenant_id):
+                service = DatasetService()
+                result = await service.update_dataset(mock_session, "dataset-B", DatasetUpdate(name="新名称"))
 
         assert result is None
         other_tenant_dataset.update.assert_not_called()
@@ -138,19 +116,12 @@ class TestDatasetTenantIsolation:
 
         mock_session = AsyncMock()
         mock_session.delete = AsyncMock()
-        mock_session.commit = AsyncMock()
-        mock_session.rollback = AsyncMock()
-        mock_session.__aenter__ = AsyncMock(return_value=mock_session)
-        mock_session.__aexit__ = AsyncMock(return_value=None)
+        mock_session.flush = AsyncMock()
 
-        with patch("demo.services.dataset.async_session") as mock_factory:
-            mock_factory.return_value.__aenter__ = AsyncMock(return_value=mock_session)
-            mock_factory.return_value.__aexit__ = AsyncMock(return_value=None)
-
-            with patch("demo.services.dataset.Dataset.one_by_id", return_value=other_tenant_dataset):
-                with patch("demo.services.dataset.get_tenant_id", return_value=tenant_id):
-                    service = DatasetService()
-                    result = await service.delete_dataset("dataset-B")
+        with patch("demo.services.dataset.Dataset.one_by_id", return_value=other_tenant_dataset):
+            with patch("demo.services.dataset.get_tenant_id", return_value=tenant_id):
+                service = DatasetService()
+                result = await service.delete_dataset(mock_session, "dataset-B")
 
         assert result is False
         mock_session.delete.assert_not_called()

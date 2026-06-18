@@ -4,18 +4,22 @@
 提供权限查询接口。
 """
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from fastapi.responses import ORJSONResponse
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from framework.database.dependencies import get_db_session
 from iam.services import permission_service
 
 router = APIRouter()
 
 
 @router.get("/permissions")
-async def list_permissions() -> ORJSONResponse:
+async def list_permissions(
+    session: AsyncSession = Depends(get_db_session),
+) -> ORJSONResponse:
     """获取所有权限列表"""
-    permissions = await permission_service.get_all_permissions()
+    permissions = await permission_service.get_all_permissions(session)
     return ORJSONResponse(
         content={
             "code": 200,
@@ -36,9 +40,11 @@ async def list_permissions() -> ORJSONResponse:
 
 
 @router.get("/permissions/grouped")
-async def get_permissions_grouped() -> ORJSONResponse:
+async def get_permissions_grouped(
+    session: AsyncSession = Depends(get_db_session),
+) -> ORJSONResponse:
     """获取按资源分组的权限"""
-    grouped = await permission_service.get_permissions_grouped()
+    grouped = await permission_service.get_permissions_grouped(session)
     return ORJSONResponse(
         content={
             "code": 200,

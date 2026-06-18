@@ -9,7 +9,6 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from framework.clients.iam_client import get_iam_client
-from framework.database.core.engine import async_session
 from framework.events import ModuleAssigned, ModuleUnassigned, event_publisher
 from tenant.models import Module, ModuleRole, TenantModule
 
@@ -21,6 +20,7 @@ class TenantModuleService:
 
     @staticmethod
     async def list_tenant_modules(
+        session: AsyncSession,
         tenant_id: str,
         page: int = 1,
         page_size: int = 20,
@@ -29,6 +29,7 @@ class TenantModuleService:
         查询租户已分配的模块列表
 
         Args:
+            session: 数据库会话
             tenant_id: 租户 ID
             page: 页码
             page_size: 每页数量
@@ -36,49 +37,49 @@ class TenantModuleService:
         Returns:
             (租户模块列表, 总数)
         """
-        async with async_session() as session:
-            # 查询总数
-            count_stmt = select(func.count(TenantModule.id)).where(
-                TenantModule.tenant_id == tenant_id
-            )
-            total_result = await session.execute(count_stmt)
-            total = total_result.scalar() or 0
+        # 查询总数
+        count_stmt = select(func.count(TenantModule.id)).where(
+            TenantModule.tenant_id == tenant_id
+        )
+        total_result = await session.execute(count_stmt)
+        total = total_result.scalar() or 0
 
-            # 查询列表
-            stmt = (
-                select(TenantModule)
-                .where(TenantModule.tenant_id == tenant_id)
-                .order_by(TenantModule.created_at.desc())
-                .offset((page - 1) * page_size)
-                .limit(page_size)
-            )
-            result = await session.execute(stmt)
-            tenant_modules = list(result.scalars().all())
+        # 查询列表
+        stmt = (
+            select(TenantModule)
+            .where(TenantModule.tenant_id == tenant_id)
+            .order_by(TenantModule.created_at.desc())
+            .offset((page - 1) * page_size)
+            .limit(page_size)
+        )
+        result = await session.execute(stmt)
+        tenant_modules = list(result.scalars().all())
 
-            return tenant_modules, total
+        return tenant_modules, total
 
     @staticmethod
-    async def get_tenant_module(tenant_id: str, module_id: str) -> TenantModule | None:
+    async def get_tenant_module(session: AsyncSession, tenant_id: str, module_id: str) -> TenantModule | None:
         """
         获取租户模块分配记录
 
         Args:
+            session: 数据库会话
             tenant_id: 租户 ID
             module_id: 模块 ID
 
         Returns:
             TenantModule | None
         """
-        async with async_session() as session:
-            stmt = select(TenantModule).where(
-                TenantModule.tenant_id == tenant_id,
-                TenantModule.module_id == module_id,
-            )
-            result = await session.execute(stmt)
-            return result.scalar_one_or_none()
+        stmt = select(TenantModule).where(
+            TenantModule.tenant_id == tenant_id,
+            TenantModule.module_id == module_id,
+        )
+        result = await session.execute(stmt)
+        return result.scalar_one_or_none()
 
     @staticmethod
     async def assign_module(
+        session: AsyncSession,
         tenant_id: str,
         module_id: str,
         started_at: datetime,
@@ -95,6 +96,7 @@ class TenantModuleService:
         5. 发布 ModuleAssigned 事件
 
         Args:
+            session: 数据库会话
             tenant_id: 租户 ID
             module_id: 模块 ID
             started_at: 生效时间
@@ -106,59 +108,58 @@ class TenantModuleService:
         Raises:
             ValueError: 业务校验失败
         """
-        async with async_session() as session:
-            # 1. 校验模块存在且已启用
-            module_stmt = select(Module).where(Module.id == module_id)
-            module_result = await session.execute(module_stmt)
-            module = module_result.scalar_one_or_none()
+        # 1. 校验模块存在且已启用
+        module_stmt = select(Module).where(Module.id == module_id)
+        module_result = await session.execute(module_stmt)
+        module = module_result.scalar_one_or_none()
 
-            if not module:
-                raise ValueError(f"模块不存在: {module_id}")
+        if not module:
+            raise ValueError(f"模块不存在: {module_id}")
 
-            if not module.is_active:
-                raise ValueError(f"模块未启用: {module.code}")
+        if not module.is_active:
+            raise ValueError(f"模块未启用: {module.code}")
 
-            # 2. 校验租户未已分配该模块
-            existing_stmt = select(TenantModule).where(
-                TenantModule.tenant_id == tenant_id,
-                TenantModule.module_id == module_id,
-            )
-            existing_result = await session.execute(existing_stmt)
-            existing = existing_result.scalar_one_or_none()
+        # 2. 校验租户未已分配该模块
+        existing_stmt = select(TenantModule).where(
+            TenantModule.tenant_id == tenant_id,
+            TenantModule.module_id == module_id,
+        )
+        existing_result = await session.execute(existing_stmt)
+        existing = existing_result.scalar_one_or_none()
 
-            if existing:
-                raise ValueError(f"租户已分配该模块: {module.code}")
+        if existing:
+            raise ValueError(f"租户已分配该模块: {module.code}")
 
-            # 3. 如果模块 is_need=true，不允许设置过期时间
-            if module.is_need and expired_at is not None:
-                raise ValueError(f"必须模块（{module.code}）不允许设置过期时间")
+        # 3. 如果模块 is_need=true，不允许设置过期时间
+        if module.is_need and expired_at is not None:
+            raise ValueError(f"必须模块（{module.code}）不允许设置过期时间")
 
-            # 4. 创建 TenantModule 记录
-            tenant_module = TenantModule(
-                tenant_id=tenant_id,
-                module_id=module_id,
-                started_at=started_at,
-                expired_at=expired_at,
-                is_active=True,
-            )
-            session.add(tenant_module)
-            await session.commit()
-            await session.refresh(tenant_module)
+        # 4. 创建 TenantModule 记录
+        tenant_module = TenantModule(
+            tenant_id=tenant_id,
+            module_id=module_id,
+            started_at=started_at,
+            expired_at=expired_at,
+            is_active=True,
+        )
+        session.add(tenant_module)
+        await session.flush()
+        await session.refresh(tenant_module)
 
-            _logger.info(
-                f"租户 {tenant_id} 分配模块 {module.code}，"
-                f"生效时间: {started_at}，过期时间: {expired_at or '无'}"
-            )
+        _logger.info(
+            f"租户 {tenant_id} 分配模块 {module.code}，"
+            f"生效时间: {started_at}，过期时间: {expired_at or '无'}"
+        )
 
-            # 5. 发布 ModuleAssigned 事件
-            await event_publisher.publish(
-                ModuleAssigned(tenant_id=tenant_id, module_id=module_id)
-            )
+        # 5. 发布 ModuleAssigned 事件
+        await event_publisher.publish(
+            ModuleAssigned(tenant_id=tenant_id, module_id=module_id)
+        )
 
-            return tenant_module
+        return tenant_module
 
     @staticmethod
-    async def unassign_module(tenant_id: str, module_id: str) -> bool:
+    async def unassign_module(session: AsyncSession, tenant_id: str, module_id: str) -> bool:
         """
         取消租户的模块分配
 
@@ -170,6 +171,7 @@ class TenantModuleService:
         5. 发布 ModuleUnassigned 事件
 
         Args:
+            session: 数据库会话
             tenant_id: 租户 ID
             module_id: 模块 ID
 
@@ -179,47 +181,46 @@ class TenantModuleService:
         Raises:
             ValueError: 业务校验失败
         """
-        async with async_session() as session:
-            # 查询模块信息
-            module_stmt = select(Module).where(Module.id == module_id)
-            module_result = await session.execute(module_stmt)
-            module = module_result.scalar_one_or_none()
+        # 查询模块信息
+        module_stmt = select(Module).where(Module.id == module_id)
+        module_result = await session.execute(module_stmt)
+        module = module_result.scalar_one_or_none()
 
-            if not module:
-                raise ValueError(f"模块不存在: {module_id}")
+        if not module:
+            raise ValueError(f"模块不存在: {module_id}")
 
-            # 1. 校验模块不是必须模块
-            if module.is_need:
-                raise ValueError(f"必须模块（{module.code}）禁止取消分配")
+        # 1. 校验模块不是必须模块
+        if module.is_need:
+            raise ValueError(f"必须模块（{module.code}）禁止取消分配")
 
-            # 查询租户模块分配记录
-            tm_stmt = select(TenantModule).where(
-                TenantModule.tenant_id == tenant_id,
-                TenantModule.module_id == module_id,
-            )
-            tm_result = await session.execute(tm_stmt)
-            tenant_module = tm_result.scalar_one_or_none()
+        # 查询租户模块分配记录
+        tm_stmt = select(TenantModule).where(
+            TenantModule.tenant_id == tenant_id,
+            TenantModule.module_id == module_id,
+        )
+        tm_result = await session.execute(tm_stmt)
+        tenant_module = tm_result.scalar_one_or_none()
 
-            if not tenant_module:
-                return False
+        if not tenant_module:
+            return False
 
-            # 2. 检查租户实例层是否有用户使用该模块的角色
-            await TenantModuleService._check_module_role_usage(
-                session, tenant_id, module_id, module.code
-            )
+        # 2. 检查租户实例层是否有用户使用该模块的角色
+        await TenantModuleService._check_module_role_usage(
+            session, tenant_id, module_id, module.code
+        )
 
-            # 4. 删除 TenantModule 记录
-            await session.delete(tenant_module)
-            await session.commit()
+        # 4. 删除 TenantModule 记录
+        await session.delete(tenant_module)
+        await session.flush()
 
-            _logger.info(f"租户 {tenant_id} 取消分配模块 {module.code}")
+        _logger.info(f"租户 {tenant_id} 取消分配模块 {module.code}")
 
-            # 5. 发布 ModuleUnassigned 事件
-            await event_publisher.publish(
-                ModuleUnassigned(tenant_id=tenant_id, module_id=module_id)
-            )
+        # 5. 发布 ModuleUnassigned 事件
+        await event_publisher.publish(
+            ModuleUnassigned(tenant_id=tenant_id, module_id=module_id)
+        )
 
-            return True
+        return True
 
     @staticmethod
     async def _check_module_role_usage(
@@ -268,25 +269,25 @@ class TenantModuleService:
             )
 
     @staticmethod
-    async def get_module_with_info(tenant_module: TenantModule) -> dict:
+    async def get_module_with_info(session: AsyncSession, tenant_module: TenantModule) -> dict:
         """
         获取租户模块的完整信息（包含模块详情）
 
         Args:
+            session: 数据库会话
             tenant_module: 租户模块分配记录
 
         Returns:
             dict: 包含 tenant_module 和 module 信息的字典
         """
-        async with async_session() as session:
-            stmt = select(Module).where(Module.id == tenant_module.module_id)
-            result = await session.execute(stmt)
-            module = result.scalar_one_or_none()
+        stmt = select(Module).where(Module.id == tenant_module.module_id)
+        result = await session.execute(stmt)
+        module = result.scalar_one_or_none()
 
-            return {
-                "tenant_module": tenant_module,
-                "module": module,
-            }
+        return {
+            "tenant_module": tenant_module,
+            "module": module,
+        }
 
 
 # 单例实例

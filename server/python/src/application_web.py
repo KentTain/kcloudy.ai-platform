@@ -16,6 +16,7 @@ from framework.common.time import ChinaTimeZone
 from framework.database.core.engine import setup_engine
 from framework.middlewares.test_user_middleware import TestUserMiddleware
 from framework.module import get_registry, load_modules
+from framework.database.dependencies import get_task_session
 from framework.module.sync_service import ModuleDefinitionSyncService
 from framework.tenant.middleware import TenantMiddleware
 from framework.tenant.protocols import register_module_auto_assigner, register_tenant_provider, register_tenant_role_creator
@@ -128,7 +129,8 @@ async def _run_module_definition_sync(phase) -> None:
     sync_service = ModuleDefinitionSyncService()
 
     try:
-        await sync_service.sync_all_modules()
+        async with get_task_session() as session:
+            await sync_service.sync_all_modules(session)
         write_success("模块定义同步完成")
         phase.details["同步状态"] = "成功"
     except Exception as e:

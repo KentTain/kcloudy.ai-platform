@@ -15,13 +15,13 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from framework.core.constants import DEFAULT_SORT, TREE_SORTS_LENGTH, DEFAULT_TREE_ROOT_ID
-from framework.database.core.engine import async_session
+from framework.database.dependencies import get_task_session
 from iam.models import Department
 
 
 async def seed_tree_fields():
     """填充部门树字段"""
-    async with async_session() as session:
+    async with get_task_session() as session:
         # 查询所有部门
         stmt = select(Department).order_by(Department.sort_order)
         result = await session.execute(stmt)

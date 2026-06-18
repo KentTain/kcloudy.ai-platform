@@ -4,12 +4,15 @@ Tenant 模块内部接口控制器
 提供模块间内部调用接口，不对外暴露。
 """
 
+import asyncio
 from typing import Any
 
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import ORJSONResponse
 from pydantic import BaseModel, Field
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from framework.database.dependencies import get_db_session
 from framework.tenant.context import SimpleTenant
 from tenant.models import Tenant, TenantStatus
 from tenant.services.tenant_service import TenantService
@@ -262,7 +265,10 @@ async def health_check() -> ORJSONResponse:
 
 
 @router.get("/tenants/{tenant_id}")
-async def get_tenant(tenant_id: str) -> ORJSONResponse:
+async def get_tenant(
+    tenant_id: str,
+    session: AsyncSession = Depends(get_db_session),
+) -> ORJSONResponse:
     """
     获取单个租户（含完整资源配置）
 
@@ -277,7 +283,7 @@ async def get_tenant(tenant_id: str) -> ORJSONResponse:
     THEN 返回 HTTP 404
     AND 响应体包含错误信息
     """
-    simple_tenant = await TenantService.get_by_id(tenant_id, use_cache=True)
+    simple_tenant = await TenantService.get_by_id(session, tenant_id, use_cache=True)
 
     if not simple_tenant:
         raise HTTPException(status_code=404, detail=f"租户 {tenant_id} 不存在")
@@ -288,7 +294,10 @@ async def get_tenant(tenant_id: str) -> ORJSONResponse:
 
 
 @router.get("/tenants/{tenant_id}/basic")
-async def get_tenant_basic(tenant_id: str) -> ORJSONResponse:
+async def get_tenant_basic(
+    tenant_id: str,
+    session: AsyncSession = Depends(get_db_session),
+) -> ORJSONResponse:
     """
     获取租户基础信息（不含资源配置详情）
 
@@ -296,7 +305,7 @@ async def get_tenant_basic(tenant_id: str) -> ORJSONResponse:
     WHEN 请求 GET /tenant/inner/v1/tenants/{tenant_id}/basic
     THEN 返回租户基础信息和资源配置 ID
     """
-    tenant = await TenantService.get_resource_bindings(tenant_id)
+    tenant = await TenantService.get_resource_bindings(session, tenant_id)
 
     if not tenant:
         raise HTTPException(status_code=404, detail=f"租户 {tenant_id} 不存在")
@@ -307,7 +316,10 @@ async def get_tenant_basic(tenant_id: str) -> ORJSONResponse:
 
 
 @router.post("/tenants/batch")
-async def get_tenants_batch(data: BatchTenantsRequest) -> ORJSONResponse:
+async def get_tenants_batch(
+    data: BatchTenantsRequest,
+    session: AsyncSession = Depends(get_db_session),
+) -> ORJSONResponse:
     """
     批量获取租户
 
@@ -317,7 +329,7 @@ async def get_tenants_batch(data: BatchTenantsRequest) -> ORJSONResponse:
     THEN 返回多个租户的信息列表
     AND 返回顺序与请求顺序一致
     """
-    tenants = await TenantService.get_tenants_batch(data.tenant_ids)
+    tenants = await TenantService.get_tenants_batch(session, data.tenant_ids)
 
     return ORJSONResponse(
         content=Success(
@@ -331,7 +343,10 @@ async def get_tenants_batch(data: BatchTenantsRequest) -> ORJSONResponse:
 
 
 @router.post("/tenants/batch-full")
-async def get_tenants_batch_full(data: BatchTenantsRequest) -> ORJSONResponse:
+async def get_tenants_batch_full(
+    data: BatchTenantsRequest,
+    session: AsyncSession = Depends(get_db_session),
+) -> ORJSONResponse:
     """
     批量获取租户完整信息（含资源配置详情）
 
@@ -340,10 +355,9 @@ async def get_tenants_batch_full(data: BatchTenantsRequest) -> ORJSONResponse:
     WITH 请求体 {"tenant_ids": ["id1", "id2"]}
     THEN 返回多个租户的完整信息列表（含资源配置）
     """
-    import asyncio
-    tenants = await TenantService.get_tenants_batch(data.tenant_ids)
+    tenants = await TenantService.get_tenants_batch(session, data.tenant_ids)
     simple_tenants = await asyncio.gather(
-        *[TenantService.build_simple_tenant(t) for t in tenants if t is not None]
+        *[TenantService.build_simple_tenant(session, t) for t in tenants if t is not None]
     )
 
     return ORJSONResponse(
@@ -355,6 +369,7 @@ async def get_tenants_batch_full(data: BatchTenantsRequest) -> ORJSONResponse:
 async def validate_tenant_access(
     tenant_id: str,
     user_id: str,
+    session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """
     验证租户访问权限
@@ -363,7 +378,7 @@ async def validate_tenant_access(
     WHEN 请求 GET /tenant/inner/v1/tenants/{tenant_id}/validate?user_id={user_id}
     THEN 返回布尔值表示用户是否有权访问该租户
     """
-    simple_tenant = await TenantService.get_by_id(tenant_id)
+    simple_tenant = await TenantService.get_by_id(session, tenant_id)
     if not simple_tenant:
         return ORJSONResponse(
             content=Success(

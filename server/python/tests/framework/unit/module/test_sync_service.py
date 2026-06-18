@@ -143,11 +143,7 @@ class TestModuleDefinitionSyncService:
             orphan_role_result,  # query orphan roles
         ]
 
-        with patch('framework.module.sync_service.async_session') as mock_async_session:
-            mock_async_session.return_value.__aenter__ = AsyncMock(return_value=mock_session)
-            mock_async_session.return_value.__aexit__ = AsyncMock()
-
-            await sync_service.sync_module(sample_definition)
+        await sync_service.sync_module(mock_session, sample_definition)
 
         # 验证 commit 被调用
         mock_session.commit.assert_called_once()
@@ -163,12 +159,14 @@ class TestModuleDefinitionSyncService:
         mock_registry = MagicMock()
         mock_registry.get_all_modules.return_value = [mock_module]
 
+        mock_session = AsyncMock()
+
         with patch('framework.module.sync_service.get_registry', return_value=mock_registry), \
              patch.object(sync_service, 'sync_module', new_callable=AsyncMock) as mock_sync_module:
 
-            await sync_service.sync_all_modules()
+            await sync_service.sync_all_modules(mock_session)
 
-            mock_sync_module.assert_called_once_with(sample_definition)
+            mock_sync_module.assert_called_once_with(mock_session, sample_definition)
 
     @pytest.mark.asyncio
     async def test_sync_all_modules_skip_none_definition(self, sync_service):
@@ -180,10 +178,12 @@ class TestModuleDefinitionSyncService:
         mock_registry = MagicMock()
         mock_registry.get_all_modules.return_value = [mock_module]
 
+        mock_session = AsyncMock()
+
         with patch('framework.module.sync_service.get_registry', return_value=mock_registry), \
              patch.object(sync_service, 'sync_module', new_callable=AsyncMock) as mock_sync_module:
 
-            await sync_service.sync_all_modules()
+            await sync_service.sync_all_modules(mock_session)
 
             mock_sync_module.assert_not_called()
 
@@ -271,14 +271,9 @@ class TestModuleDefinitionSyncService:
             menu_result,  # insert menu
         ]
 
-        with patch('framework.module.sync_service.async_session') as mock_async_session:
-            mock_async_session.return_value.__aenter__ = AsyncMock(return_value=mock_session)
-            mock_async_session.return_value.__aexit__ = AsyncMock()
-
-            # 由于 sync_module 内部会调用多次 execute，这里只验证核心逻辑
-            # 直接测试 _sync_menus 方法
-            with pytest.raises(ValueError) as exc_info:
-                await sync_service._sync_menus(mock_session, "module-id-1", "test", definition.menus)
+        # 直接测试 _sync_menus 方法
+        with pytest.raises(ValueError) as exc_info:
+            await sync_service._sync_menus(mock_session, "module-id-1", "test", definition.menus)
 
         assert "父菜单" in str(exc_info.value) or "不存在" in str(exc_info.value)
 
@@ -493,15 +488,11 @@ class TestModuleDefinitionSyncService:
                 orphan_role_result,
             ]
 
-            with patch('framework.module.sync_service.async_session') as mock_async_session:
-                mock_async_session.return_value.__aenter__ = AsyncMock(return_value=mock_session)
-                mock_async_session.return_value.__aexit__ = AsyncMock()
-
-                # 应该不抛出异常
-                try:
-                    await sync_service.sync_module(sample_definition)
-                except Exception:
-                    pass  # mock 可能不完整，但不应崩溃
+            # 应该不抛出异常
+            try:
+                await sync_service.sync_module(mock_session, sample_definition)
+            except Exception:
+                pass  # mock 可能不完整，但不应崩溃
 
         # 验证幂等性：两次调用不会抛出异常
         # 这里主要验证代码可以重复执行

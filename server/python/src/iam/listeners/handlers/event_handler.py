@@ -9,8 +9,9 @@ import logging
 from typing import Any
 
 from framework.cache.redis_util import RedisUtil
-from framework.database.core.engine import async_session
+from framework.database.dependencies import get_listener_session
 from framework.events.base import EventStream
+from framework.tenant.context import TenantContext
 from iam.services.module_sync_service import module_sync_service
 
 _logger = logging.getLogger(__name__)
@@ -60,11 +61,14 @@ class ModuleAssignedHandler(BaseEventHandler):
 
             _logger.info(f"处理 ModuleAssigned 事件: tenant_id={tenant_id}, module_id={module_id}")
 
+            # 设置租户上下文
+            TenantContext.set_tenant_id(tenant_id)
+
             # 获取模块编码
             from tenant.models import Module
             from sqlalchemy import select
 
-            async with async_session() as session:
+            async with get_listener_session() as session:
                 module_stmt = select(Module).where(Module.id == module_id)
                 module_result = await session.execute(module_stmt)
                 module = module_result.scalar_one_or_none()
@@ -77,7 +81,6 @@ class ModuleAssignedHandler(BaseEventHandler):
                 await module_sync_service.sync_module_assigned(
                     session, tenant_id, module_id, module.code
                 )
-                await session.commit()
 
             _logger.info(f"ModuleAssigned 事件处理完成: tenant_id={tenant_id}, module_id={module_id}")
 
@@ -108,10 +111,12 @@ class ModuleUnassignedHandler(BaseEventHandler):
 
             _logger.info(f"处理 ModuleUnassigned 事件: tenant_id={tenant_id}, module_id={module_id}")
 
-            async with async_session() as session:
+            # 设置租户上下文
+            TenantContext.set_tenant_id(tenant_id)
+
+            async with get_listener_session() as session:
                 # 同步删除模块数据
                 await module_sync_service.sync_module_unassigned(session, tenant_id, module_id)
-                await session.commit()
 
             _logger.info(f"ModuleUnassigned 事件处理完成: tenant_id={tenant_id}, module_id={module_id}")
 
@@ -138,11 +143,10 @@ class ModuleMenuCreatedHandler(BaseEventHandler):
 
             _logger.info(f"处理 ModuleMenuCreated 事件: module_menu_id={module_menu_id}")
 
-            async with async_session() as session:
+            async with get_listener_session() as session:
                 await module_sync_service.sync_module_menu_created(
                     session, module_menu_id, module_id
                 )
-                await session.commit()
 
             _logger.info(f"ModuleMenuCreated 事件处理完成: module_menu_id={module_menu_id}")
 
@@ -169,11 +173,10 @@ class ModuleMenuUpdatedHandler(BaseEventHandler):
 
             _logger.info(f"处理 ModuleMenuUpdated 事件: module_menu_id={module_menu_id}")
 
-            async with async_session() as session:
+            async with get_listener_session() as session:
                 await module_sync_service.sync_module_menu_updated(
                     session, module_menu_id, module_id
                 )
-                await session.commit()
 
             _logger.info(f"ModuleMenuUpdated 事件处理完成: module_menu_id={module_menu_id}")
 
@@ -200,11 +203,10 @@ class ModuleMenuDeletedHandler(BaseEventHandler):
 
             _logger.info(f"处理 ModuleMenuDeleted 事件: menu_code={menu_code}")
 
-            async with async_session() as session:
+            async with get_listener_session() as session:
                 await module_sync_service.sync_module_menu_deleted(
                     session, module_id, menu_code
                 )
-                await session.commit()
 
             _logger.info(f"ModuleMenuDeleted 事件处理完成: menu_code={menu_code}")
 
@@ -231,11 +233,10 @@ class ModulePermissionCreatedHandler(BaseEventHandler):
 
             _logger.info(f"处理 ModulePermissionCreated 事件: module_permission_id={module_permission_id}")
 
-            async with async_session() as session:
+            async with get_listener_session() as session:
                 await module_sync_service.sync_module_permission_created(
                     session, module_permission_id, module_id
                 )
-                await session.commit()
 
             _logger.info(f"ModulePermissionCreated 事件处理完成: module_permission_id={module_permission_id}")
 
@@ -262,11 +263,10 @@ class ModulePermissionUpdatedHandler(BaseEventHandler):
 
             _logger.info(f"处理 ModulePermissionUpdated 事件: module_permission_id={module_permission_id}")
 
-            async with async_session() as session:
+            async with get_listener_session() as session:
                 await module_sync_service.sync_module_permission_updated(
                     session, module_permission_id, module_id
                 )
-                await session.commit()
 
             _logger.info(f"ModulePermissionUpdated 事件处理完成: module_permission_id={module_permission_id}")
 
@@ -293,11 +293,10 @@ class ModulePermissionDeletedHandler(BaseEventHandler):
 
             _logger.info(f"处理 ModulePermissionDeleted 事件: permission_code={permission_code}")
 
-            async with async_session() as session:
+            async with get_listener_session() as session:
                 await module_sync_service.sync_module_permission_deleted(
                     session, module_id, permission_code
                 )
-                await session.commit()
 
             _logger.info(f"ModulePermissionDeleted 事件处理完成: permission_code={permission_code}")
 
@@ -324,11 +323,10 @@ class ModuleRoleCreatedHandler(BaseEventHandler):
 
             _logger.info(f"处理 ModuleRoleCreated 事件: module_role_id={module_role_id}")
 
-            async with async_session() as session:
+            async with get_listener_session() as session:
                 await module_sync_service.sync_module_role_created(
                     session, module_role_id, module_id
                 )
-                await session.commit()
 
             _logger.info(f"ModuleRoleCreated 事件处理完成: module_role_id={module_role_id}")
 
@@ -355,11 +353,10 @@ class ModuleRoleUpdatedHandler(BaseEventHandler):
 
             _logger.info(f"处理 ModuleRoleUpdated 事件: module_role_id={module_role_id}")
 
-            async with async_session() as session:
+            async with get_listener_session() as session:
                 await module_sync_service.sync_module_role_updated(
                     session, module_role_id, module_id
                 )
-                await session.commit()
 
             _logger.info(f"ModuleRoleUpdated 事件处理完成: module_role_id={module_role_id}")
 
@@ -386,11 +383,10 @@ class ModuleRoleDeletedHandler(BaseEventHandler):
 
             _logger.info(f"处理 ModuleRoleDeleted 事件: role_code={role_code}")
 
-            async with async_session() as session:
+            async with get_listener_session() as session:
                 await module_sync_service.sync_module_role_deleted(
                     session, module_id, role_code
                 )
-                await session.commit()
 
             _logger.info(f"ModuleRoleDeleted 事件处理完成: role_code={role_code}")
 
@@ -417,11 +413,10 @@ class ModuleRolePermissionChangedHandler(BaseEventHandler):
 
             _logger.info(f"处理 ModuleRolePermissionChanged 事件: module_role_id={module_role_id}")
 
-            async with async_session() as session:
+            async with get_listener_session() as session:
                 await module_sync_service.sync_module_role_permission_changed(
                     session, module_role_id, module_id
                 )
-                await session.commit()
 
             _logger.info(f"ModuleRolePermissionChanged 事件处理完成: module_role_id={module_role_id}")
 

@@ -4,9 +4,11 @@ OAuth 控制器
 提供第三方 OAuth2 登录接口。
 """
 
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import ORJSONResponse, RedirectResponse
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from framework.database.dependencies import get_db_session
 from iam.dependencies import get_current_user_id
 from iam.schemas.oauth import OAuthCompleteProfileRequest
 from iam.services import auth_service, oauth_service, user_service
@@ -16,14 +18,18 @@ router = APIRouter()
 
 
 @router.get("/oauth/{provider}")
-async def get_oauth_authorize(provider: str, redirect_uri: str | None = None) -> ORJSONResponse:
+async def get_oauth_authorize(
+    provider: str,
+    redirect_uri: str | None = None,
+    session: AsyncSession = Depends(get_db_session),
+) -> ORJSONResponse:
     """
     获取 OAuth 授权链接
 
     返回第三方 OAuth2 授权页面 URL。
     """
     try:
-        result = await oauth_service.get_authorize_url(provider, redirect_uri)
+        result = await oauth_service.get_authorize_url(session, provider, redirect_uri)
         return ORJSONResponse(
             content={
                 "code": 200,
@@ -36,7 +42,12 @@ async def get_oauth_authorize(provider: str, redirect_uri: str | None = None) ->
 
 
 @router.get("/oauth/{provider}/callback")
-async def oauth_callback(provider: str, code: str, state: str) -> ORJSONResponse:
+async def oauth_callback(
+    provider: str,
+    code: str,
+    state: str,
+    session: AsyncSession = Depends(get_db_session),
+) -> ORJSONResponse:
     """
     OAuth 回调处理
 
@@ -44,6 +55,7 @@ async def oauth_callback(provider: str, code: str, state: str) -> ORJSONResponse
     """
     try:
         user, is_new = await oauth_service.handle_callback(
+            session,
             provider=provider,
             code=code,
             state=state,
@@ -53,6 +65,7 @@ async def oauth_callback(provider: str, code: str, state: str) -> ORJSONResponse
         from framework.utils.session import create_session
 
         session_id = await create_session(
+            session,
             user_id=user.id,
             tenant_id=None,
             ip=None,
@@ -96,6 +109,7 @@ async def oauth_callback(provider: str, code: str, state: str) -> ORJSONResponse
 async def complete_oauth_profile(
     data: OAuthCompleteProfileRequest,
     user_id: str = Depends(get_current_user_id),
+    session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """
     OAuth 用户补全信息
@@ -104,6 +118,7 @@ async def complete_oauth_profile(
     """
     try:
         user = await user_service.complete_profile(
+            session,
             user_id=user_id,
             password=data.password,
             email=data.email,

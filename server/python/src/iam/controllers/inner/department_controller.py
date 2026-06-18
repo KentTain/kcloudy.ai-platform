@@ -4,15 +4,16 @@ IAM 模块内部接口控制器 - 部门
 提供模块间内部调用接口，不对外暴露。
 """
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import ORJSONResponse
 from pydantic import BaseModel, Field
 from typing import Any
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from framework.database.dependencies import get_db_session
 from iam.models import Department
 from iam.services.department_service import DepartmentService
-from framework.database.core.engine import async_session
-from sqlalchemy import select
 
 router = APIRouter()
 
@@ -79,7 +80,9 @@ def build_department_tree(departments: list[Department]) -> list[DepartmentTreeR
 
 
 @router.get("/departments/tree")
-async def get_department_tree() -> ORJSONResponse:
+async def get_department_tree(
+    session: AsyncSession = Depends(get_db_session),
+) -> ORJSONResponse:
     """
     获取部门树
 
@@ -87,10 +90,9 @@ async def get_department_tree() -> ORJSONResponse:
     WHEN 请求 GET /inner/v1/departments/tree
     THEN 返回完整的部门树结构
     """
-    async with async_session() as session:
-        stmt = select(Department).order_by(Department.tree_sort)
-        result = await session.execute(stmt)
-        departments = list(result.scalars().all())
+    stmt = select(Department).order_by(Department.tree_sort)
+    result = await session.execute(stmt)
+    departments = list(result.scalars().all())
 
     tree = build_department_tree(departments)
 
@@ -98,7 +100,10 @@ async def get_department_tree() -> ORJSONResponse:
 
 
 @router.get("/departments/{department_id}")
-async def get_department(department_id: str) -> ORJSONResponse:
+async def get_department(
+    department_id: str,
+    session: AsyncSession = Depends(get_db_session),
+) -> ORJSONResponse:
     """
     获取单个部门
 
@@ -110,7 +115,7 @@ async def get_department(department_id: str) -> ORJSONResponse:
     WHEN 请求 GET /inner/v1/departments/nonexistent
     THEN 返回 HTTP 404
     """
-    dept = await DepartmentService.get_by_id(department_id)
+    dept = await DepartmentService.get_by_id(session, department_id)
 
     if not dept:
         raise HTTPException(status_code=404, detail=f"部门 {department_id} 不存在")

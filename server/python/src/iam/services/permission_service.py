@@ -9,10 +9,10 @@ from typing import Any
 
 from loguru import logger
 from sqlalchemy import func, select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from iam.models import Permission, Role, RolePermission, UserRole
 from framework.cache.redis_util import RedisUtil
-from framework.database.core.engine import async_session
 
 _logger = logger.bind(name=__name__)
 
@@ -25,29 +25,27 @@ class PermissionService:
     """权限管理服务"""
 
     @staticmethod
-    async def get_all_permissions() -> list[Permission]:
+    async def get_all_permissions(session: AsyncSession) -> list[Permission]:
         """获取所有权限"""
-        async with async_session() as session:
-            stmt = select(Permission).order_by(Permission.resource, Permission.action)
-            result = await session.execute(stmt)
-            return list(result.scalars().all())
+        stmt = select(Permission).order_by(Permission.resource, Permission.action)
+        result = await session.execute(stmt)
+        return list(result.scalars().all())
 
     @staticmethod
-    async def get_permissions_by_resource(resource: str) -> list[Permission]:
+    async def get_permissions_by_resource(session: AsyncSession, resource: str) -> list[Permission]:
         """获取指定资源的权限"""
-        async with async_session() as session:
-            stmt = (
-                select(Permission)
-                .where(Permission.resource == resource)
-                .order_by(Permission.action)
-            )
-            result = await session.execute(stmt)
-            return list(result.scalars().all())
+        stmt = (
+            select(Permission)
+            .where(Permission.resource == resource)
+            .order_by(Permission.action)
+        )
+        result = await session.execute(stmt)
+        return list(result.scalars().all())
 
     @staticmethod
-    async def get_permissions_grouped() -> dict[str, list[Permission]]:
+    async def get_permissions_grouped(session: AsyncSession) -> dict[str, list[Permission]]:
         """按资源分组获取权限"""
-        permissions = await PermissionService.get_all_permissions()
+        permissions = await PermissionService.get_all_permissions(session)
         grouped: dict[str, list[Permission]] = defaultdict(list)
         for perm in permissions:
             grouped[perm.resource].append(perm)
@@ -58,11 +56,12 @@ class PermissionCheckService:
     """权限检查服务"""
 
     @staticmethod
-    async def get_user_permissions(user_id: str, use_cache: bool = True) -> list[str]:
+    async def get_user_permissions(session: AsyncSession, user_id: str, use_cache: bool = True) -> list[str]:
         """
         获取用户的所有权限编码
 
         Args:
+            session: 数据库会话
             user_id: 用户 ID
             use_cache: 是否使用缓存
 
@@ -81,16 +80,15 @@ class PermissionCheckService:
                 _logger.debug(f"Redis 缓存读取失败，降级到数据库查询: {e}")
 
         # 从数据库查询
-        async with async_session() as session:
-            stmt = (
-                select(Permission.code)
-                .distinct()
-                .join(RolePermission, Permission.id == RolePermission.permission_id)
-                .join(UserRole, RolePermission.role_id == UserRole.role_id)
-                .where(UserRole.user_id == user_id)
-            )
-            result = await session.execute(stmt)
-            permissions = [row for row in result.scalars().all()]
+        stmt = (
+            select(Permission.code)
+            .distinct()
+            .join(RolePermission, Permission.id == RolePermission.permission_id)
+            .join(UserRole, RolePermission.role_id == UserRole.role_id)
+            .where(UserRole.user_id == user_id)
+        )
+        result = await session.execute(stmt)
+        permissions = [row for row in result.scalars().all()]
 
         # 写入缓存
         if use_cache and RedisUtil.is_initialized():
@@ -108,7 +106,7 @@ class PermissionCheckService:
         return permissions
 
     @staticmethod
-    async def has_permission(user_id: str, permission_code: str) -> bool:
+    async def has_permission(session: AsyncSession, user_id: str, permission_code: str) -> bool:
         """
         检查用户是否拥有指定权限
 
@@ -117,13 +115,14 @@ class PermissionCheckService:
         - * 匹配所有权限
 
         Args:
+            session: 数据库会话
             user_id: 用户 ID
             permission_code: 权限编码
 
         Returns:
             bool: 是否拥有权限
         """
-        permissions = await PermissionCheckService.get_user_permissions(user_id)
+        permissions = await PermissionCheckService.get_user_permissions(session, user_id)
 
         # 检查完全匹配
         if permission_code in permissions:
@@ -142,11 +141,12 @@ class PermissionCheckService:
         return False
 
     @staticmethod
-    async def has_any_permission(user_id: str, permission_codes: list[str]) -> bool:
+    async def has_any_permission(session: AsyncSession, user_id: str, permission_codes: list[str]) -> bool:
         """
         检查用户是否拥有任一权限
 
         Args:
+            session: 数据库会话
             user_id: 用户 ID
             permission_codes: 权限编码列表
 
@@ -154,16 +154,17 @@ class PermissionCheckService:
             bool: 是否拥有任一权限
         """
         for code in permission_codes:
-            if await PermissionCheckService.has_permission(user_id, code):
+            if await PermissionCheckService.has_permission(session, user_id, code):
                 return True
         return False
 
     @staticmethod
-    async def has_all_permissions(user_id: str, permission_codes: list[str]) -> bool:
+    async def has_all_permissions(session: AsyncSession, user_id: str, permission_codes: list[str]) -> bool:
         """
         检查用户是否拥有所有权限
 
         Args:
+            session: 数据库会话
             user_id: 用户 ID
             permission_codes: 权限编码列表
 
@@ -171,7 +172,7 @@ class PermissionCheckService:
             bool: 是否拥有所有权限
         """
         for code in permission_codes:
-            if not await PermissionCheckService.has_permission(user_id, code):
+            if not await PermissionCheckService.has_permission(session, user_id, code):
                 return False
         return True
 
@@ -195,23 +196,23 @@ class PermissionCheckService:
             _logger.debug(f"权限缓存清除失败: {e}")
 
     @staticmethod
-    async def invalidate_tenant_permission_cache(tenant_id: str) -> None:
+    async def invalidate_tenant_permission_cache(session: AsyncSession, tenant_id: str) -> None:
         """
         使租户内所有用户的权限缓存失效
 
         在租户角色变更时调用。
 
         Args:
+            session: 数据库会话
             tenant_id: 租户 ID
         """
         if not RedisUtil.is_initialized():
             return
         # 查找租户内所有用户
         from iam.models import UserTenant
-        async with async_session() as session:
-            stmt = select(UserTenant.user_id).where(UserTenant.tenant_id == tenant_id)
-            result = await session.execute(stmt)
-            user_ids = [row for row in result.scalars().all()]
+        stmt = select(UserTenant.user_id).where(UserTenant.tenant_id == tenant_id)
+        result = await session.execute(stmt)
+        user_ids = [row for row in result.scalars().all()]
 
         # 批量清除缓存
         for user_id in user_ids:

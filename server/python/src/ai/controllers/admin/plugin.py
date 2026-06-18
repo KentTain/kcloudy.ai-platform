@@ -8,6 +8,7 @@ from typing import Any
 
 from fastapi import (
     APIRouter,
+    Depends,
     File,
     Form,
     HTTPException,
@@ -18,7 +19,9 @@ from fastapi import (
 )
 from fastapi.responses import ORJSONResponse, StreamingResponse
 from loguru import logger
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from framework.database.dependencies import get_db_session
 from ai.schemas import (
     GetPluginInfoSuccessRespModel,
     GetPluginListSuccessRespModel,
@@ -57,6 +60,7 @@ async def get_plugin_list(
     plugin_type: str | None = Query(None, description="插件类型过滤"),
     limit: int = Query(50, ge=1, le=2000, description="每页数量"),
     offset: int = Query(0, ge=0, description="偏移量"),
+    session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """
     获取插件列表
@@ -67,6 +71,7 @@ async def get_plugin_list(
     """
     try:
         result = await plugin_management_service.get_plugin_list(
+            session,
             status=status,
             plugin_id=plugin_id,
             plugin_type=plugin_type,
@@ -94,6 +99,7 @@ async def upload_plugin(
     plugin_file: UploadFile = File(..., description="插件包文件(.zip格式)"),
     auto_start: bool = Form(True, description="是否自动启动插件"),
     install_config: str | None = Form(default="{}", description="安装配置(JSON字符串)"),
+    session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """
     上传安装插件
@@ -129,6 +135,7 @@ async def upload_plugin(
 
         # 执行安装
         result = await plugin_management_service.install_plugin(
+            session,
             plugin_package=plugin_package,
             auto_start=auto_start,
             install_config=config,
@@ -156,6 +163,7 @@ async def upload_plugin(
 )
 async def start_plugin(
     plugin_id: str = Path(..., description="插件ID"),
+    session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """
     启动插件
@@ -165,7 +173,7 @@ async def start_plugin(
     THEN 启动指定插件并返回结果
     """
     try:
-        result = await plugin_management_service.start_plugin(plugin_id)
+        result = await plugin_management_service.start_plugin(session, plugin_id)
         return ORJSONResponse(content=Success(data=result.model_dump()))
     except Exception as e:
         _logger.exception(f"插件启动失败: {plugin_id}")
@@ -185,6 +193,7 @@ async def start_plugin(
 )
 async def stop_plugin(
     plugin_id: str = Path(..., description="插件ID"),
+    session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """
     停止插件
@@ -194,7 +203,7 @@ async def stop_plugin(
     THEN 停止指定插件并返回结果
     """
     try:
-        result = await plugin_management_service.stop_plugin(plugin_id)
+        result = await plugin_management_service.stop_plugin(session, plugin_id)
         return ORJSONResponse(content=Success(data=result.model_dump()))
     except Exception as e:
         _logger.exception(f"插件停止失败: {plugin_id}")
@@ -219,6 +228,7 @@ async def upgrade_plugin(
         None, description="是否自动启动插件（默认沿用原设置）"
     ),
     install_config: str = Form(default="{}", description="安装配置(JSON字符串)"),
+    session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """
     升级插件
@@ -250,6 +260,7 @@ async def upgrade_plugin(
 
         # 执行升级
         result = await plugin_management_service.install_plugin(
+            session,
             plugin_package=plugin_package,
             auto_start=auto_start if auto_start is not None else True,
             install_config=config,
@@ -276,6 +287,7 @@ async def upgrade_plugin(
 )
 async def uninstall_plugin(
     plugin_id: str = Path(..., description="插件ID"),
+    session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """
     卸载插件
@@ -287,7 +299,7 @@ async def uninstall_plugin(
     注意：此操作将完全移除插件，包括其所有数据和配置
     """
     try:
-        result = await plugin_management_service.uninstall_plugin(plugin_id)
+        result = await plugin_management_service.uninstall_plugin(session, plugin_id)
         return ORJSONResponse(content=Success(data=result.model_dump()))
     except HTTPException:
         raise
@@ -309,6 +321,7 @@ async def uninstall_plugin(
 async def invoke_plugin(
     request: PluginInvokeRequest,
     plugin_id: str = Path(..., description="插件ID"),
+    session: AsyncSession = Depends(get_db_session),
 ):
     """
     调用插件方法
@@ -325,6 +338,7 @@ async def invoke_plugin(
     async def generate():
         try:
             result = plugin_management_service.invoke_plugin_stream(
+                session,
                 plugin_id=plugin_id,
                 parameters=request.parameters,
                 timeout=request.timeout,
@@ -366,6 +380,7 @@ async def invoke_plugin(
 async def get_plugin_asset(
     plugin_id: str = Path(..., description="插件ID"),
     asset_path: str = Path(..., description="资源文件相对路径"),
+    session: AsyncSession = Depends(get_db_session),
 ) -> Response:
     """
     获取插件资源文件内容
@@ -383,7 +398,7 @@ async def get_plugin_asset(
     try:
         # 通过service层获取插件资源文件内容
         content = await plugin_management_service.get_plugin_asset(
-            plugin_id, asset_path
+            session, plugin_id, asset_path
         )
 
         if content is None:
@@ -439,6 +454,7 @@ async def get_plugin_asset(
 )
 async def get_plugin_info(
     plugin_id: str = Path(..., description="插件ID"),
+    session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """
     获取插件详细信息
@@ -448,7 +464,7 @@ async def get_plugin_info(
     THEN 返回插件详细信息
     """
     try:
-        result = await plugin_management_service.get_plugin_info(plugin_id)
+        result = await plugin_management_service.get_plugin_info(session, plugin_id)
         return ORJSONResponse(content=Success(data=result.model_dump()))
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))

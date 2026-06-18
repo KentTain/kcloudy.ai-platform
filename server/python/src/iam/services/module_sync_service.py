@@ -10,7 +10,6 @@ from collections import defaultdict
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from framework.database.core.engine import async_session
 from iam.models import Menu, MenuPermission, Permission, Role, RolePermission
 from iam.services.permission_service import PermissionCheckService
 

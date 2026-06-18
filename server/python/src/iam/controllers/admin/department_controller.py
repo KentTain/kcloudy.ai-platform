@@ -4,9 +4,12 @@
 提供部门管理接口。
 """
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import ORJSONResponse
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from framework.database.dependencies import get_db_session
+from framework.tenant.context import get_tenant_id
 from iam.schemas.department import (
     DepartmentCreate,
     DepartmentUpdate,
@@ -16,18 +19,19 @@ from iam.schemas.department import (
     MemberInfo,
 )
 from iam.services import department_service
-from framework.tenant.context import get_tenant_id
 
 router = APIRouter()
 
 
 @router.get("/departments")
-async def list_departments() -> ORJSONResponse:
+async def list_departments(
+    session: AsyncSession = Depends(get_db_session),
+) -> ORJSONResponse:
     """获取部门列表"""
     from iam.schemas.department import DepartmentListItem
 
     tenant_id = get_tenant_id()
-    departments = await department_service.list_by_tenant(tenant_id)
+    departments = await department_service.list_by_tenant(session, tenant_id)
     # 使用 Schema 转换方法，但保持原始数组格式
     items = [DepartmentListItem.from_department(d).model_dump() for d in departments]
     return ORJSONResponse(
@@ -40,10 +44,12 @@ async def list_departments() -> ORJSONResponse:
 
 
 @router.get("/departments/tree")
-async def get_department_tree() -> ORJSONResponse:
+async def get_department_tree(
+    session: AsyncSession = Depends(get_db_session),
+) -> ORJSONResponse:
     """获取部门树形结构"""
     tenant_id = get_tenant_id()
-    tree = await department_service.get_tree(tenant_id)
+    tree = await department_service.get_tree(session, tenant_id)
     return ORJSONResponse(
         content={
             "code": 200,
@@ -54,10 +60,14 @@ async def get_department_tree() -> ORJSONResponse:
 
 
 @router.post("/departments")
-async def create_department(data: DepartmentCreate) -> ORJSONResponse:
+async def create_department(
+    data: DepartmentCreate,
+    session: AsyncSession = Depends(get_db_session),
+) -> ORJSONResponse:
     """创建部门"""
     tenant_id = get_tenant_id()
     dept = await department_service.create(
+        session,
         tenant_id=tenant_id,
         name=data.name,
         parent_id=data.parent_id,
@@ -79,10 +89,15 @@ async def create_department(data: DepartmentCreate) -> ORJSONResponse:
 
 
 @router.put("/departments/{department_id}")
-async def update_department(department_id: str, data: DepartmentUpdate) -> ORJSONResponse:
+async def update_department(
+    department_id: str,
+    data: DepartmentUpdate,
+    session: AsyncSession = Depends(get_db_session),
+) -> ORJSONResponse:
     """更新部门"""
     try:
         dept = await department_service.update(
+            session,
             department_id=department_id,
             name=data.name,
             code=data.code,
@@ -105,10 +120,13 @@ async def update_department(department_id: str, data: DepartmentUpdate) -> ORJSO
 
 
 @router.delete("/departments/{department_id}")
-async def delete_department(department_id: str) -> ORJSONResponse:
+async def delete_department(
+    department_id: str,
+    session: AsyncSession = Depends(get_db_session),
+) -> ORJSONResponse:
     """删除部门"""
     try:
-        await department_service.delete(department_id)
+        await department_service.delete(session, department_id)
         return ORJSONResponse(
             content={
                 "code": 200,
@@ -121,9 +139,12 @@ async def delete_department(department_id: str) -> ORJSONResponse:
 
 
 @router.get("/departments/{department_id}/users")
-async def get_department_users(department_id: str) -> ORJSONResponse:
+async def get_department_users(
+    department_id: str,
+    session: AsyncSession = Depends(get_db_session),
+) -> ORJSONResponse:
     """获取部门用户列表"""
-    users = await department_service.get_department_users(department_id)
+    users = await department_service.get_department_users(session, department_id)
     return ORJSONResponse(
         content={
             "code": 200,
@@ -134,10 +155,15 @@ async def get_department_users(department_id: str) -> ORJSONResponse:
 
 
 @router.post("/departments/{department_id}/users")
-async def add_user_to_department(department_id: str, data: UserDepartmentRequest) -> ORJSONResponse:
+async def add_user_to_department(
+    department_id: str,
+    data: UserDepartmentRequest,
+    session: AsyncSession = Depends(get_db_session),
+) -> ORJSONResponse:
     """添加用户到部门"""
     try:
         await department_service.add_user(
+            session,
             department_id=department_id,
             user_id=data.user_id,
             is_leader=data.is_leader,
@@ -157,10 +183,12 @@ async def add_user_to_department(department_id: str, data: UserDepartmentRequest
 async def remove_user_from_department(
     department_id: str,
     user_id: str,
+    session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """从部门移除用户"""
     try:
         removed = await department_service.remove_user(
+            session,
             department_id=department_id,
             user_id=user_id,
         )

@@ -5,6 +5,7 @@ from enum import Enum
 from typing import Any
 
 from pydantic import BaseModel, Field
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from ai.components.plugin.engine.utils.logger import get_logger
 
@@ -217,7 +218,7 @@ class PluginWarmupManager:
 
         return frequency_score
 
-    async def warmup_plugin(self, plugin_id: str) -> SinglePluginWarmupResult:
+    async def warmup_plugin(self, session: AsyncSession, plugin_id: str) -> SinglePluginWarmupResult:
         """预热单个插件"""
         if plugin_id in self.warming_up_plugins:
             self.logger.warning(f"插件正在预热中: {plugin_id}")
@@ -241,7 +242,7 @@ class PluginWarmupManager:
             warmup_start_time = time.time()
 
             # 确保插件准备就绪（下载+启动）
-            success = await self.plugin_manager._ensure_plugin_ready(plugin_id)
+            success = await self.plugin_manager._ensure_plugin_ready(session, plugin_id)
 
             warmup_time = time.time() - warmup_start_time
 
@@ -279,7 +280,7 @@ class PluginWarmupManager:
         finally:
             self.warming_up_plugins.discard(plugin_id)
 
-    async def auto_warmup(self) -> WarmupExecutionResult:
+    async def auto_warmup(self, session: AsyncSession) -> WarmupExecutionResult:
         """自动预热插件"""
         if not self.warmup_config.enabled:
             return WarmupExecutionResult(status=WarmupStatus.DISABLED)
@@ -312,7 +313,7 @@ class PluginWarmupManager:
                     f"预热插件: {plugin_id} (评分: {candidate.frequency_score:.2f})"
                 )
 
-                result = await self.warmup_plugin(plugin_id)
+                result = await self.warmup_plugin(session, plugin_id)
                 if result.result == PluginWarmupResult.SUCCESS:
                     warmed_plugins.append(candidate)
                 else:
@@ -341,13 +342,13 @@ class PluginWarmupManager:
         )
         return result
 
-    async def startup_warmup(self) -> WarmupExecutionResult:
+    async def startup_warmup(self, session: AsyncSession) -> WarmupExecutionResult:
         """启动时预热"""
         if not self.warmup_config.warmup_on_startup:
             return WarmupExecutionResult(status=WarmupStatus.DISABLED)
 
         self.logger.info("执行启动时预热...")
-        return await self.auto_warmup()
+        return await self.auto_warmup(session)
 
     async def get_warmup_status(self) -> WarmupStatusInfo:
         """获取预热状态"""

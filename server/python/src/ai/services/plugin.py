@@ -10,10 +10,10 @@ from typing import Any
 
 from loguru import logger
 from sqlalchemy import and_, desc, select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from framework.common.ctx import get_tenant_id, get_user_id
 from framework.common.exceptions import BadRequestError
-from framework.database.core.engine import async_session
 
 from ai.models.plugin import (
     CredentialScope,
@@ -46,6 +46,7 @@ class PluginManagementService:
 
     async def get_plugin_list(
         self,
+        session: AsyncSession,
         status: str | None = None,
         plugin_id: str | None = None,
         plugin_type: str | None = None,
@@ -62,149 +63,158 @@ class PluginManagementService:
             f"plugin_id={plugin_id}, plugin_type={plugin_type}, limit={limit}, offset={offset}"
         )
 
-        async with async_session() as session:
-            # 构建查询条件
-            conditions = [PluginInstallation.tenant_id == tenant_id]
+        # 构建查询条件
+        conditions = [PluginInstallation.tenant_id == tenant_id]
 
-            if status:
-                conditions.append(PluginInstallation.status == PluginStatus(status))
+        if status:
+            conditions.append(PluginInstallation.status == PluginStatus(status))
 
-            if plugin_id:
-                conditions.append(PluginInstallation.plugin_id.ilike(f"%{plugin_id}%"))
+        if plugin_id:
+            conditions.append(PluginInstallation.plugin_id.ilike(f"%{plugin_id}%"))
 
-            if plugin_type:
-                conditions.append(PluginInstallation.plugin_type == PluginType(plugin_type))
+        if plugin_type:
+            conditions.append(PluginInstallation.plugin_type == PluginType(plugin_type))
 
-            # 查询插件列表
-            query = (
-                select(PluginInstallation)
-                .where(and_(*conditions))
-                .order_by(desc(PluginInstallation.created_at))
-            )
+        # 查询插件列表
+        query = (
+            select(PluginInstallation)
+            .where(and_(*conditions))
+            .order_by(desc(PluginInstallation.created_at))
+        )
 
-            # 计算总数
-            total_query = select(PluginInstallation).where(and_(*conditions))
-            total_result = await session.execute(total_query)
-            total = len(total_result.scalars().all())
+        # 计算总数
+        total_query = select(PluginInstallation).where(and_(*conditions))
+        total_result = await session.execute(total_query)
+        total = len(total_result.scalars().all())
 
-            # 分页查询
-            paged_query = query.limit(limit).offset(offset)
-            result = await session.execute(paged_query)
-            installations = result.scalars().all()
+        # 分页查询
+        paged_query = query.limit(limit).offset(offset)
+        result = await session.execute(paged_query)
+        installations = result.scalars().all()
 
-            # 转换为VO对象
-            plugin_vos = []
-            for installation in installations:
-                plugin_vo = await self._convert_installation_to_vo(installation)
-                plugin_vos.append(plugin_vo)
+        # 转换为VO对象
+        plugin_vos = []
+        for installation in installations:
+            plugin_vo = await self._convert_installation_to_vo(installation)
+            plugin_vos.append(plugin_vo)
 
-            return PluginPaginatedListResponseVo(plugins=plugin_vos, total=total)
+        return PluginPaginatedListResponseVo(plugins=plugin_vos, total=total)
 
-    async def get_plugin_info(self, plugin_id: str) -> PluginInfoVo:
+    async def get_plugin_info(
+        self,
+        session: AsyncSession,
+        plugin_id: str,
+    ) -> PluginInfoVo:
         """获取插件详细信息"""
         tenant_id = get_tenant_id()
         if not tenant_id:
             raise ValueError("租户ID不能为空")
 
-        async with async_session() as session:
-            result = await session.execute(
-                select(PluginInstallation).where(
-                    and_(
-                        PluginInstallation.tenant_id == tenant_id,
-                        PluginInstallation.plugin_id == plugin_id,
-                    ),
+        result = await session.execute(
+            select(PluginInstallation).where(
+                and_(
+                    PluginInstallation.tenant_id == tenant_id,
+                    PluginInstallation.plugin_id == plugin_id,
                 ),
-            )
-            installation = result.scalar_one_or_none()
+            ),
+        )
+        installation = result.scalar_one_or_none()
 
-            if not installation:
-                raise ValueError(f"插件不存在: {plugin_id}")
+        if not installation:
+            raise ValueError(f"插件不存在: {plugin_id}")
 
-            return await self._convert_installation_to_vo(installation)
+        return await self._convert_installation_to_vo(installation)
 
     # ======================= 凭证管理 =======================
 
     async def get_plugin_credentials_schema(
-        self, plugin_id: str
+        self,
+        session: AsyncSession,
+        plugin_id: str,
     ) -> list[dict[str, Any]]:
         """查询插件的凭证架构"""
-        async with async_session() as session:
-            result = await session.execute(
-                select(PluginInstallation).where(
-                    and_(
-                        PluginInstallation.plugin_id == plugin_id,
-                    ),
+        result = await session.execute(
+            select(PluginInstallation).where(
+                and_(
+                    PluginInstallation.plugin_id == plugin_id,
                 ),
-            )
-            installation = result.scalar_one_or_none()
+            ),
+        )
+        installation = result.scalar_one_or_none()
 
-            if not installation or not installation.plugin_config:
-                return []
+        if not installation or not installation.plugin_config:
+            return []
 
-            return credential_service.extract_credentials_schema(installation.plugin_config)
+        return credential_service.extract_credentials_schema(installation.plugin_config)
 
     async def list_credentials(
         self,
+        session: AsyncSession,
         plugin_id: str,
         page: int = 1,
         page_size: int = 20,
         name: str | None = None,
     ) -> tuple[int, list[PluginCredentialVo]]:
         """获取凭证列表"""
-        async with async_session() as session:
-            fields = {"plugin_id": plugin_id}
-            fuzzy = {"name": name} if name else None
-            items, pagination = await PluginCredential.paginated_by_query(
-                session=session,
-                fields=fields,
-                fuzzy_fields=fuzzy,
-                page=page,
-                page_size=page_size,
-                order_by=[("created_at", "desc")],
-            )
+        fields = {"plugin_id": plugin_id}
+        fuzzy = {"name": name} if name else None
+        items, pagination = await PluginCredential.paginated_by_query(
+            session=session,
+            fields=fields,
+            fuzzy_fields=fuzzy,
+            page=page,
+            page_size=page_size,
+            order_by=[("created_at", "desc")],
+        )
 
-            return pagination.total, [self._to_credential_vo(i) for i in items]
+        return pagination.total, [self._to_credential_vo(i) for i in items]
 
-    async def get_credential(self, credential_id: str) -> PluginCredentialVo:
+    async def get_credential(
+        self,
+        session: AsyncSession,
+        credential_id: str,
+    ) -> PluginCredentialVo:
         """获取凭证详情"""
-        async with async_session() as session:
-            record = await PluginCredential.one_by_id(session, credential_id)
-            if not record:
-                raise ValueError("凭证不存在")
+        record = await PluginCredential.one_by_id(session, credential_id)
+        if not record:
+            raise ValueError("凭证不存在")
 
-            # 读取安装记录与 schema
-            result = await session.execute(
-                select(PluginInstallation).where(
-                    and_(
-                        PluginInstallation.plugin_id == record.plugin_id,
-                    ),
+        # 读取安装记录与 schema
+        result = await session.execute(
+            select(PluginInstallation).where(
+                and_(
+                    PluginInstallation.plugin_id == record.plugin_id,
                 ),
+            ),
+        )
+        installation = result.scalar_one_or_none()
+
+        # 提取凭证架构
+        credentials_schema = []
+        if installation and installation.plugin_config:
+            credentials_schema = credential_service.extract_credentials_schema(
+                installation.plugin_config
             )
-            installation = result.scalar_one_or_none()
 
-            # 提取凭证架构
-            credentials_schema = []
-            if installation and installation.plugin_config:
-                credentials_schema = credential_service.extract_credentials_schema(
-                    installation.plugin_config
-                )
+        # 解密并脱敏
+        decrypted = record.credentials or {}
+        if installation and credentials_schema:
+            decrypted = credential_service.decrypt_credentials(
+                record.credentials or {},
+                credentials_schema,
+            )
 
-            # 解密并脱敏
-            decrypted = record.credentials or {}
-            if installation and credentials_schema:
-                decrypted = credential_service.decrypt_credentials(
-                    record.credentials or {},
-                    credentials_schema,
-                )
+        masked = credential_service.mask_credentials(decrypted, credentials_schema)
 
-            masked = credential_service.mask_credentials(decrypted, credentials_schema)
-
-            vo = self._to_credential_vo(record)
-            vo.credentials = masked
-            return vo
+        vo = self._to_credential_vo(record)
+        vo.credentials = masked
+        return vo
 
     async def create_credential(
-        self, plugin_id: str, obj_in: CreatePluginCredential
+        self,
+        session: AsyncSession,
+        plugin_id: str,
+        obj_in: CreatePluginCredential,
     ) -> PluginCredentialVo:
         """创建凭证（含格式校验、插件校验、加密入库）"""
         tenant_id = get_tenant_id()
@@ -218,77 +228,77 @@ class PluginManagementService:
 
         user_id = get_user_id() or ""
 
-        async with async_session() as session:
-            # 获取插件安装记录
-            stmt = select(PluginInstallation).where(
-                and_(
-                    PluginInstallation.plugin_id == plugin_id,
-                ),
-            )
-            plugin_installation = (await session.execute(stmt)).scalar_one_or_none()
-            if plugin_installation is None:
-                raise ValueError(f"插件不存在: {plugin_id}")
+        # 获取插件安装记录
+        stmt = select(PluginInstallation).where(
+            and_(
+                PluginInstallation.plugin_id == plugin_id,
+            ),
+        )
+        plugin_installation = (await session.execute(stmt)).scalar_one_or_none()
+        if plugin_installation is None:
+            raise ValueError(f"插件不存在: {plugin_id}")
 
-            # 检查凭证名称是否已存在
-            existing_credential_stmt = select(PluginCredential).where(
-                and_(
-                    PluginCredential.plugin_id == plugin_id,
-                    PluginCredential.name == name,
-                ),
-            )
-            existing_credential = (
-                await session.execute(existing_credential_stmt)
-            ).scalar_one_or_none()
-            if existing_credential:
-                raise BadRequestError(f"凭证名称 '{name}' 已存在，请使用其他名称")
+        # 检查凭证名称是否已存在
+        existing_credential_stmt = select(PluginCredential).where(
+            and_(
+                PluginCredential.plugin_id == plugin_id,
+                PluginCredential.name == name,
+            ),
+        )
+        existing_credential = (
+            await session.execute(existing_credential_stmt)
+        ).scalar_one_or_none()
+        if existing_credential:
+            raise BadRequestError(f"凭证名称 '{name}' 已存在，请使用其他名称")
 
-            # 凭证架构
-            credentials_schema = credential_service.extract_credentials_schema(
+        # 凭证架构
+        credentials_schema = credential_service.extract_credentials_schema(
+            plugin_installation.plugin_config
+        )
+
+        # 1) 格式校验
+        credential_service.validate_credentials_format(credentials, credentials_schema)
+
+        # 2) 加密
+        encrypted = credential_service.encrypt_credentials(
+            credentials, credentials_schema
+        )
+
+        # 默认 provider_name 取第一个 tools_configuration
+        provider_name = None
+        try:
+            if (
                 plugin_installation.plugin_config
-            )
+                and plugin_installation.plugin_config.get("tools_configuration")
+            ):
+                tools_config = plugin_installation.plugin_config["tools_configuration"]
+                if tools_config and len(tools_config) > 0:
+                    first_tool = tools_config[0]
+                    identity = first_tool.get("identity", {})
+                    provider_name = identity.get("name", "")
+                    if provider_name:
+                        provider_name = f"{plugin_id}/{provider_name}"
+        except Exception:
+            pass
 
-            # 1) 格式校验
-            credential_service.validate_credentials_format(credentials, credentials_schema)
+        data = {
+            "plugin_id": plugin_id,
+            "plugin_type": plugin_installation.plugin_type,
+            "scope": CredentialScope.GLOBAL,
+            "name": name,
+            "provider_name": provider_name,
+            "credentials": encrypted,
+            "tenant_id": tenant_id,
+            "created_by": user_id,
+        }
 
-            # 2) 加密
-            encrypted = credential_service.encrypt_credentials(
-                credentials, credentials_schema
-            )
-
-            # 默认 provider_name 取第一个 tools_configuration
-            provider_name = None
-            try:
-                if (
-                    plugin_installation.plugin_config
-                    and plugin_installation.plugin_config.get("tools_configuration")
-                ):
-                    tools_config = plugin_installation.plugin_config["tools_configuration"]
-                    if tools_config and len(tools_config) > 0:
-                        first_tool = tools_config[0]
-                        identity = first_tool.get("identity", {})
-                        provider_name = identity.get("name", "")
-                        if provider_name:
-                            provider_name = f"{plugin_id}/{provider_name}"
-            except Exception:
-                pass
-
-            data = {
-                "plugin_id": plugin_id,
-                "plugin_type": plugin_installation.plugin_type,
-                "scope": CredentialScope.GLOBAL,
-                "name": name,
-                "provider_name": provider_name,
-                "credentials": encrypted,
-                "tenant_id": tenant_id,
-                "created_by": user_id,
-            }
-
-            record = await PluginCredential.create(session, data)
-            await session.commit()
-            return self._to_credential_vo(record)
+        record = await PluginCredential.create(session, data)
+        await session.flush()
+        return self._to_credential_vo(record)
 
     async def update_credential(
         self,
+        session: AsyncSession,
         plugin_id: str,
         credential_id: str,
         obj_in: UpdatePluginCredential,
@@ -298,95 +308,95 @@ class PluginManagementService:
         if not tenant_id:
             raise ValueError("租户ID不能为空")
 
-        async with async_session() as session:
-            record = await PluginCredential.one_by_id(session, credential_id)
-            if not record:
-                raise ValueError("凭证不存在")
+        record = await PluginCredential.one_by_id(session, credential_id)
+        if not record:
+            raise ValueError("凭证不存在")
 
-            # 查询安装记录
-            result = await session.execute(
-                select(PluginInstallation).where(
-                    and_(
-                        PluginInstallation.tenant_id == tenant_id,
-                        PluginInstallation.plugin_id == plugin_id,
-                    ),
+        # 查询安装记录
+        result = await session.execute(
+            select(PluginInstallation).where(
+                and_(
+                    PluginInstallation.tenant_id == tenant_id,
+                    PluginInstallation.plugin_id == plugin_id,
                 ),
-            )
-            installation = result.scalar_one_or_none()
-            if installation is None:
-                raise ValueError(f"插件不存在: {plugin_id}")
+            ),
+        )
+        installation = result.scalar_one_or_none()
+        if installation is None:
+            raise ValueError(f"插件不存在: {plugin_id}")
 
-            credentials_schema = credential_service.extract_credentials_schema(
-                installation.plugin_config
-            )
+        credentials_schema = credential_service.extract_credentials_schema(
+            installation.plugin_config
+        )
 
-            update_data: dict[str, Any] = {}
-            if obj_in.name is not None:
-                # 检查凭证名称是否已存在
-                if obj_in.name != record.name:
-                    existing_credential_stmt = select(PluginCredential).where(
-                        and_(
-                            PluginCredential.plugin_id == plugin_id,
-                            PluginCredential.name == obj_in.name,
-                            PluginCredential.id != record.id,
-                        ),
-                    )
-                    existing_credential = (
-                        await session.execute(existing_credential_stmt)
-                    ).scalar_one_or_none()
-                    if existing_credential:
-                        raise BadRequestError(
-                            f"凭证名称 '{obj_in.name}' 已存在，请使用其他名称"
-                        )
-
-                update_data["name"] = obj_in.name
-
-            if isinstance(obj_in.credentials, dict):
-                new_credentials = dict(obj_in.credentials)
-
-                # 旧值脱敏占位回填
-                if record.credentials:
-                    decrypted_old = credential_service.decrypt_credentials(
-                        record.credentials,
-                        credentials_schema,
-                    )
-                    masked_old = credential_service.mask_credentials(
-                        decrypted_old, credentials_schema
-                    )
-                    for k, v in new_credentials.items():
-                        if isinstance(v, str) and v == masked_old.get(k):
-                            new_credentials[k] = decrypted_old.get(k)
-
-                # 1) 格式校验
-                credential_service.validate_credentials_format(
-                    new_credentials, credentials_schema
+        update_data: dict[str, Any] = {}
+        if obj_in.name is not None:
+            # 检查凭证名称是否已存在
+            if obj_in.name != record.name:
+                existing_credential_stmt = select(PluginCredential).where(
+                    and_(
+                        PluginCredential.plugin_id == plugin_id,
+                        PluginCredential.name == obj_in.name,
+                        PluginCredential.id != record.id,
+                    ),
                 )
+                existing_credential = (
+                    await session.execute(existing_credential_stmt)
+                ).scalar_one_or_none()
+                if existing_credential:
+                    raise BadRequestError(
+                        f"凭证名称 '{obj_in.name}' 已存在，请使用其他名称"
+                    )
 
-                # 2) 加密
-                encrypted = credential_service.encrypt_credentials(
-                    new_credentials, credentials_schema
+            update_data["name"] = obj_in.name
+
+        if isinstance(obj_in.credentials, dict):
+            new_credentials = dict(obj_in.credentials)
+
+            # 旧值脱敏占位回填
+            if record.credentials:
+                decrypted_old = credential_service.decrypt_credentials(
+                    record.credentials,
+                    credentials_schema,
                 )
-                update_data["credentials"] = encrypted
+                masked_old = credential_service.mask_credentials(
+                    decrypted_old, credentials_schema
+                )
+                for k, v in new_credentials.items():
+                    if isinstance(v, str) and v == masked_old.get(k):
+                        new_credentials[k] = decrypted_old.get(k)
 
-            await record.update(session, update_data)
-            await session.commit()
-            await record.refresh(session)
-            return self._to_credential_vo(record)
+            # 1) 格式校验
+            credential_service.validate_credentials_format(
+                new_credentials, credentials_schema
+            )
 
-    async def delete_credential(self, credential_id: str) -> bool:
+            # 2) 加密
+            encrypted = credential_service.encrypt_credentials(
+                new_credentials, credentials_schema
+            )
+            update_data["credentials"] = encrypted
+
+        await record.update(session, update_data)
+        await record.refresh(session)
+        return self._to_credential_vo(record)
+
+    async def delete_credential(
+        self,
+        session: AsyncSession,
+        credential_id: str,
+    ) -> bool:
         """删除凭证"""
         tenant_id = get_tenant_id()
         if not tenant_id:
             raise ValueError("租户ID不能为空")
 
-        async with async_session() as session:
-            record = await PluginCredential.one_by_id(session, credential_id)
-            if not record:
-                raise ValueError("凭证不存在")
+        record = await PluginCredential.one_by_id(session, credential_id)
+        if not record:
+            raise ValueError("凭证不存在")
 
-            await record.delete(session)
-            await session.commit()
-            return True
+        await record.delete(session)
+        return True
 
     def _to_credential_vo(self, record: PluginCredential) -> PluginCredentialVo:
         """转换凭证记录为 VO"""
@@ -406,6 +416,7 @@ class PluginManagementService:
 
     async def install_plugin(
         self,
+        session: AsyncSession,
         plugin_package: bytes,
         auto_start: bool = True,
         install_config: dict[str, Any] = {},
@@ -419,7 +430,7 @@ class PluginManagementService:
             # 获取插件管理器
             from ai.components.plugin.engine.core.plugin_manager import PluginManagerFactory
 
-            plugin_manager = await PluginManagerFactory.get_manager(tenant_id)
+            plugin_manager = await PluginManagerFactory.get_manager(tenant_id, session)
 
             # 创建安装请求
             from ai.components.plugin.engine.models.request import InstallRequest
@@ -430,7 +441,7 @@ class PluginManagementService:
 
             # 执行安装
             plugin_id = await plugin_manager.install_plugin(
-                plugin_package, install_request
+                session, plugin_package, install_request
             )
 
             _logger.info(f"插件安装成功: {plugin_id}")
@@ -445,7 +456,7 @@ class PluginManagementService:
             _logger.exception("插件安装失败")
             raise ValueError(f"插件安装失败: {str(e)}")
 
-    async def start_plugin(self, plugin_id: str) -> PluginOperationResponseVo:
+    async def start_plugin(self, session: AsyncSession, plugin_id: str) -> PluginOperationResponseVo:
         """启动插件"""
         tenant_id = get_tenant_id()
         if not tenant_id:
@@ -454,7 +465,7 @@ class PluginManagementService:
         try:
             from ai.components.plugin.engine.core.plugin_manager import PluginManagerFactory
 
-            plugin_manager = await PluginManagerFactory.get_manager(tenant_id)
+            plugin_manager = await PluginManagerFactory.get_manager(tenant_id, session)
 
             success = await plugin_manager.start_plugin(plugin_id)
 
@@ -483,7 +494,7 @@ class PluginManagementService:
                 success=False,
             )
 
-    async def stop_plugin(self, plugin_id: str) -> PluginOperationResponseVo:
+    async def stop_plugin(self, session: AsyncSession, plugin_id: str) -> PluginOperationResponseVo:
         """停止插件"""
         tenant_id = get_tenant_id()
         if not tenant_id:
@@ -492,7 +503,7 @@ class PluginManagementService:
         try:
             from ai.components.plugin.engine.core.plugin_manager import PluginManagerFactory
 
-            plugin_manager = await PluginManagerFactory.get_manager(tenant_id)
+            plugin_manager = await PluginManagerFactory.get_manager(tenant_id, session)
 
             success = await plugin_manager.stop_plugin(plugin_id)
 
@@ -521,7 +532,11 @@ class PluginManagementService:
                 success=False,
             )
 
-    async def uninstall_plugin(self, plugin_id: str) -> PluginOperationResponseVo:
+    async def uninstall_plugin(
+        self,
+        session: AsyncSession,
+        plugin_id: str,
+    ) -> PluginOperationResponseVo:
         """卸载插件"""
         tenant_id = get_tenant_id()
         if not tenant_id:
@@ -530,7 +545,7 @@ class PluginManagementService:
         try:
             from ai.components.plugin.engine.core.plugin_manager import PluginManagerFactory
 
-            plugin_manager = await PluginManagerFactory.get_manager(tenant_id)
+            plugin_manager = await PluginManagerFactory.get_manager(tenant_id, session)
 
             # 1. 停止插件
             try:
@@ -539,28 +554,27 @@ class PluginManagementService:
                 _logger.warning(f"卸载前停止插件失败: {plugin_id}")
 
             # 2. 删除数据库记录
-            async with async_session() as session:
-                result = await session.execute(
-                    select(PluginInstallation).where(
-                        and_(
-                            PluginInstallation.tenant_id == tenant_id,
-                            PluginInstallation.plugin_id == plugin_id,
-                        ),
+            result = await session.execute(
+                select(PluginInstallation).where(
+                    and_(
+                        PluginInstallation.tenant_id == tenant_id,
+                        PluginInstallation.plugin_id == plugin_id,
                     ),
+                ),
+            )
+
+            installation = result.scalar_one_or_none()
+
+            if not installation:
+                return PluginOperationResponseVo(
+                    plugin_id=plugin_id,
+                    message=f"插件不存在: {plugin_id}",
+                    status="not_found",
+                    success=False,
                 )
 
-                installation = result.scalar_one_or_none()
-
-                if not installation:
-                    return PluginOperationResponseVo(
-                        plugin_id=plugin_id,
-                        message=f"插件不存在: {plugin_id}",
-                        status="not_found",
-                        success=False,
-                    )
-
-                await session.delete(installation)
-                await session.commit()
+            await session.delete(installation)
+            await session.flush()
 
             # 3. 删除本地运行目录
             try:
@@ -602,7 +616,7 @@ class PluginManagementService:
     # ==================== 插件调用 ====================
 
     async def invoke_plugin_stream(
-        self, plugin_id: str, parameters: dict[str, Any], timeout: int
+        self, session: AsyncSession, plugin_id: str, parameters: dict[str, Any], timeout: int
     ):
         """流式调用插件方法"""
         tenant_id = get_tenant_id()
@@ -612,10 +626,10 @@ class PluginManagementService:
         try:
             from ai.components.plugin.engine.core.plugin_manager import PluginManagerFactory
 
-            plugin_manager = await PluginManagerFactory.get_manager(tenant_id)
+            plugin_manager = await PluginManagerFactory.get_manager(tenant_id, session)
 
             async for chunk in plugin_manager.invoke_plugin_stream(
-                plugin_id, parameters, timeout
+                session, plugin_id, parameters, timeout
             ):
                 yield chunk
 
@@ -668,29 +682,32 @@ class PluginManagementService:
             last_error=installation.last_error,
         )
 
-    async def _update_last_accessed_time(self, plugin_id: str):
+    async def _update_last_accessed_time(
+        self,
+        session: AsyncSession,
+        plugin_id: str,
+    ):
         """更新插件最后访问时间"""
         tenant_id = get_tenant_id()
 
-        async with async_session() as session:
-            result = await session.execute(
-                select(PluginInstallation).where(
-                    and_(
-                        PluginInstallation.tenant_id == tenant_id,
-                        PluginInstallation.plugin_id == plugin_id,
-                    ),
+        result = await session.execute(
+            select(PluginInstallation).where(
+                and_(
+                    PluginInstallation.tenant_id == tenant_id,
+                    PluginInstallation.plugin_id == plugin_id,
                 ),
-            )
-            installation = result.scalar_one_or_none()
+            ),
+        )
+        installation = result.scalar_one_or_none()
 
-            if installation:
-                installation.last_accessed_at = datetime.now()
-                installation.call_count += 1
-                await session.commit()
+        if installation:
+            installation.last_accessed_at = datetime.now()
+            installation.call_count += 1
+            await session.flush()
 
     # ==================== 插件资源文件 ====================
 
-    async def get_plugin_asset(self, plugin_id: str, asset_path: str) -> bytes:
+    async def get_plugin_asset(self, session: AsyncSession, plugin_id: str, asset_path: str) -> bytes:
         """获取插件资源文件内容"""
         tenant_id = get_tenant_id()
         if not tenant_id:
@@ -699,7 +716,7 @@ class PluginManagementService:
         try:
             from ai.components.plugin.engine.core.plugin_manager import PluginManagerFactory
 
-            plugin_manager = await PluginManagerFactory.get_manager(tenant_id)
+            plugin_manager = await PluginManagerFactory.get_manager(tenant_id, session)
 
             asset_content = await plugin_manager.get_plugin_asset(plugin_id, asset_path)
 

@@ -4,7 +4,9 @@
 
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import ORJSONResponse
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from framework.database.dependencies import get_db_session
 from framework.tenant.context import TenantContext, get_tenant_id
 from tenant.models import TenantStatus
 from tenant.schemas.console.tenant import CurrentTenantResponse, SwitchTenantResponse, UserTenantResponse
@@ -19,7 +21,10 @@ def Success(data=None, msg: str = "success") -> dict:
 
 
 @router.get("")
-async def list_user_tenants(user_id: str = "test_user") -> ORJSONResponse:
+async def list_user_tenants(
+    user_id: str = "test_user",
+    session: AsyncSession = Depends(get_db_session),
+) -> ORJSONResponse:
     """
     获取用户可用租户列表
 
@@ -44,7 +49,7 @@ async def list_user_tenants(user_id: str = "test_user") -> ORJSONResponse:
 
     # 批量获取租户信息
     tenant_ids = list(user_tenant_map.keys())
-    tenants = await TenantService.get_tenants_batch(tenant_ids)
+    tenants = await TenantService.get_tenants_batch(session, tenant_ids)
 
     items = []
     for tenant in tenants:
@@ -64,7 +69,9 @@ async def list_user_tenants(user_id: str = "test_user") -> ORJSONResponse:
 
 
 @router.get("/current")
-async def get_current_tenant_info() -> ORJSONResponse:
+async def get_current_tenant_info(
+    session: AsyncSession = Depends(get_db_session),
+) -> ORJSONResponse:
     """
     获取当前租户信息
 
@@ -80,7 +87,7 @@ async def get_current_tenant_info() -> ORJSONResponse:
     if not tenant_id:
         raise HTTPException(status_code=400, detail="租户上下文未设置")
 
-    tenant = await TenantService.get_by_id(tenant_id)
+    tenant = await TenantService.get_by_id(session, tenant_id)
     if not tenant:
         raise HTTPException(status_code=404, detail="租户不存在")
 
@@ -100,6 +107,7 @@ async def get_current_tenant_info() -> ORJSONResponse:
 async def switch_tenant(
     tenant_id: str,
     user_id: str = "test_user",
+    session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """
     切换租户
@@ -122,7 +130,7 @@ async def switch_tenant(
     THEN 返回 HTTP 403 错误，消息为 "租户已停用"
     """
     # 检查租户是否存在
-    tenant = await TenantService.get_by_id(tenant_id)
+    tenant = await TenantService.get_by_id(session, tenant_id)
     if not tenant:
         raise HTTPException(status_code=404, detail="租户不存在")
 

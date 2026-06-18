@@ -6,10 +6,12 @@ AI 模块内部接口控制器
 
 from typing import Any
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import ORJSONResponse
 from pydantic import BaseModel, Field
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from framework.database.dependencies import get_db_session
 from ai.services import plugin_management_service
 
 router = APIRouter()
@@ -58,7 +60,10 @@ async def health_check() -> ORJSONResponse:
 
 
 @router.get("/plugins/{plugin_id}")
-async def get_plugin(plugin_id: str) -> ORJSONResponse:
+async def get_plugin(
+    plugin_id: str,
+    session: AsyncSession = Depends(get_db_session),
+) -> ORJSONResponse:
     """
     获取单个插件信息
 
@@ -73,7 +78,7 @@ async def get_plugin(plugin_id: str) -> ORJSONResponse:
     THEN 返回 HTTP 404
     """
     try:
-        result = await plugin_management_service.get_plugin_info(plugin_id)
+        result = await plugin_management_service.get_plugin_info(session, plugin_id)
         return ORJSONResponse(
             content=Success(result.model_dump())
         )
@@ -87,6 +92,7 @@ async def get_plugin(plugin_id: str) -> ORJSONResponse:
 async def invoke_plugin(
     plugin_id: str,
     request: PluginInvokeRequest,
+    session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """
     调用插件方法
@@ -103,6 +109,7 @@ async def invoke_plugin(
         # 收集流式结果
         result_chunks = []
         async for chunk in plugin_management_service.invoke_plugin_stream(
+            session,
             plugin_id=plugin_id,
             parameters=request.parameters,
             timeout=request.timeout,
@@ -139,7 +146,10 @@ async def invoke_plugin(
 
 
 @router.get("/plugins/{plugin_id}/credentials")
-async def get_plugin_credentials(plugin_id: str) -> ORJSONResponse:
+async def get_plugin_credentials(
+    plugin_id: str,
+    session: AsyncSession = Depends(get_db_session),
+) -> ORJSONResponse:
     """
     获取插件凭证列表
 
@@ -149,6 +159,7 @@ async def get_plugin_credentials(plugin_id: str) -> ORJSONResponse:
     """
     try:
         total, items = await plugin_management_service.list_credentials(
+            session,
             plugin_id=plugin_id,
             page=1,
             page_size=100,  # 内部接口默认返回较多数据
@@ -168,7 +179,10 @@ async def get_plugin_credentials(plugin_id: str) -> ORJSONResponse:
 
 
 @router.get("/plugins/{plugin_id}/credentials-schema")
-async def get_plugin_credentials_schema(plugin_id: str) -> ORJSONResponse:
+async def get_plugin_credentials_schema(
+    plugin_id: str,
+    session: AsyncSession = Depends(get_db_session),
+) -> ORJSONResponse:
     """
     获取插件凭证架构
 
@@ -178,7 +192,7 @@ async def get_plugin_credentials_schema(plugin_id: str) -> ORJSONResponse:
     """
     try:
         schema = await plugin_management_service.get_plugin_credentials_schema(
-            plugin_id
+            session, plugin_id
         )
         return ORJSONResponse(content=Success(schema))
     except Exception as e:

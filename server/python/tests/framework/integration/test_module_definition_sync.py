@@ -72,11 +72,7 @@ class TestModuleDefinitionSyncWithMock:
             orphan_role_result,  # query orphan roles
         ]
 
-        with patch('framework.module.sync_service.async_session') as mock_async_session:
-            mock_async_session.return_value.__aenter__ = AsyncMock(return_value=mock_session)
-            mock_async_session.return_value.__aexit__ = AsyncMock()
-
-            await sync_service.sync_module(definition)
+        await sync_service.sync_module(mock_session, definition)
 
         mock_session.commit.assert_called_once()
 
@@ -114,10 +110,12 @@ class TestModuleDefinitionSyncWithMock:
         mock_registry = MagicMock()
         mock_registry.get_all_modules.return_value = [mock_module1, mock_module2]
 
+        mock_session = AsyncMock()
+
         with patch('framework.module.sync_service.get_registry', return_value=mock_registry), \
              patch.object(sync_service, 'sync_module', new_callable=AsyncMock) as mock_sync:
 
-            await sync_service.sync_all_modules()
+            await sync_service.sync_all_modules(mock_session)
 
             assert mock_sync.call_count == 2
 

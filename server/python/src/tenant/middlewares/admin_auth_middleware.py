@@ -11,13 +11,13 @@ import secrets
 from fastapi import Request, HTTPException
 from fastapi.security import HTTPBearer
 from loguru import logger
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import JSONResponse
 
 from tenant.models import TenantAdmin
-from framework.database.core.engine import async_session
 from framework.utils.crypto import hash_password, verify_password
-from sqlalchemy import select
 
 if TYPE_CHECKING:
     from starlette.types import ASGIApp
@@ -42,7 +42,7 @@ class AdminAuthService:
     """管理员认证服务"""
 
     @staticmethod
-    async def login(username: str, password: str) -> tuple[str, TenantAdmin] | None:
+    async def login(session: AsyncSession, username: str, password: str) -> tuple[str, TenantAdmin] | None:
         """
         管理员登录
 
@@ -50,30 +50,29 @@ class AdminAuthService:
         WHEN 超级管理员使用正确的用户名和密码登录
         THEN 返回管理员 Token
         """
-        async with async_session() as session:
-            stmt = select(TenantAdmin).where(
-                TenantAdmin.username == username,
-                TenantAdmin.is_active == True
-            )
-            result = await session.execute(stmt)
-            admin = result.scalar_one_or_none()
+        stmt = select(TenantAdmin).where(
+            TenantAdmin.username == username,
+            TenantAdmin.is_active == True
+        )
+        result = await session.execute(stmt)
+        admin = result.scalar_one_or_none()
 
-            if not admin:
-                return None
+        if not admin:
+            return None
 
-            if not verify_password(password, admin.password):
-                return None
+        if not verify_password(password, admin.password):
+            return None
 
-            # 生成 Token
-            token = generate_token()
-            _admin_tokens[token] = {
-                "admin_id": admin.id,
-                "username": admin.username,
-                "is_default": admin.is_default,
-                "expires_at": datetime.now() + timedelta(hours=TOKEN_EXPIRE_HOURS)
-            }
+        # 生成 Token
+        token = generate_token()
+        _admin_tokens[token] = {
+            "admin_id": admin.id,
+            "username": admin.username,
+            "is_default": admin.is_default,
+            "expires_at": datetime.now() + timedelta(hours=TOKEN_EXPIRE_HOURS)
+        }
 
-            return token, admin
+        return token, admin
 
     @staticmethod
     def verify_token(token: str) -> dict | None:

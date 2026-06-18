@@ -6,7 +6,9 @@
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import ORJSONResponse
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from framework.database.dependencies import get_db_session
 from iam.schemas.role import (
     RoleCreate,
     RolePermissionRequest,
@@ -29,9 +31,11 @@ router = APIRouter()
 async def list_roles(
     query: RolePaginatedQuery = Depends(),
     tenant_id: str | None = None,
+    session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """获取角色列表"""
     roles, total = await role_service.list_roles(
+        session,
         tenant_id=tenant_id,
         page=query.page,
         page_size=query.page_size,
@@ -51,10 +55,14 @@ async def list_roles(
 
 
 @router.post("/roles")
-async def create_role(data: RoleCreate) -> ORJSONResponse:
+async def create_role(
+    data: RoleCreate,
+    session: AsyncSession = Depends(get_db_session),
+) -> ORJSONResponse:
     """创建角色"""
     try:
         role = await role_service.create(
+            session,
             code=data.code,
             name=data.name,
             description=data.description,
@@ -87,9 +95,12 @@ async def get_role_options() -> ORJSONResponse:
 
 
 @router.get("/roles/{role_id}")
-async def get_role(role_id: str) -> ORJSONResponse:
+async def get_role(
+    role_id: str,
+    session: AsyncSession = Depends(get_db_session),
+) -> ORJSONResponse:
     """获取角色详情"""
-    role = await role_service.get_by_id(role_id)
+    role = await role_service.get_by_id(session, role_id)
     if not role:
         raise HTTPException(status_code=404, detail="角色不存在")
     return ORJSONResponse(
@@ -102,10 +113,15 @@ async def get_role(role_id: str) -> ORJSONResponse:
 
 
 @router.put("/roles/{role_id}")
-async def update_role(role_id: str, data: RoleUpdate) -> ORJSONResponse:
+async def update_role(
+    role_id: str,
+    data: RoleUpdate,
+    session: AsyncSession = Depends(get_db_session),
+) -> ORJSONResponse:
     """更新角色"""
     try:
         role = await role_service.update(
+            session,
             role_id=role_id,
             name=data.name,
             description=data.description,
@@ -122,10 +138,13 @@ async def update_role(role_id: str, data: RoleUpdate) -> ORJSONResponse:
 
 
 @router.delete("/roles/{role_id}")
-async def delete_role(role_id: str) -> ORJSONResponse:
+async def delete_role(
+    role_id: str,
+    session: AsyncSession = Depends(get_db_session),
+) -> ORJSONResponse:
     """删除角色"""
     try:
-        await role_service.delete(role_id)
+        await role_service.delete(session, role_id)
         return ORJSONResponse(
             content={
                 "code": 200,
@@ -138,9 +157,12 @@ async def delete_role(role_id: str) -> ORJSONResponse:
 
 
 @router.get("/roles/{role_id}/permissions")
-async def get_role_permissions(role_id: str) -> ORJSONResponse:
+async def get_role_permissions(
+    role_id: str,
+    session: AsyncSession = Depends(get_db_session),
+) -> ORJSONResponse:
     """获取角色的权限列表"""
-    permissions = await role_service.get_role_permissions(role_id)
+    permissions = await role_service.get_role_permissions(session, role_id)
     return ORJSONResponse(
         content={
             "code": 200,
@@ -160,9 +182,13 @@ async def get_role_permissions(role_id: str) -> ORJSONResponse:
 
 
 @router.post("/roles/{role_id}/permissions")
-async def assign_permissions(role_id: str, data: RolePermissionRequest) -> ORJSONResponse:
+async def assign_permissions(
+    role_id: str,
+    data: RolePermissionRequest,
+    session: AsyncSession = Depends(get_db_session),
+) -> ORJSONResponse:
     """为角色分配权限"""
-    await role_service.assign_permissions(role_id, data.permission_ids)
+    await role_service.assign_permissions(session, role_id, data.permission_ids)
     return ORJSONResponse(
         content={
             "code": 200,

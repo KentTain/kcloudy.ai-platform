@@ -7,6 +7,7 @@ IAM 客户端
 from typing import Any
 
 from pydantic import BaseModel, Field
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from framework.clients.inner_http_client import InnerHttpClient
 
@@ -76,11 +77,12 @@ class IamClient:
                 health_path="/iam/inner/v1/health",
             )
 
-    async def get_user(self, user_id: str) -> UserInfo | None:
+    async def get_user(self, session: AsyncSession, user_id: str) -> UserInfo | None:
         """
         获取单个用户
 
         Args:
+            session: 数据库会话
             user_id: 用户 ID
 
         Returns:
@@ -97,7 +99,6 @@ class IamClient:
             # 单体模式
             from iam.services.user_service import UserService
             from iam.models import UserTenant
-            from framework.database.core.engine import async_session
             from sqlalchemy import select
 
             user = await UserService.get_by_id(user_id)
@@ -106,15 +107,14 @@ class IamClient:
 
             # 获取用户的默认租户
             tenant_id = None
-            async with async_session() as session:
-                stmt = select(UserTenant).where(
-                    UserTenant.user_id == user_id,
-                    UserTenant.is_default == True
-                )
-                result = await session.execute(stmt)
-                user_tenant = result.scalar_one_or_none()
-                if user_tenant:
-                    tenant_id = user_tenant.tenant_id
+            stmt = select(UserTenant).where(
+                UserTenant.user_id == user_id,
+                UserTenant.is_default == True
+            )
+            result = await session.execute(stmt)
+            user_tenant = result.scalar_one_or_none()
+            if user_tenant:
+                tenant_id = user_tenant.tenant_id
 
             return UserInfo(
                 id=user.id,
@@ -126,11 +126,14 @@ class IamClient:
                 tenant_id=tenant_id,
             )
 
-    async def get_users_batch(self, user_ids: list[str]) -> list[UserInfo]:
+    async def get_users_batch(
+        self, session: AsyncSession, user_ids: list[str]
+    ) -> list[UserInfo]:
         """
         批量获取用户
 
         Args:
+            session: 数据库会话
             user_ids: 用户 ID 列表
 
         Returns:
@@ -152,21 +155,19 @@ class IamClient:
             # 单体模式
             from iam.services.user_service import UserService
             from iam.models import UserTenant
-            from framework.database.core.engine import async_session
             from sqlalchemy import select
 
             users = await UserService.get_by_ids(user_ids)
 
             # 获取用户的默认租户
             user_tenant_map = {}
-            async with async_session() as session:
-                stmt = select(UserTenant).where(
-                    UserTenant.user_id.in_(user_ids),
-                    UserTenant.is_default == True
-                )
-                result = await session.execute(stmt)
-                for ut in result.scalars().all():
-                    user_tenant_map[ut.user_id] = ut.tenant_id
+            stmt = select(UserTenant).where(
+                UserTenant.user_id.in_(user_ids),
+                UserTenant.is_default == True
+            )
+            result = await session.execute(stmt)
+            for ut in result.scalars().all():
+                user_tenant_map[ut.user_id] = ut.tenant_id
 
             return [
                 UserInfo(
@@ -181,11 +182,14 @@ class IamClient:
                 for u in users if u
             ]
 
-    async def get_user_departments(self, user_id: str) -> list[DepartmentInfo]:
+    async def get_user_departments(
+        self, session: AsyncSession, user_id: str
+    ) -> list[DepartmentInfo]:
         """
         获取用户部门
 
         Args:
+            session: 数据库会话
             user_id: 用户 ID
 
         Returns:
@@ -202,36 +206,37 @@ class IamClient:
         else:
             # 单体模式
             from iam.models import UserDepartment, Department
-            from framework.database.core.engine import async_session
             from sqlalchemy import select
 
-            async with async_session() as session:
-                stmt = select(UserDepartment).where(UserDepartment.user_id == user_id)
-                result = await session.execute(stmt)
-                user_departments = result.scalars().all()
+            stmt = select(UserDepartment).where(UserDepartment.user_id == user_id)
+            result = await session.execute(stmt)
+            user_departments = result.scalars().all()
 
-                department_ids = [ud.department_id for ud in user_departments]
-                if not department_ids:
-                    return []
+            department_ids = [ud.department_id for ud in user_departments]
+            if not department_ids:
+                return []
 
-                stmt = select(Department).where(Department.id.in_(department_ids))
-                result = await session.execute(stmt)
-                departments = result.scalars().all()
+            stmt = select(Department).where(Department.id.in_(department_ids))
+            result = await session.execute(stmt)
+            departments = result.scalars().all()
 
-                return [
-                    DepartmentInfo(
-                        id=d.id,
-                        name=d.name,
-                        parent_id=d.parent_id,
-                    )
-                    for d in departments
-                ]
+            return [
+                DepartmentInfo(
+                    id=d.id,
+                    name=d.name,
+                    parent_id=d.parent_id,
+                )
+                for d in departments
+            ]
 
-    async def get_user_tenants(self, user_id: str) -> list[UserTenantInfo]:
+    async def get_user_tenants(
+        self, session: AsyncSession, user_id: str
+    ) -> list[UserTenantInfo]:
         """
         获取用户租户列表
 
         Args:
+            session: 数据库会话
             user_id: 用户 ID
 
         Returns:
@@ -248,28 +253,29 @@ class IamClient:
         else:
             # 单体模式
             from iam.models import UserTenant
-            from framework.database.core.engine import async_session
             from sqlalchemy import select
 
-            async with async_session() as session:
-                stmt = select(UserTenant).where(UserTenant.user_id == user_id)
-                result = await session.execute(stmt)
-                user_tenants = result.scalars().all()
+            stmt = select(UserTenant).where(UserTenant.user_id == user_id)
+            result = await session.execute(stmt)
+            user_tenants = result.scalars().all()
 
-                return [
-                    UserTenantInfo(
-                        tenant_id=ut.tenant_id,
-                        role=ut.role,
-                        is_default=ut.is_default,
-                    )
-                    for ut in user_tenants
-                ]
+            return [
+                UserTenantInfo(
+                    tenant_id=ut.tenant_id,
+                    role=ut.role,
+                    is_default=ut.is_default,
+                )
+                for ut in user_tenants
+            ]
 
-    async def get_tenant_user_ids(self, tenant_id: str) -> list[str]:
+    async def get_tenant_user_ids(
+        self, session: AsyncSession, tenant_id: str
+    ) -> list[str]:
         """
         获取租户下的用户 ID 列表
 
         Args:
+            session: 数据库会话
             tenant_id: 租户 ID
 
         Returns:
@@ -286,23 +292,25 @@ class IamClient:
         else:
             # 单体模式
             from iam.models import UserTenant
-            from framework.database.core.engine import async_session
             from sqlalchemy import select
 
-            async with async_session() as session:
-                stmt = select(UserTenant.user_id).where(
-                    UserTenant.tenant_id == tenant_id
-                )
-                result = await session.execute(stmt)
-                return [row[0] for row in result.all()]
+            stmt = select(UserTenant.user_id).where(
+                UserTenant.tenant_id == tenant_id
+            )
+            result = await session.execute(stmt)
+            return [row[0] for row in result.all()]
 
     async def check_module_role_usage(
-        self, tenant_id: str, module_role_ids: list[str]
+        self,
+        session: AsyncSession,
+        tenant_id: str,
+        module_role_ids: list[str],
     ) -> list[ModuleRoleUsageInfo]:
         """
         检查租户下模块角色的使用情况
 
         Args:
+            session: 数据库会话
             tenant_id: 租户 ID
             module_role_ids: 模块定义层角色 ID 列表（ModuleRole.id）
 
@@ -324,51 +332,49 @@ class IamClient:
         else:
             # 单体模式
             from iam.models import Role, UserRole
-            from framework.database.core.engine import async_session
             from sqlalchemy import select, func
 
-            async with async_session() as session:
-                # 查找该租户下 ref_id 关联到这些模块角色的 IAM 角色
-                stmt = select(Role).where(
-                    Role.tenant_id == tenant_id,
-                    Role.ref_id.in_(module_role_ids),
-                )
-                result = await session.execute(stmt)
-                roles = result.scalars().all()
+            # 查找该租户下 ref_id 关联到这些模块角色的 IAM 角色
+            stmt = select(Role).where(
+                Role.tenant_id == tenant_id,
+                Role.ref_id.in_(module_role_ids),
+            )
+            result = await session.execute(stmt)
+            roles = result.scalars().all()
 
-                if not roles:
-                    return []
+            if not roles:
+                return []
 
-                role_ids = [r.id for r in roles]
-                role_map = {r.id: r for r in roles}
+            role_ids = [r.id for r in roles]
+            role_map = {r.id: r for r in roles}
 
-                # 统计每个角色的用户数
-                stmt = select(
-                    UserRole.role_id,
-                    func.count(UserRole.user_id).label("user_count"),
-                ).where(
-                    UserRole.tenant_id == tenant_id,
-                    UserRole.role_id.in_(role_ids),
-                ).group_by(UserRole.role_id)
-                result = await session.execute(stmt)
-                role_usage = {row[0]: row[1] for row in result.all()}
+            # 统计每个角色的用户数
+            stmt = select(
+                UserRole.role_id,
+                func.count(UserRole.user_id).label("user_count"),
+            ).where(
+                UserRole.tenant_id == tenant_id,
+                UserRole.role_id.in_(role_ids),
+            ).group_by(UserRole.role_id)
+            result = await session.execute(stmt)
+            role_usage = {row[0]: row[1] for row in result.all()}
 
-                # 构建返回结果（只返回有用户使用的角色）
-                usage_list = []
-                for role in roles:
-                    user_count = role_usage.get(role.id, 0)
-                    if user_count > 0:
-                        usage_list.append(
-                            ModuleRoleUsageInfo(
-                                module_role_id=role.ref_id,
-                                role_id=role.id,
-                                role_code=role.code,
-                                role_name=role.name,
-                                user_count=user_count,
-                            )
+            # 构建返回结果（只返回有用户使用的角色）
+            usage_list = []
+            for role in roles:
+                user_count = role_usage.get(role.id, 0)
+                if user_count > 0:
+                    usage_list.append(
+                        ModuleRoleUsageInfo(
+                            module_role_id=role.ref_id,
+                            role_id=role.id,
+                            role_code=role.code,
+                            role_name=role.name,
+                            user_count=user_count,
                         )
+                    )
 
-                return usage_list
+            return usage_list
 
     async def health_check(self) -> bool:
         """

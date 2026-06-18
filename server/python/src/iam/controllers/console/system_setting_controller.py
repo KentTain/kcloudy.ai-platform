@@ -4,7 +4,9 @@
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import ORJSONResponse
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from framework.database.dependencies import get_db_session
 from iam.schemas.console.system_setting import (
     ConsoleSystemSettingPaginatedListResponse,
     ConsoleSystemSettingPaginatedQuery,
@@ -29,6 +31,7 @@ def build_setting_response(setting) -> ConsoleSystemSettingResponse:
 async def list_settings(
     query: ConsoleSystemSettingPaginatedQuery = Depends(),
     tenant_id: str = "default",
+    session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """
     列出本租户配置
@@ -38,6 +41,7 @@ async def list_settings(
     THEN 返回本租户的所有配置列表
     """
     settings, total = await system_setting_service.list_settings(
+        session,
         tenant_id=tenant_id,
         page=query.page,
         page_size=query.page_size,
@@ -57,7 +61,10 @@ async def list_settings(
 
 
 @router.get("/{setting_id}")
-async def get_setting(setting_id: str) -> ORJSONResponse:
+async def get_setting(
+    setting_id: str,
+    session: AsyncSession = Depends(get_db_session),
+) -> ORJSONResponse:
     """
     获取配置详情
 
@@ -65,7 +72,7 @@ async def get_setting(setting_id: str) -> ORJSONResponse:
     WHEN 用户发送 GET /console/v1/system-settings/{id}
     THEN 返回配置详情和属性值列表
     """
-    setting = await system_setting_service.get_setting(setting_id)
+    setting = await system_setting_service.get_setting(session, setting_id)
     if not setting:
         raise HTTPException(status_code=404, detail="设置不存在")
 
@@ -75,7 +82,11 @@ async def get_setting(setting_id: str) -> ORJSONResponse:
 
 
 @router.get("/by-code/{code}")
-async def get_setting_by_code(code: str, tenant_id: str = "default") -> ORJSONResponse:
+async def get_setting_by_code(
+    code: str,
+    tenant_id: str = "default",
+    session: AsyncSession = Depends(get_db_session),
+) -> ORJSONResponse:
     """
     按编号获取配置
 
@@ -83,7 +94,7 @@ async def get_setting_by_code(code: str, tenant_id: str = "default") -> ORJSONRe
     WHEN 用户发送 GET /console/v1/system-settings/by-code/SMTP
     THEN 返回本租户 code 为 "SMTP" 的配置详情和属性值列表
     """
-    setting = await system_setting_service.get_setting_by_code(tenant_id, code)
+    setting = await system_setting_service.get_setting_by_code(session, tenant_id, code)
     if not setting:
         raise HTTPException(status_code=404, detail="设置不存在")
 

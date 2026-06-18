@@ -5,8 +5,9 @@
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import ORJSONResponse
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from framework.database.core.engine import async_session
+from framework.database.dependencies import get_db_session
 from tenant.middlewares.admin_auth_middleware import get_current_admin
 from tenant.models import Module, TenantModule
 from tenant.schemas.admin.tenant_module import (
@@ -24,29 +25,30 @@ def Success(data=None, msg: str = "success") -> dict:
     return {"code": 200, "msg": msg, "data": data}
 
 
-async def build_tenant_module_vo(tenant_module: TenantModule) -> TenantModuleResponse:
+async def build_tenant_module_vo(
+    session: AsyncSession, tenant_module: TenantModule
+) -> TenantModuleResponse:
     """构建租户模块响应对象"""
-    async with async_session() as session:
-        stmt = select(Module).where(Module.id == tenant_module.module_id)
-        result = await session.execute(stmt)
-        module = result.scalar_one_or_none()
+    stmt = select(Module).where(Module.id == tenant_module.module_id)
+    result = await session.execute(stmt)
+    module = result.scalar_one_or_none()
 
-        if not module:
-            raise ValueError(f"模块不存在: {tenant_module.module_id}")
+    if not module:
+        raise ValueError(f"模块不存在: {tenant_module.module_id}")
 
-        return TenantModuleResponse(
-            id=tenant_module.id,
-            tenant_id=tenant_module.tenant_id,
-            module_id=tenant_module.module_id,
-            module_code=module.code,
-            module_name=module.name,
-            module_is_need=module.is_need,
-            started_at=tenant_module.started_at,
-            expired_at=tenant_module.expired_at,
-            is_active=tenant_module.is_active,
-            created_at=tenant_module.created_at,
-            updated_at=tenant_module.updated_at,
-        )
+    return TenantModuleResponse(
+        id=tenant_module.id,
+        tenant_id=tenant_module.tenant_id,
+        module_id=tenant_module.module_id,
+        module_code=module.code,
+        module_name=module.name,
+        module_is_need=module.is_need,
+        started_at=tenant_module.started_at,
+        expired_at=tenant_module.expired_at,
+        is_active=tenant_module.is_active,
+        created_at=tenant_module.created_at,
+        updated_at=tenant_module.updated_at,
+    )
 
 
 @router.get("/tenants/{tenant_id}/modules")
@@ -55,6 +57,7 @@ async def list_tenant_modules(
     page: int = 1,
     page_size: int = 20,
     admin: dict = Depends(get_current_admin),
+    session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """
     获取租户已分配的模块列表
@@ -64,6 +67,7 @@ async def list_tenant_modules(
     THEN 返回该租户已分配的所有模块列表
     """
     tenant_modules, total = await TenantModuleService.list_tenant_modules(
+        session,
         tenant_id=tenant_id,
         page=page,
         page_size=page_size,
@@ -71,7 +75,7 @@ async def list_tenant_modules(
 
     items = []
     for tm in tenant_modules:
-        vo = await build_tenant_module_vo(tm)
+        vo = await build_tenant_module_vo(session, tm)
         items.append(vo)
 
     return ORJSONResponse(
@@ -93,6 +97,7 @@ async def assign_module(
     tenant_id: str,
     data: AssignModuleRequest,
     admin: dict = Depends(get_current_admin),
+    session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """
     为租户分配模块
@@ -123,6 +128,7 @@ async def assign_module(
     """
     try:
         tenant_module = await TenantModuleService.assign_module(
+            session,
             tenant_id=tenant_id,
             module_id=data.module_id,
             started_at=data.started_at,
@@ -131,7 +137,7 @@ async def assign_module(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-    vo = await build_tenant_module_vo(tenant_module)
+    vo = await build_tenant_module_vo(session, tenant_module)
     return ORJSONResponse(content=Success(vo.model_dump()))
 
 
@@ -140,6 +146,7 @@ async def unassign_module(
     tenant_id: str,
     module_id: str,
     admin: dict = Depends(get_current_admin),
+    session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """
     取消租户的模块分配
@@ -165,6 +172,7 @@ async def unassign_module(
     """
     try:
         success = await TenantModuleService.unassign_module(
+            session,
             tenant_id=tenant_id,
             module_id=module_id,
         )

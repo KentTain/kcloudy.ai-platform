@@ -7,12 +7,12 @@
 import uuid
 from loguru import logger
 from sqlalchemy import func, select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from ai.models.conversation import Conversation
 from ai.models.enums import ConversationStatus, ConversationMode
 from ai.models.message import Message
 from ai.schemas.conversation import ConversationListItem
-from framework.database.core.engine import async_session
 
 _logger = logger.bind(name=__name__)
 
@@ -27,62 +27,66 @@ class ConversationService:
     """
 
     @staticmethod
-    async def list_with_message_count(tenant_id: str) -> list[ConversationListItem]:
+    async def list_with_message_count(
+        session: AsyncSession,
+        tenant_id: str,
+    ) -> list[ConversationListItem]:
         """
         查询会话列表并统计每个会话的消息数量
 
         Args:
+            session: 数据库会话
             tenant_id: 租户 ID
 
         Returns:
             list[ConversationListItem]: 会话列表项
         """
-        async with async_session() as session:
-            # 使用子查询统计消息数量
-            message_count_subquery = (
-                select(
-                    Message.conversation_id,
-                    func.count(Message.id).label("count"),
-                )
-                .where(Message.tenant_id == tenant_id)
-                .group_by(Message.conversation_id)
-                .subquery()
+        # 使用子查询统计消息数量
+        message_count_subquery = (
+            select(
+                Message.conversation_id,
+                func.count(Message.id).label("count"),
             )
+            .where(Message.tenant_id == tenant_id)
+            .group_by(Message.conversation_id)
+            .subquery()
+        )
 
-            # 查询会话列表
-            stmt = (
-                select(
-                    Conversation.id,
-                    Conversation.name,
-                    Conversation.created_at,
-                    func.coalesce(message_count_subquery.c.count, 0).label("message_count"),
-                )
-                .outerjoin(
-                    message_count_subquery,
-                    Conversation.id == message_count_subquery.c.conversation_id,
-                )
-                .where(
-                    Conversation.tenant_id == tenant_id,
-                    Conversation.status != ConversationStatus.DELETED,
-                )
-                .order_by(Conversation.created_at.desc())
+        # 查询会话列表
+        stmt = (
+            select(
+                Conversation.id,
+                Conversation.name,
+                Conversation.created_at,
+                func.coalesce(message_count_subquery.c.count, 0).label("message_count"),
             )
+            .outerjoin(
+                message_count_subquery,
+                Conversation.id == message_count_subquery.c.conversation_id,
+            )
+            .where(
+                Conversation.tenant_id == tenant_id,
+                Conversation.status != ConversationStatus.DELETED,
+            )
+            .order_by(Conversation.created_at.desc())
+        )
 
-            result = await session.execute(stmt)
-            rows = result.all()
+        result = await session.execute(stmt)
+        rows = result.all()
 
-            return [
-                ConversationListItem(
-                    id=str(row.id),
-                    name=row.name,
-                    created_at=row.created_at,
-                    message_count=row.message_count,
-                )
-                for row in rows
-            ]
+        return [
+            ConversationListItem(
+                id=str(row.id),
+                name=row.name,
+                created_at=row.created_at,
+                message_count=row.message_count,
+            )
+            for row in rows
+        ]
 
     @staticmethod
     async def get_by_id(
+        session: AsyncSession,
         conversation_id: str,
         tenant_id: str,
     ) -> Conversation | None:
@@ -90,23 +94,24 @@ class ConversationService:
         根据 ID 获取会话
 
         Args:
+            session: 数据库会话
             conversation_id: 会话 ID
             tenant_id: 租户 ID
 
         Returns:
             Conversation | None: 会话对象，不存在则返回 None
         """
-        async with async_session() as session:
-            return await Conversation.one_by_conditions(
-                session,
-                conditions=[
-                    Conversation.id == conversation_id,
-                    Conversation.tenant_id == tenant_id,
-                ],
-            )
+        return await Conversation.one_by_conditions(
+            session,
+            conditions=[
+                Conversation.id == conversation_id,
+                Conversation.tenant_id == tenant_id,
+            ],
+        )
 
     @staticmethod
     async def get_or_create(
+        session: AsyncSession,
         conversation_id: str | None,
         tenant_id: str,
         user_id: str,
@@ -119,6 +124,7 @@ class ConversationService:
         如果 conversation_id 存在，检查并返回已有会话或创建新会话。
 
         Args:
+            session: 数据库会话
             conversation_id: 会话 ID，None 表示创建新会话
             tenant_id: 租户 ID
             user_id: 用户 ID
@@ -129,38 +135,10 @@ class ConversationService:
         """
         effective_app_id = app_id or DEFAULT_APP_ID
 
-        async with async_session() as session:
-            # 如果未提供 conversation_id，创建新会话
-            if conversation_id is None:
-                conversation = Conversation(
-                    id=str(uuid.uuid4()),
-                    tenant_id=tenant_id,
-                    app_id=effective_app_id,
-                    name="新对话",
-                    status=ConversationStatus.NORMAL,
-                    mode=ConversationMode.CHAT,
-                )
-                session.add(conversation)
-                await session.commit()
-                await session.refresh(conversation)
-                _logger.info(f"创建新会话: {conversation.id}")
-                return conversation, True
-
-            # 检查会话是否已存在
-            existing = await Conversation.one_by_conditions(
-                session,
-                conditions=[
-                    Conversation.id == conversation_id,
-                    Conversation.tenant_id == tenant_id,
-                ],
-            )
-
-            if existing:
-                return existing, False
-
-            # 会话不存在，创建新会话（使用指定的 ID）
+        # 如果未提供 conversation_id，创建新会话
+        if conversation_id is None:
             conversation = Conversation(
-                id=conversation_id,
+                id=str(uuid.uuid4()),
                 tenant_id=tenant_id,
                 app_id=effective_app_id,
                 name="新对话",
@@ -168,63 +146,96 @@ class ConversationService:
                 mode=ConversationMode.CHAT,
             )
             session.add(conversation)
-            await session.commit()
+            await session.flush()
             await session.refresh(conversation)
             _logger.info(f"创建新会话: {conversation.id}")
             return conversation, True
 
+        # 检查会话是否已存在
+        existing = await Conversation.one_by_conditions(
+            session,
+            conditions=[
+                Conversation.id == conversation_id,
+                Conversation.tenant_id == tenant_id,
+            ],
+        )
+
+        if existing:
+            return existing, False
+
+        # 会话不存在，创建新会话（使用指定的 ID）
+        conversation = Conversation(
+            id=conversation_id,
+            tenant_id=tenant_id,
+            app_id=effective_app_id,
+            name="新对话",
+            status=ConversationStatus.NORMAL,
+            mode=ConversationMode.CHAT,
+        )
+        session.add(conversation)
+        await session.flush()
+        await session.refresh(conversation)
+        _logger.info(f"创建新会话: {conversation.id}")
+        return conversation, True
+
     @staticmethod
-    async def soft_delete(conversation_id: str, tenant_id: str) -> bool:
+    async def soft_delete(
+        session: AsyncSession,
+        conversation_id: str,
+        tenant_id: str,
+    ) -> bool:
         """
         软删除会话
 
         将会话状态设为 DELETED。
 
         Args:
+            session: 数据库会话
             conversation_id: 会话 ID
             tenant_id: 租户 ID
 
         Returns:
             bool: 是否删除成功
         """
-        async with async_session() as session:
-            conversation = await Conversation.one_by_conditions(
-                session,
-                conditions=[
-                    Conversation.id == conversation_id,
-                    Conversation.tenant_id == tenant_id,
-                ],
-            )
+        conversation = await Conversation.one_by_conditions(
+            session,
+            conditions=[
+                Conversation.id == conversation_id,
+                Conversation.tenant_id == tenant_id,
+            ],
+        )
 
-            if not conversation:
-                return False
+        if not conversation:
+            return False
 
-            conversation.status = ConversationStatus.DELETED
-            await session.commit()
-            _logger.info(f"软删除会话: {conversation_id}")
-            return True
+        conversation.status = ConversationStatus.DELETED
+        _logger.info(f"软删除会话: {conversation_id}")
+        return True
 
     @staticmethod
-    async def update_name(conversation_id: str, name: str) -> bool:
+    async def update_name(
+        session: AsyncSession,
+        conversation_id: str,
+        name: str,
+    ) -> bool:
         """
         更新会话名称
 
         Args:
+            session: 数据库会话
             conversation_id: 会话 ID
             name: 新名称
 
         Returns:
             bool: 是否更新成功
         """
-        async with async_session() as session:
-            await Conversation.update_by_id(
-                session,
-                conversation_id,
-                {"name": name},
-            )
-            await session.commit()
-            _logger.info(f"更新会话名称: {conversation_id} -> {name}")
-            return True
+        await Conversation.update_by_id(
+            session,
+            conversation_id,
+            {"name": name},
+        )
+        _logger.info(f"更新会话名称: {conversation_id} -> {name}")
+        return True
 
 
 # 服务单例

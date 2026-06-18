@@ -4,7 +4,9 @@
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import ORJSONResponse
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from framework.database.dependencies import get_db_session
 from tenant.middlewares.admin_auth_middleware import get_current_admin
 from iam.schemas.admin.system_setting import (
     SystemSettingCreate,
@@ -32,6 +34,7 @@ def build_setting_response(setting) -> SystemSettingResponse:
 async def list_settings(
     query: SystemSettingPaginatedQuery = Depends(),
     admin: dict = Depends(get_current_admin),
+    session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """
     查询系统设置列表
@@ -42,6 +45,7 @@ async def list_settings(
     """
     tenant_id = "platform"  # 系统设置为平台级配置
     settings, total = await system_setting_service.list_settings(
+        session,
         tenant_id=tenant_id,
         page=query.page,
         page_size=query.page_size,
@@ -66,6 +70,7 @@ async def list_settings(
 async def create_setting(
     data: SystemSettingCreate,
     admin: dict = Depends(get_current_admin),
+    session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """
     创建系统设置
@@ -80,11 +85,12 @@ async def create_setting(
     """
     tenant_id = "platform"  # 系统设置为平台级配置
 
-    existing = await system_setting_service.get_setting_by_code(tenant_id, data.code)
+    existing = await system_setting_service.get_setting_by_code(session, tenant_id, data.code)
     if existing:
         raise HTTPException(status_code=400, detail="设置编号已存在")
 
     setting = await system_setting_service.create_setting(
+        session,
         tenant_id=tenant_id,
         code=data.code,
         name=data.name,
@@ -107,6 +113,7 @@ async def create_setting(
 async def get_setting(
     setting_id: str,
     admin: dict = Depends(get_current_admin),
+    session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """
     查询系统设置详情
@@ -119,7 +126,7 @@ async def get_setting(
     WHEN 管理员请求 GET /admin/v1/system-settings/nonexistent
     THEN 返回 HTTP 404 错误
     """
-    setting = await system_setting_service.get_setting(setting_id)
+    setting = await system_setting_service.get_setting(session, setting_id)
     if not setting:
         raise HTTPException(status_code=404, detail="设置不存在")
 
@@ -133,6 +140,7 @@ async def update_setting(
     setting_id: str,
     data: SystemSettingUpdate,
     admin: dict = Depends(get_current_admin),
+    session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """
     更新系统设置
@@ -146,6 +154,7 @@ async def update_setting(
     THEN 已有属性值更新、新增属性值创建、多余属性值删除
     """
     setting = await system_setting_service.update_setting(
+        session,
         setting_id=setting_id,
         code=data.code,
         name=data.name,
@@ -171,6 +180,7 @@ async def update_setting(
 async def delete_setting(
     setting_id: str,
     admin: dict = Depends(get_current_admin),
+    session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """
     删除系统设置
@@ -179,7 +189,7 @@ async def delete_setting(
     WHEN 管理员发送 DELETE /admin/v1/system-settings/{id}
     THEN 删除配置（级联删除属性值）
     """
-    success = await system_setting_service.delete_setting(setting_id)
+    success = await system_setting_service.delete_setting(session, setting_id)
     if not success:
         raise HTTPException(status_code=404, detail="设置不存在")
 

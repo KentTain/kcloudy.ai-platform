@@ -4,9 +4,11 @@
 提供登录、登出、Token 刷新等接口。
 """
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import ORJSONResponse
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from framework.database.dependencies import get_db_session
 from iam.schemas.login import LoginRequest, LoginResponse, LogoutResponse
 from iam.schemas.token import TokenRefreshRequest, TokenRefreshResponse
 from iam.services import auth_service
@@ -15,7 +17,11 @@ router = APIRouter()
 
 
 @router.post("/auth/login")
-async def login(request: Request, data: LoginRequest) -> ORJSONResponse:
+async def login(
+    request: Request,
+    data: LoginRequest,
+    session: AsyncSession = Depends(get_db_session),
+) -> ORJSONResponse:
     """
     用户登录
 
@@ -24,6 +30,7 @@ async def login(request: Request, data: LoginRequest) -> ORJSONResponse:
     try:
         ip = request.client.host if request.client else None
         result = await auth_service.login(
+            session,
             account=data.account,
             password=data.password,
             ip=ip,
@@ -40,7 +47,10 @@ async def login(request: Request, data: LoginRequest) -> ORJSONResponse:
 
 
 @router.post("/auth/logout")
-async def logout(request: Request) -> ORJSONResponse:
+async def logout(
+    request: Request,
+    session: AsyncSession = Depends(get_db_session),
+) -> ORJSONResponse:
     """
     用户登出
 
@@ -50,7 +60,7 @@ async def logout(request: Request) -> ORJSONResponse:
     auth_header = request.headers.get("Authorization", "")
     if auth_header.startswith("Bearer "):
         access_token = auth_header[7:]
-        await auth_service.logout(access_token)
+        await auth_service.logout(session, access_token)
 
     return ORJSONResponse(
         content={
@@ -62,14 +72,17 @@ async def logout(request: Request) -> ORJSONResponse:
 
 
 @router.post("/auth/token/refresh")
-async def refresh_token(data: TokenRefreshRequest) -> ORJSONResponse:
+async def refresh_token(
+    data: TokenRefreshRequest,
+    session: AsyncSession = Depends(get_db_session),
+) -> ORJSONResponse:
     """
     刷新 Token
 
     使用 Refresh Token 获取新的 Access Token。
     """
     try:
-        result = await auth_service.refresh_token(data.refresh_token)
+        result = await auth_service.refresh_token(session, data.refresh_token)
         return ORJSONResponse(
             content={
                 "code": 200,

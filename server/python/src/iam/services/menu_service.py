@@ -8,10 +8,10 @@ from typing import Any
 
 from loguru import logger
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql import func
 
 from iam.models import Menu, MenuPermission, Permission, Role, RolePermission, UserRole
-from framework.database.core.engine import async_session
 
 _logger = logger.bind(name=__name__)
 
@@ -23,7 +23,7 @@ class MenuService:
     """菜单管理服务"""
 
     @staticmethod
-    async def get_user_menus(user_id: str) -> list[MenuTreeDict]:
+    async def get_user_menus(session: AsyncSession, user_id: str) -> list[MenuTreeDict]:
         """
         获取用户可见菜单树
 
@@ -39,67 +39,65 @@ class MenuService:
         WHEN 菜单未关联任何权限
         THEN 所有登录用户可见此菜单（is_visible = true 时）
         """
-        async with async_session() as session:
-            # 1. 获取用户的所有权限 ID
-            stmt = (
-                select(Permission.id)
-                .join(RolePermission, Permission.id == RolePermission.permission_id)
-                .join(Role, RolePermission.role_id == Role.id)
-                .join(UserRole, Role.id == UserRole.role_id)
-                .where(UserRole.user_id == user_id)
-                .distinct()
-            )
-            result = await session.execute(stmt)
-            user_permission_ids = {row[0] for row in result.fetchall()}
+        # 1. 获取用户的所有权限 ID
+        stmt = (
+            select(Permission.id)
+            .join(RolePermission, Permission.id == RolePermission.permission_id)
+            .join(Role, RolePermission.role_id == Role.id)
+            .join(UserRole, Role.id == UserRole.role_id)
+            .where(UserRole.user_id == user_id)
+            .distinct()
+        )
+        result = await session.execute(stmt)
+        user_permission_ids = {row[0] for row in result.fetchall()}
 
-            # 2. 查询所有可见菜单
-            stmt = (
-                select(Menu)
-                .where(Menu.is_visible.is_(True))
-                .order_by(Menu.tree_sorts)
-            )
-            result = await session.execute(stmt)
-            all_menus = list(result.scalars().all())
+        # 2. 查询所有可见菜单
+        stmt = (
+            select(Menu)
+            .where(Menu.is_visible.is_(True))
+            .order_by(Menu.tree_sorts)
+        )
+        result = await session.execute(stmt)
+        all_menus = list(result.scalars().all())
 
-            if not all_menus:
-                return []
+        if not all_menus:
+            return []
 
-            # 3. 获取所有菜单的权限关联
-            menu_ids = [m.id for m in all_menus]
-            stmt = select(MenuPermission).where(MenuPermission.menu_id.in_(menu_ids))
-            result = await session.execute(stmt)
-            menu_permissions = list(result.scalars().all())
+        # 3. 获取所有菜单的权限关联
+        menu_ids = [m.id for m in all_menus]
+        stmt = select(MenuPermission).where(MenuPermission.menu_id.in_(menu_ids))
+        result = await session.execute(stmt)
+        menu_permissions = list(result.scalars().all())
 
-            # 构建 menu_id -> permission_ids 映射
-            menu_permission_map: dict[str, set[str]] = {}
-            for mp in menu_permissions:
-                if mp.menu_id not in menu_permission_map:
-                    menu_permission_map[mp.menu_id] = set()
-                menu_permission_map[mp.menu_id].add(mp.permission_id)
+        # 构建 menu_id -> permission_ids 映射
+        menu_permission_map: dict[str, set[str]] = {}
+        for mp in menu_permissions:
+            if mp.menu_id not in menu_permission_map:
+                menu_permission_map[mp.menu_id] = set()
+            menu_permission_map[mp.menu_id].add(mp.permission_id)
 
-            # 4. 过滤菜单：无权限限制 OR 用户拥有任一权限
-            visible_menu_ids = set()
-            for menu in all_menus:
-                menu_perms = menu_permission_map.get(menu.id, set())
-                # 无权限限制的菜单，所有登录用户可见
-                if not menu_perms:
-                    visible_menu_ids.add(menu.id)
-                # 用户拥有任一权限即可见
-                elif menu_perms & user_permission_ids:
-                    visible_menu_ids.add(menu.id)
+        # 4. 过滤菜单：无权限限制 OR 用户拥有任一权限
+        visible_menu_ids = set()
+        for menu in all_menus:
+            menu_perms = menu_permission_map.get(menu.id, set())
+            # 无权限限制的菜单，所有登录用户可见
+            if not menu_perms:
+                visible_menu_ids.add(menu.id)
+            # 用户拥有任一权限即可见
+            elif menu_perms & user_permission_ids:
+                visible_menu_ids.add(menu.id)
 
-            # 5. 过滤菜单列表并构建树
-            visible_menus = [m for m in all_menus if m.id in visible_menu_ids]
-            return Menu.build_tree(visible_menus)
+        # 5. 过滤菜单列表并构建树
+        visible_menus = [m for m in all_menus if m.id in visible_menu_ids]
+        return Menu.build_tree(visible_menus)
 
     @staticmethod
-    async def get_all_menus() -> list[MenuTreeDict]:
+    async def get_all_menus(session: AsyncSession) -> list[MenuTreeDict]:
         """获取所有菜单树（管理用）"""
-        async with async_session() as session:
-            stmt = select(Menu).order_by(Menu.tree_sorts)
-            result = await session.execute(stmt)
-            menus = list(result.scalars().all())
-            return Menu.build_tree(menus)
+        stmt = select(Menu).order_by(Menu.tree_sorts)
+        result = await session.execute(stmt)
+        menus = list(result.scalars().all())
+        return Menu.build_tree(menus)
 
 
 # 服务单例

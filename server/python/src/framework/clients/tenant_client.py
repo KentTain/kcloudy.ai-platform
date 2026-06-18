@@ -7,6 +7,7 @@ Tenant 客户端
 from typing import Any
 
 from pydantic import BaseModel, Field
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from framework.clients.inner_http_client import InnerHttpClient
 
@@ -131,11 +132,14 @@ class TenantClient:
                 for t in tenants if t
             ]
 
-    async def validate_access(self, user_id: str, tenant_id: str) -> bool:
+    async def validate_access(
+        self, session: AsyncSession, user_id: str, tenant_id: str
+    ) -> bool:
         """
         验证用户是否有权访问租户
 
         Args:
+            session: 数据库会话
             user_id: 用户 ID
             tenant_id: 租户 ID
 
@@ -153,17 +157,15 @@ class TenantClient:
         else:
             # 单体模式
             from iam.models import UserTenant
-            from framework.database.core.engine import async_session
             from sqlalchemy import select
 
-            async with async_session() as session:
-                stmt = select(UserTenant).where(
-                    UserTenant.user_id == user_id,
-                    UserTenant.tenant_id == tenant_id,
-                )
-                result = await session.execute(stmt)
-                user_tenant = result.scalar_one_or_none()
-                return user_tenant is not None
+            stmt = select(UserTenant).where(
+                UserTenant.user_id == user_id,
+                UserTenant.tenant_id == tenant_id,
+            )
+            result = await session.execute(stmt)
+            user_tenant = result.scalar_one_or_none()
+            return user_tenant is not None
 
     async def health_check(self) -> bool:
         """
