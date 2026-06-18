@@ -45,13 +45,9 @@
 
 ## 6. 服务层修改
 
-- [ ] 6.1 修改 `DatabaseConfigService.create()` 支持 `is_default` 唯一性控制
-- [ ] 6.2 修改 `CacheConfigService.create()` 支持 `is_default` 唯一性控制
-- [ ] 6.3 修改 `StorageConfigService.create()` 支持 `is_default` 唯一性控制
-- [ ] 6.4 修改 `QueueConfigService.create()` 支持 `is_default` 唯一性控制
-- [ ] 6.5 修改 `PubSubConfigService.create()` 支持 `is_default` 唯一性控制
-- [ ] 6.6 创建 `_get_default_config()` 辅助函数
-- [ ] 6.7 修改 `TenantService.create()` 支持自动填充默认配置
+- [x] 6.1 修改 `BaseResourceService.create()` 支持 `is_default` 唯一性控制（适用于所有 5 种配置）
+- [x] 6.2 创建 `get_default_config()` 辅助函数
+- [x] 6.3 修改 `TenantService.create()` 支持自动填充默认配置
 
 ## 7. API 控制器修改
 

@@ -66,7 +66,7 @@ class BaseResourceService(ABC):
             stmt = select(cls.model_class)
             if conditions:
                 stmt = stmt.where(*conditions)
-            stmt = stmt.order_by(cls.model_class.created_at.desc()).offset(offset).limit(page_size)
+            stmt = stmt.order_by(cls.model_class.is_default.desc(), cls.model_class.created_at.desc()).offset(offset).limit(page_size)
 
             result = await session.execute(stmt)
             items = list(result.scalars().all())
