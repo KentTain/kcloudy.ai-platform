@@ -44,7 +44,7 @@ TBD - created by archiving change impl-iam-frontend-vue. Update Purpose after ar
 - **THEN** 系统显示租户已分配的模块列表，支持分配/取消
 
 ### Requirement: 创建租户
-系统 SHALL 支持管理员创建新租户。
+系统 SHALL 支持管理员创建新租户，如果未指定资源配置则自动关联默认配置。
 
 #### Scenario: 创建新租户
 - **WHEN** 管理员填写租户名称、编码、联系人信息并提交
@@ -53,6 +53,14 @@ TBD - created by archiving change impl-iam-frontend-vue. Update Purpose after ar
 #### Scenario: 创建重复编码租户
 - **WHEN** 管理员尝试创建已存在编码的租户
 - **THEN** 系统返回错误提示"租户编码已存在"
+
+#### Scenario: 未指定资源配置时使用默认
+- **WHEN** 管理员创建租户时未指定 `db_config_id` 等配置参数
+- **THEN** 系统自动查询并关联默认资源配置
+
+#### Scenario: 指定资源配置时使用指定
+- **WHEN** 管理员创建租户时指定了 `db_config_id` 等配置参数
+- **THEN** 系统使用指定的配置 ID，不使用默认配置
 
 ### Requirement: 编辑租户
 系统 SHALL 支持管理员编辑租户信息。
@@ -84,7 +92,7 @@ TBD - created by archiving change impl-iam-frontend-vue. Update Purpose after ar
 - **THEN** 租户状态变为"停用"
 
 ### Requirement: 租户资源配置
-系统 SHALL 支持配置租户的数据库、存储、缓存资源。
+系统 SHALL 支持配置租户的数据库、存储、缓存资源，创建时支持自动关联默认配置。
 
 #### Scenario: 配置租户独立数据库
 - **WHEN** 管理员填写数据库配置（类型、主机、端口、名称、用户名）
@@ -97,6 +105,10 @@ TBD - created by archiving change impl-iam-frontend-vue. Update Purpose after ar
 #### Scenario: 配置租户独立缓存
 - **WHEN** 管理员填写 Redis DB 编号
 - **THEN** 系统验证编号范围（0-15）并检查是否已被占用
+
+#### Scenario: 前端选择资源配置
+- **WHEN** 管理员在创建租户页面选择资源配置
+- **THEN** 系统显示配置选择器，默认配置排在第一位且默认选中
 
 ### Requirement: 租户切换
 系统 SHALL 支持用户在不同租户间切换。
