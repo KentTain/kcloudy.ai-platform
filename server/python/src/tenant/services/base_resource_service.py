@@ -8,7 +8,8 @@ from abc import ABC, abstractmethod
 from typing import Any, TypeVar
 
 from loguru import logger
-from sqlalchemy import func, select, delete as sql_delete
+from sqlalchemy import func, select, delete as sql_delete, update as sql_update
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from framework.common.exceptions import ConflictError
@@ -89,9 +90,32 @@ class BaseResourceService(ABC):
             return result.scalar_one_or_none()
 
     @classmethod
+    async def _clear_existing_default(cls, s: AsyncSession) -> None:
+        """
+        清除同类型配置中已有的默认标记
+
+        将同一模型类中所有 is_default=True 的记录设为 False，
+        保证全局只有一个默认配置。
+
+        Args:
+            s: 数据库会话
+        """
+        stmt = (
+            sql_update(cls.model_class)
+            .where(cls.model_class.is_default == True)  # noqa: E712
+            .values(is_default=False)
+        )
+        await s.execute(stmt)
+        _logger.debug(f"清除 {cls.model_class.__name__} 已有默认配置标记")
+
+    @classmethod
     async def create(cls, session: AsyncSession | None = None, **kwargs: Any) -> Any:
         """
         创建配置
+
+        当 is_default=True 时，自动清除同类型其他配置的默认标记，
+        保证全局唯一性。使用事务保证原子性，捕获 IntegrityError
+        处理并发冲突。
 
         Args:
             session: 数据库会话（可选，用于事务）
@@ -99,6 +123,9 @@ class BaseResourceService(ABC):
 
         Returns:
             创建的配置模型实例
+
+        Raises:
+            IntegrityError: 并发冲突时重新抛出
         """
         # 加密敏感字段
         for field in cls.encrypt_fields:
@@ -107,23 +134,37 @@ class BaseResourceService(ABC):
                 if plain:  # 非空才加密
                     kwargs[field] = encrypt_password(plain)
 
+        is_default = kwargs.get("is_default", False)
+
         async def _create(s: AsyncSession) -> Any:
+            # 如果设置为默认配置，先清除其他默认标记
+            if is_default:
+                await cls._clear_existing_default(s)
+
             config = cls.model_class(**kwargs)
             s.add(config)
             await s.commit()
             await s.refresh(config)
-            _logger.info(f"创建 {cls.model_class.__name__} 配置: {config.id}")
+            _logger.info(f"创建 {cls.model_class.__name__} 配置: {config.id}" + (" (默认)" if is_default else ""))
             return config
 
         if session:
+            # 如果设置为默认配置，先清除其他默认标记
+            if is_default:
+                await cls._clear_existing_default(session)
+
             config = cls.model_class(**kwargs)
             session.add(config)
             await session.flush()
-            _logger.info(f"创建 {cls.model_class.__name__} 配置: {config.id}")
+            _logger.info(f"创建 {cls.model_class.__name__} 配置: {config.id}" + (" (默认)" if is_default else ""))
             return config
         else:
-            async with async_session() as s:
-                return await _create(s)
+            try:
+                async with async_session() as s:
+                    return await _create(s)
+            except IntegrityError:
+                _logger.warning(f"创建 {cls.model_class.__name__} 默认配置时发生并发冲突")
+                raise
 
     @classmethod
     async def update(
@@ -135,6 +176,10 @@ class BaseResourceService(ABC):
         """
         更新配置
 
+        当更新 is_default 为 True 时，自动清除同类型其他配置的默认标记，
+        保证全局唯一性。使用事务保证原子性，捕获 IntegrityError
+        处理并发冲突。
+
         Args:
             config_id: 配置 ID
             session: 数据库会话（可选）
@@ -142,6 +187,9 @@ class BaseResourceService(ABC):
 
         Returns:
             更新后的配置或 None
+
+        Raises:
+            IntegrityError: 并发冲突时重新抛出
         """
         # 加密敏感字段
         for field in cls.encrypt_fields:
@@ -149,6 +197,8 @@ class BaseResourceService(ABC):
                 plain = kwargs[field]
                 if plain:
                     kwargs[field] = encrypt_password(plain)
+
+        is_setting_default = kwargs.get("is_default", False)
 
         async def _update(s: AsyncSession) -> Any | None:
             stmt = select(cls.model_class).where(cls.model_class.id == config_id)
@@ -158,13 +208,17 @@ class BaseResourceService(ABC):
             if not config:
                 return None
 
+            # 如果设置为默认配置，先清除其他默认标记
+            if is_setting_default:
+                await cls._clear_existing_default(s)
+
             for key, value in kwargs.items():
                 if hasattr(config, key):
                     setattr(config, key, value)
 
             await s.commit()
             await s.refresh(config)
-            _logger.info(f"更新 {cls.model_class.__name__} 配置: {config_id}")
+            _logger.info(f"更新 {cls.model_class.__name__} 配置: {config_id}" + (" (设为默认)" if is_setting_default else ""))
             return config
 
         if session:
@@ -173,15 +227,24 @@ class BaseResourceService(ABC):
             config = result.scalar_one_or_none()
             if not config:
                 return None
+
+            # 如果设置为默认配置，先清除其他默认标记
+            if is_setting_default:
+                await cls._clear_existing_default(session)
+
             for key, value in kwargs.items():
                 if hasattr(config, key):
                     setattr(config, key, value)
             await session.flush()
-            _logger.info(f"更新 {cls.model_class.__name__} 配置: {config_id}")
+            _logger.info(f"更新 {cls.model_class.__name__} 配置: {config_id}" + (" (设为默认)" if is_setting_default else ""))
             return config
         else:
-            async with async_session() as s:
-                return await _update(s)
+            try:
+                async with async_session() as s:
+                    return await _update(s)
+            except IntegrityError:
+                _logger.warning(f"更新 {cls.model_class.__name__} 默认配置时发生并发冲突: {config_id}")
+                raise
 
     @classmethod
     async def delete(cls, config_id: str) -> bool:
@@ -248,6 +311,30 @@ class BaseResourceService(ABC):
             else:
                 result[key] = value
         return result
+
+    @classmethod
+    async def get_default_config(cls, session: AsyncSession | None = None) -> Any | None:
+        """
+        获取当前类型的默认配置
+
+        查询 is_default=True 的配置记录，返回第一个匹配项。
+
+        Args:
+            session: 数据库会话（可选，用于事务中复用）
+
+        Returns:
+            默认配置模型实例或 None
+        """
+        async def _query(s: AsyncSession) -> Any | None:
+            stmt = select(cls.model_class).where(cls.model_class.is_default == True).limit(1)  # noqa: E712
+            result = await s.execute(stmt)
+            return result.scalar_one_or_none()
+
+        if session:
+            return await _query(session)
+        else:
+            async with async_session() as s:
+                return await _query(s)
 
     @classmethod
     @abstractmethod

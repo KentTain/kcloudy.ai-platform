@@ -28,16 +28,15 @@
 
 ## 4. 种子数据脚本
 
-- [ ] 4.1 创建 `resource_config_seed.py` 文件
-- [ ] 4.2 实现数据库连接字符串解析函数 `_parse_database_url()`
-- [ ] 4.3 实现默认配置存在检查函数 `_exists_default_configs()`
-- [ ] 4.4 实现创建数据库配置函数 `_create_database_config()`
-- [ ] 4.5 实现创建缓存配置函数 `_create_cache_config()`
-- [ ] 4.6 实现创建存储配置函数 `_create_storage_config()`
-- [ ] 4.7 实现创建队列配置函数 `_create_queue_config()`
-- [ ] 4.8 实现创建发布订阅配置函数 `_create_pubsub_config()`
-- [ ] 4.9 实现主函数 `run()` 协调创建逻辑
-- [ ] 4.10 在 `module.py` 的 `get_seeds()` 中注册种子脚本
+- [x] 4.1 创建 `resource_config_seed.py` 文件
+- [x] 4.2 实现数据库连接字符串解析函数 `_parse_database_url()`
+- [x] 4.3 实现创建数据库配置函数 `_create_database_config()`
+- [x] 4.4 实现创建缓存配置函数 `_create_cache_config()`
+- [x] 4.5 实现创建存储配置函数 `_create_storage_config()`
+- [x] 4.6 实现创建队列配置函数 `_create_queue_config()`
+- [x] 4.7 实现创建发布订阅配置函数 `_create_pubsub_config()`
+- [x] 4.8 实现主函数 `run()` 协调创建逻辑
+- [x] 4.9 在 `module.py` 的 `get_seeds()` 中注册种子脚本
 
 ## 5. 租户种子脚本修改
 

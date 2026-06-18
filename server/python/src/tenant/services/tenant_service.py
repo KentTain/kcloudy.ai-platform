@@ -43,6 +43,11 @@ from framework.utils.crypto import (
     encrypt,
 )
 from framework.utils.resource_crypto import decrypt_password
+from tenant.services.database_config_service import database_config_service
+from tenant.services.storage_config_service import storage_config_service
+from tenant.services.cache_config_service import cache_config_service
+from tenant.services.queue_config_service import queue_config_service
+from tenant.services.pubsub_config_service import pubsub_config_service
 
 _logger = logger.bind(name=__name__)
 
@@ -262,6 +267,37 @@ class TenantService:
         encrypted_tenant_key = encrypt(tenant_key)
 
         async with async_session() as session:
+            # 自动填充默认配置：未指定配置 ID 时，查找 is_default=True 的配置
+            if db_config_id is None:
+                default_db = await database_config_service.get_default_config(session)
+                if default_db:
+                    db_config_id = default_db.id
+                    _logger.info(f"租户 {code} 自动关联默认数据库配置: {db_config_id}")
+
+            if storage_config_id is None:
+                default_storage = await storage_config_service.get_default_config(session)
+                if default_storage:
+                    storage_config_id = default_storage.id
+                    _logger.info(f"租户 {code} 自动关联默认存储配置: {storage_config_id}")
+
+            if cache_config_id is None:
+                default_cache = await cache_config_service.get_default_config(session)
+                if default_cache:
+                    cache_config_id = default_cache.id
+                    _logger.info(f"租户 {code} 自动关联默认缓存配置: {cache_config_id}")
+
+            if queue_config_id is None:
+                default_queue = await queue_config_service.get_default_config(session)
+                if default_queue:
+                    queue_config_id = default_queue.id
+                    _logger.info(f"租户 {code} 自动关联默认队列配置: {queue_config_id}")
+
+            if pubsub_config_id is None:
+                default_pubsub = await pubsub_config_service.get_default_config(session)
+                if default_pubsub:
+                    pubsub_config_id = default_pubsub.id
+                    _logger.info(f"租户 {code} 自动关联默认发布订阅配置: {pubsub_config_id}")
+
             tenant = Tenant(
                 name=name,
                 code=code,
