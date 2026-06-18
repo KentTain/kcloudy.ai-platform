@@ -371,3 +371,95 @@ class TestListConfigsDefaultOrdering:
 
         assert total == 2
         assert items[0].is_default is True
+
+
+class TestDeleteDefaultConfig:
+    """删除默认配置时的警告测试"""
+
+    @pytest.mark.asyncio
+    async def test_delete_default_config_raises_error(self):
+        """删除默认配置时抛出 ConflictError"""
+        from framework.common.exceptions import ConflictError
+
+        mock_config = MagicMock()
+        mock_config.id = "test-id"
+        mock_config.is_default = True
+
+        with patch("tenant.services.base_resource_service.async_session") as mock_session_ctx:
+            mock_ctx = AsyncMock()
+            mock_session_ctx.return_value.__aenter__.return_value = mock_ctx
+
+            query_result = MagicMock()
+            query_result.scalar_one_or_none.return_value = mock_config
+            mock_ctx.execute.return_value = query_result
+
+            with pytest.raises(ConflictError) as exc_info:
+                await DatabaseConfigService.delete("test-id")
+
+            assert "默认配置" in str(exc_info.value)
+
+    @pytest.mark.asyncio
+    async def test_delete_normal_config_succeeds(self):
+        """删除非默认配置成功"""
+        mock_config = MagicMock()
+        mock_config.id = "test-id"
+        mock_config.is_default = False
+
+        with patch("tenant.services.base_resource_service.async_session") as mock_session_ctx:
+            mock_ctx = AsyncMock()
+            mock_session_ctx.return_value.__aenter__.return_value = mock_ctx
+
+            query_result = MagicMock()
+            query_result.scalar_one_or_none.return_value = mock_config
+
+            delete_result = MagicMock()
+            delete_result.rowcount = 1
+
+            mock_ctx.execute.side_effect = [query_result, delete_result]
+            mock_ctx.commit = AsyncMock()
+
+            result = await DatabaseConfigService.delete("test-id")
+
+        assert result is True
+
+    @pytest.mark.asyncio
+    async def test_delete_config_referenced_by_tenant_raises_error(self):
+        """删除被租户引用的配置时抛出 ConflictError"""
+        from framework.common.exceptions import ConflictError
+
+        mock_config = MagicMock()
+        mock_config.id = "test-id"
+        mock_config.is_default = False
+
+        with patch("tenant.services.base_resource_service.async_session") as mock_session_ctx:
+            mock_ctx = AsyncMock()
+            mock_session_ctx.return_value.__aenter__.return_value = mock_ctx
+
+            query_result = MagicMock()
+            query_result.scalar_one_or_none.return_value = mock_config
+
+            count_result = MagicMock()
+            count_result.scalar.return_value = 3
+
+            mock_ctx.execute.side_effect = [query_result, count_result]
+
+            with pytest.raises(ConflictError) as exc_info:
+                await DatabaseConfigService.delete("test-id")
+
+            assert "租户使用" in str(exc_info.value)
+
+    @pytest.mark.asyncio
+    async def test_delete_nonexistent_config_returns_false(self):
+        """删除不存在的配置返回 False"""
+
+        with patch("tenant.services.base_resource_service.async_session") as mock_session_ctx:
+            mock_ctx = AsyncMock()
+            mock_session_ctx.return_value.__aenter__.return_value = mock_ctx
+
+            query_result = MagicMock()
+            query_result.scalar_one_or_none.return_value = None
+            mock_ctx.execute.return_value = query_result
+
+            result = await DatabaseConfigService.delete("nonexistent-id")
+
+        assert result is False
