@@ -8,8 +8,6 @@ import type { BasePaginatedQuery } from "@/framework/types";
 export interface ResourceConfig {
   id: string;
   name: string;
-  type: "database" | "storage" | "cache" | "queue" | "pubsub";
-  config: Record<string, any>;
   tenant_count?: number; // 被引用的租户数量
   is_default?: boolean; // 是否为默认配置
   created_at: string;
@@ -19,62 +17,51 @@ export interface ResourceConfig {
 // 数据库配置
 export interface DatabaseConfig extends ResourceConfig {
   type: "database";
-  config: {
-    host: string;
-    port: number;
-    database: string;
-    username: string;
-    password?: string;
-    ssl_mode?: string;
-  };
+  host: string;
+  port: number;
+  database: string;
+  username: string;
+  password?: string;
 }
 
 // 存储配置
 export interface StorageConfig extends ResourceConfig {
   type: "storage";
-  config: {
-    endpoint: string;
-    bucket: string;
-    access_key: string;
-    secret_key?: string;
-    region?: string;
-  };
+  endpoint: string;
+  bucket: string;
+  access_key: string;
+  secret_key?: string;
+  region?: string;
 }
 
 // 缓存配置
 export interface CacheConfig extends ResourceConfig {
   type: "cache";
-  config: {
-    host: string;
-    port: number;
-    password?: string;
-    db?: number;
-  };
+  host: string;
+  port: number;
+  password?: string;
+  db?: number;
 }
 
 // 队列配置
 export interface QueueConfig extends ResourceConfig {
   type: "queue";
-  config: {
-    host: string;
-    port: number;
-    username?: string;
-    password?: string;
-    vhost?: string;
-  };
+  host: string;
+  port: number;
+  username?: string;
+  password?: string;
+  vhost?: string;
 }
 
 // 发布订阅配置
 export interface PubsubConfig extends ResourceConfig {
   type: "pubsub";
-  config: {
-    type: "kafka" | "rabbitmq" | "redis";
-    brokers?: string[];
-    host?: string;
-    port?: number;
-    username?: string;
-    password?: string;
-  };
+  type_name: "kafka" | "rabbitmq" | "redis";
+  brokers?: string[];
+  host?: string;
+  port?: number;
+  username?: string;
+  password?: string;
 }
 
 // 连通性测试结果
@@ -87,14 +74,14 @@ export interface ConnectionTestResult {
 // 资源配置查询参数
 export interface ResourcePaginatedQuery extends BasePaginatedQuery {}
 
-// 创建资源配置参数
+// 创建资源配置参数（扁平化结构）
 export interface ResourceCreate {
   name: string;
-  config: Record<string, any>;
+  [key: string]: any; // 其他字段根据具体资源类型而定
 }
 
-// 更新资源配置参数
+// 更新资源配置参数（扁平化结构）
 export interface ResourceUpdate {
   name?: string;
-  config?: Record<string, any>;
+  [key: string]: any; // 其他字段根据具体资源类型而定
 }

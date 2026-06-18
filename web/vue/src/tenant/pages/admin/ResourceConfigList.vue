@@ -254,9 +254,15 @@ const openEditDialog = (row: ResourceConfig) => {
   editingId.value = row.id
   form.value = {
     name: row.name,
-    config: { ...row.config },
+    config: extractConfig(row),
   }
   dialogOpen.value = true
+}
+
+// 从扁平数据中提取 config 对象
+const extractConfig = (row: ResourceConfig): Record<string, any> => {
+  const { id, name, tenant_count, is_default, created_at, updated_at, type, ...config } = row as any
+  return config
 }
 
 // 打开删除确认
@@ -348,15 +354,16 @@ const handleSave = async () => {
 
   formLoading.value = true
   try {
-    const payload: ResourceCreate = {
+    // 构建扁平化的提交数据
+    const payload = {
       name: form.value.name,
-      config: form.value.config,
+      ...form.value.config,
     }
 
     if (editingId.value) {
-      const updatePayload: ResourceUpdate = {
+      const updatePayload = {
         name: form.value.name,
-        config: form.value.config,
+        ...form.value.config,
       }
       switch (currentType.value) {
         case 'database':
@@ -596,9 +603,9 @@ onMounted(() => {
                   :key="row.id"
                 >
                   <TableCell class="font-medium">{{ row.name }}</TableCell>
-                  <TableCell>{{ row.config.host }}</TableCell>
-                  <TableCell>{{ row.config.port }}</TableCell>
-                  <TableCell>{{ row.config.database }}</TableCell>
+                  <TableCell>{{ row.host }}</TableCell>
+                  <TableCell>{{ row.port }}</TableCell>
+                  <TableCell>{{ row.database }}</TableCell>
                   <TableCell>
                     <Badge :variant="getStatusBadge(row).variant">
                       {{ getStatusBadge(row).label }}
@@ -669,9 +676,9 @@ onMounted(() => {
                   :key="row.id"
                 >
                   <TableCell class="font-medium">{{ row.name }}</TableCell>
-                  <TableCell>{{ row.config.endpoint }}</TableCell>
-                  <TableCell>{{ row.config.bucket }}</TableCell>
-                  <TableCell>{{ row.config.region || '--' }}</TableCell>
+                  <TableCell>{{ row.endpoint }}</TableCell>
+                  <TableCell>{{ row.bucket }}</TableCell>
+                  <TableCell>{{ row.region || '--' }}</TableCell>
                   <TableCell>
                     <Badge :variant="getStatusBadge(row).variant">
                       {{ getStatusBadge(row).label }}
@@ -742,9 +749,9 @@ onMounted(() => {
                   :key="row.id"
                 >
                   <TableCell class="font-medium">{{ row.name }}</TableCell>
-                  <TableCell>{{ row.config.host }}</TableCell>
-                  <TableCell>{{ row.config.port }}</TableCell>
-                  <TableCell>{{ row.config.db || 0 }}</TableCell>
+                  <TableCell>{{ row.host }}</TableCell>
+                  <TableCell>{{ row.port }}</TableCell>
+                  <TableCell>{{ row.db || 0 }}</TableCell>
                   <TableCell>
                     <Badge :variant="getStatusBadge(row).variant">
                       {{ getStatusBadge(row).label }}
@@ -815,10 +822,10 @@ onMounted(() => {
                   :key="row.id"
                 >
                   <TableCell class="font-medium">{{ row.name }}</TableCell>
-                  <TableCell>{{ row.config.host }}</TableCell>
-                  <TableCell>{{ row.config.port }}</TableCell>
-                  <TableCell>{{ row.config.username || '--' }}</TableCell>
-                  <TableCell>{{ row.config.vhost || '/' }}</TableCell>
+                  <TableCell>{{ row.host }}</TableCell>
+                  <TableCell>{{ row.port }}</TableCell>
+                  <TableCell>{{ row.username || '--' }}</TableCell>
+                  <TableCell>{{ row.vhost || '/' }}</TableCell>
                   <TableCell>
                     <Badge :variant="getStatusBadge(row).variant">
                       {{ getStatusBadge(row).label }}
@@ -889,18 +896,18 @@ onMounted(() => {
                 >
                   <TableCell class="font-medium">{{ row.name }}</TableCell>
                   <TableCell>
-                    <Badge variant="outline">{{ row.config.type }}</Badge>
+                    <Badge variant="outline">{{ row.type_name }}</Badge>
                   </TableCell>
                   <TableCell>
-                    <span v-if="row.config.brokers?.length">
-                      {{ row.config.brokers.join(', ') }}
+                    <span v-if="row.brokers?.length">
+                      {{ row.brokers.join(', ') }}
                     </span>
-                    <span v-else-if="row.config.host">
-                      {{ row.config.host }}:{{ row.config.port }}
+                    <span v-else-if="row.host">
+                      {{ row.host }}:{{ row.port }}
                     </span>
                     <span v-else>--</span>
                   </TableCell>
-                  <TableCell>{{ row.config.username || '--' }}</TableCell>
+                  <TableCell>{{ row.username || '--' }}</TableCell>
                   <TableCell>
                     <Badge :variant="getStatusBadge(row).variant">
                       {{ getStatusBadge(row).label }}
