@@ -7,20 +7,15 @@ IAM 模块内部接口控制器 - 部门
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import ORJSONResponse
 from pydantic import BaseModel, Field
-from typing import Any
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from framework.database.dependencies import get_db_session
+from framework.schemas.base import Success, SuccessExtra
 from iam.models import Department
 from iam.services.department_service import DepartmentService
 
 router = APIRouter()
-
-
-def Success(data: Any = None, msg: str = "success") -> dict:
-    """成功响应"""
-    return {"code": 200, "msg": msg, "data": data}
 
 
 class DepartmentInfoResponse(BaseModel):
@@ -96,7 +91,7 @@ async def get_department_tree(
 
     tree = build_department_tree(departments)
 
-    return ORJSONResponse(content=Success([t.model_dump() for t in tree]))
+    return Success(data=[t.model_dump() for t in tree])
 
 
 @router.get("/departments/{department_id}")
@@ -120,6 +115,4 @@ async def get_department(
     if not dept:
         raise HTTPException(status_code=404, detail=f"部门 {department_id} 不存在")
 
-    return ORJSONResponse(
-        content=Success(build_department_info(dept).model_dump())
-    )
+    return Success(data=build_department_info(dept).model_dump())

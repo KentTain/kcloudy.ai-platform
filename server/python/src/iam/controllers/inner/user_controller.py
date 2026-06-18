@@ -7,21 +7,16 @@ IAM 模块内部接口控制器
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import ORJSONResponse
 from pydantic import BaseModel, Field
-from typing import Any
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from framework.database.dependencies import get_db_session
+from framework.schemas.base import Success, SuccessExtra
 from iam.models import User, UserTenant, UserDepartment
 from iam.services.user_service import UserService
 from iam.services.department_service import DepartmentService
 
 router = APIRouter()
-
-
-def Success(data: Any = None, msg: str = "success") -> dict:
-    """成功响应"""
-    return {"code": 200, "msg": msg, "data": data}
 
 
 class UserInfoResponse(BaseModel):
@@ -143,9 +138,7 @@ async def get_user(
     user_tenant = result.scalar_one_or_none()
     tenant_id = user_tenant.tenant_id if user_tenant else None
 
-    return ORJSONResponse(
-        content=Success(build_user_info(user, tenant_id).model_dump())
-    )
+    return Success(data=build_user_info(user, tenant_id).model_dump())
 
 
 @router.post("/users/batch")
@@ -162,7 +155,7 @@ async def get_users_batch(
     THEN 返回多个用户的信息列表
     """
     if not data.user_ids:
-        return ORJSONResponse(content=Success([]))
+        return Success(data=[])
 
     users = await UserService.get_by_ids(session, data.user_ids)
 
@@ -176,9 +169,7 @@ async def get_users_batch(
     for ut in result.scalars().all():
         user_tenant_map[ut.user_id] = ut.tenant_id
 
-    return ORJSONResponse(
-        content=Success([build_user_info(u, user_tenant_map.get(u.id)).model_dump() for u in users if u])
-    )
+    return Success(data=[build_user_info(u, user_tenant_map.get(u.id)).model_dump() for u in users if u])
 
 
 @router.get("/users/{user_id}/departments")
@@ -200,13 +191,11 @@ async def get_user_departments(
     department_ids = [ud.department_id for ud in user_departments]
 
     if not department_ids:
-        return ORJSONResponse(
-            content=Success(
-                UserDepartmentResponse(
-                    user_id=user_id,
-                    departments=[],
-                ).model_dump()
-            )
+        return Success(
+            data=UserDepartmentResponse(
+                user_id=user_id,
+                departments=[],
+            ).model_dump()
         )
 
     # 获取部门详情
@@ -223,13 +212,11 @@ async def get_user_departments(
         for d in departments if d
     ]
 
-    return ORJSONResponse(
-        content=Success(
-            UserDepartmentResponse(
-                user_id=user_id,
-                departments=dept_list,
-            ).model_dump()
-        )
+    return Success(
+        data=UserDepartmentResponse(
+            user_id=user_id,
+            departments=dept_list,
+        ).model_dump()
     )
 
 
@@ -247,20 +234,18 @@ async def get_user_tenants(
     """
     tenants = await UserService.get_user_tenants_detail(session, user_id)
 
-    return ORJSONResponse(
-        content=Success(
-            UserTenantsResponse(
-                user_id=user_id,
-                tenants=[
-                    UserTenantInfo(
-                        tenant_id=t["tenant_id"],
-                        role=t["role"],
-                        is_default=t["is_default"],
-                    )
-                    for t in tenants
-                ],
-            ).model_dump()
-        )
+    return Success(
+        data=UserTenantsResponse(
+            user_id=user_id,
+            tenants=[
+                UserTenantInfo(
+                    tenant_id=t["tenant_id"],
+                    role=t["role"],
+                    is_default=t["is_default"],
+                )
+                for t in tenants
+            ],
+        ).model_dump()
     )
 
 
@@ -278,11 +263,9 @@ async def get_tenant_users(
     """
     user_ids = await UserService.get_user_ids_by_tenant_id(session, tenant_id)
 
-    return ORJSONResponse(
-        content=Success(
-            TenantUsersResponse(
-                tenant_id=tenant_id,
-                user_ids=user_ids,
-            ).model_dump()
-        )
+    return Success(
+        data=TenantUsersResponse(
+            tenant_id=tenant_id,
+            user_ids=user_ids,
+        ).model_dump()
     )

@@ -7,6 +7,7 @@ from fastapi.responses import ORJSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from framework.database.dependencies import get_db_session
+from framework.schemas.base import Success, SuccessExtra
 from iam.schemas.console.system_setting import (
     ConsoleSystemSettingPaginatedListResponse,
     ConsoleSystemSettingPaginatedQuery,
@@ -17,9 +18,6 @@ from iam.services.system_setting_service import system_setting_service
 router = APIRouter()
 
 
-def Success(data=None, msg: str = "success") -> dict:
-    """成功响应"""
-    return {"code": 200, "msg": msg, "data": data}
 
 
 def build_setting_response(setting) -> ConsoleSystemSettingResponse:

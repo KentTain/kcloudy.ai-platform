@@ -7,6 +7,7 @@ from fastapi.responses import ORJSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from framework.database.dependencies import get_db_session
+from framework.schemas.base import Success, SuccessExtra
 from tenant.middlewares.admin_auth_middleware import get_current_admin
 from iam.schemas.admin.system_setting import (
     SystemSettingCreate,
@@ -20,9 +21,6 @@ from iam.services.system_setting_service import system_setting_service
 router = APIRouter()
 
 
-def Success(data=None, msg: str = "success") -> dict:
-    """成功响应"""
-    return {"code": 200, "msg": msg, "data": data}
 
 
 def build_setting_response(setting) -> SystemSettingResponse:
@@ -193,4 +191,4 @@ async def delete_setting(
     if not success:
         raise HTTPException(status_code=404, detail="设置不存在")
 
-    return ORJSONResponse(content=Success())
+    return Success()
