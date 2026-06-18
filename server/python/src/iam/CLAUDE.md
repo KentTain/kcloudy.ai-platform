@@ -67,6 +67,48 @@ IAM 模块 API 路由遵循 `/{模块}/{类型}/v1/{功能}` 格式：
 | Department | 部门 | iam.departments |
 | UserRole | 用户-角色关联 | iam.user_roles |
 | UserTenant | 用户-租户关联 | iam.user_tenants |
+| RolePermission | 角色-权限关联 | iam.role_permissions |
+| MenuPermission | 菜单-权限关联 | iam.menu_permissions |
+
+## 角色编码规范
+
+| 类型 | 编码格式 | 示例 |
+|------|----------|------|
+| 全局角色 | `{role_name}` | `admin`, `user` |
+| 租户角色 | `{tenant_id}:{role_name}` | `tenant-001:owner`, `tenant-001:admin` |
+
+### 租户角色自动创建
+
+创建租户时自动创建三个租户级角色：
+
+| 角色 | 编码 | 权限 |
+|------|------|------|
+| 租户所有者 | `{tenant_id}:owner` | 所有模块的所有权限 |
+| 租户管理员 | `{tenant_id}:admin` | 模块管理权限（待配置） |
+| 租户成员 | `{tenant_id}:member` | 基础访问权限（待配置） |
+
+## 模块同步服务
+
+`ModuleSyncService` 负责将模块定义层的数据同步到租户实例层：
+
+| 同步方法 | 源模型 | 目标模型 |
+|----------|--------|----------|
+| `sync_module_assigned` | Module* | Menu, Permission, Role, RolePermission, MenuPermission |
+| `sync_module_role_permission_created` | ModuleRolePermission | RolePermission |
+| `sync_module_role_permission_deleted` | ModuleRolePermission | RolePermission |
+| `sync_module_menu_permission_created` | ModuleMenuPermission | MenuPermission |
+| `sync_module_menu_permission_deleted` | ModuleMenuPermission | MenuPermission |
+
+### 同步映射规则
+
+```
+模块定义层                          租户实例层
+────────────                       ────────────
+ModuleRolePermission.module_role_id    → Role.ref_id
+ModuleRolePermission.module_permission_id → Permission.ref_id
+ModuleMenuPermission.module_menu_id    → Menu.ref_id
+ModuleMenuPermission.module_permission_id → Permission.ref_id
+```
 
 ## 开发规则
 
