@@ -208,3 +208,14 @@ class ModuleRolePaginatedListResponse(BaseModel):
     total: int = Field(..., description="总数")
     page: int = Field(..., description="页码")
     page_size: int = Field(..., description="每页数量")
+
+
+# =============================================================================
+# 模块菜单权限 Schema
+# =============================================================================
+
+
+class ModuleMenuPermissionUpdateRequest(BaseModel):
+    """更新菜单权限请求（整体替换）"""
+
+    permission_ids: list[str] = Field(default_factory=list, description="权限ID列表")
