@@ -191,13 +191,13 @@ AI 模块测试位于 `tests/ai/` 目录下，采用分层测试策略。
 
 ```bash
 # 运行所有 AI 组件测试
-uv run pytest tests/ai/components -v
+uv run pytest tests/ai/unit/components -v
 
 # 运行特定组件测试
-uv run pytest tests/ai/components/encryption -v
-uv run pytest tests/ai/components/datasource -v
-uv run pytest tests/ai/components/code_executor -v
-uv run pytest tests/ai/components/graphrag -v
+uv run pytest tests/ai/unit/components/encryption -v
+uv run pytest tests/ai/unit/components/datasource -v
+uv run pytest tests/ai/unit/components/code_executor -v
+uv run pytest tests/ai/unit/components/graphrag -v
 ```
 
 ### 测试特点

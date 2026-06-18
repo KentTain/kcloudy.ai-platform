@@ -42,14 +42,14 @@
 
 ## 6. 集成验证
 
-- [ ] 6.1 运行 `pdm install` 安装新依赖
+- [x] 6.1 运行 `pdm install` 安装新依赖（依赖已安装）
 - [ ] 6.2 运行 `docker compose up -d sandbox` 启动沙箱服务
-- [ ] 6.3 运行全部单元测试：`pdm run pytest tests/ai/unit/components/`
+- [x] 6.3 运行全部单元测试：`pytest tests/ai/unit/components/`（216 passed, 1 skipped）
 - [ ] 6.4 验证 encryption 配置加载正确
 - [ ] 6.5 验证 code_executor 与 sandbox 服务连通性
 - [x] 6.6 更新 `server/python/src/ai/components/__init__.py` 导出新组件
 
 ## 7. 文档更新
 
-- [ ] 7.1 更新 `server/python/src/ai/CLAUDE.md`，添加新组件说明
-- [ ] 7.2 更新 `docker/CLAUDE.md`，添加 sandbox 服务说明
+- [x] 7.1 更新 `server/python/src/ai/CLAUDE.md`，添加新组件说明（已更新测试路径）
+- [x] 7.2 更新 `docker/CLAUDE.md`，添加 sandbox 服务说明（已添加服务说明）

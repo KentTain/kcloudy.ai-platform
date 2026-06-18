@@ -142,6 +142,38 @@ claude-code-hub
 
 前端服务
 └── depends_on: 后端服务 (healthy)
+
+sandbox (代码沙箱)
+└── 用于 code_executor 组件执行不受信任的代码
+```
+
+## 新增服务说明
+
+### Sandbox 服务（代码沙箱）
+
+用于 `ai.components.code_executor` 组件，提供安全的代码执行环境。
+
+**服务配置**：
+- 镜像：`langgenius/dify-sandbox:0.2.12`
+- 容器名：`kcloudy-sandbox`
+- 端口：`8194`（可通过 `SANDBOX_PORT` 环境变量配置）
+- 网络：`kcloudy-network`
+
+**使用场景**：
+- 执行用户提供的 Python3 代码
+- 执行 JavaScript 代码
+- 执行 Jinja2 模板渲染
+
+**安全特性**：
+
+- 隔离的执行环境
+- 资源限制（CPU、内存、执行时间）
+- 网络隔离
+
+**启动命令**：
+
+```bash
+docker compose -f docker-compose.backend.yml up -d sandbox
 ```
 
 ## 常用操作
