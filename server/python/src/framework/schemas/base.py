@@ -11,6 +11,118 @@ from typing import Any
 
 from pydantic import BaseModel as PydanticBaseModel
 from pydantic import ConfigDict, Field
+from starlette.status import (
+    HTTP_200_OK,
+    HTTP_400_BAD_REQUEST,
+    HTTP_401_UNAUTHORIZED,
+    HTTP_403_FORBIDDEN,
+    HTTP_404_NOT_FOUND,
+    HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+    HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+    HTTP_422_UNPROCESSABLE_ENTITY,
+    HTTP_429_TOO_MANY_REQUESTS,
+    HTTP_500_INTERNAL_SERVER_ERROR,
+    HTTP_503_SERVICE_UNAVAILABLE,
+)
+
+from extended.fastapi.responses import ORJSONResponse
+
+
+class Success(ORJSONResponse):
+    """成功响应"""
+
+    def __init__(
+        self,
+        code: int = HTTP_200_OK,
+        msg: str | None = "OK",
+        data: Any | None = None,
+        **kwargs,
+    ) -> None:
+        """
+        初始化实例。
+
+        Args:
+            code (int): code 参数。
+            msg (str | None): msg 参数。
+            data (Any | None): data 参数。
+            kwargs: kwargs 参数。
+        """
+        content: dict[str, Any] = {
+            "code": code,
+            "msg": msg,
+            "data": data,
+        }
+        # 添加额外的参数，如conversation_id, has_more, limit等
+        content.update(kwargs)
+        super().__init__(content=content, status_code=code)
+
+
+class SuccessExtra(ORJSONResponse):
+    """分页成功响应"""
+
+    def __init__(
+        self,
+        code: int = HTTP_200_OK,
+        msg: str | None = None,
+        data: Any | None = None,
+        total: int = 0,
+        page: int = 1,
+        page_size: int = 20,
+        **kwargs,
+    ) -> None:
+        """
+        初始化实例。
+
+        Args:
+            code (int): code 参数。
+            msg (str | None): msg 参数。
+            data (Any | None): data 参数。
+            total (int): total 参数。
+            page (int): page 参数。
+            page_size (int): page_size 参数。
+            kwargs: kwargs 参数。
+        """
+        content: dict[str, Any] = {
+            "code": code,
+            "msg": msg,
+            "data": data,
+            "total": total,
+            "page": page,
+            "page_size": page_size,
+        }
+        content.update(kwargs)
+        super().__init__(
+            content=content,
+            status_code=code,
+        )
+
+
+class Fail(ORJSONResponse):
+    """失败响应"""
+
+    def __init__(
+        self,
+        code: int = HTTP_400_BAD_REQUEST,
+        msg: str | None = None,
+        data: Any | None = None,
+        **kwargs,
+    ) -> None:
+        """
+        初始化实例。
+
+        Args:
+            code (int): code 参数。
+            msg (str | None): msg 参数。
+            data (Any | None): data 参数。
+            kwargs: kwargs 参数。
+        """
+        content: dict[str, Any] = {
+            "code": code,
+            "msg": msg,
+            "data": data,
+        }
+        content.update(kwargs)
+        super().__init__(content=content, status_code=code)
 
 
 class BaseModel(PydanticBaseModel):
@@ -38,7 +150,6 @@ class BaseModel(PydanticBaseModel):
         # 处理额外字段的策略
         extra="ignore",
     )
-
 
 
 class BaseQuery(BaseModel):
