@@ -55,11 +55,7 @@
 
 ## 8. 前端类型定义修改
 
-- [ ] 8.1 为 `DatabaseConfig` 接口添加 `is_default: boolean` 字段
-- [ ] 8.2 为 `CacheConfig` 接口添加 `is_default: boolean` 字段
-- [ ] 8.3 为 `StorageConfig` 接口添加 `is_default: boolean` 字段
-- [ ] 8.4 为 `QueueConfig` 接口添加 `is_default: boolean` 字段
-- [ ] 8.5 为 `PubsubConfig` 接口添加 `is_default: boolean` 字段
+- [x] 8.1 为 `ResourceConfig` 基础接口添加 `is_default?: boolean` 字段（子接口自动继承）
 
 ## 9. 前端创建租户页面修改
 
