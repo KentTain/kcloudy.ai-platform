@@ -18,6 +18,10 @@ from framework.events.domain_events import (
     ModuleRoleUpdated,
     ModuleRoleDeleted,
     ModuleRolePermissionChanged,
+    ModuleRolePermissionCreated,
+    ModuleRolePermissionDeleted,
+    ModuleMenuPermissionCreated,
+    ModuleMenuPermissionDeleted,
 )
 from framework.events.publisher import EventPublisher, event_publisher
 
@@ -40,6 +44,11 @@ __all__ = [
     "ModuleRoleUpdated",
     "ModuleRoleDeleted",
     "ModuleRolePermissionChanged",
+    "ModuleRolePermissionCreated",
+    "ModuleRolePermissionDeleted",
+    # 模块菜单权限事件
+    "ModuleMenuPermissionCreated",
+    "ModuleMenuPermissionDeleted",
     # 发布器
     "EventPublisher",
     "event_publisher",

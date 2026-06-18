@@ -104,3 +104,9 @@ class EventStream:
     MODULE_ROLE_UPDATED = "module_role_updated_events"
     MODULE_ROLE_DELETED = "module_role_deleted_events"
     MODULE_ROLE_PERMISSION_CHANGED = "module_role_permission_changed_events"
+    MODULE_ROLE_PERMISSION_CREATED = "module_role_permission_created_events"
+    MODULE_ROLE_PERMISSION_DELETED = "module_role_permission_deleted_events"
+
+    # 模块菜单权限事件流
+    MODULE_MENU_PERMISSION_CREATED = "module_menu_permission_created_events"
+    MODULE_MENU_PERMISSION_DELETED = "module_menu_permission_deleted_events"

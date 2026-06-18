@@ -271,3 +271,91 @@ class ModuleRolePermissionChanged(DomainEvent):
     @classmethod
     def get_stream_name(cls) -> str:
         return EventStream.MODULE_ROLE_PERMISSION_CHANGED
+
+
+# =============================================================================
+# 模块角色权限关联事件（细化）
+# =============================================================================
+
+
+@dataclass
+class ModuleRolePermissionCreated(DomainEvent):
+    """
+    模块角色权限关联创建事件
+
+    触发时机：模块角色新增权限关联成功后
+    携带数据：module_role_permission_id
+
+    消费者：
+    - IAM 服务：同步创建角色权限关联到已分配该模块的租户实例层
+    """
+
+    module_role_permission_id: str = ""
+
+    @classmethod
+    def get_stream_name(cls) -> str:
+        return EventStream.MODULE_ROLE_PERMISSION_CREATED
+
+
+@dataclass
+class ModuleRolePermissionDeleted(DomainEvent):
+    """
+    模块角色权限关联删除事件
+
+    触发时机：模块角色删除权限关联成功后
+    携带数据：module_role_id, module_permission_id
+
+    消费者：
+    - IAM 服务：同步删除已分配该模块的租户实例层角色权限关联
+    """
+
+    module_role_id: str = ""
+    module_permission_id: str = ""
+
+    @classmethod
+    def get_stream_name(cls) -> str:
+        return EventStream.MODULE_ROLE_PERMISSION_DELETED
+
+
+# =============================================================================
+# 模块菜单权限关联事件
+# =============================================================================
+
+
+@dataclass
+class ModuleMenuPermissionCreated(DomainEvent):
+    """
+    模块菜单权限关联创建事件
+
+    触发时机：模块新增菜单权限关联成功后
+    携带数据：module_menu_permission_id
+
+    消费者：
+    - IAM 服务：同步创建菜单权限关联到已分配该模块的租户实例层
+    """
+
+    module_menu_permission_id: str = ""
+
+    @classmethod
+    def get_stream_name(cls) -> str:
+        return EventStream.MODULE_MENU_PERMISSION_CREATED
+
+
+@dataclass
+class ModuleMenuPermissionDeleted(DomainEvent):
+    """
+    模块菜单权限关联删除事件
+
+    触发时机：模块删除菜单权限关联成功后
+    携带数据：module_menu_id, module_permission_id
+
+    消费者：
+    - IAM 服务：同步删除已分配该模块的租户实例层菜单权限关联
+    """
+
+    module_menu_id: str = ""
+    module_permission_id: str = ""
+
+    @classmethod
+    def get_stream_name(cls) -> str:
+        return EventStream.MODULE_MENU_PERMISSION_DELETED
