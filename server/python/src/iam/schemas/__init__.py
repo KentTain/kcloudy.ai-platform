@@ -26,6 +26,9 @@ from iam.schemas.department import (
     DepartmentUserResponse,
     DepartmentResponse,
     UserDepartmentRequest,
+    DepartmentUserBatchRequest,
+    DepartmentDetailResponse,
+    MemberInfo,
 )
 from iam.schemas.login import (
     LoginRequest,
@@ -57,6 +60,10 @@ from iam.schemas.role import (
     RoleUpdate,
     RoleResponse,
     RoleWithPermissionsResponse,
+    RoleOptionResponse,
+    RoleMemberAssignRequest,
+    RoleMenuAssignRequest,
+    RoleMemberResponse,
     RoleQuery,
     RolePaginatedQuery,
 )
@@ -75,6 +82,7 @@ from iam.schemas.user import (
     UserResponse,
     UserQuery,
     UserPaginatedQuery,
+    UserStatsResponse,
 )
 
 __all__ = [
@@ -100,6 +108,7 @@ __all__ = [
     "UserQuery",
     "UserPaginatedQuery",
     "UserPaginatedListResponse",
+    "UserStatsResponse",
     # 角色
     "RoleCreate",
     "RoleUpdate",
@@ -109,6 +118,10 @@ __all__ = [
     "RolePaginatedQuery",
     "RolePaginatedListResponse",
     "RoleWithPermissionsResponse",
+    "RoleOptionResponse",
+    "RoleMemberAssignRequest",
+    "RoleMenuAssignRequest",
+    "RoleMemberResponse",
     # 权限
     "PermissionResponse",
     "PermissionQuery",
@@ -122,6 +135,9 @@ __all__ = [
     "DepartmentTreeResponse",
     "UserDepartmentRequest",
     "DepartmentUserResponse",
+    "DepartmentUserBatchRequest",
+    "DepartmentDetailResponse",
+    "MemberInfo",
     # OAuth
     "OAuthAuthorizeResponse",
     "OAuthCallbackRequest",

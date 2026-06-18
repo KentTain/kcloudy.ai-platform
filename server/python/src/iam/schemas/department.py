@@ -124,3 +124,38 @@ class DepartmentListResponse(BaseModel):
             DepartmentListResponse 实例
         """
         return cls(items=[DepartmentListItem.from_department(d) for d in departments])
+
+
+class DepartmentUserBatchRequest(BaseModel):
+    """批量添加部门成员请求"""
+
+    user_ids: list[str] = Field(..., min_length=1, description="用户 ID 列表")
+
+
+class DepartmentDetailResponse(BaseModel):
+    """部门详情响应（含统计信息）"""
+
+    id: str
+    name: str
+    code: str | None
+    parent_id: str | None
+    sort_order: int
+    leader_id: str | None
+    status: str
+    created_at: datetime
+    path: str = Field("", description="组织路径")
+    direct_member_count: int = Field(0, description="直属成员数")
+    total_member_count: int = Field(0, description="累计成员数（含下级）")
+    children_count: int = Field(0, description="直接子组织数")
+
+
+class MemberInfo(BaseModel):
+    """部门成员信息"""
+
+    user_id: str
+    username: str
+    nickname: str | None
+    email: str | None
+    phone: str | None
+    status: str
+    is_leader: bool = False

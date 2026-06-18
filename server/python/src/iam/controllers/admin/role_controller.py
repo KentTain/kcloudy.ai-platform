@@ -14,8 +14,13 @@ from iam.schemas.role import (
     RoleResponse,
     RolePaginatedListResponse,
     RolePaginatedQuery,
+    RoleOptionResponse,
+    RoleMemberAssignRequest,
+    RoleMenuAssignRequest,
+    RoleMemberResponse,
 )
 from iam.services import permission_service, role_service
+from iam.services.role_service import role_member_service
 
 router = APIRouter()
 
@@ -149,3 +154,92 @@ async def assign_permissions(role_id: str, data: RolePermissionRequest) -> ORJSO
             "data": None,
         }
     )
+
+
+@router.get("/roles/options")
+async def get_role_options() -> ORJSONResponse:
+    """获取角色选项列表（不分页，供下拉选择用）"""
+    roles = await role_service.get_role_options()
+    return ORJSONResponse(
+        content={
+            "code": 200,
+            "msg": "success",
+            "data": [
+                RoleOptionResponse.model_validate(r).model_dump()
+                for r in roles
+            ],
+        }
+    )
+
+
+@router.get("/roles/{role_id}/members")
+async def get_role_members(role_id: str) -> ORJSONResponse:
+    """获取角色成员列表"""
+    members = await role_member_service.get_role_members(role_id)
+    return ORJSONResponse(
+        content={
+            "code": 200,
+            "msg": "success",
+            "data": members,
+        }
+    )
+
+
+@router.post("/roles/{role_id}/members")
+async def add_role_members(role_id: str, data: RoleMemberAssignRequest) -> ORJSONResponse:
+    """为角色添加成员"""
+    try:
+        added = await role_member_service.add_role_members(role_id, data.user_ids)
+        return ORJSONResponse(
+            content={
+                "code": 200,
+                "msg": f"成功添加 {added} 个成员",
+                "data": {"added": added},
+            }
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.delete("/roles/{role_id}/members/{user_id}")
+async def remove_role_member(role_id: str, user_id: str) -> ORJSONResponse:
+    """移除角色成员"""
+    removed = await role_member_service.remove_role_member(role_id, user_id)
+    if not removed:
+        raise HTTPException(status_code=404, detail="该用户不是此角色成员")
+    return ORJSONResponse(
+        content={
+            "code": 200,
+            "msg": "移除成功",
+            "data": None,
+        }
+    )
+
+
+@router.get("/roles/{role_id}/menus")
+async def get_role_menus(role_id: str) -> ORJSONResponse:
+    """获取角色已分配的菜单 ID 列表"""
+    menu_ids = await role_member_service.get_role_menus(role_id)
+    return ORJSONResponse(
+        content={
+            "code": 200,
+            "msg": "success",
+            "data": menu_ids,
+        }
+    )
+
+
+@router.post("/roles/{role_id}/menus")
+async def assign_role_menus(role_id: str, data: RoleMenuAssignRequest) -> ORJSONResponse:
+    """为角色分配菜单"""
+    try:
+        await role_member_service.assign_role_menus(role_id, data.menu_ids)
+        return ORJSONResponse(
+            content={
+                "code": 200,
+                "msg": "分配成功",
+                "data": None,
+            }
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
