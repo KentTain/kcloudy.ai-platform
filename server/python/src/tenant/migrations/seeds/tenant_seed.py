@@ -2,6 +2,7 @@
 Tenant 模块种子数据初始化
 
 初始化默认租户数据并分配活跃模块。
+创建租户时自动关联默认资源配置（如果存在）。
 """
 
 from __future__ import annotations
@@ -12,7 +13,15 @@ from datetime import datetime, timedelta
 from sqlalchemy import select
 
 from framework.utils.log_util import write_info, write_success, write_warning
-from tenant.models import Tenant, TenantStatus
+from tenant.models import (
+    CacheConfig,
+    DatabaseConfig,
+    PubSubConfig,
+    QueueConfig,
+    StorageConfig,
+    Tenant,
+    TenantStatus,
+)
 
 
 async def run(*, dry_run: bool = False) -> int:
@@ -48,7 +57,33 @@ async def run(*, dry_run: bool = False) -> int:
         if existing_tenant:
             write_info("默认租户已存在，跳过创建")
         else:
-            # 创建默认租户
+            # 查询默认资源配置（is_default=True）
+            default_db = await session.execute(
+                select(DatabaseConfig).where(DatabaseConfig.is_default == True).limit(1)  # noqa: E712
+            )
+            default_db_config = default_db.scalar_one_or_none()
+
+            default_cache = await session.execute(
+                select(CacheConfig).where(CacheConfig.is_default == True).limit(1)  # noqa: E712
+            )
+            default_cache_config = default_cache.scalar_one_or_none()
+
+            default_storage = await session.execute(
+                select(StorageConfig).where(StorageConfig.is_default == True).limit(1)  # noqa: E712
+            )
+            default_storage_config = default_storage.scalar_one_or_none()
+
+            default_queue = await session.execute(
+                select(QueueConfig).where(QueueConfig.is_default == True).limit(1)  # noqa: E712
+            )
+            default_queue_config = default_queue.scalar_one_or_none()
+
+            default_pubsub = await session.execute(
+                select(PubSubConfig).where(PubSubConfig.is_default == True).limit(1)  # noqa: E712
+            )
+            default_pubsub_config = default_pubsub.scalar_one_or_none()
+
+            # 创建默认租户，关联默认资源配置
             tenant = Tenant(
                 id=default_tenant_id,
                 name="默认租户",
@@ -61,6 +96,12 @@ async def run(*, dry_run: bool = False) -> int:
                     "max_users": 100,
                     "max_storage_mb": 10240,
                 },
+                # 关联默认资源配置
+                db_config_id=default_db_config.id if default_db_config else None,
+                cache_config_id=default_cache_config.id if default_cache_config else None,
+                storage_config_id=default_storage_config.id if default_storage_config else None,
+                queue_config_id=default_queue_config.id if default_queue_config else None,
+                pubsub_config_id=default_pubsub_config.id if default_pubsub_config else None,
             )
 
             if dry_run:
