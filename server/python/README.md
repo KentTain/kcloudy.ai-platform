@@ -280,6 +280,28 @@ uv run python manage.py seed --dry-run
 uv run python manage.py seed --module iam
 ```
 
+### 默认资源配置初始化
+
+应用启动时，通过 `seed` 命令自动创建默认资源配置（如果不存在）：
+
+- 从 `application.yml` 读取数据库（PostgreSQL）、缓存（Redis）、存储（MinIO/S3）、队列和发布订阅等配置
+- 为每个配置类型创建默认记录，标记 `is_default=True`
+- 敏感字段（密码、密钥等）使用 AES-256-GCM 加密存储
+- 使用 PostgreSQL 部分唯一索引保证每种配置最多只有一条默认记录
+
+创建租户时，如果未指定资源配置 ID，系统会自动关联默认配置：
+
+```python
+# 自动关联逻辑：tenant_service.create()
+if db_config_id is None:
+    default_db = await database_config_service.get_default_config(session)
+    if default_db:
+        db_config_id = default_db.id
+```
+
+默认配置支持通过管理 API 切换：将任意非默认配置设为 `is_default=True` 时，
+原默认配置的标记将自动清除，保证同一类型配置始终只有一个默认值。
+
 ### 测试
 
 详细测试说明见 [tests/README.md](tests/README.md)。
