@@ -575,7 +575,7 @@ async def delete_module_permission(
     if not success:
         raise HTTPException(status_code=404, detail="权限不存在")
 
-    return Success()
+    return Success(data=success)
 
 
 # =============================================================================

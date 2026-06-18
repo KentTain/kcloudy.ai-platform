@@ -10,6 +10,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from framework.database.dependencies import get_db_session
+from framework.schemas.base import Success, SuccessExtra
 from tenant.middlewares.admin_auth_middleware import AdminAuthService, get_current_admin
 from tenant.models import ModuleMenu, Tenant
 from tenant.schemas.admin.module import ModuleMenuTreeResponse
@@ -34,9 +35,6 @@ from tenant.services.tenant_service import TenantService
 router = APIRouter()
 
 
-def Success(data=None, msg: str = "success") -> dict:
-    """成功响应"""
-    return {"code": 200, "msg": msg, "data": data}
 
 
 async def _get_resource_ref(
@@ -124,7 +122,7 @@ async def admin_logout(
     )
     if token:
         AdminAuthService.logout(token)
-    return ORJSONResponse(content=Success())
+    return Success()
 
 
 # ============== 租户管理 API ==============
@@ -219,7 +217,7 @@ async def create_tenant(
         pubsub_config_id=data.pubsub_config_id,
     )
 
-    return ORJSONResponse(content=Success((await build_tenant_vo(session, tenant)).model_dump()))
+    return Success(data=(await build_tenant_vo(session, tenant).model_dump()))
 
 
 @router.get("/tenants/{tenant_id}")
@@ -278,7 +276,7 @@ async def update_tenant(
     if not tenant:
         raise HTTPException(status_code=404, detail="租户不存在")
 
-    return ORJSONResponse(content=Success((await build_tenant_vo(session, tenant)).model_dump()))
+    return Success(data=(await build_tenant_vo(session, tenant).model_dump()))
 
 
 @router.delete("/tenants/{tenant_id}")
@@ -310,7 +308,7 @@ async def delete_tenant(
     if not success:
         raise HTTPException(status_code=404, detail="租户不存在")
 
-    return ORJSONResponse(content=Success())
+    return Success()
 
 
 @router.post("/tenants/{tenant_id}/activate")
@@ -330,7 +328,7 @@ async def activate_tenant(
     if not tenant:
         raise HTTPException(status_code=404, detail="租户不存在")
 
-    return ORJSONResponse(content=Success((await build_tenant_vo(session, tenant)).model_dump()))
+    return Success(data=(await build_tenant_vo(session, tenant).model_dump()))
 
 
 @router.post("/tenants/{tenant_id}/deactivate")
@@ -350,7 +348,7 @@ async def deactivate_tenant(
     if not tenant:
         raise HTTPException(status_code=404, detail="租户不存在")
 
-    return ORJSONResponse(content=Success((await build_tenant_vo(session, tenant)).model_dump()))
+    return Success(data=(await build_tenant_vo(session, tenant).model_dump()))
 
 
 @router.get("/tenants/{tenant_id}/stats")
@@ -384,7 +382,7 @@ async def get_tenant_stats(
         active_users=0,  # TODO: 实现活跃用户统计
     )
 
-    return ORJSONResponse(content=Success(stats.model_dump()))
+    return Success(data=stats.model_dump())
 
 
 # ============== 资源绑定 API ==============
@@ -572,7 +570,7 @@ async def get_admin_menus(
     module = await ModuleService.get_by_code(session, "tenant")
 
     if not module:
-        return ORJSONResponse(content=Success([]))
+        return Success(data=[])
 
     result: list[ModuleMenuTreeResponse] = []
 
@@ -601,4 +599,4 @@ async def get_admin_menus(
 
     result.append(module_menu)
 
-    return ORJSONResponse(content=Success([r.model_dump() for r in result]))
+    return Success(data=[r.model_dump() for r in result])

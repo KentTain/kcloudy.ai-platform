@@ -2,11 +2,12 @@
 用户端租户控制器
 """
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import ORJSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from framework.database.dependencies import get_db_session
+from framework.schemas.base import Success, SuccessExtra
 from framework.tenant.context import TenantContext, get_tenant_id
 from tenant.models import TenantStatus
 from tenant.schemas.console.tenant import CurrentTenantResponse, SwitchTenantResponse, UserTenantResponse
@@ -15,9 +16,6 @@ from tenant.services.tenant_service import TenantService
 router = APIRouter()
 
 
-def Success(data=None, msg: str = "success") -> dict:
-    """成功响应"""
-    return {"code": 200, "msg": msg, "data": data}
 
 
 @router.get("")
@@ -42,7 +40,7 @@ async def list_user_tenants(
     iam_client = get_iam_client()
     user_tenants = await iam_client.get_user_tenants(user_id)
     if not user_tenants:
-        return ORJSONResponse(content=Success([]))
+        return Success(data=[])
 
     # 构建租户 ID 到用户租户信息的映射
     user_tenant_map = {ut.tenant_id: ut for ut in user_tenants}
@@ -65,7 +63,7 @@ async def list_user_tenants(
             )
         )
 
-    return ORJSONResponse(content=Success(items))
+    return Success(data=items)
 
 
 @router.get("/current")

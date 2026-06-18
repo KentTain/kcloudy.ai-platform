@@ -9,6 +9,7 @@ from fastapi.responses import ORJSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from framework.database.dependencies import get_db_session
+from framework.schemas.base import Success, SuccessExtra
 from tenant.middlewares.admin_auth_middleware import get_current_admin
 from tenant.schemas.admin.resource_config import (
     # 数据库
@@ -50,9 +51,6 @@ from tenant.services.pubsub_config_service import PubSubConfigService
 router = APIRouter()
 
 
-def Success(data=None, msg: str = "success") -> dict:
-    """成功响应"""
-    return {"code": 200, "msg": msg, "data": data}
 
 
 # =============================================================================
@@ -101,11 +99,9 @@ async def create_database_config(
     创建数据库配置
     """
     config = await DatabaseConfigService.create(session, **data.model_dump())
-    return ORJSONResponse(
-        content=Success(
+    return Success(data=
             DatabasePropertyResponse(
-                **DatabaseConfigService.build_response(config)
-            ).model_dump()
+                **DatabaseConfigService.build_response(config).model_dump()
         )
     )
 
@@ -122,11 +118,9 @@ async def get_database_config(
     config = await DatabaseConfigService.get_by_id(session, config_id)
     if not config:
         raise HTTPException(status_code=404, detail="数据库配置不存在")
-    return ORJSONResponse(
-        content=Success(
+    return Success(data=
             DatabasePropertyResponse(
-                **DatabaseConfigService.build_response(config)
-            ).model_dump()
+                **DatabaseConfigService.build_response(config).model_dump()
         )
     )
 
@@ -146,11 +140,9 @@ async def update_database_config(
     config = await DatabaseConfigService.update(session, config_id, **update_data)
     if not config:
         raise HTTPException(status_code=404, detail="数据库配置不存在")
-    return ORJSONResponse(
-        content=Success(
+    return Success(data=
             DatabasePropertyResponse(
-                **DatabaseConfigService.build_response(config)
-            ).model_dump()
+                **DatabaseConfigService.build_response(config).model_dump()
         )
     )
 
@@ -167,7 +159,7 @@ async def delete_database_config(
     success = await DatabaseConfigService.delete(session, config_id)
     if not success:
         raise HTTPException(status_code=404, detail="数据库配置不存在")
-    return ORJSONResponse(content=Success())
+    return Success()
 
 
 @router.post(f"{DB_PREFIX}/{{config_id}}/test-connection")
@@ -230,11 +222,9 @@ async def create_storage_config(
 ) -> ORJSONResponse:
     """创建存储配置"""
     config = await StorageConfigService.create(session, **data.model_dump())
-    return ORJSONResponse(
-        content=Success(
+    return Success(data=
             StoragePropertyResponse(
-                **StorageConfigService.build_response(config)
-            ).model_dump()
+                **StorageConfigService.build_response(config).model_dump()
         )
     )
 
@@ -249,11 +239,9 @@ async def get_storage_config(
     config = await StorageConfigService.get_by_id(session, config_id)
     if not config:
         raise HTTPException(status_code=404, detail="存储配置不存在")
-    return ORJSONResponse(
-        content=Success(
+    return Success(data=
             StoragePropertyResponse(
-                **StorageConfigService.build_response(config)
-            ).model_dump()
+                **StorageConfigService.build_response(config).model_dump()
         )
     )
 
@@ -270,11 +258,9 @@ async def update_storage_config(
     config = await StorageConfigService.update(session, config_id, **update_data)
     if not config:
         raise HTTPException(status_code=404, detail="存储配置不存在")
-    return ORJSONResponse(
-        content=Success(
+    return Success(data=
             StoragePropertyResponse(
-                **StorageConfigService.build_response(config)
-            ).model_dump()
+                **StorageConfigService.build_response(config).model_dump()
         )
     )
 
@@ -289,7 +275,7 @@ async def delete_storage_config(
     success = await StorageConfigService.delete(session, config_id)
     if not success:
         raise HTTPException(status_code=404, detail="存储配置不存在")
-    return ORJSONResponse(content=Success())
+    return Success()
 
 
 @router.post(f"{STORAGE_PREFIX}/{{config_id}}/test-connection")
@@ -403,7 +389,7 @@ async def delete_cache_config(
     success = await CacheConfigService.delete(session, config_id)
     if not success:
         raise HTTPException(status_code=404, detail="缓存配置不存在")
-    return ORJSONResponse(content=Success())
+    return Success()
 
 
 @router.post(f"{CACHE_PREFIX}/{{config_id}}/test-connection")
@@ -517,7 +503,7 @@ async def delete_queue_config(
     success = await QueueConfigService.delete(session, config_id)
     if not success:
         raise HTTPException(status_code=404, detail="队列配置不存在")
-    return ORJSONResponse(content=Success())
+    return Success()
 
 
 @router.post(f"{QUEUE_PREFIX}/{{config_id}}/test-connection")
@@ -578,11 +564,9 @@ async def create_pubsub_config(
 ) -> ORJSONResponse:
     """创建发布订阅配置"""
     config = await PubSubConfigService.create(session, **data.model_dump())
-    return ORJSONResponse(
-        content=Success(
+    return Success(data=
             PubSubPropertyResponse(
-                **PubSubConfigService.build_response(config)
-            ).model_dump()
+                **PubSubConfigService.build_response(config).model_dump()
         )
     )
 
@@ -597,11 +581,9 @@ async def get_pubsub_config(
     config = await PubSubConfigService.get_by_id(session, config_id)
     if not config:
         raise HTTPException(status_code=404, detail="发布订阅配置不存在")
-    return ORJSONResponse(
-        content=Success(
+    return Success(data=
             PubSubPropertyResponse(
-                **PubSubConfigService.build_response(config)
-            ).model_dump()
+                **PubSubConfigService.build_response(config).model_dump()
         )
     )
 
@@ -618,11 +600,9 @@ async def update_pubsub_config(
     config = await PubSubConfigService.update(session, config_id, **update_data)
     if not config:
         raise HTTPException(status_code=404, detail="发布订阅配置不存在")
-    return ORJSONResponse(
-        content=Success(
+    return Success(data=
             PubSubPropertyResponse(
-                **PubSubConfigService.build_response(config)
-            ).model_dump()
+                **PubSubConfigService.build_response(config).model_dump()
         )
     )
 
@@ -637,7 +617,7 @@ async def delete_pubsub_config(
     success = await PubSubConfigService.delete(session, config_id)
     if not success:
         raise HTTPException(status_code=404, detail="发布订阅配置不存在")
-    return ORJSONResponse(content=Success())
+    return Success()
 
 
 @router.post(f"{PUBSUB_PREFIX}/{{config_id}}/test-connection")
