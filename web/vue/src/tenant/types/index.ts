@@ -50,6 +50,12 @@ export type {
   AssignModuleParams,
 } from "./admin";
 
+// 资源配置引用
+export interface ResourceConfigReference {
+  id: string;
+  name: string;
+}
+
 // 租户实体
 export interface Tenant {
   id: string;
@@ -61,6 +67,12 @@ export interface Tenant {
   contact_phone?: string;
   expired_at?: string;
   settings?: Record<string, any>;
+  // 资源配置关联
+  db_config?: ResourceConfigReference | null;
+  storage_config?: ResourceConfigReference | null;
+  cache_config?: ResourceConfigReference | null;
+  queue_config?: ResourceConfigReference | null;
+  pubsub_config?: ResourceConfigReference | null;
   created_at: string;
   updated_at?: string;
 }
@@ -120,6 +132,12 @@ export interface TenantCreate {
   contact_phone?: string;
   expired_at?: string;
   settings?: Record<string, any>;
+  // 资源配置关联
+  db_config_id?: string;
+  storage_config_id?: string;
+  cache_config_id?: string;
+  queue_config_id?: string;
+  pubsub_config_id?: string;
 }
 
 // 更新租户参数
@@ -131,4 +149,10 @@ export interface TenantUpdate {
   expired_at?: string;
   settings?: Record<string, any>;
   status?: "active" | "inactive";
+  // 资源配置关联
+  db_config_id?: string;
+  storage_config_id?: string;
+  cache_config_id?: string;
+  queue_config_id?: string;
+  pubsub_config_id?: string;
 }

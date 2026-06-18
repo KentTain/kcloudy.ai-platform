@@ -11,6 +11,7 @@ export interface ResourceConfig {
   type: "database" | "storage" | "cache" | "queue" | "pubsub";
   config: Record<string, any>;
   tenant_count?: number; // 被引用的租户数量
+  is_default?: boolean; // 是否为默认配置
   created_at: string;
   updated_at?: string;
 }

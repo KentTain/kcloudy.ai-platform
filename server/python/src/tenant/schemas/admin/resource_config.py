@@ -76,6 +76,7 @@ class DatabasePropertyResponse(BaseModel):
     database: str = Field(..., description="数据库名称")
     username: str = Field(..., description="数据库用户名")
     password: str = Field(..., description="数据库密码（脱敏）")
+    is_default: bool = Field(..., description="是否为默认配置")
     created_at: datetime = Field(..., description="创建时间")
     updated_at: datetime = Field(..., description="更新时间")
 
@@ -128,6 +129,7 @@ class StoragePropertyResponse(BaseModel):
     endpoint: str | None = Field(None, description="服务端点")
     access_key: str | None = Field(None, description="访问密钥")
     secret_key: str | None = Field(None, description="私密密钥（脱敏）")
+    is_default: bool = Field(..., description="是否为默认配置")
     created_at: datetime = Field(..., description="创建时间")
     updated_at: datetime = Field(..., description="更新时间")
 
@@ -180,6 +182,7 @@ class CachePropertyResponse(BaseModel):
     password: str | None = Field(None, description="缓存密码（脱敏）")
     db: int = Field(..., description="数据库编号")
     prefix: str | None = Field(None, description="键前缀")
+    is_default: bool = Field(..., description="是否为默认配置")
     created_at: datetime = Field(..., description="创建时间")
     updated_at: datetime = Field(..., description="更新时间")
 
@@ -235,6 +238,7 @@ class QueuePropertyResponse(BaseModel):
     username: str | None = Field(None, description="用户名")
     password: str | None = Field(None, description="密码（脱敏）")
     vhost: str | None = Field(None, description="虚拟主机")
+    is_default: bool = Field(..., description="是否为默认配置")
     created_at: datetime = Field(..., description="创建时间")
     updated_at: datetime = Field(..., description="更新时间")
 
@@ -287,6 +291,7 @@ class PubSubPropertyResponse(BaseModel):
     port: int = Field(..., description="端口")
     username: str | None = Field(None, description="用户名")
     password: str | None = Field(None, description="密码（脱敏）")
+    is_default: bool = Field(..., description="是否为默认配置")
     created_at: datetime = Field(..., description="创建时间")
     updated_at: datetime = Field(..., description="更新时间")
 

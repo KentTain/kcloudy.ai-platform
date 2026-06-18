@@ -2,42 +2,41 @@
 
 ## 1. 数据库模型修改
 
-- [ ] 1.1 为 `DatabaseConfig` 模型添加 `is_default` 字段（`Mapped[bool]`，默认 `False`）
-- [ ] 1.2 为 `CacheConfig` 模型添加 `is_default` 字段（`Mapped[bool]`，默认 `False`）
-- [ ] 1.3 为 `StorageConfig` 模型添加 `is_default` 字段（`Mapped[bool]`，默认 `False`）
-- [ ] 1.4 为 `QueueConfig` 模型添加 `is_default` 字段（`Mapped[bool]`，默认 `False`）
-- [ ] 1.5 为 `PubSubConfig` 模型添加 `is_default` 字段（`Mapped[bool]`，默认 `False`）
+- [x] 1.1 为 `DatabaseConfig` 模型添加 `is_default` 字段（`Mapped[bool]`，默认 `False`）
+- [x] 1.2 为 `CacheConfig` 模型添加 `is_default` 字段（`Mapped[bool]`，默认 `False`）
+- [x] 1.3 为 `StorageConfig` 模型添加 `is_default` 字段（`Mapped[bool]`，默认 `False`）
+- [x] 1.4 为 `QueueConfig` 模型添加 `is_default` 字段（`Mapped[bool]`，默认 `False`）
+- [x] 1.5 为 `PubSubConfig` 模型添加 `is_default` 字段（`Mapped[bool]`，默认 `False`）
 
 ## 2. 数据库迁移
 
-- [ ] 2.1 创建迁移脚本 `XXX_add_is_default_to_resource_configs.py`
-- [ ] 2.2 添加 `is_default` 字段到五个资源配置表（非空，默认 `False`）
-- [ ] 2.3 创建部分唯一索引 `uix_database_configs_default`（WHERE is_default = TRUE）
-- [ ] 2.4 创建部分唯一索引 `uix_cache_configs_default`
-- [ ] 2.5 创建部分唯一索引 `uix_storage_configs_default`
-- [ ] 2.6 创建部分唯一索引 `uix_queue_configs_default`
-- [ ] 2.7 创建部分唯一索引 `uix_pubsub_configs_default`
+- [x] 2.1 创建迁移脚本 `004_add_is_default_to_resource_configs.py`
+- [x] 2.2 添加 `is_default` 字段到五个资源配置表（非空，默认 `False`）
+- [x] 2.3 创建部分唯一索引 `uix_database_configs_default`（WHERE is_default = TRUE）
+- [x] 2.4 创建部分唯一索引 `uix_cache_configs_default`
+- [x] 2.5 创建部分唯一索引 `uix_storage_configs_default`
+- [x] 2.6 创建部分唯一索引 `uix_queue_configs_default`
+- [x] 2.7 创建部分唯一索引 `uix_pubsub_configs_default`
 
 ## 3. Schema 响应模型修改
 
-- [ ] 3.1 为 `DatabaseConfigResponse` 添加 `is_default: bool` 字段
-- [ ] 3.2 为 `CacheConfigResponse` 添加 `is_default: bool` 字段
-- [ ] 3.3 为 `StorageConfigResponse` 添加 `is_default: bool` 字段
-- [ ] 3.4 为 `QueueConfigResponse` 添加 `is_default: bool` 字段
-- [ ] 3.5 为 `PubSubConfigResponse` 添加 `is_default: bool` 字段
+- [x] 3.1 为 `DatabasePropertyResponse` 添加 `is_default: bool` 字段
+- [x] 3.2 为 `CachePropertyResponse` 添加 `is_default: bool` 字段
+- [x] 3.3 为 `StoragePropertyResponse` 添加 `is_default: bool` 字段
+- [x] 3.4 为 `QueuePropertyResponse` 添加 `is_default: bool` 字段
+- [x] 3.5 为 `PubSubPropertyResponse` 添加 `is_default: bool` 字段
 
 ## 4. 种子数据脚本
 
-- [ ] 4.1 创建 `resource_config_seed.py` 文件
-- [ ] 4.2 实现数据库连接字符串解析函数 `_parse_database_url()`
-- [ ] 4.3 实现默认配置存在检查函数 `_exists_default_configs()`
-- [ ] 4.4 实现创建数据库配置函数 `_create_database_config()`
-- [ ] 4.5 实现创建缓存配置函数 `_create_cache_config()`
-- [ ] 4.6 实现创建存储配置函数 `_create_storage_config()`
-- [ ] 4.7 实现创建队列配置函数 `_create_queue_config()`
-- [ ] 4.8 实现创建发布订阅配置函数 `_create_pubsub_config()`
-- [ ] 4.9 实现主函数 `run()` 协调创建逻辑
-- [ ] 4.10 在 `module.py` 的 `get_seeds()` 中注册种子脚本
+- [x] 4.1 创建 `resource_config_seed.py` 文件
+- [x] 4.2 实现数据库连接字符串解析函数 `_parse_database_url()`
+- [x] 4.3 实现创建数据库配置函数 `_create_database_config()`
+- [x] 4.4 实现创建缓存配置函数 `_create_cache_config()`
+- [x] 4.5 实现创建存储配置函数 `_create_storage_config()`
+- [x] 4.6 实现创建队列配置函数 `_create_queue_config()`
+- [x] 4.7 实现创建发布订阅配置函数 `_create_pubsub_config()`
+- [x] 4.8 实现主函数 `run()` 协调创建逻辑
+- [x] 4.9 在 `module.py` 的 `get_seeds()` 中注册种子脚本
 
 ## 5. 租户种子脚本修改
 
@@ -46,42 +45,30 @@
 
 ## 6. 服务层修改
 
-- [ ] 6.1 修改 `DatabaseConfigService.create()` 支持 `is_default` 唯一性控制
-- [ ] 6.2 修改 `CacheConfigService.create()` 支持 `is_default` 唯一性控制
-- [ ] 6.3 修改 `StorageConfigService.create()` 支持 `is_default` 唯一性控制
-- [ ] 6.4 修改 `QueueConfigService.create()` 支持 `is_default` 唯一性控制
-- [ ] 6.5 修改 `PubSubConfigService.create()` 支持 `is_default` 唯一性控制
-- [ ] 6.6 创建 `_get_default_config()` 辅助函数
-- [ ] 6.7 修改 `TenantService.create()` 支持自动填充默认配置
+- [x] 6.1 修改 `BaseResourceService.create()` 支持 `is_default` 唯一性控制（适用于所有 5 种配置）
+- [x] 6.2 创建 `get_default_config()` 辅助函数
+- [x] 6.3 修改 `TenantService.create()` 支持自动填充默认配置
 
 ## 7. API 控制器修改
 
-- [ ] 7.1 修改数据库配置查询接口，按 `is_default` 降序排序
-- [ ] 7.2 修改缓存配置查询接口，按 `is_default` 降序排序
-- [ ] 7.3 修改存储配置查询接口，按 `is_default` 降序排序
-- [ ] 7.4 修改队列配置查询接口，按 `is_default` 降序排序
-- [ ] 7.5 修改发布订阅配置查询接口，按 `is_default` 降序排序
+- [x] 7.1 修改 `BaseResourceService.list_configs()` 按 `is_default` 降序排序（适用于所有 5 种配置）
 
 ## 8. 前端类型定义修改
 
-- [ ] 8.1 为 `DatabaseConfig` 接口添加 `is_default: boolean` 字段
-- [ ] 8.2 为 `CacheConfig` 接口添加 `is_default: boolean` 字段
-- [ ] 8.3 为 `StorageConfig` 接口添加 `is_default: boolean` 字段
-- [ ] 8.4 为 `QueueConfig` 接口添加 `is_default: boolean` 字段
-- [ ] 8.5 为 `PubsubConfig` 接口添加 `is_default: boolean` 字段
+- [x] 8.1 为 `ResourceConfig` 基础接口添加 `is_default?: boolean` 字段（子接口自动继承）
 
 ## 9. 前端创建租户页面修改
 
-- [ ] 9.1 添加资源配置查询 API 调用
-- [ ] 9.2 实现配置选择器组件，支持 `is_default` 排序
-- [ ] 9.3 实现默认配置自动选中逻辑
-- [ ] 9.4 添加"+ 创建新配置"按钮，支持跳转到资源配置页面
-- [ ] 9.5 修改创建租户表单提交逻辑
+- [x] 9.1 添加资源配置查询 API 调用
+- [x] 9.2 实现配置选择器组件，支持 `is_default` 排序
+- [x] 9.3 实现默认配置自动选中逻辑
+- [x] 9.4 添加"+ 创建新配置"按钮，支持跳转到资源配置页面
+- [x] 9.5 修改创建租户表单提交逻辑
 
 ## 10. 文档更新
 
-- [ ] 10.1 更新 `server/python/README.md` 说明默认配置初始化机制
-- [ ] 10.2 更新 API 文档说明 `is_default` 字段
+- [x] 10.1 更新 `server/python/README.md` 说明默认配置初始化机制
+- [x] 10.2 更新 API 文档说明 `is_default` 字段（Pydantic Schema 中已包含 description）
 
 ## 11. 测试
 
