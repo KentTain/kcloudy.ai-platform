@@ -12,7 +12,6 @@ from nanoid import generate
 
 from framework.cache.redis_util import RedisUtil
 
-
 # 默认会话 TTL（7 天）
 DEFAULT_SESSION_TTL_DAYS = 7
 
@@ -56,7 +55,7 @@ def get_blacklist_key(jti: str, key_prefix: str = "") -> str:
 
 async def create_session(
     user_id: str,
-    tenant_id: str,
+    tenant_id: str | None = None,
     device_info: str | None = None,
     ip: str | None = None,
     ttl: timedelta | None = None,
@@ -91,7 +90,9 @@ async def create_session(
 
     if _is_redis_available():
         # 计算 TTL
-        ttl_seconds = int((ttl or timedelta(days=DEFAULT_SESSION_TTL_DAYS)).total_seconds())
+        ttl_seconds = int(
+            (ttl or timedelta(days=DEFAULT_SESSION_TTL_DAYS)).total_seconds()
+        )
 
         # 存储到 Redis
         key = get_session_key(session_id, key_prefix)
@@ -173,7 +174,8 @@ async def delete_user_sessions(user_id: str, key_prefix: str = "") -> int:
     else:
         # 从内存中删除
         sessions_to_delete = [
-            sid for sid, data in _memory_sessions.items()
+            sid
+            for sid, data in _memory_sessions.items()
             if data.get("user_id") == user_id
         ]
         for sid in sessions_to_delete:

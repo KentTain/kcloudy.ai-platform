@@ -3,13 +3,17 @@
 提供模型列表查询接口。
 """
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi.responses import ORJSONResponse
 from loguru import logger
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from ai.components.model.internal.model_provider_factory import ModelProviderFactory
 from ai.schemas.model import ModelListResponse, ProviderItem
 from ai_plugin.sdk.entities.model import ModelType
 from framework.common.ctx import get_tenant_id
+from framework.database.dependencies import get_db_session
+from framework.schemas.base import Success, SuccessExtra
 
 _logger = logger.bind(name=__name__)
 
@@ -17,7 +21,9 @@ router = APIRouter(prefix="/models", tags=["模型列表"])
 
 
 @router.get("", response_model=ModelListResponse)
-async def list_models() -> ModelListResponse:
+async def list_models(
+    session: AsyncSession = Depends(get_db_session),
+) -> ModelListResponse:
     """获取模型列表
 
     返回当前租户可用的所有提供商和模型。
@@ -38,8 +44,7 @@ async def list_models() -> ModelListResponse:
 
             # 过滤 LLM 类型模型
             llm_models = [
-                model for model in provider.models
-                if model.model_type == ModelType.LLM
+                model for model in provider.models if model.model_type == ModelType.LLM
             ]
 
             if llm_models:

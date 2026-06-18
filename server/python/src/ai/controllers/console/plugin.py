@@ -6,9 +6,10 @@ AI 模块控制台控制器
 
 from typing import Any
 
-from fastapi import APIRouter, Body, Path, Query
+from fastapi import APIRouter, Body, Depends, HTTPException, Path, Query, Request
 from fastapi.responses import ORJSONResponse
 from loguru import logger
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from ai.schemas import (
     CreatePluginCredential,
@@ -23,6 +24,7 @@ from ai.schemas import (
 )
 from ai.services import plugin_management_service
 from framework.common.exceptions import BadRequestError
+from framework.database.dependencies import get_db_session
 from framework.schemas.base import Success, SuccessExtra
 
 _logger = logger.bind(name=__name__)
@@ -47,6 +49,7 @@ async def get_plugin_list(
     plugin_type: str | None = Query(None, description="插件类型过滤"),
     limit: int = Query(50, ge=1, le=2000, description="每页数量"),
     offset: int = Query(0, ge=0, description="偏移量"),
+    session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """
     获取插件列表
@@ -57,6 +60,7 @@ async def get_plugin_list(
     """
     try:
         result = await plugin_management_service.get_plugin_list(
+            session=session,
             status=status,
             plugin_id=plugin_id,
             plugin_type=plugin_type,
@@ -82,6 +86,7 @@ async def get_plugin_list(
 )
 async def get_plugin_detail(
     plugin_id: str = Path(..., description="插件ID"),
+    session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """
     获取插件详情
@@ -91,7 +96,7 @@ async def get_plugin_detail(
     THEN 返回插件详细信息
     """
     try:
-        result = await plugin_management_service.get_plugin_info(plugin_id)
+        result = await plugin_management_service.get_plugin_info(session, plugin_id)
         return Success(data=result.model_dump())
     except ValueError as e:
         raise BadRequestError(f"插件不存在: {str(e)}")
@@ -113,6 +118,7 @@ async def list_credentials(
     page: int = Query(1, description="页码"),
     page_size: int = Query(20, description="每页数量"),
     name: str | None = Query(None, description="凭证名称模糊查询"),
+    session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """
     获取插件凭证列表
@@ -123,6 +129,7 @@ async def list_credentials(
     """
     try:
         total, items = await plugin_management_service.list_credentials(
+            session=session,
             plugin_id=plugin_id,
             page=page,
             page_size=page_size,
@@ -150,6 +157,7 @@ async def list_credentials(
 async def get_credential_detail(
     plugin_id: str = Path(..., description="插件ID"),
     credential_id: str = Path(..., description="凭证ID"),
+    session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """
     获取凭证详情
@@ -159,7 +167,7 @@ async def get_credential_detail(
     THEN 返回凭证详细信息（含脱敏后的凭证内容）
     """
     try:
-        data = await plugin_management_service.get_credential(credential_id)
+        data = await plugin_management_service.get_credential(session, credential_id)
         return Success(data=data.model_dump())
     except Exception as e:
         _logger.exception("获取凭证详情失败")
@@ -179,6 +187,7 @@ async def get_credential_detail(
 )
 async def get_plugin_credentials_schema(
     plugin_id: str = Path(..., description="插件ID"),
+    session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """
     获取插件凭证架构
@@ -189,7 +198,7 @@ async def get_plugin_credentials_schema(
     """
     try:
         schema = await plugin_management_service.get_plugin_credentials_schema(
-            plugin_id
+            session, plugin_id
         )
         return Success(
             data=[PluginCredentialsSchemaVo.model_validate(cred) for cred in schema]
@@ -210,6 +219,7 @@ async def get_plugin_credentials_schema(
 async def create_credential(
     plugin_id: str = Path(..., description="插件ID"),
     obj_in: CreatePluginCredential = Body(..., description="创建凭证请求体"),
+    session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """
     创建插件凭证
@@ -221,7 +231,9 @@ async def create_credential(
     注意：scope 固定为 global
     """
     try:
-        data = await plugin_management_service.create_credential(plugin_id, obj_in)
+        data = await plugin_management_service.create_credential(
+            session, plugin_id, obj_in
+        )
         return Success(data=data.model_dump())
     except Exception as e:
         _logger.exception("创建插件凭证失败")
@@ -240,6 +252,7 @@ async def update_credential(
     plugin_id: str = Path(..., description="插件ID"),
     credential_id: str = Path(..., description="凭证ID"),
     obj_in: UpdatePluginCredential = Body(..., description="更新凭证请求体"),
+    session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """
     更新插件凭证
@@ -250,7 +263,7 @@ async def update_credential(
     """
     try:
         data = await plugin_management_service.update_credential(
-            plugin_id, credential_id, obj_in
+            session, plugin_id, credential_id, obj_in
         )
         return Success(data=data.model_dump())
     except Exception as e:
@@ -266,6 +279,7 @@ async def update_credential(
 async def delete_credential(
     plugin_id: str = Path(..., description="插件ID"),
     credential_id: str = Path(..., description="凭证ID"),
+    session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """
     删除插件凭证
@@ -275,7 +289,7 @@ async def delete_credential(
     THEN 删除凭证并返回结果
     """
     try:
-        await plugin_management_service.delete_credential(credential_id)
+        await plugin_management_service.delete_credential(session, credential_id)
         return Success(data=True)
     except Exception as e:
         _logger.exception("删除插件凭证失败")
