@@ -1,5 +1,5 @@
 import { del, get, post, put } from "@/framework/api/client";
-import type { ApiResponse, Department, DepartmentUser } from "../types";
+import type { ApiResponse, Department, DepartmentUser, DepartmentDetail } from "../types";
 import type { DepartmentQuery } from "../types";
 
 export interface DepartmentCreate {
@@ -74,3 +74,33 @@ export const addDepartmentUser = (department_id: string, user_id: string, is_lea
 
 export const removeDepartmentUser = (department_id: string, user_id: string) =>
   del<ApiResponse<void>>(`/iam/admin/v1/departments/${department_id}/users/${user_id}`);
+
+/**
+ * 批量添加部门成员
+ */
+export const batchAddDepartmentUsers = (department_id: string, user_ids: string[]) =>
+  post<ApiResponse<{ added: number }>>(`/iam/admin/v1/departments/${department_id}/users/batch`, { user_ids });
+
+/**
+ * 启用部门成员
+ */
+export const enableDepartmentUser = (department_id: string, user_id: string) =>
+  post<ApiResponse<{ user_id: string; status: string }>>(`/iam/admin/v1/departments/${department_id}/users/${user_id}/enable`);
+
+/**
+ * 停用部门成员
+ */
+export const disableDepartmentUser = (department_id: string, user_id: string) =>
+  post<ApiResponse<{ user_id: string; status: string }>>(`/iam/admin/v1/departments/${department_id}/users/${user_id}/disable`);
+
+/**
+ * 获取部门详情（含统计信息）
+ */
+export const getDepartmentDetail = (id: string) =>
+  get<ApiResponse<DepartmentDetail>>(`/iam/admin/v1/departments/${id}/detail`);
+
+/**
+ * 获取部门成员列表（详细版）
+ */
+export const getDepartmentMembers = (id: string) =>
+  get<ApiResponse<DepartmentUser[]>>(`/iam/admin/v1/departments/${id}/members`);

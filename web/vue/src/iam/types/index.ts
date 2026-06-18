@@ -37,6 +37,11 @@ export interface User {
   roles: string[];
   permissions: string[];
   tenants?: UserTenant[];
+  // 扩展字段
+  dept_id?: string;
+  dept_name?: string;
+  dept_path?: string;
+  role_ids?: string[];
 }
 
 // 用户租户类型
@@ -93,6 +98,11 @@ export interface Department {
   status: "active" | "inactive";
   created_at: string;
   children?: Department[];
+  // 扩展字段
+  direct_member_count?: number;
+  total_member_count?: number;
+  path?: string;
+  children_count?: number;
 }
 
 // 登录请求
@@ -137,8 +147,11 @@ export interface UserUpdate {
  */
 export interface UserPaginatedQuery extends BasePaginatedQuery {
   status?: string;
+  keyword?: string;
   department_id?: string;
   role_id?: string;
+  dept_id?: string;
+  include_children?: boolean;
 }
 
 // 角色相关类型
@@ -224,4 +237,65 @@ export type { MenuTreeNode };
 // 菜单列表响应
 export interface MenuListResponse {
   menus: MenuTreeNode[];
+}
+
+// ============================================
+// 新增类型（iam-page-refactor）
+// ============================================
+
+/** 用户统计数据 */
+export interface UserStats {
+  total: number;
+  enabled: number;
+  disabled: number;
+  multi_role: number;
+}
+
+/** 角色选项（下拉框用） */
+export interface RoleOption {
+  id: string;
+  code: string;
+  name: string;
+  description?: string;
+}
+
+/** 组织树节点 */
+export interface OrgTreeNode {
+  id: string;
+  name: string;
+  code?: string;
+  parent_id?: string;
+  tree_level?: number;
+  tree_leaf?: boolean;
+  tree_sort?: number;
+  has_org_num?: number;
+  has_user_num?: number;
+  children?: OrgTreeNode[];
+}
+
+/** 人员选择项 */
+export interface PeopleItem {
+  user_id: string;
+  username: string;
+  nickname?: string;
+  email?: string;
+  phone?: string;
+  status: string;
+  is_leader?: boolean;
+}
+
+/** 部门详情（含统计信息） */
+export interface DepartmentDetail {
+  id: string;
+  name: string;
+  code?: string;
+  parent_id?: string;
+  sort_order: number;
+  leader_id?: string;
+  status: string;
+  created_at: string;
+  path: string;
+  direct_member_count: number;
+  total_member_count: number;
+  children_count: number;
 }

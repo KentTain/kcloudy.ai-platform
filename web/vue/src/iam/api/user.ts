@@ -1,5 +1,5 @@
 import { del, get, post, put } from "@/framework/api/client";
-import type { ApiResponse, PaginatedListResponse, User, Role, Department } from "../types";
+import type { ApiResponse, PaginatedListResponse, User, Role, Department, RoleOption, UserStats } from "../types";
 import type { UserPaginatedQuery } from "../types";
 
 export interface UserCreate {
@@ -94,3 +94,15 @@ export const resetUserPassword = (id: string, data: { new_password?: string } = 
 
 export const updateUserStatus = (id: string, status: User["status"]) =>
   put<ApiResponse<User>>(`/iam/admin/v1/users/${id}/status`, { status });
+
+/**
+ * 获取用户统计
+ */
+export const getUserStats = () =>
+  get<ApiResponse<UserStats>>("/iam/admin/v1/users/stats");
+
+/**
+ * 获取角色选项列表（不分页，供下拉选择用）
+ */
+export const getRoleOptions = () =>
+  get<ApiResponse<RoleOption[]>>("/iam/admin/v1/roles/options");
