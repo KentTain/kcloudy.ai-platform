@@ -10,7 +10,6 @@ from fastapi import APIRouter, Body, Path, Query
 from fastapi.responses import ORJSONResponse
 from loguru import logger
 
-from framework.common.exceptions import BadRequestError
 from ai.schemas import (
     CreatePluginCredential,
     GetPluginCredentialsSchemaSuccessRespModel,
@@ -23,29 +22,12 @@ from ai.schemas import (
     UpdatePluginCredential,
 )
 from ai.services import plugin_management_service
+from framework.common.exceptions import BadRequestError
+from framework.schemas.base import Success, SuccessExtra
 
 _logger = logger.bind(name=__name__)
 
 router = APIRouter(tags=["控制台-插件"])
-
-
-def Success(data: Any = None, msg: str = "success") -> dict:
-    """成功响应"""
-    return {"code": 200, "msg": msg, "data": data}
-
-
-def SuccessExtra(
-    data: Any = None, total: int = 0, page: int = 1, page_size: int = 20
-) -> dict:
-    """带分页信息的成功响应"""
-    return {
-        "code": 200,
-        "msg": "success",
-        "data": data,
-        "total": total,
-        "page": page,
-        "page_size": page_size,
-    }
 
 
 @router.get(
@@ -81,7 +63,7 @@ async def get_plugin_list(
             limit=limit,
             offset=offset,
         )
-        return ORJSONResponse(content=Success(data=result.model_dump()))
+        return Success(data=result.model_dump())
     except Exception as e:
         _logger.exception("获取插件列表失败")
         raise BadRequestError(f"获取插件列表失败: {str(e)}")
@@ -110,7 +92,7 @@ async def get_plugin_detail(
     """
     try:
         result = await plugin_management_service.get_plugin_info(plugin_id)
-        return ORJSONResponse(content=Success(data=result.model_dump()))
+        return Success(data=result.model_dump())
     except ValueError as e:
         raise BadRequestError(f"插件不存在: {str(e)}")
     except Exception as e:
@@ -146,13 +128,11 @@ async def list_credentials(
             page_size=page_size,
             name=name,
         )
-        return ORJSONResponse(
-            content=SuccessExtra(
-                data=[item.model_dump() for item in items],
-                total=total,
-                page=page,
-                page_size=page_size,
-            )
+        return SuccessExtra(
+            data=[item.model_dump() for item in items],
+            total=total,
+            page=page,
+            page_size=page_size,
         )
     except Exception as e:
         _logger.exception("获取插件凭证列表失败")
@@ -180,7 +160,7 @@ async def get_credential_detail(
     """
     try:
         data = await plugin_management_service.get_credential(credential_id)
-        return ORJSONResponse(content=Success(data=data.model_dump()))
+        return Success(data=data.model_dump())
     except Exception as e:
         _logger.exception("获取凭证详情失败")
         raise BadRequestError(f"获取凭证详情失败: {str(e)}")
@@ -211,10 +191,8 @@ async def get_plugin_credentials_schema(
         schema = await plugin_management_service.get_plugin_credentials_schema(
             plugin_id
         )
-        return ORJSONResponse(
-            content=Success(
-                data=[PluginCredentialsSchemaVo.model_validate(cred) for cred in schema]
-            )
+        return Success(
+            data=[PluginCredentialsSchemaVo.model_validate(cred) for cred in schema]
         )
     except Exception as e:
         _logger.exception("获取插件凭证架构失败")
@@ -243,10 +221,8 @@ async def create_credential(
     注意：scope 固定为 global
     """
     try:
-        data = await plugin_management_service.create_credential(
-            plugin_id, obj_in
-        )
-        return ORJSONResponse(content=Success(data=data.model_dump()))
+        data = await plugin_management_service.create_credential(plugin_id, obj_in)
+        return Success(data=data.model_dump())
     except Exception as e:
         _logger.exception("创建插件凭证失败")
         raise BadRequestError(f"创建插件凭证失败: {str(e)}")
@@ -276,7 +252,7 @@ async def update_credential(
         data = await plugin_management_service.update_credential(
             plugin_id, credential_id, obj_in
         )
-        return ORJSONResponse(content=Success(data=data.model_dump()))
+        return Success(data=data.model_dump())
     except Exception as e:
         _logger.exception("更新插件凭证失败")
         raise BadRequestError(f"更新插件凭证失败: {str(e)}")
@@ -300,7 +276,7 @@ async def delete_credential(
     """
     try:
         await plugin_management_service.delete_credential(credential_id)
-        return ORJSONResponse(content=Success(data=True))
+        return Success(data=True)
     except Exception as e:
         _logger.exception("删除插件凭证失败")
         raise BadRequestError(f"删除插件凭证失败: {str(e)}")

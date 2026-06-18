@@ -9,6 +9,7 @@ from fastapi.responses import ORJSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from framework.database.dependencies import get_db_session
+from framework.schemas.base import Success
 from iam.schemas.login import LoginRequest, LoginResponse, LogoutResponse
 from iam.schemas.token import TokenRefreshRequest, TokenRefreshResponse
 from iam.services import auth_service
@@ -35,13 +36,7 @@ async def login(
             password=data.password,
             ip=ip,
         )
-        return ORJSONResponse(
-            content={
-                "code": 200,
-                "msg": "登录成功",
-                "data": result.model_dump(),
-            }
-        )
+        return Success(data=result.model_dump())
     except ValueError as e:
         raise HTTPException(status_code=401, detail=str(e))
 
@@ -60,15 +55,9 @@ async def logout(
     auth_header = request.headers.get("Authorization", "")
     if auth_header.startswith("Bearer "):
         access_token = auth_header[7:]
-        await auth_service.logout(session, access_token)
+        await auth_service.logout(access_token)
 
-    return ORJSONResponse(
-        content={
-            "code": 200,
-            "msg": "登出成功",
-            "data": None,
-        }
-    )
+    return Success(data=None)
 
 
 @router.post("/auth/token/refresh")
@@ -82,13 +71,7 @@ async def refresh_token(
     使用 Refresh Token 获取新的 Access Token。
     """
     try:
-        result = await auth_service.refresh_token(session, data.refresh_token)
-        return ORJSONResponse(
-            content={
-                "code": 200,
-                "msg": "刷新成功",
-                "data": result.model_dump(),
-            }
-        )
+        result = await auth_service.refresh_token(data.refresh_token)
+        return Success(data=result.model_dump())
     except ValueError as e:
         raise HTTPException(status_code=401, detail=str(e))

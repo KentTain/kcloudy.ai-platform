@@ -11,19 +11,16 @@ from fastapi.responses import ORJSONResponse
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from framework.database.dependencies import get_db_session
 from ai.services import plugin_management_service
+from framework.database.dependencies import get_db_session
+from framework.schemas.base import Success, SuccessExtra
 
 router = APIRouter()
 
 
-def Success(data: Any = None, msg: str = "success") -> dict:
-    """成功响应"""
-    return {"code": 200, "msg": msg, "data": data}
-
-
 class PluginInfoResponse(BaseModel):
     """插件信息响应"""
+
     plugin_id: str = Field(..., description="插件ID")
     plugin_name: str = Field(..., description="插件名称")
     version: str = Field(..., description="版本号")
@@ -35,12 +32,14 @@ class PluginInfoResponse(BaseModel):
 
 class PluginInvokeRequest(BaseModel):
     """插件调用请求"""
+
     parameters: dict[str, Any] = Field(default_factory=dict, description="调用参数")
     timeout: int = Field(default=120, description="超时时间（秒）")
 
 
 class PluginInvokeResponse(BaseModel):
     """插件调用响应"""
+
     plugin_id: str = Field(..., description="插件ID")
     result: dict[str, Any] | None = Field(default=None, description="调用结果")
     success: bool = Field(..., description="是否成功")
@@ -79,9 +78,7 @@ async def get_plugin(
     """
     try:
         result = await plugin_management_service.get_plugin_info(session, plugin_id)
-        return ORJSONResponse(
-            content=Success(result.model_dump())
-        )
+        return Success(data=result.model_dump())
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
@@ -122,26 +119,22 @@ async def invoke_plugin(
         else:
             result = {"chunks": result_chunks}
 
-        return ORJSONResponse(
-            content=Success(
-                PluginInvokeResponse(
-                    plugin_id=plugin_id,
-                    result=result,
-                    success=True,
-                    error=None,
-                ).model_dump()
-            )
+        return Success(
+            data=PluginInvokeResponse(
+                plugin_id=plugin_id,
+                result=result,
+                success=True,
+                error=None,
+            ).model_dump()
         )
     except Exception as e:
-        return ORJSONResponse(
-            content=Success(
-                PluginInvokeResponse(
-                    plugin_id=plugin_id,
-                    result=None,
-                    success=False,
-                    error=str(e),
-                ).model_dump()
-            )
+        return Success(
+            data=PluginInvokeResponse(
+                plugin_id=plugin_id,
+                result=None,
+                success=False,
+                error=str(e),
+            ).model_dump()
         )
 
 
@@ -165,14 +158,12 @@ async def get_plugin_credentials(
             page_size=100,  # 内部接口默认返回较多数据
             name=None,
         )
-        return ORJSONResponse(
-            content=Success(
-                {
-                    "plugin_id": plugin_id,
-                    "credentials": [item.model_dump() for item in items],
-                    "total": total,
-                }
-            )
+        return Success(
+            data={
+                "plugin_id": plugin_id,
+                "credentials": [item.model_dump() for item in items],
+                "total": total,
+            }
         )
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -194,6 +185,6 @@ async def get_plugin_credentials_schema(
         schema = await plugin_management_service.get_plugin_credentials_schema(
             session, plugin_id
         )
-        return ORJSONResponse(content=Success(schema))
+        return Success(data=schema)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))

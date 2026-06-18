@@ -19,12 +19,10 @@ from tenant.schemas.admin.module import (
     ModuleMenuUpdate,
     ModulePaginatedListResponse,
     ModulePermissionCreate,
-    ModulePermissionPaginatedListResponse,
     ModulePermissionResponse,
     ModulePermissionUpdate,
     ModuleResponse,
     ModuleRoleCreate,
-    ModuleRolePaginatedListResponse,
     ModuleRolePermissionUpdateRequest,
     ModuleRoleResponse,
     ModuleRoleUpdate,
@@ -260,7 +258,7 @@ async def delete_module(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-    return Success()
+    return Success(data=success)
 
 
 # =============================================================================
@@ -414,7 +412,7 @@ async def delete_module_menu(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-    return Success()
+    return Success(data=success)
 
 
 # =============================================================================
@@ -453,17 +451,11 @@ async def list_module_permissions(
         action=action,
     )
 
-    return ORJSONResponse(
-        content={
-            "code": 200,
-            "msg": "success",
-            "data": ModulePermissionPaginatedListResponse(
-                items=[build_permission_vo(p) for p in permissions],
-                total=total,
-                page=page,
-                page_size=page_size,
-            ).model_dump(),
-        }
+    return SuccessExtra(
+        data=[build_permission_vo(p) for p in permissions],
+        total=total,
+        page=page,
+        page_size=page_size,
     )
 
 
@@ -616,17 +608,11 @@ async def list_module_roles(
         permissions = await ModuleRoleService.get_role_permissions(session, role.id)
         role_vos.append(build_role_vo(role, permissions))
 
-    return ORJSONResponse(
-        content={
-            "code": 200,
-            "msg": "success",
-            "data": ModuleRolePaginatedListResponse(
-                items=role_vos,
-                total=total,
-                page=page,
-                page_size=page_size,
-            ).model_dump(),
-        }
+    return SuccessExtra(
+        data=role_vos,
+        total=total,
+        page=page,
+        page_size=page_size,
     )
 
 
@@ -742,7 +728,7 @@ async def delete_module_role(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-    return Success()
+    return Success(data=success)
 
 
 @router.put("/modules/{module_id}/roles/{role_id}/permissions")

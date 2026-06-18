@@ -9,10 +9,11 @@ from fastapi.responses import ORJSONResponse, RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from framework.database.dependencies import get_db_session
+from framework.schemas.base import Success
+from framework.utils.jwt import generate_access_token, generate_refresh_token
 from iam.dependencies import get_current_user_id
 from iam.schemas.oauth import OAuthCompleteProfileRequest
 from iam.services import auth_service, oauth_service, user_service
-from framework.utils.jwt import generate_access_token, generate_refresh_token
 
 router = APIRouter()
 
@@ -29,14 +30,8 @@ async def get_oauth_authorize(
     返回第三方 OAuth2 授权页面 URL。
     """
     try:
-        result = await oauth_service.get_authorize_url(session, provider, redirect_uri)
-        return ORJSONResponse(
-            content={
-                "code": 200,
-                "msg": "success",
-                "data": result,
-            }
-        )
+        result = await oauth_service.get_authorize_url(provider, redirect_uri)
+        return Success(data=result)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -65,7 +60,6 @@ async def oauth_callback(
         from framework.utils.session import create_session
 
         session_id = await create_session(
-            session,
             user_id=user.id,
             tenant_id=None,
             ip=None,
@@ -86,19 +80,15 @@ async def oauth_callback(
             jwt_secret,
         )
 
-        return ORJSONResponse(
-            content={
-                "code": 200,
-                "msg": "登录成功" if not is_new else "注册成功",
-                "data": {
-                    "user_id": user.id,
-                    "username": user.username,
-                    "nickname": user.nickname,
-                    "need_complete_profile": not user.profile_completed,
-                    "access_token": access_token,
-                    "refresh_token": refresh_token,
-                    "expires_in": 7200,
-                },
+        return Success(
+            data={
+                "user_id": user.id,
+                "username": user.username,
+                "nickname": user.nickname,
+                "need_complete_profile": not user.profile_completed,
+                "access_token": access_token,
+                "refresh_token": refresh_token,
+                "expires_in": 7200,
             }
         )
     except ValueError as e:
@@ -124,12 +114,6 @@ async def complete_oauth_profile(
             email=data.email,
             phone=data.phone,
         )
-        return ORJSONResponse(
-            content={
-                "code": 200,
-                "msg": "信息补全成功",
-                "data": None,
-            }
-        )
+        return Success(data=None)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))

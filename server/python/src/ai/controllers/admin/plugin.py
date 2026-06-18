@@ -21,7 +21,6 @@ from fastapi.responses import ORJSONResponse, StreamingResponse
 from loguru import logger
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from framework.database.dependencies import get_db_session
 from ai.schemas import (
     GetPluginInfoSuccessRespModel,
     GetPluginListSuccessRespModel,
@@ -32,15 +31,12 @@ from ai.schemas import (
     UninstallPluginSuccessRespModel,
 )
 from ai.services import plugin_management_service
+from framework.database.dependencies import get_db_session
+from framework.schemas.base import Success, SuccessExtra
 
 _logger = logger.bind(name=__name__)
 
 router = APIRouter(tags=["管理端-插件管理"])
-
-
-def Success(data: Any = None, msg: str = "success") -> dict:
-    """成功响应"""
-    return {"code": 200, "msg": msg, "data": data}
 
 
 @router.get(
@@ -78,7 +74,7 @@ async def get_plugin_list(
             limit=limit,
             offset=offset,
         )
-        return ORJSONResponse(content=Success(data=result.model_dump()))
+        return Success(data=result.model_dump())
     except Exception as e:
         _logger.exception("获取插件列表失败")
         raise HTTPException(status_code=400, detail=str(e))
@@ -141,7 +137,7 @@ async def upload_plugin(
             install_config=config,
         )
 
-        return ORJSONResponse(content=Success(data=result.model_dump()))
+        return Success(data=result.model_dump())
 
     except HTTPException:
         raise
@@ -174,7 +170,7 @@ async def start_plugin(
     """
     try:
         result = await plugin_management_service.start_plugin(session, plugin_id)
-        return ORJSONResponse(content=Success(data=result.model_dump()))
+        return Success(data=result.model_dump())
     except Exception as e:
         _logger.exception(f"插件启动失败: {plugin_id}")
         raise HTTPException(status_code=400, detail=str(e))
@@ -204,7 +200,7 @@ async def stop_plugin(
     """
     try:
         result = await plugin_management_service.stop_plugin(session, plugin_id)
-        return ORJSONResponse(content=Success(data=result.model_dump()))
+        return Success(data=result.model_dump())
     except Exception as e:
         _logger.exception(f"插件停止失败: {plugin_id}")
         raise HTTPException(status_code=400, detail=str(e))
@@ -265,7 +261,7 @@ async def upgrade_plugin(
             auto_start=auto_start if auto_start is not None else True,
             install_config=config,
         )
-        return ORJSONResponse(content=Success(data=result.model_dump()))
+        return Success(data=result.model_dump())
 
     except HTTPException:
         raise
@@ -300,7 +296,7 @@ async def uninstall_plugin(
     """
     try:
         result = await plugin_management_service.uninstall_plugin(session, plugin_id)
-        return ORJSONResponse(content=Success(data=result.model_dump()))
+        return Success(data=result.model_dump())
     except HTTPException:
         raise
     except Exception as e:
@@ -391,9 +387,7 @@ async def get_plugin_asset(
 
     支持图片、JSON、YAML等各种类型的资源文件
     """
-    _logger.info(
-        f"get_plugin_asset-> plugin_id:{plugin_id}, asset_path:{asset_path}"
-    )
+    _logger.info(f"get_plugin_asset-> plugin_id:{plugin_id}, asset_path:{asset_path}")
 
     try:
         # 通过service层获取插件资源文件内容
@@ -465,7 +459,7 @@ async def get_plugin_info(
     """
     try:
         result = await plugin_management_service.get_plugin_info(session, plugin_id)
-        return ORJSONResponse(content=Success(data=result.model_dump()))
+        return Success(data=result.model_dump())
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:

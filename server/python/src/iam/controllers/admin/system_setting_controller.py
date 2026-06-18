@@ -8,19 +8,16 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from framework.database.dependencies import get_db_session
 from framework.schemas.base import Success, SuccessExtra
-from tenant.middlewares.admin_auth_middleware import get_current_admin
 from iam.schemas.admin.system_setting import (
     SystemSettingCreate,
-    SystemSettingPaginatedListResponse,
+    SystemSettingPaginatedQuery,
     SystemSettingResponse,
     SystemSettingUpdate,
-    SystemSettingPaginatedQuery,
 )
 from iam.services.system_setting_service import system_setting_service
+from tenant.middlewares.admin_auth_middleware import get_current_admin
 
 router = APIRouter()
-
-
 
 
 def build_setting_response(setting) -> SystemSettingResponse:
@@ -33,7 +30,7 @@ async def list_settings(
     query: SystemSettingPaginatedQuery = Depends(),
     admin: dict = Depends(get_current_admin),
     session: AsyncSession = Depends(get_db_session),
-) -> ORJSONResponse:
+):
     """
     查询系统设置列表
 
@@ -50,17 +47,11 @@ async def list_settings(
         keyword=query.keyword,
     )
 
-    return ORJSONResponse(
-        content={
-            "code": 200,
-            "msg": "success",
-            "data": SystemSettingPaginatedListResponse(
-                items=[build_setting_response(s) for s in settings],
-                total=total,
-                page=query.page,
-                page_size=query.page_size,
-            ).model_dump(),
-        }
+    return SuccessExtra(
+        data=[build_setting_response(s) for s in settings],
+        total=total,
+        page=query.page,
+        page_size=query.page_size,
     )
 
 
@@ -69,7 +60,7 @@ async def create_setting(
     data: SystemSettingCreate,
     admin: dict = Depends(get_current_admin),
     session: AsyncSession = Depends(get_db_session),
-) -> ORJSONResponse:
+):
     """
     创建系统设置
 
@@ -83,7 +74,9 @@ async def create_setting(
     """
     tenant_id = "platform"  # 系统设置为平台级配置
 
-    existing = await system_setting_service.get_setting_by_code(session, tenant_id, data.code)
+    existing = await system_setting_service.get_setting_by_code(
+        session, tenant_id, data.code
+    )
     if existing:
         raise HTTPException(status_code=400, detail="设置编号已存在")
 
@@ -102,9 +95,7 @@ async def create_setting(
         attributes=[attr.model_dump() for attr in data.attributes],
     )
 
-    return ORJSONResponse(
-        content=Success(build_setting_response(setting).model_dump())
-    )
+    return Success(data=build_setting_response(setting).model_dump())
 
 
 @router.get("/{setting_id}")
@@ -112,7 +103,7 @@ async def get_setting(
     setting_id: str,
     admin: dict = Depends(get_current_admin),
     session: AsyncSession = Depends(get_db_session),
-) -> ORJSONResponse:
+):
     """
     查询系统设置详情
 
@@ -128,9 +119,7 @@ async def get_setting(
     if not setting:
         raise HTTPException(status_code=404, detail="设置不存在")
 
-    return ORJSONResponse(
-        content=Success(build_setting_response(setting).model_dump())
-    )
+    return Success(data=build_setting_response(setting).model_dump())
 
 
 @router.put("/{setting_id}")
@@ -139,7 +128,7 @@ async def update_setting(
     data: SystemSettingUpdate,
     admin: dict = Depends(get_current_admin),
     session: AsyncSession = Depends(get_db_session),
-) -> ORJSONResponse:
+):
     """
     更新系统设置
 
@@ -163,15 +152,15 @@ async def update_setting(
         can_edit=data.can_edit,
         is_require=data.is_require,
         index=data.index,
-        attributes=[attr.model_dump() for attr in data.attributes] if data.attributes else None,
+        attributes=[attr.model_dump() for attr in data.attributes]
+        if data.attributes
+        else None,
     )
 
     if not setting:
         raise HTTPException(status_code=404, detail="设置不存在")
 
-    return ORJSONResponse(
-        content=Success(build_setting_response(setting).model_dump())
-    )
+    return Success(data=build_setting_response(setting).model_dump())
 
 
 @router.delete("/{setting_id}")
@@ -179,7 +168,7 @@ async def delete_setting(
     setting_id: str,
     admin: dict = Depends(get_current_admin),
     session: AsyncSession = Depends(get_db_session),
-) -> ORJSONResponse:
+):
     """
     删除系统设置
 
@@ -191,4 +180,4 @@ async def delete_setting(
     if not success:
         raise HTTPException(status_code=404, detail="设置不存在")
 
-    return Success()
+    return Success(data=None)

@@ -9,6 +9,7 @@ from fastapi.responses import ORJSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from framework.database.dependencies import get_db_session
+from framework.schemas.base import Success
 from framework.tenant.context import get_tenant_id
 from iam.dependencies import get_current_user_id
 from iam.schemas.user import (
@@ -58,16 +59,12 @@ async def register(
             password=data.password,
         )
 
-        return ORJSONResponse(
-            content={
-                "code": 200,
-                "msg": "注册成功",
-                "data": {
-                    "user": UserResponse.model_validate(user).model_dump(),
-                    "access_token": login_result.access_token,
-                    "refresh_token": login_result.refresh_token,
-                    "expires_in": login_result.expires_in,
-                },
+        return Success(
+            data={
+                "user": UserResponse.model_validate(user).model_dump(),
+                "access_token": login_result.access_token,
+                "refresh_token": login_result.refresh_token,
+                "expires_in": login_result.expires_in,
             }
         )
     except ValueError as e:
@@ -88,13 +85,7 @@ async def get_current_user(
     if not user_detail:
         raise HTTPException(status_code=404, detail="用户不存在")
 
-    return ORJSONResponse(
-        content={
-            "code": 200,
-            "msg": "success",
-            "data": user_detail.model_dump(),
-        }
-    )
+    return Success(data=user_detail.model_dump())
 
 
 @router.put("/users/me")
@@ -117,13 +108,7 @@ async def update_current_user(
             email=data.email,
             phone=data.phone,
         )
-        return ORJSONResponse(
-            content={
-                "code": 200,
-                "msg": "修改成功",
-                "data": UserResponse.model_validate(user).model_dump(),
-            }
-        )
+        return Success(data=UserResponse.model_validate(user).model_dump())
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -146,13 +131,7 @@ async def change_password(
             old_password=data.old_password,
             new_password=data.new_password,
         )
-        return ORJSONResponse(
-            content={
-                "code": 200,
-                "msg": "密码修改成功，请重新登录",
-                "data": None,
-            }
-        )
+        return Success(data=None)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -168,13 +147,7 @@ async def send_reset_code(
     向邮箱或手机号发送 6 位验证码。
     """
     # TODO: 实现验证码发送
-    return ORJSONResponse(
-        content={
-            "code": 200,
-            "msg": "验证码已发送",
-            "data": None,
-        }
-    )
+    return Success(data=None)
 
 
 @router.post("/users/password/reset")
@@ -195,13 +168,7 @@ async def reset_password(
             code=data.code,
             new_password=data.new_password,
         )
-        return ORJSONResponse(
-            content={
-                "code": 200,
-                "msg": "密码重置成功",
-                "data": None,
-            }
-        )
+        return Success(data=None)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -248,10 +215,4 @@ async def get_user_menus(
 
     data = [to_vo(m) for m in menus]
 
-    return ORJSONResponse(
-        content={
-            "code": 200,
-            "msg": "获取成功",
-            "data": [d.model_dump() for d in data],
-        }
-    )
+    return Success(data=[d.model_dump() for d in data])

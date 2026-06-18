@@ -12,45 +12,38 @@ from framework.database.dependencies import get_db_session
 from framework.schemas.base import Success, SuccessExtra
 from tenant.middlewares.admin_auth_middleware import get_current_admin
 from tenant.schemas.admin.resource_config import (
-    # 数据库
-    DatabaseConfigCreate,
-    DatabaseConfigUpdate,
-    DatabasePropertyResponse,
-    DatabasePropertyPaginatedListResponse,
-    # 存储
-    StorageConfigCreate,
-    StorageConfigUpdate,
-    StoragePropertyResponse,
-    StoragePropertyPaginatedListResponse,
     # 缓存
     CacheConfigCreate,
     CacheConfigUpdate,
     CachePropertyResponse,
-    CachePropertyPaginatedListResponse,
-    # 队列
-    QueueConfigCreate,
-    QueueConfigUpdate,
-    QueuePropertyResponse,
-    QueuePropertyPaginatedListResponse,
+    # 通用
+    ConnectionTestResult,
+    # 数据库
+    DatabaseConfigCreate,
+    DatabaseConfigUpdate,
+    DatabasePropertyResponse,
     # 发布订阅
     PubSubConfigCreate,
     PubSubConfigUpdate,
     PubSubPropertyResponse,
-    PubSubPropertyPaginatedListResponse,
-    # 通用
-    ConnectionTestResult,
-    ResourceQuery,
+    # 队列
+    QueueConfigCreate,
+    QueueConfigUpdate,
+    QueuePropertyResponse,
     ResourcePaginatedQuery,
+    ResourceQuery,
+    # 存储
+    StorageConfigCreate,
+    StorageConfigUpdate,
+    StoragePropertyResponse,
 )
-from tenant.services.database_config_service import DatabaseConfigService
-from tenant.services.storage_config_service import StorageConfigService
 from tenant.services.cache_config_service import CacheConfigService
-from tenant.services.queue_config_service import QueueConfigService
+from tenant.services.database_config_service import DatabaseConfigService
 from tenant.services.pubsub_config_service import PubSubConfigService
+from tenant.services.queue_config_service import QueueConfigService
+from tenant.services.storage_config_service import StorageConfigService
 
 router = APIRouter()
-
-
 
 
 # =============================================================================
@@ -74,18 +67,14 @@ async def list_database_configs(
     items, total = await DatabaseConfigService.list_configs(
         session, page=page, page_size=page_size, keyword=keyword
     )
-    return ORJSONResponse(
-        content=Success(
-            DatabasePropertyPaginatedListResponse(
-                items=[
-                    DatabasePropertyResponse(**DatabaseConfigService.build_response(item))
-                    for item in items
-                ],
-                total=total,
-                page=page,
-                page_size=page_size,
-            ).model_dump()
-        )
+    return SuccessExtra(
+        data=[
+            DatabasePropertyResponse(**DatabaseConfigService.build_response(item))
+            for item in items
+        ],
+        total=total,
+        page=page,
+        page_size=page_size,
     )
 
 
@@ -99,10 +88,8 @@ async def create_database_config(
     创建数据库配置
     """
     config = await DatabaseConfigService.create(session, **data.model_dump())
-    return Success(data=
-            DatabasePropertyResponse(
-                **DatabaseConfigService.build_response(config).model_dump()
-        )
+    return Success(
+        data=DatabasePropertyResponse(**DatabaseConfigService.build_response(config))
     )
 
 
@@ -118,10 +105,8 @@ async def get_database_config(
     config = await DatabaseConfigService.get_by_id(session, config_id)
     if not config:
         raise HTTPException(status_code=404, detail="数据库配置不存在")
-    return Success(data=
-            DatabasePropertyResponse(
-                **DatabaseConfigService.build_response(config).model_dump()
-        )
+    return Success(
+        data=DatabasePropertyResponse(**DatabaseConfigService.build_response(config))
     )
 
 
@@ -140,10 +125,8 @@ async def update_database_config(
     config = await DatabaseConfigService.update(session, config_id, **update_data)
     if not config:
         raise HTTPException(status_code=404, detail="数据库配置不存在")
-    return Success(data=
-            DatabasePropertyResponse(
-                **DatabaseConfigService.build_response(config).model_dump()
-        )
+    return Success(
+        data=DatabasePropertyResponse(**DatabaseConfigService.build_response(config))
     )
 
 
@@ -159,24 +142,25 @@ async def delete_database_config(
     success = await DatabaseConfigService.delete(session, config_id)
     if not success:
         raise HTTPException(status_code=404, detail="数据库配置不存在")
-    return Success()
+    return Success(data=success)
 
 
 @router.post(f"{DB_PREFIX}/{{config_id}}/test-connection")
 async def test_database_connection(
     config_id: str,
     admin: dict = Depends(get_current_admin),
+    session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """
     测试数据库连通性
     """
-    success, message, latency = await DatabaseConfigService.test_connection(config_id)
-    return ORJSONResponse(
-        content=Success(
-            ConnectionTestResult(
-                success=success, message=message, latency_ms=latency
-            ).model_dump()
-        )
+    success, message, latency = await DatabaseConfigService.test_connection(
+        session, config_id
+    )
+    return Success(
+        data=ConnectionTestResult(
+            success=success, message=message, latency_ms=latency
+        ).model_dump()
     )
 
 
@@ -199,18 +183,14 @@ async def list_storage_configs(
     items, total = await StorageConfigService.list_configs(
         session, page=page, page_size=page_size, keyword=keyword
     )
-    return ORJSONResponse(
-        content=Success(
-            StoragePropertyPaginatedListResponse(
-                items=[
-                    StoragePropertyResponse(**StorageConfigService.build_response(item))
-                    for item in items
-                ],
-                total=total,
-                page=page,
-                page_size=page_size,
-            ).model_dump()
-        )
+    return SuccessExtra(
+        data=[
+            StoragePropertyResponse(**StorageConfigService.build_response(item))
+            for item in items
+        ],
+        total=total,
+        page=page,
+        page_size=page_size,
     )
 
 
@@ -222,10 +202,8 @@ async def create_storage_config(
 ) -> ORJSONResponse:
     """创建存储配置"""
     config = await StorageConfigService.create(session, **data.model_dump())
-    return Success(data=
-            StoragePropertyResponse(
-                **StorageConfigService.build_response(config).model_dump()
-        )
+    return Success(
+        data=StoragePropertyResponse(**StorageConfigService.build_response(config))
     )
 
 
@@ -239,10 +217,8 @@ async def get_storage_config(
     config = await StorageConfigService.get_by_id(session, config_id)
     if not config:
         raise HTTPException(status_code=404, detail="存储配置不存在")
-    return Success(data=
-            StoragePropertyResponse(
-                **StorageConfigService.build_response(config).model_dump()
-        )
+    return Success(
+        data=StoragePropertyResponse(**StorageConfigService.build_response(config))
     )
 
 
@@ -258,10 +234,8 @@ async def update_storage_config(
     config = await StorageConfigService.update(session, config_id, **update_data)
     if not config:
         raise HTTPException(status_code=404, detail="存储配置不存在")
-    return Success(data=
-            StoragePropertyResponse(
-                **StorageConfigService.build_response(config).model_dump()
-        )
+    return Success(
+        data=StoragePropertyResponse(**StorageConfigService.build_response(config))
     )
 
 
@@ -275,22 +249,23 @@ async def delete_storage_config(
     success = await StorageConfigService.delete(session, config_id)
     if not success:
         raise HTTPException(status_code=404, detail="存储配置不存在")
-    return Success()
+    return Success(data=success)
 
 
 @router.post(f"{STORAGE_PREFIX}/{{config_id}}/test-connection")
 async def test_storage_connection(
     config_id: str,
     admin: dict = Depends(get_current_admin),
+    session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """测试存储连通性"""
-    success, message, latency = await StorageConfigService.test_connection(config_id)
-    return ORJSONResponse(
-        content=Success(
-            ConnectionTestResult(
-                success=success, message=message, latency_ms=latency
-            ).model_dump()
-        )
+    success, message, latency = await StorageConfigService.test_connection(
+        session, config_id
+    )
+    return Success(
+        data=ConnectionTestResult(
+            success=success, message=message, latency_ms=latency
+        ).model_dump()
     )
 
 
@@ -313,18 +288,14 @@ async def list_cache_configs(
     items, total = await CacheConfigService.list_configs(
         session, page=page, page_size=page_size, keyword=keyword
     )
-    return ORJSONResponse(
-        content=Success(
-            CachePropertyPaginatedListResponse(
-                items=[
-                    CachePropertyResponse(**CacheConfigService.build_response(item))
-                    for item in items
-                ],
-                total=total,
-                page=page,
-                page_size=page_size,
-            ).model_dump()
-        )
+    return SuccessExtra(
+        data=[
+            CachePropertyResponse(**CacheConfigService.build_response(item))
+            for item in items
+        ],
+        total=total,
+        page=page,
+        page_size=page_size,
     )
 
 
@@ -336,10 +307,8 @@ async def create_cache_config(
 ) -> ORJSONResponse:
     """创建缓存配置"""
     config = await CacheConfigService.create(session, **data.model_dump())
-    return ORJSONResponse(
-        content=Success(
-            CachePropertyResponse(**CacheConfigService.build_response(config)).model_dump()
-        )
+    return Success(
+        data=CachePropertyResponse(**CacheConfigService.build_response(config))
     )
 
 
@@ -353,10 +322,8 @@ async def get_cache_config(
     config = await CacheConfigService.get_by_id(session, config_id)
     if not config:
         raise HTTPException(status_code=404, detail="缓存配置不存在")
-    return ORJSONResponse(
-        content=Success(
-            CachePropertyResponse(**CacheConfigService.build_response(config)).model_dump()
-        )
+    return Success(
+        data=CachePropertyResponse(**CacheConfigService.build_response(config))
     )
 
 
@@ -372,10 +339,8 @@ async def update_cache_config(
     config = await CacheConfigService.update(session, config_id, **update_data)
     if not config:
         raise HTTPException(status_code=404, detail="缓存配置不存在")
-    return ORJSONResponse(
-        content=Success(
-            CachePropertyResponse(**CacheConfigService.build_response(config)).model_dump()
-        )
+    return Success(
+        data=CachePropertyResponse(**CacheConfigService.build_response(config))
     )
 
 
@@ -389,22 +354,23 @@ async def delete_cache_config(
     success = await CacheConfigService.delete(session, config_id)
     if not success:
         raise HTTPException(status_code=404, detail="缓存配置不存在")
-    return Success()
+    return Success(data=success)
 
 
 @router.post(f"{CACHE_PREFIX}/{{config_id}}/test-connection")
 async def test_cache_connection(
     config_id: str,
     admin: dict = Depends(get_current_admin),
+    session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """测试缓存连通性"""
-    success, message, latency = await CacheConfigService.test_connection(config_id)
-    return ORJSONResponse(
-        content=Success(
-            ConnectionTestResult(
-                success=success, message=message, latency_ms=latency
-            ).model_dump()
-        )
+    success, message, latency = await CacheConfigService.test_connection(
+        session, config_id
+    )
+    return Success(
+        data=ConnectionTestResult(
+            success=success, message=message, latency_ms=latency
+        ).model_dump()
     )
 
 
@@ -427,18 +393,14 @@ async def list_queue_configs(
     items, total = await QueueConfigService.list_configs(
         session, page=page, page_size=page_size, keyword=keyword
     )
-    return ORJSONResponse(
-        content=Success(
-            QueuePropertyPaginatedListResponse(
-                items=[
-                    QueuePropertyResponse(**QueueConfigService.build_response(item))
-                    for item in items
-                ],
-                total=total,
-                page=page,
-                page_size=page_size,
-            ).model_dump()
-        )
+    return SuccessExtra(
+        data=[
+            QueuePropertyResponse(**QueueConfigService.build_response(item))
+            for item in items
+        ],
+        total=total,
+        page=page,
+        page_size=page_size,
     )
 
 
@@ -450,10 +412,8 @@ async def create_queue_config(
 ) -> ORJSONResponse:
     """创建队列配置"""
     config = await QueueConfigService.create(session, **data.model_dump())
-    return ORJSONResponse(
-        content=Success(
-            QueuePropertyResponse(**QueueConfigService.build_response(config)).model_dump()
-        )
+    return Success(
+        data=QueuePropertyResponse(**QueueConfigService.build_response(config))
     )
 
 
@@ -467,10 +427,8 @@ async def get_queue_config(
     config = await QueueConfigService.get_by_id(session, config_id)
     if not config:
         raise HTTPException(status_code=404, detail="队列配置不存在")
-    return ORJSONResponse(
-        content=Success(
-            QueuePropertyResponse(**QueueConfigService.build_response(config)).model_dump()
-        )
+    return Success(
+        data=QueuePropertyResponse(**QueueConfigService.build_response(config))
     )
 
 
@@ -486,10 +444,8 @@ async def update_queue_config(
     config = await QueueConfigService.update(session, config_id, **update_data)
     if not config:
         raise HTTPException(status_code=404, detail="队列配置不存在")
-    return ORJSONResponse(
-        content=Success(
-            QueuePropertyResponse(**QueueConfigService.build_response(config)).model_dump()
-        )
+    return Success(
+        data=QueuePropertyResponse(**QueueConfigService.build_response(config))
     )
 
 
@@ -503,22 +459,23 @@ async def delete_queue_config(
     success = await QueueConfigService.delete(session, config_id)
     if not success:
         raise HTTPException(status_code=404, detail="队列配置不存在")
-    return Success()
+    return Success(data=success)
 
 
 @router.post(f"{QUEUE_PREFIX}/{{config_id}}/test-connection")
 async def test_queue_connection(
     config_id: str,
     admin: dict = Depends(get_current_admin),
+    session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """测试队列连通性"""
-    success, message, latency = await QueueConfigService.test_connection(config_id)
-    return ORJSONResponse(
-        content=Success(
-            ConnectionTestResult(
-                success=success, message=message, latency_ms=latency
-            ).model_dump()
-        )
+    success, message, latency = await QueueConfigService.test_connection(
+        session, config_id
+    )
+    return Success(
+        data=ConnectionTestResult(
+            success=success, message=message, latency_ms=latency
+        ).model_dump()
     )
 
 
@@ -541,18 +498,14 @@ async def list_pubsub_configs(
     items, total = await PubSubConfigService.list_configs(
         session, page=page, page_size=page_size, keyword=keyword
     )
-    return ORJSONResponse(
-        content=Success(
-            PubSubPropertyPaginatedListResponse(
-                items=[
-                    PubSubPropertyResponse(**PubSubConfigService.build_response(item))
-                    for item in items
-                ],
-                total=total,
-                page=page,
-                page_size=page_size,
-            ).model_dump()
-        )
+    return SuccessExtra(
+        data=[
+            PubSubPropertyResponse(**PubSubConfigService.build_response(item))
+            for item in items
+        ],
+        total=total,
+        page=page,
+        page_size=page_size,
     )
 
 
@@ -564,10 +517,8 @@ async def create_pubsub_config(
 ) -> ORJSONResponse:
     """创建发布订阅配置"""
     config = await PubSubConfigService.create(session, **data.model_dump())
-    return Success(data=
-            PubSubPropertyResponse(
-                **PubSubConfigService.build_response(config).model_dump()
-        )
+    return Success(
+        data=PubSubPropertyResponse(**PubSubConfigService.build_response(config))
     )
 
 
@@ -581,10 +532,8 @@ async def get_pubsub_config(
     config = await PubSubConfigService.get_by_id(session, config_id)
     if not config:
         raise HTTPException(status_code=404, detail="发布订阅配置不存在")
-    return Success(data=
-            PubSubPropertyResponse(
-                **PubSubConfigService.build_response(config).model_dump()
-        )
+    return Success(
+        data=PubSubPropertyResponse(**PubSubConfigService.build_response(config))
     )
 
 
@@ -600,10 +549,8 @@ async def update_pubsub_config(
     config = await PubSubConfigService.update(session, config_id, **update_data)
     if not config:
         raise HTTPException(status_code=404, detail="发布订阅配置不存在")
-    return Success(data=
-            PubSubPropertyResponse(
-                **PubSubConfigService.build_response(config).model_dump()
-        )
+    return Success(
+        data=PubSubPropertyResponse(**PubSubConfigService.build_response(config))
     )
 
 
@@ -617,20 +564,21 @@ async def delete_pubsub_config(
     success = await PubSubConfigService.delete(session, config_id)
     if not success:
         raise HTTPException(status_code=404, detail="发布订阅配置不存在")
-    return Success()
+    return Success(data=success)
 
 
 @router.post(f"{PUBSUB_PREFIX}/{{config_id}}/test-connection")
 async def test_pubsub_connection(
     config_id: str,
     admin: dict = Depends(get_current_admin),
+    session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """测试发布订阅连通性"""
-    success, message, latency = await PubSubConfigService.test_connection(config_id)
-    return ORJSONResponse(
-        content=Success(
-            ConnectionTestResult(
-                success=success, message=message, latency_ms=latency
-            ).model_dump()
-        )
+    success, message, latency = await PubSubConfigService.test_connection(
+        session, config_id
+    )
+    return Success(
+        data=ConnectionTestResult(
+            success=success, message=message, latency_ms=latency
+        ).model_dump()
     )

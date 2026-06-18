@@ -138,7 +138,9 @@ class ValidateAccessResponse(BaseModel):
     user_id: str = Field(..., description="用户ID")
 
 
-def build_tenant_info(tenant: Tenant, include_secrets: bool = False) -> TenantInfoResponse:
+def build_tenant_info(
+    tenant: Tenant, include_secrets: bool = False
+) -> TenantInfoResponse:
     """构建租户基础信息响应"""
     from framework.utils.crypto import decrypt
 
@@ -236,7 +238,9 @@ def build_tenant_full_info(simple_tenant: SimpleTenant) -> TenantFullInfoRespons
         contact_name=simple_tenant.contact_name,
         contact_email=simple_tenant.contact_email,
         contact_phone=simple_tenant.contact_phone,
-        expired_at=simple_tenant.expired_at.isoformat() if simple_tenant.expired_at else None,
+        expired_at=simple_tenant.expired_at.isoformat()
+        if simple_tenant.expired_at
+        else None,
         database=database,
         storage=storage,
         cache=cache,
@@ -347,10 +351,16 @@ async def get_tenants_batch_full(
     """
     tenants = await TenantService.get_tenants_batch(session, data.tenant_ids)
     simple_tenants = await asyncio.gather(
-        *[TenantService.build_simple_tenant(session, t) for t in tenants if t is not None]
+        *[
+            TenantService.build_simple_tenant(session, t)
+            for t in tenants
+            if t is not None
+        ]
     )
 
-    return Success(data=[build_tenant_full_info(st).model_dump() for st in simple_tenants])
+    return Success(
+        data=[build_tenant_full_info(st).model_dump() for st in simple_tenants]
+    )
 
 
 @router.get("/tenants/{tenant_id}/validate")
@@ -389,7 +399,7 @@ async def validate_tenant_access(
     from framework.clients.iam_client import get_iam_client
 
     iam_client = get_iam_client()
-    user_tenants = await iam_client.get_user_tenants(user_id)
+    user_tenants = await iam_client.get_user_tenants(session, user_id)
     tenant_ids = [ut.tenant_id for ut in user_tenants]
     valid = tenant_id in tenant_ids
 

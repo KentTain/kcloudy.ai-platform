@@ -46,15 +46,11 @@ async def list_settings(
         keyword=query.keyword,
     )
 
-    return ORJSONResponse(
-        content=Success(
-            ConsoleSystemSettingPaginatedListResponse(
-                items=[build_setting_response(s) for s in settings],
-                total=total,
-                page=query.page,
-                page_size=query.page_size,
-            ).model_dump()
-        )
+    return SuccessExtra(
+        data=[build_setting_response(s) for s in settings],
+        total=total,
+        page=query.page,
+        page_size=query.page_size,
     )
 
 
@@ -74,9 +70,7 @@ async def get_setting(
     if not setting:
         raise HTTPException(status_code=404, detail="设置不存在")
 
-    return ORJSONResponse(
-        content=Success(build_setting_response(setting).model_dump())
-    )
+    return Success(data=build_setting_response(setting).model_dump())
 
 
 @router.get("/by-code/{code}")
@@ -96,6 +90,4 @@ async def get_setting_by_code(
     if not setting:
         raise HTTPException(status_code=404, detail="设置不存在")
 
-    return ORJSONResponse(
-        content=Success(build_setting_response(setting).model_dump())
-    )
+    return Success(data=build_setting_response(setting).model_dump())

@@ -20,10 +20,8 @@ from tenant.schemas.admin.tenant import (
     ResourceBindingRequest,
     ResourceBindingResponse,
     ResourceConfigReferenceResponse,
-    ResourceValidateResponse,
     TenantCreate,
     TenantListStats,
-    TenantPaginatedListResponse,
     TenantResponse,
     TenantStatsResponse,
     TenantUpdate,
@@ -33,8 +31,6 @@ from tenant.services.module_service import ModuleService
 from tenant.services.tenant_service import TenantService
 
 router = APIRouter()
-
-
 
 
 async def _get_resource_ref(
@@ -98,14 +94,12 @@ async def admin_login(
         raise HTTPException(status_code=401, detail="用户名或密码错误")
 
     token, admin = result
-    return ORJSONResponse(
-        content=Success(
-            AdminLoginResponse(
-                token=token,
-                username=admin.username,
-                is_default=admin.is_default,
-            ).model_dump()
-        )
+    return Success(
+        data=AdminLoginResponse(
+            token=token,
+            username=admin.username,
+            is_default=admin.is_default,
+        ).model_dump()
     )
 
 
@@ -122,7 +116,7 @@ async def admin_logout(
     )
     if token:
         AdminAuthService.logout(token)
-    return Success()
+    return Success(data=True)
 
 
 # ============== 租户管理 API ==============
@@ -164,18 +158,12 @@ async def list_tenants(
     # 并行构建 TenantResponse
     tenant_vos = await asyncio.gather(*[build_tenant_vo(session, t) for t in tenants])
 
-    return ORJSONResponse(
-        content={
-            "code": 200,
-            "msg": "success",
-            "data": TenantPaginatedListResponse(
-                items=tenant_vos,
-                total=total,
-                page=page,
-                page_size=page_size,
-                stats=TenantListStats(**stats),
-            ).model_dump(),
-        }
+    return SuccessExtra(
+        data=tenant_vos,
+        total=total,
+        page=page,
+        page_size=page_size,
+        stats=TenantListStats(**stats),
     )
 
 
@@ -217,7 +205,7 @@ async def create_tenant(
         pubsub_config_id=data.pubsub_config_id,
     )
 
-    return Success(data=(await build_tenant_vo(session, tenant).model_dump()))
+    return Success(data=(await build_tenant_vo(session, tenant)).model_dump())
 
 
 @router.get("/tenants/{tenant_id}")
@@ -243,9 +231,7 @@ async def get_tenant(
 
     # get_by_id 返回的是 SimpleTenant，需要重新获取 ORM 模型来构建完整的 VO
     tenant_model = await TenantService.get_resource_bindings(session, tenant_id)
-    return ORJSONResponse(
-        content=Success((await build_tenant_vo(session, tenant_model)).model_dump())
-    )
+    return Success(data=(await build_tenant_vo(session, tenant_model)).model_dump())
 
 
 @router.put("/tenants/{tenant_id}")
@@ -276,7 +262,7 @@ async def update_tenant(
     if not tenant:
         raise HTTPException(status_code=404, detail="租户不存在")
 
-    return Success(data=(await build_tenant_vo(session, tenant).model_dump()))
+    return Success(data=(await build_tenant_vo(session, tenant)).model_dump())
 
 
 @router.delete("/tenants/{tenant_id}")
@@ -300,7 +286,7 @@ async def delete_tenant(
     from framework.clients.iam_client import get_iam_client
 
     iam_client = get_iam_client()
-    user_ids = await iam_client.get_tenant_user_ids(tenant_id)
+    user_ids = await iam_client.get_tenant_user_ids(session, tenant_id)
     if len(user_ids) > 0:
         raise HTTPException(status_code=400, detail="租户下存在用户，无法删除")
 
@@ -308,7 +294,7 @@ async def delete_tenant(
     if not success:
         raise HTTPException(status_code=404, detail="租户不存在")
 
-    return Success()
+    return Success(data=success)
 
 
 @router.post("/tenants/{tenant_id}/activate")
@@ -328,7 +314,7 @@ async def activate_tenant(
     if not tenant:
         raise HTTPException(status_code=404, detail="租户不存在")
 
-    return Success(data=(await build_tenant_vo(session, tenant).model_dump()))
+    return Success(data=(await build_tenant_vo(session, tenant)).model_dump())
 
 
 @router.post("/tenants/{tenant_id}/deactivate")
@@ -348,7 +334,7 @@ async def deactivate_tenant(
     if not tenant:
         raise HTTPException(status_code=404, detail="租户不存在")
 
-    return Success(data=(await build_tenant_vo(session, tenant).model_dump()))
+    return Success(data=(await build_tenant_vo(session, tenant)).model_dump())
 
 
 @router.get("/tenants/{tenant_id}/stats")
@@ -372,7 +358,7 @@ async def get_tenant_stats(
     from framework.clients.iam_client import get_iam_client
 
     iam_client = get_iam_client()
-    user_ids = await iam_client.get_tenant_user_ids(tenant_id)
+    user_ids = await iam_client.get_tenant_user_ids(session, tenant_id)
     user_count = len(user_ids)
 
     stats = TenantStatsResponse(
@@ -422,17 +408,15 @@ async def get_tenant_resources(
         _get_resource_ref(session, tenant.pubsub_config_id, PubSubConfigService),
     )
 
-    return ORJSONResponse(
-        content=Success(
-            ResourceBindingResponse(
-                tenant_id=tenant.id,
-                db_config=db_ref,
-                storage_config=storage_ref,
-                cache_config=cache_ref,
-                queue_config=queue_ref,
-                pubsub_config=pubsub_ref,
-            ).model_dump()
-        )
+    return Success(
+        data=ResourceBindingResponse(
+            tenant_id=tenant.id,
+            db_config=db_ref,
+            storage_config=storage_ref,
+            cache_config=cache_ref,
+            queue_config=queue_ref,
+            pubsub_config=pubsub_ref,
+        ).model_dump()
     )
 
 
@@ -480,7 +464,9 @@ async def update_tenant_resources(
         _validate_config(session, data.storage_config_id, StorageConfigService, "存储"),
         _validate_config(session, data.cache_config_id, CacheConfigService, "缓存"),
         _validate_config(session, data.queue_config_id, QueueConfigService, "队列"),
-        _validate_config(session, data.pubsub_config_id, PubSubConfigService, "发布订阅"),
+        _validate_config(
+            session, data.pubsub_config_id, PubSubConfigService, "发布订阅"
+        ),
     )
 
     # 更新资源绑定
@@ -506,17 +492,15 @@ async def update_tenant_resources(
         _get_resource_ref(session, tenant.pubsub_config_id, PubSubConfigService),
     )
 
-    return ORJSONResponse(
-        content=Success(
-            ResourceBindingResponse(
-                tenant_id=tenant.id,
-                db_config=db_ref,
-                storage_config=storage_ref,
-                cache_config=cache_ref,
-                queue_config=queue_ref,
-                pubsub_config=pubsub_ref,
-            ).model_dump()
-        )
+    return Success(
+        data=ResourceBindingResponse(
+            tenant_id=tenant.id,
+            db_config=db_ref,
+            storage_config=storage_ref,
+            cache_config=cache_ref,
+            queue_config=queue_ref,
+            pubsub_config=pubsub_ref,
+        ).model_dump()
     )
 
 

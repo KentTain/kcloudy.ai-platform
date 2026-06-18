@@ -10,12 +10,14 @@ from framework.database.dependencies import get_db_session
 from framework.schemas.base import Success, SuccessExtra
 from framework.tenant.context import TenantContext, get_tenant_id
 from tenant.models import TenantStatus
-from tenant.schemas.console.tenant import CurrentTenantResponse, SwitchTenantResponse, UserTenantResponse
+from tenant.schemas.console.tenant import (
+    CurrentTenantResponse,
+    SwitchTenantResponse,
+    UserTenantResponse,
+)
 from tenant.services.tenant_service import TenantService
 
 router = APIRouter()
-
-
 
 
 @router.get("")
@@ -38,7 +40,7 @@ async def list_user_tenants(
     from framework.clients.iam_client import get_iam_client
 
     iam_client = get_iam_client()
-    user_tenants = await iam_client.get_user_tenants(user_id)
+    user_tenants = await iam_client.get_user_tenants(session, user_id)
     if not user_tenants:
         return Success(data=[])
 
@@ -89,15 +91,13 @@ async def get_current_tenant_info(
     if not tenant:
         raise HTTPException(status_code=404, detail="租户不存在")
 
-    return ORJSONResponse(
-        content=Success(
-            CurrentTenantResponse(
-                id=tenant.id,
-                name=tenant.name,
-                code=tenant.code,
-                status=tenant.status,
-            ).model_dump()
-        )
+    return Success(
+        data=CurrentTenantResponse(
+            id=tenant.id,
+            name=tenant.name,
+            code=tenant.code,
+            status=tenant.status,
+        ).model_dump()
     )
 
 
@@ -140,7 +140,7 @@ async def switch_tenant(
     from framework.clients.iam_client import get_iam_client
 
     iam_client = get_iam_client()
-    user_tenants = await iam_client.get_user_tenants(user_id)
+    user_tenants = await iam_client.get_user_tenants(session, user_id)
     tenant_ids = [ut.tenant_id for ut in user_tenants]
     if tenant_id not in tenant_ids:
         raise HTTPException(status_code=403, detail="无权访问该租户")
@@ -148,12 +148,10 @@ async def switch_tenant(
     # 设置新的租户上下文（实际应用中应该返回新的 Token）
     TenantContext.set_current_tenant(tenant)
 
-    return ORJSONResponse(
-        content=Success(
-            SwitchTenantResponse(
-                tenant_id=tenant.id,
-                tenant_name=tenant.name,
-                message="租户切换成功",
-            ).model_dump()
-        )
+    return Success(
+        data=SwitchTenantResponse(
+            tenant_id=tenant.id,
+            tenant_name=tenant.name,
+            message="租户切换成功",
+        ).model_dump()
     )
