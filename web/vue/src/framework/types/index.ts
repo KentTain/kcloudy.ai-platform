@@ -23,12 +23,27 @@ export interface RouteMeta {
 /**
  * 统一 API 响应类型
  *
- * 与后端 `framework.common.responses.ApiResponse` 对齐
+ * 与后端 `framework.schemas.base.Success` 对齐
  */
 export interface ApiResponse<T = unknown> {
   code: number;
-  message: string;
+  msg: string;
   data: T;
+}
+
+/**
+ * 分页响应类型
+ *
+ * 与后端 `framework.schemas.base.SuccessExtra` 对齐
+ * 用于 DataTable 组件的分页数据响应
+ */
+export interface SuccessExtra<T> {
+  code: number;
+  msg: string;
+  data: T;
+  total: number;
+  page: number;
+  page_size: number;
 }
 
 /**
@@ -61,7 +76,8 @@ export interface PageParams {
 /**
  * 分页列表响应
  *
- * 与后端 `TenantListVo` 等分页响应格式对齐
+ * @deprecated 使用 `SuccessExtra<T[]>` 替代。后端已统一使用 `SuccessExtra` 响应格式。
+ * 迁移示例：`ApiResponse<PaginatedListResponse<T>>` → `SuccessExtra<T[]>`
  */
 export interface PaginatedListResponse<T> {
   items: T[];

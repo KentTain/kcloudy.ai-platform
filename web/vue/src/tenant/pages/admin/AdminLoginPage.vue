@@ -47,7 +47,7 @@ const onSubmit = handleSubmit(async (values) => {
       error.value = "用户名或密码错误";
     }
   } catch (err: any) {
-    error.value = err?.response?.data?.message || err?.message || "登录失败，请重试";
+    error.value = err?.response?.data?.msg || err?.message || "登录失败，请重试";
   } finally {
     loading.value = false;
   }

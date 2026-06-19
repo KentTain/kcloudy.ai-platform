@@ -94,7 +94,7 @@ const handleDelete = async (row: Tenant) => {
     loadTenants()
   } catch (error: any) {
     console.error('删除租户失败:', error)
-    const errorMessage = error?.response?.data?.message || error?.message || '删除失败'
+    const errorMessage = error?.response?.data?.msg || error?.message || '删除失败'
     notifyError(errorMessage)
   }
 }

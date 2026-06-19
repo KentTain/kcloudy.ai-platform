@@ -12,19 +12,7 @@ import {
   type VisibilityState,
 } from "@tanstack/vue-table";
 import { computed, effect, type Ref, ref, shallowRef } from "vue";
-
-/**
- * 分页响应数据结构
- * 包含分页信息的数据响应
- */
-export interface SuccessExtra<T> {
-  code: number;
-  data: T;
-  msg: string;
-  page: number;
-  page_size: number;
-  total: number;
-}
+import type { SuccessExtra } from "@/framework/types";
 
 export interface DataTableState<TData extends RowData> {
   loading: Ref<boolean>;

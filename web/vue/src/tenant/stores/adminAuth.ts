@@ -35,7 +35,7 @@ export const useAdminAuthStore = defineStore("admin-auth", () => {
 
       return true;
     } catch (error: any) {
-      notifyError(error?.response?.data?.message || "登录失败");
+      notifyError(error?.response?.data?.msg || "登录失败");
       return false;
     }
   };

@@ -124,7 +124,7 @@ const handleDelete = async (row: Module) => {
     loadData()
   } catch (error: any) {
     console.error('删除模块失败:', error)
-    const errorMessage = error?.response?.data?.message || error?.message || '删除失败'
+    const errorMessage = error?.response?.data?.msg || error?.message || '删除失败'
     notifyError(errorMessage)
   }
 }

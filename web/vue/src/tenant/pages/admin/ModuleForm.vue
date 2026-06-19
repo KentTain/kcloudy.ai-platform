@@ -101,7 +101,7 @@ const handleSave = async () => {
     router.push('/admin/modules')
   } catch (error: any) {
     console.error('保存模块失败:', error)
-    const errorMessage = error?.response?.data?.message || error?.message || '保存失败'
+    const errorMessage = error?.response?.data?.msg || error?.message || '保存失败'
     notifyError(errorMessage)
   } finally {
     saving.value = false

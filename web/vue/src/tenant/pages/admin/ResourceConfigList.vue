@@ -444,7 +444,7 @@ const confirmDelete = async () => {
   } catch (error: any) {
     console.error('删除失败:', error)
     // 解析错误信息
-    const errorMessage = error?.response?.data?.message || error?.message || '删除失败'
+    const errorMessage = error?.response?.data?.msg || error?.message || '删除失败'
 
     // 针对性错误提示
     if (errorMessage.includes('已被') || errorMessage.includes('引用') || errorMessage.includes('关联')) {

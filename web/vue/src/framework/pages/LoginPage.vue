@@ -42,7 +42,7 @@ const onSubmit = handleSubmit(async (values) => {
     localStorage.setItem("last_login_account", values.username);
     router.push("/");
   } catch (err: any) {
-    error.value = err?.response?.data?.message || err?.message || "登录失败，请重试";
+    error.value = err?.response?.data?.msg || err?.message || "登录失败，请重试";
   } finally {
     loading.value = false;
   }
