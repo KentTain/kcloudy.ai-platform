@@ -14,13 +14,12 @@ class TestTenantCreateAutoDefault:
     """租户创建时自动关联默认配置测试"""
 
     @pytest.mark.asyncio
-    async def test_auto_assigns_default_database_config_when_not_specified(self):
+    async def test_auto_assigns_default_database_config_when_not_specified(self, session):
         """未指定数据库配置时自动关联默认数据库配置"""
         mock_default_db = MagicMock()
         mock_default_db.id = "default-db-id"
 
-        with patch("tenant.services.tenant_service.async_session") as mock_session_ctx, \
-             patch("tenant.services.tenant_service.database_config_service") as mock_db_service, \
+        with patch("tenant.services.tenant_service.database_config_service") as mock_db_service, \
              patch("tenant.services.tenant_service.storage_config_service") as mock_storage_service, \
              patch("tenant.services.tenant_service.cache_config_service") as mock_cache_service, \
              patch("tenant.services.tenant_service.queue_config_service") as mock_queue_service, \
@@ -29,11 +28,9 @@ class TestTenantCreateAutoDefault:
              patch("tenant.services.tenant_service.encrypt", return_value="encrypted-key"), \
              patch("framework.tenant.protocols.get_module_auto_assigner", return_value=None):
 
-            mock_ctx = AsyncMock()
-            mock_session_ctx.return_value.__aenter__.return_value = mock_ctx
-            mock_ctx.commit = AsyncMock()
-            mock_ctx.refresh = AsyncMock()
-            mock_ctx.flush = AsyncMock()
+            session.commit = AsyncMock()
+            session.refresh = AsyncMock()
+            session.flush = AsyncMock()
 
             # 数据库配置返回默认配置，其他返回 None
             mock_db_service.get_default_config = AsyncMock(return_value=mock_default_db)
@@ -43,6 +40,7 @@ class TestTenantCreateAutoDefault:
             mock_pubsub_service.get_default_config = AsyncMock(return_value=None)
 
             await TenantService.create(
+                session,
                 name="测试租户",
                 code="test-tenant",
             )
@@ -50,7 +48,7 @@ class TestTenantCreateAutoDefault:
         mock_db_service.get_default_config.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_auto_assigns_all_default_configs_when_not_specified(self):
+    async def test_auto_assigns_all_default_configs_when_not_specified(self, session):
         """未指定任何配置时自动关联所有默认配置"""
         mock_default_db = MagicMock()
         mock_default_db.id = "default-db-id"
@@ -63,8 +61,7 @@ class TestTenantCreateAutoDefault:
         mock_default_pubsub = MagicMock()
         mock_default_pubsub.id = "default-pubsub-id"
 
-        with patch("tenant.services.tenant_service.async_session") as mock_session_ctx, \
-             patch("tenant.services.tenant_service.database_config_service") as mock_db_service, \
+        with patch("tenant.services.tenant_service.database_config_service") as mock_db_service, \
              patch("tenant.services.tenant_service.storage_config_service") as mock_storage_service, \
              patch("tenant.services.tenant_service.cache_config_service") as mock_cache_service, \
              patch("tenant.services.tenant_service.queue_config_service") as mock_queue_service, \
@@ -73,11 +70,9 @@ class TestTenantCreateAutoDefault:
              patch("tenant.services.tenant_service.encrypt", return_value="encrypted-key"), \
              patch("framework.tenant.protocols.get_module_auto_assigner", return_value=None):
 
-            mock_ctx = AsyncMock()
-            mock_session_ctx.return_value.__aenter__.return_value = mock_ctx
-            mock_ctx.commit = AsyncMock()
-            mock_ctx.refresh = AsyncMock()
-            mock_ctx.flush = AsyncMock()
+            session.commit = AsyncMock()
+            session.refresh = AsyncMock()
+            session.flush = AsyncMock()
 
             mock_db_service.get_default_config = AsyncMock(return_value=mock_default_db)
             mock_storage_service.get_default_config = AsyncMock(return_value=mock_default_storage)
@@ -86,6 +81,7 @@ class TestTenantCreateAutoDefault:
             mock_pubsub_service.get_default_config = AsyncMock(return_value=mock_default_pubsub)
 
             await TenantService.create(
+                session,
                 name="测试租户",
                 code="test-tenant",
             )
@@ -98,10 +94,9 @@ class TestTenantCreateAutoDefault:
         mock_pubsub_service.get_default_config.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_no_auto_assign_when_config_specified(self):
+    async def test_no_auto_assign_when_config_specified(self, session):
         """指定配置 ID 时不自动关联默认配置"""
-        with patch("tenant.services.tenant_service.async_session") as mock_session_ctx, \
-             patch("tenant.services.tenant_service.database_config_service") as mock_db_service, \
+        with patch("tenant.services.tenant_service.database_config_service") as mock_db_service, \
              patch("tenant.services.tenant_service.storage_config_service") as mock_storage_service, \
              patch("tenant.services.tenant_service.cache_config_service") as mock_cache_service, \
              patch("tenant.services.tenant_service.queue_config_service") as mock_queue_service, \
@@ -110,11 +105,9 @@ class TestTenantCreateAutoDefault:
              patch("tenant.services.tenant_service.encrypt", return_value="encrypted-key"), \
              patch("framework.tenant.protocols.get_module_auto_assigner", return_value=None):
 
-            mock_ctx = AsyncMock()
-            mock_session_ctx.return_value.__aenter__.return_value = mock_ctx
-            mock_ctx.commit = AsyncMock()
-            mock_ctx.refresh = AsyncMock()
-            mock_ctx.flush = AsyncMock()
+            session.commit = AsyncMock()
+            session.refresh = AsyncMock()
+            session.flush = AsyncMock()
 
             mock_db_service.get_default_config = AsyncMock(return_value=MagicMock(id="default-db"))
             mock_storage_service.get_default_config = AsyncMock(return_value=None)
@@ -123,6 +116,7 @@ class TestTenantCreateAutoDefault:
             mock_pubsub_service.get_default_config = AsyncMock(return_value=None)
 
             await TenantService.create(
+                session,
                 name="测试租户",
                 code="test-tenant",
                 db_config_id="specified-db-id",
@@ -132,10 +126,9 @@ class TestTenantCreateAutoDefault:
         mock_db_service.get_default_config.assert_not_called()
 
     @pytest.mark.asyncio
-    async def test_no_auto_assign_when_all_configs_specified(self):
+    async def test_no_auto_assign_when_all_configs_specified(self, session):
         """指定所有配置 ID 时不查询任何默认配置"""
-        with patch("tenant.services.tenant_service.async_session") as mock_session_ctx, \
-             patch("tenant.services.tenant_service.database_config_service") as mock_db_service, \
+        with patch("tenant.services.tenant_service.database_config_service") as mock_db_service, \
              patch("tenant.services.tenant_service.storage_config_service") as mock_storage_service, \
              patch("tenant.services.tenant_service.cache_config_service") as mock_cache_service, \
              patch("tenant.services.tenant_service.queue_config_service") as mock_queue_service, \
@@ -144,13 +137,12 @@ class TestTenantCreateAutoDefault:
              patch("tenant.services.tenant_service.encrypt", return_value="encrypted-key"), \
              patch("framework.tenant.protocols.get_module_auto_assigner", return_value=None):
 
-            mock_ctx = AsyncMock()
-            mock_session_ctx.return_value.__aenter__.return_value = mock_ctx
-            mock_ctx.commit = AsyncMock()
-            mock_ctx.refresh = AsyncMock()
-            mock_ctx.flush = AsyncMock()
+            session.commit = AsyncMock()
+            session.refresh = AsyncMock()
+            session.flush = AsyncMock()
 
             await TenantService.create(
+                session,
                 name="测试租户",
                 code="test-tenant",
                 db_config_id="db-1",
@@ -167,13 +159,12 @@ class TestTenantCreateAutoDefault:
         mock_pubsub_service.get_default_config.assert_not_called()
 
     @pytest.mark.asyncio
-    async def test_tenant_created_with_default_config_id(self):
+    async def test_tenant_created_with_default_config_id(self, session):
         """租户创建后关联了默认配置的 ID"""
         mock_default_db = MagicMock()
         mock_default_db.id = "default-db-id"
 
-        with patch("tenant.services.tenant_service.async_session") as mock_session_ctx, \
-             patch("tenant.services.tenant_service.database_config_service") as mock_db_service, \
+        with patch("tenant.services.tenant_service.database_config_service") as mock_db_service, \
              patch("tenant.services.tenant_service.storage_config_service") as mock_storage_service, \
              patch("tenant.services.tenant_service.cache_config_service") as mock_cache_service, \
              patch("tenant.services.tenant_service.queue_config_service") as mock_queue_service, \
@@ -182,11 +173,9 @@ class TestTenantCreateAutoDefault:
              patch("tenant.services.tenant_service.encrypt", return_value="encrypted-key"), \
              patch("framework.tenant.protocols.get_module_auto_assigner", return_value=None):
 
-            mock_ctx = AsyncMock()
-            mock_session_ctx.return_value.__aenter__.return_value = mock_ctx
-            mock_ctx.commit = AsyncMock()
-            mock_ctx.refresh = AsyncMock()
-            mock_ctx.flush = AsyncMock()
+            session.commit = AsyncMock()
+            session.refresh = AsyncMock()
+            session.flush = AsyncMock()
 
             mock_db_service.get_default_config = AsyncMock(return_value=mock_default_db)
             mock_storage_service.get_default_config = AsyncMock(return_value=None)
@@ -195,19 +184,19 @@ class TestTenantCreateAutoDefault:
             mock_pubsub_service.get_default_config = AsyncMock(return_value=None)
 
             await TenantService.create(
+                session,
                 name="测试租户",
                 code="test-tenant",
             )
 
         # 验证 session.add 被调用，且创建的 Tenant 对象关联了默认配置 ID
-        added_tenant = mock_ctx.add.call_args[0][0]
+        added_tenant = session.add.call_args[0][0]
         assert added_tenant.db_config_id == "default-db-id"
 
     @pytest.mark.asyncio
-    async def test_tenant_created_without_default_when_none_exists(self):
+    async def test_tenant_created_without_default_when_none_exists(self, session):
         """没有默认配置时租户创建不关联配置"""
-        with patch("tenant.services.tenant_service.async_session") as mock_session_ctx, \
-             patch("tenant.services.tenant_service.database_config_service") as mock_db_service, \
+        with patch("tenant.services.tenant_service.database_config_service") as mock_db_service, \
              patch("tenant.services.tenant_service.storage_config_service") as mock_storage_service, \
              patch("tenant.services.tenant_service.cache_config_service") as mock_cache_service, \
              patch("tenant.services.tenant_service.queue_config_service") as mock_queue_service, \
@@ -216,11 +205,9 @@ class TestTenantCreateAutoDefault:
              patch("tenant.services.tenant_service.encrypt", return_value="encrypted-key"), \
              patch("framework.tenant.protocols.get_module_auto_assigner", return_value=None):
 
-            mock_ctx = AsyncMock()
-            mock_session_ctx.return_value.__aenter__.return_value = mock_ctx
-            mock_ctx.commit = AsyncMock()
-            mock_ctx.refresh = AsyncMock()
-            mock_ctx.flush = AsyncMock()
+            session.commit = AsyncMock()
+            session.refresh = AsyncMock()
+            session.flush = AsyncMock()
 
             # 所有默认配置查询都返回 None
             mock_db_service.get_default_config = AsyncMock(return_value=None)
@@ -230,11 +217,12 @@ class TestTenantCreateAutoDefault:
             mock_pubsub_service.get_default_config = AsyncMock(return_value=None)
 
             await TenantService.create(
+                session,
                 name="测试租户",
                 code="test-tenant",
             )
 
-        added_tenant = mock_ctx.add.call_args[0][0]
+        added_tenant = session.add.call_args[0][0]
         assert added_tenant.db_config_id is None
         assert added_tenant.storage_config_id is None
         assert added_tenant.cache_config_id is None

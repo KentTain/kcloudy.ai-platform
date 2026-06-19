@@ -28,9 +28,8 @@ class TestModuleSyncService:
     """模块同步服务测试"""
 
     @pytest.mark.asyncio
-    async def test_sync_module_assigned(self):
+    async def test_sync_module_assigned(self, session):
         """同步模块分配事件"""
-        mock_session = AsyncMock()
 
         mock_menu = MagicMock()
         mock_menu.id = "menu-1"
@@ -78,7 +77,7 @@ class TestModuleSyncService:
         empty_existing.scalars.return_value.all.return_value = []
 
         # 提供充足的 side_effect 条目（sync_module_assigned 含 8+ 次 execute 调用）
-        mock_session.execute.side_effect = [
+        session.execute.side_effect = [
             menu_result,        # 1: ModuleMenu 查询
             perm_result,        # 2: ModulePermission 查询
             role_result,        # 3: ModuleRole 查询
@@ -90,19 +89,18 @@ class TestModuleSyncService:
             empty_existing,     # 9: 额外备用
             empty_existing,     # 10: 额外备用
         ]
-        mock_session.flush = AsyncMock()
-        mock_session.add = MagicMock()
+        session.flush = AsyncMock()
+        session.add = MagicMock()
 
         await ModuleSyncService.sync_module_assigned(
-            mock_session, "tenant-1", "module-1", "demo"
+            session, "tenant-1", "module-1", "demo"
         )
 
-        assert mock_session.add.call_count >= 3
+        assert session.add.call_count >= 3
 
     @pytest.mark.asyncio
-    async def test_sync_module_unassigned(self):
+    async def test_sync_module_unassigned(self, session):
         """同步模块取消分配事件"""
-        mock_session = AsyncMock()
 
         role_result = MagicMock()
         role_result.all.return_value = [("role-1",)]
@@ -127,7 +125,7 @@ class TestModuleSyncService:
         child_result = MagicMock()
         child_result.all.return_value = []
 
-        mock_session.execute.side_effect = [
+        session.execute.side_effect = [
             role_result,
             perm_result,
             menu_result,
@@ -142,15 +140,14 @@ class TestModuleSyncService:
         ]
 
         await ModuleSyncService.sync_module_unassigned(
-            mock_session, "tenant-1", "module-1"
+            session, "tenant-1", "module-1"
         )
 
-        assert mock_session.execute.call_count == 11
+        assert session.execute.call_count == 11
 
     @pytest.mark.asyncio
-    async def test_sync_module_menu_created(self):
+    async def test_sync_module_menu_created(self, session):
         """同步模块菜单创建事件"""
-        mock_session = AsyncMock()
 
         mock_module = MagicMock()
         mock_module.code = "demo"
@@ -174,23 +171,22 @@ class TestModuleSyncService:
         menu_result = MagicMock()
         menu_result.scalar_one_or_none.return_value = mock_menu
 
-        mock_session.execute.side_effect = [
+        session.execute.side_effect = [
             module_result,
             menu_result,
             tm_result,
         ]
-        mock_session.add = MagicMock()
+        session.add = MagicMock()
 
         await ModuleSyncService.sync_module_menu_created(
-            mock_session, "menu-1", "module-1"
+            session, "menu-1", "module-1"
         )
 
-        assert mock_session.add.call_count >= 1
+        assert session.add.call_count >= 1
 
     @pytest.mark.asyncio
-    async def test_sync_module_permission_created(self):
+    async def test_sync_module_permission_created(self, session):
         """同步模块权限创建事件"""
-        mock_session = AsyncMock()
 
         mock_perm = MagicMock()
         mock_perm.id = "perm-1"
@@ -206,22 +202,21 @@ class TestModuleSyncService:
         tm_result = MagicMock()
         tm_result.all.return_value = [("tenant-1",)]
 
-        mock_session.execute.side_effect = [
+        session.execute.side_effect = [
             perm_result,
             tm_result,
         ]
-        mock_session.add = MagicMock()
+        session.add = MagicMock()
 
         await ModuleSyncService.sync_module_permission_created(
-            mock_session, "perm-1", "module-1"
+            session, "perm-1", "module-1"
         )
 
-        assert mock_session.add.call_count >= 1
+        assert session.add.call_count >= 1
 
     @pytest.mark.asyncio
-    async def test_sync_module_role_created(self):
+    async def test_sync_module_role_created(self, session):
         """同步模块角色创建事件"""
-        mock_session = AsyncMock()
 
         mock_role = MagicMock()
         mock_role.id = "role-1"
@@ -236,22 +231,21 @@ class TestModuleSyncService:
         tm_result = MagicMock()
         tm_result.all.return_value = [("tenant-1",)]
 
-        mock_session.execute.side_effect = [
+        session.execute.side_effect = [
             role_result,
             tm_result,
         ]
-        mock_session.add = MagicMock()
+        session.add = MagicMock()
 
         await ModuleSyncService.sync_module_role_created(
-            mock_session, "role-1", "module-1"
+            session, "role-1", "module-1"
         )
 
-        assert mock_session.add.call_count >= 1
+        assert session.add.call_count >= 1
 
     @pytest.mark.asyncio
-    async def test_sync_module_role_permission_changed(self):
+    async def test_sync_module_role_permission_changed(self, session):
         """同步模块角色权限变更事件"""
-        mock_session = AsyncMock()
 
         role_result = MagicMock()
         role_result.scalar_one_or_none.return_value = MagicMock(module_id="module-1")
@@ -265,19 +259,19 @@ class TestModuleSyncService:
         tenant_perm_result = MagicMock()
         tenant_perm_result.all.return_value = [("tenant-perm-1",)]
 
-        mock_session.execute.side_effect = [
+        session.execute.side_effect = [
             role_result,
             tm_result,
             tenant_role_result,
             tenant_perm_result,
         ]
-        mock_session.add = MagicMock()
+        session.add = MagicMock()
 
         await ModuleSyncService.sync_module_role_permission_changed(
-            mock_session, "role-1", ["perm-1"]
+            session, "role-1", ["perm-1"]
         )
 
-        assert mock_session.execute.call_count >= 4
+        assert session.execute.call_count >= 4
 
 
 class TestModuleAssignedHandler:
@@ -664,10 +658,9 @@ class TestModuleSyncServiceAdditional:
 
     @pytest.mark.asyncio
     @pytest.mark.unit
-    async def test_sync_module_role_permission_created(self):
+    async def test_sync_module_role_permission_created(self, session):
         """同步模块角色权限关联创建事件"""
-        mock_session = AsyncMock()
-        mock_session.add = MagicMock()
+        session.add = MagicMock()
 
         mock_rp = MagicMock()
         mock_rp.module_role_id = "role-1"
@@ -691,7 +684,7 @@ class TestModuleSyncServiceAdditional:
         empty_result = MagicMock()
         empty_result.scalar_one_or_none.return_value = None
 
-        mock_session.execute.side_effect = [
+        session.execute.side_effect = [
             rp_result,      # 1: ModuleRolePermission 查询
             tm_result,      # 2: 租户列表
             role_result,    # 3: 查找 Role（by ref_id）
@@ -704,18 +697,17 @@ class TestModuleSyncServiceAdditional:
             new_callable=AsyncMock,
         ) as mock_cache:
             await ModuleSyncService.sync_module_role_permission_created(
-                mock_session, "mrp-1", "module-1"
+                session, "mrp-1", "module-1"
             )
 
-        assert mock_session.add.call_count >= 1
+        assert session.add.call_count >= 1
         mock_cache.assert_awaited_once()
 
     @pytest.mark.asyncio
     @pytest.mark.unit
-    async def test_sync_module_role_permission_created_skip_duplicate(self):
+    async def test_sync_module_role_permission_created_skip_duplicate(self, session):
         """角色权限关联创建：幂等检查跳过已存在的记录"""
-        mock_session = AsyncMock()
-        mock_session.add = MagicMock()
+        session.add = MagicMock()
 
         mock_rp = MagicMock()
         mock_rp.module_role_id = "role-1"
@@ -737,7 +729,7 @@ class TestModuleSyncServiceAdditional:
         existing_result = MagicMock()
         existing_result.scalar_one_or_none.return_value = MagicMock()
 
-        mock_session.execute.side_effect = [
+        session.execute.side_effect = [
             rp_result,       # 1: ModuleRolePermission 查询
             tm_result,       # 2: 租户列表
             role_result,     # 3: 查找 Role
@@ -750,19 +742,18 @@ class TestModuleSyncServiceAdditional:
             new_callable=AsyncMock,
         ) as mock_cache:
             await ModuleSyncService.sync_module_role_permission_created(
-                mock_session, "mrp-1", "module-1"
+                session, "mrp-1", "module-1"
             )
 
         # 不应调用 add，因为已存在
-        assert mock_session.add.call_count == 0
+        assert session.add.call_count == 0
         mock_cache.assert_awaited_once()
 
     @pytest.mark.asyncio
     @pytest.mark.unit
-    async def test_sync_module_role_permission_created_missing_role(self):
+    async def test_sync_module_role_permission_created_missing_role(self, session):
         """角色权限关联创建：租户角色不存在时跳过"""
-        mock_session = AsyncMock()
-        mock_session.add = MagicMock()
+        session.add = MagicMock()
 
         mock_rp = MagicMock()
         mock_rp.module_role_id = "role-1"
@@ -778,7 +769,7 @@ class TestModuleSyncServiceAdditional:
         role_result = MagicMock()
         role_result.scalar_one_or_none.return_value = None
 
-        mock_session.execute.side_effect = [
+        session.execute.side_effect = [
             rp_result,   # 1: ModuleRolePermission 查询
             tm_result,   # 2: 租户列表
             role_result, # 3: 角色查询返回 None
@@ -789,34 +780,32 @@ class TestModuleSyncServiceAdditional:
             new_callable=AsyncMock,
         ) as mock_cache:
             await ModuleSyncService.sync_module_role_permission_created(
-                mock_session, "mrp-1", "module-1"
+                session, "mrp-1", "module-1"
             )
 
-        assert mock_session.add.call_count == 0
+        assert session.add.call_count == 0
         # 即使角色不存在，缓存失效仍会触发（因为 tenant_ids 已获取）
         mock_cache.assert_awaited_once()
 
     @pytest.mark.asyncio
     @pytest.mark.unit
-    async def test_sync_module_role_permission_created_not_found(self):
+    async def test_sync_module_role_permission_created_not_found(self, session):
         """角色权限关联创建：关联记录不存在时跳过"""
-        mock_session = AsyncMock()
 
         rp_result = MagicMock()
         rp_result.scalar_one_or_none.return_value = None
-        mock_session.execute.return_value = rp_result
+        session.execute.return_value = rp_result
 
         await ModuleSyncService.sync_module_role_permission_created(
-            mock_session, "nonexistent", "module-1"
+            session, "nonexistent", "module-1"
         )
 
-        assert mock_session.add.call_count == 0
+        assert session.add.call_count == 0
 
     @pytest.mark.asyncio
     @pytest.mark.unit
-    async def test_sync_module_role_permission_deleted(self):
+    async def test_sync_module_role_permission_deleted(self, session):
         """同步模块角色权限关联删除事件"""
-        mock_session = AsyncMock()
 
         # 查找 Role（by ref_id）
         role_result = MagicMock()
@@ -829,7 +818,7 @@ class TestModuleSyncServiceAdditional:
         delete_result = MagicMock()
         delete_result.rowcount = 1
 
-        mock_session.execute.side_effect = [
+        session.execute.side_effect = [
             role_result,    # 1: 查找 Role
             perm_result,    # 2: 查找 Permission
             delete_result,  # 3: 删除 RolePermission
@@ -840,35 +829,33 @@ class TestModuleSyncServiceAdditional:
             new_callable=AsyncMock,
         ) as mock_cache:
             await ModuleSyncService.sync_module_role_permission_deleted(
-                mock_session, "role-1", "perm-1"
+                session, "role-1", "perm-1"
             )
 
-        assert mock_session.execute.call_count >= 3
+        assert session.execute.call_count >= 3
         mock_cache.assert_awaited_once()
 
     @pytest.mark.asyncio
     @pytest.mark.unit
-    async def test_sync_module_role_permission_deleted_no_role(self):
+    async def test_sync_module_role_permission_deleted_no_role(self, session):
         """角色权限关联删除：角色不存在时跳过"""
-        mock_session = AsyncMock()
 
         role_result = MagicMock()
         role_result.all.return_value = []
-        mock_session.execute.return_value = role_result
+        session.execute.return_value = role_result
 
         await ModuleSyncService.sync_module_role_permission_deleted(
-            mock_session, "role-nonexistent", "perm-1"
+            session, "role-nonexistent", "perm-1"
         )
 
         # 只执行了角色查询，没有删除操作
-        assert mock_session.execute.call_count == 1
+        assert session.execute.call_count == 1
 
     @pytest.mark.asyncio
     @pytest.mark.unit
-    async def test_sync_module_menu_permission_created(self):
+    async def test_sync_module_menu_permission_created(self, session):
         """同步模块菜单权限关联创建事件"""
-        mock_session = AsyncMock()
-        mock_session.add = MagicMock()
+        session.add = MagicMock()
 
         mock_mmp = MagicMock()
         mock_mmp.module_menu_id = "menu-1"
@@ -889,7 +876,7 @@ class TestModuleSyncServiceAdditional:
         empty_result = MagicMock()
         empty_result.scalar_one_or_none.return_value = None
 
-        mock_session.execute.side_effect = [
+        session.execute.side_effect = [
             mmp_result,       # 1: ModuleMenuPermission 查询
             tm_result,        # 2: 租户列表
             menu_result,      # 3: 查找 Menu（by ref_id）
@@ -898,17 +885,16 @@ class TestModuleSyncServiceAdditional:
         ]
 
         await ModuleSyncService.sync_module_menu_permission_created(
-            mock_session, "mmp-1", "module-1"
+            session, "mmp-1", "module-1"
         )
 
-        assert mock_session.add.call_count >= 1
+        assert session.add.call_count >= 1
 
     @pytest.mark.asyncio
     @pytest.mark.unit
-    async def test_sync_module_menu_permission_created_skip_duplicate(self):
+    async def test_sync_module_menu_permission_created_skip_duplicate(self, session):
         """菜单权限关联创建：幂等检查跳过已存在的记录"""
-        mock_session = AsyncMock()
-        mock_session.add = MagicMock()
+        session.add = MagicMock()
 
         mock_mmp = MagicMock()
         mock_mmp.module_menu_id = "menu-1"
@@ -930,7 +916,7 @@ class TestModuleSyncServiceAdditional:
         existing_result = MagicMock()
         existing_result.scalar_one_or_none.return_value = MagicMock()
 
-        mock_session.execute.side_effect = [
+        session.execute.side_effect = [
             mmp_result,        # 1: ModuleMenuPermission 查询
             tm_result,         # 2: 租户列表
             menu_result,       # 3: 查找 Menu
@@ -939,32 +925,30 @@ class TestModuleSyncServiceAdditional:
         ]
 
         await ModuleSyncService.sync_module_menu_permission_created(
-            mock_session, "mmp-1", "module-1"
+            session, "mmp-1", "module-1"
         )
 
-        assert mock_session.add.call_count == 0
+        assert session.add.call_count == 0
 
     @pytest.mark.asyncio
     @pytest.mark.unit
-    async def test_sync_module_menu_permission_created_not_found(self):
+    async def test_sync_module_menu_permission_created_not_found(self, session):
         """菜单权限关联创建：关联记录不存在时跳过"""
-        mock_session = AsyncMock()
 
         mmp_result = MagicMock()
         mmp_result.scalar_one_or_none.return_value = None
-        mock_session.execute.return_value = mmp_result
+        session.execute.return_value = mmp_result
 
         await ModuleSyncService.sync_module_menu_permission_created(
-            mock_session, "nonexistent", "module-1"
+            session, "nonexistent", "module-1"
         )
 
-        assert mock_session.add.call_count == 0
+        assert session.add.call_count == 0
 
     @pytest.mark.asyncio
     @pytest.mark.unit
-    async def test_sync_module_menu_permission_deleted(self):
+    async def test_sync_module_menu_permission_deleted(self, session):
         """同步模块菜单权限关联删除事件"""
-        mock_session = AsyncMock()
 
         # 查找 Menu（by ref_id）
         menu_result = MagicMock()
@@ -977,23 +961,22 @@ class TestModuleSyncServiceAdditional:
         delete_result = MagicMock()
         delete_result.rowcount = 1
 
-        mock_session.execute.side_effect = [
+        session.execute.side_effect = [
             menu_result,     # 1: 查找 Menu（含 tenant_id）
             perm_result,     # 2: 查找 Permission（含 tenant_id）
             delete_result,   # 3: 删除 MenuPermission
         ]
 
         await ModuleSyncService.sync_module_menu_permission_deleted(
-            mock_session, "menu-1", "perm-1"
+            session, "menu-1", "perm-1"
         )
 
-        assert mock_session.execute.call_count >= 3
+        assert session.execute.call_count >= 3
 
     @pytest.mark.asyncio
     @pytest.mark.unit
-    async def test_sync_module_menu_permission_deleted_no_menu(self):
+    async def test_sync_module_menu_permission_deleted_no_menu(self, session):
         """菜单权限关联删除：菜单不存在时跳过"""
-        mock_session = AsyncMock()
 
         menu_result = MagicMock()
         menu_result.all.return_value = []
@@ -1002,24 +985,23 @@ class TestModuleSyncServiceAdditional:
         perm_result = MagicMock()
         perm_result.all.return_value = []
 
-        mock_session.execute.side_effect = [
+        session.execute.side_effect = [
             menu_result,  # 1: 查找 Menu
             perm_result,  # 2: 查找 Permission
         ]
 
         await ModuleSyncService.sync_module_menu_permission_deleted(
-            mock_session, "menu-nonexistent", "perm-1"
+            session, "menu-nonexistent", "perm-1"
         )
 
         # 执行了菜单和权限查询，但没有删除操作
-        assert mock_session.execute.call_count == 2
+        assert session.execute.call_count == 2
 
     @pytest.mark.asyncio
     @pytest.mark.unit
-    async def test_sync_permission_cache_invalidation_on_role_permission_created(self):
+    async def test_sync_permission_cache_invalidation_on_role_permission_created(self, session):
         """角色权限关联创建后触发缓存失效"""
-        mock_session = AsyncMock()
-        mock_session.add = MagicMock()
+        session.add = MagicMock()
 
         mock_rp = MagicMock()
         mock_rp.module_role_id = "role-1"
@@ -1040,7 +1022,7 @@ class TestModuleSyncServiceAdditional:
         empty_result = MagicMock()
         empty_result.scalar_one_or_none.return_value = None
 
-        mock_session.execute.side_effect = [
+        session.execute.side_effect = [
             rp_result,       # 1: ModuleRolePermission 查询
             tm_result,       # 2: 租户列表（2 个租户）
             role_result,     # 3: tenant-1 角色
@@ -1056,7 +1038,7 @@ class TestModuleSyncServiceAdditional:
             new_callable=AsyncMock,
         ) as mock_cache:
             await ModuleSyncService.sync_module_role_permission_created(
-                mock_session, "mrp-1", "module-1"
+                session, "mrp-1", "module-1"
             )
 
             # 每个租户触发一次缓存失效
@@ -1064,9 +1046,8 @@ class TestModuleSyncServiceAdditional:
 
     @pytest.mark.asyncio
     @pytest.mark.unit
-    async def test_sync_permission_cache_invalidation_on_role_permission_deleted(self):
+    async def test_sync_permission_cache_invalidation_on_role_permission_deleted(self, session):
         """角色权限关联删除后触发缓存失效"""
-        mock_session = AsyncMock()
 
         role_result = MagicMock()
         role_result.all.return_value = [
@@ -1083,7 +1064,7 @@ class TestModuleSyncServiceAdditional:
         delete_result = MagicMock()
         delete_result.rowcount = 1
 
-        mock_session.execute.side_effect = [
+        session.execute.side_effect = [
             role_result,      # 1: 查找 Role
             perm_result_1,    # 2: tenant-1 权限
             delete_result,    # 3: 删除 tenant-1 关联
@@ -1096,7 +1077,7 @@ class TestModuleSyncServiceAdditional:
             new_callable=AsyncMock,
         ) as mock_cache:
             await ModuleSyncService.sync_module_role_permission_deleted(
-                mock_session, "role-1", "perm-1"
+                session, "role-1", "perm-1"
             )
 
             assert mock_cache.await_count == 2

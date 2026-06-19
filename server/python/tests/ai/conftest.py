@@ -1,6 +1,16 @@
 ﻿# AI 模块测试公共 fixtures
 
 import pytest
+from unittest.mock import AsyncMock
+
+
+@pytest.fixture
+def session():
+    """异步数据库会话 mock fixture
+
+    为单元测试提供 mock 的 AsyncSession 对象。
+    """
+    return AsyncMock()
 
 
 @pytest.fixture
