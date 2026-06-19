@@ -18,7 +18,7 @@ class TestUserFlow:
     """用户管理流程测试"""
 
     @pytest.mark.asyncio
-    async def test_register_flow(self, postgres_available, test_tenant_id, cleanup_users):
+    async def test_register_flow(self, session, postgres_available, test_tenant_id, cleanup_users):
         """
         场景：用户注册
         WHEN: 提交注册信息
@@ -31,6 +31,7 @@ class TestUserFlow:
         password = "TestPass123!"
 
         user = await UserService.register(
+            session,
             username=username,
             password=password,
             tenant_id=test_tenant_id,
@@ -46,7 +47,7 @@ class TestUserFlow:
         assert user.profile_completed is True
 
     @pytest.mark.asyncio
-    async def test_update_profile_flow(self, postgres_available, test_tenant_id, cleanup_users):
+    async def test_update_profile_flow(self, session, postgres_available, test_tenant_id, cleanup_users):
         """
         场景：修改用户信息
         WHEN: 登录后修改昵称、头像
@@ -58,6 +59,7 @@ class TestUserFlow:
         # 创建测试用户
         username = f"test_update_{uuid.uuid4().hex[:8]}"
         user = await UserService.register(
+            session,
             username=username,
             password="TestPass123!",
             tenant_id=test_tenant_id,
@@ -66,6 +68,7 @@ class TestUserFlow:
 
         # 更新用户信息
         updated_user = await UserService.update_profile(
+            session,
             user_id=user.id,
             nickname="新昵称",
             avatar="https://example.com/avatar.png",
@@ -75,7 +78,7 @@ class TestUserFlow:
         assert updated_user.avatar == "https://example.com/avatar.png"
 
     @pytest.mark.asyncio
-    async def test_change_password_flow(self, postgres_available, test_tenant_id, cleanup_users):
+    async def test_change_password_flow(self, session, postgres_available, test_tenant_id, cleanup_users):
         """
         场景：修改密码
         WHEN: 验证原密码后设置新密码
@@ -90,6 +93,7 @@ class TestUserFlow:
         new_password = "NewPass456!"
 
         user = await UserService.register(
+            session,
             username=username,
             password=old_password,
             tenant_id=test_tenant_id,
@@ -98,6 +102,7 @@ class TestUserFlow:
 
         # 修改密码
         result = await UserService.change_password(
+            session,
             user_id=user.id,
             old_password=old_password,
             new_password=new_password,
@@ -107,6 +112,7 @@ class TestUserFlow:
 
         # 验证新密码可以登录
         login_result = await AuthService.login(
+            session,
             account=username,
             password=new_password,
         )
@@ -114,7 +120,7 @@ class TestUserFlow:
         assert login_result.access_token is not None
 
     @pytest.mark.asyncio
-    async def test_reset_password_flow(self, postgres_available, test_tenant_id, cleanup_users):
+    async def test_reset_password_flow(self, session, postgres_available, test_tenant_id, cleanup_users):
         """
         场景：重置密码
         WHEN: 管理员重置用户密码
@@ -126,6 +132,7 @@ class TestUserFlow:
         # 创建测试用户
         username = f"test_reset_{uuid.uuid4().hex[:8]}"
         user = await UserService.register(
+            session,
             username=username,
             password="OriginalPass123!",
             tenant_id=test_tenant_id,
@@ -134,13 +141,14 @@ class TestUserFlow:
         cleanup_users.append(user.id)
 
         # 管理员重置密码
-        new_password = await UserService.admin_reset_password(user_id=user.id)
+        new_password = await UserService.admin_reset_password(session, user_id=user.id)
 
         assert new_password is not None
         assert len(new_password) >= 8
 
         # 验证新密码可以登录
         login_result = await AuthService.login(
+            session,
             account=username,
             password=new_password,
         )
@@ -148,7 +156,7 @@ class TestUserFlow:
         assert login_result.access_token is not None
 
     @pytest.mark.asyncio
-    async def test_register_duplicate_username_fails(self, postgres_available, test_tenant_id, cleanup_users):
+    async def test_register_duplicate_username_fails(self, session, postgres_available, test_tenant_id, cleanup_users):
         """
         场景：注册重复用户名
         WHEN: 同租户内注册重复用户名
@@ -161,6 +169,7 @@ class TestUserFlow:
 
         # 第一次注册
         user1 = await UserService.register(
+            session,
             username=username,
             password="TestPass123!",
             tenant_id=test_tenant_id,
@@ -170,6 +179,7 @@ class TestUserFlow:
         # 第二次注册相同用户名
         with pytest.raises(ValueError) as exc:
             await UserService.register(
+                session,
                 username=username,
                 password="TestPass456!",
                 tenant_id=test_tenant_id,
@@ -178,7 +188,7 @@ class TestUserFlow:
         assert "用户名已存在" in str(exc.value)
 
     @pytest.mark.asyncio
-    async def test_register_weak_password_fails(self, postgres_available, test_tenant_id):
+    async def test_register_weak_password_fails(self, session, postgres_available, test_tenant_id):
         """
         场景：注册弱密码
         WHEN: 使用弱密码注册
@@ -191,13 +201,14 @@ class TestUserFlow:
 
         with pytest.raises(ValueError):
             await UserService.register(
+                session,
                 username=username,
                 password="123",  # 弱密码
                 tenant_id=test_tenant_id,
             )
 
     @pytest.mark.asyncio
-    async def test_update_email_uniqueness(self, postgres_available, test_tenant_id, cleanup_users):
+    async def test_update_email_uniqueness(self, session, postgres_available, test_tenant_id, cleanup_users):
         """
         场景：更新邮箱唯一性
         WHEN: 更新邮箱为其他用户已使用的邮箱
@@ -211,6 +222,7 @@ class TestUserFlow:
         username2 = f"test_email2_{uuid.uuid4().hex[:8]}"
 
         user1 = await UserService.register(
+            session,
             username=username1,
             password="TestPass123!",
             tenant_id=test_tenant_id,
@@ -219,6 +231,7 @@ class TestUserFlow:
         cleanup_users.append(user1.id)
 
         user2 = await UserService.register(
+            session,
             username=username2,
             password="TestPass123!",
             tenant_id=test_tenant_id,
@@ -229,6 +242,7 @@ class TestUserFlow:
         # 尝试将 user2 的邮箱更新为 user1 的邮箱
         with pytest.raises(ValueError) as exc:
             await UserService.update_profile(
+                session,
                 user_id=user2.id,
                 email=f"{username1}@test.com",
             )

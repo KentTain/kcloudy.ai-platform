@@ -181,3 +181,14 @@ async def cleanup_users(db_engine):
                 delete(User).where(User.id.in_(created_user_ids))
             )
             await session.commit()
+
+
+# =============================================================================
+# Session Fixture
+# =============================================================================
+
+@pytest_asyncio.fixture
+async def session(db_engine):
+    """数据库会话 fixture"""
+    async with AsyncSession(bind=db_engine) as session:
+        yield session

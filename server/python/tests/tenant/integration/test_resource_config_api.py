@@ -12,7 +12,7 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from httpx import AsyncClient, ASGITransport
 
-from tenant.controllers.admin.resource_config_controller import router
+from tenant.controllers.admin.resource_controller import router
 
 
 # 创建测试应用
@@ -48,7 +48,7 @@ class TestDatabaseResourceRoutes:
     async def test_list_database_configs_route_accessible(self, mock_admin, mock_db_config):
         """测试 GET /resources/databases 路由可访问"""
         with patch(
-            "tenant.controllers.admin.resource_config_controller.get_current_admin",
+            "tenant.controllers.admin.resource_controller.get_current_admin",
             return_value=mock_admin,
         ), patch(
             "tenant.services.database_config_service.DatabaseConfigService.list_configs",
@@ -70,7 +70,7 @@ class TestDatabaseResourceRoutes:
     async def test_create_database_config_route_accessible(self, mock_admin, mock_db_config):
         """测试 POST /resources/databases 路由可访问"""
         with patch(
-            "tenant.controllers.admin.resource_config_controller.get_current_admin",
+            "tenant.controllers.admin.resource_controller.get_current_admin",
             return_value=mock_admin,
         ), patch(
             "tenant.services.database_config_service.DatabaseConfigService.create",
@@ -114,7 +114,7 @@ class TestDatabaseResourceRoutes:
     async def test_get_database_config_by_id_route_accessible(self, mock_admin, mock_db_config):
         """测试 GET /resources/databases/{id} 路由可访问"""
         with patch(
-            "tenant.controllers.admin.resource_config_controller.get_current_admin",
+            "tenant.controllers.admin.resource_controller.get_current_admin",
             return_value=mock_admin,
         ), patch(
             "tenant.services.database_config_service.DatabaseConfigService.get_by_id",
@@ -147,7 +147,7 @@ class TestDatabaseResourceRoutes:
     async def test_update_database_config_route_accessible(self, mock_admin, mock_db_config):
         """测试 PUT /resources/databases/{id} 路由可访问"""
         with patch(
-            "tenant.controllers.admin.resource_config_controller.get_current_admin",
+            "tenant.controllers.admin.resource_controller.get_current_admin",
             return_value=mock_admin,
         ), patch(
             "tenant.services.database_config_service.DatabaseConfigService.update",
@@ -181,7 +181,7 @@ class TestDatabaseResourceRoutes:
     async def test_delete_database_config_route_accessible(self, mock_admin):
         """测试 DELETE /resources/databases/{id} 路由可访问"""
         with patch(
-            "tenant.controllers.admin.resource_config_controller.get_current_admin",
+            "tenant.controllers.admin.resource_controller.get_current_admin",
             return_value=mock_admin,
         ), patch(
             "tenant.services.database_config_service.DatabaseConfigService.delete",
@@ -201,7 +201,7 @@ class TestDatabaseResourceRoutes:
     async def test_test_database_connection_route_accessible(self, mock_admin):
         """测试 POST /resources/databases/{id}/test-connection 路由可访问"""
         with patch(
-            "tenant.controllers.admin.resource_config_controller.get_current_admin",
+            "tenant.controllers.admin.resource_controller.get_current_admin",
             return_value=mock_admin,
         ), patch(
             "tenant.services.database_config_service.DatabaseConfigService.test_connection",
@@ -223,7 +223,7 @@ class TestDatabaseResourceRoutes:
     async def test_get_database_config_not_found(self, mock_admin):
         """测试 GET /resources/databases/{id} 配置不存在返回 404"""
         with patch(
-            "tenant.controllers.admin.resource_config_controller.get_current_admin",
+            "tenant.controllers.admin.resource_controller.get_current_admin",
             return_value=mock_admin,
         ), patch(
             "tenant.services.database_config_service.DatabaseConfigService.get_by_id",
@@ -263,7 +263,7 @@ class TestStorageResourceRoutes:
     async def test_list_storage_configs_route_accessible(self, mock_admin, mock_storage_config):
         """测试 GET /resources/storages 路由可访问"""
         with patch(
-            "tenant.controllers.admin.resource_config_controller.get_current_admin",
+            "tenant.controllers.admin.resource_controller.get_current_admin",
             return_value=mock_admin,
         ), patch(
             "tenant.services.storage_config_service.StorageConfigService.list_configs",
@@ -284,7 +284,7 @@ class TestStorageResourceRoutes:
     async def test_test_storage_connection_route_accessible(self, mock_admin):
         """测试 POST /resources/storages/{id}/test-connection 路由可访问"""
         with patch(
-            "tenant.controllers.admin.resource_config_controller.get_current_admin",
+            "tenant.controllers.admin.resource_controller.get_current_admin",
             return_value=mock_admin,
         ), patch(
             "tenant.services.storage_config_service.StorageConfigService.test_connection",
@@ -325,7 +325,7 @@ class TestCacheResourceRoutes:
     async def test_list_cache_configs_route_accessible(self, mock_admin, mock_cache_config):
         """测试 GET /resources/caches 路由可访问"""
         with patch(
-            "tenant.controllers.admin.resource_config_controller.get_current_admin",
+            "tenant.controllers.admin.resource_controller.get_current_admin",
             return_value=mock_admin,
         ), patch(
             "tenant.services.cache_config_service.CacheConfigService.list_configs",
@@ -345,7 +345,7 @@ class TestCacheResourceRoutes:
     async def test_test_cache_connection_route_accessible(self, mock_admin):
         """测试 POST /resources/caches/{id}/test-connection 路由可访问"""
         with patch(
-            "tenant.controllers.admin.resource_config_controller.get_current_admin",
+            "tenant.controllers.admin.resource_controller.get_current_admin",
             return_value=mock_admin,
         ), patch(
             "tenant.services.cache_config_service.CacheConfigService.test_connection",
@@ -388,7 +388,7 @@ class TestQueueResourceRoutes:
     async def test_list_queue_configs_route_accessible(self, mock_admin, mock_queue_config):
         """测试 GET /resources/queues 路由可访问"""
         with patch(
-            "tenant.controllers.admin.resource_config_controller.get_current_admin",
+            "tenant.controllers.admin.resource_controller.get_current_admin",
             return_value=mock_admin,
         ), patch(
             "tenant.services.queue_config_service.QueueConfigService.list_configs",
@@ -408,7 +408,7 @@ class TestQueueResourceRoutes:
     async def test_test_queue_connection_route_accessible(self, mock_admin):
         """测试 POST /resources/queues/{id}/test-connection 路由可访问"""
         with patch(
-            "tenant.controllers.admin.resource_config_controller.get_current_admin",
+            "tenant.controllers.admin.resource_controller.get_current_admin",
             return_value=mock_admin,
         ), patch(
             "tenant.services.queue_config_service.QueueConfigService.test_connection",
@@ -450,7 +450,7 @@ class TestPubSubResourceRoutes:
     async def test_list_pubsub_configs_route_accessible(self, mock_admin, mock_pubsub_config):
         """测试 GET /resources/pubsubs 路由可访问"""
         with patch(
-            "tenant.controllers.admin.resource_config_controller.get_current_admin",
+            "tenant.controllers.admin.resource_controller.get_current_admin",
             return_value=mock_admin,
         ), patch(
             "tenant.services.pubsub_config_service.PubSubConfigService.list_configs",
@@ -470,7 +470,7 @@ class TestPubSubResourceRoutes:
     async def test_test_pubsub_connection_route_accessible(self, mock_admin):
         """测试 POST /resources/pubsubs/{id}/test-connection 路由可访问"""
         with patch(
-            "tenant.controllers.admin.resource_config_controller.get_current_admin",
+            "tenant.controllers.admin.resource_controller.get_current_admin",
             return_value=mock_admin,
         ), patch(
             "tenant.services.pubsub_config_service.PubSubConfigService.test_connection",
@@ -498,7 +498,7 @@ class TestConnectionTestResult:
     async def test_connection_test_result_format(self, mock_admin):
         """测试连通性测试接口返回正确格式"""
         with patch(
-            "tenant.controllers.admin.resource_config_controller.get_current_admin",
+            "tenant.controllers.admin.resource_controller.get_current_admin",
             return_value=mock_admin,
         ), patch(
             "tenant.services.database_config_service.DatabaseConfigService.test_connection",

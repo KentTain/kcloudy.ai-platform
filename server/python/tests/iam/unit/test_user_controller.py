@@ -12,7 +12,7 @@ from iam.schemas.user import UserDetailResponse
 
 
 @pytest.mark.asyncio
-async def test_get_current_user_returns_roles_and_permissions():
+async def test_get_current_user_returns_roles_and_permissions(session):
     """get_current_user 应返回用户的角色和权限"""
 
     # Mock UserDetailResponse
@@ -31,20 +31,20 @@ async def test_get_current_user_returns_roles_and_permissions():
     with patch("iam.controllers.console.user_controller.user_service.get_user_detail", new_callable=AsyncMock) as mock_get_detail:
         mock_get_detail.return_value = mock_user_detail
 
-        result = await get_current_user("user-123")
+        result = await get_current_user("user-123", session)
 
         # 验证返回类型
         assert isinstance(result, ORJSONResponse)
 
-        # 验证调用了正确的服务
-        mock_get_detail.assert_called_once_with("user-123")
+        # 验证调用了正确的服务（带 session 参数）
+        mock_get_detail.assert_called_once_with(session, "user-123")
 
         # 验证返回内容
         content = bytes(result.body).decode('utf-8')
         data = json.loads(content)
 
         assert data["code"] == 200
-        assert data["msg"] == "success"
+        assert data["msg"] == "OK"  # Success 默认 msg 是 "OK"
 
         user_data = data["data"]
         assert user_data["id"] == "user-123"
@@ -54,22 +54,22 @@ async def test_get_current_user_returns_roles_and_permissions():
 
 
 @pytest.mark.asyncio
-async def test_get_current_user_not_found():
+async def test_get_current_user_not_found(session):
     """用户不存在时应抛出 404 错误"""
 
     with patch("iam.controllers.console.user_controller.user_service.get_user_detail", new_callable=AsyncMock) as mock_get_detail:
         mock_get_detail.return_value = None
 
         with pytest.raises(HTTPException) as exc_info:
-            await get_current_user("non-existent-user")
+            await get_current_user("non-existent-user", session)
 
         assert exc_info.value.status_code == 404
         assert exc_info.value.detail == "用户不存在"
-        mock_get_detail.assert_called_once_with("non-existent-user")
+        mock_get_detail.assert_called_once_with(session, "non-existent-user")
 
 
 @pytest.mark.asyncio
-async def test_get_current_user_empty_roles_and_permissions():
+async def test_get_current_user_empty_roles_and_permissions(session):
     """用户无角色和权限时应返回空列表"""
 
     # Mock UserDetailResponse
@@ -88,7 +88,7 @@ async def test_get_current_user_empty_roles_and_permissions():
     with patch("iam.controllers.console.user_controller.user_service.get_user_detail", new_callable=AsyncMock) as mock_get_detail:
         mock_get_detail.return_value = mock_user_detail
 
-        result = await get_current_user("user-456")
+        result = await get_current_user("user-456", session)
 
         # 验证返回类型
         assert isinstance(result, ORJSONResponse)
@@ -98,7 +98,7 @@ async def test_get_current_user_empty_roles_and_permissions():
         data = json.loads(content)
 
         assert data["code"] == 200
-        assert data["msg"] == "success"
+        assert data["msg"] == "OK"  # Success 默认 msg 是 "OK"
 
         user_data = data["data"]
         assert user_data["id"] == "user-456"

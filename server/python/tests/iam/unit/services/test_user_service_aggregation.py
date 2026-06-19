@@ -15,7 +15,7 @@ class TestGetUserDetail:
     """测试 UserService.get_user_detail() 聚合方法"""
 
     @pytest.mark.asyncio
-    async def test_get_user_detail_success(self):
+    async def test_get_user_detail_success(self, session):
         """测试成功获取用户详情"""
         # 创建 mock User 对象
         mock_user = MagicMock()
@@ -68,7 +68,7 @@ class TestGetUserDetail:
         ):
             from iam.services.user_service import user_service
 
-            result = await user_service.get_user_detail("user-123")
+            result = await user_service.get_user_detail(session, "user-123")
 
             # 验证返回结果
             assert result is not None
@@ -81,7 +81,7 @@ class TestGetUserDetail:
             assert result.tenants[0].id == "tenant-456"
 
     @pytest.mark.asyncio
-    async def test_get_user_detail_user_not_found(self):
+    async def test_get_user_detail_user_not_found(self, session):
         """测试用户不存在时返回 None"""
         with patch(
             "iam.services.user_service.UserService.get_by_id",
@@ -90,13 +90,13 @@ class TestGetUserDetail:
         ):
             from iam.services.user_service import user_service
 
-            result = await user_service.get_user_detail("nonexistent-user")
+            result = await user_service.get_user_detail(session, "nonexistent-user")
 
             # 验证返回 None
             assert result is None
 
     @pytest.mark.asyncio
-    async def test_get_user_detail_empty_data(self):
+    async def test_get_user_detail_empty_data(self, session):
         """测试用户无角色、权限、租户的场景"""
         mock_user = MagicMock()
         mock_user.id = "user-123"
@@ -132,7 +132,7 @@ class TestGetUserDetail:
         ):
             from iam.services.user_service import user_service
 
-            result = await user_service.get_user_detail("user-123")
+            result = await user_service.get_user_detail(session, "user-123")
 
             # 验证返回结果为空集合
             assert result is not None
@@ -145,7 +145,7 @@ class TestGetUserTenantsWithDetail:
     """测试 UserService._get_user_tenants_with_detail() 内部方法"""
 
     @pytest.mark.asyncio
-    async def test_get_tenants_with_detail_success(self):
+    async def test_get_tenants_with_detail_success(self, session):
         """测试成功获取租户详情"""
         # Mock UserTenant 数据
         mock_user_tenants = [
@@ -180,7 +180,7 @@ class TestGetUserTenantsWithDetail:
         ):
             from iam.services.user_service import user_service
 
-            result = await user_service._get_user_tenants_with_detail("user-123")
+            result = await user_service._get_user_tenants_with_detail(session, "user-123")
 
             # 验证返回结果
             assert len(result) == 2
@@ -191,7 +191,7 @@ class TestGetUserTenantsWithDetail:
             assert result[1].is_default is False
 
     @pytest.mark.asyncio
-    async def test_get_tenants_with_detail_empty(self):
+    async def test_get_tenants_with_detail_empty(self, session):
         """测试用户无租户的场景"""
         with patch(
             "iam.services.user_service.UserService.get_user_tenants_detail",
@@ -200,7 +200,7 @@ class TestGetUserTenantsWithDetail:
         ):
             from iam.services.user_service import user_service
 
-            result = await user_service._get_user_tenants_with_detail("user-123")
+            result = await user_service._get_user_tenants_with_detail(session, "user-123")
 
             # 验证返回空列表
             assert result == []
