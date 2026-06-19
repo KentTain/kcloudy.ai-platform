@@ -7,13 +7,10 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from framework.cache.redis_util import RedisUtil
 from framework.events.base import DomainEvent
-
-if TYPE_CHECKING:
-    pass
 
 _logger = logging.getLogger(__name__)
 

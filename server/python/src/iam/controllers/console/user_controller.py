@@ -17,8 +17,8 @@ from iam.schemas.user import (
     PasswordResetCodeRequest,
     PasswordResetRequest,
     UserRegisterRequest,
-    UserUpdate,
     UserResponse,
+    UserUpdate,
 )
 from iam.schemas.user_menu import UserMenuTreeResponse
 from iam.services import auth_service, user_service

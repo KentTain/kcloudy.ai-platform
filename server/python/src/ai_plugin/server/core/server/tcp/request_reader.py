@@ -21,7 +21,6 @@ from ai_plugin.server.core.entities.plugin.io import (
 from ai_plugin.server.core.server.__base.request_reader import RequestReader
 from ai_plugin.server.core.server.__base.response_writer import ResponseWriter
 
-
 logger = logging.getLogger(__name__)
 
 

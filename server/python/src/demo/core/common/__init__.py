@@ -12,8 +12,8 @@ from demo.core.common.path import (
     SRC_DIR,
     WORKSPACE_ROOT_DIR,
 )
-from framework.common.singleton import Singleton, AbstractSingleton
 from framework.common.instance import get_instance_id, set_instance_id
+from framework.common.singleton import AbstractSingleton, Singleton
 from framework.common.time import ChinaTimeZone
 
 __all__ = [

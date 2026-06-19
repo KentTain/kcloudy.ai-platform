@@ -16,9 +16,8 @@ import pytest_asyncio
 
 from framework.cache.tenant_cache_manager import TenantCacheManager
 from framework.queue.tenant_queue_manager import TenantQueueManager, init_queue_manager
-from framework.tenant.protocols import TenantQueueConfig, TenantCacheConfig
 from framework.tenant.enums import QueueType
-
+from framework.tenant.protocols import TenantQueueConfig
 
 pytestmark = pytest.mark.integration
 

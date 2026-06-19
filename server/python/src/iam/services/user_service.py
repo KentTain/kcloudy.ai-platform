@@ -7,7 +7,6 @@
 import asyncio
 import secrets
 import string
-from datetime import datetime, timezone
 
 from loguru import logger
 from sqlalchemy import func, or_, select
@@ -20,7 +19,7 @@ from framework.utils.crypto import (
 )
 from framework.utils.session import delete_user_sessions
 from iam.models import User, UserDepartment, UserStatus, UserTenant
-from iam.schemas.user import UserDetailResponse, UserResponse, UserTenantResponse
+from iam.schemas.user import UserDetailResponse, UserTenantResponse
 
 _logger = logger.bind(name=__name__)
 
@@ -337,6 +336,8 @@ class UserService:
         page_size: int = 20,
         keyword: str | None = None,
         status: str | None = None,
+        dept_id: str | None = None,
+        include_children: bool = False,
     ) -> tuple[list[User], int]:
         """
         获取用户列表
@@ -348,11 +349,15 @@ class UserService:
             page_size: 每页数量
             keyword: 搜索关键词
             status: 状态过滤
+            dept_id: 部门 ID 过滤
+            include_children: 是否包含子部门用户
 
         Returns:
             tuple[list[User], int]
         """
-        from sqlalchemy import func, or_
+        from sqlalchemy import func
+
+        from iam.models import Department
 
         # 构建查询条件
         conditions = []
@@ -368,6 +373,37 @@ class UserService:
             )
         if status:
             conditions.append(User.status == status)
+
+        # 部门筛选
+        if dept_id:
+            if include_children:
+                # 获取部门及其所有子部门的 ID
+                dept = await session.get(Department, dept_id)
+                if dept:
+                    # 使用 parent_ids 前缀匹配所有子部门
+                    parent_ids_prefix = dept.descendant_parent_ids_prefix()
+                    dept_stmt = select(Department.id).where(
+                        or_(
+                            Department.id == dept_id,
+                            Department.parent_ids.like(f"{parent_ids_prefix}%"),
+                        )
+                    )
+                    dept_result = await session.execute(dept_stmt)
+                    dept_ids = [row[0] for row in dept_result.all()]
+                else:
+                    dept_ids = [dept_id]
+            else:
+                dept_ids = [dept_id]
+
+            # 通过 UserDepartment 关联查询
+            user_id_stmt = (
+                select(UserDepartment.user_id)
+                .where(UserDepartment.department_id.in_(dept_ids))
+                .distinct()
+            )
+            user_id_result = await session.execute(user_id_stmt)
+            user_ids = [row[0] for row in user_id_result.all()]
+            conditions.append(User.id.in_(user_ids))
 
         # 查询总数
         count_stmt = select(func.count(User.id))
@@ -387,6 +423,75 @@ class UserService:
         users = list(result.scalars().all())
 
         return users, total
+
+    @staticmethod
+    async def get_user_stats(
+        session: AsyncSession,
+        tenant_id: str | None = None,
+    ) -> dict:
+        """
+        获取用户统计信息
+
+        Args:
+            session: 数据库会话
+            tenant_id: 租户 ID（可选，不传则统计所有租户）
+
+        Returns:
+            dict: 包含 total、enabled、disabled、multi_role 的统计数据
+        """
+        from iam.models import UserRole
+
+        # 基础条件
+        base_condition = []
+        if tenant_id:
+            base_condition.append(User.tenant_id == tenant_id)
+
+        # 并行统计各项数据
+        # 1. 用户总数
+        total_stmt = select(func.count(User.id))
+        if base_condition:
+            total_stmt = total_stmt.where(*base_condition)
+
+        # 2. 启用用户数
+        enabled_stmt = select(func.count(User.id)).where(User.status == UserStatus.ACTIVE)
+        if base_condition:
+            enabled_stmt = enabled_stmt.where(*base_condition)
+
+        # 3. 停用用户数
+        disabled_stmt = select(func.count(User.id)).where(User.status == UserStatus.INACTIVE)
+        if base_condition:
+            disabled_stmt = disabled_stmt.where(*base_condition)
+
+        # 执行查询
+        total_result = await session.execute(total_stmt)
+        enabled_result = await session.execute(enabled_stmt)
+        disabled_result = await session.execute(disabled_stmt)
+
+        total = total_result.scalar() or 0
+        enabled = enabled_result.scalar() or 0
+        disabled = disabled_result.scalar() or 0
+
+        # 4. 多角色用户数
+        # 查询有多个角色的用户
+        multi_role_stmt = (
+            select(UserRole.user_id)
+            .join(User, UserRole.user_id == User.id)
+            .where(User.status != UserStatus.LOCKED)  # 排除锁定用户
+            .group_by(UserRole.user_id)
+            .having(func.count(UserRole.role_id) > 1)
+        )
+        if base_condition:
+            multi_role_stmt = multi_role_stmt.where(*base_condition)
+
+        multi_role_result = await session.execute(multi_role_stmt)
+        multi_role = len(multi_role_result.all())
+
+        return {
+            "total": total,
+            "enabled": enabled,
+            "disabled": disabled,
+            "multi_role": multi_role,
+        }
 
     @staticmethod
     async def create_user(
@@ -732,8 +837,8 @@ class UserService:
             return None
 
         # 并行查询角色、权限、租户
-        from iam.services.role_service import user_role_service as user_roles_service
         from iam.services.permission_service import permission_check_service
+        from iam.services.role_service import user_role_service as user_roles_service
 
         roles_task = user_roles_service.get_user_roles(session, user_id)
         permissions_task = permission_check_service.get_user_permissions(session, user_id)

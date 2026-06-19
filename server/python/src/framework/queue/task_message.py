@@ -4,11 +4,11 @@
 定义标准的任务消息格式，支持租户上下文传递。
 """
 
-from dataclasses import dataclass, field, asdict
+import json
+import uuid
+from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any
-import uuid
-import json
 
 from framework.tenant.context import get_tenant_id
 

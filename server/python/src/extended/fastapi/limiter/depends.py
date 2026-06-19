@@ -1,7 +1,7 @@
 """提供第三方扩展相关功能。"""
 
-from typing import Annotated
 from collections.abc import Callable
+from typing import Annotated
 
 from pydantic import Field
 from starlette.requests import Request
@@ -131,7 +131,7 @@ class RateLimiter:
         key = f"{FastAPILimiter.prefix}:{rate_key}:{route_index}:{dep_index}"
         try:
             pexpire = await self._check(key)
-        except Exception as e:
+        except Exception:
             # 处理脚本不存在的错误
             if FastAPILimiter.redis and FastAPILimiter.lua_script:
                 lua_script_result = await FastAPILimiter.redis.script_load(

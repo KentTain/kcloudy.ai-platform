@@ -8,6 +8,7 @@ import time
 from typing import Any
 
 import tiktoken
+
 from ai.components.graphrag.query.context_builder.builders import LocalContextBuilder
 from ai.components.graphrag.query.context_builder.conversation_history import (
     ConversationHistory,

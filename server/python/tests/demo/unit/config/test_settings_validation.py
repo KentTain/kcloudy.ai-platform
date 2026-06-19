@@ -1,7 +1,8 @@
 """Settings Validation Tests"""
 
 import pytest
-from pydantic import Field, field_validator, ValidationError
+from pydantic import Field, ValidationError, field_validator
+
 from demo.configs import BaseSettings
 
 

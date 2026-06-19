@@ -13,7 +13,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from framework.database.dependencies import get_db_session
-from framework.schemas.base import Success, SuccessExtra
+from framework.schemas.base import Success
 from framework.tenant.context import SimpleTenant
 from tenant.models import Tenant, TenantStatus
 from tenant.services.tenant_service import TenantService
@@ -172,7 +172,6 @@ def build_tenant_info(
 
 def build_tenant_full_info(simple_tenant: SimpleTenant) -> TenantFullInfoResponse:
     """构建租户完整信息响应（含资源配置详情）"""
-    from framework.utils.crypto import decrypt
 
     encryption_key = None
     # SimpleTenant 没有 encryption_key，需要从原始模型获取

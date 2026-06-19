@@ -4,14 +4,14 @@ from typing import TYPE_CHECKING
 
 from loguru import logger
 
-from framework.pubsub import get_pubsub_provider
-from framework.queue import get_queue_provider
 from demo.listeners.services.pubsub.constants import HEARTBEAT_TOPIC
 from demo.listeners.services.pubsub.heartbeat_handler import HeartbeatHandler
 from demo.listeners.services.queue.constants import DATASET_NOTIFY_QUEUE
 from demo.listeners.services.queue.dataset_notify_handler import (
     DatasetNotifyHandler,
 )
+from framework.pubsub import get_pubsub_provider
+from framework.queue import get_queue_provider
 
 if TYPE_CHECKING:
     from framework.configs.settings import Settings

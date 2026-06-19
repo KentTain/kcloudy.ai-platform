@@ -5,7 +5,7 @@ Tenant 模块数据模型
 所有模型归属于 tenant PostgreSQL schema。
 """
 
-from framework.database import create_module_base, create_base_model
+from framework.database import create_base_model, create_module_base
 
 # 创建 Tenant 模块的 Base 和 BaseModel
 Base = create_module_base("tenant")

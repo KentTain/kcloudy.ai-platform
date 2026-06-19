@@ -6,14 +6,13 @@ LangGraph 工作流边界条件测试
 
 import pytest
 
+from demo.examples.langgraph_workflows.error_handler_demo import (
+    ErrorCountState,
+    ErrorHandlerWorkflow,
+)
 from demo.examples.langgraph_workflows.intent_router_demo import (
     AgentState,
     IntentRouterWorkflow,
-)
-from demo.examples.langgraph_workflows.error_handler_demo import (
-    CircuitBreakerWorkflow,
-    ErrorCountState,
-    ErrorHandlerWorkflow,
 )
 from demo.examples.langgraph_workflows.parallel_execution_demo import (
     ParallelState,

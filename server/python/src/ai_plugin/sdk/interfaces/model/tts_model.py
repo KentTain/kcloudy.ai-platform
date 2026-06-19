@@ -11,7 +11,6 @@ from pydantic import ConfigDict
 from ai_plugin.sdk.entities.model import ModelPropertyKey, ModelType
 from ai_plugin.sdk.interfaces.model.ai_model import AIModel
 
-
 logger = logging.getLogger(__name__)
 
 

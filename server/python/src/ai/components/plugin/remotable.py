@@ -11,7 +11,6 @@ from pydantic import BaseModel
 
 from framework.configs.settings import Settings
 
-
 REMOTABLE_REGISTRY: dict[str, type] = {}
 """全局注册表，用于存储所有被@remotable装饰的类。"""
 

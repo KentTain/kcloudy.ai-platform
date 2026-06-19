@@ -3,10 +3,7 @@
 测试 UserRoleItem、UserRolesResponse、DepartmentListItem、DepartmentListResponse 转换方法。
 """
 
-from datetime import datetime
 from unittest.mock import MagicMock
-
-import pytest
 
 
 class TestUserRoleItem:

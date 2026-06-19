@@ -7,11 +7,10 @@ StructuredTool 结构化工具示例
 Day 3 讲义：AI 智能体应用实战 - 自定义工具开发
 """
 
-from typing import Annotated, Any
+from typing import Annotated
 
 from langchain_core.tools import StructuredTool
 from pydantic import BaseModel, Field
-
 
 # ==================== 输入模型定义 ====================
 
@@ -261,7 +260,7 @@ class EmailTool:
 
         # 模拟发送
         result = [
-            f"邮件发送成功！",
+            "邮件发送成功！",
             f"收件人: {to}",
             f"主题: {subject}",
             f"优先级: {priority}",

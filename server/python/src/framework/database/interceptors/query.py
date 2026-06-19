@@ -4,11 +4,9 @@
 提供查询级别的拦截功能。
 """
 
-from typing import Any, Type
+from typing import Any
 
-from sqlalchemy import select, delete, update
-from sqlalchemy.orm import Query
-from sqlalchemy.sql import Select, Delete, Update
+from sqlalchemy.sql import Delete, Select, Update
 
 from framework.common.ctx import get_tenant_id
 from framework.database.mixins.tenant import should_skip_tenant
@@ -18,7 +16,7 @@ class SoftDeleteInterceptor:
     """软删除拦截器"""
 
     @staticmethod
-    def inject_soft_delete_filter(statement: Any, model_class: Type) -> Any:
+    def inject_soft_delete_filter(statement: Any, model_class: type) -> Any:
         """
         注入软删除过滤条件
 
@@ -54,7 +52,7 @@ class TenantQueryInterceptor:
     """
 
     @staticmethod
-    def inject_tenant_filter(statement: Any, model_class: Type) -> Any:
+    def inject_tenant_filter(statement: Any, model_class: type) -> Any:
         """
         注入租户过滤条件
 
@@ -91,7 +89,7 @@ class QueryInterceptor:
         """添加拦截器"""
         self._interceptors.append(interceptor)
 
-    def apply_select_interceptors(self, statement: Select, model_class: Type) -> Select:
+    def apply_select_interceptors(self, statement: Select, model_class: type) -> Select:
         """应用 SELECT 拦截器"""
         for interceptor in self._interceptors:
             if hasattr(interceptor, "inject_soft_delete_filter"):
@@ -100,14 +98,14 @@ class QueryInterceptor:
                 statement = interceptor.inject_tenant_filter(statement, model_class)
         return statement
 
-    def apply_update_interceptors(self, statement: Update, model_class: Type) -> Update:
+    def apply_update_interceptors(self, statement: Update, model_class: type) -> Update:
         """应用 UPDATE 拦截器"""
         for interceptor in self._interceptors:
             if hasattr(interceptor, "inject_tenant_filter"):
                 statement = interceptor.inject_tenant_filter(statement, model_class)
         return statement
 
-    def apply_delete_interceptors(self, statement: Delete, model_class: Type) -> Delete:
+    def apply_delete_interceptors(self, statement: Delete, model_class: type) -> Delete:
         """应用 DELETE 拦截器"""
         for interceptor in self._interceptors:
             if hasattr(interceptor, "inject_tenant_filter"):

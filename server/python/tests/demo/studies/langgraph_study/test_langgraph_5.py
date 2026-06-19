@@ -22,7 +22,6 @@ from operator import add
 from typing import Annotated
 
 import pytest
-
 from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.graph import StateGraph
 from langgraph.graph.state import CompiledStateGraph

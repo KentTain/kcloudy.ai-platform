@@ -4,7 +4,6 @@ Tenant 客户端
 提供对 Tenant 模块的统一调用入口。
 """
 
-from typing import Any
 
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -69,8 +68,8 @@ class TenantClient:
             return data
         else:
             # 单体模式：直接调用 Service
-            from tenant.services.tenant_service import TenantService
             from framework.tenant.context import SimpleTenant
+            from tenant.services.tenant_service import TenantService
 
             tenant = await TenantService.get_by_id(tenant_id)
             if tenant:
@@ -104,8 +103,8 @@ class TenantClient:
 
         if self._http_client:
             # 微服务模式
+
             from pydantic import BaseModel
-            from typing import Any
 
             class BatchResponse(BaseModel):
                 items: list[TenantInfo]
@@ -156,8 +155,9 @@ class TenantClient:
             return False
         else:
             # 单体模式
-            from iam.models import UserTenant
             from sqlalchemy import select
+
+            from iam.models import UserTenant
 
             stmt = select(UserTenant).where(
                 UserTenant.user_id == user_id,

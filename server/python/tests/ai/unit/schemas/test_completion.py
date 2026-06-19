@@ -1,16 +1,17 @@
 ﻿"""LLM 对话 Schema 测试"""
 
 import pytest
+
 from ai.schemas.completion import (
-    ModelConfig,
-    SearchConfig,
+    ErrorCode,
     FileItem,
     LLMChatCompletion,
-    SSEMessageEvent,
-    SSEFinishEvent,
-    SSESearchEvent,
+    ModelConfig,
+    SearchConfig,
     SSEErrorEvent,
-    ErrorCode,
+    SSEFinishEvent,
+    SSEMessageEvent,
+    SSESearchEvent,
 )
 
 

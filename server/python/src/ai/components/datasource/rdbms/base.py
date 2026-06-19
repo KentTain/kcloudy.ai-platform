@@ -3,8 +3,8 @@
 提供基于 SQLAlchemy 的异步数据库操作封装。
 """
 
-from typing import Any
 from collections.abc import Iterable
+from typing import Any
 from urllib.parse import quote, quote_plus
 
 import regex as re
@@ -18,7 +18,6 @@ from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engin
 from sqlalchemy.schema import CreateTable
 
 from ai.components.datasource.interfaces import BaseConnect
-
 
 _logger = logger.bind(name=__name__)
 

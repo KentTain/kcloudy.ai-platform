@@ -7,8 +7,8 @@
 from typing import Any
 
 from sqlalchemy import MetaData
-from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.ext.asyncio import AsyncAttrs
+from sqlalchemy.orm import DeclarativeBase
 
 from framework.database.mixins.timestamp import TimestampMixin
 from framework.database.mixins.uuid_primary_key import UUIDPrimaryKeyMixin

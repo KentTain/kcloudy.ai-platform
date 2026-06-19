@@ -2,8 +2,8 @@
 
 from loguru import logger
 
-from demo.listeners.services.queue.constants import DATASET_NOTIFY_QUEUE
 from demo.configs import settings
+from demo.listeners.services.queue.constants import DATASET_NOTIFY_QUEUE
 from framework.queue import get_queue_provider
 
 _logger = logger.bind(name=__name__)

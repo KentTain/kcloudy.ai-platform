@@ -37,9 +37,7 @@ class ModuleSyncService:
             module_id: 模块 ID
             module_code: 模块编码
         """
-        _logger.info(
-            f"开始同步模块分配: tenant_id={tenant_id}, module={module_code}"
-        )
+        _logger.info(f"开始同步模块分配: tenant_id={tenant_id}, module={module_code}")
 
         # 导入模块定义层模型
         from tenant.models import (
@@ -112,7 +110,9 @@ class ModuleSyncService:
 
         for mm in sorted_menus:
             # 幂等检查：优先通过 ref_id，其次通过 code
-            existing = existing_menus_by_ref.get(mm.id) or existing_menus_by_code.get(mm.code)
+            existing = existing_menus_by_ref.get(mm.id) or existing_menus_by_code.get(
+                mm.code
+            )
             if existing:
                 menu_id_map[mm.id] = existing.id
                 # 如果历史数据缺少 ref_id，补全它
@@ -162,7 +162,9 @@ class ModuleSyncService:
 
         for mp in module_permissions:
             # 幂等检查：优先通过 ref_id，其次通过 code
-            existing = existing_perms_by_ref.get(mp.id) or existing_perms_by_code.get(mp.code)
+            existing = existing_perms_by_ref.get(mp.id) or existing_perms_by_code.get(
+                mp.code
+            )
             if existing:
                 perm_id_map[mp.id] = existing.id
                 # 如果历史数据缺少 ref_id，补全它
@@ -205,7 +207,9 @@ class ModuleSyncService:
 
         for mr in module_roles:
             # 幂等检查：优先通过 ref_id，其次通过 code
-            existing = existing_roles_by_ref.get(mr.id) or existing_roles_by_code.get(mr.code)
+            existing = existing_roles_by_ref.get(mr.id) or existing_roles_by_code.get(
+                mr.code
+            )
             if existing:
                 role_id_map[mr.id] = existing.id
                 # 如果历史数据缺少 ref_id，补全它
@@ -236,7 +240,8 @@ class ModuleSyncService:
             )
             existing_rp_result = await session.execute(existing_rp_stmt)
             existing_rps = {
-                (rp.role_id, rp.permission_id) for rp in existing_rp_result.scalars().all()
+                (rp.role_id, rp.permission_id)
+                for rp in existing_rp_result.scalars().all()
             }
         else:
             existing_rps = set()
@@ -308,10 +313,12 @@ class ModuleSyncService:
             tenant_id: 租户 ID
             module_id: 模块 ID
         """
-        _logger.info(f"开始同步模块取消分配: tenant_id={tenant_id}, module_id={module_id}")
+        _logger.info(
+            f"开始同步模块取消分配: tenant_id={tenant_id}, module_id={module_id}"
+        )
 
         # 导入模块定义层模型
-        from tenant.models import ModuleRole, ModulePermission, ModuleMenu
+        from tenant.models import ModuleMenu, ModulePermission, ModuleRole
 
         # 1. 获取该模块的所有角色 ID
         role_stmt = select(ModuleRole.id).where(ModuleRole.module_id == module_id)
@@ -397,9 +404,7 @@ class ModuleSyncService:
                 child_result = await session.execute(child_stmt)
                 child_ids = [row[0] for row in child_result.all()]
                 if child_ids:
-                    await session.execute(
-                        delete(Menu).where(Menu.id.in_(child_ids))
-                    )
+                    await session.execute(delete(Menu).where(Menu.id.in_(child_ids)))
 
             # 删除菜单本身
             await session.execute(
@@ -428,7 +433,7 @@ class ModuleSyncService:
             module_menu_id: 模块菜单 ID
             module_id: 模块 ID
         """
-        from tenant.models import ModuleMenu, Module, TenantModule
+        from tenant.models import Module, ModuleMenu, TenantModule
 
         # 1. 获取模块信息
         module_stmt = select(Module).where(Module.id == module_id)
@@ -600,9 +605,7 @@ class ModuleSyncService:
                 await session.delete(tenant_menu)
                 deleted_count += 1
 
-        _logger.info(
-            f"模块菜单删除同步完成: menu={menu_code}, tenants={deleted_count}"
-        )
+        _logger.info(f"模块菜单删除同步完成: menu={menu_code}, tenants={deleted_count}")
 
     @staticmethod
     async def sync_module_permission_created(
@@ -925,9 +928,7 @@ class ModuleSyncService:
                 await session.delete(tenant_role)
                 deleted_count += 1
 
-        _logger.info(
-            f"模块角色删除同步完成: role={role_code}, tenants={deleted_count}"
-        )
+        _logger.info(f"模块角色删除同步完成: role={role_code}, tenants={deleted_count}")
 
     @staticmethod
     async def sync_module_role_permission_created(
@@ -1018,7 +1019,9 @@ class ModuleSyncService:
 
         # 触发权限缓存失效
         for tenant_id in tenant_ids:
-            await PermissionCheckService.invalidate_tenant_permission_cache(tenant_id)
+            await PermissionCheckService.invalidate_tenant_permission_cache(
+                session, tenant_id
+            )
 
         _logger.info(
             f"模块角色权限关联创建同步完成: "
@@ -1043,7 +1046,6 @@ class ModuleSyncService:
             module_id: 模块 ID
         """
         from tenant.models import (
-            ModuleRole,
             ModuleRolePermission,
             TenantModule,
         )
@@ -1103,7 +1105,9 @@ class ModuleSyncService:
 
         # 触发权限缓存失效
         for tenant_id in tenant_ids:
-            await PermissionCheckService.invalidate_tenant_permission_cache(tenant_id)
+            await PermissionCheckService.invalidate_tenant_permission_cache(
+                session, tenant_id
+            )
 
         _logger.info(
             f"模块角色权限变更同步完成: module_role_id={module_role_id}, tenants={len(tenant_ids)}"
@@ -1126,9 +1130,7 @@ class ModuleSyncService:
             module_permission_id: 模块权限 ID
         """
         # 1. 查找所有租户实例层中 ref_id=module_role_id 的 Role（含 tenant_id）
-        role_stmt = select(Role.id, Role.tenant_id).where(
-            Role.ref_id == module_role_id
-        )
+        role_stmt = select(Role.id, Role.tenant_id).where(Role.ref_id == module_role_id)
         role_result = await session.execute(role_stmt)
         role_rows = role_result.all()
 
@@ -1167,7 +1169,9 @@ class ModuleSyncService:
         # 触发权限缓存失效
         affected_tenant_ids = {role_tenant_id for _, role_tenant_id in role_rows}
         for tenant_id in affected_tenant_ids:
-            await PermissionCheckService.invalidate_tenant_permission_cache(tenant_id)
+            await PermissionCheckService.invalidate_tenant_permission_cache(
+                session, tenant_id
+            )
 
         _logger.info(
             f"模块角色权限关联删除同步完成: "

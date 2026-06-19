@@ -1,6 +1,5 @@
 """dictionary_util 单元测试"""
 
-import pytest
 
 from demo.utils import deep_merge_dict
 

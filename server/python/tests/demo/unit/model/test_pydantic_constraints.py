@@ -1,7 +1,7 @@
 """Pydantic Constraint Tests"""
 
 import pytest
-from pydantic import BaseModel, Field, ValidationError, constr, conint
+from pydantic import BaseModel, Field, ValidationError, conint, constr
 
 
 class TestPydanticConstraints:

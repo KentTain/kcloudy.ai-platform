@@ -4,10 +4,7 @@ jwt 模块单元测试
 测试 JWT Token 生成、验证和解析功能
 """
 
-import time
 from datetime import datetime, timedelta, timezone
-
-import pytest
 
 
 class TestGenerateAccessToken:
@@ -226,7 +223,7 @@ class TestDecodeToken:
         WHEN: Token 有效
         THEN: 返回 payload（不验证过期）
         """
-        from framework.utils.jwt import generate_access_token, decode_token
+        from framework.utils.jwt import decode_token, generate_access_token
 
         payload = {"user_id": "user-123", "session_id": "session-456"}
         secret = "test-secret-key"

@@ -4,9 +4,9 @@ Tenant 单元测试配置
 提供 Tenant 单元测试的 fixtures。
 """
 
-import pytest
-import pytest_asyncio
 from unittest.mock import AsyncMock, MagicMock
+
+import pytest_asyncio
 from sqlalchemy.ext.asyncio import AsyncSession
 
 

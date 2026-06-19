@@ -9,7 +9,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from framework.database.dependencies import get_db_session
 from framework.schemas.base import Success, SuccessExtra
 from iam.schemas.console.system_setting import (
-    ConsoleSystemSettingPaginatedListResponse,
     ConsoleSystemSettingPaginatedQuery,
     ConsoleSystemSettingResponse,
 )

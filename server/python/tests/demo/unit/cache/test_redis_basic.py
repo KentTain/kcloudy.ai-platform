@@ -1,7 +1,8 @@
 """Redis Cache Basic Operations Tests"""
 
+from unittest.mock import AsyncMock, patch
+
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
 
 
 class TestRedisBasic:

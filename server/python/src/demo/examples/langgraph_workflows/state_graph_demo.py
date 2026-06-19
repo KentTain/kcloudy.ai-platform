@@ -12,7 +12,6 @@ from typing import Annotated, Any
 from langgraph.graph import END, StateGraph
 from pydantic import BaseModel
 
-
 # ==================== 状态定义 ====================
 
 
@@ -80,7 +79,7 @@ def plan_node(state: WorkflowState) -> dict[str, Any]:
         状态更新
     """
     # 模拟规划过程
-    plan = f"执行计划：\n1. 数据验证\n2. 数据处理\n3. 结果输出"
+    plan = "执行计划：\n1. 数据验证\n2. 数据处理\n3. 结果输出"
 
     return {
         "current_step": "plan",
@@ -135,7 +134,7 @@ def summarize_node(state: WorkflowState) -> dict[str, Any]:
 
     return {
         "current_step": "summarize",
-        "messages": [f"[总结] 处理完成"],
+        "messages": ["[总结] 处理完成"],
     }
 
 
@@ -195,12 +194,12 @@ def demo_state_graph() -> None:
     final_state = app.invoke(initial_state)
 
     print("-" * 50)
-    print(f"\n最终状态：")
+    print("\n最终状态：")
     print(f"  当前步骤: {final_state['current_step']}")
     print(f"  步骤数: {final_state['step_count']}")
     print(f"  结果: {final_state['result']}")
 
-    print(f"\n消息历史：")
+    print("\n消息历史：")
     for msg in final_state["messages"]:
         print(f"  {msg}")
 

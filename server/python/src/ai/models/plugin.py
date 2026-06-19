@@ -5,10 +5,9 @@
 """
 
 from datetime import datetime
-from typing import Any
 from enum import Enum
+from typing import Any
 
-from loguru import logger
 from sqlalchemy import JSON, Boolean, DateTime, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.types import TypeDecorator
@@ -17,7 +16,6 @@ from ai.models import BaseModel
 from framework.database.mixins.active_record import ActiveRecordMixin
 from framework.database.mixins.audit import AuditMixin
 from framework.database.mixins.tenant import TenantMixin
-
 
 # ======================= 枚举定义 =======================
 

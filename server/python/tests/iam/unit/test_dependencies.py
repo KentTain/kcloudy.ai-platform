@@ -4,13 +4,14 @@ IAM 依赖注入测试
 
 import pytest
 from fastapi import HTTPException, Request
+
+from framework.common.ctx import Context, clear_context, set_context, set_user
 from iam.dependencies import (
+    get_current_session_id,
+    get_current_tenant_id,
     get_current_user_id,
     get_optional_user_id,
-    get_current_tenant_id,
-    get_current_session_id,
 )
-from framework.common.ctx import set_user, set_context, Context, clear_context
 
 
 class TestGetCurrentUserId:

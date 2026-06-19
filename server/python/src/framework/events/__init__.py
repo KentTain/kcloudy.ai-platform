@@ -7,21 +7,21 @@
 from framework.events.base import DomainEvent
 from framework.events.domain_events import (
     ModuleAssigned,
-    ModuleUnassigned,
     ModuleMenuCreated,
-    ModuleMenuUpdated,
     ModuleMenuDeleted,
+    ModuleMenuPermissionCreated,
+    ModuleMenuPermissionDeleted,
+    ModuleMenuUpdated,
     ModulePermissionCreated,
-    ModulePermissionUpdated,
     ModulePermissionDeleted,
+    ModulePermissionUpdated,
     ModuleRoleCreated,
-    ModuleRoleUpdated,
     ModuleRoleDeleted,
     ModuleRolePermissionChanged,
     ModuleRolePermissionCreated,
     ModuleRolePermissionDeleted,
-    ModuleMenuPermissionCreated,
-    ModuleMenuPermissionDeleted,
+    ModuleRoleUpdated,
+    ModuleUnassigned,
 )
 from framework.events.publisher import EventPublisher, event_publisher
 

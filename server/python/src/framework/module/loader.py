@@ -6,7 +6,6 @@
 
 import importlib.util
 from pathlib import Path
-from typing import Any
 
 from framework.module.descriptor import ModuleDescriptor
 from framework.module.registry import ModuleRegistry, get_registry

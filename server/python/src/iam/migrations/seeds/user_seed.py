@@ -7,7 +7,6 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime
 
 from sqlalchemy import select, text
 
@@ -64,7 +63,7 @@ async def run(*, dry_run: bool = False) -> int:
             write_info(f"[DRY-RUN] 默认密码: {DEFAULT_ADMIN_PASSWORD}")
             write_info(f"[DRY-RUN] 关联租户: {tenant_id}")
             if role_id:
-                write_info(f"[DRY-RUN] 分配角色: admin")
+                write_info("[DRY-RUN] 分配角色: admin")
             return 1
 
         # 创建用户
@@ -110,6 +109,6 @@ async def run(*, dry_run: bool = False) -> int:
         write_success(f"    默认密码: {DEFAULT_ADMIN_PASSWORD}")
         write_success(f"    关联租户: {tenant_id}")
         if role_id:
-            write_success(f"    分配角色: admin")
+            write_success("    分配角色: admin")
         write_warning("    [WARN] 请在生产环境中修改默认密码!")
         return 1

@@ -5,7 +5,7 @@
 """
 
 from enum import Enum
-from typing import Any, Type, TypeVar
+from typing import Any, TypeVar
 
 from sqlalchemy import String, TypeDecorator
 
@@ -22,7 +22,7 @@ class EnumType(TypeDecorator):
     impl = String(64)
     cache_ok = True
 
-    def __init__(self, enum_class: Type[T], **kwargs):
+    def __init__(self, enum_class: type[T], **kwargs):
         super().__init__(**kwargs)
         self._enum_class = enum_class
 

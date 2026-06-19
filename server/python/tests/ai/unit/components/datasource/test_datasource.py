@@ -35,8 +35,9 @@ class TestBaseConnect:
 
     def test_base_connect_is_abstract(self):
         """测试 BaseConnect 是抽象类"""
-        from ai.components.datasource.interfaces import BaseConnect
         from abc import ABC
+
+        from ai.components.datasource.interfaces import BaseConnect
 
         assert issubclass(BaseConnect, ABC)
 
@@ -46,8 +47,9 @@ class TestBaseConnect:
 
     def test_base_connect_has_required_methods(self):
         """测试 BaseConnect 有必需的抽象方法"""
-        from ai.components.datasource.interfaces import BaseConnect
         import inspect
+
+        from ai.components.datasource.interfaces import BaseConnect
 
         # 获取所有抽象方法
         abstract_methods = [

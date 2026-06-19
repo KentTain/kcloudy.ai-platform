@@ -5,7 +5,6 @@
 
 from ai.components.model.internal.model_instance_factory import (
     ModelInstance,
-    ModelInstanceFactory,
 )
 from ai.components.model.services.base_model_service import BaseModelService
 from ai_plugin.sdk.entities.model import ModelType

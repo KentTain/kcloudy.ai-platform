@@ -12,9 +12,9 @@ Embedding 生成示例
     vectors = embedder.embed_batch(["text1", "text2"])
 """
 
-from typing import Any
 import hashlib
 import math
+from typing import Any
 
 
 class MockEmbedding:

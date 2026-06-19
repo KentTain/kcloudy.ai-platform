@@ -8,7 +8,7 @@ from loguru import logger
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from iam.models import Role, Permission, RolePermission, UserRole
+from iam.models import Permission, Role, RolePermission, UserRole
 
 _logger = logger.bind(name=__name__)
 

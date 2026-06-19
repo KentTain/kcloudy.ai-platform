@@ -5,7 +5,7 @@
 """
 
 from framework.pubsub.factory import get_pubsub_provider
-from framework.pubsub.handler import TopicMessageHandler, SingleTopicHandler
+from framework.pubsub.handler import SingleTopicHandler, TopicMessageHandler
 
 __all__ = [
     "get_pubsub_provider",

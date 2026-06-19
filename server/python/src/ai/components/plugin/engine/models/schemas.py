@@ -2,15 +2,14 @@
 插件配置模式定义
 """
 
-from typing import Any
 
 from pydantic import Field
 
-from framework.schemas import BaseModel
 from ai_plugin.sdk.entities.agent import AgentStrategyProviderConfiguration
 from ai_plugin.sdk.entities.model.provider import ModelProviderConfiguration
 from ai_plugin.sdk.entities.tool import ToolProviderConfiguration
 from ai_plugin.server.core.entities.plugin.setup import PluginConfiguration
+from framework.schemas import BaseModel
 
 
 class PluginConfig(BaseModel):

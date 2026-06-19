@@ -11,7 +11,6 @@ from framework.module.definition import (
     RoleDef,
 )
 from framework.module.descriptor import ModuleDescriptor
-from framework.module.registry import ModuleRegistry, get_registry
 from framework.module.loader import (
     CyclicDependencyError,
     ModuleLoadError,
@@ -20,6 +19,7 @@ from framework.module.loader import (
     load_modules,
     resolve_dependencies,
 )
+from framework.module.registry import ModuleRegistry, get_registry
 from framework.module.sync_service import ModuleDefinitionSyncService
 
 __all__ = [

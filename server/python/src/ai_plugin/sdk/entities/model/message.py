@@ -1,6 +1,6 @@
 from collections.abc import Sequence
 from enum import Enum, StrEnum
-from typing import Annotated, Literal, Union
+from typing import Annotated, Literal
 
 from pydantic import BaseModel, BeforeValidator, Field, field_validator
 
@@ -175,13 +175,7 @@ class DocumentPromptMessageContent(MultiModalPromptMessageContent):
 
 # 提示消息内容联合类型，支持所有内容类型的区分联合
 PromptMessageContentUnionTypes = Annotated[
-    Union[
-        TextPromptMessageContent,
-        ImagePromptMessageContent,
-        DocumentPromptMessageContent,
-        AudioPromptMessageContent,
-        VideoPromptMessageContent,
-    ],
+    TextPromptMessageContent | ImagePromptMessageContent | DocumentPromptMessageContent | AudioPromptMessageContent | VideoPromptMessageContent,
     Field(discriminator="type"),
 ]
 

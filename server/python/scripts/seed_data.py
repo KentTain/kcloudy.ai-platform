@@ -14,13 +14,13 @@ from __future__ import annotations
 import argparse
 import asyncio
 import sys
+from collections.abc import Callable, Coroutine
 from pathlib import Path
-from typing import Callable, Coroutine
 
 # Windows 控制台编码处理
 if sys.platform == "win32":
-    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
-    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")  # type: ignore[union-attr]
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")  # type: ignore[union-attr]
 
 # 添加 src 目录到路径（必须在其他导入之前）
 src_path = Path(__file__).parent.parent / "src"
@@ -36,7 +36,7 @@ def check_database_connection() -> bool:
     """
     try:
         from demo.configs import settings
-        from framework.database.core.engine import setup_engine, get_engine
+        from framework.database.core.engine import get_engine, setup_engine
 
         sqlalchemy_config = settings.sqlalchemy
         setup_engine(
@@ -70,7 +70,7 @@ def get_seed_modules() -> dict[str, Callable[[bool], Coroutine[None, None, int]]
         模块名到种子函数的映射
     """
     try:
-        from demo.seeds import SEED_MODULES
+        from demo.seeds import SEED_MODULES  # type: ignore[import-untyped]
 
         return SEED_MODULES
     except ImportError as e:

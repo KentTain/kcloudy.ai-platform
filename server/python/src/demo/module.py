@@ -1,8 +1,7 @@
-﻿from typing import Callable
-
-from framework.module.definition import ModuleDefinition
+﻿from collections.abc import Callable
 
 from demo.models import Base
+from framework.module.definition import ModuleDefinition
 
 
 class DemoModule:
@@ -62,7 +61,7 @@ class DemoModule:
 
         返回 (setup_func, cleanup_func) 元组
         """
-        from demo.tasks.setup import setup_scheduler, cleanup_scheduler
+        from demo.tasks.setup import cleanup_scheduler, setup_scheduler
 
         return (setup_scheduler, cleanup_scheduler)
 
@@ -72,7 +71,7 @@ class DemoModule:
 
         返回 (setup_func, cleanup_func) 元组
         """
-        from demo.listeners.setup import setup_listeners, cleanup_listeners
+        from demo.listeners.setup import cleanup_listeners, setup_listeners
 
         return (setup_listeners, cleanup_listeners)
 

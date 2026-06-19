@@ -11,9 +11,8 @@ from loguru import logger
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from iam.models import OAuthConnection, OAuthProvider, User
-from framework.utils.crypto import hash_password
 from framework.configs import get_settings
+from iam.models import OAuthConnection, OAuthProvider, User
 
 _logger = logger.bind(name=__name__)
 
@@ -48,6 +47,16 @@ class OAuthService:
     }
 
     @staticmethod
+    def _resolve_provider(provider: str) -> OAuthProvider:
+        try:
+            oauth_provider = OAuthProvider(provider)
+        except ValueError:
+            raise ValueError("不支持的登录方式") from None
+        if oauth_provider not in OAuthService.OAUTH_CONFIGS:
+            raise ValueError("不支持的登录方式")
+        return oauth_provider
+
+    @staticmethod
     async def get_authorize_url(provider: str, redirect_uri: str | None = None) -> dict:
         """
         获取 OAuth 授权链接
@@ -59,10 +68,8 @@ class OAuthService:
         Returns:
             dict: 包含 authorize_url 和 state
         """
-        if provider not in OAuthService.OAUTH_CONFIGS:
-            raise ValueError("不支持的登录方式")
-
-        config = OAuthService.OAUTH_CONFIGS[provider]
+        oauth_provider = OAuthService._resolve_provider(provider)
+        config = OAuthService.OAUTH_CONFIGS[oauth_provider]
 
         # 生成 state（防 CSRF）
         state = secrets.token_urlsafe(16)
@@ -84,9 +91,9 @@ class OAuthService:
             "state": state,
         }
 
-        if provider == OAuthProvider.WECHAT:
+        if oauth_provider == OAuthProvider.WECHAT:
             authorize_url = f"{config['authorize_url']}?{urlencode(params)}"
-        elif provider == OAuthProvider.WEWORK:
+        elif oauth_provider == OAuthProvider.WEWORK:
             params["agentid"] = config.get("agentid", "")
             authorize_url = f"{config['authorize_url']}?{urlencode(params)}"
         else:

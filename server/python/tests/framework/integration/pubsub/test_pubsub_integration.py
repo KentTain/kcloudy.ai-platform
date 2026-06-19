@@ -5,14 +5,11 @@ Redis 发布订阅集成测试
 使用 @pytest.mark.integration 标记。
 """
 
-import asyncio
 
 import pytest
 import pytest_asyncio
 
-from framework.cache.redis_util import RedisUtil
 from framework.pubsub.impl.redis import RedisPubSub
-
 
 pytestmark = pytest.mark.integration
 

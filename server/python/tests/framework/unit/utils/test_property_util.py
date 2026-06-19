@@ -2,12 +2,13 @@
 PropertyUtil 工具类单元测试
 """
 
-import pytest
 from datetime import datetime
 from decimal import Decimal
 
-from framework.utils.property_util import PropertyUtil
+import pytest
+
 from framework.database import AttributeDataType
+from framework.utils.property_util import PropertyUtil
 
 
 class MockAttribute:

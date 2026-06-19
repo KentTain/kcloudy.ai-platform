@@ -4,7 +4,8 @@
 自动携带租户上下文。
 """
 
-from typing import Any, Callable, Awaitable
+from typing import Any
+
 from loguru import logger
 
 from framework.cache.tenant_redis_util import TenantRedisUtil

@@ -6,12 +6,11 @@
 
 from __future__ import annotations
 
-from typing import Any, Optional
+from typing import Any
 
 from framework.cache.redis_util import RedisUtil
-from framework.tenant.context import get_tenant_id
 from framework.database.mixins.tenant import should_skip_tenant
-
+from framework.tenant.context import get_tenant_id
 
 # 租户前缀格式
 TENANT_KEY_PREFIX = "{tenant_id}:{key}"
@@ -93,7 +92,7 @@ class TenantRedisUtil:
 
     @classmethod
     async def set(
-        cls, key: str, value: str, ttl: Optional[int] = None,
+        cls, key: str, value: str, ttl: int | None = None,
         nx: bool = False, skip_tenant: bool = False
     ) -> bool:
         """设置键值对，自动添加租户前缀"""
@@ -101,7 +100,7 @@ class TenantRedisUtil:
         return await RedisUtil.set(actual_key, value, ttl=ttl, nx=nx)
 
     @classmethod
-    async def get(cls, key: str, skip_tenant: bool = False) -> Optional[str]:
+    async def get(cls, key: str, skip_tenant: bool = False) -> str | None:
         """获取键值，自动添加租户前缀"""
         actual_key = _build_key(key, skip_tenant)
         return await RedisUtil.get(actual_key)
@@ -141,7 +140,7 @@ class TenantRedisUtil:
     # =========================================================================
 
     @classmethod
-    async def hget(cls, name: str, key: str, skip_tenant: bool = False) -> Optional[str]:
+    async def hget(cls, name: str, key: str, skip_tenant: bool = False) -> str | None:
         """获取 Hash 字段值，自动添加租户前缀"""
         actual_name = _build_key(name, skip_tenant)
         return await RedisUtil.hget(actual_name, key)

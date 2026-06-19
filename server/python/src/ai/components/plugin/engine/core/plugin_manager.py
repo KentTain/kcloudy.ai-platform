@@ -22,8 +22,6 @@ import yaml
 from sqlalchemy import and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from framework.configs.settings import settings
-from framework.storage import get_storage_provider
 from ai.components.plugin.engine.core.communication.protocol import PluginError
 from ai.components.plugin.engine.core.helper import (
     PluginConfig,
@@ -44,14 +42,19 @@ from ai.components.plugin.engine.core.warmup.plugin_warmup_manager import (
     WarmupStatus,
     WarmupStatusInfo,
 )
+from ai.components.plugin.engine.models.enums import (
+    PluginStatus,
+    RuntimeType,
+    SourceType,
+)
+from ai.components.plugin.engine.models.enums import PluginType as DBPluginType
 from ai.components.plugin.engine.models.plugin import PluginInfo
 from ai.components.plugin.engine.models.request import InstallRequest
 from ai.components.plugin.engine.utils.logger import get_logger
 from ai.models.plugin import PluginInstallation
-from ai.components.plugin.engine.models.enums import PluginStatus, RuntimeType, SourceType
-from ai.components.plugin.engine.models.enums import PluginType as DBPluginType
 from ai_plugin.server.core.entities.plugin.setup import PluginAsset
-
+from framework.configs.settings import settings
+from framework.storage import get_storage_provider
 
 logger = get_logger(__name__)
 
@@ -185,7 +188,7 @@ class TenantPluginManager:
             if warmup_result.status == WarmupStatus.COMPLETED:
                 warmed_count = len(warmup_result.warmed_plugins)
                 self.logger.info(f"启动时预热完成: {warmed_count} 个插件已预热")
-        except Exception as e:
+        except Exception:
             self.logger.exception("启动时预热失败，但不影响系统正常运行")
 
         self._initialized = True
@@ -251,7 +254,7 @@ class TenantPluginManager:
 
             return plugin_info
 
-        except Exception as e:
+        except Exception:
             self.logger.exception(f"从数据库加载插件信息失败 {installation.plugin_id}")
             return None
 
@@ -353,7 +356,7 @@ class TenantPluginManager:
                 uploaded_files[asset.filename] = oss_path
                 self.logger.debug(f"资源文件已上传: {asset.filename} -> {oss_path}")
 
-            except Exception as e:
+            except Exception:
                 failed_files.append(asset.filename)
                 self.logger.exception(f"上传资源文件异常: {asset.filename}")
 
@@ -387,7 +390,7 @@ class TenantPluginManager:
             self.logger.debug(f"从OSS下载资源文件成功: {oss_path}")
             return content
 
-        except Exception as e:
+        except Exception:
             self.logger.exception(
                 f"从OSS下载资源文件异常: {plugin_id}@{version}/{asset_path}"
             )
@@ -614,7 +617,7 @@ class TenantPluginManager:
             self.logger.info(f"插件启动成功: {plugin_id} (用时: {startup_time:.3f}秒)")
             return True
 
-        except Exception as e:
+        except Exception:
             startup_time = time.time() - startup_start_time
             self.performance_monitor.record_startup_time(
                 plugin_id, startup_time
@@ -706,7 +709,7 @@ class TenantPluginManager:
             )
             return plugin_id
 
-        except Exception as e:
+        except Exception:
             self.logger.exception("插件安装失败，开始执行完整回滚...")
 
             # 执行完整的回滚操作
@@ -717,7 +720,7 @@ class TenantPluginManager:
                     plugin_id if "plugin_id" in locals() else None,
                     oss_path if "oss_path" in locals() else None,
                 )
-            except Exception as rollback_error:
+            except Exception:
                 self.logger.exception("回滚操作失败")
 
             raise
@@ -823,7 +826,7 @@ class TenantPluginManager:
                 await session.flush()
                 self.logger.debug(f"已更新插件访问时间: {plugin_id}")
 
-        except Exception as e:
+        except Exception:
             self.logger.exception(f"更新插件访问时间失败: {plugin_id}")
             # 不抛出异常，因为这不是关键功能
 
@@ -847,7 +850,7 @@ class TenantPluginManager:
                     f"已更新插件运行状态: {plugin_id}, status: {installation.status}"
                 )
 
-        except Exception as e:
+        except Exception:
             self.logger.exception(f"更新插件运行状态失败: {plugin_id}")
             # 不抛出异常，因为这不是关键功能
 
@@ -1174,7 +1177,7 @@ class TenantPluginManager:
 
             self.logger.info(f"插件注册成功: {plugin_id}")
 
-        except Exception as e:
+        except Exception:
             # 清理失败的注册
             if plugin_id in self.plugins:
                 del self.plugins[plugin_id]
@@ -1363,7 +1366,7 @@ class TenantPluginManager:
                 plugin_id, version, asset_path
             )
 
-        except Exception as e:
+        except Exception:
             self.logger.exception(f"获取插件资源文件失败: {plugin_id}/{asset_path}")
             return None
 

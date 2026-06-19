@@ -13,7 +13,7 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_core.tools import tool
 from langgraph.checkpoint.memory import MemorySaver
 
-from extended.langchain import AlonChatModel, AgentFactory, MessageAdapter
+from extended.langchain import AgentFactory, AlonChatModel, MessageAdapter
 
 
 async def demo_alon_chat_model() -> None:

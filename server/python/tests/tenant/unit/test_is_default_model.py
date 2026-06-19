@@ -4,15 +4,14 @@
 测试所有资源配置模型中 is_default 字段的默认值和可设置性。
 """
 
-import pytest
 from unittest.mock import MagicMock
 
 from tenant.models import (
-    DatabaseConfig,
-    StorageConfig,
     CacheConfig,
-    QueueConfig,
+    DatabaseConfig,
     PubSubConfig,
+    QueueConfig,
+    StorageConfig,
 )
 
 

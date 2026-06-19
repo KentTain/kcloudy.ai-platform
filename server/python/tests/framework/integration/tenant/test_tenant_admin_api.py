@@ -7,13 +7,11 @@
 3. 租户激活/停用
 """
 
-import pytest
 
+from framework.utils.crypto import hash_password, verify_password
 from tenant.middlewares.admin_auth_middleware import (
-    hash_password,
-    verify_password,
-    generate_token,
     AdminAuthService,
+    generate_token,
 )
 
 
@@ -70,8 +68,9 @@ class TestTenantAdminAPI:
 
     def test_tenant_vo(self):
         """测试租户 VO"""
-        from tenant.schemas.admin.tenant import TenantResponse
         from datetime import datetime
+
+        from tenant.schemas.admin.tenant import TenantResponse
 
         vo = TenantResponse(
             id="t001",

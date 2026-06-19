@@ -3,12 +3,12 @@
 import pytest
 
 from ai_plugin.sdk.errors.invoke import (
-    InvokeError,
-    InvokeConnectionError,
-    InvokeServerUnavailableError,
-    InvokeRateLimitError,
     InvokeAuthorizationError,
     InvokeBadRequestError,
+    InvokeConnectionError,
+    InvokeError,
+    InvokeRateLimitError,
+    InvokeServerUnavailableError,
 )
 
 
@@ -22,25 +22,25 @@ class TestInvokeError:
     def test_default_description_is_none(self):
         """测试默认 description 为 None"""
         err = InvokeError()
-        
+
         assert err.description is None
 
     def test_custom_description(self):
         """测试自定义 description"""
         err = InvokeError(description="Custom error message")
-        
+
         assert err.description == "Custom error message"
 
     def test_str_with_description(self):
         """测试带 description 的字符串表示"""
         err = InvokeError(description="Custom error message")
-        
+
         assert str(err) == "Custom error message"
 
     def test_str_without_description(self):
         """测试不带 description 的字符串表示（返回类名）"""
         err = InvokeError()
-        
+
         assert str(err) == "InvokeError"
 
 
@@ -59,14 +59,14 @@ class TestInvokeConnectionError:
     def test_custom_description_overrides_default(self):
         """测试自定义 description 覆盖默认值"""
         err = InvokeConnectionError(description="网络超时")
-        
+
         assert err.description == "网络超时"
         assert str(err) == "网络超时"
 
     def test_instance_without_description_uses_class_name(self):
         """测试不带参数实例化时使用类名"""
         err = InvokeConnectionError()
-        
+
         # 实例化时会覆盖类属性为 None
         assert err.description is None
         assert str(err) == "InvokeConnectionError"
@@ -132,7 +132,7 @@ class TestErrorHierarchy:
             InvokeAuthorizationError,
             InvokeBadRequestError,
         ]
-        
+
         for error_class in error_classes:
             assert issubclass(error_class, InvokeError)
             assert issubclass(error_class, ValueError)
@@ -146,7 +146,7 @@ class TestErrorHierarchy:
             InvokeAuthorizationError(),
             InvokeBadRequestError(),
         ]
-        
+
         for err in errors_to_raise:
             with pytest.raises(InvokeError):
                 raise err

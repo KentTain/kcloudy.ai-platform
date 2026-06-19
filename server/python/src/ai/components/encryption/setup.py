@@ -2,13 +2,12 @@
 
 from loguru import logger
 
-from framework.configs.settings import get_settings
 from ai.components.encryption.manager import (
     get_encryption_manager,
     init_encryption_manager,
 )
 from framework.configs.encryption import EncryptionSettings
-
+from framework.configs.settings import get_settings
 
 _logger = logger.bind(name=__name__)
 
@@ -51,5 +50,5 @@ async def setup_encryption() -> None:
         _logger.info(f"加密组件初始化成功，可用实例: {manager.list_instances()}")
         _encryption_initialized = True
 
-    except Exception as e:
+    except Exception:
         _logger.exception("初始化加密组件时出错")

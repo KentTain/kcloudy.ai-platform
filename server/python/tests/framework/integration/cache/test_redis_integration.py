@@ -10,10 +10,6 @@ import asyncio
 import pytest
 import pytest_asyncio
 
-from framework.cache.redis_util import RedisUtil
-from framework.core.lock import Lock
-
-
 pytestmark = pytest.mark.integration
 
 

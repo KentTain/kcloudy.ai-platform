@@ -7,8 +7,8 @@ methods that delegate to the platform LLMService.
 
 from __future__ import annotations
 
-from collections.abc import AsyncIterator, Sequence
-from typing import Any, Callable
+from collections.abc import AsyncIterator, Callable, Sequence
+from typing import Any
 
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import AIMessage, AIMessageChunk, BaseMessage
@@ -22,7 +22,6 @@ from langchain_core.runnables import Runnable
 from langchain_core.tools import BaseTool
 
 from ai.components.model.services.llm_service import LLMService
-from ai_plugin.sdk.entities.model.llm import LLMResult, LLMResultChunk
 from ai_plugin.sdk.entities.model.message import PromptMessageTool
 from extended.langchain.models.message_adapter import (
     MessageAdapter,

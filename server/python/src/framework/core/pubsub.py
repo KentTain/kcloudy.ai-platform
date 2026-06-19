@@ -4,7 +4,8 @@
 使用 Python Protocol 定义统一的发布订阅接口。
 """
 
-from typing import Any, Callable, Protocol, runtime_checkable
+from collections.abc import Callable
+from typing import Any, Protocol, runtime_checkable
 
 
 @runtime_checkable

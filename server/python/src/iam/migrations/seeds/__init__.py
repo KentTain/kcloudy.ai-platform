@@ -13,7 +13,7 @@
     }
 """
 
-from typing import Callable, Coroutine
+from collections.abc import Callable, Coroutine
 
 # 种子模块注册表
 # 格式: {"模块名": 异步种子函数}

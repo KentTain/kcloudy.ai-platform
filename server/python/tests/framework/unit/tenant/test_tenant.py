@@ -4,25 +4,22 @@ tenant 模块单元测试
 
 import pytest
 
+from framework.tenant.context import (
+    SimpleTenant,
+    TenantContext,
+    get_current_tenant,
+    get_tenant_id,
+    set_current_tenant,
+)
+from framework.tenant.enums import DatabaseType, QueueType, StorageType
+from framework.tenant.middleware import TenantMiddleware
 from framework.tenant.protocols import (
     TenantDatabaseConfig,
-    TenantStorageConfig,
     TenantQueueConfig,
-    TenantPubSubConfig,
-    TenantInfo,
-    TenantProvider,
-    register_tenant_provider,
+    TenantStorageConfig,
     get_tenant_provider,
+    register_tenant_provider,
 )
-from framework.tenant.enums import DatabaseType, StorageType, QueueType
-from framework.tenant.context import (
-    TenantContext,
-    SimpleTenant,
-    get_current_tenant,
-    set_current_tenant,
-    get_tenant_id,
-)
-from framework.tenant.middleware import TenantMiddleware
 
 
 class TestTenantMiddleware:

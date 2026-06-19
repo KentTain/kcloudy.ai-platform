@@ -2,8 +2,10 @@
 OAuthService 测试
 """
 
+from unittest.mock import MagicMock
+
 import pytest
-from unittest.mock import AsyncMock, patch, MagicMock
+
 from iam.services.oauth_service import OAuthService
 
 

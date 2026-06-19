@@ -5,7 +5,6 @@
 """
 
 from fastapi import APIRouter, Depends, HTTPException
-from fastapi.responses import ORJSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from framework.database.dependencies import get_db_session
@@ -13,7 +12,6 @@ from framework.schemas.base import Success, SuccessExtra
 from iam.schemas.role import (
     RoleCreate,
     RoleMemberAssignRequest,
-    RoleMemberResponse,
     RoleMenuAssignRequest,
     RoleOptionResponse,
     RolePaginatedQuery,
@@ -21,7 +19,7 @@ from iam.schemas.role import (
     RoleResponse,
     RoleUpdate,
 )
-from iam.services import permission_service, role_service
+from iam.services import role_service
 from iam.services.role_service import role_member_service, user_role_service
 
 router = APIRouter()
@@ -67,9 +65,9 @@ async def create_role(
 
 
 @router.get("/roles/options")
-async def get_role_options():
+async def get_role_options(session: AsyncSession = Depends(get_db_session)):
     """获取角色选项列表（不分页，供下拉选择用）"""
-    roles = await user_role_service.get_role_options()
+    roles = await user_role_service.get_role_options(session)
     return Success(
         data=[RoleOptionResponse.model_validate(r).model_dump() for r in roles]
     )
@@ -152,43 +150,61 @@ async def assign_permissions(
 
 
 @router.get("/roles/{role_id}/members")
-async def get_role_members(role_id: str):
+async def get_role_members(
+    role_id: str, session: AsyncSession = Depends(get_db_session)
+):
     """获取角色成员列表"""
-    members = await role_member_service.get_role_members(role_id)
+    members = await role_member_service.get_role_members(session, role_id)
     return Success(data=members)
 
 
 @router.post("/roles/{role_id}/members")
-async def add_role_members(role_id: str, data: RoleMemberAssignRequest):
+async def add_role_members(
+    role_id: str,
+    data: RoleMemberAssignRequest,
+    session: AsyncSession = Depends(get_db_session),
+):
     """为角色添加成员"""
     try:
-        added = await role_member_service.add_role_members(role_id, data.user_ids)
+        added = await role_member_service.add_role_members(
+            session, role_id, data.user_ids
+        )
         return Success(data={"added": added})
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
 
 @router.delete("/roles/{role_id}/members/{user_id}")
-async def remove_role_member(role_id: str, user_id: str):
+async def remove_role_member(
+    role_id: str,
+    user_id: str,
+    session: AsyncSession = Depends(get_db_session),
+):
     """移除角色成员"""
-    removed = await role_member_service.remove_role_member(role_id, user_id)
+    removed = await role_member_service.remove_role_member(session, role_id, user_id)
     if not removed:
         raise HTTPException(status_code=404, detail="该用户不是此角色成员")
     return Success(data=None)
 
 
 @router.get("/roles/{role_id}/menus")
-async def get_role_menus(role_id: str):
+async def get_role_menus(
+    role_id: str, session: AsyncSession = Depends(get_db_session)
+):
     """获取角色已分配的菜单 ID 列表"""
-    menu_ids = await role_member_service.get_role_menus(role_id)
+    menu_ids = await role_member_service.get_role_menus(session, role_id)
     return Success(data=menu_ids)
 
 
 @router.post("/roles/{role_id}/menus")
-async def assign_role_menus(role_id: str, data: RoleMenuAssignRequest):
+async def assign_role_menus(
+    role_id: str,
+    data: RoleMenuAssignRequest,
+    session: AsyncSession = Depends(get_db_session),
+):
     """为角色分配菜单"""
     try:
-        await role_member_service.assign_role_menus(role_id, data.menu_ids)
+        await role_member_service.assign_role_menus(session, role_id, data.menu_ids)
         return Success(data=None)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))

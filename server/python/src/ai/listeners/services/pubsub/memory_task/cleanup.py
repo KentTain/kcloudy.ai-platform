@@ -5,9 +5,12 @@ from collections.abc import Callable
 
 from loguru import logger
 
-from framework.pubsub import get_pubsub_provider
 from ai.listeners.services.pubsub.constants import CANCEL_ASYNCIO_TASK_TOPIC
-from ai.listeners.services.pubsub.memory_task.constants import ACTIVE_ASYNCIO_TASKS, ACTIVE_CLEANUP_TASKS
+from ai.listeners.services.pubsub.memory_task.constants import (
+    ACTIVE_ASYNCIO_TASKS,
+    ACTIVE_CLEANUP_TASKS,
+)
+from framework.pubsub import get_pubsub_provider
 
 _logger = logger.bind(name=__name__)
 

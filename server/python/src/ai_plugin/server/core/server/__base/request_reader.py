@@ -5,14 +5,12 @@ from abc import ABC, abstractmethod
 from collections.abc import Callable, Generator
 from typing import TYPE_CHECKING
 
-
 if TYPE_CHECKING:
     from ai_plugin.server.core.entities.plugin.io import PluginInStream
 
 from ai_plugin.server.core.server.__base.filter_reader import (
     FilterReader,
 )
-
 
 logger = logging.getLogger(__name__)
 

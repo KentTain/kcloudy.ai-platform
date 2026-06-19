@@ -4,9 +4,8 @@ AI 模块控制台控制器
 提供插件列表、详情、凭证管理等用户端接口。
 """
 
-from typing import Any
 
-from fastapi import APIRouter, Body, Depends, HTTPException, Path, Query, Request
+from fastapi import APIRouter, Body, Depends, Path, Query
 from fastapi.responses import ORJSONResponse
 from loguru import logger
 from sqlalchemy.ext.asyncio import AsyncSession

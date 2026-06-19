@@ -14,8 +14,7 @@ from operator import add
 from typing import Annotated, Literal
 
 import pytest
-
-from langgraph.graph import END, StateGraph
+from langgraph.graph import StateGraph
 from langgraph.graph.state import CompiledStateGraph
 
 _logger = logging.getLogger(__name__)
@@ -31,25 +30,25 @@ class GraphState:
 
 def start_node(state: GraphState) -> GraphState:
     """起始节点"""
-    print(f"\n[Start] 开始处理")
+    print("\n[Start] 开始处理")
     return GraphState(result=["start"], route_decision=state.route_decision)
 
 
 def path_a_node(state: GraphState) -> GraphState:
     """路径A"""
-    print(f"\n[Path A] 执行路径A")
+    print("\n[Path A] 执行路径A")
     return GraphState(result=["path_a"], route_decision=state.route_decision)
 
 
 def path_b_node(state: GraphState) -> GraphState:
     """路径B"""
-    print(f"\n[Path B] 执行路径B")
+    print("\n[Path B] 执行路径B")
     return GraphState(result=["path_b"], route_decision=state.route_decision)
 
 
 def end_node(state: GraphState) -> GraphState:
     """结束节点"""
-    print(f"\n[End] 处理完成")
+    print("\n[End] 处理完成")
     return GraphState(result=["end"], route_decision=state.route_decision)
 
 

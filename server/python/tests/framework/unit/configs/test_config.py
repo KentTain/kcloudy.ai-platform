@@ -2,15 +2,14 @@
 config 模块单元测试
 """
 
+
 import pytest
-from unittest.mock import patch, MagicMock
-from pathlib import Path
 
 from framework.configs.base import BaseSettings
 from framework.configs.helpers import (
-    hyphen_to_underscore,
     convert_dict_hyphen_to_underscore,
     deep_merge_dict,
+    hyphen_to_underscore,
 )
 
 

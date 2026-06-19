@@ -1,8 +1,9 @@
 """Redis Cache Serialization Tests"""
 
-import pytest
-import orjson
 from unittest.mock import AsyncMock, patch
+
+import orjson
+import pytest
 
 
 class TestRedisSerialization:

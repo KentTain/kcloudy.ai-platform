@@ -11,13 +11,12 @@
 from datetime import datetime, timedelta
 from typing import Any
 
-from redis.asyncio import Redis, ConnectionPool
 from loguru import logger
+from redis.asyncio import ConnectionPool, Redis
 
-from framework.cache.redis_util import RedisUtil
+from framework.database.mixins.tenant import should_skip_tenant
 from framework.tenant.context import get_tenant_id
 from framework.tenant.protocols import TenantCacheConfig
-from framework.database.mixins.tenant import should_skip_tenant
 
 _logger = logger.bind(name=__name__)
 

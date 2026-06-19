@@ -4,7 +4,7 @@
 适配 framework 的加密工具，提供与 Alon 兼容的接口
 """
 
-from framework.utils.crypto import encrypt, decrypt
+from framework.utils.crypto import decrypt, encrypt
 
 
 def encrypt_token(tenant_id: str, token: str) -> str:

@@ -25,8 +25,8 @@ from ai.components.plugin.engine.core.communication.protocol import (
 )
 from ai.components.plugin.engine.models.plugin import PluginInfo
 from ai.components.plugin.engine.utils.helpers import find_available_port
-from framework.configs.settings import Settings
 from ai_plugin.server.core.server.__base.writer_entities import Event
+from framework.configs.settings import Settings
 
 from .base import PluginRuntime, PluginRuntimeState
 
@@ -732,7 +732,7 @@ class LocalPluginRuntime(PluginRuntime):
                 try:
                     process.kill()
                     await asyncio.wait_for(process.wait(), timeout=10)
-                except Exception as kill_error:
+                except Exception:
                     self._plugin_logger.exception("终止UV进程失败")
                 raise RuntimeError(f"UV创建虚拟环境超时（{timeout}秒）")
 

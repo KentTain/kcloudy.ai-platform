@@ -13,7 +13,6 @@ from typing import Any
 
 from pydantic import BaseModel
 
-
 # ==================== 配置模型 ====================
 
 

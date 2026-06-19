@@ -6,7 +6,6 @@ import asyncio
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import ORJSONResponse
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from framework.database.dependencies import get_db_session
@@ -548,7 +547,6 @@ async def get_admin_menus(
     WHEN 数据库中没有活跃模块
     THEN 返回空数组
     """
-    from tenant.models import Module
 
     # 获取租户模块（一级菜单）
     module = await ModuleService.get_by_code(session, "tenant")

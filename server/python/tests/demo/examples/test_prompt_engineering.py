@@ -7,7 +7,6 @@
 import pytest
 
 from demo.examples.prompt_engineering import (
-    create_example_selector,
     create_few_shot_prompt,
     create_partial_template,
     create_prompt_template,

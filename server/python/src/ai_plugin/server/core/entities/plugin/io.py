@@ -1,7 +1,6 @@
 from enum import Enum
 from typing import TYPE_CHECKING
 
-
 if TYPE_CHECKING:
     from ai_plugin.server.core.server.__base.request_reader import RequestReader
 

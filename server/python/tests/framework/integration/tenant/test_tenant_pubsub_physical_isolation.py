@@ -16,10 +16,12 @@ import pytest
 import pytest_asyncio
 
 from framework.cache.tenant_cache_manager import TenantCacheManager
-from framework.pubsub.tenant_pubsub_manager import TenantPubSubManager, init_pubsub_manager
-from framework.tenant.protocols import TenantPubSubConfig
+from framework.pubsub.tenant_pubsub_manager import (
+    TenantPubSubManager,
+    init_pubsub_manager,
+)
 from framework.tenant.enums import PubSubType
-
+from framework.tenant.protocols import TenantPubSubConfig
 
 pytestmark = pytest.mark.integration
 
@@ -272,7 +274,7 @@ class TestTenantPubSubOperations:
         # 再次调用 unsubscribe 应该也是安全的
         try:
             await pubsub_manager.unsubscribe(pubsub, unique_channel)
-        except Exception as e:
+        except Exception:
             # 某些客户端可能会抛出异常
             pass
 

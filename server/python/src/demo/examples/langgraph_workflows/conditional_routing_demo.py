@@ -12,7 +12,6 @@ from typing import Annotated, Any, Literal
 from langgraph.graph import END, StateGraph
 from pydantic import BaseModel
 
-
 # ==================== 状态定义 ====================
 
 
@@ -67,7 +66,7 @@ def classify_node(state: RoutingState) -> dict[str, Any]:
 
 def weather_handler(state: RoutingState) -> dict[str, Any]:
     """天气处理器"""
-    response = f"天气预报：今天晴朗，气温 25°C"
+    response = "天气预报：今天晴朗，气温 25°C"
     return {
         "response": response,
         "messages": [f"[天气] {response}"],
@@ -121,7 +120,7 @@ def validate_response(state: RoutingState) -> dict[str, Any]:
 
     return {
         "needs_retry": False,
-        "messages": [f"[验证] 响应有效"],
+        "messages": ["[验证] 响应有效"],
     }
 
 

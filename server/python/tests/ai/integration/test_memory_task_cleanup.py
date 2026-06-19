@@ -5,13 +5,13 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
+from ai.listeners.services.pubsub.constants import CANCEL_ASYNCIO_TASK_TOPIC
+from ai.listeners.services.pubsub.memory_task.cleanup import cleanup_task_after_timeout
 from ai.listeners.services.pubsub.memory_task.constants import (
     ACTIVE_ASYNCIO_TASKS,
     ACTIVE_CLEANUP_TASKS,
     TASK_TYPE_GENERATE_LLM,
 )
-from ai.listeners.services.pubsub.memory_task.cleanup import cleanup_task_after_timeout
-from ai.listeners.services.pubsub.constants import CANCEL_ASYNCIO_TASK_TOPIC
 
 
 @pytest.fixture(autouse=True)

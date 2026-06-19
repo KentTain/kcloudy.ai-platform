@@ -11,7 +11,6 @@ SQL 解析测试
 注意：这些测试不连接真实数据库。
 """
 
-import pytest
 import sqlparse
 from sqlparse import tokens as token_types
 

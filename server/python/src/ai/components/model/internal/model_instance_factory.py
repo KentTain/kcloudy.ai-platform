@@ -17,11 +17,11 @@ from ai.components.model.internal.provider_manager import ProviderManager
 from ai.components.model.model_providers.__base__.large_language_model import (
     LargeLanguageModelImpl,
 )
-from ai_plugin.sdk.entities.model import ModelType
 from ai.components.model.model_providers.__base__.rerank_model import RerankModelImpl
 from ai.components.model.model_providers.__base__.text_embedding_model import (
     TextEmbeddingModelImpl,
 )
+from ai_plugin.sdk.entities.model import ModelType
 from ai_plugin.sdk.entities.model.llm import LLMResult, LLMResultChunk
 from ai_plugin.sdk.entities.model.message import PromptMessage, PromptMessageTool
 from ai_plugin.sdk.entities.model.rerank import RerankResult
@@ -98,7 +98,7 @@ class ModelInstance:
             raise Exception("模型类型实例不是 LargeLanguageModel")
 
         self.model_type_instance = cast(
-            LargeLanguageModelImpl, self.model_type_instance
+            "LargeLanguageModelImpl", self.model_type_instance
         )
 
         result = await self._async_round_robin_invoke(
@@ -139,10 +139,10 @@ class ModelInstance:
             raise Exception("模型类型实例不是 LargeLanguageModel")
 
         self.model_type_instance = cast(
-            LargeLanguageModelImpl, self.model_type_instance
+            "LargeLanguageModelImpl", self.model_type_instance
         )
         return cast(
-            int,
+            "int",
             await self._async_round_robin_invoke(
                 function=self.model_type_instance.get_num_tokens,
                 model=self.model,
@@ -160,10 +160,10 @@ class ModelInstance:
             raise Exception("模型类型实例不是 TextEmbeddingModel")
 
         self.model_type_instance = cast(
-            TextEmbeddingModelImpl, self.model_type_instance
+            "TextEmbeddingModelImpl", self.model_type_instance
         )
         return cast(
-            TextEmbeddingResult,
+            "TextEmbeddingResult",
             await self._async_round_robin_invoke(
                 function=self.model_type_instance.invoke,
                 model=self.model,
@@ -179,10 +179,10 @@ class ModelInstance:
             raise Exception("模型类型实例不是 TextEmbeddingModel")
 
         self.model_type_instance = cast(
-            TextEmbeddingModelImpl, self.model_type_instance
+            "TextEmbeddingModelImpl", self.model_type_instance
         )
         return cast(
-            list[int],
+            "list[int]",
             await self._async_round_robin_invoke(
                 function=self.model_type_instance.get_num_tokens,
                 model=self.model,
@@ -203,9 +203,9 @@ class ModelInstance:
         if not isinstance(self.model_type_instance, RerankModelImpl):
             raise Exception("模型类型实例不是 RerankModel")
 
-        self.model_type_instance = cast(RerankModelImpl, self.model_type_instance)
+        self.model_type_instance = cast("RerankModelImpl", self.model_type_instance)
         return cast(
-            RerankResult,
+            "RerankResult",
             await self._async_round_robin_invoke(
                 function=self.model_type_instance.invoke,
                 model=self.model,

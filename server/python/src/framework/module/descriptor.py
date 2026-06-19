@@ -4,9 +4,8 @@
 定义模块必须实现的接口，用于动态加载和装配。
 """
 
-from typing import Protocol, Any, Callable
-
-from fastapi import FastAPI
+from collections.abc import Callable
+from typing import Protocol
 
 from framework.module.definition import ModuleDefinition
 

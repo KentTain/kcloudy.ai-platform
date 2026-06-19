@@ -1,8 +1,15 @@
 ﻿"""LLM 对话控制器测试"""
 
+from unittest.mock import AsyncMock, Mock, patch
+
 import pytest
-from unittest.mock import Mock, patch, AsyncMock, MagicMock
-from ai.controllers.v1.chat.llm import router, _is_search_tool, _format_sse_line, EventType
+
+from ai.controllers.v1.chat.llm import (
+    EventType,
+    _format_sse_line,
+    _is_search_tool,
+    router,
+)
 
 
 class TestRouterConfiguration:
@@ -91,8 +98,9 @@ class TestTenantIsolation:
     @pytest.mark.asyncio
     async def test_stop_chat_cross_tenant_returns_404(self):
         """测试跨租户停止对话返回 404（get_by_id 会过滤 tenant_id）"""
-        from ai.controllers.v1.chat.llm import stop_chat_messages
         from fastapi import HTTPException
+
+        from ai.controllers.v1.chat.llm import stop_chat_messages
 
         # Mock get_tenant_id 返回当前租户
         with patch("ai.controllers.v1.chat.llm.get_tenant_id", return_value="tenant-1"):
@@ -111,8 +119,9 @@ class TestTenantIsolation:
     @pytest.mark.asyncio
     async def test_stop_chat_not_found_returns_404(self):
         """测试停止不存在的会话返回 404"""
-        from ai.controllers.v1.chat.llm import stop_chat_messages
         from fastapi import HTTPException
+
+        from ai.controllers.v1.chat.llm import stop_chat_messages
 
         with patch("ai.controllers.v1.chat.llm.get_tenant_id", return_value="tenant-1"):
             with patch(
@@ -141,11 +150,10 @@ class TestTenantIsolation:
                 "ai.controllers.v1.chat.llm.conversation_service.get_by_id",
                 new_callable=AsyncMock,
                 return_value=mock_conversation,
+            ), patch(
+                "ai.controllers.v1.chat.llm.ACTIVE_ASYNCIO_TASKS",
+                {"generate:llm": {}},
             ):
-                with patch(
-                    "ai.controllers.v1.chat.llm.ACTIVE_ASYNCIO_TASKS",
-                    {"generate:llm": {}},
-                ):
-                    result = await stop_chat_messages("conv-1")
-                    assert result["success"] is True
-                    assert "未找到活跃任务" in result["message"]
+                result = await stop_chat_messages("conv-1")
+                assert result["success"] is True
+                assert "未找到活跃任务" in result["message"]

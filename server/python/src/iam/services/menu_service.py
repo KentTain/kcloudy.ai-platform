@@ -9,7 +9,6 @@ from typing import Any
 from loguru import logger
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.sql import func
 
 from iam.models import Menu, MenuPermission, Permission, Role, RolePermission, UserRole
 
@@ -81,10 +80,7 @@ class MenuService:
         for menu in all_menus:
             menu_perms = menu_permission_map.get(menu.id, set())
             # 无权限限制的菜单，所有登录用户可见
-            if not menu_perms:
-                visible_menu_ids.add(menu.id)
-            # 用户拥有任一权限即可见
-            elif menu_perms & user_permission_ids:
+            if not menu_perms or menu_perms & user_permission_ids:
                 visible_menu_ids.add(menu.id)
 
         # 5. 过滤菜单列表并构建树

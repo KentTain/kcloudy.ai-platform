@@ -1,8 +1,8 @@
 """Pydantic Serialization Tests"""
 
-import pytest
-from datetime import datetime, date
-from pydantic import BaseModel, Field
+from datetime import date, datetime
+
+from pydantic import BaseModel
 
 
 class TestPydanticSerialization:

@@ -6,8 +6,6 @@ VO Mixin 单元测试
 
 from datetime import datetime
 
-import pytest
-
 from framework.schemas import (
     PropertyAttributeVoMixin,
     PropertyVoMixin,

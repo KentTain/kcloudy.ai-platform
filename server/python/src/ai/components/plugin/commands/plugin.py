@@ -8,8 +8,8 @@ import time
 
 import click
 
-from framework.common.ctx import CTX_TENANT_ID
 from ai.components.plugin.engine.core.plugin_manager import PluginManagerFactory
+from framework.common.ctx import CTX_TENANT_ID
 
 
 @click.group()

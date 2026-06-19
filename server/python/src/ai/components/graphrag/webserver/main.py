@@ -66,10 +66,11 @@ async def startup_event():
     Web server startup event handler.
     """
     logger.info("webserver startup event triggered.")
+    from webserver import START_TIME
+
     from ai.components.graphrag.index.__main__ import run_index
     from ai.components.graphrag.prompt_tune.__main__ import run_prompt_tune
     from ai.components.graphrag.query.__main__ import run_search
-    from webserver import START_TIME
 
     logger.info(
         "webserver startup complete, cost: %s s, %s, %s, %s",

@@ -1,6 +1,5 @@
 """GraphRAG 组件测试"""
 
-import pytest
 
 
 class TestGraphData:
@@ -40,8 +39,8 @@ class TestGraphData:
 
     def test_graph_data_validation(self):
         """测试 GraphData 数据验证"""
+
         from ai.components.graphrag.client import GraphData
-        from pydantic import ValidationError
 
         # 验证有效数据
         valid_data = GraphData(
@@ -90,7 +89,8 @@ class TestGraphRAGClient:
 
     def test_graph_data_inheritance(self):
         """测试 GraphData 继承自 BaseModel"""
-        from ai.components.graphrag.client import GraphData
         from pydantic import BaseModel
+
+        from ai.components.graphrag.client import GraphData
 
         assert issubclass(GraphData, BaseModel)

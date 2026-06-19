@@ -5,12 +5,11 @@
 使用 framework/utils/crypto.py 的 AES-256-GCM 加密。
 """
 
-import re
 from typing import Any
 
 from loguru import logger
 
-from framework.utils.crypto import encrypt, decrypt
+from framework.utils.crypto import decrypt, encrypt
 
 _logger = logger.bind(name=__name__)
 

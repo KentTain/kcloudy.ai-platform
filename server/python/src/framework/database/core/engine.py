@@ -4,8 +4,8 @@
 提供数据库引擎和会话管理，支持从配置自动初始化。
 """
 
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
-from typing import AsyncGenerator
 
 from loguru import logger
 from sqlalchemy import event
@@ -88,7 +88,7 @@ class EngineManager:
                     dbapi_connection.set_client_encoding("UTF8")
             except Exception as e:
                 _logger.exception(f"连接池连接事件处理失败，失败消息：{e}")
-                write_error(f"连接池连接事件处理失败")
+                write_error("连接池连接事件处理失败")
 
     async def close(self) -> None:
         """关闭数据库连接"""

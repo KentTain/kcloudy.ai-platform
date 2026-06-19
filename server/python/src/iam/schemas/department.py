@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING
 
 from pydantic import BaseModel, Field
 
-from framework.schemas.tree import TreeNodeVo, TreeNodeTreeVo
+from framework.schemas.tree import TreeNodeTreeVo, TreeNodeVo
 
 if TYPE_CHECKING:
     from iam.models import Department
@@ -88,7 +88,7 @@ class DepartmentListItem(BaseModel):
     status: str = Field("active", description="状态")
 
     @classmethod
-    def from_department(cls, dept: "Department") -> "DepartmentListItem":
+    def from_department(cls, dept: Department) -> DepartmentListItem:
         """从 Department 实体构建 DepartmentListItem
 
         Args:
@@ -114,7 +114,7 @@ class DepartmentListResponse(BaseModel):
     items: list[DepartmentListItem] = Field(default_factory=list, description="部门列表")
 
     @classmethod
-    def from_departments(cls, departments: list["Department"]) -> "DepartmentListResponse":
+    def from_departments(cls, departments: list[Department]) -> DepartmentListResponse:
         """从 Department 列表构建 DepartmentListResponse
 
         Args:

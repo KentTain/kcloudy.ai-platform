@@ -4,14 +4,13 @@
 提供租户信息的抽象接口，支持依赖倒置。
 """
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime
 from typing import Protocol
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from framework.tenant.enums import DatabaseType, StorageType, QueueType, PubSubType
-
+from framework.tenant.enums import DatabaseType, PubSubType, QueueType, StorageType
 
 # ============== 资源配置 ==============
 

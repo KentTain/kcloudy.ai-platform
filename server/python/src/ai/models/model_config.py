@@ -15,7 +15,6 @@ from framework.database.mixins.active_record import ActiveRecordMixin
 from framework.database.mixins.audit import AuditMixin
 from framework.database.mixins.tenant import TenantMixin
 
-
 # ======================= 枚举定义 =======================
 
 

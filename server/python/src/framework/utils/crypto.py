@@ -9,7 +9,6 @@
 import os
 import re
 import secrets
-from typing import Optional
 
 import bcrypt
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
@@ -154,7 +153,7 @@ def _get_master_key() -> bytes:
 
 
 # 主密钥缓存
-_master_key: Optional[bytes] = None
+_master_key: bytes | None = None
 
 
 def get_master_key() -> bytes:
@@ -180,7 +179,7 @@ def generate_tenant_key() -> str:
     return secrets.token_hex(32)
 
 
-def encrypt(plaintext: str, key: Optional[bytes] = None) -> str:
+def encrypt(plaintext: str, key: bytes | None = None) -> str:
     """
     使用 AES-256-GCM 加密
 
@@ -216,7 +215,7 @@ def encrypt(plaintext: str, key: Optional[bytes] = None) -> str:
         raise CryptoError(f"加密失败: {e}") from e
 
 
-def decrypt(encrypted: str, key: Optional[bytes] = None) -> str:
+def decrypt(encrypted: str, key: bytes | None = None) -> str:
     """
     使用 AES-256-GCM 解密
 

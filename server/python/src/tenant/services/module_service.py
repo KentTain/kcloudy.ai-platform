@@ -3,12 +3,11 @@
 """
 
 import logging
-from typing import Any
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from tenant.models import Module, ModulePermission, ModuleRole, TenantModule
+from tenant.models import Module, ModuleRole, TenantModule
 
 _logger = logging.getLogger(__name__)
 

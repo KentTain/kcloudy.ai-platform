@@ -5,7 +5,6 @@
 import logging
 
 from sqlalchemy import func, select
-from sqlalchemy.orm import joinedload
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from framework.events import (

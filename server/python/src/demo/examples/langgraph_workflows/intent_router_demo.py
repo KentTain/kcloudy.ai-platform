@@ -12,7 +12,6 @@ from typing import Annotated, Any, Literal
 from langgraph.graph import END, StateGraph
 from pydantic import BaseModel
 
-
 # ==================== 状态定义 ====================
 
 
@@ -114,7 +113,7 @@ def tool_node(state: AgentState) -> dict[str, Any]:
     注意：此处为 Mock 实现，生产环境应调用真实天气 API。
     """
     # 模拟天气 API 响应
-    result = f"天气查询结果：当前温度 25°C，晴天"
+    result = "天气查询结果：当前温度 25°C，晴天"
 
     return {
         "result": result,

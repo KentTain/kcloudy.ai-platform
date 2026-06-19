@@ -2,16 +2,17 @@
 TenantPubSubManager 单元测试
 """
 
+from unittest.mock import AsyncMock, MagicMock, patch
+
 import pytest
-from unittest.mock import MagicMock, AsyncMock, patch
 
 from framework.pubsub.tenant_pubsub_manager import (
     TenantPubSubManager,
     get_pubsub_manager,
     init_pubsub_manager,
 )
-from framework.tenant.protocols import TenantPubSubConfig
 from framework.tenant.enums import PubSubType
+from framework.tenant.protocols import TenantPubSubConfig
 
 
 class TestTenantPubSubManager:

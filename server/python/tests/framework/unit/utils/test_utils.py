@@ -2,35 +2,33 @@
 utils 模块单元测试
 """
 
-import pytest
 from datetime import datetime, timedelta
 
+from framework.utils.dictionary_util import (
+    deep_merge,
+    flatten_dict,
+    get_nested_value,
+    set_nested_value,
+)
+from framework.utils.enum_util import (
+    enum_to_dict,
+    get_enum_values,
+    is_valid_enum_value,
+)
+from framework.utils.json_util import json_dumps, json_loads
 from framework.utils.string_util import (
-    to_snake_case,
-    to_camel_case,
-    mask_string,
-    truncate_string,
     is_empty,
+    mask_string,
+    to_camel_case,
+    to_snake_case,
+    truncate_string,
 )
 from framework.utils.time_util import (
     format_datetime,
+    humanize_time,
     parse_datetime,
     timestamp_to_datetime,
-    datetime_to_timestamp,
-    humanize_time,
 )
-from framework.utils.enum_util import (
-    get_enum_values,
-    is_valid_enum_value,
-    enum_to_dict,
-)
-from framework.utils.dictionary_util import (
-    deep_merge,
-    get_nested_value,
-    set_nested_value,
-    flatten_dict,
-)
-from framework.utils.json_util import json_dumps, json_loads
 
 
 class TestStringUtils:

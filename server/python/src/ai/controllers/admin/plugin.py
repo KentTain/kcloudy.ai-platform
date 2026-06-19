@@ -4,7 +4,6 @@ AI 模块管理后台控制器
 提供插件的安装、卸载、启动、停止、升级等管理接口。
 """
 
-from typing import Any
 
 from fastapi import (
     APIRouter,
@@ -32,7 +31,7 @@ from ai.schemas import (
 )
 from ai.services import plugin_management_service
 from framework.database.dependencies import get_db_session
-from framework.schemas.base import Success, SuccessExtra
+from framework.schemas.base import Success
 
 _logger = logger.bind(name=__name__)
 

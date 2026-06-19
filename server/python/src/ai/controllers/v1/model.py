@@ -3,8 +3,7 @@
 提供模型列表查询接口。
 """
 
-from fastapi import APIRouter, Depends, HTTPException, Request
-from fastapi.responses import ORJSONResponse
+from fastapi import APIRouter, Depends
 from loguru import logger
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -13,7 +12,6 @@ from ai.schemas.model import ModelListResponse, ProviderItem
 from ai_plugin.sdk.entities.model import ModelType
 from framework.common.ctx import get_tenant_id
 from framework.database.dependencies import get_db_session
-from framework.schemas.base import Success, SuccessExtra
 
 _logger = logger.bind(name=__name__)
 
@@ -58,6 +56,6 @@ async def list_models(
 
         return ModelListResponse(providers=provider_items)
 
-    except Exception as e:
+    except Exception:
         _logger.exception("获取模型列表失败")
         return ModelListResponse(providers=[])

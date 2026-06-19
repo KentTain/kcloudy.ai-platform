@@ -176,8 +176,14 @@ EOF
 # 安装依赖
 uv sync
 
+# 同步所有依赖组
+uv sync --all-groups
+
 # 安装 LangChain 依赖（可选）
 uv sync --group langchain
+
+# 仅 graphrag 相关测试
+uv sync --group graphrag
 ```
 
 ### 配置

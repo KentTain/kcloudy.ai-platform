@@ -11,10 +11,10 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from framework.database.dependencies import get_db_session
-from framework.schemas.base import Success, SuccessExtra
-from iam.models import User, UserTenant, UserDepartment
-from iam.services.user_service import UserService
+from framework.schemas.base import Success
+from iam.models import User, UserDepartment, UserTenant
 from iam.services.department_service import DepartmentService
+from iam.services.user_service import UserService
 
 router = APIRouter()
 

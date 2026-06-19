@@ -2,8 +2,9 @@
 IAMTenantRoleCreator 单元测试
 """
 
+from unittest.mock import AsyncMock, MagicMock
+
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
 
 from iam.services.tenant_role_creator import IAMTenantRoleCreator
 

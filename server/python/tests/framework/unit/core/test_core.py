@@ -4,13 +4,11 @@ core 模块单元测试
 验证 Protocol 接口定义是否正确。
 """
 
-import pytest
-from typing import Protocol, runtime_checkable
 
-from framework.core.storage import StorageProvider
-from framework.core.queue import QueueProvider, Message
+from framework.core.lock import Lock, LockProvider
 from framework.core.pubsub import PubSubProvider
-from framework.core.lock import LockProvider, Lock
+from framework.core.queue import Message, QueueProvider
+from framework.core.storage import StorageProvider
 
 
 class TestStorageProtocol:

@@ -12,7 +12,6 @@ from typing import Annotated, Any, Literal
 from langgraph.graph import END, StateGraph
 from pydantic import BaseModel
 
-
 # ==================== 状态定义 ====================
 
 
@@ -137,7 +136,7 @@ def fallback_node(state: ErrorCountState) -> dict[str, Any]:
 
     return {
         "result": result,
-        "messages": [f"[降级] 熔断已触发，执行降级处理"],
+        "messages": ["[降级] 熔断已触发，执行降级处理"],
     }
 
 

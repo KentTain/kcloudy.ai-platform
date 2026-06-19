@@ -9,7 +9,7 @@ from typing import Any
 from uuid import uuid4
 
 from loguru import logger
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class SessionStatus:
@@ -50,8 +50,7 @@ class PluginSession(BaseModel):
         if self.plugin_id is None:
             self.plugin_id = self.plugin_name
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     def is_expired(self, timeout_minutes: int = 30) -> bool:
         """检查会话是否过期"""

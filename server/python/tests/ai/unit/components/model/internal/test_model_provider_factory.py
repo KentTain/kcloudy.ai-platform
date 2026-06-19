@@ -1,11 +1,18 @@
 # ModelProviderFactory 单元测试
 
-import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import pytest
+
+from ai.components.model.errors.error import (
+    ProviderNotFoundError,
+    UnsupportedProviderError,
+)
 from ai.components.model.internal.model_provider_factory import ModelProviderFactory
-from ai.components.model.errors.error import ProviderNotFoundError, UnsupportedProviderError
-from ai.components.model.schema.provider_id import ModelProviderID, ProviderIDFormatError
+from ai.components.model.schema.provider_id import (
+    ModelProviderID,
+    ProviderIDFormatError,
+)
 
 
 class TestModelProviderFactoryInit:

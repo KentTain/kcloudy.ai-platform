@@ -184,7 +184,7 @@ describe("TenantList", () => {
 
       await nextTick();
 
-      expect(wrapper.text()).toContain("暂无数据");
+      expect(wrapper.text()).toContain("暂无租户");
     });
 
     it("显示租户列表", async () => {

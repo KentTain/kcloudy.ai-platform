@@ -405,8 +405,8 @@ def rebuild(ctx, module, all_modules, yes, dry_run):
         write_info(f"[{m.name}] 将执行:")
         write_info(f"    1. DROP SCHEMA IF EXISTS {m.schema} CASCADE")
         write_info(f"    2. CREATE SCHEMA {m.schema}")
-        write_info(f"    3. alembic upgrade head")
-        write_info(f"    4. run seeds")
+        write_info("    3. alembic upgrade head")
+        write_info("    4. run seeds")
         write_empty_line()
 
     if not dry_run:
@@ -488,7 +488,6 @@ def rebuild(ctx, module, all_modules, yes, dry_run):
 @click.option("--module", default=None, help="指定要初始化的模块名")
 def seed(dry_run, module):
     """初始化默认数据"""
-    from framework.module import get_registry
 
     # 加载模块
     modules = resolve_target_modules(module)

@@ -11,7 +11,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from framework.database.dependencies import get_db_session
-from iam.models import Role, Permission, RolePermission
+from iam.models import Permission, Role, RolePermission
 from iam.schemas.role import RolePaginatedQuery
 
 router = APIRouter(prefix="/tenants/{tenant_id}", tags=["Tenant Role"])

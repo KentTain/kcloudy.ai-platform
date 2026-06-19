@@ -14,12 +14,12 @@ from iam.services.permission_service import (
     permission_service,
 )
 from iam.services.role_service import (
+    RoleMemberService,
     RoleService,
     UserRoleService,
-    RoleMemberService,
+    role_member_service,
     role_service,
     user_role_service,
-    role_member_service,
 )
 from iam.services.user_service import UserService, user_service
 

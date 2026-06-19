@@ -13,15 +13,14 @@
 from __future__ import annotations
 
 import argparse
-import asyncio
 import subprocess
 import sys
 from pathlib import Path
 
 # Windows 控制台编码处理
 if sys.platform == "win32":
-    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
-    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")  # type: ignore[union-attr]
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")  # type: ignore[union-attr]
 
 
 def run_alembic(args: list[str], description: str = "") -> tuple[bool, str]:

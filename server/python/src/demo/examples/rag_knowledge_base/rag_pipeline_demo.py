@@ -21,7 +21,6 @@ from demo.examples.rag_knowledge_base.embedding_demo import EmbeddingDemo
 from demo.examples.rag_knowledge_base.pdf_parser_demo import PDFParserDemo
 from demo.examples.rag_knowledge_base.text_splitter_demo import (
     ChapterTextSplitter,
-    TextSplitterDemo,
 )
 from demo.examples.rag_knowledge_base.vector_store_demo import InMemoryVectorStore
 

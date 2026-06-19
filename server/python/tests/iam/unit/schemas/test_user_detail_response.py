@@ -6,8 +6,6 @@
 from datetime import datetime
 from unittest.mock import MagicMock
 
-import pytest
-
 from iam.schemas.user import UserDetailResponse, UserTenantResponse
 
 

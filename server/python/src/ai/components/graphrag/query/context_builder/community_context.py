@@ -13,7 +13,6 @@ import tiktoken
 from ai.components.graphrag.model import CommunityReport, Entity
 from ai.components.graphrag.query.llm.text_utils import num_tokens
 
-
 log = logging.getLogger(__name__)
 
 NO_COMMUNITY_RECORDS_WARNING: str = (

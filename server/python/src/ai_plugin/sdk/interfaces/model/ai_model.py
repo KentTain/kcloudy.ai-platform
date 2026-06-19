@@ -19,7 +19,6 @@ from ai_plugin.sdk.entities.model import (
 )
 from ai_plugin.sdk.errors.model import InvokeAuthorizationError, InvokeError
 
-
 if socket.socket is gevent.socket.socket:
     import gevent.threadpool
 

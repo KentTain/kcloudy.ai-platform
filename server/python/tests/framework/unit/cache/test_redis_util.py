@@ -7,8 +7,9 @@ RedisUtil 工具类测试
 - 健康检查
 """
 
-import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
 
 
 class TestRedisUtilInit:
@@ -22,7 +23,6 @@ class TestRedisUtilInit:
         THEN: 系统创建单机 Redis 连接池
         """
         from framework.cache.redis_util import RedisUtil
-        from unittest.mock import MagicMock
 
         mock_config = MagicMock()
         mock_config.mode = "single"
@@ -186,8 +186,9 @@ class TestRedisUtilConnectionPool:
         WHEN: 配置 redis.single.connection-pool.max-connections=50
         THEN: 连接池最大连接数为 50
         """
+        from unittest.mock import AsyncMock, patch
+
         from framework.cache.redis_util import RedisUtil
-        from unittest.mock import MagicMock, patch, AsyncMock
 
         mock_config = MagicMock()
         mock_config.mode = "single"
@@ -240,8 +241,8 @@ class TestRedisUtilUninitialized:
         WHEN: Redis 已初始化时调用 is_initialized()
         THEN: 返回 True
         """
+
         from framework.cache.redis_util import RedisUtil
-        from unittest.mock import MagicMock, patch
 
         mock_config = MagicMock()
         mock_config.mode = "single"

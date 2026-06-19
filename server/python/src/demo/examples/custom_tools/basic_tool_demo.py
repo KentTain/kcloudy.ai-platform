@@ -11,7 +11,6 @@ from typing import Annotated
 
 from langchain_core.tools import tool
 
-
 # ==================== 简单函数工具 ====================
 
 

@@ -1,7 +1,7 @@
 """Pydantic Validation Tests"""
 
 import pytest
-from pydantic import BaseModel, ValidationError, Field
+from pydantic import BaseModel, ValidationError
 
 
 class TestPydanticValidation:

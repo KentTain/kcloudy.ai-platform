@@ -11,7 +11,6 @@ Jinja2 模板转换器测试
 - 预加载脚本
 """
 
-import pytest
 
 from ai.components.code_executor import Jinja2TemplateTransformer, TemplateTransformer
 

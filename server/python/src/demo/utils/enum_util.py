@@ -44,10 +44,9 @@ class EnumDataUtils:
 
             import inspect
 
-            from demo.models.enums import EnumBase
-
             # 获取 enums.py 中的所有枚举类
             from demo.models import enums
+            from demo.models.enums import EnumBase
 
             for name, cls in inspect.getmembers(enums):
                 if (

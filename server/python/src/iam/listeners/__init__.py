@@ -4,17 +4,17 @@ IAM 模块监听器
 
 from iam.listeners.handlers.event_handler import (
     ModuleAssignedHandler,
-    ModuleUnassignedHandler,
     ModuleMenuCreatedHandler,
-    ModuleMenuUpdatedHandler,
     ModuleMenuDeletedHandler,
+    ModuleMenuUpdatedHandler,
     ModulePermissionCreatedHandler,
-    ModulePermissionUpdatedHandler,
     ModulePermissionDeletedHandler,
+    ModulePermissionUpdatedHandler,
     ModuleRoleCreatedHandler,
-    ModuleRoleUpdatedHandler,
     ModuleRoleDeletedHandler,
     ModuleRolePermissionChangedHandler,
+    ModuleRoleUpdatedHandler,
+    ModuleUnassignedHandler,
 )
 
 __all__ = [

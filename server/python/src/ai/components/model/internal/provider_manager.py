@@ -8,9 +8,9 @@
 使用 Redis 缓存来存储供应商配置，支持分布式环境下的缓存一致性
 """
 
+import json
 from collections import defaultdict
 from json import JSONDecodeError
-import json
 
 from loguru import logger
 
@@ -25,9 +25,7 @@ from ai.components.model.internal.helper.encrypter import decrypt_token
 from ai.components.model.internal.model_provider_factory import ModelProviderFactory
 from ai.components.model.schema.model_entities import (
     DefaultModelEntity,
-    DefaultModelProviderEntity,
 )
-from ai.components.plugin.client.plugin.entities.plugin import ModelProviderID
 from ai_plugin.sdk.entities.model import ModelType
 from ai_plugin.sdk.entities.model.provider import (
     CredentialFormSchema,

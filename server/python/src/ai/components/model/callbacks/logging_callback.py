@@ -7,11 +7,8 @@ from loguru import logger
 
 from ai.components.model.callbacks.base_callback import Callback
 from ai.components.model.model_providers.__base__.ai_model import AIModelImpl
-
-from ai_plugin.sdk.entities.model.message import PromptMessage, PromptMessageTool
-
 from ai_plugin.sdk.entities.model.llm import LLMResult, LLMResultChunk
-
+from ai_plugin.sdk.entities.model.message import PromptMessage, PromptMessageTool
 
 _logger = logger.bind(name=__name__)
 
@@ -110,7 +107,7 @@ class LoggingCallback(Callback):
         :param user: 用户唯一标识（可选）
         """
         # 实时输出流式响应的内容到标准输出
-        sys.stdout.write(cast(str, chunk.delta.message.content))
+        sys.stdout.write(cast("str", chunk.delta.message.content))
         sys.stdout.flush()
 
     def on_after_invoke(

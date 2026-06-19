@@ -211,8 +211,6 @@ class TestAIChatRequestIntegration:
 
     def test_full_request_validation(self) -> None:
         """测试完整请求验证"""
-        from ai.schemas.chat import BodyConfig
-        from ai.schemas.completion import ModelConfig
 
         data = {
             "id": "conv-123",

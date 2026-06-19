@@ -12,9 +12,9 @@
 """
 
 import time
+from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
-from collections.abc import Callable
 
 
 @dataclass

@@ -1,13 +1,14 @@
 # 凭证缓存集成测试
 
-import pytest
-import pytest_asyncio
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import pytest
+import pytest_asyncio
+
 from ai.components.model.internal.provider_manager import (
-    ProviderManager,
     CACHE_KEY_PREFIX,
     CACHE_TTL,
+    ProviderManager,
 )
 
 
@@ -58,31 +59,30 @@ class TestCredentialCacheIntegration:
         with patch(
             "ai.components.model.internal.provider_manager.get_cache_manager",
             return_value=mock_cache_manager,
-        ):
+        ), patch(
+            "ai.components.model.internal.provider_manager.ModelProviderFactory"
+        ) as mock_factory_class:
+            mock_factory = MagicMock()
+            mock_factory.get_providers = AsyncMock(return_value=[])
+            mock_factory_class.return_value = mock_factory
+
             with patch(
-                "ai.components.model.internal.provider_manager.ModelProviderFactory"
-            ) as mock_factory_class:
-                mock_factory = MagicMock()
-                mock_factory.get_providers = AsyncMock(return_value=[])
-                mock_factory_class.return_value = mock_factory
+                "ai.components.model.internal.provider_manager.ProviderConfigurations"
+            ) as mock_configs_class:
+                mock_configs = MagicMock()
+                mock_configs_class.from_dict = MagicMock(return_value=mock_configs)
 
-                with patch(
-                    "ai.components.model.internal.provider_manager.ProviderConfigurations"
-                ) as mock_configs_class:
-                    mock_configs = MagicMock()
-                    mock_configs_class.from_dict = MagicMock(return_value=mock_configs)
+                # 第一次调用应该命中缓存
+                result = await provider_manager.get_configurations(
+                    tenant_id, use_cache=True
+                )
 
-                    # 第一次调用应该命中缓存
-                    result = await provider_manager.get_configurations(
-                        tenant_id, use_cache=True
-                    )
-
-                    # 验证从缓存获取
-                    mock_cache_manager.get.assert_called_once_with(
-                        cache_key, tenant_id=tenant_id
-                    )
-                    # 验证没有写入缓存（因为命中了）
-                    mock_cache_manager.set.assert_not_called()
+                # 验证从缓存获取
+                mock_cache_manager.get.assert_called_once_with(
+                    cache_key, tenant_id=tenant_id
+                )
+                # 验证没有写入缓存（因为命中了）
+                mock_cache_manager.set.assert_not_called()
 
     @pytest.mark.asyncio
     async def test_cache_miss_and_set(

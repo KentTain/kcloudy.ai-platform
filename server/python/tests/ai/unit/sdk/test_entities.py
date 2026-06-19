@@ -16,7 +16,7 @@ class TestI18nObject:
             zh_Hans="中文文本",
             pt_BR="Texto em português",
         )
-        
+
         assert i18n.en_US == "English text"
         assert i18n.zh_Hans == "中文文本"
         assert i18n.pt_BR == "Texto em português"
@@ -24,7 +24,7 @@ class TestI18nObject:
     def test_init_with_en_only(self):
         """测试仅提供英语版本时，其他语言自动回退"""
         i18n = I18nObject(en_US="English text")
-        
+
         assert i18n.en_US == "English text"
         assert i18n.zh_Hans == "English text"
         assert i18n.pt_BR == "English text"
@@ -35,7 +35,7 @@ class TestI18nObject:
             en_US="English text",
             zh_Hans="中文文本",
         )
-        
+
         assert i18n.en_US == "English text"
         assert i18n.zh_Hans == "中文文本"
         assert i18n.pt_BR == "English text"
@@ -46,9 +46,9 @@ class TestI18nObject:
             en_US="English text",
             zh_Hans="中文文本",
         )
-        
+
         result = i18n.to_dict()
-        
+
         assert isinstance(result, dict)
         assert result["en_US"] == "English text"
         assert result["zh_Hans"] == "中文文本"
@@ -60,19 +60,19 @@ class TestI18nObject:
             en_US="English text",
             zh_Hans="中文文本",
         )
-        
+
         assert i18n.path == "English text"
 
     def test_empty_zh_hans_fallback(self):
         """测试空字符串中文版本回退到英语"""
         i18n = I18nObject(en_US="English text", zh_Hans="")
-        
+
         assert i18n.zh_Hans == "English text"
 
     def test_none_pt_br_fallback(self):
         """测试 None 葡萄牙语版本回退到英语"""
         i18n = I18nObject(en_US="English text", pt_BR=None)
-        
+
         assert i18n.pt_BR == "English text"
 
 
@@ -82,21 +82,21 @@ class TestToolInvokeMessage:
     def test_text_message_creation(self):
         """测试文本消息创建"""
         msg = ToolInvokeMessage.TextMessage(text="Hello, world!")
-        
+
         assert msg.text == "Hello, world!"
         assert msg.to_dict() == {"text": "Hello, world!"}
 
     def test_json_message_with_dict(self):
         """测试 JSON 消息（字典）"""
         msg = ToolInvokeMessage.JsonMessage(json_object={"key": "value", "count": 42})
-        
+
         assert msg.json_object == {"key": "value", "count": 42}
         assert msg.to_dict() == {"json_object": {"key": "value", "count": 42}}
 
     def test_json_message_with_list(self):
         """测试 JSON 消息（列表）"""
         msg = ToolInvokeMessage.JsonMessage(json_object=[1, 2, 3])
-        
+
         assert msg.json_object == [1, 2, 3]
         assert msg.to_dict() == {"json_object": [1, 2, 3]}
 
@@ -104,7 +104,7 @@ class TestToolInvokeMessage:
         """测试二进制消息创建"""
         data = b"\x00\x01\x02\x03"
         msg = ToolInvokeMessage.BlobMessage(blob=data)
-        
+
         assert msg.blob == data
 
     def test_blob_chunk_message(self):
@@ -116,7 +116,7 @@ class TestToolInvokeMessage:
             blob=b"\x00\x01",
             end=False,
         )
-        
+
         assert chunk.id == "chunk-001"
         assert chunk.sequence == 1
         assert chunk.total_length == 1024
@@ -130,7 +130,7 @@ class TestToolInvokeMessage:
             variable_value={"status": "success"},
             stream=False,
         )
-        
+
         assert var.variable_name == "result"
         assert var.variable_value == {"status": "success"}
         assert var.stream is False
@@ -142,7 +142,7 @@ class TestToolInvokeMessage:
             variable_value="Streaming text...",
             stream=True,
         )
-        
+
         assert var.variable_name == "output"
         assert var.variable_value == "Streaming text..."
         assert var.stream is True

@@ -12,15 +12,15 @@ Create Date: 2026-06-02
 - 树结构的父子关系通过 parent_ids 字段维护，应用层保证一致性
 
 """
-from typing import Sequence, Union
+from collections.abc import Sequence
 
 from alembic import op
 
 # revision identifiers, used by Alembic.
 revision: str = "003_remove_tree_parent_fk"
-down_revision: Union[str, None] = "002_iam_tenant_isolation"
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | None = "002_iam_tenant_isolation"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 # 模块 schema
 MODULE_SCHEMA = "iam"

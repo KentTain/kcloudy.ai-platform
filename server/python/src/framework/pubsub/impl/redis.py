@@ -4,9 +4,9 @@ Redis PubSub 实现
 
 import asyncio
 import json
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
-from framework.core.pubsub import PubSubProvider
 from framework.cache.redis_util import RedisUtil
 
 

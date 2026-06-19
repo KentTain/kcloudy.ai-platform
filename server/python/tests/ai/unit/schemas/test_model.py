@@ -1,7 +1,6 @@
 """模型列表 Schema 测试"""
 
-import pytest
-from ai.schemas.model import ModelItem, ProviderItem, ModelListResponse
+from ai.schemas.model import ModelItem, ModelListResponse, ProviderItem
 
 
 class TestModelItem:

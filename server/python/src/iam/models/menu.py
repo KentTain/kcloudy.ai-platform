@@ -7,8 +7,8 @@
 from sqlalchemy import Boolean, ForeignKey, Index, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
-from iam.models import BaseModel
 from framework.database.mixins.tree import TreeNodeMixin
+from iam.models import BaseModel
 
 
 class Menu(BaseModel, TreeNodeMixin):

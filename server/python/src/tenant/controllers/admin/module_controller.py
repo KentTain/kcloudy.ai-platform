@@ -17,7 +17,6 @@ from tenant.schemas.admin.module import (
     ModuleMenuListResponse,
     ModuleMenuTreeResponse,
     ModuleMenuUpdate,
-    ModulePaginatedListResponse,
     ModulePermissionCreate,
     ModulePermissionResponse,
     ModulePermissionUpdate,

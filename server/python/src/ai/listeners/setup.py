@@ -4,11 +4,11 @@ from typing import TYPE_CHECKING
 
 from loguru import logger
 
-from framework.pubsub import get_pubsub_provider
 from ai.listeners.services.pubsub.constants import CANCEL_ASYNCIO_TASK_TOPIC
 from ai.listeners.services.pubsub.memory_task.cancel_asyncio_task import (
     CancelAsyncioTaskHandler,
 )
+from framework.pubsub import get_pubsub_provider
 
 if TYPE_CHECKING:
     from framework.configs.settings import Settings

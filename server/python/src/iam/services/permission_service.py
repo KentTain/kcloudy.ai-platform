@@ -5,14 +5,13 @@
 """
 
 from collections import defaultdict
-from typing import Any
 
 from loguru import logger
-from sqlalchemy import func, select
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from iam.models import Permission, Role, RolePermission, UserRole
 from framework.cache.redis_util import RedisUtil
+from iam.models import Permission, RolePermission, UserRole
 
 _logger = logger.bind(name=__name__)
 

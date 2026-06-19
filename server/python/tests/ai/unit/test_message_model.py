@@ -1,9 +1,7 @@
 """消息模型单元测试"""
 
-import pytest
 
 from ai.models.message import Message
-from ai.models.enums import MessageStatus, MessageRole
 
 
 class TestMessageModel:

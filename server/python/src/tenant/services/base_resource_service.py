@@ -8,8 +8,9 @@ from abc import ABC, abstractmethod
 from typing import Any, TypeVar
 
 from loguru import logger
-from sqlalchemy import func, select, delete as sql_delete, update as sql_update
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy import delete as sql_delete
+from sqlalchemy import func, select
+from sqlalchemy import update as sql_update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from framework.common.exceptions import ConflictError
@@ -245,7 +246,7 @@ class BaseResourceService(ABC):
                     f"删除 {cls.model_class.__name__} 配置失败: {config_id} 被 {ref_count} 个租户引用"
                 )
                 raise ConflictError(
-                    f"此配置被租户使用，无法删除"
+                    "此配置被租户使用，无法删除"
                 )
 
         # 执行删除

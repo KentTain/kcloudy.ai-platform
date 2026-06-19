@@ -26,11 +26,15 @@ os.environ["TZ"] = "Asia/Shanghai"
 # Event Loop (Session Scope)
 # =============================================================================
 
+# 注意：虽然 pytest-asyncio 推荐使用 loop_scope 参数，
+# 但 session 作用域的异步 fixtures 需要手动定义 event_loop
+# 参考：https://pytest-asyncio.readthedocs.io/en/stable/reference/fixtures.html
+
 @pytest.fixture(scope="session")
 def event_loop():
     """创建 session 作用域的事件循环"""
-    import asyncio
-    loop = asyncio.new_event_loop()
+    policy = asyncio.get_event_loop_policy()
+    loop = policy.new_event_loop()
     yield loop
     loop.close()
 
@@ -38,6 +42,8 @@ def event_loop():
 # =============================================================================
 # 配置加载
 # =============================================================================
+
+# 注意：event_loop 已在上面定义，pytest-asyncio 会自动使用它
 
 @pytest.fixture(scope="session")
 def integration_settings():
@@ -78,8 +84,8 @@ async def redis_available(integration_settings):
 @pytest_asyncio.fixture(scope="session")
 async def postgres_available(integration_settings):
     """检测 PostgreSQL 服务是否可用"""
-    from sqlalchemy.ext.asyncio import create_async_engine
     from sqlalchemy import text
+    from sqlalchemy.ext.asyncio import create_async_engine
 
     try:
         engine = create_async_engine(

@@ -1,8 +1,8 @@
 """初始化第三方扩展包。"""
 
+from collections.abc import Callable
 from math import ceil
 from typing import Optional, Union
-from collections.abc import Callable
 
 import redis.asyncio as aioredis
 from starlette.requests import Request

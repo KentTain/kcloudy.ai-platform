@@ -1,9 +1,9 @@
 import glob
 import os
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Type, TypeVar
-from collections.abc import Callable
 
 import yaml
 from loguru import logger
@@ -19,7 +19,6 @@ from ai_plugin.server.core.entities.plugin.setup import (
     PluginConfiguration,
 )
 from ai_plugin.server.core.utils.yaml_loader import load_yaml_file
-
 
 # 获取模块级别的日志记录器
 _logger = logger.bind(name=__name__)

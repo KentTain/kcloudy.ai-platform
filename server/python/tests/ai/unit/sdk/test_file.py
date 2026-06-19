@@ -35,7 +35,7 @@ class TestFileConstants:
             DIFY_TOOL_SELECTOR_IDENTITY,
             FILE_MODEL_IDENTITY,
         ]
-        
+
         assert len(constants) == len(set(constants))
 
 
@@ -45,7 +45,7 @@ class TestFileType:
     def test_file_type_is_str_enum(self):
         """测试 FileType 继承自 StrEnum"""
         from enum import StrEnum
-        
+
         assert issubclass(FileType, StrEnum)
 
     def test_image_type(self):
@@ -89,13 +89,13 @@ class TestFileType:
     def test_all_members_count(self):
         """测试枚举成员数量"""
         members = list(FileType)
-        
+
         assert len(members) == 5
 
     def test_can_use_as_string(self):
         """测试枚举可以作为字符串使用"""
         file_type = FileType.IMAGE
-        
+
         # StrEnum 允许直接比较字符串
         assert file_type == "image"
         assert f"Type: {file_type}" == "Type: image"
@@ -103,7 +103,7 @@ class TestFileType:
     def test_member_iteration(self):
         """测试枚举成员迭代"""
         members = [member.value for member in FileType]
-        
+
         assert "image" in members
         assert "document" in members
         assert "audio" in members

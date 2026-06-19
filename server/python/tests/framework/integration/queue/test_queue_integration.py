@@ -5,14 +5,11 @@ Redis Stream 队列集成测试
 使用 @pytest.mark.integration 标记。
 """
 
-import asyncio
 
 import pytest
 import pytest_asyncio
 
-from framework.cache.redis_util import RedisUtil
 from framework.queue.impl.redis import RedisQueue
-
 
 pytestmark = pytest.mark.integration
 

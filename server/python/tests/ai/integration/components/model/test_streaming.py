@@ -1,9 +1,9 @@
 # 流式调用端到端测试
 
+from unittest.mock import AsyncMock
+
 import pytest
 import pytest_asyncio
-from unittest.mock import AsyncMock, MagicMock, patch
-from typing import AsyncIterator
 
 from ai.models.model_config import ModelType
 

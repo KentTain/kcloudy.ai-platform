@@ -13,7 +13,6 @@ from langgraph.graph import END, StateGraph
 from langgraph.types import Send
 from pydantic import BaseModel
 
-
 # ==================== 状态定义 ====================
 
 
@@ -290,7 +289,7 @@ def demo_parallel_execution() -> None:
 
     result = workflow.run("人工智能发展趋势")
 
-    print(f"查询：人工智能发展趋势")
+    print("查询：人工智能发展趋势")
     print("-" * 40)
     print(f"结果数：{len(result['results'])}")
     print(f"\n汇总结果：\n{result['summary']}")
@@ -304,7 +303,7 @@ def demo_custom_sources() -> None:
 
     result = workflow.run("Python 编程技巧")
 
-    print(f"查询：Python 编程技巧")
+    print("查询：Python 编程技巧")
     print("-" * 40)
 
     for r in result["results"]:

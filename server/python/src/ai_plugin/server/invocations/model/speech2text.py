@@ -1,12 +1,12 @@
 from binascii import hexlify
 from typing import IO
 
-from ai_plugin.server.core.entities.invocation import InvokeType
-from ai_plugin.server.core.runtime import BackwardsInvocation
 from ai_plugin.sdk.entities.model.speech2text import (
     Speech2TextModelConfig,
     Speech2TextResult,
 )
+from ai_plugin.server.core.entities.invocation import InvokeType
+from ai_plugin.server.core.runtime import BackwardsInvocation
 
 
 class Speech2TextInvocation(BackwardsInvocation[Speech2TextResult]):

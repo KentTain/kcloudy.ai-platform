@@ -5,8 +5,8 @@ import { nextTick } from 'vue'
 import DepartmentPage from '@/iam/pages/departments/DepartmentPage.vue'
 import type { Department } from '@/iam/types'
 
-// Mock 数据
-const mockDepartments: Department[] = [
+// 使用 vi.hoisted 确保 mock 数据在 vi.mock 之前初始化
+const mockDepartments = vi.hoisted(() => [
   {
     id: 'dept-1',
     tenant_id: 'tenant-1',
@@ -39,7 +39,7 @@ const mockDepartments: Department[] = [
       },
     ],
   },
-]
+] as Department[])
 
 // Mock API
 vi.mock('@/iam/api/department', () => ({

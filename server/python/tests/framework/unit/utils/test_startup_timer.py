@@ -1,8 +1,8 @@
 """StartupTimer 单元测试"""
 
-from io import StringIO
 import sys
 import time
+from io import StringIO
 
 
 class TestPhaseInfo:
@@ -122,6 +122,7 @@ class TestStartupTimer:
         """测试摘要按 order 输出阶段"""
         from contextlib import redirect_stdout
         from io import StringIO
+
         from framework.utils.startup_timer import StartupTimer
 
         timer = StartupTimer(app_name="Demo API")
@@ -186,9 +187,8 @@ class TestStartupTimer:
 
         timer = StartupTimer()
 
-        with timer.phase("外层"):
-            with timer.phase("内层"):
-                pass
+        with timer.phase("外层"), timer.phase("内层"):
+            pass
 
         assert len(timer.phases) == 2
         assert [p.name for p in timer.phases] == ["内层", "外层"]

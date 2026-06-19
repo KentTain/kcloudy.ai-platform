@@ -3,7 +3,7 @@
 import secrets
 import string
 
-from ai.components.encryption.impl.aes import AESEncryption, RSAEncryption
+from ai.components.encryption.impl.aes import RSAEncryption
 
 
 def generate_aes_key(length: int = 32) -> str:

@@ -1,8 +1,8 @@
 """Redis Cache Expiration Tests"""
 
-import pytest
 from unittest.mock import AsyncMock, patch
-import asyncio
+
+import pytest
 
 
 class TestRedisExpiration:

@@ -5,7 +5,7 @@ OAuth 控制器
 """
 
 from fastapi import APIRouter, Depends, HTTPException
-from fastapi.responses import ORJSONResponse, RedirectResponse
+from fastapi.responses import ORJSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from framework.database.dependencies import get_db_session

@@ -5,12 +5,12 @@ IAM 模块集成测试配置
 """
 
 import os
-import uuid
+from pathlib import Path
+
 import pytest
 import pytest_asyncio
-from pathlib import Path
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
-from sqlalchemy import text, select
+from sqlalchemy import select, text
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 
 # 设置测试环境
 os.environ["PYTHON_SERVICE_ENV"] = "local"
@@ -21,11 +21,14 @@ os.environ["TZ"] = "Asia/Shanghai"
 # Event Loop (Session Scope)
 # =============================================================================
 
+# 注意：session 作用域的异步 fixtures 需要手动定义 event_loop
+
 @pytest.fixture(scope="session")
 def event_loop():
     """创建 session 作用域的事件循环"""
     import asyncio
-    loop = asyncio.new_event_loop()
+    policy = asyncio.get_event_loop_policy()
+    loop = policy.new_event_loop()
     yield loop
     loop.close()
 
@@ -91,7 +94,7 @@ async def db_engine(integration_settings, postgres_available):
     if not postgres_available:
         pytest.skip("PostgreSQL 服务不可用")
 
-    from framework.database.core.engine import setup_engine, get_engine
+    from framework.database.core.engine import get_engine, setup_engine
 
     # 初始化全局引擎
     setup_engine(
@@ -132,8 +135,8 @@ TEST_TENANT_CODE = "TEST_TENANT"
 @pytest_asyncio.fixture(scope="session")
 async def test_tenant(db_engine):
     """创建或获取测试租户"""
+
     from tenant.models import Tenant, TenantStatus
-    from sqlalchemy import insert
 
     async with AsyncSession(bind=db_engine) as session:
         # 检查租户是否存在
@@ -174,6 +177,7 @@ async def cleanup_users(db_engine):
     # 清理测试数据
     if created_user_ids:
         from sqlalchemy import delete
+
         from iam.models import User
 
         async with AsyncSession(bind=db_engine) as session:

@@ -11,9 +11,9 @@ from typing import Any
 
 from loguru import logger
 
+from framework.database.mixins.tenant import should_skip_tenant
 from framework.tenant.context import get_tenant_id
 from framework.tenant.protocols import TenantQueueConfig
-from framework.database.mixins.tenant import should_skip_tenant
 
 _logger = logger.bind(name=__name__)
 

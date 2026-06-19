@@ -4,8 +4,9 @@
 自动解析租户标识、验证租户状态、注入租户上下文。
 """
 
+from collections.abc import Callable
 from datetime import datetime, timezone
-from typing import TYPE_CHECKING, Callable
+from typing import TYPE_CHECKING
 
 from loguru import logger
 from starlette.middleware.base import BaseHTTPMiddleware

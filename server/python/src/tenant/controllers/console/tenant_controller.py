@@ -7,7 +7,7 @@ from fastapi.responses import ORJSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from framework.database.dependencies import get_db_session
-from framework.schemas.base import Success, SuccessExtra
+from framework.schemas.base import Success
 from framework.tenant.context import TenantContext, get_tenant_id
 from tenant.models import TenantStatus
 from tenant.schemas.console.tenant import (
