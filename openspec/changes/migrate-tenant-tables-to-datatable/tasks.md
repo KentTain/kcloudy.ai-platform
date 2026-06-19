@@ -21,12 +21,12 @@
 
 ## 4. ModuleList 页面迁移
 
-- [ ] 4.1 移除手动状态管理
-- [ ] 4.2 创建 Module 类型列定义
-- [ ] 4.3 使用 useDataTable 初始化表格状态
-- [ ] 4.4 替换模板中的原生 Table 为 DataTable 组件
-- [ ] 4.5 实现搜索筛选集成
-- [ ] 4.6 保留统计卡片区独立逻辑
+- [x] 4.1 移除手动状态管理
+- [x] 4.2 创建 Module 类型列定义
+- [x] 4.3 使用 useDataTable 初始化表格状态
+- [x] 4.4 替换模板中的原生 Table 为 DataTable 组件
+- [x] 4.5 实现搜索筛选集成
+- [x] 4.6 保留统计卡片区独立逻辑
 
 ## 5. ResourceConfigList 页面迁移
 

@@ -1,143 +1,199 @@
-﻿<script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-import { getModules, deleteModule } from '@/tenant/api/module'
-import type { Module } from '@/tenant/types/admin'
-import { notifySuccess, notifyError, confirmAction } from '@/framework/utils/feedback'
-import { Button, Input, Badge, Skeleton, Pagination } from '@/components'
+<script setup lang="ts">
+import {
+  Eye,
+  Package,
+  Pencil,
+  Plus,
+  RefreshCw,
+  RotateCcw,
+  Search,
+  Trash2,
+  CheckCircle,
+  Star,
+  Users,
+} from "@lucide/vue";
+import type { ColumnDef } from "@tanstack/vue-table";
+import { h, ref } from "vue";
+import { useRouter } from "vue-router";
+import { Badge, Button, Card, DataTable, Input, useDataTable } from "@/components";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
-import { Card } from '@/components'
-import { Plus, Search, RotateCcw, Pencil, Trash2, Eye, RefreshCw, Package, CheckCircle, Star, Users } from '@lucide/vue'
+} from "@/components/ui/select";
+import { confirmAction, notifyError, notifySuccess } from "@/framework/utils/feedback";
+import { deleteModule, getModules } from "@/tenant/api/module";
+import type { Module } from "@/tenant/types/admin";
 
-const router = useRouter()
-
-// 数据列表
-const dataList = ref<Module[]>([])
-const loading = ref(false)
-const total = ref(0)
-
-// 分页
-const pagination = ref({
-  page: 1,
-  pageSize: 20,
-})
+const router = useRouter();
 
 // 搜索筛选
 const searchForm = ref({
-  keyword: '',
-  is_active: '',
-})
+  keyword: "",
+  is_active: "",
+});
 
 // 统计数据
-const stats = computed(() => {
-  const totalCount = dataList.value.length
-  const activeCount = dataList.value.filter(item => item.is_active).length
-  const needCount = dataList.value.filter(item => item.is_need).length
-  const assignedCount = dataList.value.reduce((sum, item) => sum + (item.tenant_count || 0), 0)
-  return { totalCount, activeCount, needCount, assignedCount }
-})
+const stats = ref({
+  totalCount: 0,
+  activeCount: 0,
+  needCount: 0,
+  assignedCount: 0,
+});
 
-// 加载数据
-const loadData = async () => {
-  loading.value = true
-  try {
-    const response = await getModules({
-      page: pagination.value.page,
-      page_size: pagination.value.pageSize,
-      keyword: searchForm.value.keyword || undefined,
-      is_active: searchForm.value.is_active === 'all' ? undefined : searchForm.value.is_active === 'true' || undefined,
-    })
-
-    if (response.data) {
-      dataList.value = response.data.items || []
-      total.value = response.data.total || 0
-    }
-  } catch (error) {
-    console.error('加载模块列表失败:', error)
-    notifyError('加载模块列表失败')
-  } finally {
-    loading.value = false
-  }
+// 格式化日期
+function formatDate(dateStr?: string): string {
+  if (!dateStr) return "--";
+  return new Date(dateStr).toLocaleString();
 }
+
+// 列定义
+const moduleColumns: ColumnDef<Module>[] = [
+  {
+    accessorKey: "name",
+    header: "模块信息",
+    size: 200,
+    cell: ({ row }) => {
+      const module = row.original;
+      return h("div", { class: "space-y-1" }, [
+        h("div", { class: "font-medium" }, module.name),
+        h("div", { class: "text-muted-foreground text-xs" }, module.code),
+      ]);
+    },
+  },
+  {
+    accessorKey: "is_active",
+    header: "状态",
+    size: 80,
+    cell: ({ row }) => {
+      const isActive = row.original.is_active;
+      return h(
+        Badge,
+        { variant: isActive ? "default" : "secondary" },
+        () => (isActive ? "启用" : "停用")
+      );
+    },
+  },
+  {
+    accessorKey: "is_need",
+    header: "必须模块",
+    size: 100,
+    cell: ({ row }) => {
+      const isNeed = row.original.is_need;
+      return h(Badge, { variant: isNeed ? "default" : "outline" }, () => (isNeed ? "是" : "否"));
+    },
+  },
+  {
+    accessorKey: "tenant_count",
+    header: "分配次数",
+    size: 100,
+    cell: ({ row }) => row.original.tenant_count || 0,
+  },
+  {
+    accessorKey: "created_at",
+    header: "创建时间",
+    size: 180,
+    cell: ({ row }) => formatDate(row.original.created_at),
+  },
+  {
+    id: "actions",
+    header: "操作",
+    size: 160,
+    cell: ({ row }) => {
+      const module = row.original;
+      return h("div", { class: "flex items-center gap-1" }, [
+        h(
+          Button,
+          { variant: "ghost", size: "sm", onClick: () => handleDetail(module) },
+          () => [h(Eye, { class: "mr-1 h-3.5 w-3.5" }), "详情"]
+        ),
+        h(
+          Button,
+          { variant: "ghost", size: "sm", onClick: () => handleEdit(module) },
+          () => [h(Pencil, { class: "mr-1 h-3.5 w-3.5" }), "编辑"]
+        ),
+        h(
+          Button,
+          {
+            variant: "ghost",
+            size: "sm",
+            class: "text-destructive hover:text-destructive",
+            onClick: () => handleDelete(module),
+          },
+          () => [h(Trash2, { class: "mr-1 h-3.5 w-3.5" }), "删除"]
+        ),
+      ]);
+    },
+  },
+];
+
+// 初始化 DataTable
+const dataTable = useDataTable<Module>({
+  columns: moduleColumns,
+  remoteFetchFn: async ({ page, page_size }) => {
+    const response = await getModules({
+      page,
+      page_size,
+      keyword: searchForm.value.keyword || undefined,
+      is_active:
+        searchForm.value.is_active === "all"
+          ? undefined
+          : searchForm.value.is_active === "true",
+    });
+    // 提取统计数据
+    const items = response.data;
+    stats.value = {
+      totalCount: response.total,
+      activeCount: items.filter((item) => item.is_active).length,
+      needCount: items.filter((item) => item.is_need).length,
+      assignedCount: items.reduce((sum, item) => sum + (item.tenant_count || 0), 0),
+    };
+    return response;
+  },
+});
 
 // 搜索
 const handleSearch = () => {
-  pagination.value.page = 1
-  loadData()
-}
+  dataTable.refresh(true);
+};
 
 // 重置
 const handleReset = () => {
-  searchForm.value = { keyword: '', is_active: '' }
-  pagination.value.page = 1
-  loadData()
-}
-
-// 分页变化
-const handlePageChange = (page: number) => {
-  pagination.value.page = page
-  loadData()
-}
-
-const handlePageSizeChange = (pageSize: number) => {
-  pagination.value.pageSize = pageSize
-  pagination.value.page = 1
-  loadData()
-}
+  searchForm.value = { keyword: "", is_active: "" };
+  dataTable.refresh(true);
+};
 
 // 新增模块
 const handleCreate = () => {
-  router.push('/admin/modules/create')
-}
+  router.push("/admin/modules/create");
+};
 
 // 查看详情
 const handleDetail = (row: Module) => {
-  router.push(`/admin/modules/${row.id}`)
-}
+  router.push(`/admin/modules/${row.id}`);
+};
 
 // 编辑模块
 const handleEdit = (row: Module) => {
-  router.push(`/admin/modules/${row.id}/edit`)
-}
+  router.push(`/admin/modules/${row.id}/edit`);
+};
 
 // 删除模块
 const handleDelete = async (row: Module) => {
-  if (!await confirmAction(`确定要删除模块 "${row.name}" 吗？删除后不可恢复。`)) return
+  if (!(await confirmAction(`确定要删除模块 "${row.name}" 吗？删除后不可恢复。`))) return;
 
   try {
-    await deleteModule(row.id)
-    notifySuccess('模块已删除')
-    loadData()
+    await deleteModule(row.id);
+    notifySuccess("模块已删除");
+    dataTable.refresh();
   } catch (error: any) {
-    console.error('删除模块失败:', error)
-    const errorMessage = error?.response?.data?.msg || error?.message || '删除失败'
-    notifyError(errorMessage)
+    console.error("删除模块失败:", error);
+    const errorMessage = error?.response?.data?.msg || error?.message || "删除失败";
+    notifyError(errorMessage);
   }
-}
-
-// 格式化日期
-const formatDate = (dateStr?: string): string => {
-  if (!dateStr) return '--'
-  return new Date(dateStr).toLocaleString()
-}
-
-onMounted(() => {
-  loadData()
-})
+};
 </script>
 
 <template>
@@ -151,7 +207,7 @@ onMounted(() => {
         </p>
       </div>
       <div class="flex items-center gap-2">
-        <Button variant="outline" @click="loadData">
+        <Button variant="outline" @click="dataTable.refresh()">
           <RefreshCw class="mr-1 h-4 w-4" />
           刷新
         </Button>
@@ -235,82 +291,9 @@ onMounted(() => {
         </div>
       </div>
 
-      <div class="min-h-0 flex-1 overflow-auto px-5 py-4">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead class="w-[200px]">模块信息</TableHead>
-              <TableHead class="w-[80px]">状态</TableHead>
-              <TableHead class="w-[100px]">必须模块</TableHead>
-              <TableHead class="w-[100px]">分配次数</TableHead>
-              <TableHead class="w-[180px]">创建时间</TableHead>
-              <TableHead class="w-[160px]">操作</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            <TableRow v-if="loading">
-              <TableCell v-for="n in 6" :key="n">
-                <Skeleton class="h-5 w-full" />
-              </TableCell>
-            </TableRow>
-            <TableRow v-else-if="!dataList.length">
-              <TableCell colspan="6" class="h-24 text-center text-muted-foreground">
-                暂无模块数据
-              </TableCell>
-            </TableRow>
-            <TableRow v-else v-for="row in dataList" :key="row.id">
-              <TableCell>
-                <div class="space-y-1">
-                  <div class="font-medium">{{ row.name }}</div>
-                  <div class="text-muted-foreground text-xs">{{ row.code }}</div>
-                </div>
-              </TableCell>
-              <TableCell>
-                <Badge :variant="row.is_active ? 'default' : 'secondary'">
-                  {{ row.is_active ? '启用' : '停用' }}
-                </Badge>
-              </TableCell>
-              <TableCell>
-                <Badge :variant="row.is_need ? 'default' : 'outline'">
-                  {{ row.is_need ? '是' : '否' }}
-                </Badge>
-              </TableCell>
-              <TableCell>{{ row.tenant_count || 0 }}</TableCell>
-              <TableCell>{{ formatDate(row.created_at) }}</TableCell>
-              <TableCell>
-                <div class="flex items-center gap-1">
-                  <Button variant="ghost" size="sm" @click="handleDetail(row)">
-                    <Eye class="mr-1 h-3.5 w-3.5" />
-                    详情
-                  </Button>
-                  <Button variant="ghost" size="sm" @click="handleEdit(row)">
-                    <Pencil class="mr-1 h-3.5 w-3.5" />
-                    编辑
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    class="text-destructive hover:text-destructive"
-                    @click="handleDelete(row)"
-                  >
-                    <Trash2 class="mr-1 h-3.5 w-3.5" />
-                    删除
-                  </Button>
-                </div>
-              </TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
+      <div class="min-h-0 flex-1 overflow-hidden px-5 py-4">
+        <DataTable :data-table="dataTable" :fixed-layout="true" />
       </div>
     </Card>
-
-    <!-- 分页 -->
-    <Pagination
-      :total="total"
-      :page="pagination.page"
-      :page-size="pagination.pageSize"
-      @update:page="handlePageChange"
-      @update:page-size="handlePageSizeChange"
-    />
   </div>
 </template>
