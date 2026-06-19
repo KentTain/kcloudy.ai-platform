@@ -191,6 +191,22 @@ class TenantContext:
         return get_context().tenant_id
 
     @staticmethod
+    def set_tenant_id(tenant_id: str | None) -> None:
+        """设置当前租户 ID（轻量级设置）
+
+        仅设置 tenant_id，不设置其他租户信息。
+        适用于只需要租户 ID 的场景（如监听器中）。
+
+        Args:
+            tenant_id: 租户 ID，传 None 则清空
+        """
+
+        def modifier(ctx) -> None:
+            ctx.tenant_id = tenant_id
+
+        _update_context(modifier)
+
+    @staticmethod
     def get_tenant_code() -> str | None:
         """获取当前租户编码"""
         return get_context().tenant_code

@@ -1,6 +1,12 @@
 ﻿import logging
 import os
 import sys
+from pathlib import Path
+
+# 添加 src 目录到 Python 路径（必须在导入 demo 之前）
+src_path = Path(__file__).parent.parent / "src"
+if str(src_path) not in sys.path:
+    sys.path.insert(0, str(src_path))
 
 # Set environment variables
 os.environ["PYTHON_SERVICE_ENV"] = "local"

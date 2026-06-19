@@ -10,9 +10,6 @@ from loguru import logger
 from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from iam.models import User, UserStatus, UserTenant
-from iam.schemas.login import LoginResponse
-from iam.schemas.token import TokenRefreshResponse
 from framework.cache.redis_util import RedisUtil
 from framework.utils.crypto import hash_password, verify_password
 from framework.utils.jwt import (
@@ -28,6 +25,9 @@ from framework.utils.session import (
     get_session,
     is_blacklisted,
 )
+from iam.models import User, UserStatus, UserTenant
+from iam.schemas.login import LoginResponse
+from iam.schemas.token import TokenRefreshResponse
 
 _logger = logger.bind(name=__name__)
 
@@ -53,7 +53,9 @@ class AuthService:
     """用户认证服务"""
 
     @staticmethod
-    async def login(session: AsyncSession, account: str, password: str, ip: str | None = None) -> LoginResponse:
+    async def login(
+        session: AsyncSession, account: str, password: str, ip: str | None = None
+    ) -> LoginResponse:
         """
         用户登录
 
@@ -109,8 +111,7 @@ class AuthService:
         # 获取用户默认租户
         tenant_id = None
         stmt = select(UserTenant).where(
-            UserTenant.user_id == user.id,
-            UserTenant.is_default == True
+            UserTenant.user_id == user.id, UserTenant.is_default == True
         )
         result = await session.execute(stmt)
         user_tenant = result.scalar_one_or_none()
@@ -210,6 +211,9 @@ class AuthService:
         if not payload:
             raise ValueError("登录已过期，请重新登录")
 
+        if not payload.__contains__("session_id"):
+            raise ValueError("登录已过期，请重新登录")
+
         user_id = payload.get("user_id")
         session_id = payload.get("session_id")
         tenant_id = payload.get("tenant_id")
@@ -239,7 +243,9 @@ class AuthService:
         if tenant_id:
             new_payload["tenant_id"] = tenant_id
 
-        new_access_token = generate_access_token(new_payload, AuthService._get_jwt_secret())
+        new_access_token = generate_access_token(
+            new_payload, AuthService._get_jwt_secret()
+        )
         new_refresh_token = generate_refresh_token(
             {"user_id": user_id, "session_id": session_id},
             AuthService._get_jwt_secret(),

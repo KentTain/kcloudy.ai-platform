@@ -5,14 +5,15 @@
 """
 
 import pytest
-from unittest.mock import AsyncMock, patch, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 from datetime import datetime
 
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
-from httpx import AsyncClient, ASGITransport
 
 from tenant.controllers.admin.resource_controller import router
+from tenant.middlewares.admin_auth_middleware import get_current_admin
+from framework.database.dependencies import get_db_session
 
 
 # 创建测试应用
@@ -20,13 +21,40 @@ app = FastAPI()
 app.include_router(router)
 
 
+# Mock 管理员数据
+MOCK_ADMIN = {"id": "admin-1", "username": "admin"}
+
+
+# Mock 数据库会话
+@pytest.fixture
+def mock_session():
+    """模拟数据库会话"""
+    return MagicMock()
+
+
+# 覆盖依赖
+@pytest.fixture(autouse=True)
+def override_dependencies(mock_session):
+    """自动覆盖 FastAPI 依赖"""
+    # 覆盖 get_current_admin 依赖
+    async def mock_get_current_admin():
+        return MOCK_ADMIN
+
+    # 覆盖 get_db_session 依赖
+    async def mock_get_db_session():
+        yield mock_session
+
+    app.dependency_overrides[get_current_admin] = mock_get_current_admin
+    app.dependency_overrides[get_db_session] = mock_get_db_session
+
+    yield
+
+    # 清理
+    app.dependency_overrides.clear()
+
+
 class TestDatabaseResourceRoutes:
     """数据库资源配置路由测试"""
-
-    @pytest.fixture
-    def mock_admin(self):
-        """模拟管理员认证"""
-        return {"id": "admin-1", "username": "admin"}
 
     @pytest.fixture
     def mock_db_config(self):
@@ -40,210 +68,182 @@ class TestDatabaseResourceRoutes:
         config.database = "test_db"
         config.username = "admin"
         config.password = "******"
+        config.is_default = False
         config.created_at = datetime.now()
         config.updated_at = datetime.now()
         return config
 
-    @pytest.mark.asyncio
-    async def test_list_database_configs_route_accessible(self, mock_admin, mock_db_config):
+    @pytest.fixture
+    def mock_db_response(self):
+        """模拟数据库配置响应"""
+        return {
+            "id": "db-1",
+            "name": "测试数据库",
+            "type": "postgresql",
+            "host": "localhost",
+            "port": 5432,
+            "database": "test_db",
+            "username": "admin",
+            "password": "******",
+            "is_default": False,
+            "created_at": "2024-01-01T00:00:00",
+            "updated_at": "2024-01-01T00:00:00",
+        }
+
+    def test_list_database_configs_route_accessible(self, mock_db_config, mock_db_response, mock_session):
         """测试 GET /resources/databases 路由可访问"""
-        with patch(
-            "tenant.controllers.admin.resource_controller.get_current_admin",
-            return_value=mock_admin,
-        ), patch(
-            "tenant.services.database_config_service.DatabaseConfigService.list_configs",
+        with patch.object(
+            __import__("tenant.services.database_config_service", fromlist=["DatabaseConfigService"]).DatabaseConfigService,
+            "list_configs",
             new_callable=AsyncMock,
             return_value=([mock_db_config], 1),
+        ), patch.object(
+            __import__("tenant.services.database_config_service", fromlist=["DatabaseConfigService"]).DatabaseConfigService,
+            "build_response",
+            return_value=mock_db_response,
         ):
-            async with AsyncClient(
-                transport=ASGITransport(app=app), base_url="http://test"
-            ) as client:
-                response = await client.get("/resources/databases")
+            client = TestClient(app)
+            response = client.get("/resources/databases")
 
         assert response.status_code == 200
         data = response.json()
         assert data["code"] == 200
-        assert "items" in data["data"]
-        assert data["data"]["total"] == 1
+        assert "data" in data
+        assert data["total"] == 1
 
-    @pytest.mark.asyncio
-    async def test_create_database_config_route_accessible(self, mock_admin, mock_db_config):
+    def test_create_database_config_route_accessible(self, mock_db_config, mock_db_response, mock_session):
         """测试 POST /resources/databases 路由可访问"""
-        with patch(
-            "tenant.controllers.admin.resource_controller.get_current_admin",
-            return_value=mock_admin,
-        ), patch(
-            "tenant.services.database_config_service.DatabaseConfigService.create",
+        with patch.object(
+            __import__("tenant.services.database_config_service", fromlist=["DatabaseConfigService"]).DatabaseConfigService,
+            "create",
             new_callable=AsyncMock,
             return_value=mock_db_config,
-        ), patch(
-            "tenant.services.database_config_service.DatabaseConfigService.build_response",
-            return_value={
-                "id": "db-1",
-                "name": "测试数据库",
-                "type": "postgresql",
-                "host": "localhost",
-                "port": 5432,
-                "database": "test_db",
-                "username": "admin",
-                "password": "******",
-            },
+        ), patch.object(
+            __import__("tenant.services.database_config_service", fromlist=["DatabaseConfigService"]).DatabaseConfigService,
+            "build_response",
+            return_value=mock_db_response,
         ):
-            async with AsyncClient(
-                transport=ASGITransport(app=app), base_url="http://test"
-            ) as client:
-                response = await client.post(
-                    "/resources/databases",
-                    json={
-                        "name": "测试数据库",
-                        "type": "postgresql",
-                        "host": "localhost",
-                        "port": 5432,
-                        "database": "test_db",
-                        "username": "admin",
-                        "password": "plain_password",
-                    },
-                )
+            client = TestClient(app)
+            response = client.post(
+                "/resources/databases",
+                json={
+                    "name": "测试数据库",
+                    "type": "postgresql",
+                    "host": "localhost",
+                    "port": 5432,
+                    "database": "test_db",
+                    "username": "admin",
+                    "password": "plain_password",
+                },
+            )
 
         assert response.status_code == 200
         data = response.json()
         assert data["code"] == 200
         assert data["data"]["id"] == "db-1"
 
-    @pytest.mark.asyncio
-    async def test_get_database_config_by_id_route_accessible(self, mock_admin, mock_db_config):
+    def test_get_database_config_by_id_route_accessible(self, mock_db_config, mock_db_response, mock_session):
         """测试 GET /resources/databases/{id} 路由可访问"""
-        with patch(
-            "tenant.controllers.admin.resource_controller.get_current_admin",
-            return_value=mock_admin,
-        ), patch(
-            "tenant.services.database_config_service.DatabaseConfigService.get_by_id",
+        with patch.object(
+            __import__("tenant.services.database_config_service", fromlist=["DatabaseConfigService"]).DatabaseConfigService,
+            "get_by_id",
             new_callable=AsyncMock,
             return_value=mock_db_config,
-        ), patch(
-            "tenant.services.database_config_service.DatabaseConfigService.build_response",
-            return_value={
-                "id": "db-1",
-                "name": "测试数据库",
-                "type": "postgresql",
-                "host": "localhost",
-                "port": 5432,
-                "database": "test_db",
-                "username": "admin",
-                "password": "******",
-            },
+        ), patch.object(
+            __import__("tenant.services.database_config_service", fromlist=["DatabaseConfigService"]).DatabaseConfigService,
+            "build_response",
+            return_value=mock_db_response,
         ):
-            async with AsyncClient(
-                transport=ASGITransport(app=app), base_url="http://test"
-            ) as client:
-                response = await client.get("/resources/databases/db-1")
+            client = TestClient(app)
+            response = client.get("/resources/databases/db-1")
 
         assert response.status_code == 200
         data = response.json()
         assert data["code"] == 200
         assert data["data"]["id"] == "db-1"
 
-    @pytest.mark.asyncio
-    async def test_update_database_config_route_accessible(self, mock_admin, mock_db_config):
+    def test_update_database_config_route_accessible(self, mock_db_config, mock_session):
         """测试 PUT /resources/databases/{id} 路由可访问"""
-        with patch(
-            "tenant.controllers.admin.resource_controller.get_current_admin",
-            return_value=mock_admin,
-        ), patch(
-            "tenant.services.database_config_service.DatabaseConfigService.update",
+        updated_response = {
+            "id": "db-1",
+            "name": "更新后的数据库",
+            "type": "postgresql",
+            "host": "localhost",
+            "port": 5432,
+            "database": "test_db",
+            "username": "admin",
+            "password": "******",
+            "is_default": False,
+            "created_at": "2024-01-01T00:00:00",
+            "updated_at": "2024-01-01T00:00:00",
+        }
+        with patch.object(
+            __import__("tenant.services.database_config_service", fromlist=["DatabaseConfigService"]).DatabaseConfigService,
+            "update",
             new_callable=AsyncMock,
             return_value=mock_db_config,
-        ), patch(
-            "tenant.services.database_config_service.DatabaseConfigService.build_response",
-            return_value={
-                "id": "db-1",
-                "name": "更新后的数据库",
-                "type": "postgresql",
-                "host": "localhost",
-                "port": 5432,
-                "database": "test_db",
-                "username": "admin",
-                "password": "******",
-            },
+        ), patch.object(
+            __import__("tenant.services.database_config_service", fromlist=["DatabaseConfigService"]).DatabaseConfigService,
+            "build_response",
+            return_value=updated_response,
         ):
-            async with AsyncClient(
-                transport=ASGITransport(app=app), base_url="http://test"
-            ) as client:
-                response = await client.put(
-                    "/resources/databases/db-1", json={"name": "更新后的数据库"}
-                )
+            client = TestClient(app)
+            response = client.put(
+                "/resources/databases/db-1", json={"name": "更新后的数据库"}
+            )
 
         assert response.status_code == 200
         data = response.json()
         assert data["code"] == 200
 
-    @pytest.mark.asyncio
-    async def test_delete_database_config_route_accessible(self, mock_admin):
+    def test_delete_database_config_route_accessible(self, mock_session):
         """测试 DELETE /resources/databases/{id} 路由可访问"""
-        with patch(
-            "tenant.controllers.admin.resource_controller.get_current_admin",
-            return_value=mock_admin,
-        ), patch(
-            "tenant.services.database_config_service.DatabaseConfigService.delete",
+        with patch.object(
+            __import__("tenant.services.database_config_service", fromlist=["DatabaseConfigService"]).DatabaseConfigService,
+            "delete",
             new_callable=AsyncMock,
             return_value=True,
         ):
-            async with AsyncClient(
-                transport=ASGITransport(app=app), base_url="http://test"
-            ) as client:
-                response = await client.delete("/resources/databases/db-1")
+            client = TestClient(app)
+            response = client.delete("/resources/databases/db-1")
 
         assert response.status_code == 200
         data = response.json()
         assert data["code"] == 200
 
-    @pytest.mark.asyncio
-    async def test_test_database_connection_route_accessible(self, mock_admin):
+    def test_test_database_connection_route_accessible(self, mock_session):
         """测试 POST /resources/databases/{id}/test-connection 路由可访问"""
-        with patch(
-            "tenant.controllers.admin.resource_controller.get_current_admin",
-            return_value=mock_admin,
-        ), patch(
-            "tenant.services.database_config_service.DatabaseConfigService.test_connection",
+        with patch.object(
+            __import__("tenant.services.database_config_service", fromlist=["DatabaseConfigService"]).DatabaseConfigService,
+            "test_connection",
             new_callable=AsyncMock,
-            return_value=(True, "连接成功", 10.5),
+            return_value=(True, "连接成功", 10),  # latency_ms 是整数
         ):
-            async with AsyncClient(
-                transport=ASGITransport(app=app), base_url="http://test"
-            ) as client:
-                response = await client.post("/resources/databases/db-1/test-connection")
+            client = TestClient(app)
+            response = client.post("/resources/databases/db-1/test-connection")
 
         assert response.status_code == 200
         data = response.json()
         assert data["code"] == 200
         assert data["data"]["success"] is True
-        assert data["data"]["latency_ms"] == 10.5
+        assert data["data"]["latency_ms"] == 10
 
-    @pytest.mark.asyncio
-    async def test_get_database_config_not_found(self, mock_admin):
+    def test_get_database_config_not_found(self, mock_session):
         """测试 GET /resources/databases/{id} 配置不存在返回 404"""
-        with patch(
-            "tenant.controllers.admin.resource_controller.get_current_admin",
-            return_value=mock_admin,
-        ), patch(
-            "tenant.services.database_config_service.DatabaseConfigService.get_by_id",
+        with patch.object(
+            __import__("tenant.services.database_config_service", fromlist=["DatabaseConfigService"]).DatabaseConfigService,
+            "get_by_id",
             new_callable=AsyncMock,
             return_value=None,
         ):
-            async with AsyncClient(
-                transport=ASGITransport(app=app), base_url="http://test"
-            ) as client:
-                response = await client.get("/resources/databases/nonexistent")
+            client = TestClient(app)
+            response = client.get("/resources/databases/nonexistent")
 
         assert response.status_code == 404
 
 
 class TestStorageResourceRoutes:
     """存储资源配置路由测试"""
-
-    @pytest.fixture
-    def mock_admin(self):
-        return {"id": "admin-1", "username": "admin"}
 
     @pytest.fixture
     def mock_storage_config(self):
@@ -255,46 +255,56 @@ class TestStorageResourceRoutes:
         config.endpoint = "http://localhost:9000"
         config.access_key = "admin"
         config.secret_key = "******"
+        config.is_default = False
         config.created_at = datetime.now()
         config.updated_at = datetime.now()
         return config
 
-    @pytest.mark.asyncio
-    async def test_list_storage_configs_route_accessible(self, mock_admin, mock_storage_config):
+    @pytest.fixture
+    def mock_storage_response(self):
+        return {
+            "id": "storage-1",
+            "name": "测试存储",
+            "type": "minio",
+            "bucket": "test-bucket",
+            "endpoint": "http://localhost:9000",
+            "access_key": "admin",
+            "secret_key": "******",
+            "is_default": False,
+            "created_at": "2024-01-01T00:00:00",
+            "updated_at": "2024-01-01T00:00:00",
+        }
+
+    def test_list_storage_configs_route_accessible(self, mock_storage_config, mock_storage_response, mock_session):
         """测试 GET /resources/storages 路由可访问"""
-        with patch(
-            "tenant.controllers.admin.resource_controller.get_current_admin",
-            return_value=mock_admin,
-        ), patch(
-            "tenant.services.storage_config_service.StorageConfigService.list_configs",
+        with patch.object(
+            __import__("tenant.services.storage_config_service", fromlist=["StorageConfigService"]).StorageConfigService,
+            "list_configs",
             new_callable=AsyncMock,
             return_value=([mock_storage_config], 1),
+        ), patch.object(
+            __import__("tenant.services.storage_config_service", fromlist=["StorageConfigService"]).StorageConfigService,
+            "build_response",
+            return_value=mock_storage_response,
         ):
-            async with AsyncClient(
-                transport=ASGITransport(app=app), base_url="http://test"
-            ) as client:
-                response = await client.get("/resources/storages")
+            client = TestClient(app)
+            response = client.get("/resources/storages")
 
         assert response.status_code == 200
         data = response.json()
         assert data["code"] == 200
-        assert "items" in data["data"]
+        assert "data" in data
 
-    @pytest.mark.asyncio
-    async def test_test_storage_connection_route_accessible(self, mock_admin):
+    def test_test_storage_connection_route_accessible(self, mock_session):
         """测试 POST /resources/storages/{id}/test-connection 路由可访问"""
-        with patch(
-            "tenant.controllers.admin.resource_controller.get_current_admin",
-            return_value=mock_admin,
-        ), patch(
-            "tenant.services.storage_config_service.StorageConfigService.test_connection",
+        with patch.object(
+            __import__("tenant.services.storage_config_service", fromlist=["StorageConfigService"]).StorageConfigService,
+            "test_connection",
             new_callable=AsyncMock,
-            return_value=(True, "连接成功", 15.0),
+            return_value=(True, "连接成功", 15),  # latency_ms 是整数
         ):
-            async with AsyncClient(
-                transport=ASGITransport(app=app), base_url="http://test"
-            ) as client:
-                response = await client.post("/resources/storages/storage-1/test-connection")
+            client = TestClient(app)
+            response = client.post("/resources/storages/storage-1/test-connection")
 
         assert response.status_code == 200
         data = response.json()
@@ -305,10 +315,6 @@ class TestCacheResourceRoutes:
     """缓存资源配置路由测试"""
 
     @pytest.fixture
-    def mock_admin(self):
-        return {"id": "admin-1", "username": "admin"}
-
-    @pytest.fixture
     def mock_cache_config(self):
         config = MagicMock()
         config.id = "cache-1"
@@ -317,45 +323,56 @@ class TestCacheResourceRoutes:
         config.port = 6379
         config.password = "******"
         config.db = 0
+        config.prefix = None
+        config.is_default = False
         config.created_at = datetime.now()
         config.updated_at = datetime.now()
         return config
 
-    @pytest.mark.asyncio
-    async def test_list_cache_configs_route_accessible(self, mock_admin, mock_cache_config):
+    @pytest.fixture
+    def mock_cache_response(self):
+        return {
+            "id": "cache-1",
+            "name": "测试缓存",
+            "host": "localhost",
+            "port": 6379,
+            "password": "******",
+            "db": 0,
+            "prefix": None,
+            "is_default": False,
+            "created_at": "2024-01-01T00:00:00",
+            "updated_at": "2024-01-01T00:00:00",
+        }
+
+    def test_list_cache_configs_route_accessible(self, mock_cache_config, mock_cache_response, mock_session):
         """测试 GET /resources/caches 路由可访问"""
-        with patch(
-            "tenant.controllers.admin.resource_controller.get_current_admin",
-            return_value=mock_admin,
-        ), patch(
-            "tenant.services.cache_config_service.CacheConfigService.list_configs",
+        with patch.object(
+            __import__("tenant.services.cache_config_service", fromlist=["CacheConfigService"]).CacheConfigService,
+            "list_configs",
             new_callable=AsyncMock,
             return_value=([mock_cache_config], 1),
+        ), patch.object(
+            __import__("tenant.services.cache_config_service", fromlist=["CacheConfigService"]).CacheConfigService,
+            "build_response",
+            return_value=mock_cache_response,
         ):
-            async with AsyncClient(
-                transport=ASGITransport(app=app), base_url="http://test"
-            ) as client:
-                response = await client.get("/resources/caches")
+            client = TestClient(app)
+            response = client.get("/resources/caches")
 
         assert response.status_code == 200
         data = response.json()
         assert data["code"] == 200
 
-    @pytest.mark.asyncio
-    async def test_test_cache_connection_route_accessible(self, mock_admin):
+    def test_test_cache_connection_route_accessible(self, mock_session):
         """测试 POST /resources/caches/{id}/test-connection 路由可访问"""
-        with patch(
-            "tenant.controllers.admin.resource_controller.get_current_admin",
-            return_value=mock_admin,
-        ), patch(
-            "tenant.services.cache_config_service.CacheConfigService.test_connection",
+        with patch.object(
+            __import__("tenant.services.cache_config_service", fromlist=["CacheConfigService"]).CacheConfigService,
+            "test_connection",
             new_callable=AsyncMock,
-            return_value=(True, "连接成功", 5.0),
+            return_value=(True, "连接成功", 5),  # latency_ms 是整数
         ):
-            async with AsyncClient(
-                transport=ASGITransport(app=app), base_url="http://test"
-            ) as client:
-                response = await client.post("/resources/caches/cache-1/test-connection")
+            client = TestClient(app)
+            response = client.post("/resources/caches/cache-1/test-connection")
 
         assert response.status_code == 200
         data = response.json()
@@ -364,10 +381,6 @@ class TestCacheResourceRoutes:
 
 class TestQueueResourceRoutes:
     """队列资源配置路由测试"""
-
-    @pytest.fixture
-    def mock_admin(self):
-        return {"id": "admin-1", "username": "admin"}
 
     @pytest.fixture
     def mock_queue_config(self):
@@ -380,45 +393,56 @@ class TestQueueResourceRoutes:
         config.username = "admin"
         config.password = "******"
         config.vhost = "/"
+        config.is_default = False
         config.created_at = datetime.now()
         config.updated_at = datetime.now()
         return config
 
-    @pytest.mark.asyncio
-    async def test_list_queue_configs_route_accessible(self, mock_admin, mock_queue_config):
+    @pytest.fixture
+    def mock_queue_response(self):
+        return {
+            "id": "queue-1",
+            "name": "测试队列",
+            "type": "rabbitmq",
+            "host": "localhost",
+            "port": 5672,
+            "username": "admin",
+            "password": "******",
+            "vhost": "/",
+            "is_default": False,
+            "created_at": "2024-01-01T00:00:00",
+            "updated_at": "2024-01-01T00:00:00",
+        }
+
+    def test_list_queue_configs_route_accessible(self, mock_queue_config, mock_queue_response, mock_session):
         """测试 GET /resources/queues 路由可访问"""
-        with patch(
-            "tenant.controllers.admin.resource_controller.get_current_admin",
-            return_value=mock_admin,
-        ), patch(
-            "tenant.services.queue_config_service.QueueConfigService.list_configs",
+        with patch.object(
+            __import__("tenant.services.queue_config_service", fromlist=["QueueConfigService"]).QueueConfigService,
+            "list_configs",
             new_callable=AsyncMock,
             return_value=([mock_queue_config], 1),
+        ), patch.object(
+            __import__("tenant.services.queue_config_service", fromlist=["QueueConfigService"]).QueueConfigService,
+            "build_response",
+            return_value=mock_queue_response,
         ):
-            async with AsyncClient(
-                transport=ASGITransport(app=app), base_url="http://test"
-            ) as client:
-                response = await client.get("/resources/queues")
+            client = TestClient(app)
+            response = client.get("/resources/queues")
 
         assert response.status_code == 200
         data = response.json()
         assert data["code"] == 200
 
-    @pytest.mark.asyncio
-    async def test_test_queue_connection_route_accessible(self, mock_admin):
+    def test_test_queue_connection_route_accessible(self, mock_session):
         """测试 POST /resources/queues/{id}/test-connection 路由可访问"""
-        with patch(
-            "tenant.controllers.admin.resource_controller.get_current_admin",
-            return_value=mock_admin,
-        ), patch(
-            "tenant.services.queue_config_service.QueueConfigService.test_connection",
+        with patch.object(
+            __import__("tenant.services.queue_config_service", fromlist=["QueueConfigService"]).QueueConfigService,
+            "test_connection",
             new_callable=AsyncMock,
-            return_value=(True, "连接成功", 8.0),
+            return_value=(True, "连接成功", 8),  # latency_ms 是整数
         ):
-            async with AsyncClient(
-                transport=ASGITransport(app=app), base_url="http://test"
-            ) as client:
-                response = await client.post("/resources/queues/queue-1/test-connection")
+            client = TestClient(app)
+            response = client.post("/resources/queues/queue-1/test-connection")
 
         assert response.status_code == 200
         data = response.json()
@@ -427,10 +451,6 @@ class TestQueueResourceRoutes:
 
 class TestPubSubResourceRoutes:
     """发布订阅资源配置路由测试"""
-
-    @pytest.fixture
-    def mock_admin(self):
-        return {"id": "admin-1", "username": "admin"}
 
     @pytest.fixture
     def mock_pubsub_config(self):
@@ -442,45 +462,55 @@ class TestPubSubResourceRoutes:
         config.port = 9092
         config.username = None
         config.password = None
+        config.is_default = False
         config.created_at = datetime.now()
         config.updated_at = datetime.now()
         return config
 
-    @pytest.mark.asyncio
-    async def test_list_pubsub_configs_route_accessible(self, mock_admin, mock_pubsub_config):
+    @pytest.fixture
+    def mock_pubsub_response(self):
+        return {
+            "id": "pubsub-1",
+            "name": "测试发布订阅",
+            "type": "kafka",
+            "host": "localhost",
+            "port": 9092,
+            "username": None,
+            "password": None,
+            "is_default": False,
+            "created_at": "2024-01-01T00:00:00",
+            "updated_at": "2024-01-01T00:00:00",
+        }
+
+    def test_list_pubsub_configs_route_accessible(self, mock_pubsub_config, mock_pubsub_response, mock_session):
         """测试 GET /resources/pubsubs 路由可访问"""
-        with patch(
-            "tenant.controllers.admin.resource_controller.get_current_admin",
-            return_value=mock_admin,
-        ), patch(
-            "tenant.services.pubsub_config_service.PubSubConfigService.list_configs",
+        with patch.object(
+            __import__("tenant.services.pubsub_config_service", fromlist=["PubSubConfigService"]).PubSubConfigService,
+            "list_configs",
             new_callable=AsyncMock,
             return_value=([mock_pubsub_config], 1),
+        ), patch.object(
+            __import__("tenant.services.pubsub_config_service", fromlist=["PubSubConfigService"]).PubSubConfigService,
+            "build_response",
+            return_value=mock_pubsub_response,
         ):
-            async with AsyncClient(
-                transport=ASGITransport(app=app), base_url="http://test"
-            ) as client:
-                response = await client.get("/resources/pubsubs")
+            client = TestClient(app)
+            response = client.get("/resources/pubsubs")
 
         assert response.status_code == 200
         data = response.json()
         assert data["code"] == 200
 
-    @pytest.mark.asyncio
-    async def test_test_pubsub_connection_route_accessible(self, mock_admin):
+    def test_test_pubsub_connection_route_accessible(self, mock_session):
         """测试 POST /resources/pubsubs/{id}/test-connection 路由可访问"""
-        with patch(
-            "tenant.controllers.admin.resource_controller.get_current_admin",
-            return_value=mock_admin,
-        ), patch(
-            "tenant.services.pubsub_config_service.PubSubConfigService.test_connection",
+        with patch.object(
+            __import__("tenant.services.pubsub_config_service", fromlist=["PubSubConfigService"]).PubSubConfigService,
+            "test_connection",
             new_callable=AsyncMock,
-            return_value=(True, "连接成功", 12.0),
+            return_value=(True, "连接成功", 12),  # latency_ms 是整数
         ):
-            async with AsyncClient(
-                transport=ASGITransport(app=app), base_url="http://test"
-            ) as client:
-                response = await client.post("/resources/pubsubs/pubsub-1/test-connection")
+            client = TestClient(app)
+            response = client.post("/resources/pubsubs/pubsub-1/test-connection")
 
         assert response.status_code == 200
         data = response.json()
@@ -490,25 +520,16 @@ class TestPubSubResourceRoutes:
 class TestConnectionTestResult:
     """连通性测试结果测试"""
 
-    @pytest.fixture
-    def mock_admin(self):
-        return {"id": "admin-1", "username": "admin"}
-
-    @pytest.mark.asyncio
-    async def test_connection_test_result_format(self, mock_admin):
+    def test_connection_test_result_format(self, mock_session):
         """测试连通性测试接口返回正确格式"""
-        with patch(
-            "tenant.controllers.admin.resource_controller.get_current_admin",
-            return_value=mock_admin,
-        ), patch(
-            "tenant.services.database_config_service.DatabaseConfigService.test_connection",
+        with patch.object(
+            __import__("tenant.services.database_config_service", fromlist=["DatabaseConfigService"]).DatabaseConfigService,
+            "test_connection",
             new_callable=AsyncMock,
             return_value=(False, "连接失败：超时", None),
         ):
-            async with AsyncClient(
-                transport=ASGITransport(app=app), base_url="http://test"
-            ) as client:
-                response = await client.post("/resources/databases/db-1/test-connection")
+            client = TestClient(app)
+            response = client.post("/resources/databases/db-1/test-connection")
 
         assert response.status_code == 200
         data = response.json()

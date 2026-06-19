@@ -293,10 +293,11 @@ class TestModuleAssignedHandler:
         mock_module.id = "module-1"
         mock_module.code = "demo"
 
-        with patch("iam.listeners.handlers.event_handler.async_session") as mock_session,              patch("iam.listeners.handlers.event_handler.module_sync_service") as mock_sync:
+        with patch("iam.listeners.handlers.event_handler.get_listener_session") as mock_get_session, \
+             patch("iam.listeners.handlers.event_handler.module_sync_service") as mock_sync:
 
             mock_ctx = AsyncMock()
-            mock_session.return_value.__aenter__.return_value = mock_ctx
+            mock_get_session.return_value.__aenter__.return_value = mock_ctx
 
             module_result = MagicMock()
             module_result.scalar_one_or_none.return_value = mock_module
@@ -334,9 +335,9 @@ class TestModuleAssignedHandler:
             })
         }
 
-        with patch("iam.listeners.handlers.event_handler.async_session") as mock_session:
+        with patch("iam.listeners.handlers.event_handler.get_listener_session") as mock_get_session:
             mock_ctx = AsyncMock()
-            mock_session.return_value.__aenter__.return_value = mock_ctx
+            mock_get_session.return_value.__aenter__.return_value = mock_ctx
 
             module_result = MagicMock()
             module_result.scalar_one_or_none.return_value = None
@@ -360,10 +361,11 @@ class TestModuleUnassignedHandler:
             })
         }
 
-        with patch("iam.listeners.handlers.event_handler.async_session") as mock_session,              patch("iam.listeners.handlers.event_handler.module_sync_service") as mock_sync:
+        with patch("iam.listeners.handlers.event_handler.get_listener_session") as mock_get_session, \
+             patch("iam.listeners.handlers.event_handler.module_sync_service") as mock_sync:
 
             mock_ctx = AsyncMock()
-            mock_session.return_value.__aenter__.return_value = mock_ctx
+            mock_get_session.return_value.__aenter__.return_value = mock_ctx
             mock_ctx.commit = AsyncMock()
 
             mock_sync.sync_module_unassigned = AsyncMock()
@@ -388,10 +390,11 @@ class TestModuleMenuCreatedHandler:
             })
         }
 
-        with patch("iam.listeners.handlers.event_handler.async_session") as mock_session,              patch("iam.listeners.handlers.event_handler.module_sync_service") as mock_sync:
+        with patch("iam.listeners.handlers.event_handler.get_listener_session") as mock_get_session, \
+             patch("iam.listeners.handlers.event_handler.module_sync_service") as mock_sync:
 
             mock_ctx = AsyncMock()
-            mock_session.return_value.__aenter__.return_value = mock_ctx
+            mock_get_session.return_value.__aenter__.return_value = mock_ctx
             mock_ctx.commit = AsyncMock()
 
             mock_sync.sync_module_menu_created = AsyncMock()
@@ -416,10 +419,11 @@ class TestModuleMenuUpdatedHandler:
             })
         }
 
-        with patch("iam.listeners.handlers.event_handler.async_session") as mock_session,              patch("iam.listeners.handlers.event_handler.module_sync_service") as mock_sync:
+        with patch("iam.listeners.handlers.event_handler.get_listener_session") as mock_get_session, \
+             patch("iam.listeners.handlers.event_handler.module_sync_service") as mock_sync:
 
             mock_ctx = AsyncMock()
-            mock_session.return_value.__aenter__.return_value = mock_ctx
+            mock_get_session.return_value.__aenter__.return_value = mock_ctx
             mock_ctx.commit = AsyncMock()
 
             mock_sync.sync_module_menu_updated = AsyncMock()
@@ -444,10 +448,11 @@ class TestModuleMenuDeletedHandler:
             })
         }
 
-        with patch("iam.listeners.handlers.event_handler.async_session") as mock_session,              patch("iam.listeners.handlers.event_handler.module_sync_service") as mock_sync:
+        with patch("iam.listeners.handlers.event_handler.get_listener_session") as mock_get_session, \
+             patch("iam.listeners.handlers.event_handler.module_sync_service") as mock_sync:
 
             mock_ctx = AsyncMock()
-            mock_session.return_value.__aenter__.return_value = mock_ctx
+            mock_get_session.return_value.__aenter__.return_value = mock_ctx
             mock_ctx.commit = AsyncMock()
 
             mock_sync.sync_module_menu_deleted = AsyncMock()
@@ -472,10 +477,11 @@ class TestModulePermissionCreatedHandler:
             })
         }
 
-        with patch("iam.listeners.handlers.event_handler.async_session") as mock_session,              patch("iam.listeners.handlers.event_handler.module_sync_service") as mock_sync:
+        with patch("iam.listeners.handlers.event_handler.get_listener_session") as mock_get_session, \
+             patch("iam.listeners.handlers.event_handler.module_sync_service") as mock_sync:
 
             mock_ctx = AsyncMock()
-            mock_session.return_value.__aenter__.return_value = mock_ctx
+            mock_get_session.return_value.__aenter__.return_value = mock_ctx
             mock_ctx.commit = AsyncMock()
 
             mock_sync.sync_module_permission_created = AsyncMock()
@@ -500,10 +506,11 @@ class TestModulePermissionUpdatedHandler:
             })
         }
 
-        with patch("iam.listeners.handlers.event_handler.async_session") as mock_session,              patch("iam.listeners.handlers.event_handler.module_sync_service") as mock_sync:
+        with patch("iam.listeners.handlers.event_handler.get_listener_session") as mock_get_session, \
+             patch("iam.listeners.handlers.event_handler.module_sync_service") as mock_sync:
 
             mock_ctx = AsyncMock()
-            mock_session.return_value.__aenter__.return_value = mock_ctx
+            mock_get_session.return_value.__aenter__.return_value = mock_ctx
             mock_ctx.commit = AsyncMock()
 
             mock_sync.sync_module_permission_updated = AsyncMock()
@@ -528,10 +535,11 @@ class TestModulePermissionDeletedHandler:
             })
         }
 
-        with patch("iam.listeners.handlers.event_handler.async_session") as mock_session,              patch("iam.listeners.handlers.event_handler.module_sync_service") as mock_sync:
+        with patch("iam.listeners.handlers.event_handler.get_listener_session") as mock_get_session, \
+             patch("iam.listeners.handlers.event_handler.module_sync_service") as mock_sync:
 
             mock_ctx = AsyncMock()
-            mock_session.return_value.__aenter__.return_value = mock_ctx
+            mock_get_session.return_value.__aenter__.return_value = mock_ctx
             mock_ctx.commit = AsyncMock()
 
             mock_sync.sync_module_permission_deleted = AsyncMock()
@@ -556,10 +564,11 @@ class TestModuleRoleCreatedHandler:
             })
         }
 
-        with patch("iam.listeners.handlers.event_handler.async_session") as mock_session,              patch("iam.listeners.handlers.event_handler.module_sync_service") as mock_sync:
+        with patch("iam.listeners.handlers.event_handler.get_listener_session") as mock_get_session, \
+             patch("iam.listeners.handlers.event_handler.module_sync_service") as mock_sync:
 
             mock_ctx = AsyncMock()
-            mock_session.return_value.__aenter__.return_value = mock_ctx
+            mock_get_session.return_value.__aenter__.return_value = mock_ctx
             mock_ctx.commit = AsyncMock()
 
             mock_sync.sync_module_role_created = AsyncMock()
@@ -584,10 +593,11 @@ class TestModuleRoleUpdatedHandler:
             })
         }
 
-        with patch("iam.listeners.handlers.event_handler.async_session") as mock_session,              patch("iam.listeners.handlers.event_handler.module_sync_service") as mock_sync:
+        with patch("iam.listeners.handlers.event_handler.get_listener_session") as mock_get_session, \
+             patch("iam.listeners.handlers.event_handler.module_sync_service") as mock_sync:
 
             mock_ctx = AsyncMock()
-            mock_session.return_value.__aenter__.return_value = mock_ctx
+            mock_get_session.return_value.__aenter__.return_value = mock_ctx
             mock_ctx.commit = AsyncMock()
 
             mock_sync.sync_module_role_updated = AsyncMock()
@@ -612,10 +622,11 @@ class TestModuleRoleDeletedHandler:
             })
         }
 
-        with patch("iam.listeners.handlers.event_handler.async_session") as mock_session,              patch("iam.listeners.handlers.event_handler.module_sync_service") as mock_sync:
+        with patch("iam.listeners.handlers.event_handler.get_listener_session") as mock_get_session, \
+             patch("iam.listeners.handlers.event_handler.module_sync_service") as mock_sync:
 
             mock_ctx = AsyncMock()
-            mock_session.return_value.__aenter__.return_value = mock_ctx
+            mock_get_session.return_value.__aenter__.return_value = mock_ctx
             mock_ctx.commit = AsyncMock()
 
             mock_sync.sync_module_role_deleted = AsyncMock()
@@ -640,10 +651,11 @@ class TestModuleRolePermissionChangedHandler:
             })
         }
 
-        with patch("iam.listeners.handlers.event_handler.async_session") as mock_session,              patch("iam.listeners.handlers.event_handler.module_sync_service") as mock_sync:
+        with patch("iam.listeners.handlers.event_handler.get_listener_session") as mock_get_session, \
+             patch("iam.listeners.handlers.event_handler.module_sync_service") as mock_sync:
 
             mock_ctx = AsyncMock()
-            mock_session.return_value.__aenter__.return_value = mock_ctx
+            mock_get_session.return_value.__aenter__.return_value = mock_ctx
             mock_ctx.commit = AsyncMock()
 
             mock_sync.sync_module_role_permission_changed = AsyncMock()

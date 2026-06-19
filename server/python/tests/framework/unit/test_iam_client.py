@@ -4,6 +4,7 @@ IamClient 单元测试
 
 import pytest
 from unittest.mock import AsyncMock, patch, MagicMock
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from framework.clients.iam_client import IamClient, UserTenantInfo
 
@@ -16,6 +17,9 @@ class TestIamClientGetUserTenants:
         """单体模式返回用户租户列表"""
         client = IamClient(inner_url=None)  # 单体模式
 
+        # 创建 mock session
+        mock_session = AsyncMock(spec=AsyncSession)
+
         mock_user_tenant_1 = MagicMock()
         mock_user_tenant_1.tenant_id = "tenant-1"
         mock_user_tenant_1.role = "admin"
@@ -26,18 +30,14 @@ class TestIamClientGetUserTenants:
         mock_user_tenant_2.role = "member"
         mock_user_tenant_2.is_default = False
 
-        with patch("framework.database.core.engine.async_session") as mock_session:
-            mock_session_context = AsyncMock()
-            mock_session.return_value.__aenter__.return_value = mock_session_context
+        mock_result = MagicMock()
+        mock_result.scalars.return_value.all.return_value = [
+            mock_user_tenant_1,
+            mock_user_tenant_2,
+        ]
+        mock_session.execute.return_value = mock_result
 
-            mock_result = MagicMock()
-            mock_result.scalars.return_value.all.return_value = [
-                mock_user_tenant_1,
-                mock_user_tenant_2,
-            ]
-            mock_session_context.execute.return_value = mock_result
-
-            result = await client.get_user_tenants("user-1")
+        result = await client.get_user_tenants(mock_session, "user-1")
 
         assert len(result) == 2
         assert result[0].tenant_id == "tenant-1"
@@ -52,15 +52,14 @@ class TestIamClientGetUserTenants:
         """单体模式用户无租户时返回空列表"""
         client = IamClient(inner_url=None)
 
-        with patch("framework.database.core.engine.async_session") as mock_session:
-            mock_session_context = AsyncMock()
-            mock_session.return_value.__aenter__.return_value = mock_session_context
+        # 创建 mock session
+        mock_session = AsyncMock(spec=AsyncSession)
 
-            mock_result = MagicMock()
-            mock_result.scalars.return_value.all.return_value = []
-            mock_session_context.execute.return_value = mock_result
+        mock_result = MagicMock()
+        mock_result.scalars.return_value.all.return_value = []
+        mock_session.execute.return_value = mock_result
 
-            result = await client.get_user_tenants("user-no-tenants")
+        result = await client.get_user_tenants(mock_session, "user-no-tenants")
 
         assert result == []
 
@@ -73,15 +72,14 @@ class TestIamClientGetTenantUserIds:
         """单体模式返回租户用户 ID 列表"""
         client = IamClient(inner_url=None)
 
-        with patch("framework.database.core.engine.async_session") as mock_session:
-            mock_session_context = AsyncMock()
-            mock_session.return_value.__aenter__.return_value = mock_session_context
+        # 创建 mock session
+        mock_session = AsyncMock(spec=AsyncSession)
 
-            mock_result = MagicMock()
-            mock_result.all.return_value = [("user-1",), ("user-2",)]
-            mock_session_context.execute.return_value = mock_result
+        mock_result = MagicMock()
+        mock_result.all.return_value = [("user-1",), ("user-2",)]
+        mock_session.execute.return_value = mock_result
 
-            result = await client.get_tenant_user_ids("tenant-1")
+        result = await client.get_tenant_user_ids(mock_session, "tenant-1")
 
         assert result == ["user-1", "user-2"]
 
@@ -90,15 +88,14 @@ class TestIamClientGetTenantUserIds:
         """单体模式租户无用户时返回空列表"""
         client = IamClient(inner_url=None)
 
-        with patch("framework.database.core.engine.async_session") as mock_session:
-            mock_session_context = AsyncMock()
-            mock_session.return_value.__aenter__.return_value = mock_session_context
+        # 创建 mock session
+        mock_session = AsyncMock(spec=AsyncSession)
 
-            mock_result = MagicMock()
-            mock_result.all.return_value = []
-            mock_session_context.execute.return_value = mock_result
+        mock_result = MagicMock()
+        mock_result.all.return_value = []
+        mock_session.execute.return_value = mock_result
 
-            result = await client.get_tenant_user_ids("tenant-no-users")
+        result = await client.get_tenant_user_ids(mock_session, "tenant-no-users")
 
         assert result == []
 
@@ -124,7 +121,9 @@ class TestIamClientGetUserTenantsMicroservice:
         )
         client._http_client = mock_http_client
 
-        result = await client.get_user_tenants("user-1")
+        # 微服务模式下 session 不会被使用，但需要传入
+        mock_session = AsyncMock(spec=AsyncSession)
+        result = await client.get_user_tenants(mock_session, "user-1")
 
         assert len(result) == 2
         assert result[0].tenant_id == "tenant-1"
@@ -143,7 +142,9 @@ class TestIamClientGetUserTenantsMicroservice:
         mock_http_client.get = AsyncMock(return_value={"user_id": "user-1", "tenants": []})
         client._http_client = mock_http_client
 
-        result = await client.get_user_tenants("user-1")
+        # 微服务模式下 session 不会被使用，但需要传入
+        mock_session = AsyncMock(spec=AsyncSession)
+        result = await client.get_user_tenants(mock_session, "user-1")
 
         assert result == []
 
@@ -162,7 +163,9 @@ class TestIamClientGetTenantUserIdsMicroservice:
         )
         client._http_client = mock_http_client
 
-        result = await client.get_tenant_user_ids("tenant-1")
+        # 微服务模式下 session 不会被使用，但需要传入
+        mock_session = AsyncMock(spec=AsyncSession)
+        result = await client.get_tenant_user_ids(mock_session, "tenant-1")
 
         assert result == ["user-1", "user-2"]
         mock_http_client.get.assert_called_once_with("/iam/inner/v1/tenants/tenant-1/users")
@@ -176,6 +179,8 @@ class TestIamClientGetTenantUserIdsMicroservice:
         mock_http_client.get = AsyncMock(return_value={"tenant_id": "tenant-1", "user_ids": []})
         client._http_client = mock_http_client
 
-        result = await client.get_tenant_user_ids("tenant-1")
+        # 微服务模式下 session 不会被使用，但需要传入
+        mock_session = AsyncMock(spec=AsyncSession)
+        result = await client.get_tenant_user_ids(mock_session, "tenant-1")
 
         assert result == []
