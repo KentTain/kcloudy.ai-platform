@@ -5,10 +5,11 @@
  * 布局：
  * - 顶部统计卡片（人员总数、启用账号数、当前部门人数、多角色成员数）
  * - 左侧 300px 部门树筛选
- * - 右侧 Table 人员列表 + 多条件筛选 + 行内操作
+ * - 右侧 DataTable 人员列表 + 多条件筛选 + 行内操作
  */
 
-import { ref, computed, onMounted } from "vue"
+import { ref, computed, onMounted, h } from "vue"
+import type { ColumnDef } from "@tanstack/vue-table"
 import {
   Users,
   UserCheck,
@@ -27,9 +28,9 @@ import AppPage from "@/framework/layouts/components/AppPage.vue"
 import {
   Button,
   Badge,
-  Table,
-  Pagination,
   Input,
+  DataTable,
+  useDataTable,
 } from "@/components"
 import {
   Select,
@@ -58,10 +59,6 @@ import UserFormDialog, { type UserSubmitData } from "@/iam/components/UserFormDi
 
 // ========== 状态 ==========
 
-const loading = ref(false)
-const users = ref<User[]>([])
-const total = ref(0)
-
 // 统计
 const stats = ref<UserStats>({ total: 0, enabled: 0, disabled: 0, multi_role: 0 })
 
@@ -79,9 +76,6 @@ const filters = ref({
   dept_id: "",
   include_children: true,
 })
-
-// 分页
-const pagination = ref({ page: 1, pageSize: 20 })
 
 // 当前选中的部门名称
 const selectedDeptName = ref("")
@@ -133,19 +127,20 @@ const statusOptions = [
   { label: "锁定", value: "locked" },
 ]
 
-// ========== 表格配置 ==========
-
-const columns = [
-  { key: "username", title: "用户名", width: "120px" },
-  { key: "nickname", title: "昵称", width: "100px" },
-  { key: "dept_name", title: "部门", width: "140px" },
-  { key: "email", title: "邮箱", width: "160px" },
-  { key: "phone", title: "手机号", width: "120px" },
-  { key: "status", title: "状态", width: "80px" },
-  { key: "actions", title: "操作", width: "200px" },
-]
-
 // ========== 方法 ==========
+
+/** 状态 Badge 样式 */
+function getStatusBadgeVariant(status: string): "default" | "secondary" | "destructive" | "outline" {
+  if (status === "active") return "default"
+  if (status === "locked") return "destructive"
+  return "secondary"
+}
+
+function getStatusLabel(status: string): string {
+  if (status === "active") return "启用"
+  if (status === "locked") return "锁定"
+  return "停用"
+}
 
 /** 加载部门树 */
 async function loadDepartmentTree() {
@@ -177,34 +172,136 @@ async function loadStats() {
   }
 }
 
-/** 加载用户列表 */
-async function loadUsers() {
-  loading.value = true
-  try {
+// ========== 列定义 ==========
+
+const userColumns: ColumnDef<User>[] = [
+  {
+    accessorKey: "username",
+    header: "用户名",
+    size: 120,
+    cell: ({ row }) => h("span", { class: "font-medium" }, row.original.username),
+  },
+  {
+    accessorKey: "nickname",
+    header: "昵称",
+    size: 100,
+    cell: ({ row }) => row.original.nickname || "--",
+  },
+  {
+    accessorKey: "dept_name",
+    header: "部门",
+    size: 140,
+    cell: ({ row }) => row.original.dept_name || "--",
+  },
+  {
+    accessorKey: "email",
+    header: "邮箱",
+    size: 160,
+    cell: ({ row }) => row.original.email || "--",
+  },
+  {
+    accessorKey: "phone",
+    header: "手机号",
+    size: 120,
+    cell: ({ row }) => row.original.phone || "--",
+  },
+  {
+    accessorKey: "status",
+    header: "状态",
+    size: 80,
+    cell: ({ row }) => {
+      const status = row.original.status
+      return h(Badge, { variant: getStatusBadgeVariant(status) }, () => getStatusLabel(status))
+    },
+  },
+  {
+    id: "actions",
+    header: "操作",
+    size: 180,
+    cell: ({ row }) => {
+      const user = row.original
+      const buttons = [
+        h(
+          Button,
+          { variant: "ghost", size: "sm", onClick: () => handleEdit(user) },
+          () => h(Pencil, { class: "h-3.5 w-3.5" })
+        ),
+      ]
+
+      if (user.status === "active") {
+        buttons.push(
+          h(
+            Button,
+            { variant: "ghost", size: "sm", onClick: () => handleDisable(user) },
+            () => h(ShieldOff, { class: "h-3.5 w-3.5" })
+          )
+        )
+      } else {
+        buttons.push(
+          h(
+            Button,
+            { variant: "ghost", size: "sm", onClick: () => handleEnable(user) },
+            () => h(ShieldCheck, { class: "h-3.5 w-3.5" })
+          )
+        )
+      }
+
+      buttons.push(
+        h(
+          Button,
+          { variant: "ghost", size: "sm", onClick: () => handleResetPassword(user) },
+          () => h(KeyRound, { class: "h-3.5 w-3.5" })
+        )
+      )
+
+      buttons.push(
+        h(
+          Button,
+          {
+            variant: "ghost",
+            size: "sm",
+            class: "text-destructive hover:text-destructive",
+            onClick: () => handleDelete(user),
+          },
+          () => h(Trash2, { class: "h-3.5 w-3.5" })
+        )
+      )
+
+      return h("div", { class: "flex items-center gap-1" }, buttons)
+    },
+  },
+]
+
+// ========== 初始化 DataTable ==========
+
+const dataTable = useDataTable<User>({
+  columns: userColumns,
+  remoteFetchFn: async ({ page, page_size }) => {
     const roleId = filters.value.role_id === "__all__" ? undefined : filters.value.role_id
     const status = filters.value.status === "__all__" ? undefined : filters.value.status
     const res = await getUsers({
-      page: pagination.value.page,
-      page_size: pagination.value.pageSize,
+      page,
+      page_size,
       keyword: filters.value.keyword || undefined,
       status: status,
       role_id: roleId,
       dept_id: filters.value.dept_id || undefined,
       include_children: filters.value.include_children,
     })
-    users.value = res.data?.items || []
-    total.value = res.data?.total || 0
-  } catch (error) {
-    notifyError(getErrorMessage(error, "加载用户列表失败"))
-  } finally {
-    loading.value = false
-  }
-}
+    return {
+      code: res.code,
+      data: res.data?.items || [],
+      msg: res.msg,
+      page: res.data?.page || page,
+      page_size: res.data?.page_size || page_size,
+      total: res.data?.total || 0,
+    }
+  },
+})
 
 /** 选择部门筛选 */
 function selectDepartment(deptId: string | undefined) {
   filters.value.dept_id = deptId || ""
-  pagination.value.page = 1
 
   // 查找部门名称
   if (deptId) {
@@ -223,21 +320,19 @@ function selectDepartment(deptId: string | undefined) {
     selectedDeptName.value = ""
   }
 
-  loadUsers()
+  dataTable.refresh(true)
 }
 
 /** 搜索 */
 function handleSearch() {
-  pagination.value.page = 1
-  loadUsers()
+  dataTable.refresh(true)
 }
 
 /** 重置筛选 */
 function handleReset() {
   filters.value = { keyword: "", status: "__all__", role_id: "__all__", dept_id: "", include_children: true }
-  pagination.value.page = 1
   selectedDeptName.value = ""
-  loadUsers()
+  dataTable.refresh(true)
 }
 
 /** 创建用户 */
@@ -279,7 +374,7 @@ async function handleFormSubmit(data: UserSubmitData) {
     }
 
     formDialogOpen.value = false
-    await Promise.all([loadUsers(), loadStats()])
+    await Promise.all([dataTable.refresh(), loadStats()])
   } catch (error) {
     notifyError(getErrorMessage(error, "操作失败"))
   }
@@ -290,7 +385,7 @@ async function handleEnable(user: User) {
   try {
     await enableUser(user.id)
     notifySuccess("已启用")
-    await Promise.all([loadUsers(), loadStats()])
+    await Promise.all([dataTable.refresh(), loadStats()])
   } catch (error) {
     notifyError(getErrorMessage(error, "启用失败"))
   }
@@ -303,7 +398,7 @@ async function handleDisable(user: User) {
   try {
     await disableUser(user.id)
     notifySuccess("已停用")
-    await Promise.all([loadUsers(), loadStats()])
+    await Promise.all([dataTable.refresh(), loadStats()])
   } catch (error) {
     notifyError(getErrorMessage(error, "停用失败"))
   }
@@ -328,23 +423,10 @@ async function handleDelete(user: User) {
   try {
     await deleteUser(user.id)
     notifySuccess("删除成功")
-    await Promise.all([loadUsers(), loadStats()])
+    await Promise.all([dataTable.refresh(), loadStats()])
   } catch (error) {
     notifyError(getErrorMessage(error, "删除失败"))
   }
-}
-
-/** 状态 Badge 样式 */
-function getStatusBadgeVariant(status: string): "default" | "secondary" | "destructive" | "outline" {
-  if (status === "active") return "default"
-  if (status === "locked") return "destructive"
-  return "secondary"
-}
-
-function getStatusLabel(status: string): string {
-  if (status === "active") return "启用"
-  if (status === "locked") return "锁定"
-  return "停用"
 }
 
 // 初始化
@@ -352,7 +434,6 @@ onMounted(() => {
   loadDepartmentTree()
   loadRoleOptions()
   loadStats()
-  loadUsers()
 })
 </script>
 
@@ -487,78 +568,8 @@ onMounted(() => {
         </div>
 
         <!-- 用户列表 -->
-        <div class="flex-1 overflow-auto">
-          <Table
-            :columns="columns"
-            :data="users"
-            :loading="loading"
-            stripe
-          >
-            <template #username="{ row }">
-              <span class="font-medium">{{ row.username }}</span>
-            </template>
-            <template #nickname="{ row }">
-              {{ row.nickname || "--" }}
-            </template>
-            <template #dept_name="{ row }">
-              {{ row.dept_name || "--" }}
-            </template>
-            <template #email="{ row }">
-              {{ row.email || "--" }}
-            </template>
-            <template #phone="{ row }">
-              {{ row.phone || "--" }}
-            </template>
-            <template #status="{ row }">
-              <Badge :variant="getStatusBadgeVariant(row.status)">
-                {{ getStatusLabel(row.status) }}
-              </Badge>
-            </template>
-            <template #actions="{ row }">
-              <div class="flex items-center gap-1">
-                <Button variant="ghost" size="sm" @click="handleEdit(row as User)">
-                  <Pencil class="h-3.5 w-3.5" />
-                </Button>
-                <Button
-                  v-if="row.status === 'active'"
-                  variant="ghost"
-                  size="sm"
-                  @click="handleDisable(row as User)"
-                >
-                  <ShieldOff class="h-3.5 w-3.5" />
-                </Button>
-                <Button
-                  v-else
-                  variant="ghost"
-                  size="sm"
-                  @click="handleEnable(row as User)"
-                >
-                  <ShieldCheck class="h-3.5 w-3.5" />
-                </Button>
-                <Button variant="ghost" size="sm" @click="handleResetPassword(row as User)">
-                  <KeyRound class="h-3.5 w-3.5" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  class="text-destructive hover:text-destructive"
-                  @click="handleDelete(row as User)"
-                >
-                  <Trash2 class="h-3.5 w-3.5" />
-                </Button>
-              </div>
-            </template>
-          </Table>
-        </div>
-
-        <!-- 分页 -->
-        <div class="p-3 border-t">
-          <Pagination
-            :total="total"
-            v-model:page="pagination.page"
-            v-model:page-size="pagination.pageSize"
-            @update:page="loadUsers"
-          />
+        <div class="flex-1 overflow-hidden p-3">
+          <DataTable :data-table="dataTable" :fixed-layout="true" />
         </div>
       </div>
     </div>
