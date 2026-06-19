@@ -7,7 +7,8 @@
  * - 右侧：Tabs（角色列表、菜单列表）
  */
 
-import { ref, computed, onMounted } from "vue"
+import { ref, computed, onMounted, h } from "vue"
+import type { ColumnDef } from "@tanstack/vue-table"
 import {
   Shield,
   Search,
@@ -22,17 +23,11 @@ import {
   Skeleton,
   Input,
   Checkbox,
+  DataTable,
+  useDataTable,
 } from "@/components"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
 import {
   Dialog,
   DialogContent,
@@ -55,7 +50,6 @@ import { getMenus } from "@/iam/api/menu"
 
 const loading = ref(false)
 const permissions = ref<Permission[]>([])
-const roles = ref<Role[]>([])
 const menus = ref<MenuTreeNode[]>([])
 
 // 权限树搜索
@@ -122,20 +116,74 @@ const filteredGroups = computed(() => {
     .filter((g) => g.permissions.length > 0)
 })
 
+// ========== 角色列表 DataTable ==========
+
+// 列定义
+const roleColumns: ColumnDef<Role>[] = [
+  {
+    accessorKey: "name",
+    header: "角色名称",
+    size: 120,
+    cell: ({ row }) => h("span", { class: "font-medium" }, row.original.name),
+  },
+  {
+    accessorKey: "code",
+    header: "角色编码",
+    size: 120,
+    cell: ({ row }) => h("span", { class: "font-mono text-sm" }, row.original.code),
+  },
+  {
+    accessorKey: "description",
+    header: "描述",
+    cell: ({ row }) => row.original.description || "--",
+  },
+  {
+    id: "actions",
+    header: "操作",
+    size: 120,
+    cell: ({ row }) => {
+      const role = row.original
+      return h(
+        Button,
+        {
+          variant: "outline",
+          size: "sm",
+          onClick: () => handleAssignPermissions(role),
+        },
+        () => [h(Settings, { class: "mr-1 h-3.5 w-3.5" }), "分配权限"]
+      )
+    },
+  },
+]
+
+// DataTable 初始化
+const roleTable = useDataTable<Role>({
+  columns: roleColumns,
+  remoteFetchFn: async ({ page, page_size }) => {
+    const response = await getRoles({ page, page_size })
+    return {
+      data: response.data?.items || [],
+      total: response.data?.total || 0,
+      page: response.data?.page || 1,
+      page_size: response.data?.page_size || 10,
+    }
+  },
+})
+
 // ========== 方法 ==========
 
 /** 加载数据 */
 async function loadData() {
   loading.value = true
   try {
-    const [permRes, rolesRes, menusRes] = await Promise.all([
+    const [permRes, menusRes] = await Promise.all([
       getPermissions({ page: 1, page_size: 1000 }),
-      getRoles({ page: 1, page_size: 100 }),
       getMenus(),
     ])
     permissions.value = permRes.data?.items || []
-    roles.value = rolesRes.data?.items || []
     menus.value = menusRes.data?.menus || []
+    // 角色列表由 DataTable 自动加载
+    await roleTable.refresh(true)
   } catch (error) {
     notifyError(getErrorMessage(error, "加载数据失败"))
   } finally {
@@ -256,39 +304,7 @@ onMounted(() => {
           <ScrollArea class="flex-1">
             <!-- 角色列表 Tab -->
             <TabsContent value="roles" class="p-4 m-0">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>角色名称</TableHead>
-                    <TableHead>角色编码</TableHead>
-                    <TableHead>描述</TableHead>
-                    <TableHead class="w-[100px]">操作</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  <TableRow v-if="loading">
-                    <TableCell v-for="n in 4" :key="n">
-                      <Skeleton class="h-5 w-full" />
-                    </TableCell>
-                  </TableRow>
-                  <TableRow v-else-if="roles.length === 0">
-                    <TableCell colspan="4" class="h-16 text-center text-muted-foreground">
-                      暂无角色数据
-                    </TableCell>
-                  </TableRow>
-                  <TableRow v-else v-for="role in roles" :key="role.id">
-                    <TableCell class="font-medium">{{ role.name }}</TableCell>
-                    <TableCell class="font-mono text-sm">{{ role.code }}</TableCell>
-                    <TableCell>{{ role.description || "--" }}</TableCell>
-                    <TableCell>
-                      <Button variant="outline" size="sm" @click="handleAssignPermissions(role)">
-                        <Settings class="mr-1 h-3.5 w-3.5" />
-                        分配权限
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                </TableBody>
-              </Table>
+              <DataTable :data-table="roleTable" :fixed-layout="true" />
             </TabsContent>
 
             <!-- 菜单列表 Tab -->
