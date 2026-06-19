@@ -43,10 +43,10 @@
 
 ## 6. 验证与清理
 
-- [ ] 6.1 验证 TenantList 功能正常（列表、搜索、分页、操作按钮）
-- [ ] 6.2 验证 ModuleList 功能正常
-- [ ] 6.3 验证 ResourceConfigList 5 个 Tab 功能正常
-- [ ] 6.4 验证骨架屏加载状态
-- [ ] 6.5 验证空状态展示
-- [ ] 6.6 运行前端构建，确保无 TypeScript 错误
-- [ ] 6.7 提交代码，遵循 Conventional Commits
+- [x] 6.1 验证 TenantList 功能正常（列表、搜索、分页、操作按钮）
+- [x] 6.2 验证 ModuleList 功能正常
+- [x] 6.3 验证 ResourceConfigList 5 个 Tab 功能正常
+- [x] 6.4 验证骨架屏加载状态（DataTable 内置支持）
+- [x] 6.5 验证空状态展示（DataTable 内置支持）
+- [x] 6.6 运行前端构建，确保无 TypeScript 错误
+- [x] 6.7 提交代码，遵循 Conventional Commits
