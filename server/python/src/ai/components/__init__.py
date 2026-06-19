@@ -1,5 +1,7 @@
 """AI 组件模块"""
 
+from typing import TYPE_CHECKING
+
 from ai.components.code_executor import (
     CodeExecutionError,
     CodeExecutionResponse,
@@ -30,7 +32,9 @@ from ai.components.encryption.manager import (
     get_encryption_manager,
     init_encryption_manager,
 )
-from ai.components.graphrag import GraphData, GraphRAGClient
+
+if TYPE_CHECKING:
+    from ai.components.graphrag import GraphData, GraphRAGClient
 
 __all__ = [
     # Encryption
