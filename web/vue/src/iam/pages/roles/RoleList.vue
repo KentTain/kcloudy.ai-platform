@@ -7,7 +7,8 @@
  * - 右侧：Tabs（角色成员、权限列表）
  */
 
-import { ref, computed, onMounted, onUnmounted } from "vue"
+import { ref, computed, onMounted, onUnmounted, h } from "vue"
+import type { ColumnDef } from "@tanstack/vue-table"
 import {
   Shield,
   Users,
@@ -23,21 +24,14 @@ import AppPage from "@/framework/layouts/components/AppPage.vue"
 import {
   Button,
   Badge,
-  Skeleton,
   Checkbox,
+  DataTable,
+  useDataTable,
   PeopleSelectDialog,
   Input,
 } from "@/components"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
 import {
   Dialog,
   DialogContent,
@@ -47,7 +41,7 @@ import {
   DialogFooter,
 } from "@/components"
 import { confirmAction, notifySuccess, notifyError, getErrorMessage } from "@/framework/utils/feedback"
-import type { Role, Permission, PermissionGroup } from "@/iam/types"
+import type { Role, Permission, PermissionGroup, RoleMember } from "@/iam/types"
 import type { OrgTreeNode, PeopleItem } from "@/components/common/feedback/people-select"
 import {
   getRoles,
@@ -71,10 +65,6 @@ const loading = ref(false)
 const roles = ref<Role[]>([])
 const selectedRole = ref<Role | null>(null)
 const activeTab = ref("members")
-
-// 角色成员
-const members = ref<{ user_id: string; username: string; nickname?: string; email?: string; phone?: string; status: string }[]>([])
-const membersLoading = ref(false)
 
 // 角色权限
 const allPermissions = ref<Permission[]>([])
@@ -134,6 +124,85 @@ const filteredPermissionGroups = computed(() => {
     .filter((g) => g.permissions.length > 0)
 })
 
+// ========== 角色成员 DataTable ==========
+
+// 列定义
+const memberColumns: ColumnDef<RoleMember>[] = [
+  {
+    accessorKey: "nickname",
+    header: "姓名",
+    size: 120,
+    cell: ({ row }) => h("span", { class: "font-medium" }, row.original.nickname || row.original.username),
+  },
+  {
+    accessorKey: "username",
+    header: "账号",
+    size: 120,
+    cell: ({ row }) => h("span", { class: "font-mono text-sm" }, row.original.username),
+  },
+  {
+    accessorKey: "email",
+    header: "邮箱",
+    cell: ({ row }) => row.original.email || "--",
+  },
+  {
+    accessorKey: "phone",
+    header: "手机",
+    size: 120,
+    cell: ({ row }) => row.original.phone || "--",
+  },
+  {
+    accessorKey: "status",
+    header: "状态",
+    size: 80,
+    cell: ({ row }) => {
+      const status = row.original.status
+      return h(
+        Badge,
+        { variant: status === "active" ? "default" : "secondary" },
+        () => status === "active" ? "启用" : "停用"
+      )
+    },
+  },
+  {
+    id: "actions",
+    header: "操作",
+    size: 100,
+    cell: ({ row }) => {
+      const member = row.original
+      return h(
+        Button,
+        {
+          variant: "ghost",
+          size: "sm",
+          class: "text-destructive hover:text-destructive",
+          onClick: () => handleRemoveMember(member),
+        },
+        () => [h(X, { class: "h-3.5 w-3.5 mr-1" }), "移除"]
+      )
+    },
+  },
+]
+
+// DataTable 初始化
+const memberTable = useDataTable<RoleMember>({
+  columns: memberColumns,
+  remoteFetchFn: async () => {
+    if (!selectedRole.value) {
+      return { data: [], total: 0, page: 1, page_size: 10 }
+    }
+    const res = await getRoleMembers(selectedRole.value.id)
+    const items = res.data || []
+    return {
+      data: items,
+      total: items.length,
+      page: 1,
+      page_size: items.length || 10,
+    }
+  },
+  enabled: () => !!selectedRole.value && activeTab.value === "members",
+})
+
 // ========== 方法 ==========
 
 /** 加载角色列表 */
@@ -155,26 +224,9 @@ async function loadRoles() {
 async function selectRole(role: Role) {
   selectedRole.value = role
   activeTab.value = "members"
-  await loadRoleMembers()
+  // 成员列表由 DataTable 自动加载（enabled 条件触发）
   if (isUnmounted.value) return
   await loadRolePermissions()
-}
-
-/** 加载角色成员 */
-async function loadRoleMembers() {
-  if (!selectedRole.value) return
-  membersLoading.value = true
-  try {
-    const res = await getRoleMembers(selectedRole.value.id)
-    if (isUnmounted.value) return
-    members.value = res.data || []
-  } catch (error) {
-    if (isUnmounted.value) return
-    notifyError(getErrorMessage(error, "加载角色成员失败"))
-    members.value = []
-  } finally {
-    membersLoading.value = false
-  }
 }
 
 /** 加载角色权限 */
@@ -207,7 +259,7 @@ async function handleAddMembers(userIds: string[]) {
     const res = await addRoleMembers(selectedRole.value.id, userIds)
     notifySuccess(`成功添加 ${res.data?.added || 0} 个成员`)
     addMemberDialogOpen.value = false
-    await loadRoleMembers()
+    await memberTable.refresh(true)
   } catch (error) {
     notifyError(getErrorMessage(error, "添加成员失败"))
   }
@@ -220,7 +272,7 @@ async function handleRemoveMember(user: { user_id: string; username: string; nic
   try {
     await removeRoleMember(selectedRole.value.id, user.user_id)
     notifySuccess("已移除成员")
-    await loadRoleMembers()
+    await memberTable.refresh(true)
   } catch (error) {
     notifyError(getErrorMessage(error, "移除成员失败"))
   }
@@ -489,7 +541,7 @@ onUnmounted(() => {
               <TabsContent value="members" class="p-4 m-0">
                 <div class="mb-3 flex items-center justify-between">
                   <span class="text-sm text-muted-foreground">
-                    共 {{ members.length }} 个成员
+                    共 {{ memberTable.table.getRowCount() }} 个成员
                   </span>
                   <Button size="sm" @click="addMemberDialogOpen = true">
                     <UserPlus class="h-3.5 w-3.5 mr-1" />
@@ -497,56 +549,8 @@ onUnmounted(() => {
                   </Button>
                 </div>
 
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>姓名</TableHead>
-                      <TableHead>账号</TableHead>
-                      <TableHead>邮箱</TableHead>
-                      <TableHead>手机</TableHead>
-                      <TableHead class="w-[80px]">状态</TableHead>
-                      <TableHead class="w-[100px]">操作</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    <TableRow v-if="membersLoading">
-                      <TableCell v-for="n in 6" :key="n">
-                        <Skeleton class="h-5 w-full" />
-                      </TableCell>
-                    </TableRow>
-                    <TableRow v-else-if="members.length === 0">
-                      <TableCell colspan="6" class="h-16 text-center text-muted-foreground">
-                        暂无成员
-                      </TableCell>
-                    </TableRow>
-                    <TableRow v-else v-for="member in members" :key="member.user_id">
-                      <TableCell class="font-medium">
-                        {{ member.nickname || member.username }}
-                      </TableCell>
-                      <TableCell class="font-mono text-sm">
-                        {{ member.username }}
-                      </TableCell>
-                      <TableCell>{{ member.email || "--" }}</TableCell>
-                      <TableCell>{{ member.phone || "--" }}</TableCell>
-                      <TableCell>
-                        <Badge :variant="member.status === 'active' ? 'default' : 'secondary'">
-                          {{ member.status === 'active' ? '启用' : '停用' }}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          class="text-destructive hover:text-destructive"
-                          @click="handleRemoveMember(member)"
-                        >
-                          <X class="h-3.5 w-3.5 mr-1" />
-                          移除
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  </TableBody>
-                </Table>
+                <!-- 成员表格 -->
+                <DataTable :data-table="memberTable" :fixed-layout="true" />
               </TabsContent>
 
               <!-- 权限列表 Tab -->

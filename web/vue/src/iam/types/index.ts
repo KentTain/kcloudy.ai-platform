@@ -243,6 +243,16 @@ export interface MenuListResponse {
 // 新增类型（iam-page-refactor）
 // ============================================
 
+/** 角色成员类型 */
+export interface RoleMember {
+  user_id: string;
+  username: string;
+  nickname?: string;
+  email?: string;
+  phone?: string;
+  status: string;
+}
+
 /** 用户统计数据 */
 export interface UserStats {
   total: number;
