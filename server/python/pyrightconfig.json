@@ -1,8 +1,23 @@
 {
   "include": ["src", "tests", "scripts"],
-  "exclude": [".venv", "**/__pycache__", "**/.pytest_cache"],
+  "exclude": [
+    ".venv",
+    "**/__pycache__",
+    "**/.pytest_cache",
+    "**/.ruff_cache",
+    "**/node_modules",
+    "**/.git",
+    "**/dist",
+    "**/.benchmarks"
+  ],
   "venvPath": ".",
   "venv": ".venv",
   "extraPaths": ["src"],
-  "pythonVersion": "3.12"
+  "pythonVersion": "3.12",
+  "typeCheckingMode": "basic",
+  "reportMissingImports": true,
+  "reportMissingTypeStubs": false,
+  "reportUnusedImport": "warning",
+  "reportUnusedVariable": "warning",
+  "reportGeneralTypeIssues": "warning"
 }
