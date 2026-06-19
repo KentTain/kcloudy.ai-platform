@@ -15,9 +15,25 @@
   "extraPaths": ["src"],
   "pythonVersion": "3.12",
   "typeCheckingMode": "basic",
-  "reportMissingImports": true,
+
+  "reportMissingImports": "error",
   "reportMissingTypeStubs": false,
   "reportUnusedImport": "warning",
   "reportUnusedVariable": "warning",
-  "reportGeneralTypeIssues": "warning"
+
+  "reportGeneralTypeIssues": "warning",
+  "reportOptionalMemberAccess": "warning",
+  "reportOptionalSubscript": "warning",
+  "reportAttributeAccessIssue": "warning",
+  "reportCallIssue": "warning",
+  "reportArgumentType": "warning",
+  "reportReturnType": "warning",
+  "reportAssignmentType": "warning",
+  "reportIndexIssue": "warning",
+  "reportOperatorIssue": "warning",
+  "reportIncompatibleMethodOverride": "warning",
+  "reportIncompatibleVariableOverride": "warning",
+  "reportUnnecessaryComparison": "warning",
+  "reportUnnecessaryContains": "warning",
+  "reportPossiblyUnboundVariable": "warning"
 }

@@ -35,11 +35,12 @@ class ActiveRecordMixin:
     Note: 子类需要提供 __table__ 和 deleted_at 属性
     """
 
-    __table__: "Table"
-    deleted_at: datetime | None
-    """
-
     __abstract__ = True
+
+    # 类型注解：子类需要提供的属性
+    if TYPE_CHECKING:
+        __table__: "Table"
+        deleted_at: datetime | None
 
     # ==================== 属性 ====================
 
