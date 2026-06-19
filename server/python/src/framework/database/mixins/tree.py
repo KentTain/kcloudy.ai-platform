@@ -7,7 +7,7 @@
 from collections.abc import Callable, Sequence
 from datetime import UTC, datetime
 from enum import Enum
-from typing import Any, ClassVar, Self
+from typing import TYPE_CHECKING, Any, ClassVar, Self
 
 from sqlalchemy import Boolean, Integer, String, and_, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -19,6 +19,9 @@ from framework.core.constants import (
     TREE_SORTS_LENGTH,
     TREE_SORTS_PADSTR,
 )
+
+if TYPE_CHECKING:
+    from sqlalchemy import Table
 
 
 class TreeNodeEventType(str, Enum):
@@ -43,9 +46,14 @@ class TreeNodeMixin:
     - tree_sorts: 排序路径
     - tree_names: 名称路径
     - parent_ids: 父ID路径
+
+    Note: 子类需要提供 id, deleted_at 和 __table__ 属性
     """
 
     __abstract__ = True
+    __table__: "Table"
+    id: str
+    deleted_at: datetime | None
 
     # ==================== 字段名常量 ====================
 
@@ -356,7 +364,7 @@ class TreeNodeMixin:
     def _node_not_deleted_condition(cls):
         """检查模型是否支持软删除"""
         if hasattr(cls, "deleted_at"):
-            return cls.deleted_at.is_(None)
+            return cls.deleted_at.is_(None)  # type: ignore[union-attr]
         return None
 
     @classmethod
