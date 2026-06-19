@@ -33,7 +33,10 @@ class TestGraphRAGImports:
         assert hasattr(module, "StorageType")
 
     def test_import_config_defaults(self):
-        """测试导入 config.defaults"""
+        """测试导入 config.defaults（需要 datashaper 可选依赖）"""
+        # datashaper 是 graphrag 可选依赖组的依赖，未安装时自动跳过
+        pytest.importorskip("datashaper")
+
         import importlib.util
 
         spec = importlib.util.spec_from_file_location(
