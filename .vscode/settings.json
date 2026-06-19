@@ -189,6 +189,11 @@
   "cursorpyright.analysis.diagnosticMode": "workspace",// 关闭自动覆盖语言服务器
   "cursorpyright.analysis.extraPaths": ["${workspaceFolder}/server/python/src"],
   "cursorpyright.analysis.exclude": [
+    "**/ai_plugin",
+    "**/ai/components/model",
+    "**/ai/components/plugin",
+    "**/ai/components/graphrag",
+    "**/ai/components/datasource",
     "**/node_modules",
     "**/__pycache__",
     "**/.pytest_cache",

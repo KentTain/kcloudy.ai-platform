@@ -8,11 +8,10 @@
 """
 
 
+from framework.utils.crypto import hash_password, verify_password
 from tenant.middlewares.admin_auth_middleware import (
     AdminAuthService,
     generate_token,
-    hash_password,
-    verify_password,
 )
 
 
