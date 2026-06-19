@@ -57,7 +57,7 @@ class RedisUtil:
             cls._pool = None
 
     @classmethod
-    def get_client(cls) -> Redis:
+    def get_client(cls) -> Redis:  # type: ignore[misc]
         """获取 Redis 客户端"""
         if cls._client is None:
             raise RuntimeError("Redis 客户端未初始化")
