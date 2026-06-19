@@ -7,13 +7,16 @@ ActiveRecord 混入
 import math
 from collections.abc import Sequence
 from datetime import UTC, datetime
-from typing import Any, Self, TypeVar
+from typing import TYPE_CHECKING, Any, Self, TypeVar
 
 from loguru import logger
 from sqlalchemy import and_, asc, desc, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from framework.database.pagination import Pagination
+
+if TYPE_CHECKING:
+    from sqlalchemy import Table
 
 T = TypeVar("T", bound="ActiveRecordMixin")
 _logger = logger.bind(name=__name__)
@@ -28,6 +31,12 @@ class ActiveRecordMixin:
     - 类方法：create, count, first, one, all, paginated 系列
     - 支持软删除（自动检测 deleted_at 字段）
     - 支持复杂查询条件
+
+    Note: 子类需要提供 __table__ 和 deleted_at 属性
+    """
+
+    __table__: "Table"
+    deleted_at: datetime | None
     """
 
     __abstract__ = True
