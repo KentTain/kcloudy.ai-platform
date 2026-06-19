@@ -1,0 +1,34 @@
+# Cargo 构建配置
+
+[build]
+# 并行编译任务数
+jobs = 8
+
+[net]
+# 使用国内镜像加速
+retry = 5
+
+[env]
+# 设置环境变量
+RUST_LOG = "debug"
+
+# Windows 特定配置
+[target.x86_64-pc-windows-msvc]
+linker = "rust-lld.exe"
+
+[target.x86_64-pc-windows-gnu]
+linker = "x86_64-w64-mingw32-gcc"
+
+# Linux 特定配置
+[target.x86_64-unknown-linux-gnu]
+linker = "gcc"
+
+# 注册国内镜像源（需要时取消注释）
+[source.crates-io]
+replace-with = "ustc"
+
+[source.ustc]
+registry = "https://mirrors.ustc.edu.cn/crates.io-index"
+
+[source.tuna]
+registry = "https://mirrors.tuna.tsinghua.edu.cn/git/crates.io-index.git"

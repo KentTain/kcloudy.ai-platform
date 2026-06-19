@@ -1,0 +1,315 @@
+# Docker Compose - Backend Services
+# Python FastAPI 后端服务：支持平台版和独立模块版
+#
+# 环境选择：通过 PYTHON_SERVICE_ENV 环境变量
+#   - local: 本地/Docker 开发环境（默认），使用 Docker 内部服务名
+#   - prod: 生产环境，需要在环境变量中配置生产地址
+
+services:
+  # ============================================
+  # Platform Version - All Modules
+  # ============================================
+  backend-platform-api:
+    build:
+      context: ../server
+      dockerfile: python/Dockerfile
+      args:
+        BUILD_MODULES: demo,iam,tenant
+        APP_ROLE: web
+    image: ai-platform-backend-platform:${VERSION:-latest}
+    container_name: ai-platform-backend-platform-api
+    restart: unless-stopped
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+    environment:
+      - PYTHON_SERVICE_ENV=${PYTHON_SERVICE_ENV:-local}
+      - SQLALCHEMY_URL=postgresql+asyncpg://${POSTGRES_USER:-admin}:${POSTGRES_PASSWORD:-XdA9caoq}@postgres:5432/${POSTGRES_DB:-alon_demo}
+      - REDIS_SINGLE_HOST=redis
+      - REDIS_SINGLE_PORT=6379
+      - REDIS_SINGLE_PASSWORD=${REDIS_PASSWORD:-XdA9caoq}
+      - REDIS_SINGLE_DB=${REDIS_DB:-0}
+      - APP_ROLE=web
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - kcloudy-network
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=5)",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  backend-platform-task:
+    build:
+      context: ../server
+      dockerfile: python/Dockerfile
+      args:
+        BUILD_MODULES: demo,iam,tenant
+        APP_ROLE: task
+    image: ai-platform-backend-platform:${VERSION:-latest}
+    container_name: ai-platform-backend-platform-task
+    restart: unless-stopped
+    environment:
+      - PYTHON_SERVICE_ENV=${PYTHON_SERVICE_ENV:-local}
+      - SQLALCHEMY_URL=postgresql+asyncpg://${POSTGRES_USER:-admin}:${POSTGRES_PASSWORD:-XdA9caoq}@postgres:5432/${POSTGRES_DB:-alon_demo}
+      - REDIS_SINGLE_HOST=redis
+      - REDIS_SINGLE_PORT=6379
+      - REDIS_SINGLE_PASSWORD=${REDIS_PASSWORD:-XdA9caoq}
+      - REDIS_SINGLE_DB=${REDIS_DB:-0}
+      - APP_ROLE=task
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - kcloudy-network
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep -f 'application_task' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  backend-platform-listener:
+    build:
+      context: ../server
+      dockerfile: python/Dockerfile
+      args:
+        BUILD_MODULES: demo,iam,tenant
+        APP_ROLE: listener
+    image: ai-platform-backend-platform:${VERSION:-latest}
+    container_name: ai-platform-backend-platform-listener
+    restart: unless-stopped
+    environment:
+      - PYTHON_SERVICE_ENV=${PYTHON_SERVICE_ENV:-local}
+      - SQLALCHEMY_URL=postgresql+asyncpg://${POSTGRES_USER:-admin}:${POSTGRES_PASSWORD:-XdA9caoq}@postgres:5432/${POSTGRES_DB:-alon_demo}
+      - REDIS_SINGLE_HOST=redis
+      - REDIS_SINGLE_PORT=6379
+      - REDIS_SINGLE_PASSWORD=${REDIS_PASSWORD:-XdA9caoq}
+      - REDIS_SINGLE_DB=${REDIS_DB:-0}
+      - APP_ROLE=listener
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - kcloudy-network
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep -f 'application_listener' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # ============================================
+  # Standalone Modules (profile: standalone)
+  # ============================================
+  backend-demo-api:
+    build:
+      context: ../server
+      dockerfile: python/Dockerfile
+      args:
+        BUILD_MODULES: demo
+        APP_ROLE: web
+    image: ai-platform-backend-demo:${VERSION:-latest}
+    container_name: ai-platform-backend-demo-api
+    restart: unless-stopped
+    ports:
+      - "${BACKEND_DEMO_PORT:-8010}:8000"
+    environment:
+      - PYTHON_SERVICE_ENV=${PYTHON_SERVICE_ENV:-local}
+      - SQLALCHEMY_URL=postgresql+asyncpg://${POSTGRES_USER:-admin}:${POSTGRES_PASSWORD:-XdA9caoq}@postgres:5432/${POSTGRES_DB:-alon_demo}
+      - REDIS_SINGLE_HOST=redis
+      - REDIS_SINGLE_PORT=6379
+      - REDIS_SINGLE_PASSWORD=${REDIS_PASSWORD:-XdA9caoq}
+      - REDIS_SINGLE_DB=${REDIS_DB:-0}
+      - APP_ROLE=web
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - kcloudy-network
+    profiles:
+      - standalone
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=5)",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  backend-demo-task:
+    build:
+      context: ../server
+      dockerfile: python/Dockerfile
+      args:
+        BUILD_MODULES: demo
+        APP_ROLE: task
+    image: ai-platform-backend-demo:${VERSION:-latest}
+    container_name: ai-platform-backend-demo-task
+    restart: unless-stopped
+    environment:
+      - PYTHON_SERVICE_ENV=${PYTHON_SERVICE_ENV:-local}
+      - SQLALCHEMY_URL=postgresql+asyncpg://${POSTGRES_USER:-admin}:${POSTGRES_PASSWORD:-XdA9caoq}@postgres:5432/${POSTGRES_DB:-alon_demo}
+      - REDIS_SINGLE_HOST=redis
+      - REDIS_SINGLE_PORT=6379
+      - REDIS_SINGLE_PASSWORD=${REDIS_PASSWORD:-XdA9caoq}
+      - REDIS_SINGLE_DB=${REDIS_DB:-0}
+      - APP_ROLE=task
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - kcloudy-network
+    profiles:
+      - standalone
+
+  backend-demo-listener:
+    build:
+      context: ../server
+      dockerfile: python/Dockerfile
+      args:
+        BUILD_MODULES: demo
+        APP_ROLE: listener
+    image: ai-platform-backend-demo:${VERSION:-latest}
+    container_name: ai-platform-backend-demo-listener
+    restart: unless-stopped
+    environment:
+      - PYTHON_SERVICE_ENV=${PYTHON_SERVICE_ENV:-local}
+      - SQLALCHEMY_URL=postgresql+asyncpg://${POSTGRES_USER:-admin}:${POSTGRES_PASSWORD:-XdA9caoq}@postgres:5432/${POSTGRES_DB:-alon_demo}
+      - REDIS_SINGLE_HOST=redis
+      - REDIS_SINGLE_PORT=6379
+      - REDIS_SINGLE_PASSWORD=${REDIS_PASSWORD:-XdA9caoq}
+      - REDIS_SINGLE_DB=${REDIS_DB:-0}
+      - APP_ROLE=listener
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - kcloudy-network
+    profiles:
+      - standalone
+
+  backend-iam-api:
+    build:
+      context: ../server
+      dockerfile: python/Dockerfile
+      args:
+        BUILD_MODULES: iam
+        APP_ROLE: web
+    image: ai-platform-backend-iam:${VERSION:-latest}
+    container_name: ai-platform-backend-iam-api
+    restart: unless-stopped
+    ports:
+      - "${BACKEND_IAM_PORT:-8020}:8000"
+    environment:
+      - PYTHON_SERVICE_ENV=${PYTHON_SERVICE_ENV:-local}
+      - SQLALCHEMY_URL=postgresql+asyncpg://${POSTGRES_USER:-admin}:${POSTGRES_PASSWORD:-XdA9caoq}@postgres:5432/${POSTGRES_DB:-alon_demo}
+      - REDIS_SINGLE_HOST=redis
+      - REDIS_SINGLE_PORT=6379
+      - REDIS_SINGLE_PASSWORD=${REDIS_PASSWORD:-XdA9caoq}
+      - REDIS_SINGLE_DB=${REDIS_DB:-0}
+      - APP_ROLE=web
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - kcloudy-network
+    profiles:
+      - standalone
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=5)",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  backend-tenant-api:
+    build:
+      context: ../server
+      dockerfile: python/Dockerfile
+      args:
+        BUILD_MODULES: tenant
+        APP_ROLE: web
+    image: ai-platform-backend-tenant:${VERSION:-latest}
+    container_name: ai-platform-backend-tenant-api
+    restart: unless-stopped
+    ports:
+      - "${BACKEND_TENANT_PORT:-8030}:8000"
+    environment:
+      - PYTHON_SERVICE_ENV=${PYTHON_SERVICE_ENV:-local}
+      - SQLALCHEMY_URL=postgresql+asyncpg://${POSTGRES_USER:-admin}:${POSTGRES_PASSWORD:-XdA9caoq}@postgres:5432/${POSTGRES_DB:-alon_demo}
+      - REDIS_SINGLE_HOST=redis
+      - REDIS_SINGLE_PORT=6379
+      - REDIS_SINGLE_PASSWORD=${REDIS_PASSWORD:-XdA9caoq}
+      - REDIS_SINGLE_DB=${REDIS_DB:-0}
+      - APP_ROLE=web
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - kcloudy-network
+    profiles:
+      - standalone
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=5)",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # ============================================
+  # Infrastructure Services
+  # ============================================
+  sandbox:
+    image: langgenius/dify-sandbox:0.2.12
+    container_name: kcloudy-sandbox
+    restart: unless-stopped
+    ports:
+      - "${SANDBOX_PORT:-8194}:8194"
+    networks:
+      - kcloudy-network
+
+networks:
+  kcloudy-network:
+    name: kcloudy-network

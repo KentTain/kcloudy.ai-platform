@@ -1,0 +1,65 @@
+# Dependencies
+node_modules
+.pnpm-store
+.venv
+.ruff_cache
+
+# Build output
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Logs
+logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+*.swp
+*.bak
+
+# Test coverage
+coverage
+
+# TypeScript cache
+*.tsbuildinfo
+
+# Frontend cache
+.vite/
+.eslintcache
+
+__pycache__
+**/__pycache__
+
+__init__
+**/__init__
+
+# Python
+*.py[cod]
+*.egg-info/
+*.egg
+.eggs/
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# obsidian
+docs/.claudian
+docs/.obsidian
+docs/Excalidraw
+*.base

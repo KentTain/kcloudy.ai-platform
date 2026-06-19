@@ -1,0 +1,88 @@
+# Dependencies
+node_modules
+.pnpm-store
+.venv
+.ruff_cache
+
+# Build output
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Logs
+logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+*.swp
+*.bak
+
+# Test coverage
+coverage
+
+# Playwright E2E test output
+**/test-results/
+**/playwright-report/
+
+# TypeScript cache
+*.tsbuildinfo
+
+# Frontend cache
+.vite/
+.eslintcache
+
+__pycache__
+**/__pycache__
+
+# Python
+*.py[cod]
+*.egg-info/
+*.egg
+.eggs/
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# obsidian
+docs/.claude
+docs/.claudian
+docs/.obsidian
+docs/Excalidraw
+*.base
+
+# 本地配置（含敏感信息，不提交）
+**/application-local.yml
+**/application-prod.yml
+
+# skill
+.benchmarks
+.codegraph
+.superpowers
+.worktrees
+.cursor
+# Claude AI assistant
+.claude/settings.local.json
+
+# 本地pnpn缓存设置
+web/vue/pnpm-workspace.yaml

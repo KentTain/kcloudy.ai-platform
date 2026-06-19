@@ -1,0 +1,101 @@
+﻿import { createApp } from "vue";
+import { createPinia } from "pinia";
+import App from "./App.vue";
+import router from "./framework/router";
+import { setupRouterGuards } from "./framework/router/guards";
+import { setupPermissionDirective } from "./framework/directives/permission";
+import { setupFramework } from "./framework/module";
+import { ENABLED_MODULES } from "./config/modules";
+
+// Import module descriptors (conditionally based on config)
+import { aiModule } from "./ai";
+import { demoModule } from "./demo";
+import { iamModule } from "./iam";
+import { tenantModule } from "./tenant";
+
+// Import admin routes
+import { adminRoutes } from "./tenant/router";
+import { notFoundRoute } from "./framework/router";
+
+// Import styles
+import "./framework/styles/main.css";
+
+// Build modules array based on ENABLED_MODULES config
+const modules = [];
+if (ENABLED_MODULES.includes("ai")) {
+  modules.push(aiModule);
+}
+if (ENABLED_MODULES.includes("demo")) {
+  modules.push(demoModule);
+}
+if (ENABLED_MODULES.includes("iam")) {
+  modules.push(iamModule);
+}
+if (ENABLED_MODULES.includes("tenant")) {
+  modules.push(tenantModule);
+}
+
+// 创建应用实例
+const app = createApp(App);
+
+console.log("[main.ts] App created, starting initialization...");
+
+// Pinia 状态管理
+const pinia = createPinia();
+app.use(pinia);
+
+console.log("[main.ts] Pinia installed");
+
+// 路由守卫
+setupRouterGuards(router);
+
+console.log("[main.ts] Router guards setup");
+
+// 注册异步路由
+import { asyncRoutes } from "./framework/router";
+console.log("[main.ts] Registering asyncRoutes:", asyncRoutes.map(r => r.path));
+asyncRoutes.forEach((route) => router.addRoute(route));
+
+console.log("[main.ts] After asyncRoutes, router has:", router.getRoutes().map(r => ({ name: r.name, path: r.path })));
+
+// 注册管理后台路由
+adminRoutes.forEach((route) => router.addRoute(route));
+
+console.log("[main.ts] After adminRoutes, router has:", router.getRoutes().map(r => ({ name: r.name, path: r.path })));
+
+// 权限指令
+setupPermissionDirective(app);
+
+// 设置框架并注册模块路由（必须在 app.use(router) 之前完成）
+console.log("[main.ts] Starting setupFramework...");
+setupFramework({
+  app,
+  router,
+  pinia,
+  modules,
+})
+  .then(async () => {
+    console.log("[main.ts] setupFramework completed");
+    console.log("[main.ts] After setupFramework, router has:", router.getRoutes().map(r => ({ name: r.name, path: r.path })));
+
+    // 最后注册 404 路由（确保它是最后一个匹配的路由）
+    router.addRoute(notFoundRoute);
+    console.log("[main.ts] 404 route registered");
+
+    // 安装路由插件（在所有路由注册完成后）
+    app.use(router);
+    console.log("[main.ts] Router installed, current route:", router.currentRoute.value.path, router.currentRoute.value.name);
+
+    // 等待路由准备好
+    await router.isReady();
+
+    console.log("[main.ts] Router ready, current route:", router.currentRoute.value.path, router.currentRoute.value.name);
+    console.log("[main.ts] Current route matched:", router.currentRoute.value.matched.map(m => m.path));
+
+    // 挂载应用
+    app.mount("#app");
+    console.log("[main.ts] App mounted");
+  })
+  .catch((error) => {
+    console.error("Failed to setup framework:", error);
+  });

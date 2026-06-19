@@ -1,0 +1,179 @@
+# Demo 基础配置
+
+# 应用名称
+name: demo
+
+# 服务器配置
+server:
+  host: 0.0.0.0
+  port: 8000
+  debug: false
+
+# cors配置
+cors:
+  allowed-origin-patterns: "*"
+  allowed-methods: "*"
+  allowed-headers: "*"
+  allow-credentials: true
+  max-age: 86400
+
+# 日志配置
+logging:
+  level: debug
+  path: . # 相对于 LOGS_DIR（项目根目录/logs/）
+  # 日志文件轮转配置
+  rotation:
+    # 轮转方式：time(按时间) 或 size(按大小)
+    type: time
+    # 时间轮转配置（当type为time时生效）
+    time: "1 hour" # 支持: "1 minute", "1 hour", "1 day", "1 week", "1 month"
+    # 大小轮转配置（当type为size时生效）
+    size: "100 MB" # 支持: "1 KB", "1 MB", "1 GB"
+  # 日志文件保留配置
+  retention:
+    # 保留方式：time(按时间) 或 count(按数量)
+    type: time
+    # 时间保留配置（当type为time时生效）
+    time: "7 days" # 支持: "1 day", "1 week", "1 month"
+    # 数量保留配置（当type为count时生效）
+    count: 10
+  # 日志格式配置
+  format:
+    # 控制台日志格式（包含进程ID、链路追踪ID和用户ID）
+    console: "<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | <level>{level: <8}</level> | <magenta>PID:{process}</magenta> | <yellow>{extra[trace_id]}</yellow> | <blue>{extra[user_id]}</blue> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> | <level>{message}</level>"
+    # 文件日志格式（包含进程ID、链路追踪ID和用户ID）
+    file: "{time:YYYY-MM-DD HH:mm:ss.SSS} | {level: <8} | PID:{process} | {extra[trace_id]} | {extra[user_id]} | {name}:{function}:{line} | {message}"
+  # 是否在控制台输出日志
+  console-enabled: true
+  # 是否输出到文件
+  file-enabled: true
+  # 是否启用彩色输出（仅控制台）
+  colorize: true
+  # 是否启用诊断信息
+  diagnose: true
+  # 是否启用反向跟踪
+  backtrace: true
+  # 日志文件编码
+  encoding: "utf-8"
+  # 是否启用压缩（轮转后的日志文件）
+  compression: "gz" # 可选: null, "gz", "bz2", "xz"
+
+# 租户配置
+tenant:
+  # 扩展的跳过租户中间件路径前缀列表（追加到系统内置路径之后）
+  # 系统内置路径包括：/health、/docs、/redoc、/openapi.json、/tenant/admin/、/iam/console/v1/auth/* 等
+  # 如需添加额外的跳过路径，在此配置
+  skip-tenant-setting-path: []
+  # 示例：添加自定义跳过路径
+  # skip-tenant-setting-path:
+  #   - "/api/public/"
+  #   - "/webhook/"
+
+# 数据库配置
+sqlalchemy:
+  # 数据库连接URL
+  url: "postgresql+asyncpg://user:password@localhost:5432/ai_platform"
+  # 是否启用SQL语句日志
+  echo: false
+  pool:
+    # 注意：启用此选项会输出详细的连接池操作日志，建议仅在调试时使用
+    echo: false
+    # 连接池类型（可选值：queue, null）
+    # queue: 默认异步连接池，适用于大多数异步应用（推荐）
+    # null: 禁用连接池，适用于多进程/多事件循环环境
+    #
+    # 多进程部署建议：
+    # - 如果使用uvicorn --workers > 1，推荐使用 queue（已优化多进程安全）
+    # - 如果遇到连接池问题，可以尝试 null（性能会有所下降）
+    class-name: "queue"
+    # 连接池大小 (根据并发需求调整)
+    # 多进程环境建议：总连接数 = pool_size × workers
+    # 建议值: 小型应用 5-10, 中型应用 10-20, 大型应用 20-40
+    # 注意：workers=2时，每个进程建议使用较小的pool_size
+    size: 5
+    # 最大溢出连接数 (临时连接)
+    # 建议值: 等于或略小于 pool_size
+    max-overflow: 5
+    # 连接预检测 (建议开启，特别是多进程环境)
+    # 能够及时检测失效的连接，避免跨进程连接问题
+    pre-ping: true
+    # 连接回收时间 (秒)
+    # 多进程环境建议适当缩短，避免长时间占用连接
+    # 建议值: 1800-3600 (30分钟到1小时)
+    recycle: 1800
+    # 连接池超时时间 (秒)
+    # 获取连接的最大等待时间
+    pool-timeout: 30
+    # 连接返回时的重置策略
+    # commit: 提交事务, rollback: 回滚事务, none: 不重置
+    pool-reset-on-return: "commit"
+    # 使用LIFO策略 (后进先出)
+    # 提高连接缓存效率，多进程环境推荐启用
+    pool-use-lifo: true
+
+# redis 配置
+redis:
+  mode: single
+  single:
+    host: "127.0.0.1"
+    port: 6379
+    username: ""
+    password: ""
+    db: 0
+    # 连接池配置
+    connection-pool:
+      max-connections: 50 # 最大连接数
+      socket-timeout: 10.0 # 套接字超时时间（秒），增加到10秒支持Stream阻塞操作
+      socket-connect-timeout: 5.0 # 连接超时时间（秒）
+      socket-keepalive: true # 是否启用套接字保活
+      socket-keepalive-options: {} # 套接字保活选项
+      retry-on-timeout: true # 超时时重试
+      health-check-interval: 30 # 健康检查间隔（秒）
+  sentinel:
+    master: "mymaster" # 哨兵监控的主节点名称
+    nodes:
+      - "192.168.1.101:26379"
+      - "192.168.1.102:26379"
+      - "192.168.1.103:26379"
+    username: "" # 哨兵用户名
+    password: "" # 哨兵密码
+    node-username: "" # 节点用户名
+    node-password: "" # 节点密码
+    db: 0
+    # 哨兵特有参数
+    min-other-sentinels: 0 # 最小其他哨兵数量
+    # 连接池配置
+    connection-pool:
+      max-connections: 50 # 最大连接数
+      socket-timeout: 10.0 # 套接字超时时间（秒），增加到10秒支持Stream阻塞操作
+      socket-connect-timeout: 5.0 # 连接超时时间（秒）
+      socket-keepalive: true # 是否启用套接字保活
+      socket-keepalive-options: {} # 套接字保活选项
+      retry-on-timeout: true # 超时重试
+      health-check-interval: 30 # 健康检查间隔（秒）
+  cluster:
+    # 集群节点列表
+    nodes:
+      - "192.168.1.101:6379"
+      - "192.168.1.102:6379"
+      - "192.168.1.103:6379"
+      - "192.168.1.104:6379"
+      - "192.168.1.105:6379"
+      - "192.168.1.106:6379"
+    username: ""
+    password: ""
+    # 集群参数
+    require-full-coverage: true
+    read-from-replicas: false
+    reinitialize-steps: 5
+    cluster-error-retry-attempts: 3
+    connection-error-retry-attempts: 3
+    # 连接池配置
+    connection-pool:
+      max-connections: 50 # 每个节点的最大连接数
+      socket-timeout: 10.0 # 套接字超时时间（秒），增加到10秒支持Stream阻塞操作
+      socket-connect-timeout: 5.0 # 连接超时时间（秒）
+      socket-keepalive: true
+      socket-keepalive-options: {}
+      retry-on-timeout: true
+      health-check-interval: 30

@@ -1,0 +1,16 @@
+# Ruff configuration
+# https://docs.astral.sh/ruff/configuration/
+
+# Python version target
+target-version = "py312"
+
+# Source directories
+src = ["src", "tests"]
+
+[lint]
+# Enable flake8-pytest-style rules (PT prefix)
+select = ["PT"]
+
+# Per-file ignores
+[lint.per-file-ignores]
+"tests/*" = ["F811"]  # Allow redefined-while-unused in tests

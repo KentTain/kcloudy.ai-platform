@@ -1,0 +1,62 @@
+schema: spec-driven
+
+context: |
+  语言：中文（简体）
+  所有产物必须用简体中文撰写。
+
+  # 项目概述
+  项目名称：AiPlatform - 最小化 AI 助手平台
+  项目类型：演示 AI 平台
+  仓库结构：uv workspace monorepo
+
+  # 技术栈
+  后端：PostgreSQL (pgvector), Redis, MinIO
+  前端：Vue 3, TypeScript, Vite, Shadcn, Radix, Tailwind CSS
+  AI：langchain 1.3.0（LLM 框架）, langgraph 1.2.0（工作流引擎）
+
+  # 后端架构
+  - 三层架构：Controller → Service → Model
+  - Controller：HTTP 路由、参数解析、响应封装，不含业务逻辑
+  - Service：核心业务逻辑、数据库操作、事务管理，单例模式
+  - Model：SQLAlchemy ORM，继承 BaseModel + Mixin，Mapped[...] 声明式字段
+  - Schema：Pydantic 校验模型（请求/VO/查询参数/响应模型）
+
+  # API 端点结构
+  - /admin/v1/ — 系统管理（租户/用户）
+  - /console/v1/ — 用户控制台
+  - /inner/v1/ — 内部接口，负责内部服务通信
+  - /api/v1/ — 通用业务接口，负责外部服务集成
+
+  # 代码规范
+  - Python 3.12，行宽 88 字符，Ruff 格式化 + 检查
+  - 类型标注统一使用 Mapped[...] 声明式，不使用 Column()
+  - 禁止 __init__.py 重导出，统一全路径导入
+  - 前端 pnpm 管理，ESLint + Prettier
+  - 提交遵循 Conventional Commits
+
+  # 关键目录
+  - 后端源码：src/demo/
+  - 前端源码：web/src/
+  - 后端入口：manage.py
+  - 配置文件：config/
+  - 迁移文件：src/demo/migrations/
+
+rules:
+  proposal:
+    - 明确变更影响范围，列出受影响的组件和 API 端点
+    - 说明对现有功能的影响和兼容性考虑
+    - 涉及数据库变更时必须包含迁移策略
+  specs:
+    - 使用 Given/When/Then 格式编写场景
+    - 覆盖多租户场景（不同租户数据隔离）
+    - 包含边界条件和异常场景
+  design:
+    - 新增功能严格遵循 Controller → Service → Model 三层架构
+    - 说明涉及的组件、models、schemas 文件变更
+    - 数据库变更需说明表结构、字段类型（使用 Mapped[...] 声明式注解）
+    - API 变更需说明端点路径、认证方式、请求/响应模型
+  tasks:
+    - 任务粒度适中（每个任务约 1-2 小时工作量）
+    - 按模块分组，使用层级编号（1.1, 1.2...）
+    - 包含必要的数据库迁移任务
+    - 包含必要的测试任务

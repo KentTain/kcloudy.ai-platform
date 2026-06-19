@@ -1,0 +1,138 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Alon API",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/api/v1/console/apps/": {
+      "get": {
+        "tags": ["控制台（开发态）-应用"],
+        "summary": "获取应用列表",
+        "description": "获取应用列表",
+        "operationId": "list_apps_api_v1_console_apps__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 20,
+              "title": "Page Size"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "应用列表获取成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListAppsSuccessRespModel"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ListAppsSuccessRespModel": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "状态码",
+            "title": "Code"
+          },
+          "message": {
+            "type": "string",
+            "description": "消息",
+            "title": "Message"
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "items": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/AppItem"
+                },
+                "title": "Items"
+              },
+              "total": {
+                "type": "integer",
+                "description": "总数",
+                "title": "Total"
+              },
+              "page": {
+                "type": "integer",
+                "description": "当前页",
+                "title": "Page"
+              },
+              "page_size": {
+                "type": "integer",
+                "description": "每页数量",
+                "title": "Page Size"
+              }
+            },
+            "title": "Data"
+          }
+        },
+        "title": "ListAppsSuccessRespModel"
+      },
+      "AppItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "应用ID",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "description": "应用名称",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "description": "应用描述",
+            "title": "Description"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "创建时间",
+            "title": "Created At"
+          }
+        },
+        "title": "AppItem"
+      }
+    },
+    "securitySchemes": {
+      "HTTPBearer": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  }
+}
