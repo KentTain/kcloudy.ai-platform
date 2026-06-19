@@ -173,7 +173,7 @@ const dataTable = useDataTable<Tenant>({
       status: searchForm.value.status === "all" ? undefined : searchForm.value.status || undefined,
     });
     // 提取 stats 供统计卡片使用
-    stats.value = response.data.stats ?? stats.value;
+    stats.value = response.stats ?? stats.value;
     return response;
   },
 });

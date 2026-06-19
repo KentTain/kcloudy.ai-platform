@@ -96,6 +96,9 @@ export function useDataTable<TData extends RowData>(initialOptions: {
         dataList.value = res.data;
         rowCount.value = res.total;
       })
+      .catch(() => {
+        // 网络或后端错误由调用方处理，此处仅确保 loading 状态可恢复
+      })
       .finally(() => {
         if (!skipLoading) {
           loading.value = false;

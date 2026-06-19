@@ -439,7 +439,7 @@ const pubsubDataTable = useDataTable<PubsubConfig>({
 })
 
 // DataTable 实例映射
-const dataTableMap: Record<ResourceType, { refresh: (firstPage?: boolean, skipLoading?: boolean) => void }> = {
+const dataTableMap: Record<ResourceType, ReturnType<typeof useDataTable<ResourceConfig>>> = {
   database: databaseDataTable,
   storage: storageDataTable,
   cache: cacheDataTable,
@@ -467,8 +467,10 @@ const currentDataList = computed<ResourceConfig[]>(() => {
 
 // 统计数据
 const stats = computed(() => {
-  const total = currentDataList.value.length
-  const used = currentDataList.value.filter(item => (item.tenant_count || 0) > 0).length
+  const dt = dataTableMap[currentType.value]
+  const total = dt.table.getRowCount()
+  const data = currentDataList.value
+  const used = data.filter(item => (item.tenant_count || 0) > 0).length
   const unused = total - used
   return { total, used, unused }
 })
