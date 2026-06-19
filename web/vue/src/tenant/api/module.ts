@@ -1,4 +1,5 @@
 import { rawDel, rawGet, rawPost, rawPut } from "@/framework/api/client";
+import type { SuccessExtra } from "@/framework/types";
 import type {
   ApiResponse,
   MenuCreate,
@@ -10,7 +11,6 @@ import type {
   ModulePermission,
   ModulePaginatedQuery,
   ModuleRole,
-  PaginatedListResponse,
   MenuUpdate,
   ModuleUpdate,
   PermissionUpdate,
@@ -23,7 +23,7 @@ import type {
  * 获取模块列表
  */
 export const getModules = (params?: ModulePaginatedQuery) =>
-  rawGet<ApiResponse<PaginatedListResponse<Module>>>("/tenant/admin/v1/modules", { params });
+  rawGet<SuccessExtra<Module[]>>("/tenant/admin/v1/modules", { params });
 
 /**
  * 获取模块详情

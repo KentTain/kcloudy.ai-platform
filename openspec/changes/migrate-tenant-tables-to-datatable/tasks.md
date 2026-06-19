@@ -6,9 +6,9 @@
 
 ## 2. API 类型声明更新
 
-- [ ] 2.1 更新 `tenant/api/tenant.ts`，`getTenants` 返回类型改为 `SuccessExtra<Tenant[]>`
-- [ ] 2.2 更新 `tenant/api/module.ts`，`getModules` 返回类型改为 `SuccessExtra<Module[]>`
-- [ ] 2.3 更新 `tenant/api/resourceConfig.ts`，所有 `getXxxConfigs` 返回类型改为 `SuccessExtra<XxxConfig[]>`
+- [x] 2.1 更新 `tenant/api/tenant.ts`，`getTenants` 返回类型改为 `SuccessExtra<Tenant[]>`
+- [x] 2.2 更新 `tenant/api/module.ts`，`getModules` 返回类型改为 `SuccessExtra<Module[]>`
+- [x] 2.3 更新 `tenant/api/resourceConfig.ts`，所有 `getXxxConfigs` 返回类型改为 `SuccessExtra<XxxConfig[]>`
 
 ## 3. TenantList 页面迁移
 

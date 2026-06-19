@@ -1,11 +1,11 @@
 import { rawDel, rawGet, rawPost, rawPut } from "@/framework/api/client";
+import type { SuccessExtra } from "@/framework/types";
 import type {
   ApiResponse,
   CacheConfig,
   ConnectionTestResult,
   ResourceCreate,
   DatabaseConfig,
-  PaginatedListResponse,
   PubsubConfig,
   QueueConfig,
   ResourcePaginatedQuery,
@@ -19,9 +19,7 @@ import type {
  * 获取数据库配置列表
  */
 export const getDatabaseConfigs = (params?: ResourcePaginatedQuery) =>
-  rawGet<ApiResponse<PaginatedListResponse<DatabaseConfig>>>("/tenant/admin/v1/resources/databases", {
-    params,
-  });
+  rawGet<SuccessExtra<DatabaseConfig[]>>("/tenant/admin/v1/resources/databases", { params });
 
 /**
  * 获取数据库配置详情
@@ -61,7 +59,7 @@ export const testDatabaseConnection = (id: string) =>
  * 获取存储配置列表
  */
 export const getStorageConfigs = (params?: ResourcePaginatedQuery) =>
-  rawGet<ApiResponse<PaginatedListResponse<StorageConfig>>>("/tenant/admin/v1/resources/storages", { params });
+  rawGet<SuccessExtra<StorageConfig[]>>("/tenant/admin/v1/resources/storages", { params });
 
 /**
  * 获取存储配置详情
@@ -101,7 +99,7 @@ export const testStorageConnection = (id: string) =>
  * 获取缓存配置列表
  */
 export const getCacheConfigs = (params?: ResourcePaginatedQuery) =>
-  rawGet<ApiResponse<PaginatedListResponse<CacheConfig>>>("/tenant/admin/v1/resources/caches", { params });
+  rawGet<SuccessExtra<CacheConfig[]>>("/tenant/admin/v1/resources/caches", { params });
 
 /**
  * 获取缓存配置详情
@@ -141,7 +139,7 @@ export const testCacheConnection = (id: string) =>
  * 获取队列配置列表
  */
 export const getQueueConfigs = (params?: ResourcePaginatedQuery) =>
-  rawGet<ApiResponse<PaginatedListResponse<QueueConfig>>>("/tenant/admin/v1/resources/queues", { params });
+  rawGet<SuccessExtra<QueueConfig[]>>("/tenant/admin/v1/resources/queues", { params });
 
 /**
  * 获取队列配置详情
@@ -181,7 +179,7 @@ export const testQueueConnection = (id: string) =>
  * 获取发布订阅配置列表
  */
 export const getPubsubConfigs = (params?: ResourcePaginatedQuery) =>
-  rawGet<ApiResponse<PaginatedListResponse<PubsubConfig>>>("/tenant/admin/v1/resources/pubsubs", { params });
+  rawGet<SuccessExtra<PubsubConfig[]>>("/tenant/admin/v1/resources/pubsubs", { params });
 
 /**
  * 获取发布订阅配置详情
