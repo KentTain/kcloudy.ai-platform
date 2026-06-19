@@ -5,22 +5,27 @@ import uuid
 
 import pytest
 import pytest_asyncio
-from sqlalchemy import text
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+from sqlalchemy.ext.asyncio import async_sessionmaker
 
 os.environ["PYTHON_SERVICE_ENV"] = "local"
 
-from ai.models import Base
 from ai.models.conversation import Conversation
+from ai.models.enums import (
+    ConversationMode,
+    ConversationStatus,
+    MessageRole,
+    MessageStatus,
+)
 from ai.models.message import Message
-from ai.models.enums import ConversationStatus, ConversationMode, MessageStatus, MessageRole
 
 
 @pytest_asyncio.fixture(scope="module")
 async def db_engine():
-    from framework.configs import init_settings
     from pathlib import Path
+
     from sqlalchemy.ext.asyncio import create_async_engine
+
+    from framework.configs import init_settings
 
     config_dir = Path(__file__).parent.parent.parent.parent.parent / "config"
     settings = init_settings(config_dir)
@@ -38,10 +43,9 @@ async def db_engine():
 async def db_session(db_engine):
     """每个测试独立的数据库会话，测试后回滚"""
     session_factory = async_sessionmaker(db_engine, expire_on_commit=False)
-    async with session_factory() as session:
-        async with session.begin():
-            yield session
-            await session.rollback()
+    async with session_factory() as session, session.begin():
+        yield session
+        await session.rollback()
 
 
 @pytest.fixture

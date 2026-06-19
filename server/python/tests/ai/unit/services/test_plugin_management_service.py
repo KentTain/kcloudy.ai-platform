@@ -1,8 +1,8 @@
 ﻿# PluginManagementService 单元测试
 
+from unittest.mock import MagicMock, patch
+
 import pytest
-from unittest.mock import patch, MagicMock, AsyncMock
-from datetime import datetime
 
 from ai.services.plugin import PluginManagementService
 

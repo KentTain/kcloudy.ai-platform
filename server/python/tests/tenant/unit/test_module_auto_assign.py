@@ -4,7 +4,6 @@
 测试 Protocol 定义、IAM 实现、TenantService 集成。
 """
 
-from datetime import datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest

@@ -11,8 +11,8 @@ from sqlalchemy import DateTime, Index, String, Text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
-from tenant.models import BaseModel
 from framework.database.mixins.active_record import ActiveRecordMixin
+from tenant.models import BaseModel
 from tenant.models.enums import TenantStatus
 
 

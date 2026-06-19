@@ -2,26 +2,27 @@
 IAM 模块同步服务单元测试
 """
 
-import pytest
-from unittest.mock import AsyncMock, patch, MagicMock
 import json
+from unittest.mock import AsyncMock, MagicMock, patch
 
-from iam.services.module_sync_service import ModuleSyncService
+import pytest
+
+from framework.events.base import EventStream
 from iam.listeners.handlers.event_handler import (
     ModuleAssignedHandler,
-    ModuleUnassignedHandler,
     ModuleMenuCreatedHandler,
-    ModuleMenuUpdatedHandler,
     ModuleMenuDeletedHandler,
+    ModuleMenuUpdatedHandler,
     ModulePermissionCreatedHandler,
-    ModulePermissionUpdatedHandler,
     ModulePermissionDeletedHandler,
+    ModulePermissionUpdatedHandler,
     ModuleRoleCreatedHandler,
-    ModuleRoleUpdatedHandler,
     ModuleRoleDeletedHandler,
     ModuleRolePermissionChangedHandler,
+    ModuleRoleUpdatedHandler,
+    ModuleUnassignedHandler,
 )
-from framework.events.base import EventStream
+from iam.services.module_sync_service import ModuleSyncService
 
 
 class TestModuleSyncService:

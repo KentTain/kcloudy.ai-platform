@@ -1046,7 +1046,6 @@ class ModuleSyncService:
             module_id: 模块 ID
         """
         from tenant.models import (
-            ModuleRole,
             ModuleRolePermission,
             TenantModule,
         )

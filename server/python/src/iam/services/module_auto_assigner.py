@@ -10,7 +10,6 @@ from loguru import logger
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from framework.tenant.protocols import ModuleAutoAssigner
 from tenant.models import Module, TenantModule
 
 _logger = logger.bind(name=__name__)

@@ -3,7 +3,6 @@
 """
 
 from datetime import datetime, timedelta
-from typing import Optional
 
 
 def format_datetime(
@@ -28,7 +27,7 @@ def format_datetime(
 def parse_datetime(
     text: str,
     fmt: str = "%Y-%m-%d %H:%M:%S"
-) -> Optional[datetime]:
+) -> datetime | None:
     """
     解析日期时间字符串
 
@@ -80,7 +79,7 @@ def datetime_to_timestamp(dt: datetime, milliseconds: bool = False) -> int:
     return ts * 1000 if milliseconds else ts
 
 
-def humanize_time(dt: datetime, now: Optional[datetime] = None) -> str:
+def humanize_time(dt: datetime, now: datetime | None = None) -> str:
     """
     人性化时间显示
 
@@ -115,7 +114,7 @@ def humanize_time(dt: datetime, now: Optional[datetime] = None) -> str:
         return f"{years} 年前"
 
 
-def get_time_range(range_type: str, base: Optional[datetime] = None) -> tuple[datetime, datetime]:
+def get_time_range(range_type: str, base: datetime | None = None) -> tuple[datetime, datetime]:
     """
     获取时间范围
 

@@ -5,9 +5,9 @@ JSON 工具函数
 """
 
 import json
-from datetime import datetime, date
-from typing import Any
+from datetime import date, datetime
 from decimal import Decimal
+from typing import Any
 
 import orjson
 
@@ -116,9 +116,9 @@ def orjson_default(obj: Any) -> Any:
         return json_method()
 
     # Pydantic BaseModel
-    if hasattr(obj, "model_dump") and callable(getattr(obj, "model_dump")):
+    if hasattr(obj, "model_dump") and callable(obj.model_dump):
         return obj.model_dump()
-    if hasattr(obj, "dict") and callable(getattr(obj, "dict")):
+    if hasattr(obj, "dict") and callable(obj.dict):
         return obj.dict()
 
     # Enum

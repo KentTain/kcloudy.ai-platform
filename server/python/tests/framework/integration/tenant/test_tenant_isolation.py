@@ -7,10 +7,14 @@
 3. 查询自动过滤
 """
 
-import pytest
 
+from framework.database.mixins.tenant import (
+    TenantMixin,
+    clear_skip_tenant,
+    set_skip_tenant,
+    should_skip_tenant,
+)
 from framework.tenant.context import SimpleTenant, TenantContext
-from framework.database.mixins.tenant import TenantMixin, set_skip_tenant, should_skip_tenant, clear_skip_tenant
 
 
 class TestTenantMixin:

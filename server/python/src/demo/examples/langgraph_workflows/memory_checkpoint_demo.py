@@ -13,7 +13,6 @@ from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, StateGraph
 from pydantic import BaseModel
 
-
 # ==================== 状态定义 ====================
 
 
@@ -218,20 +217,20 @@ def demo_memory_checkpoint() -> None:
 
     # 第一轮对话
     result1 = graph.chat("你好！", thread_id=thread_id)
-    print(f"用户：你好！")
+    print("用户：你好！")
     print(f"助手：{result1['history'][-1]['content']}")
     print(f"消息数：{result1['message_count']}")
 
     # 第二轮对话
     result2 = graph.chat("我是小明", thread_id=thread_id)
-    print(f"\n用户：我是小明")
+    print("\n用户：我是小明")
     print(f"助手：{result2['history'][-1]['content']}")
     print(f"用户名：{result2.get('user_name', '未设置')}")
     print(f"消息数：{result2['message_count']}")
 
     # 第三轮对话 - 验证记忆
     result3 = graph.chat("你还记得我是谁吗？", thread_id=thread_id)
-    print(f"\n用户：你还记得我是谁吗？")
+    print("\n用户：你还记得我是谁吗？")
     print(f"助手：{result3['history'][-1]['content']}")
     print(f"用户名：{result3.get('user_name', '未设置')}")
     print(f"消息数：{result3['message_count']}")

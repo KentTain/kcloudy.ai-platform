@@ -8,14 +8,13 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from framework.database.dependencies import get_db_session
-from framework.schemas.base import Success, SuccessExtra
+from framework.schemas.base import Success
 from framework.tenant.context import get_tenant_id
 from iam.schemas.department import (
     DepartmentCreate,
     DepartmentDetailResponse,
     DepartmentUpdate,
     DepartmentUserBatchRequest,
-    MemberInfo,
     UserDepartmentRequest,
 )
 from iam.services import department_service

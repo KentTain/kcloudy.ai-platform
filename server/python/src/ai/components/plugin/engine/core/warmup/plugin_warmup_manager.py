@@ -9,7 +9,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from ai.components.plugin.engine.utils.logger import get_logger
 
-
 logger = get_logger(__name__)
 
 
@@ -367,7 +366,7 @@ class PluginWarmupManager:
             self.warmup_config = config
             self.logger.info(f"更新预热配置: {config}")
             return True
-        except Exception as e:
+        except Exception:
             self.logger.exception("配置预热参数失败")
             return False
 
@@ -384,6 +383,6 @@ class PluginWarmupManager:
 
             self.logger.info(f"部分更新预热配置: {kwargs}")
             return True
-        except Exception as e:
+        except Exception:
             self.logger.exception("更新预热配置失败")
             return False

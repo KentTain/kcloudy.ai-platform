@@ -4,11 +4,9 @@
 基于数据库行级锁实现分布式锁。
 """
 
-import asyncio
 from datetime import datetime
-from typing import AsyncGenerator
 
-from framework.core.lock import Lock, LockProvider
+from framework.core.lock import Lock
 
 
 class DatabaseLock:

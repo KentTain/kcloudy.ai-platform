@@ -32,7 +32,6 @@ from ai_plugin.server.core.utils.class_loader import (
 from ai_plugin.server.core.utils.yaml_loader import load_yaml_file
 from ai_plugin.server.protocol.oauth import OAuthProviderProtocol
 
-
 T = TypeVar("T")
 
 

@@ -2,15 +2,14 @@
 TenantCacheManager 单元测试
 """
 
+from unittest.mock import AsyncMock, MagicMock, patch
+
 import pytest
-from unittest.mock import MagicMock, AsyncMock, patch
 
 from framework.cache.tenant_cache_manager import (
     TenantCacheManager,
     get_cache_manager,
     init_cache_manager,
-    MIN_DB,
-    MAX_DB,
 )
 from framework.tenant.protocols import TenantCacheConfig
 

@@ -5,12 +5,13 @@
 """
 
 import uuid
+
 from loguru import logger
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ai.models.conversation import Conversation
-from ai.models.enums import ConversationStatus, ConversationMode
+from ai.models.enums import ConversationMode, ConversationStatus
 from ai.models.message import Message
 from ai.schemas.conversation import ConversationListItem
 

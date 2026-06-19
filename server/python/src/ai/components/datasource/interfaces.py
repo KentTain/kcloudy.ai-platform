@@ -1,8 +1,8 @@
 """数据库连接接口定义"""
 
 from abc import ABC, abstractmethod
-from typing import Any
 from collections.abc import Iterable
+from typing import Any
 
 
 class BaseConnect(ABC):

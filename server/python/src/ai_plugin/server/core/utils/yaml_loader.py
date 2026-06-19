@@ -5,7 +5,6 @@ import yaml
 
 from ai_plugin.server.config.logger_format import plugin_logger_handler
 
-
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 logger.addHandler(plugin_logger_handler)

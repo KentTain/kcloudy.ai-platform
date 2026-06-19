@@ -2,8 +2,10 @@
 UserService 密码管理测试
 """
 
+from unittest.mock import AsyncMock, MagicMock, patch
+
 import pytest
-from unittest.mock import AsyncMock, patch, MagicMock
+
 from iam.services.user_service import UserService
 
 

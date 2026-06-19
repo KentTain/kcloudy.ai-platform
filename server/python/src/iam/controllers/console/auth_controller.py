@@ -10,8 +10,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from framework.database.dependencies import get_db_session
 from framework.schemas.base import Success
-from iam.schemas.login import LoginRequest, LoginResponse, LogoutResponse
-from iam.schemas.token import TokenRefreshRequest, TokenRefreshResponse
+from iam.schemas.login import LoginRequest
+from iam.schemas.token import TokenRefreshRequest
 from iam.services import auth_service
 
 router = APIRouter()

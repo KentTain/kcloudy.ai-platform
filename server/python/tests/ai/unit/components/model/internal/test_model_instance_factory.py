@@ -1,14 +1,15 @@
 # ModelInstanceFactory 单元测试
 
-import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from ai.components.model.internal.model_instance_factory import ModelInstanceFactory
+import pytest
+
 from ai.components.model.errors.error import (
-    ModelInvocationError,
     ModelCredentialError,
+    ModelInvocationError,
     ProviderNotFoundError,
 )
+from ai.components.model.internal.model_instance_factory import ModelInstanceFactory
 from ai.models.model_config import ModelType
 
 

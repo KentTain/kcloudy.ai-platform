@@ -5,16 +5,16 @@ Revises: 001_iam
 Create Date: 2026-06-01
 
 """
-from typing import Sequence, Union
+from collections.abc import Sequence
 
-from alembic import op
 import sqlalchemy as sa
+from alembic import op
 
 # revision identifiers, used by Alembic.
 revision: str = "002_iam_tenant_isolation"
-down_revision: Union[str, None] = "001_iam"
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | None = "001_iam"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 # 模块 schema
 MODULE_SCHEMA = "iam"

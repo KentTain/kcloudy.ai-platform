@@ -30,7 +30,6 @@ from ai_plugin.sdk.entities.model.message import (
 )
 from ai_plugin.sdk.interfaces.model.ai_model import AIModel
 
-
 logger = logging.getLogger(__name__)
 
 

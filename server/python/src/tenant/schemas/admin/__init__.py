@@ -4,22 +4,22 @@ Tenant 模块管理后台 Schemas
 
 from .module import (
     ModuleCreate,
-    ModulePaginatedListResponse,
     ModuleMenuCreate,
     ModuleMenuListResponse,
-    ModuleMenuUpdate,
     ModuleMenuTreeResponse,
+    ModuleMenuUpdate,
+    ModulePaginatedListResponse,
     ModulePermissionCreate,
     ModulePermissionPaginatedListResponse,
-    ModulePermissionUpdate,
     ModulePermissionResponse,
+    ModulePermissionUpdate,
+    ModuleResponse,
     ModuleRoleCreate,
     ModuleRolePaginatedListResponse,
     ModuleRolePermissionUpdateRequest,
-    ModuleRoleUpdate,
     ModuleRoleResponse,
+    ModuleRoleUpdate,
     ModuleUpdate,
-    ModuleResponse,
 )
 from .tenant_module import (
     AssignModuleRequest,

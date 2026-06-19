@@ -1,10 +1,10 @@
 """orjson Serialization Tests"""
 
-import pytest
-import orjson
-from datetime import datetime, date
+from datetime import date, datetime
 from decimal import Decimal
 from uuid import UUID
+
+import orjson
 
 
 class TestOrjsonSerialize:

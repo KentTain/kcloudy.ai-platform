@@ -3,7 +3,6 @@
 import logging
 import time
 
-
 START_TIME = time.time()
 
 logging.basicConfig(

@@ -6,12 +6,9 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from datetime import datetime
-from typing import Any
+from dataclasses import dataclass
 
 from framework.events.base import DomainEvent, EventStream
-
 
 # =============================================================================
 # 模块分配事件

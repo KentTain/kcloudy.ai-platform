@@ -10,17 +10,17 @@
 - 幂等性验证
 """
 
-import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
-import uuid
 
-from framework.module.sync_service import ModuleDefinitionSyncService
+import pytest
+
 from framework.module.definition import (
-    ModuleDefinition,
     MenuDef,
+    ModuleDefinition,
     PermissionDef,
     RoleDef,
 )
+from framework.module.sync_service import ModuleDefinitionSyncService
 
 
 class TestModuleDefinitionSyncService:

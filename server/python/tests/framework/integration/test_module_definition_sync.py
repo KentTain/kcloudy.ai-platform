@@ -10,9 +10,10 @@
 - 菜单、权限、角色关联同步
 """
 
-import pytest
-from unittest.mock import MagicMock, patch, AsyncMock
 import uuid
+from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
 
 pytestmark = pytest.mark.integration
 
@@ -35,7 +36,7 @@ class TestModuleDefinitionSyncWithMock:
         WHEN 调用 sync_module
         THEN 正确执行同步逻辑
         """
-        from framework.module.definition import ModuleDefinition, MenuDef
+        from framework.module.definition import MenuDef, ModuleDefinition
 
         unique_suffix = uuid.uuid4().hex[:8]
 
@@ -132,8 +133,8 @@ class TestModuleRegistryIntegration:
         WHEN 注册到注册中心
         THEN 可以正确获取模块定义
         """
-        from framework.module.registry import get_registry, ModuleRegistry
         from framework.module.definition import ModuleDefinition
+        from framework.module.registry import ModuleRegistry, get_registry
 
         # 重置注册中心
         ModuleRegistry.reset()
@@ -179,7 +180,7 @@ class TestModuleRegistryIntegration:
         WHEN 注册到注册中心
         THEN 可以正常注册，但定义返回 None
         """
-        from framework.module.registry import get_registry, ModuleRegistry
+        from framework.module.registry import ModuleRegistry, get_registry
 
         # 重置注册中心
         ModuleRegistry.reset()
@@ -216,8 +217,8 @@ class TestModuleDefinitionLogic:
     def test_module_definition_creation(self):
         """测试创建模块定义"""
         from framework.module.definition import (
-            ModuleDefinition,
             MenuDef,
+            ModuleDefinition,
             PermissionDef,
             RoleDef,
         )

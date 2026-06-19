@@ -4,8 +4,9 @@ MenuService 单元测试
 测试菜单服务的权限过滤逻辑。
 """
 
+from unittest.mock import MagicMock, patch
+
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
 
 
 class TestMenuService:

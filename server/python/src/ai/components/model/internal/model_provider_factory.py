@@ -13,7 +13,6 @@ from loguru import logger
 from pydantic import BaseModel
 
 from ai.components.model.errors import ProviderNotFoundError, UnsupportedProviderError
-from ai.components.model.internal.configs import model_config
 from ai.components.model.internal.entities.provider_entities import SimpleProviderConfig
 from ai.components.model.internal.helper.position_helper import (
     get_provider_position_map,
@@ -109,7 +108,6 @@ class ModelProviderFactory:
 
         :return: 插件模型提供者列表
         """
-        from ai.components.model.entities.plugin_entities import PluginModelProviderEntity
 
         plugin_model_providers = []
 
@@ -147,7 +145,6 @@ class ModelProviderFactory:
         :return: 插件模型提供者实体
         :raises ValueError: 当提供者不存在时抛出异常
         """
-        from ai.components.model.entities.plugin_entities import PluginModelProviderEntity
 
         # 如果提供者名称不包含插件 ID，自动添加默认格式
         if "/" not in provider:
@@ -375,7 +372,6 @@ class ModelProviderFactory:
         :return: 对应的模型实例
         :raises ValueError: 当模型类型不支持时抛出异常
         """
-        from ai.components.model.model_providers.__base__.ai_model import AIModelImpl
         from ai.components.model.model_providers.__base__.large_language_model import (
             LargeLanguageModelImpl,
         )

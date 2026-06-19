@@ -5,15 +5,15 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
+from ai.listeners.services.pubsub.constants import CANCEL_ASYNCIO_TASK_TOPIC
+from ai.listeners.services.pubsub.memory_task.cancel_asyncio_task import (
+    CancelAsyncioTaskHandler,
+)
 from ai.listeners.services.pubsub.memory_task.constants import (
     ACTIVE_ASYNCIO_TASKS,
     ACTIVE_CLEANUP_TASKS,
     TASK_TYPE_GENERATE_LLM,
 )
-from ai.listeners.services.pubsub.memory_task.cancel_asyncio_task import (
-    CancelAsyncioTaskHandler,
-)
-from ai.listeners.services.pubsub.constants import CANCEL_ASYNCIO_TASK_TOPIC
 
 
 @pytest.fixture(autouse=True)
@@ -152,7 +152,9 @@ class TestStopTaskById:
 class TestCleanupTaskResources:
     @pytest.mark.asyncio
     async def test_removes_from_active_tasks(self):
-        from ai.listeners.services.pubsub.memory_task.helpers import cleanup_task_resources
+        from ai.listeners.services.pubsub.memory_task.helpers import (
+            cleanup_task_resources,
+        )
 
         async def dummy_coro():
             await asyncio.sleep(100)

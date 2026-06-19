@@ -10,8 +10,6 @@ GraphRAG GraphData 模型测试
 - 数据类型验证
 """
 
-import pytest
-from pydantic import ValidationError
 
 from ai.components.graphrag.client import GraphData
 

@@ -1,7 +1,6 @@
 from collections.abc import Sequence
 from decimal import Decimal
 from enum import StrEnum
-from typing import Optional
 
 from pydantic import BaseModel, Field
 
@@ -118,12 +117,12 @@ class LLMResult(BaseModel):
     封装LLM调用的完整响应结果
     """
 
-    id: Optional[str] = None  # 响应ID
+    id: str | None = None  # 响应ID
     model: str  # 使用的模型名称
     prompt_messages: Sequence[PromptMessage] = Field(default_factory=list)  # 输入的提示消息列表
     message: AssistantPromptMessage  # 生成的助手消息
     usage: LLMUsage  # 使用统计信息
-    system_fingerprint: Optional[str] = None  # 系统指纹
+    system_fingerprint: str | None = None  # 系统指纹
 
 
 class LLMResultChunkDelta(BaseModel):
@@ -135,8 +134,8 @@ class LLMResultChunkDelta(BaseModel):
 
     index: int  # 数据块索引
     message: AssistantPromptMessage  # 消息增量内容
-    usage: Optional[LLMUsage] = None  # 使用统计信息（可选）
-    finish_reason: Optional[str] = None  # 完成原因（可选）
+    usage: LLMUsage | None = None  # 使用统计信息（可选）
+    finish_reason: str | None = None  # 完成原因（可选）
 
 
 class LLMResultChunk(BaseModel):
@@ -148,7 +147,7 @@ class LLMResultChunk(BaseModel):
 
     model: str  # 使用的模型名称
     prompt_messages: Sequence[PromptMessage] = Field(default_factory=list)  # 输入的提示消息列表
-    system_fingerprint: Optional[str] = None  # 系统指纹
+    system_fingerprint: str | None = None  # 系统指纹
     delta: LLMResultChunkDelta  # 数据块增量内容
 
 

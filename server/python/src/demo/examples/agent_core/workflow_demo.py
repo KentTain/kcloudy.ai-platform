@@ -134,7 +134,7 @@ class AgentWorkflow:
         query = state["query"]
 
         # 模拟工具调用
-        tool_result = f"工具调用结果: 北京天气晴朗，温度 25℃"
+        tool_result = "工具调用结果: 北京天气晴朗，温度 25℃"
 
         return {
             "tool_result": tool_result,

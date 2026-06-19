@@ -4,9 +4,9 @@ IAM 依赖注入
 提供认证相关的 FastAPI 依赖。
 """
 
-from fastapi import Depends, HTTPException, Request
+from fastapi import HTTPException, Request
 
-from framework.common.ctx import get_user_id, get_tenant_id, get_session_id
+from framework.common.ctx import get_session_id, get_tenant_id, get_user_id
 
 
 def get_current_user_id(request: Request) -> str:

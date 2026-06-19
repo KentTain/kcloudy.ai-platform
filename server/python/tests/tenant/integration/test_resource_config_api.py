@@ -4,17 +4,16 @@
 测试 /resources/* 路由的 CRUD 操作和连通性测试接口。
 """
 
-import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
 from datetime import datetime
+from unittest.mock import AsyncMock, MagicMock, patch
 
+import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
+from framework.database.dependencies import get_db_session
 from tenant.controllers.admin.resource_controller import router
 from tenant.middlewares.admin_auth_middleware import get_current_admin
-from framework.database.dependencies import get_db_session
-
 
 # 创建测试应用
 app = FastAPI()

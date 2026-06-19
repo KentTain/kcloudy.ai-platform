@@ -11,7 +11,6 @@
     result = plugin.query("Python 函数示例")
 """
 
-from typing import Any
 
 
 class CodeQAPlugin:

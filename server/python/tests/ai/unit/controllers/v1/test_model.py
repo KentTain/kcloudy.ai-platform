@@ -1,7 +1,8 @@
 """模型列表控制器测试"""
 
-import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
 
 from ai.controllers.v1.model import router
 from ai.schemas.model import ModelListResponse

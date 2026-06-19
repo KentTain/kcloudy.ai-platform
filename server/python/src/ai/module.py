@@ -4,16 +4,15 @@ AI 模块声明
 定义 AI 模块的注册信息，包括路由、中间件、生命周期钩子和 Seed 数据。
 """
 
-from typing import Callable
+from collections.abc import Callable
 
+from ai.models import Base
 from framework.module.definition import (
     MenuDef,
     ModuleDefinition,
     PermissionDef,
     RoleDef,
 )
-
-from ai.models import Base
 
 
 class AIModule:
@@ -94,7 +93,7 @@ class AIModule:
 
     def get_listener_setup(self) -> tuple | None:
         """返回监听器配置"""
-        from ai.listeners.setup import setup_listeners, cleanup_listeners
+        from ai.listeners.setup import cleanup_listeners, setup_listeners
 
         return (setup_listeners, cleanup_listeners)
 

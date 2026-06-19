@@ -7,9 +7,9 @@
 from loguru import logger
 from sqlalchemy import select
 
-from tenant.models import TenantAdmin
 from framework.database.dependencies import get_task_session
-from framework.utils.crypto import hash_password, verify_password
+from framework.utils.crypto import hash_password
+from tenant.models import TenantAdmin
 
 _logger = logger.bind(name=__name__)
 

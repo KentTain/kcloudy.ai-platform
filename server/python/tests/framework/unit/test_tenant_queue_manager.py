@@ -2,16 +2,17 @@
 TenantQueueManager 单元测试
 """
 
+from unittest.mock import AsyncMock, MagicMock, patch
+
 import pytest
-from unittest.mock import MagicMock, AsyncMock, patch
 
 from framework.queue.tenant_queue_manager import (
     TenantQueueManager,
     get_queue_manager,
     init_queue_manager,
 )
-from framework.tenant.protocols import TenantQueueConfig
 from framework.tenant.enums import QueueType
+from framework.tenant.protocols import TenantQueueConfig
 
 
 class TestTenantQueueManager:

@@ -8,7 +8,6 @@ import json
 import logging
 from typing import Any
 
-from framework.cache.redis_util import RedisUtil
 from framework.database.dependencies import get_listener_session
 from framework.events.base import EventStream
 from framework.tenant.context import TenantContext
@@ -65,8 +64,9 @@ class ModuleAssignedHandler(BaseEventHandler):
             TenantContext.set_tenant_id(tenant_id)
 
             # 获取模块编码
-            from tenant.models import Module
             from sqlalchemy import select
+
+            from tenant.models import Module
 
             async with get_listener_session() as session:
                 module_stmt = select(Module).where(Module.id == module_id)

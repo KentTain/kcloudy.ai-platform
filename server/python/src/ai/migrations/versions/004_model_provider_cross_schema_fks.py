@@ -5,15 +5,15 @@ Revises: 003_model_provider
 Create Date: 2026-06-03
 
 """
-from typing import Sequence, Union
+from collections.abc import Sequence
 
 from alembic import op
 
 # revision identifiers, used by Alembic.
 revision: str = "004_model_provider_fks"
-down_revision: Union[str, None] = "003_model_provider"
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | None = "003_model_provider"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 # 模块 schema
 MODULE_SCHEMA = "ai"

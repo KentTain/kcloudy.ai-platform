@@ -46,7 +46,6 @@ from ai_plugin.sdk.interfaces.model.openai_compatible.common import (
     _CommonOaiApiCompat,
 )
 
-
 # 创建日志记录器
 logger = logging.getLogger(__name__)
 
@@ -931,14 +930,14 @@ class OAICompatLargeLanguageModel(_CommonOaiApiCompat, LargeLanguageModel):
         """
         message_dict = {}
         if isinstance(message, UserPromptMessage):
-            message = cast(UserPromptMessage, message)
+            message = cast("UserPromptMessage", message)
             if isinstance(message.content, str):
                 message_dict = {"role": "user", "content": message.content}
             else:
                 sub_messages = []
                 for message_content in message.content or []:
                     if message_content.type == PromptMessageContentType.TEXT:
-                        message_content = cast(PromptMessageContent, message_content)
+                        message_content = cast("PromptMessageContent", message_content)
                         sub_message_dict = {
                             "type": "text",
                             "text": message_content.data,
@@ -946,7 +945,7 @@ class OAICompatLargeLanguageModel(_CommonOaiApiCompat, LargeLanguageModel):
                         sub_messages.append(sub_message_dict)
                     elif message_content.type == PromptMessageContentType.IMAGE:
                         message_content = cast(
-                            ImagePromptMessageContent, message_content
+                            "ImagePromptMessageContent", message_content
                         )
                         sub_message_dict = {
                             "type": "image_url",
@@ -959,7 +958,7 @@ class OAICompatLargeLanguageModel(_CommonOaiApiCompat, LargeLanguageModel):
 
                 message_dict = {"role": "user", "content": sub_messages}
         elif isinstance(message, AssistantPromptMessage):
-            message = cast(AssistantPromptMessage, message)
+            message = cast("AssistantPromptMessage", message)
             message_dict = {"role": "assistant", "content": message.content}
             if message.tool_calls:
                 function_calling_type = credentials.get(
@@ -976,10 +975,10 @@ class OAICompatLargeLanguageModel(_CommonOaiApiCompat, LargeLanguageModel):
                         "arguments": function_call.function.arguments,
                     }
         elif isinstance(message, SystemPromptMessage):
-            message = cast(SystemPromptMessage, message)
+            message = cast("SystemPromptMessage", message)
             message_dict = {"role": "system", "content": message.content}
         elif isinstance(message, ToolPromptMessage):
-            message = cast(ToolPromptMessage, message)
+            message = cast("ToolPromptMessage", message)
             function_calling_type = credentials.get("function_calling_type", "no_call")
             if function_calling_type == "tool_call":
                 message_dict = {
@@ -1024,7 +1023,7 @@ class OAICompatLargeLanguageModel(_CommonOaiApiCompat, LargeLanguageModel):
             full_text = ""
             for message_content in text:
                 if message_content.type == PromptMessageContentType.TEXT:
-                    message_content = cast(PromptMessageContent, message_content)
+                    message_content = cast("PromptMessageContent", message_content)
                     full_text += message_content.data
 
         num_tokens = self._get_num_tokens_by_gpt2(full_text)

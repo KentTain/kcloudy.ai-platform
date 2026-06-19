@@ -7,9 +7,8 @@
 from typing import Any
 
 from loguru import logger
-from sqlalchemy import select, and_
+from sqlalchemy import and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import joinedload
 
 from iam.models import Menu, MenuPermission, Permission, Role, RolePermission, UserRole
 from tenant.models import Module, TenantModule
@@ -278,10 +277,7 @@ class UserMenuService:
         for menu in all_menus:
             menu_perms = menu_permission_map.get(menu.id, set())
             # 无权限限制的菜单，所有登录用户可见
-            if not menu_perms:
-                visible_menu_ids.add(menu.id)
-            # 用户拥有任一权限即可见
-            elif menu_perms & user_permission_ids:
+            if not menu_perms or menu_perms & user_permission_ids:
                 visible_menu_ids.add(menu.id)
 
         return visible_menu_ids

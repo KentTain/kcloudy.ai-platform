@@ -9,7 +9,6 @@ import pytest_asyncio
 
 from framework.queue.impl.redis import RedisQueue
 
-
 pytestmark = pytest.mark.integration
 
 

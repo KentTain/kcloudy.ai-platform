@@ -4,8 +4,9 @@
 测试未指定配置时自动关联默认配置、指定配置时使用指定配置。
 """
 
-import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
 
 from tenant.services.tenant_service import TenantService
 

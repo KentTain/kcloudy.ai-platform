@@ -5,7 +5,7 @@
 复用 framework.utils.crypto 的 AES-256-GCM 加密能力。
 """
 
-from framework.utils.crypto import encrypt, decrypt, CryptoError
+from framework.utils.crypto import decrypt, encrypt
 
 
 def encrypt_password(plain: str) -> str:

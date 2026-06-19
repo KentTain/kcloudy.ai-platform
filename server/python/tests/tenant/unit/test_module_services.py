@@ -2,15 +2,15 @@
 模块定义层服务单元测试
 """
 
-import pytest
-from unittest.mock import AsyncMock, patch, MagicMock
 from datetime import datetime
+from unittest.mock import AsyncMock, MagicMock, patch
 
-from tenant.services.module_service import ModuleService
+import pytest
+
 from tenant.services.module_menu_service import ModuleMenuService
 from tenant.services.module_permission_service import ModulePermissionService
 from tenant.services.module_role_service import ModuleRoleService
-from framework.common.exceptions import ConflictError
+from tenant.services.module_service import ModuleService
 
 
 class TestModuleService:

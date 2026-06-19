@@ -13,7 +13,7 @@ from typing import Any
 
 from demo.examples.agent_core.knowledge_base_demo import AgentKnowledgeBase
 from demo.examples.agent_core.persona_demo import AgentPersona, PersonaConfig
-from demo.examples.agent_core.workflow_demo import AgentState, AgentWorkflow
+from demo.examples.agent_core.workflow_demo import AgentWorkflow
 
 
 class SimpleAgent:

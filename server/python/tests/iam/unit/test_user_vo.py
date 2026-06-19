@@ -1,6 +1,5 @@
 """UserResponse 角色权限字段测试"""
 
-import pytest
 from iam.schemas.user import UserResponse
 
 

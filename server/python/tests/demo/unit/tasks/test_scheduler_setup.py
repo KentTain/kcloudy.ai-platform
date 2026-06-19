@@ -1,6 +1,6 @@
 """调度器生命周期单元测试"""
 
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 

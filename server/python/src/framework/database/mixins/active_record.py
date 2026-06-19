@@ -10,7 +10,7 @@ from datetime import UTC, datetime
 from typing import Any, Self, TypeVar
 
 from loguru import logger
-from sqlalchemy import and_, asc, desc, func, or_, select, update
+from sqlalchemy import and_, asc, desc, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from framework.database.pagination import Pagination

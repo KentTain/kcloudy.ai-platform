@@ -4,10 +4,10 @@ from typing import Any, override
 
 from loguru import logger
 
-from framework.pubsub.handler import SingleTopicHandler
 from ai.listeners.services.pubsub.constants import CANCEL_ASYNCIO_TASK_TOPIC
 from ai.listeners.services.pubsub.memory_task.constants import ACTIVE_ASYNCIO_TASKS
 from ai.listeners.services.pubsub.memory_task.helpers import stop_message_by_id
+from framework.pubsub.handler import SingleTopicHandler
 
 _logger = logger.bind(name=__name__)
 

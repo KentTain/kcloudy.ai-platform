@@ -10,7 +10,6 @@ from framework.configs.encryption import (
     EncryptionSettings,
 )
 
-
 _logger = logger.bind(name=__name__)
 
 

@@ -2,8 +2,8 @@
 阿里云 OSS 存储实现
 """
 
+
 import oss2
-from typing import Any
 
 from framework.configs.settings import AliyunOssSettings
 

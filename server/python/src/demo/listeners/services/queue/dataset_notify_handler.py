@@ -1,12 +1,11 @@
 """数据集通知队列处理器"""
 
-from typing import Any
 
 from loguru import logger
 
+from demo.listeners.services.queue.constants import DATASET_NOTIFY_QUEUE
 from framework.core.queue import Message
 from framework.queue.handler import SingleQueueHandler
-from demo.listeners.services.queue.constants import DATASET_NOTIFY_QUEUE
 
 _logger = logger.bind(name=__name__)
 

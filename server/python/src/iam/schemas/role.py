@@ -6,7 +6,7 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from framework.schemas.base import BaseQuery, BasePaginatedQuery
+from framework.schemas.base import BasePaginatedQuery, BaseQuery
 
 
 class RoleCreate(BaseModel):

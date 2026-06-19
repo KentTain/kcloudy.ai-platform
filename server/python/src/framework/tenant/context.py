@@ -14,9 +14,8 @@ from framework.common.ctx import _update_context, get_context
 from framework.tenant.protocols import (
     TenantCacheConfig,
     TenantDatabaseConfig,
-    TenantInfo,
-    TenantQueueConfig,
     TenantPubSubConfig,
+    TenantQueueConfig,
     TenantStorageConfig,
 )
 

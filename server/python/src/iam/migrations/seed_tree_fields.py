@@ -12,9 +12,12 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent / "src"))
 
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 
-from framework.core.constants import DEFAULT_SORT, TREE_SORTS_LENGTH, DEFAULT_TREE_ROOT_ID
+from framework.core.constants import (
+    DEFAULT_SORT,
+    DEFAULT_TREE_ROOT_ID,
+    TREE_SORTS_LENGTH,
+)
 from framework.database.dependencies import get_task_session
 from iam.models import Department
 

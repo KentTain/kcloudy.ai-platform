@@ -10,8 +10,6 @@ import orjson
 from loguru import logger
 from pydantic import BaseModel
 
-from framework.configs.settings import get_settings
-
 from ai.components.code_executor.javascript.javascript_transformer import (
     NodeJsTemplateTransformer,
 )
@@ -22,7 +20,7 @@ from ai.components.code_executor.python3.python3_transformer import (
     Python3TemplateTransformer,
 )
 from ai.components.code_executor.template_transformer import TemplateTransformer
-
+from framework.configs.settings import get_settings
 
 _logger = logger.bind(name=__name__)
 

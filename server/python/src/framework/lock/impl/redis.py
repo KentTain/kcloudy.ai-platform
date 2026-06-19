@@ -4,13 +4,12 @@ Redis 分布式锁实现
 
 import asyncio
 import uuid
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from datetime import datetime
-from typing import AsyncGenerator
 
-from framework.core.lock import Lock, LockProvider
 from framework.cache.redis_util import RedisUtil
-
+from framework.core.lock import Lock
 
 # Lua 脚本：释放锁（仅当值匹配时）
 RELEASE_SCRIPT = """

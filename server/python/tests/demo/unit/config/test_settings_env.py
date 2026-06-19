@@ -1,8 +1,8 @@
 """Settings Environment Override Tests"""
 
-import pytest
 import os
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
+
 from pydantic import Field, SecretStr
 
 from framework.configs.base import BaseSettings

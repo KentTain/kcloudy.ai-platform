@@ -7,7 +7,6 @@
 3. 租户切换
 """
 
-import pytest
 
 from framework.tenant.context import SimpleTenant, TenantContext
 
@@ -25,7 +24,11 @@ class TestUserTenantAPI:
 
     def test_schema_validation(self):
         """测试 Schema 验证"""
-        from tenant.schemas.console.tenant import UserTenantResponse, CurrentTenantResponse, SwitchTenantResponse
+        from tenant.schemas.console.tenant import (
+            CurrentTenantResponse,
+            SwitchTenantResponse,
+            UserTenantResponse,
+        )
 
         # 用户租户 VO
         vo = UserTenantResponse(

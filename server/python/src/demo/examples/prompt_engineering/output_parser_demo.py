@@ -14,7 +14,6 @@ from langchain_core.output_parsers import JsonOutputParser, PydanticOutputParser
 from langchain_core.prompts import PromptTemplate
 from pydantic import BaseModel, Field
 
-
 # ==================== Pydantic 模型定义 ====================
 
 

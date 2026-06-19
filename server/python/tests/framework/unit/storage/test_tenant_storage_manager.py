@@ -2,16 +2,17 @@
 TenantStorageManager 单元测试
 """
 
+from unittest.mock import MagicMock, patch
+
 import pytest
-from unittest.mock import MagicMock, AsyncMock, patch
 
 from framework.storage.tenant_storage_manager import (
     TenantStorageManager,
     get_storage_manager,
     init_storage_manager,
 )
-from framework.tenant.protocols import TenantStorageConfig
 from framework.tenant.enums import StorageType
+from framework.tenant.protocols import TenantStorageConfig
 
 
 class TestTenantStorageManager:

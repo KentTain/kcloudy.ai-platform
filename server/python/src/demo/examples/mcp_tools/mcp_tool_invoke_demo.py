@@ -12,7 +12,6 @@ from typing import Any
 from langchain_core.tools import StructuredTool
 from pydantic import BaseModel, Field
 
-
 # ==================== MCP 工具包装器 ====================
 
 

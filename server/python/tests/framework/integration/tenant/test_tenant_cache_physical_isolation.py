@@ -16,7 +16,6 @@ import pytest_asyncio
 from framework.cache.tenant_cache_manager import TenantCacheManager, init_cache_manager
 from framework.tenant.protocols import TenantCacheConfig
 
-
 pytestmark = pytest.mark.integration
 
 

@@ -4,7 +4,6 @@ IAM 客户端
 提供对 IAM 模块的统一调用入口。
 """
 
-from typing import Any
 
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -97,9 +96,10 @@ class IamClient:
             return data
         else:
             # 单体模式
-            from iam.services.user_service import UserService
-            from iam.models import UserTenant
             from sqlalchemy import select
+
+            from iam.models import UserTenant
+            from iam.services.user_service import UserService
 
             user = await UserService.get_by_id(user_id)
             if not user:
@@ -153,9 +153,10 @@ class IamClient:
             return []
         else:
             # 单体模式
-            from iam.services.user_service import UserService
-            from iam.models import UserTenant
             from sqlalchemy import select
+
+            from iam.models import UserTenant
+            from iam.services.user_service import UserService
 
             users = await UserService.get_by_ids(user_ids)
 
@@ -205,8 +206,9 @@ class IamClient:
             return []
         else:
             # 单体模式
-            from iam.models import UserDepartment, Department
             from sqlalchemy import select
+
+            from iam.models import Department, UserDepartment
 
             stmt = select(UserDepartment).where(UserDepartment.user_id == user_id)
             result = await session.execute(stmt)
@@ -252,8 +254,9 @@ class IamClient:
             return []
         else:
             # 单体模式
-            from iam.models import UserTenant
             from sqlalchemy import select
+
+            from iam.models import UserTenant
 
             stmt = select(UserTenant).where(UserTenant.user_id == user_id)
             result = await session.execute(stmt)
@@ -291,8 +294,9 @@ class IamClient:
             return []
         else:
             # 单体模式
-            from iam.models import UserTenant
             from sqlalchemy import select
+
+            from iam.models import UserTenant
 
             stmt = select(UserTenant.user_id).where(
                 UserTenant.tenant_id == tenant_id
@@ -331,8 +335,9 @@ class IamClient:
             return []
         else:
             # 单体模式
+            from sqlalchemy import func, select
+
             from iam.models import Role, UserRole
-            from sqlalchemy import select, func
 
             # 查找该租户下 ref_id 关联到这些模块角色的 IAM 角色
             stmt = select(Role).where(

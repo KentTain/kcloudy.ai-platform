@@ -11,7 +11,7 @@ from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from framework.cache.redis_util import RedisUtil
-from framework.utils.crypto import hash_password, verify_password
+from framework.utils.crypto import verify_password
 from framework.utils.jwt import (
     decode_token,
     generate_access_token,

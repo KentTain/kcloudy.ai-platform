@@ -1,15 +1,15 @@
 """消息模型"""
 
-from sqlalchemy import String, Text, Integer, ForeignKey
+from sqlalchemy import ForeignKey, Integer, Text
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.orm import Mapped, mapped_column
 
 from ai.models import BaseModel
-from ai.models.enums import MessageStatus, MessageRole
+from ai.models.enums import MessageRole, MessageStatus
 from framework.database.mixins.active_record import ActiveRecordMixin
 from framework.database.mixins.tenant import TenantMixin
-from framework.database.types.uuid import StringUUID
 from framework.database.types.enum import EnumType
+from framework.database.types.uuid import StringUUID
 
 
 class Message(BaseModel, ActiveRecordMixin, TenantMixin):

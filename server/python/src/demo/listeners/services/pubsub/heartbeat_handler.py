@@ -4,8 +4,8 @@ from typing import Any
 
 from loguru import logger
 
-from framework.pubsub.handler import SingleTopicHandler
 from demo.listeners.services.pubsub.constants import HEARTBEAT_TOPIC
+from framework.pubsub.handler import SingleTopicHandler
 
 _logger = logger.bind(name=__name__)
 

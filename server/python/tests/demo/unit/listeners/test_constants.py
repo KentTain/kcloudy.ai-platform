@@ -1,6 +1,5 @@
 """Listeners 常量测试"""
 
-import pytest
 
 
 class TestPubSubConstants:

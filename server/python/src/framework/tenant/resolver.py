@@ -4,7 +4,7 @@
 从请求中解析租户标识，支持多种解析策略。
 """
 
-from typing import TYPE_CHECKING, Protocol
+from typing import TYPE_CHECKING
 
 from framework.tenant.exceptions import TenantResolveError
 

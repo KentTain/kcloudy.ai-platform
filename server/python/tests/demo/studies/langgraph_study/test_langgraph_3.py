@@ -17,7 +17,6 @@ from operator import add
 from typing import Annotated
 
 import pytest
-
 from langgraph.graph import END, START, StateGraph
 from langgraph.graph.state import CompiledStateGraph
 
@@ -34,19 +33,19 @@ class GraphState:
 
 def source_node_a(state: GraphState) -> GraphState:
     """源节点A"""
-    print(f"\n[Source A] 执行")
+    print("\n[Source A] 执行")
     return GraphState(result=["source_a"], execution_count=[1])
 
 
 def source_node_b(state: GraphState) -> GraphState:
     """源节点B"""
-    print(f"\n[Source B] 执行")
+    print("\n[Source B] 执行")
     return GraphState(result=["source_b"], execution_count=[1])
 
 
 def source_node_c(state: GraphState) -> GraphState:
     """源节点C"""
-    print(f"\n[Source C] 执行")
+    print("\n[Source C] 执行")
     return GraphState(result=["source_c"], execution_count=[1])
 
 
@@ -59,7 +58,7 @@ def converge_node(state: GraphState) -> GraphState:
 
 def final_node(state: GraphState) -> GraphState:
     """最终节点"""
-    print(f"\n[Final] 最终执行")
+    print("\n[Final] 最终执行")
     return GraphState(result=["final"], execution_count=[1])
 
 

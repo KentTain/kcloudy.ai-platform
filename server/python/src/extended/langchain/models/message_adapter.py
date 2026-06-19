@@ -84,9 +84,7 @@ def _platform_content_to_lc(
         elif isinstance(item, ImagePromptMessageContent):
             url = item.url or item.data
             result.append({"type": "image_url", "image_url": {"url": url}})
-        elif isinstance(item, str):
-            result.append(item)
-        elif isinstance(item, dict):
+        elif isinstance(item, str) or isinstance(item, dict):
             result.append(item)
         else:
             result.append(str(item))

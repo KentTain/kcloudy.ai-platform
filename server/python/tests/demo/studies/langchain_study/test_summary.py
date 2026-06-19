@@ -8,8 +8,9 @@
 注意：这是结构演示测试，使用模拟数据，不依赖实际 LLM 服务。
 """
 
-import pytest
 from dataclasses import dataclass
+
+import pytest
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 

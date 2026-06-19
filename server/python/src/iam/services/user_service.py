@@ -7,7 +7,6 @@
 import asyncio
 import secrets
 import string
-from datetime import datetime, timezone
 
 from loguru import logger
 from sqlalchemy import func, or_, select
@@ -20,7 +19,7 @@ from framework.utils.crypto import (
 )
 from framework.utils.session import delete_user_sessions
 from iam.models import User, UserDepartment, UserStatus, UserTenant
-from iam.schemas.user import UserDetailResponse, UserResponse, UserTenantResponse
+from iam.schemas.user import UserDetailResponse, UserTenantResponse
 
 _logger = logger.bind(name=__name__)
 
@@ -356,7 +355,7 @@ class UserService:
         Returns:
             tuple[list[User], int]
         """
-        from sqlalchemy import func, or_
+        from sqlalchemy import func
 
         from iam.models import Department
 
@@ -838,8 +837,8 @@ class UserService:
             return None
 
         # 并行查询角色、权限、租户
-        from iam.services.role_service import user_role_service as user_roles_service
         from iam.services.permission_service import permission_check_service
+        from iam.services.role_service import user_role_service as user_roles_service
 
         roles_task = user_roles_service.get_user_roles(session, user_id)
         permissions_task = permission_check_service.get_user_permissions(session, user_id)

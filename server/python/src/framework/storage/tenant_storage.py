@@ -4,11 +4,10 @@
 自动为存储路径添加租户目录前缀。
 """
 
-from typing import Any
 
+from framework.database.mixins.tenant import should_skip_tenant
 from framework.storage.impl.minio import MinioStorage
 from framework.tenant.context import get_tenant_id
-from framework.database.mixins.tenant import should_skip_tenant
 
 
 def _build_object_path(path: str, skip_tenant: bool = False) -> str:

@@ -3,7 +3,6 @@ MinIO 存储实现
 """
 
 import io
-from typing import Any
 
 from minio import Minio
 from minio.error import S3Error

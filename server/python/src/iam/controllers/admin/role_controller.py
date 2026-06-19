@@ -5,7 +5,6 @@
 """
 
 from fastapi import APIRouter, Depends, HTTPException
-from fastapi.responses import ORJSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from framework.database.dependencies import get_db_session
@@ -13,7 +12,6 @@ from framework.schemas.base import Success, SuccessExtra
 from iam.schemas.role import (
     RoleCreate,
     RoleMemberAssignRequest,
-    RoleMemberResponse,
     RoleMenuAssignRequest,
     RoleOptionResponse,
     RolePaginatedQuery,
@@ -21,7 +19,7 @@ from iam.schemas.role import (
     RoleResponse,
     RoleUpdate,
 )
-from iam.services import permission_service, role_service
+from iam.services import role_service
 from iam.services.role_service import role_member_service, user_role_service
 
 router = APIRouter()

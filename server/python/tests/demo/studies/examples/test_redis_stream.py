@@ -17,8 +17,8 @@ Redis Stream 使用示例
     python test_redis_stream.py --password your_password
 """
 
-import asyncio
 import argparse
+import asyncio
 import sys
 from dataclasses import dataclass
 from typing import Any

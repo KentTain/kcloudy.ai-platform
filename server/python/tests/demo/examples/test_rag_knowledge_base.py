@@ -22,14 +22,12 @@ from demo.examples.rag_knowledge_base.pdf_parser_demo import (
     parse_pdf_file,
 )
 from demo.examples.rag_knowledge_base.rag_pipeline_demo import (
-    RAGPipelineDemo,
     SimpleRAGPipeline,
 )
 from demo.examples.rag_knowledge_base.text_splitter_demo import (
-    CharacterTextSplitter,
     ChapterTextSplitter,
+    CharacterTextSplitter,
     SentenceTextSplitter,
-    TextSplitterDemo,
 )
 from demo.examples.rag_knowledge_base.vector_store_demo import (
     InMemoryVectorStore,

@@ -9,16 +9,14 @@ import uuid
 from datetime import datetime
 
 import pytest
-import pytest_asyncio
 from sqlalchemy import String, text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from framework.database.core.base import Base
-from framework.database.types.uuid import StringUUID
-from framework.database.types.snowflake import SnowflakeIDGenerator
 from framework.database.mixins.audit import AuditMixin
 from framework.database.mixins.tenant import TenantMixin
-
+from framework.database.types.snowflake import SnowflakeIDGenerator
+from framework.database.types.uuid import StringUUID
 
 pytestmark = pytest.mark.integration
 

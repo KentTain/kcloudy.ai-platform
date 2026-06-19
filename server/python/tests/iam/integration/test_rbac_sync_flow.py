@@ -5,8 +5,9 @@ RBAC 同步流程集成测试
 以及租户创建时的角色自动创建流程。
 """
 
-import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
 
 
 @pytest.mark.integration

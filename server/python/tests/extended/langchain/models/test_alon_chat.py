@@ -1,5 +1,6 @@
 """AlonChatModel unit tests"""
 
+from decimal import Decimal
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -7,7 +8,6 @@ from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
     HumanMessage,
-    SystemMessage,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 
@@ -18,7 +18,6 @@ from ai_plugin.sdk.entities.model.llm import (
     LLMUsage,
 )
 from ai_plugin.sdk.entities.model.message import AssistantPromptMessage
-from decimal import Decimal
 from extended.langchain.models.alon_chat import AlonChatModel
 
 

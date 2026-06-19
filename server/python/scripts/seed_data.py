@@ -14,8 +14,8 @@ from __future__ import annotations
 import argparse
 import asyncio
 import sys
+from collections.abc import Callable, Coroutine
 from pathlib import Path
-from typing import Callable, Coroutine
 
 # Windows 控制台编码处理
 if sys.platform == "win32":
@@ -36,7 +36,7 @@ def check_database_connection() -> bool:
     """
     try:
         from demo.configs import settings
-        from framework.database.core.engine import setup_engine, get_engine
+        from framework.database.core.engine import get_engine, setup_engine
 
         sqlalchemy_config = settings.sqlalchemy
         setup_engine(

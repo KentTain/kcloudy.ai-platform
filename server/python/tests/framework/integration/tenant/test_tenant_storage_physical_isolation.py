@@ -12,10 +12,12 @@ import uuid
 import pytest
 import pytest_asyncio
 
-from framework.storage.tenant_storage_manager import TenantStorageManager, init_storage_manager
-from framework.tenant.protocols import TenantStorageConfig
+from framework.storage.tenant_storage_manager import (
+    TenantStorageManager,
+    init_storage_manager,
+)
 from framework.tenant.enums import StorageType
-
+from framework.tenant.protocols import TenantStorageConfig
 
 pytestmark = pytest.mark.integration
 
@@ -344,7 +346,6 @@ class TestTenantStorageInstanceManagement:
     @pytest.mark.asyncio
     async def test_close_clears_all_instances(self, storage_manager):
         """关闭时清理所有实例"""
-        from datetime import datetime
         storage_manager._instance_storages["https://test.example.com"] = storage_manager._default_storage
 
         await storage_manager.close()

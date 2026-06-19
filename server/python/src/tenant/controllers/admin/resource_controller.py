@@ -30,9 +30,6 @@ from tenant.schemas.admin.resource_config import (
     QueueConfigCreate,
     QueueConfigUpdate,
     QueuePropertyResponse,
-    ResourcePaginatedQuery,
-    ResourceQuery,
-    # 存储
     StorageConfigCreate,
     StorageConfigUpdate,
     StoragePropertyResponse,

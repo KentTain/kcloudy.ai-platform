@@ -70,8 +70,8 @@ class ResourceConfigReferenceResponse(BaseModel):
     @classmethod
     def from_config(
         cls,
-        config: "DatabaseConfig | StorageConfig | CacheConfig | QueueConfig | PubSubConfig | None",
-    ) -> "ResourceConfigReferenceResponse | None":
+        config: DatabaseConfig | StorageConfig | CacheConfig | QueueConfig | PubSubConfig | None,
+    ) -> ResourceConfigReferenceResponse | None:
         """从配置对象构建响应
 
         Args:
@@ -109,13 +109,13 @@ class TenantResponse(BaseModel):
     @classmethod
     def from_tenant(
         cls,
-        tenant: "Tenant",
-        db_config: "ResourceConfigReferenceResponse | None" = None,
-        storage_config: "ResourceConfigReferenceResponse | None" = None,
-        cache_config: "ResourceConfigReferenceResponse | None" = None,
-        queue_config: "ResourceConfigReferenceResponse | None" = None,
-        pubsub_config: "ResourceConfigReferenceResponse | None" = None,
-    ) -> "TenantResponse":
+        tenant: Tenant,
+        db_config: ResourceConfigReferenceResponse | None = None,
+        storage_config: ResourceConfigReferenceResponse | None = None,
+        cache_config: ResourceConfigReferenceResponse | None = None,
+        queue_config: ResourceConfigReferenceResponse | None = None,
+        pubsub_config: ResourceConfigReferenceResponse | None = None,
+    ) -> TenantResponse:
         """从租户对象和资源配置构建响应
 
         Args:

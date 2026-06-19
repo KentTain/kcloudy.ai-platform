@@ -17,7 +17,6 @@ from operator import add
 from typing import Annotated
 
 import pytest
-
 from langgraph.graph import StateGraph
 from langgraph.graph.state import CompiledStateGraph
 
@@ -129,7 +128,7 @@ async def test_graph_with_initial_state(graph: CompiledStateGraph):
 
     result = await graph.ainvoke(initial_state)
 
-    print(f"\n初始状态: ['initial_data']")
+    print("\n初始状态: ['initial_data']")
     print(f"最终结果: {result['result']}")
 
     # 验证初始状态被保留，且节点输出被追加

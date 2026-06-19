@@ -7,8 +7,8 @@ from pathlib import Path
 
 from ai.components.plugin.engine.core.runtime.base import PluginRuntime
 from ai.components.plugin.engine.core.runtime.local_runtime import LocalPluginRuntime
-from ai.components.plugin.engine.models.plugin import PluginInfo
 from ai.components.plugin.engine.models.enums import RuntimeType
+from ai.components.plugin.engine.models.plugin import PluginInfo
 
 
 class RuntimeFactory:

@@ -14,12 +14,16 @@ from loguru import logger
 from demo.configs import settings
 from framework.common.time import ChinaTimeZone
 from framework.database.core.engine import setup_engine
+from framework.database.dependencies import get_task_session
 from framework.middlewares.test_user_middleware import TestUserMiddleware
 from framework.module import get_registry, load_modules
-from framework.database.dependencies import get_task_session
 from framework.module.sync_service import ModuleDefinitionSyncService
 from framework.tenant.middleware import TenantMiddleware
-from framework.tenant.protocols import register_module_auto_assigner, register_tenant_provider, register_tenant_role_creator
+from framework.tenant.protocols import (
+    register_module_auto_assigner,
+    register_tenant_provider,
+    register_tenant_role_creator,
+)
 from framework.utils.log_util import (
     write_error,
     write_info,

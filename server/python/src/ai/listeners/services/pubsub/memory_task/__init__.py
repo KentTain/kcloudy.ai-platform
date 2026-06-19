@@ -7,9 +7,9 @@ from ai.listeners.services.pubsub.memory_task.cleanup import (
     cleanup_task_after_timeout,
 )
 from ai.listeners.services.pubsub.memory_task.helpers import (
-    stop_task_by_id,
     cleanup_task_resources,
     stop_message_by_id,
+    stop_task_by_id,
 )
 
 __all__ = [

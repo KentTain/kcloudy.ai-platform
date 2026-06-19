@@ -2,14 +2,15 @@
 资源配置密码加密工具单元测试
 """
 
+from unittest.mock import patch
+
 import pytest
-from unittest.mock import patch, MagicMock
 
 from framework.utils.resource_crypto import (
-    encrypt_password,
     decrypt_password,
-    mask_password,
+    encrypt_password,
     is_encrypted,
+    mask_password,
 )
 
 

@@ -9,8 +9,8 @@ from __future__ import annotations
 import json
 from collections import OrderedDict
 from datetime import datetime
-from typing import TYPE_CHECKING, Any
 from threading import Lock
+from typing import TYPE_CHECKING
 
 from loguru import logger
 
@@ -91,11 +91,11 @@ class TenantCache:
     """
 
     _l1_cache: TenantL1Cache = TenantL1Cache()
-    _redis: "RedisUtil | None" = None
+    _redis: RedisUtil | None = None
     _pubsub_listener_started: bool = False
 
     @classmethod
-    def init(cls, redis: "RedisUtil") -> None:
+    def init(cls, redis: RedisUtil) -> None:
         """初始化缓存，设置 Redis 客户端"""
         cls._redis = redis
         cls._start_pubsub_listener()
@@ -175,14 +175,19 @@ class TenantCache:
             try:
                 obj = json.loads(data)
                 # 解析资源配置
-                from framework.tenant.protocols import (
-                    TenantDatabaseConfig,
-                    TenantStorageConfig,
-                    TenantCacheConfig,
-                    TenantQueueConfig,
-                    TenantPubSubConfig,
+                from framework.tenant.enums import (
+                    DatabaseType,
+                    PubSubType,
+                    QueueType,
+                    StorageType,
                 )
-                from framework.tenant.enums import DatabaseType, StorageType, QueueType, PubSubType
+                from framework.tenant.protocols import (
+                    TenantCacheConfig,
+                    TenantDatabaseConfig,
+                    TenantPubSubConfig,
+                    TenantQueueConfig,
+                    TenantStorageConfig,
+                )
 
                 database = None
                 if obj.get("database"):

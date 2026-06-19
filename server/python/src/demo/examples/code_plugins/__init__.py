@@ -11,8 +11,8 @@
 """
 
 from demo.examples.code_plugins.code_qa_plugin_demo import (
-    CodeQAPlugin,
     CodeQADemo,
+    CodeQAPlugin,
     PythonCodeQA,
 )
 from demo.examples.code_plugins.keyword_match_demo import (

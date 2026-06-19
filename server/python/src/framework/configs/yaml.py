@@ -16,7 +16,6 @@ from typing import Any
 
 from framework.configs.helpers import deep_merge_dict
 
-
 VAR_PATTERN = re.compile(r"\$\{([^}]+)\}")
 """变量引用正则表达式，匹配${xxx.yyy}格式"""
 

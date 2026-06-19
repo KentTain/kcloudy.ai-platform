@@ -3,12 +3,10 @@
 import importlib
 import sys
 
-import pytest
-from unittest.mock import patch, MagicMock
 from pydantic import Field
 
 from framework.configs.base import BaseSettings
-from framework.configs.settings import Settings, ServerSettings, SqlalchemySettings
+from framework.configs.settings import ServerSettings, Settings, SqlalchemySettings
 
 
 class TestSettingsLoad:
@@ -70,8 +68,8 @@ class TestSettingsLoad:
         assert settings.sqlalchemy.pool.size == 10
     def test_demo_settings_initializes_framework_global_settings(self):
         """Test demo settings initializes framework global settings"""
-        from framework.configs import get_settings
         import framework.configs.settings as framework_settings_module
+        from framework.configs import get_settings
 
         framework_settings_module._settings = None
         sys.modules.pop("demo.configs", None)

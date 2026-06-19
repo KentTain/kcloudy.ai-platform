@@ -6,7 +6,7 @@ Framework 模块测试辅助函数
 
 import asyncio
 import uuid
-from typing import Callable, Coroutine
+from collections.abc import Callable, Coroutine
 
 
 def unique_id() -> str:

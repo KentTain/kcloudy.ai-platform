@@ -22,7 +22,7 @@ class ModelItem(BaseModel):
     description: str | None = Field(default=None, description="模型描述")
 
     @classmethod
-    def from_entity(cls, provider: str, model: "ProviderModel") -> "ModelItem":
+    def from_entity(cls, provider: str, model: ProviderModel) -> ModelItem:
         """从 ProviderModel 实体构建 ModelItem
 
         Args:
@@ -51,9 +51,9 @@ class ProviderItem(BaseModel):
     def from_entity(
         cls,
         provider_id: str,
-        provider_label: "I18nObject",
-        models: list["ProviderModel"],
-    ) -> "ProviderItem":
+        provider_label: I18nObject,
+        models: list[ProviderModel],
+    ) -> ProviderItem:
         """从提供商实体构建 ProviderItem
 
         Args:

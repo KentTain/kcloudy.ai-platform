@@ -2,16 +2,17 @@
 内部 HTTP 客户端单元测试
 """
 
-import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
+
 import httpx
+import pytest
+from pydantic import BaseModel
 
 from framework.clients.inner_http_client import (
     InnerHttpClient,
-    InnerServiceUnavailableError,
     InnerServiceTimeoutError,
+    InnerServiceUnavailableError,
 )
-from pydantic import BaseModel
 
 
 class SampleResponse(BaseModel):

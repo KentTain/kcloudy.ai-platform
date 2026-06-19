@@ -4,7 +4,9 @@
 自动恢复和清理租户上下文。
 """
 
-from typing import Any, Callable, Awaitable
+from collections.abc import Awaitable, Callable
+from typing import Any
+
 from loguru import logger
 
 from framework.queue.task_message import TaskMessage

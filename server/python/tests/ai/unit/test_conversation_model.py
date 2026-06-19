@@ -1,9 +1,7 @@
 """会话模型单元测试"""
 
-import pytest
 
 from ai.models.conversation import Conversation
-from ai.models.enums import ConversationStatus, ConversationMode
 
 
 class TestConversationModel:

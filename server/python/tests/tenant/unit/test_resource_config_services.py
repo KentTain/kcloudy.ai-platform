@@ -2,16 +2,17 @@
 资源配置服务单元测试
 """
 
-import pytest
-from unittest.mock import AsyncMock, patch, MagicMock
 from datetime import datetime
+from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
 
 from framework.common.exceptions import ConflictError
-from tenant.services.database_config_service import DatabaseConfigService
-from tenant.services.storage_config_service import StorageConfigService
 from tenant.services.cache_config_service import CacheConfigService
-from tenant.services.queue_config_service import QueueConfigService
+from tenant.services.database_config_service import DatabaseConfigService
 from tenant.services.pubsub_config_service import PubSubConfigService
+from tenant.services.queue_config_service import QueueConfigService
+from tenant.services.storage_config_service import StorageConfigService
 
 
 class TestDatabaseConfigService:
@@ -151,7 +152,6 @@ class TestDatabaseConfigService:
 
     def test_build_response_masks_password(self):
         """响应脱敏密码"""
-        from unittest.mock import create_autospec
 
         mock_config = MagicMock()
         # 手动模拟 Column 和 Table 结构

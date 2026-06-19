@@ -4,11 +4,12 @@
 为管理后台提供独立的超级管理员认证体系。
 """
 
-from datetime import datetime, timedelta
-from typing import TYPE_CHECKING, Callable
 import secrets
+from collections.abc import Callable
+from datetime import datetime, timedelta
+from typing import TYPE_CHECKING
 
-from fastapi import Request, HTTPException
+from fastapi import HTTPException, Request
 from fastapi.security import HTTPBearer
 from loguru import logger
 from sqlalchemy import select
@@ -16,8 +17,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import JSONResponse
 
+from framework.utils.crypto import verify_password
 from tenant.models import TenantAdmin
-from framework.utils.crypto import hash_password, verify_password
 
 if TYPE_CHECKING:
     from starlette.types import ASGIApp

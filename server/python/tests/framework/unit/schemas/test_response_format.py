@@ -6,8 +6,6 @@
 
 import json
 
-import pytest
-
 from framework.schemas.base import Fail, Success, SuccessExtra
 
 

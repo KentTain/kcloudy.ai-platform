@@ -1,11 +1,11 @@
 """用户控制器测试 - /me 接口返回角色权限"""
 
 import json
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from fastapi import HTTPException
 from fastapi.responses import ORJSONResponse
-from unittest.mock import AsyncMock, patch, MagicMock
 
 from iam.controllers.console.user_controller import get_current_user
 from iam.schemas.user import UserDetailResponse

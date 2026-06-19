@@ -6,16 +6,17 @@ RedisUtil - 统一的 Redis 工具类
 
 from __future__ import annotations
 
-from typing import Any, Optional
-from redis.asyncio import Redis, ConnectionPool
+from typing import Any
+
+from redis.asyncio import ConnectionPool, Redis
 from redis.exceptions import RedisError
 
 
 class RedisUtil:
     """统一的 Redis 工具类，所有 Redis 操作通过此类"""
 
-    _client: Optional[Redis] = None
-    _pool: Optional[ConnectionPool] = None
+    _client: Redis | None = None
+    _pool: ConnectionPool | None = None
 
     @classmethod
     async def init(cls, config: Any) -> None:
@@ -72,7 +73,7 @@ class RedisUtil:
     # =========================================================================
 
     @classmethod
-    async def set(cls, key: str, value: str, ttl: Optional[int] = None, nx: bool = False) -> bool:
+    async def set(cls, key: str, value: str, ttl: int | None = None, nx: bool = False) -> bool:
         """
         设置键值对
 
@@ -88,7 +89,7 @@ class RedisUtil:
         return await cls.get_client().set(key, value, ex=ttl, nx=nx)
 
     @classmethod
-    async def get(cls, key: str) -> Optional[str]:
+    async def get(cls, key: str) -> str | None:
         """
         获取键值
 
@@ -192,7 +193,7 @@ class RedisUtil:
     # =========================================================================
 
     @classmethod
-    async def hget(cls, name: str, key: str) -> Optional[str]:
+    async def hget(cls, name: str, key: str) -> str | None:
         """获取 Hash 字段值"""
         result = await cls.get_client().hget(name, key)
         if result is None:
@@ -237,7 +238,7 @@ class RedisUtil:
         return await cls.get_client().rpush(key, *values)
 
     @classmethod
-    async def lpop(cls, key: str) -> Optional[str]:
+    async def lpop(cls, key: str) -> str | None:
         """从左侧弹出"""
         result = await cls.get_client().lpop(key)
         if result is None:
@@ -247,7 +248,7 @@ class RedisUtil:
         return result
 
     @classmethod
-    async def rpop(cls, key: str) -> Optional[str]:
+    async def rpop(cls, key: str) -> str | None:
         """从右侧弹出"""
         result = await cls.get_client().rpop(key)
         if result is None:

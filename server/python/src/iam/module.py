@@ -4,7 +4,7 @@ IAM 模块声明
 定义 IAM 模块的注册信息，包括路由、中间件、生命周期钩子和 Seed 数据。
 """
 
-from typing import Callable
+from collections.abc import Callable
 
 from framework.module.definition import (
     MenuDef,

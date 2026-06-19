@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
-from framework.schemas.base import BaseQuery, BasePaginatedQuery
+from framework.schemas.base import BasePaginatedQuery, BaseQuery
 
 if TYPE_CHECKING:
     from iam.models import Role
@@ -209,11 +209,11 @@ class UserDetailResponse(BaseModel):
     @classmethod
     def from_user(
         cls,
-        user: "User",
+        user: User,
         role_codes: list[str],
         permissions: list[str],
         tenants: list[UserTenantResponse],
-    ) -> "UserDetailResponse":
+    ) -> UserDetailResponse:
         """从 User 实体和相关数据构建 UserDetailResponse
 
         Args:
@@ -263,7 +263,7 @@ class UserRoleItem(BaseModel):
     description: str | None = Field(None, description="角色描述")
 
     @classmethod
-    def from_role(cls, role: "Role") -> "UserRoleItem":
+    def from_role(cls, role: Role) -> UserRoleItem:
         """从 Role 实体构建 UserRoleItem
 
         Args:
@@ -286,7 +286,7 @@ class UserRolesResponse(BaseModel):
     roles: list[UserRoleItem] = Field(default_factory=list, description="角色列表")
 
     @classmethod
-    def from_roles(cls, roles: list["Role"]) -> "UserRolesResponse":
+    def from_roles(cls, roles: list[Role]) -> UserRolesResponse:
         """从 Role 列表构建 UserRolesResponse
 
         Args:

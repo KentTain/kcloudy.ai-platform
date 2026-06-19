@@ -4,25 +4,26 @@
 测试从配置创建默认配置、幂等性和 is_default 正确设置。
 """
 
+from unittest.mock import AsyncMock, MagicMock, patch
+
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch, call
 
 from tenant.migrations.seeds.resource_config_seed import (
     DEFAULT_CONFIG_NAME,
-    _parse_database_url,
-    _create_database_config,
     _create_cache_config,
-    _create_storage_config,
-    _create_queue_config,
+    _create_database_config,
     _create_pubsub_config,
+    _create_queue_config,
+    _create_storage_config,
+    _parse_database_url,
     run,
 )
 from tenant.models import (
-    DatabaseConfig,
     CacheConfig,
-    StorageConfig,
-    QueueConfig,
+    DatabaseConfig,
     PubSubConfig,
+    QueueConfig,
+    StorageConfig,
 )
 
 

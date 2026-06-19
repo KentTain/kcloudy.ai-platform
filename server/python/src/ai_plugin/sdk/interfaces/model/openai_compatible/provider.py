@@ -2,7 +2,6 @@ import logging
 
 from ai_plugin.sdk.interfaces.model import ModelProvider
 
-
 logger = logging.getLogger(__name__)
 
 

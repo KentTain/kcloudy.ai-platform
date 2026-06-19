@@ -5,18 +5,18 @@ AI 模块数据模型
 所有模型归属于 ai PostgreSQL schema。
 """
 
-from framework.database import create_module_base, create_base_model
+from framework.database import create_base_model, create_module_base
 
 # 创建 AI 模块的 Base 和 BaseModel
 Base = create_module_base("ai")
 BaseModel = create_base_model(Base)
 
 # 导入模型（必须在 Base 和 BaseModel 定义之后）
+from .conversation import Conversation
+from .enums import ConversationMode, ConversationStatus, MessageRole, MessageStatus
+from .message import Message
 from .model_config import ModelConfig, ModelType
 from .model_provider import ModelProvider, ProviderType
-from .enums import ConversationStatus, ConversationMode, MessageStatus, MessageRole
-from .conversation import Conversation
-from .message import Message
 from .plugin import (
     CredentialScope,
     InstallType,

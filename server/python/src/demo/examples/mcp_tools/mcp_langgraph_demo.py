@@ -12,7 +12,6 @@ from typing import Annotated, Any, Literal
 from langgraph.graph import END, StateGraph
 from pydantic import BaseModel
 
-
 # ==================== 状态定义 ====================
 
 
@@ -340,7 +339,7 @@ def demo_mcp_agent() -> None:
         print(f"工具：{result['tool_name'] or '无'}")
         print(f"响应：{result['response']}")
 
-        print(f"\n消息历史：")
+        print("\n消息历史：")
         for msg in result["messages"]:
             print(f"  {msg}")
 
@@ -356,7 +355,7 @@ def demo_react_agent() -> None:
     print(f"响应：{result['response']}")
     print(f"迭代次数：{result['iterations']}")
 
-    print(f"\n执行过程：")
+    print("\n执行过程：")
     for msg in result["messages"]:
         print(f"  {msg}")
 

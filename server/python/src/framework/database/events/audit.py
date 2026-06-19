@@ -4,13 +4,11 @@
 提供数据库操作的审计事件监听。
 """
 
-from datetime import datetime
 from typing import Any
 
 from sqlalchemy import event
-from sqlalchemy.orm import Session
 
-from framework.common.ctx import get_user_id, get_tenant_id
+from framework.common.ctx import get_tenant_id, get_user_id
 
 
 class AuditEventListener:

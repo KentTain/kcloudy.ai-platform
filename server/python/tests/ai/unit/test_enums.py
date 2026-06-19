@@ -1,12 +1,11 @@
 """枚举定义单元测试"""
 
-import pytest
 
 from ai.models.enums import (
-    ConversationStatus,
     ConversationMode,
-    MessageStatus,
+    ConversationStatus,
     MessageRole,
+    MessageStatus,
 )
 
 

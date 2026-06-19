@@ -7,8 +7,9 @@
 3. 上下文清理
 """
 
-import pytest
 import asyncio
+
+import pytest
 
 from framework.tenant.context import (
     SimpleTenant,

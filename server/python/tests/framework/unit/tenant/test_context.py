@@ -2,17 +2,14 @@
 租户上下文单元测试
 """
 
-import pytest
 import asyncio
-import threading
+
+import pytest
 
 from framework.tenant.context import (
     SimpleTenant,
     TenantContext,
-    clear_tenant_context,
-    get_current_tenant,
     get_tenant_id,
-    set_current_tenant,
 )
 
 

@@ -6,7 +6,7 @@ SystemSetting 模型单元测试
 
 import pytest
 
-from framework.database import AttributeDataType, PropertyMixin, PropertyAttributeMixin
+from framework.database import AttributeDataType
 from iam.models import SystemSetting, SystemSettingAttribute
 
 
@@ -230,8 +230,9 @@ class TestSystemSettingSchema:
         WHEN: 提交 SystemSettingCreate 时缺少 code 或 name
         THEN: Pydantic 校验失败
         """
-        from iam.schemas.admin.system_setting import SystemSettingCreate
         from pydantic import ValidationError
+
+        from iam.schemas.admin.system_setting import SystemSettingCreate
 
         with pytest.raises(ValidationError):
             SystemSettingCreate()
@@ -245,8 +246,9 @@ class TestSystemSettingSchema:
         WHEN: 提交 SystemSettingCreate 时 code 长度超过 20
         THEN: Pydantic 校验失败
         """
-        from iam.schemas.admin.system_setting import SystemSettingCreate
         from pydantic import ValidationError
+
+        from iam.schemas.admin.system_setting import SystemSettingCreate
 
         with pytest.raises(ValidationError):
             SystemSettingCreate(code="a" * 21, name="测试")

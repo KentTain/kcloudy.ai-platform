@@ -448,7 +448,6 @@ class ProviderConfiguration(BaseModel):
         :param model_setting_map: 模型设置映射
         :return: 供应商模型列表
         """
-        from ai_plugin.sdk.entities.model.provider import ModelPosition
 
         provider_models = []
 

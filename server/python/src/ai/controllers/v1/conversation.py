@@ -3,8 +3,7 @@
 提供会话列表和删除接口。
 """
 
-from fastapi import APIRouter, Depends, HTTPException, Request
-from fastapi.responses import ORJSONResponse
+from fastapi import APIRouter, Depends, HTTPException
 from loguru import logger
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -15,7 +14,6 @@ from ai.schemas.conversation import (
 from ai.services import conversation_service
 from framework.common.ctx import get_tenant_id
 from framework.database.dependencies import get_db_session
-from framework.schemas.base import Success, SuccessExtra
 
 _logger = logger.bind(name=__name__)
 

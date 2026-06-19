@@ -7,10 +7,8 @@ import uuid
 from datetime import datetime
 from typing import Any
 
-from redis.asyncio import Redis
-
-from framework.core.queue import Message, QueueProvider
 from framework.cache.redis_util import RedisUtil
+from framework.core.queue import Message
 
 
 class RedisQueue:

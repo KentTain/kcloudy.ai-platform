@@ -5,11 +5,10 @@
 """
 
 from datetime import datetime
-from typing import Any
 
-from framework.schemas.base import BasePaginatedQuery, BaseQuery
 from pydantic import BaseModel, Field
 
+from framework.schemas.base import BasePaginatedQuery, BaseQuery
 
 # =============================================================================
 # 通用响应模型

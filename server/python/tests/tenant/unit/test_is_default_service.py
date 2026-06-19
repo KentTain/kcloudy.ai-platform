@@ -4,15 +4,15 @@ is_default 唯一性控制服务层测试
 测试创建和更新默认配置时清除其他默认标记，以及 get_default_config 方法。
 """
 
-import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from tenant.services.base_resource_service import BaseResourceService
-from tenant.services.database_config_service import DatabaseConfigService
-from tenant.services.storage_config_service import StorageConfigService
+import pytest
+
 from tenant.services.cache_config_service import CacheConfigService
-from tenant.services.queue_config_service import QueueConfigService
+from tenant.services.database_config_service import DatabaseConfigService
 from tenant.services.pubsub_config_service import PubSubConfigService
+from tenant.services.queue_config_service import QueueConfigService
+from tenant.services.storage_config_service import StorageConfigService
 
 
 class TestClearExistingDefault:

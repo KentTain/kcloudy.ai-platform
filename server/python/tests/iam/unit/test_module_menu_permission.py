@@ -2,8 +2,7 @@
 ModuleMenuPermission 模型单元测试
 """
 
-import pytest
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 
 class TestModuleMenuPermission:
@@ -53,8 +52,9 @@ class TestModuleMenuPermission:
 
     def test_model_foreign_key_cascade(self):
         """验证外键级联删除"""
-        from tenant.models import ModuleMenuPermission
         from sqlalchemy import inspect
+
+        from tenant.models import ModuleMenuPermission
 
         # 获取模型元数据
         mapper = inspect(ModuleMenuPermission)

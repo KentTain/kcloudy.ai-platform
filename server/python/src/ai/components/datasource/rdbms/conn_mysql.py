@@ -5,7 +5,6 @@ from sqlalchemy.schema import CreateTable
 
 from ai.components.datasource.rdbms.base import RDBMSDatabase
 
-
 _logger = logger.bind(name=__name__)
 
 

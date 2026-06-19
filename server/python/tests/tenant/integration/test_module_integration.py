@@ -2,8 +2,9 @@
 租户模块系统集成测试
 """
 
-import pytest
 from unittest.mock import AsyncMock, MagicMock
+
+import pytest
 
 from iam.services.module_sync_service import ModuleSyncService
 

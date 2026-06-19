@@ -14,7 +14,8 @@ project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root / "src"))
 
 from sqlalchemy import text
-from framework.configs import init_settings, get_settings
+
+from framework.configs import get_settings, init_settings
 from framework.database import get_engine
 
 

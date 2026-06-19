@@ -1,7 +1,8 @@
 ﻿# AI 模块测试公共 fixtures
 
-import pytest
 from unittest.mock import AsyncMock
+
+import pytest
 
 
 @pytest.fixture

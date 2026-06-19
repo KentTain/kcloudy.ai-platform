@@ -11,24 +11,24 @@
     from demo.examples.agent_core import PersonaConfig, AgentWorkflow
 """
 
-from demo.examples.agent_core.persona_demo import (
-    AgentPersona,
-    PersonaConfig,
-    PersonaDemo,
+from demo.examples.agent_core.agent_demo import (
+    AgentDemo,
+    SimpleAgent,
 )
 from demo.examples.agent_core.knowledge_base_demo import (
     AgentKnowledgeBase,
     KnowledgeBaseDemo,
     MockRetriever,
 )
+from demo.examples.agent_core.persona_demo import (
+    AgentPersona,
+    PersonaConfig,
+    PersonaDemo,
+)
 from demo.examples.agent_core.workflow_demo import (
     AgentState,
     AgentWorkflow,
     WorkflowDemo,
-)
-from demo.examples.agent_core.agent_demo import (
-    AgentDemo,
-    SimpleAgent,
 )
 
 __all__ = [

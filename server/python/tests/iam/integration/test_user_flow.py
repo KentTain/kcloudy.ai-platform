@@ -4,13 +4,13 @@
 测试用户注册、修改、密码管理流程。
 """
 
-import pytest
 import uuid
-from datetime import datetime
 
-from iam.services.user_service import UserService
+import pytest
+
+from iam.models import UserStatus
 from iam.services.auth_service import AuthService
-from iam.models import User, UserStatus
+from iam.services.user_service import UserService
 
 
 @pytest.mark.integration

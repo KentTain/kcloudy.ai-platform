@@ -2,14 +2,16 @@
 会话管理工具测试
 """
 
+from unittest.mock import AsyncMock, MagicMock, patch
+
 import pytest
-from unittest.mock import AsyncMock, patch, MagicMock
+
 from framework.utils.session import (
-    delete_user_sessions,
-    create_session,
-    get_session,
-    delete_session,
     _memory_sessions,
+    create_session,
+    delete_session,
+    delete_user_sessions,
+    get_session,
 )
 
 

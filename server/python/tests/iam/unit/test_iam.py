@@ -13,18 +13,12 @@ class TestIAMImports:
     def test_import_models(self):
         """测试模型导入"""
         from iam.models import (
-            User,
-            Role,
             Permission,
-            UserRole,
-            RolePermission,
-            Department,
-            UserDepartment,
-            OAuthConnection,
-            UserTenant,
+            Role,
+            User,
         )
+
         # Tenant 相关模型已迁移到 tenant 模块
-        from tenant.models import Tenant, TenantAdmin, TenantConfig
 
         assert User is not None
         assert Role is not None
@@ -34,10 +28,7 @@ class TestIAMImports:
         """测试 Schema 导入"""
         from iam.schemas import (
             LoginRequest,
-            LoginResponse,
             UserResponse,
-            RoleResponse,
-            PermissionResponse,
         )
 
         assert LoginRequest is not None
@@ -45,6 +36,7 @@ class TestIAMImports:
 
     def test_import_admin_user_management_schemas(self):
         """测试管理员用户管理 Schema 导入"""
+        from iam.schemas.department import UserDepartmentRequest
         from iam.schemas.user import (
             AdminPasswordResetRequest,
             AdminPasswordResetResponse,
@@ -54,7 +46,6 @@ class TestIAMImports:
             UserRoleAssignRequest,
             UserStatusUpdateRequest,
         )
-        from iam.schemas.department import UserDepartmentRequest
 
         assert AdminUserCreate(username="admin", password="Password123").username == "admin"
         assert AdminUserUpdate(nickname="管理员").nickname == "管理员"
@@ -70,10 +61,6 @@ class TestIAMImports:
         from iam.services import (
             auth_service,
             user_service,
-            role_service,
-            permission_service,
-            department_service,
-            oauth_service,
         )
 
         assert auth_service is not None
@@ -119,7 +106,6 @@ class TestPasswordStrength:
     def test_password_too_short(self):
         """密码太短"""
         from framework.utils.crypto import validate_password_strength
-        import pytest
 
         with pytest.raises(ValueError, match="密码长度需 8-32 位"):
             validate_password_strength("Pass1")
@@ -127,7 +113,6 @@ class TestPasswordStrength:
     def test_password_no_letter(self):
         """密码无字母"""
         from framework.utils.crypto import validate_password_strength
-        import pytest
 
         with pytest.raises(ValueError, match="密码必须包含字母和数字"):
             validate_password_strength("12345678")
@@ -135,7 +120,6 @@ class TestPasswordStrength:
     def test_password_no_digit(self):
         """密码无数字"""
         from framework.utils.crypto import validate_password_strength
-        import pytest
 
         with pytest.raises(ValueError, match="密码必须包含字母和数字"):
             validate_password_strength("Password")
@@ -183,7 +167,7 @@ class TestJWTToken:
 
     def test_decode_token(self):
         """解析 Token"""
-        from framework.utils.jwt import generate_access_token, decode_token
+        from framework.utils.jwt import decode_token, generate_access_token
 
         payload = {"user_id": "user-123", "session_id": "session-456"}
         token = generate_access_token(payload, "test-secret")

@@ -1,6 +1,6 @@
 """HeartbeatHandler 单元测试"""
 
-from unittest.mock import AsyncMock, patch
+from unittest.mock import patch
 
 import pytest
 

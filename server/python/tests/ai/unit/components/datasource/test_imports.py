@@ -13,8 +13,6 @@ Datasource 组件导入测试
 import ast
 from pathlib import Path
 
-import pytest
-
 
 class TestDatasourceImports:
     """Datasource 组件导入测试"""
@@ -83,7 +81,7 @@ class TestDatasourceSyntax:
             except SyntaxError as e:
                 syntax_errors.append(f"{py_file}: {e}")
 
-        assert not syntax_errors, f"发现语法错误:\n" + "\n".join(syntax_errors)
+        assert not syntax_errors, "发现语法错误:\n" + "\n".join(syntax_errors)
 
     def test_no_relative_imports_outside_package(self):
         """验证没有使用超出包范围的相对导入"""
@@ -99,4 +97,4 @@ class TestDatasourceSyntax:
             if "from ... import" in content:
                 invalid_imports.append(f"{py_file}: 发现超出包范围的相对导入")
 
-        assert not invalid_imports, f"发现无效导入:\n" + "\n".join(invalid_imports)
+        assert not invalid_imports, "发现无效导入:\n" + "\n".join(invalid_imports)

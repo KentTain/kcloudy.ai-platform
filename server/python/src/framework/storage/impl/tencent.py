@@ -2,8 +2,8 @@
 腾讯云 COS 存储实现
 """
 
+
 from qcloud_cos import CosConfig, CosS3Client
-from typing import Any
 
 from framework.configs.settings import TencentCosSettings
 

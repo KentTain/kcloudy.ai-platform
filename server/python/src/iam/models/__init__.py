@@ -7,7 +7,7 @@ IAM 模块数据模型
 注意：Tenant、TenantConfig、TenantAdmin 已迁移到 tenant 模块
 """
 
-from framework.database import create_module_base, create_base_model
+from framework.database import create_base_model, create_module_base
 
 # 创建 IAM 模块的 Base 和 BaseModel
 Base = create_module_base("iam")

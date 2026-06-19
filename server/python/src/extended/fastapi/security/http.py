@@ -3,7 +3,8 @@
 from typing import override
 
 from fastapi.exceptions import HTTPException
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer as RawHTTPBearer
+from fastapi.security import HTTPAuthorizationCredentials
+from fastapi.security import HTTPBearer as RawHTTPBearer
 from fastapi.security.utils import get_authorization_scheme_param
 from starlette.requests import Request
 from starlette.status import HTTP_403_FORBIDDEN

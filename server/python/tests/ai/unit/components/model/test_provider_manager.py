@@ -1,14 +1,15 @@
 # ProviderManager 单元测试
 
-import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import pytest
+
+from ai.components.model.errors.error import ProviderNotFoundError
 from ai.components.model.internal.provider_manager import (
-    ProviderManager,
     CACHE_KEY_PREFIX,
     CACHE_TTL,
+    ProviderManager,
 )
-from ai.components.model.errors.error import ProviderNotFoundError
 from ai.models.model_config import ModelType
 
 

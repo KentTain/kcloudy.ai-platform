@@ -4,11 +4,11 @@ from sqlalchemy import String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from ai.models import BaseModel
-from ai.models.enums import ConversationStatus, ConversationMode
+from ai.models.enums import ConversationMode, ConversationStatus
 from framework.database.mixins.active_record import ActiveRecordMixin
 from framework.database.mixins.tenant import TenantMixin
-from framework.database.types.uuid import StringUUID
 from framework.database.types.enum import EnumType
+from framework.database.types.uuid import StringUUID
 
 
 class Conversation(BaseModel, ActiveRecordMixin, TenantMixin):

@@ -2,12 +2,13 @@
 租户模块分配服务单元测试
 """
 
-import pytest
-from unittest.mock import AsyncMock, patch, MagicMock
 from datetime import datetime, timedelta
+from unittest.mock import AsyncMock, MagicMock, patch
 
-from tenant.services.tenant_module_service import TenantModuleService
+import pytest
+
 from framework.events.domain_events import ModuleAssigned, ModuleUnassigned
+from tenant.services.tenant_module_service import TenantModuleService
 
 
 class TestAssignModule:

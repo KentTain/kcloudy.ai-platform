@@ -2,20 +2,16 @@
 框架层模块系统单元测试
 """
 
+from unittest.mock import MagicMock
+
 import pytest
-from pathlib import Path
-from unittest.mock import MagicMock, patch
-from typing import Any
 
 from framework.module import (
+    CyclicDependencyError,
     ModuleDescriptor,
     ModuleRegistry,
-    get_registry,
-    CyclicDependencyError,
-    ModuleLoadError,
-    discover_modules,
     filter_modules,
-    load_modules,
+    get_registry,
     resolve_dependencies,
 )
 

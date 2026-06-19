@@ -7,7 +7,7 @@
 import time
 
 from loguru import logger
-from sqlalchemy import select, text
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 
 from framework.utils.resource_crypto import decrypt_password

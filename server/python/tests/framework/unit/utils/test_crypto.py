@@ -2,17 +2,16 @@
 加密工具单元测试
 """
 
-import os
 import pytest
 
 from framework.utils.crypto import (
-    encrypt,
-    decrypt,
-    generate_tenant_key,
-    encrypt_with_tenant_key,
-    decrypt_with_tenant_key,
-    get_master_key,
     CryptoError,
+    decrypt,
+    decrypt_with_tenant_key,
+    encrypt,
+    encrypt_with_tenant_key,
+    generate_tenant_key,
+    get_master_key,
 )
 
 

@@ -4,8 +4,9 @@ Tenant 模块 TenantProvider 实现的单元测试
 注意：TenantProvider 已迁移到 tenant 模块
 """
 
-import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
 
 
 class TestTenantProvider:
@@ -159,7 +160,9 @@ class TestTenantProvider:
                     new_callable=AsyncMock,
                     side_effect=expected_tenants,
                 ):
-                    from tenant.services.tenant_provider_impl import tenant_provider_impl
+                    from tenant.services.tenant_provider_impl import (
+                        tenant_provider_impl,
+                    )
                     result = await tenant_provider_impl.get_user_tenants("user-123")
 
                     assert len(result) == 2

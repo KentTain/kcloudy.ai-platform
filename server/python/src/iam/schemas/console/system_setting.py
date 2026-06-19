@@ -6,7 +6,12 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field
 
-from framework.schemas import PropertyAttributeVoMixin, PropertyVoMixin, BaseQuery, BasePaginatedQuery
+from framework.schemas import (
+    BasePaginatedQuery,
+    BaseQuery,
+    PropertyAttributeVoMixin,
+    PropertyVoMixin,
+)
 
 
 class ConsoleSystemSettingQuery(BaseQuery):

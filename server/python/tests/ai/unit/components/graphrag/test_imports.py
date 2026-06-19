@@ -7,8 +7,6 @@ GraphRAG 组件导入测试
 测试直接导入 graphrag 子模块，避免 ai.components.__init__.py 中的其他组件依赖。
 """
 
-import sys
-import importlib
 
 import pytest
 
@@ -70,7 +68,7 @@ class TestGraphRAGSyntax:
             except SyntaxError as e:
                 syntax_errors.append(f"{py_file}: {e}")
 
-        assert not syntax_errors, f"发现语法错误:\n" + "\n".join(syntax_errors)
+        assert not syntax_errors, "发现语法错误:\n" + "\n".join(syntax_errors)
 
     def test_no_alon_imports_remaining(self):
         """验证没有遗留的 alon 导入"""
@@ -85,4 +83,4 @@ class TestGraphRAGSyntax:
             if "alon." in content or "from alon" in content or "import alon" in content:
                 alon_imports.append(str(py_file))
 
-        assert not alon_imports, f"发现遗留的 alon 导入:\n" + "\n".join(alon_imports)
+        assert not alon_imports, "发现遗留的 alon 导入:\n" + "\n".join(alon_imports)

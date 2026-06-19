@@ -9,7 +9,6 @@ from pydantic import BaseModel, Field
 
 from .completion import FileItem, ModelConfig, SearchConfig
 
-
 # ======================= 消息部分类型 =======================
 
 

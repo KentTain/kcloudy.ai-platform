@@ -2,25 +2,26 @@
 事件发布单元测试
 """
 
-import pytest
-from unittest.mock import AsyncMock, patch, MagicMock
 from datetime import datetime
+from unittest.mock import patch
 
+import pytest
+
+from framework.events.base import EventStream
 from framework.events.domain_events import (
     ModuleAssigned,
-    ModuleUnassigned,
     ModuleMenuCreated,
-    ModuleMenuUpdated,
     ModuleMenuDeleted,
+    ModuleMenuUpdated,
     ModulePermissionCreated,
-    ModulePermissionUpdated,
     ModulePermissionDeleted,
+    ModulePermissionUpdated,
     ModuleRoleCreated,
-    ModuleRoleUpdated,
     ModuleRoleDeleted,
     ModuleRolePermissionChanged,
+    ModuleRoleUpdated,
+    ModuleUnassigned,
 )
-from framework.events.base import DomainEvent, EventStream
 
 
 class TestDomainEvent:

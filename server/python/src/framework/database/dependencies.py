@@ -4,8 +4,8 @@
 提供多租户感知的 FastAPI 依赖注入函数和 Listener/Task 专用函数。
 """
 
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
-from typing import AsyncGenerator
 
 from sqlalchemy.ext.asyncio import AsyncSession
 

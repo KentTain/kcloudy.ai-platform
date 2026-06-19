@@ -2,18 +2,19 @@
 Tenant 服务单元测试
 """
 
-import pytest
-from unittest.mock import AsyncMock, patch, MagicMock
 from datetime import datetime, timedelta
+from unittest.mock import AsyncMock, MagicMock, patch
 
-from tenant.services.tenant_service import TenantService
-from tenant.models import Tenant, TenantStatus
+import pytest
+
 from framework.tenant.context import SimpleTenant
 from framework.tenant.exceptions import (
-    TenantNotFoundError,
-    TenantInactiveError,
     TenantExpiredError,
+    TenantInactiveError,
+    TenantNotFoundError,
 )
+from tenant.models import Tenant, TenantStatus
+from tenant.services.tenant_service import TenantService
 
 
 class TestGetById:

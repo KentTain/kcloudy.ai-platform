@@ -12,15 +12,12 @@ if str(src_path) not in sys.path:
 os.environ["PYTHON_SERVICE_ENV"] = "local"
 os.environ["TZ"] = "Asia/Shanghai"
 
-import asyncio
 
-import pytest
 import pytest_asyncio
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 
 from demo.configs import settings
 from demo.models import BaseModel
-
 
 # Configure SQLAlchemy logging levels
 for logger_name in [

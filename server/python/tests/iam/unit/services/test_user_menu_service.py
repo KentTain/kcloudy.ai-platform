@@ -10,8 +10,9 @@ UserMenuService 单元测试
 注意：由于依赖问题，主要测试辅助方法和逻辑。
 """
 
+from unittest.mock import AsyncMock, MagicMock
+
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
 
 
 class TestUserMenuServiceLogic:
@@ -36,9 +37,7 @@ class TestUserMenuServiceLogic:
         visible_menu_ids = set()
         for menu in all_menus:
             menu_perms = menu_permission_map.get(menu.id, set())
-            if not menu_perms:
-                visible_menu_ids.add(menu.id)
-            elif menu_perms & user_permission_ids:
+            if not menu_perms or menu_perms & user_permission_ids:
                 visible_menu_ids.add(menu.id)
 
         assert "menu-1" in visible_menu_ids
@@ -56,9 +55,7 @@ class TestUserMenuServiceLogic:
         visible_menu_ids = set()
         for menu in all_menus:
             menu_perms = menu_permission_map.get(menu.id, set())
-            if not menu_perms:
-                visible_menu_ids.add(menu.id)
-            elif menu_perms & user_permission_ids:
+            if not menu_perms or menu_perms & user_permission_ids:
                 visible_menu_ids.add(menu.id)
 
         assert "menu-1" in visible_menu_ids
@@ -76,9 +73,7 @@ class TestUserMenuServiceLogic:
         visible_menu_ids = set()
         for menu in all_menus:
             menu_perms = menu_permission_map.get(menu.id, set())
-            if not menu_perms:
-                visible_menu_ids.add(menu.id)
-            elif menu_perms & user_permission_ids:
+            if not menu_perms or menu_perms & user_permission_ids:
                 visible_menu_ids.add(menu.id)
 
         assert "menu-1" not in visible_menu_ids

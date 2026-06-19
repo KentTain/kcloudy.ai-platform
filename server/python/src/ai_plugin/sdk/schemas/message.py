@@ -1,7 +1,7 @@
 from abc import ABC
 from collections.abc import Mapping, Sequence
 from enum import Enum, StrEnum
-from typing import Annotated, Any, Literal, Optional, Union
+from typing import Annotated, Any, Literal
 
 from pydantic import BaseModel, Field, field_serializer, field_validator
 
@@ -150,13 +150,7 @@ class DocumentPromptMessageContent(MultiModalPromptMessageContent):
 
 # 提示消息内容联合类型，支持类型区分
 PromptMessageContentUnionTypes = Annotated[
-    Union[
-        TextPromptMessageContent,
-        ImagePromptMessageContent,
-        DocumentPromptMessageContent,
-        AudioPromptMessageContent,
-        VideoPromptMessageContent,
-    ],
+    TextPromptMessageContent | ImagePromptMessageContent | DocumentPromptMessageContent | AudioPromptMessageContent | VideoPromptMessageContent,
     Field(discriminator="type"),
 ]
 
@@ -179,8 +173,8 @@ class PromptMessage(ABC, BaseModel):
     """
 
     role: PromptMessageRole  # 消息角色
-    content: Optional[str | list[PromptMessageContentUnionTypes]] = None  # 消息内容，可以是字符串或内容列表
-    name: Optional[str] = None  # 消息发送者名称（可选）
+    content: str | list[PromptMessageContentUnionTypes] | None = None  # 消息内容，可以是字符串或内容列表
+    name: str | None = None  # 消息发送者名称（可选）
 
     def is_empty(self) -> bool:
         """
@@ -216,8 +210,8 @@ class PromptMessage(ABC, BaseModel):
 
     @field_serializer("content")
     def serialize_content(
-        self, content: Optional[Union[str, Sequence[PromptMessageContent]]]
-    ) -> Optional[str | list[dict[str, Any] | PromptMessageContent] | Sequence[PromptMessageContent]]:
+        self, content: str | Sequence[PromptMessageContent] | None
+    ) -> str | list[dict[str, Any] | PromptMessageContent] | Sequence[PromptMessageContent] | None:
         """
         序列化消息内容
 

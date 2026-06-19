@@ -17,8 +17,6 @@ from ai_plugin.sdk.entities.model.llm import (
 from ai_plugin.sdk.entities.model.message import AssistantPromptMessage
 from extended.langchain.agents.agent_factory import AgentFactory
 from extended.langchain.models.alon_chat import AlonChatModel
-from extended.langchain.models.message_adapter import MessageAdapter
-
 
 pytestmark = pytest.mark.integration
 

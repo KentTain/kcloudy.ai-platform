@@ -13,7 +13,6 @@ from ai.components.model.model_providers.__base__.ai_model import AIModelImpl
 from ai_plugin.sdk.entities.model.llm import LLMResult, LLMResultChunk
 from ai_plugin.sdk.entities.model.message import PromptMessage, PromptMessageTool
 
-
 _TEXT_COLOR_MAPPING = {
     "blue": "36;1",
     "yellow": "33;1",

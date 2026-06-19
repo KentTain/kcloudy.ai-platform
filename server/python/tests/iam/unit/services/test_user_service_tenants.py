@@ -2,8 +2,10 @@
 UserService 租户相关方法测试
 """
 
+from unittest.mock import MagicMock
+
 import pytest
-from unittest.mock import AsyncMock, patch, MagicMock
+
 from iam.services.user_service import UserService
 
 

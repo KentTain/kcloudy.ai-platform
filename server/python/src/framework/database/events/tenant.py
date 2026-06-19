@@ -7,7 +7,6 @@
 from typing import Any
 
 from sqlalchemy import event
-from sqlalchemy.orm import Session
 
 from framework.common.ctx import get_tenant_id
 from framework.database.mixins.tenant import should_skip_tenant

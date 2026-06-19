@@ -9,7 +9,6 @@ RDBMSDatabase URI 构造测试
 注意：这些测试只验证 URI 构造逻辑，不连接真实数据库。
 """
 
-import pytest
 from urllib.parse import quote, quote_plus
 
 from ai.components.datasource.rdbms import MySQLConnect, RDBMSDatabase

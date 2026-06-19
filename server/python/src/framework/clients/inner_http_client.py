@@ -4,10 +4,10 @@
 用于模块间 HTTP 调用，支持单体和微服务模式切换。
 """
 
+from typing import Any, TypeVar
+
 import httpx
 from loguru import logger
-from typing import Any, TypeVar, Type
-
 from pydantic import BaseModel
 
 _logger = logger.bind(name=__name__)
@@ -80,7 +80,7 @@ class InnerHttpClient:
     async def get(
         self,
         path: str,
-        response_model: Type[T] | None = None,
+        response_model: type[T] | None = None,
     ) -> T | dict[str, Any] | None:
         """
         GET 请求
@@ -109,7 +109,7 @@ class InnerHttpClient:
         self,
         path: str,
         json: dict[str, Any] | None = None,
-        response_model: Type[T] | None = None,
+        response_model: type[T] | None = None,
     ) -> T | dict[str, Any] | None:
         """
         POST 请求
@@ -138,7 +138,7 @@ class InnerHttpClient:
     def _handle_response(
         self,
         response: httpx.Response,
-        response_model: Type[T] | None = None,
+        response_model: type[T] | None = None,
     ) -> T | dict[str, Any] | None:
         """处理响应"""
         if response.status_code == 404:

@@ -11,7 +11,6 @@ import pytest_asyncio
 
 from framework.pubsub.impl.redis import RedisPubSub
 
-
 pytestmark = pytest.mark.integration
 
 

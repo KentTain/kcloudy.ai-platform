@@ -11,9 +11,8 @@ from loguru import logger
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from iam.models import OAuthConnection, OAuthProvider, User
-from framework.utils.crypto import hash_password
 from framework.configs import get_settings
+from iam.models import OAuthConnection, OAuthProvider, User
 
 _logger = logger.bind(name=__name__)
 

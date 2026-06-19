@@ -5,7 +5,7 @@ Demo 模块数据模型
 所有模型归属于 demo PostgreSQL schema。
 """
 
-from framework.database import create_module_base, create_base_model
+from framework.database import create_base_model, create_module_base
 from framework.database.mixins.active_record import ActiveRecordMixin
 
 # 创建 Demo 模块的 Base 和 BaseModel

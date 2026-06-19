@@ -356,7 +356,7 @@ class TreeNodeMixin:
     def _node_not_deleted_condition(cls):
         """检查模型是否支持软删除"""
         if hasattr(cls, "deleted_at"):
-            return getattr(cls, "deleted_at").is_(None)
+            return cls.deleted_at.is_(None)
         return None
 
     @classmethod

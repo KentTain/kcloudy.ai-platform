@@ -7,9 +7,13 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from framework.schemas import PropertyAttributeVoMixin, PropertyVoMixin, BaseQuery, BasePaginatedQuery
 from framework.database import AttributeDataType
-
+from framework.schemas import (
+    BasePaginatedQuery,
+    BaseQuery,
+    PropertyAttributeVoMixin,
+    PropertyVoMixin,
+)
 
 # ============== 查询参数 Schema ==============
 

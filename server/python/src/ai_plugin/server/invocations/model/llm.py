@@ -93,7 +93,7 @@ class LLMInvocation(BackwardsInvocation[LLMResultChunk]):
                 LLMResultChunk,
                 data,
             )
-            response = cast(Generator[LLMResultChunk, None, None], response)
+            response = cast("Generator[LLMResultChunk, None, None]", response)
             return response
 
         # 非流式输出模式，需要聚合所有响应块
@@ -177,7 +177,7 @@ class SummaryInvocation(BackwardsInvocation[SummaryResult]):
             SummaryResult,
             data,
         ):
-            data = cast(SummaryResult, llm_result)
+            data = cast("SummaryResult", llm_result)
             return data.summary
 
         raise Exception("文本摘要服务没有响应")

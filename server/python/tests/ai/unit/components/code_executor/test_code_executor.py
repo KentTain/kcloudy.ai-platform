@@ -247,7 +247,6 @@ def main(arg1: str, arg2: str) -> dict:
     @pytest.mark.asyncio
     async def test_unsupported_language_error(self, mock_settings):
         """测试不支持的语言抛出错误"""
-        from ai.components.code_executor import CodeLanguage
 
         # 直接测试 execute_workflow_code_template 对不支持语言的处理
         # 我们使用一个伪造的 language 值来测试
@@ -267,17 +266,17 @@ class TestCodeExecutorImports:
     def test_import_all_exports(self):
         """测试导入所有导出类"""
         from ai.components.code_executor import (
-            CodeExecutor,
             CodeExecutionError,
             CodeExecutionResponse,
+            CodeExecutor,
             CodeLanguage,
             CodeNodeProvider,
-            TemplateTransformer,
-            Python3TemplateTransformer,
-            NodeJsTemplateTransformer,
-            Jinja2TemplateTransformer,
-            Python3CodeProvider,
             JavascriptCodeProvider,
+            Jinja2TemplateTransformer,
+            NodeJsTemplateTransformer,
+            Python3CodeProvider,
+            Python3TemplateTransformer,
+            TemplateTransformer,
         )
 
         # 验证所有类都已导入
@@ -311,8 +310,9 @@ class TestCodeNodeProvider:
 
     def test_base_provider_inheritance(self):
         """测试基类继承自 BaseModel"""
-        from ai.components.code_executor import CodeNodeProvider
         from pydantic import BaseModel
+
+        from ai.components.code_executor import CodeNodeProvider
 
         assert issubclass(CodeNodeProvider, BaseModel)
 
@@ -336,7 +336,9 @@ class TestJinja2CodeProvider:
 
     def test_jinja2_code_provider(self):
         """测试 Jinja2CodeProvider 创建"""
-        from ai.components.code_executor.jinja2.jinja2_transformer import Jinja2TemplateTransformer
+        from ai.components.code_executor.jinja2.jinja2_transformer import (
+            Jinja2TemplateTransformer,
+        )
 
         transformer = Jinja2TemplateTransformer()
 
@@ -359,7 +361,9 @@ class TestJinja2CodeProvider:
 
     def test_jinja2_transformer_format_response(self):
         """测试 Jinja2 响应格式化"""
-        from ai.components.code_executor.jinja2.jinja2_transformer import Jinja2TemplateTransformer
+        from ai.components.code_executor.jinja2.jinja2_transformer import (
+            Jinja2TemplateTransformer,
+        )
 
         # 测试格式化响应（响应需要包含 <<r>> 标签）
         response = "<<r>>Hello, World!<<r>>"

@@ -7,7 +7,6 @@
 from loguru import logger
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
 
 from iam.models import Permission, Role, RolePermission, UserRole
 from iam.services.permission_service import PermissionCheckService

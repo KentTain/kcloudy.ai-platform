@@ -10,9 +10,9 @@ import orjson
 from loguru import logger
 from pydantic import BaseModel
 
-from framework.utils.json_util import orjson_default
 from ai_plugin.server.core.entities.plugin.io import PluginInStreamEvent
 from ai_plugin.server.core.server.__base.writer_entities import StreamOutputMessage
+from framework.utils.json_util import orjson_default
 
 
 class PluginInStream(BaseModel):

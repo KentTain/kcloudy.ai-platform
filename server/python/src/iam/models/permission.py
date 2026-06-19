@@ -2,11 +2,11 @@
 权限模型
 """
 
-from sqlalchemy import Boolean, ForeignKey, Index, String, Text, UniqueConstraint
+from sqlalchemy import ForeignKey, Index, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
-from iam.models import BaseModel
 from framework.database.mixins.tenant import TenantMixin
+from iam.models import BaseModel
 
 
 class Permission(BaseModel):

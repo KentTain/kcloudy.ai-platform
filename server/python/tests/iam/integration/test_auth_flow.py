@@ -4,13 +4,14 @@
 测试登录、登出、Token 刷新流程。
 """
 
-import pytest
 import uuid
 
-from iam.services.user_service import UserService
-from iam.services.auth_service import AuthService
-from iam.models import User, UserStatus
+import pytest
+
 from framework.utils.jwt import decode_token
+from iam.models import UserStatus
+from iam.services.auth_service import AuthService
+from iam.services.user_service import UserService
 
 
 @pytest.mark.integration

@@ -11,8 +11,8 @@ import pytest
 
 from demo.examples.http_plugins.error_handling_demo import (
     ErrorHandler,
-    RetryConfig,
     RetryableHTTPClient,
+    RetryConfig,
 )
 from demo.examples.http_plugins.mock_data_demo import (
     DynamicMockData,

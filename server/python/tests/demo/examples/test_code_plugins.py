@@ -7,7 +7,6 @@
 - 插件与 LangGraph 集成
 """
 
-import pytest
 
 from demo.examples.code_plugins.code_qa_plugin_demo import (
     CodeQADemo,

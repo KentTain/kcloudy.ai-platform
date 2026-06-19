@@ -12,7 +12,6 @@ import pytest_asyncio
 
 from framework.storage.impl.minio import MinioStorage
 
-
 pytestmark = pytest.mark.integration
 
 

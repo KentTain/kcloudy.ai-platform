@@ -10,20 +10,19 @@
 """
 
 import json
+from unittest.mock import AsyncMock, patch
 
 import pytest
 from fastapi import HTTPException
 from fastapi.responses import ORJSONResponse
-from unittest.mock import AsyncMock, patch, MagicMock
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from iam.controllers.admin.role_controller import (
-    get_role_members,
     add_role_members,
-    remove_role_member,
-    get_role_options,
-    get_role_menus,
     assign_role_menus,
+    get_role_members,
+    get_role_menus,
+    remove_role_member,
 )
 
 

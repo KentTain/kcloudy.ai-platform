@@ -4,7 +4,7 @@ Tenant 模块声明
 定义 Tenant 模块的注册信息，包括路由、中间件、生命周期钩子和 Seed 数据。
 """
 
-from typing import Callable
+from collections.abc import Callable
 
 from framework.module.definition import (
     MenuDef,
@@ -12,7 +12,6 @@ from framework.module.definition import (
     PermissionDef,
     RoleDef,
 )
-
 from tenant.models import Base
 
 
@@ -41,12 +40,25 @@ class TenantModule:
 
         格式: [(router, prefix, tags), ...]
         """
-        from tenant.controllers.admin.tenant_controller import router as admin_tenant_router
-        from tenant.controllers.admin.resource_config_controller import router as admin_resource_router
-        from tenant.controllers.admin.module_controller import router as admin_module_router
-        from tenant.controllers.admin.tenant_module_controller import router as admin_tenant_module_router
-        from tenant.controllers.console.tenant_controller import router as console_tenant_router
-        from tenant.controllers.inner.tenant_controller import router as inner_tenant_router
+        from tenant.controllers.admin.resource_config_controller import (
+            router as admin_resource_router,
+        )
+
+        from tenant.controllers.admin.module_controller import (
+            router as admin_module_router,
+        )
+        from tenant.controllers.admin.tenant_controller import (
+            router as admin_tenant_router,
+        )
+        from tenant.controllers.admin.tenant_module_controller import (
+            router as admin_tenant_module_router,
+        )
+        from tenant.controllers.console.tenant_controller import (
+            router as console_tenant_router,
+        )
+        from tenant.controllers.inner.tenant_controller import (
+            router as inner_tenant_router,
+        )
 
         return [
             (admin_tenant_router, "/tenant/admin/v1", ["Admin - Tenant"]),
@@ -76,7 +88,9 @@ class TenantModule:
         注意：Python 3.7+ 字典保持插入顺序，resource_config 必须在 tenant 之前执行，
         因为 tenant_seed 可能需要引用默认资源配置。
         """
-        from tenant.migrations.seeds.resource_config_seed import run as resource_config_seed_run
+        from tenant.migrations.seeds.resource_config_seed import (
+            run as resource_config_seed_run,
+        )
         from tenant.migrations.seeds.tenant_seed import run as tenant_seed_run
 
         return {

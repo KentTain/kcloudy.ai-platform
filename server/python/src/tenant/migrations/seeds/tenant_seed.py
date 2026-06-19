@@ -7,7 +7,6 @@ Tenant 模块种子数据初始化
 
 from __future__ import annotations
 
-import uuid
 from datetime import datetime, timedelta
 
 from sqlalchemy import select
@@ -126,9 +125,9 @@ async def run(*, dry_run: bool = False) -> int:
             await session.commit()
 
         if created_count:
-            write_success(f"已创建默认租户")
+            write_success("已创建默认租户")
         if assigned_count:
-            write_success(f"已为默认租户分配活跃模块")
+            write_success("已为默认租户分配活跃模块")
 
         if not created_count and not assigned_count:
             write_warning("默认租户已初始化且模块已分配，无需变更")

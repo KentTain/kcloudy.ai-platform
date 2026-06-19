@@ -2,11 +2,12 @@
 IamClient 单元测试
 """
 
+from unittest.mock import AsyncMock, MagicMock
+
 import pytest
-from unittest.mock import AsyncMock, patch, MagicMock
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from framework.clients.iam_client import IamClient, UserTenantInfo
+from framework.clients.iam_client import IamClient
 
 
 class TestIamClientGetUserTenants:

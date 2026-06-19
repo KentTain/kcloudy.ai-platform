@@ -4,7 +4,6 @@
 遵循 TDD：先写测试验证期望的导入行为，然后重构代码使测试通过。
 """
 
-import pytest
 
 
 class TestDemoConfigsImports:
@@ -22,7 +21,6 @@ class TestDemoConfigsImports:
     def test_import_yaml_parser_from_framework(self):
         """demo.configs.YamlParser 应该继承自 framework.configs.yaml.YamlParser"""
         from demo.configs import YamlParser
-
         from framework.configs.yaml import YamlParser as FrameworkYamlParser
 
         # demo 的 YamlParser 继承自 framework 的 YamlParser
@@ -32,8 +30,8 @@ class TestDemoConfigsImports:
         """helper 函数应该直接从 framework 导入"""
         # helpers 应该从 framework 直接导入
         from framework.configs.helpers import (
-            hyphen_to_underscore,
             convert_dict_hyphen_to_underscore,
+            hyphen_to_underscore,
         )
 
         assert callable(hyphen_to_underscore)
@@ -46,17 +44,22 @@ class TestDemoCommonImports:
     def test_import_exceptions_from_framework(self):
         """demo.common 应该从 framework 导入异常类"""
         from demo.common import (
-            UnauthorizedError,
+            BadRequestError,
             ForbiddenError,
             NotFoundError,
-            BadRequestError,
+            UnauthorizedError,
         )
-
+        from framework.common.exceptions import (
+            BadRequestError as FrameworkBadRequest,
+        )
+        from framework.common.exceptions import (
+            ForbiddenError as FrameworkForbidden,
+        )
+        from framework.common.exceptions import (
+            NotFoundError as FrameworkNotFound,
+        )
         from framework.common.exceptions import (
             UnauthorizedError as FrameworkUnauthorized,
-            ForbiddenError as FrameworkForbidden,
-            NotFoundError as FrameworkNotFound,
-            BadRequestError as FrameworkBadRequest,
         )
 
         assert UnauthorizedError is FrameworkUnauthorized
@@ -67,19 +70,26 @@ class TestDemoCommonImports:
     def test_import_context_functions_from_framework(self):
         """demo.common 应该从 framework 导入上下文函数"""
         from demo.common import (
-            get_context,
-            set_context,
             clear_context,
-            get_user_id,
+            get_context,
             get_tenant_id,
+            get_user_id,
+            set_context,
         )
-
+        from framework.common.ctx import (
+            clear_context as framework_clear_context,
+        )
         from framework.common.ctx import (
             get_context as framework_get_context,
-            set_context as framework_set_context,
-            clear_context as framework_clear_context,
-            get_user_id as framework_get_user_id,
+        )
+        from framework.common.ctx import (
             get_tenant_id as framework_get_tenant_id,
+        )
+        from framework.common.ctx import (
+            get_user_id as framework_get_user_id,
+        )
+        from framework.common.ctx import (
+            set_context as framework_set_context,
         )
 
         assert get_context is framework_get_context
@@ -138,7 +148,7 @@ class TestDemoCoreCommonImports:
 
     def test_singleton_classes_defined(self):
         """demo.core.common 应该定义单例类"""
-        from demo.core.common import Singleton, AbstractSingleton
+        from demo.core.common import AbstractSingleton, Singleton
 
         assert Singleton is not None
         assert AbstractSingleton is not None

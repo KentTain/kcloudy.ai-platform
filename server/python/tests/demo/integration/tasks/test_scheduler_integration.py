@@ -8,7 +8,6 @@ import asyncio
 
 import pytest
 
-
 pytestmark = pytest.mark.integration
 
 
@@ -22,6 +21,7 @@ class TestSchedulerIntegration:
         """WHEN: 启动本地调度器
         THEN: heartbeat_task 在间隔内被触发"""
         from apscheduler.schedulers.asyncio import AsyncIOScheduler
+
         from demo.tasks.services.heartbeat_task import heartbeat_task
 
         # 使用默认的 MemoryJobStore

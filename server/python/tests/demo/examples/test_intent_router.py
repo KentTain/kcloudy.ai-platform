@@ -9,11 +9,11 @@ import pytest
 from demo.examples.langgraph_workflows.intent_router_demo import (
     AgentState,
     IntentRouterWorkflow,
+    error_handler,
     intent_node,
     rag_node,
     route_logic,
     tool_node,
-    error_handler,
 )
 
 

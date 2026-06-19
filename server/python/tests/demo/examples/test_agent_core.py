@@ -8,7 +8,6 @@
 - 完整智能体
 """
 
-import pytest
 
 from demo.examples.agent_core.agent_demo import AgentDemo, SimpleAgent
 from demo.examples.agent_core.knowledge_base_demo import (
@@ -21,7 +20,7 @@ from demo.examples.agent_core.persona_demo import (
     PersonaConfig,
     PersonaDemo,
 )
-from demo.examples.agent_core.workflow_demo import AgentState, AgentWorkflow
+from demo.examples.agent_core.workflow_demo import AgentWorkflow
 
 
 class TestPersonaConfig:

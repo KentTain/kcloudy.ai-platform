@@ -15,11 +15,11 @@ from demo.common.exceptions import (
 
 # 从 framework 提供的上下文管理函数
 from framework.common.ctx import (
-    get_context,
-    set_context,
     clear_context,
-    get_user_id,
+    get_context,
     get_tenant_id,
+    get_user_id,
+    set_context,
 )
 
 __all__ = [

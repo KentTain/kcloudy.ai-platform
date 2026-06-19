@@ -7,9 +7,9 @@ FewShotPromptTemplate 少样本学习示例
 Day 3 讲义：AI 智能体应用实战 - 提示词工程
 """
 
-from langchain_core.prompts import FewShotPromptTemplate, PromptTemplate
-from langchain_core.example_selectors import SemanticSimilarityExampleSelector
 from langchain_community.vectorstores import FAISS
+from langchain_core.example_selectors import SemanticSimilarityExampleSelector
+from langchain_core.prompts import FewShotPromptTemplate, PromptTemplate
 from langchain_openai import OpenAIEmbeddings
 
 

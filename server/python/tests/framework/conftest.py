@@ -78,8 +78,8 @@ async def redis_available(integration_settings):
 @pytest_asyncio.fixture(scope="session")
 async def postgres_available(integration_settings):
     """检测 PostgreSQL 服务是否可用"""
-    from sqlalchemy.ext.asyncio import create_async_engine
     from sqlalchemy import text
+    from sqlalchemy.ext.asyncio import create_async_engine
 
     try:
         engine = create_async_engine(

@@ -1,14 +1,12 @@
 """AgentFactory unit tests"""
 
-from unittest.mock import MagicMock, patch
 
-import pytest
 from langchain_core.tools import tool
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph.state import CompiledStateGraph
 
-from extended.langchain.models.alon_chat import AlonChatModel
 from extended.langchain.agents.agent_factory import AgentFactory
+from extended.langchain.models.alon_chat import AlonChatModel
 
 
 @tool
