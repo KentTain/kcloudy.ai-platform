@@ -7,7 +7,8 @@
  * - Tabs：个人信息、安全设置
  */
 
-import { computed, onMounted, ref, watch } from "vue"
+import { computed, h, onMounted, ref, watch } from "vue"
+import type { ColumnDef } from "@tanstack/vue-table"
 import { changePassword, getLoginHistory, updateCurrentUser } from "@/iam/api/auth"
 import { useTenantStore } from "@/tenant/stores/tenant"
 import { getErrorMessage, notifyError, notifySuccess } from "@/framework/utils/feedback"
@@ -18,10 +19,10 @@ import {
   Button,
   Input,
   Badge,
-  Skeleton,
   DateInput,
   Card,
-  Pagination,
+  DataTable,
+  useDataTable,
 } from "@/components"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components"
@@ -33,14 +34,6 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
 import { toTypedSchema } from "@vee-validate/zod"
 import { useForm } from "vee-validate"
 import * as z from "zod"
@@ -158,48 +151,9 @@ const onPasswordSubmit = handlePasswordSubmit(async (values) => {
 
 // ========== 登录历史 ==========
 
-const loginHistory = ref<LoginHistory[]>([])
-const loginHistoryLoading = ref(false)
-const loginHistoryTotal = ref(0)
-const loginHistoryPage = ref(1)
-const loginHistoryPageSize = ref(10)
 const dateRange = ref<string | [string, string] | undefined>(undefined)
 
-const loadLoginHistory = async () => {
-  loginHistoryLoading.value = true
-  try {
-    const params: Record<string, unknown> = {
-      page: loginHistoryPage.value,
-      page_size: loginHistoryPageSize.value,
-    }
-    if (dateRange.value && Array.isArray(dateRange.value) && dateRange.value[0] && dateRange.value[1]) {
-      params.start_date = dateRange.value[0]
-      params.end_date = dateRange.value[1]
-    }
-    const response = await getLoginHistory(params)
-    loginHistory.value = response.data.items
-    loginHistoryTotal.value = response.data.total
-  } catch (error) {
-    notifyError(getErrorMessage(error, "获取登录历史失败"))
-  } finally {
-    loginHistoryLoading.value = false
-  }
-}
-
-watch(loginHistoryPage, () => loadLoginHistory())
-watch(dateRange, () => {
-  loginHistoryPage.value = 1
-  loadLoginHistory()
-})
-
-watch(activeTab, (newTab) => {
-  if (newTab === "security") {
-    loadLoginHistory()
-  }
-})
-
-// ========== 格式化函数 ==========
-
+// 格式化函数
 const formatDateTime = (dateStr: string) => {
   if (!dateStr) return "--"
   return new Date(dateStr).toLocaleString("zh-CN")
@@ -211,6 +165,73 @@ const formatDeviceType = (type?: string) => {
 }
 
 const formatLoginStatus = (status: string) => (status === "success" ? "成功" : "失败")
+
+// 列定义
+const loginHistoryColumns: ColumnDef<LoginHistory>[] = [
+  {
+    accessorKey: "login_at",
+    header: "登录时间",
+    size: 160,
+    cell: ({ row }) => formatDateTime(row.original.login_at),
+  },
+  {
+    accessorKey: "ip_address",
+    header: "IP 地址",
+    size: 120,
+    cell: ({ row }) => row.original.ip_address,
+  },
+  {
+    accessorKey: "device_type",
+    header: "设备",
+    size: 80,
+    cell: ({ row }) => formatDeviceType(row.original.device_type),
+  },
+  {
+    accessorKey: "status",
+    header: "状态",
+    size: 80,
+    cell: ({ row }) => {
+      const status = row.original.status
+      return h(Badge, { variant: status === "success" ? "default" : "destructive", size: "sm" }, () =>
+        formatLoginStatus(status)
+      )
+    },
+  },
+  {
+    accessorKey: "location",
+    header: "位置",
+    cell: ({ row }) => row.original.location || "--",
+  },
+]
+
+// DataTable 初始化
+const loginHistoryTable = useDataTable<LoginHistory>({
+  columns: loginHistoryColumns,
+  remoteFetchFn: async ({ page, page_size }) => {
+    const params: Record<string, unknown> = { page, page_size }
+    if (dateRange.value && Array.isArray(dateRange.value) && dateRange.value[0] && dateRange.value[1]) {
+      params.start_date = dateRange.value[0]
+      params.end_date = dateRange.value[1]
+    }
+    const response = await getLoginHistory(params)
+    return {
+      data: response.data.items,
+      total: response.data.total,
+      page: response.data.page,
+      page_size: response.data.page_size,
+    }
+  },
+})
+
+watch(dateRange, () => {
+  loginHistoryTable.refresh(true)
+})
+
+watch(activeTab, (newTab) => {
+  if (newTab === "security") {
+    loginHistoryTable.refresh(true)
+  }
+})
 
 // ========== 用户信息 ==========
 
@@ -324,52 +345,7 @@ onMounted(async () => {
               />
             </div>
 
-            <div class="rounded-lg border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead class="w-[160px]">登录时间</TableHead>
-                    <TableHead class="w-[120px]">IP 地址</TableHead>
-                    <TableHead class="w-[80px]">设备</TableHead>
-                    <TableHead class="w-[80px]">状态</TableHead>
-                    <TableHead>位置</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  <TableRow v-if="loginHistoryLoading">
-                    <TableCell v-for="n in 5" :key="n">
-                      <Skeleton class="h-5 w-full" />
-                    </TableCell>
-                  </TableRow>
-                  <TableRow v-else-if="!loginHistory.length">
-                    <TableCell colspan="5" class="h-16 text-center text-muted-foreground">
-                      暂无登录记录
-                    </TableCell>
-                  </TableRow>
-                  <TableRow v-else v-for="row in loginHistory" :key="row.id">
-                    <TableCell>{{ formatDateTime(row.login_at) }}</TableCell>
-                    <TableCell>{{ row.ip_address }}</TableCell>
-                    <TableCell>{{ formatDeviceType(row.device_type) }}</TableCell>
-                    <TableCell>
-                      <Badge :variant="row.status === 'success' ? 'default' : 'destructive'" size="sm">
-                        {{ formatLoginStatus(row.status) }}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{{ row.location || "--" }}</TableCell>
-                  </TableRow>
-                </TableBody>
-              </Table>
-            </div>
-
-            <Pagination
-              v-if="loginHistoryTotal > loginHistoryPageSize"
-              :total="loginHistoryTotal"
-              :page="loginHistoryPage"
-              :page-size="loginHistoryPageSize"
-              class="mt-3"
-              @update:page="(p: number) => (loginHistoryPage = p)"
-              @update:page-size="(s: number) => { loginHistoryPageSize = s; loginHistoryPage = 1 }"
-            />
+            <DataTable :data-table="loginHistoryTable" :fixed-layout="true" />
           </Card>
         </div>
       </TabsContent>
