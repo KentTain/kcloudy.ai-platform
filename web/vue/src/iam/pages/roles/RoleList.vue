@@ -24,6 +24,7 @@ import AppPage from "@/framework/layouts/components/AppPage.vue"
 import {
   Button,
   Badge,
+  Skeleton,
   Checkbox,
   DataTable,
   useDataTable,
