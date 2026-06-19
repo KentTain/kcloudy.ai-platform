@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, h } from 'vue'
+import type { ColumnDef } from '@tanstack/vue-table'
 import {
   getDatabaseConfigs,
   createDatabaseConfig,
@@ -38,7 +39,7 @@ import type {
   ResourceUpdate,
 } from '@/tenant/types/resource'
 import { notifySuccess, notifyError } from '@/framework/utils/feedback'
-import { Button, Input, Label, Card, Badge, Skeleton, Pagination } from '@/components'
+import { Button, Input, Label, Card, Badge, DataTable, useDataTable } from '@/components'
 import {
   Select,
   SelectContent,
@@ -53,21 +54,13 @@ import {
   TabsTrigger,
 } from '@/components'
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
-import {
   Dialog,
   DialogContent,
   DialogFooter,
   DialogHeader,
   DialogTitle,
 } from '@/components'
-import { Plus, Pencil, Trash2, Plug, RefreshCw } from '@lucide/vue'
+import { Plus, Pencil, Trash2, Plug, RefreshCw, Search } from '@lucide/vue'
 
 // 资源类型定义
 type ResourceType = 'database' | 'storage' | 'cache' | 'queue' | 'pubsub'
@@ -83,16 +76,8 @@ const resourceTypes: { label: string; value: ResourceType }[] = [
 // 当前选中的资源类型
 const currentType = ref<ResourceType>('database')
 
-// 数据列表
-const dataList = ref<ResourceConfig[]>([])
-const loading = ref(false)
-const total = ref(0)
-
-// 分页
-const pagination = ref({
-  page: 1,
-  pageSize: 20,
-})
+// 搜索关键字
+const keyword = ref('')
 
 // 弹窗状态
 const dialogOpen = ref(false)
@@ -173,71 +158,336 @@ const getDefaultConfig = (type: ResourceType): Record<string, any> => {
   }
 }
 
+// 格式化日期
+const formatDate = (dateStr?: string): string => {
+  if (!dateStr) return '--'
+  return new Date(dateStr).toLocaleString()
+}
+
+// 获取状态徽章
+const getStatusBadge = (row: ResourceConfig) => {
+  if ((row.tenant_count || 0) > 0) {
+    return { label: '已引用', variant: 'default' as const }
+  }
+  return { label: '未使用', variant: 'secondary' as const }
+}
+
+// ==================== 测试连接 ====================
+const handleTestConnection = async (row: ResourceConfig, type: ResourceType) => {
+  testingId.value = row.id
+  testLoading.value = true
+  try {
+    let response
+    switch (type) {
+      case 'database':
+        response = await testDatabaseConnection(row.id)
+        break
+      case 'storage':
+        response = await testStorageConnection(row.id)
+        break
+      case 'cache':
+        response = await testCacheConnection(row.id)
+        break
+      case 'queue':
+        response = await testQueueConnection(row.id)
+        break
+      case 'pubsub':
+        response = await testPubsubConnection(row.id)
+        break
+    }
+
+    if (response?.data?.success) {
+      notifySuccess(`连接成功，延迟 ${response.data.latency}ms`)
+    } else {
+      notifyError(response?.data?.error || '连接失败')
+    }
+  } catch (error) {
+    console.error('测试连接失败:', error)
+    notifyError('测试连接失败')
+  } finally {
+    testingId.value = null
+    testLoading.value = false
+  }
+}
+
+// ==================== 列定义 ====================
+
+// 数据库列定义
+const databaseColumns: ColumnDef<DatabaseConfig>[] = [
+  { accessorKey: 'name', header: '配置名称', size: 200, cell: ({ row }) => h('span', { class: 'font-medium' }, row.original.name) },
+  { accessorKey: 'host', header: '主机地址', size: 150 },
+  { accessorKey: 'port', header: '端口', size: 80 },
+  { accessorKey: 'database', header: '数据库名', size: 120 },
+  {
+    accessorKey: 'tenant_count',
+    header: '状态',
+    size: 80,
+    cell: ({ row }) => h(Badge, { variant: getStatusBadge(row.original).variant }, () => getStatusBadge(row.original).label),
+  },
+  { accessorKey: 'tenant_count', header: '引用租户', size: 80, cell: ({ row }) => row.original.tenant_count || 0 },
+  { accessorKey: 'created_at', header: '创建时间', size: 160, cell: ({ row }) => formatDate(row.original.created_at) },
+  {
+    id: 'actions',
+    header: '操作',
+    size: 200,
+    cell: ({ row }) => {
+      const item = row.original
+      return h('div', { class: 'flex items-center gap-1' }, [
+        h(Button, {
+          variant: 'ghost', size: 'sm',
+          disabled: testingId.value === item.id && testLoading.value,
+          onClick: () => handleTestConnection(item, 'database'),
+        }, () => [h(Plug, { class: 'mr-1 h-3.5 w-3.5' }), '测试']),
+        h(Button, { variant: 'ghost', size: 'sm', onClick: () => openEditDialog(item) }, () => [h(Pencil, { class: 'mr-1 h-3.5 w-3.5' }), '编辑']),
+        h(Button, { variant: 'ghost', size: 'sm', class: 'text-destructive hover:text-destructive', onClick: () => openDeleteDialog(item) }, () => [h(Trash2, { class: 'mr-1 h-3.5 w-3.5' }), '删除']),
+      ])
+    },
+  },
+]
+
+// 存储列定义
+const storageColumns: ColumnDef<StorageConfig>[] = [
+  { accessorKey: 'name', header: '配置名称', size: 200, cell: ({ row }) => h('span', { class: 'font-medium' }, row.original.name) },
+  { accessorKey: 'endpoint', header: 'Endpoint', size: 200 },
+  { accessorKey: 'bucket', header: 'Bucket', size: 120 },
+  { accessorKey: 'region', header: 'Region', size: 100, cell: ({ row }) => row.original.region || '--' },
+  {
+    accessorKey: 'tenant_count',
+    header: '状态',
+    size: 80,
+    cell: ({ row }) => h(Badge, { variant: getStatusBadge(row.original).variant }, () => getStatusBadge(row.original).label),
+  },
+  { accessorKey: 'tenant_count', header: '引用租户', size: 80, cell: ({ row }) => row.original.tenant_count || 0 },
+  { accessorKey: 'created_at', header: '创建时间', size: 160, cell: ({ row }) => formatDate(row.original.created_at) },
+  {
+    id: 'actions',
+    header: '操作',
+    size: 200,
+    cell: ({ row }) => {
+      const item = row.original
+      return h('div', { class: 'flex items-center gap-1' }, [
+        h(Button, {
+          variant: 'ghost', size: 'sm',
+          disabled: testingId.value === item.id && testLoading.value,
+          onClick: () => handleTestConnection(item, 'storage'),
+        }, () => [h(Plug, { class: 'mr-1 h-3.5 w-3.5' }), '测试']),
+        h(Button, { variant: 'ghost', size: 'sm', onClick: () => openEditDialog(item) }, () => [h(Pencil, { class: 'mr-1 h-3.5 w-3.5' }), '编辑']),
+        h(Button, { variant: 'ghost', size: 'sm', class: 'text-destructive hover:text-destructive', onClick: () => openDeleteDialog(item) }, () => [h(Trash2, { class: 'mr-1 h-3.5 w-3.5' }), '删除']),
+      ])
+    },
+  },
+]
+
+// 缓存列定义
+const cacheColumns: ColumnDef<CacheConfig>[] = [
+  { accessorKey: 'name', header: '配置名称', size: 200, cell: ({ row }) => h('span', { class: 'font-medium' }, row.original.name) },
+  { accessorKey: 'host', header: '主机地址', size: 150 },
+  { accessorKey: 'port', header: '端口', size: 80 },
+  { accessorKey: 'db', header: '数据库', size: 80, cell: ({ row }) => row.original.db || 0 },
+  {
+    accessorKey: 'tenant_count',
+    header: '状态',
+    size: 80,
+    cell: ({ row }) => h(Badge, { variant: getStatusBadge(row.original).variant }, () => getStatusBadge(row.original).label),
+  },
+  { accessorKey: 'tenant_count', header: '引用租户', size: 80, cell: ({ row }) => row.original.tenant_count || 0 },
+  { accessorKey: 'created_at', header: '创建时间', size: 160, cell: ({ row }) => formatDate(row.original.created_at) },
+  {
+    id: 'actions',
+    header: '操作',
+    size: 200,
+    cell: ({ row }) => {
+      const item = row.original
+      return h('div', { class: 'flex items-center gap-1' }, [
+        h(Button, {
+          variant: 'ghost', size: 'sm',
+          disabled: testingId.value === item.id && testLoading.value,
+          onClick: () => handleTestConnection(item, 'cache'),
+        }, () => [h(Plug, { class: 'mr-1 h-3.5 w-3.5' }), '测试']),
+        h(Button, { variant: 'ghost', size: 'sm', onClick: () => openEditDialog(item) }, () => [h(Pencil, { class: 'mr-1 h-3.5 w-3.5' }), '编辑']),
+        h(Button, { variant: 'ghost', size: 'sm', class: 'text-destructive hover:text-destructive', onClick: () => openDeleteDialog(item) }, () => [h(Trash2, { class: 'mr-1 h-3.5 w-3.5' }), '删除']),
+      ])
+    },
+  },
+]
+
+// 队列列定义
+const queueColumns: ColumnDef<QueueConfig>[] = [
+  { accessorKey: 'name', header: '配置名称', size: 200, cell: ({ row }) => h('span', { class: 'font-medium' }, row.original.name) },
+  { accessorKey: 'host', header: '主机地址', size: 150 },
+  { accessorKey: 'port', header: '端口', size: 80 },
+  { accessorKey: 'username', header: '用户名', size: 100, cell: ({ row }) => row.original.username || '--' },
+  { accessorKey: 'vhost', header: 'VHost', size: 80, cell: ({ row }) => row.original.vhost || '/' },
+  {
+    accessorKey: 'tenant_count',
+    header: '状态',
+    size: 80,
+    cell: ({ row }) => h(Badge, { variant: getStatusBadge(row.original).variant }, () => getStatusBadge(row.original).label),
+  },
+  { accessorKey: 'tenant_count', header: '引用租户', size: 80, cell: ({ row }) => row.original.tenant_count || 0 },
+  {
+    id: 'actions',
+    header: '操作',
+    size: 200,
+    cell: ({ row }) => {
+      const item = row.original
+      return h('div', { class: 'flex items-center gap-1' }, [
+        h(Button, {
+          variant: 'ghost', size: 'sm',
+          disabled: testingId.value === item.id && testLoading.value,
+          onClick: () => handleTestConnection(item, 'queue'),
+        }, () => [h(Plug, { class: 'mr-1 h-3.5 w-3.5' }), '测试']),
+        h(Button, { variant: 'ghost', size: 'sm', onClick: () => openEditDialog(item) }, () => [h(Pencil, { class: 'mr-1 h-3.5 w-3.5' }), '编辑']),
+        h(Button, { variant: 'ghost', size: 'sm', class: 'text-destructive hover:text-destructive', onClick: () => openDeleteDialog(item) }, () => [h(Trash2, { class: 'mr-1 h-3.5 w-3.5' }), '删除']),
+      ])
+    },
+  },
+]
+
+// 发布订阅列定义
+const pubsubColumns: ColumnDef<PubsubConfig>[] = [
+  { accessorKey: 'name', header: '配置名称', size: 200, cell: ({ row }) => h('span', { class: 'font-medium' }, row.original.name) },
+  {
+    accessorKey: 'type_name',
+    header: '类型',
+    size: 100,
+    cell: ({ row }) => h(Badge, { variant: 'outline' }, () => row.original.type_name),
+  },
+  {
+    id: 'address',
+    header: '地址信息',
+    size: 200,
+    cell: ({ row }) => {
+      const item = row.original
+      if (item.brokers?.length) {
+        return item.brokers.join(', ')
+      }
+      if (item.host) {
+        return `${item.host}:${item.port}`
+      }
+      return '--'
+    },
+  },
+  { accessorKey: 'username', header: '用户名', size: 100, cell: ({ row }) => row.original.username || '--' },
+  {
+    accessorKey: 'tenant_count',
+    header: '状态',
+    size: 80,
+    cell: ({ row }) => h(Badge, { variant: getStatusBadge(row.original).variant }, () => getStatusBadge(row.original).label),
+  },
+  { accessorKey: 'tenant_count', header: '引用租户', size: 80, cell: ({ row }) => row.original.tenant_count || 0 },
+  { accessorKey: 'created_at', header: '创建时间', size: 160, cell: ({ row }) => formatDate(row.original.created_at) },
+  {
+    id: 'actions',
+    header: '操作',
+    size: 200,
+    cell: ({ row }) => {
+      const item = row.original
+      return h('div', { class: 'flex items-center gap-1' }, [
+        h(Button, {
+          variant: 'ghost', size: 'sm',
+          disabled: testingId.value === item.id && testLoading.value,
+          onClick: () => handleTestConnection(item, 'pubsub'),
+        }, () => [h(Plug, { class: 'mr-1 h-3.5 w-3.5' }), '测试']),
+        h(Button, { variant: 'ghost', size: 'sm', onClick: () => openEditDialog(item) }, () => [h(Pencil, { class: 'mr-1 h-3.5 w-3.5' }), '编辑']),
+        h(Button, { variant: 'ghost', size: 'sm', class: 'text-destructive hover:text-destructive', onClick: () => openDeleteDialog(item) }, () => [h(Trash2, { class: 'mr-1 h-3.5 w-3.5' }), '删除']),
+      ])
+    },
+  },
+]
+
+// ==================== DataTable 实例 ====================
+
+const databaseDataTable = useDataTable<DatabaseConfig>({
+  columns: databaseColumns,
+  enabled: () => currentType.value === 'database',
+  remoteFetchFn: async ({ page, page_size }) => {
+    return await getDatabaseConfigs({ page, page_size, keyword: keyword.value || undefined })
+  },
+})
+
+const storageDataTable = useDataTable<StorageConfig>({
+  columns: storageColumns,
+  enabled: () => currentType.value === 'storage',
+  remoteFetchFn: async ({ page, page_size }) => {
+    return await getStorageConfigs({ page, page_size, keyword: keyword.value || undefined })
+  },
+})
+
+const cacheDataTable = useDataTable<CacheConfig>({
+  columns: cacheColumns,
+  enabled: () => currentType.value === 'cache',
+  remoteFetchFn: async ({ page, page_size }) => {
+    return await getCacheConfigs({ page, page_size, keyword: keyword.value || undefined })
+  },
+})
+
+const queueDataTable = useDataTable<QueueConfig>({
+  columns: queueColumns,
+  enabled: () => currentType.value === 'queue',
+  remoteFetchFn: async ({ page, page_size }) => {
+    return await getQueueConfigs({ page, page_size, keyword: keyword.value || undefined })
+  },
+})
+
+const pubsubDataTable = useDataTable<PubsubConfig>({
+  columns: pubsubColumns,
+  enabled: () => currentType.value === 'pubsub',
+  remoteFetchFn: async ({ page, page_size }) => {
+    return await getPubsubConfigs({ page, page_size, keyword: keyword.value || undefined })
+  },
+})
+
+// DataTable 实例映射
+const dataTableMap: Record<ResourceType, { refresh: (firstPage?: boolean, skipLoading?: boolean) => void }> = {
+  database: databaseDataTable,
+  storage: storageDataTable,
+  cache: cacheDataTable,
+  queue: queueDataTable,
+  pubsub: pubsubDataTable,
+}
+
+// 获取当前 DataTable 的数据列表（用于统计）
+const currentDataList = computed<ResourceConfig[]>(() => {
+  switch (currentType.value) {
+    case 'database':
+      return (databaseDataTable.table.getRowModel().rows || []).map(r => r.original)
+    case 'storage':
+      return (storageDataTable.table.getRowModel().rows || []).map(r => r.original)
+    case 'cache':
+      return (cacheDataTable.table.getRowModel().rows || []).map(r => r.original)
+    case 'queue':
+      return (queueDataTable.table.getRowModel().rows || []).map(r => r.original)
+    case 'pubsub':
+      return (pubsubDataTable.table.getRowModel().rows || []).map(r => r.original)
+    default:
+      return []
+  }
+})
+
 // 统计数据
 const stats = computed(() => {
-  const total = dataList.value.length
-  const used = dataList.value.filter(item => (item.tenant_count || 0) > 0).length
+  const total = currentDataList.value.length
+  const used = currentDataList.value.filter(item => (item.tenant_count || 0) > 0).length
   const unused = total - used
   return { total, used, unused }
 })
 
-// 加载数据
-const loadData = async () => {
-  loading.value = true
-  try {
-    const params = {
-      page: pagination.value.page,
-      page_size: pagination.value.pageSize,
-    }
+// ==================== 搜索 ====================
 
-    let response
-    switch (currentType.value) {
-      case 'database':
-        response = await getDatabaseConfigs(params)
-        break
-      case 'storage':
-        response = await getStorageConfigs(params)
-        break
-      case 'cache':
-        response = await getCacheConfigs(params)
-        break
-      case 'queue':
-        response = await getQueueConfigs(params)
-        break
-      case 'pubsub':
-        response = await getPubsubConfigs(params)
-        break
-    }
-
-    if (response.data) {
-      dataList.value = response.data.items || []
-      total.value = response.data.total || 0
-    }
-  } catch (error) {
-    console.error('加载数据失败:', error)
-    notifyError('加载数据失败')
-  } finally {
-    loading.value = false
+// 全局搜索：刷新所有 DataTable（切换 Tab 时数据已预加载）
+const handleSearch = () => {
+  for (const dt of Object.values(dataTableMap)) {
+    dt.refresh(true)
   }
 }
 
-// 监听类型变化重新加载
-watch(currentType, () => {
-  pagination.value.page = 1
-  loadData()
-})
-
-// 分页变化
-const handlePageChange = (page: number) => {
-  pagination.value.page = page
-  loadData()
+// 刷新当前表格
+const handleRefresh = () => {
+  dataTableMap[currentType.value].refresh()
 }
 
-const handlePageSizeChange = (pageSize: number) => {
-  pagination.value.pageSize = pageSize
-  pagination.value.page = 1
-  loadData()
-}
+// ==================== 弹窗操作 ====================
 
 // 打开新增弹窗
 const openCreateDialog = () => {
@@ -405,7 +655,7 @@ const handleSave = async () => {
     }
 
     dialogOpen.value = false
-    loadData()
+    dataTableMap[currentType.value].refresh()
   } catch (error) {
     console.error('保存失败:', error)
     notifyError('保存失败')
@@ -440,7 +690,7 @@ const confirmDelete = async () => {
 
     notifySuccess('配置已删除')
     deleteDialogOpen.value = false
-    loadData()
+    dataTableMap[currentType.value].refresh()
   } catch (error: any) {
     console.error('删除失败:', error)
     // 解析错误信息
@@ -456,62 +706,6 @@ const confirmDelete = async () => {
     formLoading.value = false
   }
 }
-
-// 测试连接
-const handleTestConnection = async (row: ResourceConfig) => {
-  testingId.value = row.id
-  testLoading.value = true
-  try {
-    let response
-    switch (currentType.value) {
-      case 'database':
-        response = await testDatabaseConnection(row.id)
-        break
-      case 'storage':
-        response = await testStorageConnection(row.id)
-        break
-      case 'cache':
-        response = await testCacheConnection(row.id)
-        break
-      case 'queue':
-        response = await testQueueConnection(row.id)
-        break
-      case 'pubsub':
-        response = await testPubsubConnection(row.id)
-        break
-    }
-
-    if (response?.data?.success) {
-      notifySuccess(`连接成功，延迟 ${response.data.latency}ms`)
-    } else {
-      notifyError(response?.data?.error || '连接失败')
-    }
-  } catch (error) {
-    console.error('测试连接失败:', error)
-    notifyError('测试连接失败')
-  } finally {
-    testingId.value = null
-    testLoading.value = false
-  }
-}
-
-// 格式化日期
-const formatDate = (dateStr?: string): string => {
-  if (!dateStr) return '--'
-  return new Date(dateStr).toLocaleString()
-}
-
-// 获取状态徽章
-const getStatusBadge = (row: ResourceConfig) => {
-  if ((row.tenant_count || 0) > 0) {
-    return { label: '已引用', variant: 'default' as const }
-  }
-  return { label: '未使用', variant: 'secondary' as const }
-}
-
-onMounted(() => {
-  loadData()
-})
 </script>
 
 <template>
@@ -525,7 +719,17 @@ onMounted(() => {
         </p>
       </div>
       <div class="flex items-center gap-2">
-        <Button variant="outline" @click="loadData">
+        <Input
+          v-model="keyword"
+          class="w-56"
+          placeholder="搜索配置名称"
+          @keydown.enter="handleSearch"
+        />
+        <Button variant="outline" @click="handleSearch">
+          <Search class="mr-1 h-4 w-4" />
+          搜索
+        </Button>
+        <Button variant="outline" @click="handleRefresh">
           <RefreshCw class="mr-1 h-4 w-4" />
           刷新
         </Button>
@@ -570,393 +774,34 @@ onMounted(() => {
           </TabsList>
         </div>
 
-        <div class="min-h-0 flex-1 overflow-auto px-5 py-4">
+        <div class="min-h-0 flex-1 overflow-hidden px-5 py-4">
           <!-- 数据库表格 -->
           <TabsContent value="database" class="mt-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead class="w-[200px]">配置名称</TableHead>
-                  <TableHead class="w-[150px]">主机地址</TableHead>
-                  <TableHead class="w-[80px]">端口</TableHead>
-                  <TableHead class="w-[120px]">数据库名</TableHead>
-                  <TableHead class="w-[80px]">状态</TableHead>
-                  <TableHead class="w-[80px]">引用租户</TableHead>
-                  <TableHead class="w-[160px]">创建时间</TableHead>
-                  <TableHead class="w-[160px]">操作</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                <TableRow v-if="loading">
-                  <TableCell v-for="n in 8" :key="n">
-                    <Skeleton class="h-5 w-full" />
-                  </TableCell>
-                </TableRow>
-                <TableRow v-else-if="!dataList.length">
-                  <TableCell colspan="8" class="h-24 text-center text-muted-foreground">
-                    暂无数据库配置
-                  </TableCell>
-                </TableRow>
-                <TableRow
-                  v-else
-                  v-for="row in dataList as DatabaseConfig[]"
-                  :key="row.id"
-                >
-                  <TableCell class="font-medium">{{ row.name }}</TableCell>
-                  <TableCell>{{ row.host }}</TableCell>
-                  <TableCell>{{ row.port }}</TableCell>
-                  <TableCell>{{ row.database }}</TableCell>
-                  <TableCell>
-                    <Badge :variant="getStatusBadge(row).variant">
-                      {{ getStatusBadge(row).label }}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>{{ row.tenant_count || 0 }}</TableCell>
-                  <TableCell>{{ formatDate(row.created_at) }}</TableCell>
-                  <TableCell>
-                    <div class="flex items-center gap-1">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        :disabled="testingId === row.id && testLoading"
-                        @click="handleTestConnection(row)"
-                      >
-                        <Plug class="mr-1 h-3.5 w-3.5" />
-                        测试
-                      </Button>
-                      <Button variant="ghost" size="sm" @click="openEditDialog(row)">
-                        <Pencil class="mr-1 h-3.5 w-3.5" />
-                        编辑
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        class="text-destructive hover:text-destructive"
-                        @click="openDeleteDialog(row)"
-                      >
-                        <Trash2 class="mr-1 h-3.5 w-3.5" />
-                        删除
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              </TableBody>
-            </Table>
+            <DataTable :data-table="databaseDataTable" :fixed-layout="true" />
           </TabsContent>
 
           <!-- 存储表格 -->
           <TabsContent value="storage" class="mt-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead class="w-[200px]">配置名称</TableHead>
-                  <TableHead class="w-[200px]">Endpoint</TableHead>
-                  <TableHead class="w-[120px]">Bucket</TableHead>
-                  <TableHead class="w-[100px]">Region</TableHead>
-                  <TableHead class="w-[80px]">状态</TableHead>
-                  <TableHead class="w-[80px]">引用租户</TableHead>
-                  <TableHead class="w-[160px]">创建时间</TableHead>
-                  <TableHead class="w-[160px]">操作</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                <TableRow v-if="loading">
-                  <TableCell v-for="n in 8" :key="n">
-                    <Skeleton class="h-5 w-full" />
-                  </TableCell>
-                </TableRow>
-                <TableRow v-else-if="!dataList.length">
-                  <TableCell colspan="8" class="h-24 text-center text-muted-foreground">
-                    暂无存储配置
-                  </TableCell>
-                </TableRow>
-                <TableRow
-                  v-else
-                  v-for="row in dataList as StorageConfig[]"
-                  :key="row.id"
-                >
-                  <TableCell class="font-medium">{{ row.name }}</TableCell>
-                  <TableCell>{{ row.endpoint }}</TableCell>
-                  <TableCell>{{ row.bucket }}</TableCell>
-                  <TableCell>{{ row.region || '--' }}</TableCell>
-                  <TableCell>
-                    <Badge :variant="getStatusBadge(row).variant">
-                      {{ getStatusBadge(row).label }}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>{{ row.tenant_count || 0 }}</TableCell>
-                  <TableCell>{{ formatDate(row.created_at) }}</TableCell>
-                  <TableCell>
-                    <div class="flex items-center gap-1">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        :disabled="testingId === row.id && testLoading"
-                        @click="handleTestConnection(row)"
-                      >
-                        <Plug class="mr-1 h-3.5 w-3.5" />
-                        测试
-                      </Button>
-                      <Button variant="ghost" size="sm" @click="openEditDialog(row)">
-                        <Pencil class="mr-1 h-3.5 w-3.5" />
-                        编辑
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        class="text-destructive hover:text-destructive"
-                        @click="openDeleteDialog(row)"
-                      >
-                        <Trash2 class="mr-1 h-3.5 w-3.5" />
-                        删除
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              </TableBody>
-            </Table>
+            <DataTable :data-table="storageDataTable" :fixed-layout="true" />
           </TabsContent>
 
           <!-- 缓存表格 -->
           <TabsContent value="cache" class="mt-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead class="w-[200px]">配置名称</TableHead>
-                  <TableHead class="w-[150px]">主机地址</TableHead>
-                  <TableHead class="w-[80px]">端口</TableHead>
-                  <TableHead class="w-[80px]">数据库</TableHead>
-                  <TableHead class="w-[80px]">状态</TableHead>
-                  <TableHead class="w-[80px]">引用租户</TableHead>
-                  <TableHead class="w-[160px]">创建时间</TableHead>
-                  <TableHead class="w-[160px]">操作</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                <TableRow v-if="loading">
-                  <TableCell v-for="n in 8" :key="n">
-                    <Skeleton class="h-5 w-full" />
-                  </TableCell>
-                </TableRow>
-                <TableRow v-else-if="!dataList.length">
-                  <TableCell colspan="8" class="h-24 text-center text-muted-foreground">
-                    暂无缓存配置
-                  </TableCell>
-                </TableRow>
-                <TableRow
-                  v-else
-                  v-for="row in dataList as CacheConfig[]"
-                  :key="row.id"
-                >
-                  <TableCell class="font-medium">{{ row.name }}</TableCell>
-                  <TableCell>{{ row.host }}</TableCell>
-                  <TableCell>{{ row.port }}</TableCell>
-                  <TableCell>{{ row.db || 0 }}</TableCell>
-                  <TableCell>
-                    <Badge :variant="getStatusBadge(row).variant">
-                      {{ getStatusBadge(row).label }}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>{{ row.tenant_count || 0 }}</TableCell>
-                  <TableCell>{{ formatDate(row.created_at) }}</TableCell>
-                  <TableCell>
-                    <div class="flex items-center gap-1">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        :disabled="testingId === row.id && testLoading"
-                        @click="handleTestConnection(row)"
-                      >
-                        <Plug class="mr-1 h-3.5 w-3.5" />
-                        测试
-                      </Button>
-                      <Button variant="ghost" size="sm" @click="openEditDialog(row)">
-                        <Pencil class="mr-1 h-3.5 w-3.5" />
-                        编辑
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        class="text-destructive hover:text-destructive"
-                        @click="openDeleteDialog(row)"
-                      >
-                        <Trash2 class="mr-1 h-3.5 w-3.5" />
-                        删除
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              </TableBody>
-            </Table>
+            <DataTable :data-table="cacheDataTable" :fixed-layout="true" />
           </TabsContent>
 
           <!-- 队列表格 -->
           <TabsContent value="queue" class="mt-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead class="w-[200px]">配置名称</TableHead>
-                  <TableHead class="w-[150px]">主机地址</TableHead>
-                  <TableHead class="w-[80px]">端口</TableHead>
-                  <TableHead class="w-[100px]">用户名</TableHead>
-                  <TableHead class="w-[80px]">VHost</TableHead>
-                  <TableHead class="w-[80px]">状态</TableHead>
-                  <TableHead class="w-[80px]">引用租户</TableHead>
-                  <TableHead class="w-[160px]">操作</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                <TableRow v-if="loading">
-                  <TableCell v-for="n in 8" :key="n">
-                    <Skeleton class="h-5 w-full" />
-                  </TableCell>
-                </TableRow>
-                <TableRow v-else-if="!dataList.length">
-                  <TableCell colspan="8" class="h-24 text-center text-muted-foreground">
-                    暂无队列配置
-                  </TableCell>
-                </TableRow>
-                <TableRow
-                  v-else
-                  v-for="row in dataList as QueueConfig[]"
-                  :key="row.id"
-                >
-                  <TableCell class="font-medium">{{ row.name }}</TableCell>
-                  <TableCell>{{ row.host }}</TableCell>
-                  <TableCell>{{ row.port }}</TableCell>
-                  <TableCell>{{ row.username || '--' }}</TableCell>
-                  <TableCell>{{ row.vhost || '/' }}</TableCell>
-                  <TableCell>
-                    <Badge :variant="getStatusBadge(row).variant">
-                      {{ getStatusBadge(row).label }}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>{{ row.tenant_count || 0 }}</TableCell>
-                  <TableCell>
-                    <div class="flex items-center gap-1">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        :disabled="testingId === row.id && testLoading"
-                        @click="handleTestConnection(row)"
-                      >
-                        <Plug class="mr-1 h-3.5 w-3.5" />
-                        测试
-                      </Button>
-                      <Button variant="ghost" size="sm" @click="openEditDialog(row)">
-                        <Pencil class="mr-1 h-3.5 w-3.5" />
-                        编辑
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        class="text-destructive hover:text-destructive"
-                        @click="openDeleteDialog(row)"
-                      >
-                        <Trash2 class="mr-1 h-3.5 w-3.5" />
-                        删除
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              </TableBody>
-            </Table>
+            <DataTable :data-table="queueDataTable" :fixed-layout="true" />
           </TabsContent>
 
           <!-- 发布订阅表格 -->
           <TabsContent value="pubsub" class="mt-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead class="w-[200px]">配置名称</TableHead>
-                  <TableHead class="w-[100px]">类型</TableHead>
-                  <TableHead class="w-[200px]">地址信息</TableHead>
-                  <TableHead class="w-[100px]">用户名</TableHead>
-                  <TableHead class="w-[80px]">状态</TableHead>
-                  <TableHead class="w-[80px]">引用租户</TableHead>
-                  <TableHead class="w-[160px]">创建时间</TableHead>
-                  <TableHead class="w-[160px]">操作</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                <TableRow v-if="loading">
-                  <TableCell v-for="n in 8" :key="n">
-                    <Skeleton class="h-5 w-full" />
-                  </TableCell>
-                </TableRow>
-                <TableRow v-else-if="!dataList.length">
-                  <TableCell colspan="8" class="h-24 text-center text-muted-foreground">
-                    暂无发布订阅配置
-                  </TableCell>
-                </TableRow>
-                <TableRow
-                  v-else
-                  v-for="row in dataList as PubsubConfig[]"
-                  :key="row.id"
-                >
-                  <TableCell class="font-medium">{{ row.name }}</TableCell>
-                  <TableCell>
-                    <Badge variant="outline">{{ row.type_name }}</Badge>
-                  </TableCell>
-                  <TableCell>
-                    <span v-if="row.brokers?.length">
-                      {{ row.brokers.join(', ') }}
-                    </span>
-                    <span v-else-if="row.host">
-                      {{ row.host }}:{{ row.port }}
-                    </span>
-                    <span v-else>--</span>
-                  </TableCell>
-                  <TableCell>{{ row.username || '--' }}</TableCell>
-                  <TableCell>
-                    <Badge :variant="getStatusBadge(row).variant">
-                      {{ getStatusBadge(row).label }}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>{{ row.tenant_count || 0 }}</TableCell>
-                  <TableCell>{{ formatDate(row.created_at) }}</TableCell>
-                  <TableCell>
-                    <div class="flex items-center gap-1">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        :disabled="testingId === row.id && testLoading"
-                        @click="handleTestConnection(row)"
-                      >
-                        <Plug class="mr-1 h-3.5 w-3.5" />
-                        测试
-                      </Button>
-                      <Button variant="ghost" size="sm" @click="openEditDialog(row)">
-                        <Pencil class="mr-1 h-3.5 w-3.5" />
-                        编辑
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        class="text-destructive hover:text-destructive"
-                        @click="openDeleteDialog(row)"
-                      >
-                        <Trash2 class="mr-1 h-3.5 w-3.5" />
-                        删除
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              </TableBody>
-            </Table>
+            <DataTable :data-table="pubsubDataTable" :fixed-layout="true" />
           </TabsContent>
         </div>
       </Tabs>
     </Card>
-
-    <!-- 分页 -->
-    <Pagination
-      :total="total"
-      :page="pagination.page"
-      :page-size="pagination.pageSize"
-      @update:page="handlePageChange"
-      @update:page-size="handlePageSizeChange"
-    />
 
     <!-- 新增/编辑弹窗 -->
     <Dialog :open="dialogOpen" @update:open="dialogOpen = $event">

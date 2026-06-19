@@ -30,16 +30,16 @@
 
 ## 5. ResourceConfigList 页面迁移
 
-- [ ] 5.1 重构页面结构，每个 Tab 使用独立 DataTable
-- [ ] 5.2 创建 DatabaseConfig 类型列定义
-- [ ] 5.3 创建 StorageConfig 类型列定义
-- [ ] 5.4 创建 CacheConfig 类型列定义
-- [ ] 5.5 创建 QueueConfig 类型列定义
-- [ ] 5.6 创建 PubsubConfig 类型列定义
-- [ ] 5.7 使用 `enabled` 条件控制 Tab 激活时加载
-- [ ] 5.8 实现测试连接按钮的单元格渲染
-- [ ] 5.9 替换模板中的原生 Table 为 DataTable 组件
-- [ ] 5.10 实现全局搜索刷新所有 DataTable
+- [x] 5.1 重构页面结构，每个 Tab 使用独立 DataTable
+- [x] 5.2 创建 DatabaseConfig 类型列定义
+- [x] 5.3 创建 StorageConfig 类型列定义
+- [x] 5.4 创建 CacheConfig 类型列定义
+- [x] 5.5 创建 QueueConfig 类型列定义
+- [x] 5.6 创建 PubsubConfig 类型列定义
+- [x] 5.7 使用 `enabled` 条件控制 Tab 激活时加载
+- [x] 5.8 实现测试连接按钮的单元格渲染
+- [x] 5.9 替换模板中的原生 Table 为 DataTable 组件
+- [x] 5.10 实现全局搜索刷新所有 DataTable
 
 ## 6. 验证与清理
 
