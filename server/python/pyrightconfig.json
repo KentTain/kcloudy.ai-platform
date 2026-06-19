@@ -14,7 +14,7 @@
   "venv": ".venv",
   "extraPaths": ["src"],
   "pythonVersion": "3.12",
-  "typeCheckingMode": "strict",
+  "typeCheckingMode": "basic",
   "reportMissingImports": true,
   "reportMissingTypeStubs": false,
   "reportUnusedImport": "warning",

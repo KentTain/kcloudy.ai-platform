@@ -41,8 +41,8 @@ def _ensure_utf8():
     """确保控制台支持 UTF-8"""
     if sys.platform == "win32":
         try:
-            sys.stdout.reconfigure(encoding="utf-8")
-            sys.stderr.reconfigure(encoding="utf-8")
+            sys.stdout.reconfigure(encoding="utf-8")  # type: ignore[union-attr]
+            sys.stderr.reconfigure(encoding="utf-8")  # type: ignore[union-attr]
         except (AttributeError, OSError):
             pass
 

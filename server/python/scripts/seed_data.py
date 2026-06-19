@@ -19,8 +19,8 @@ from pathlib import Path
 
 # Windows 控制台编码处理
 if sys.platform == "win32":
-    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
-    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")  # type: ignore[union-attr]
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")  # type: ignore[union-attr]
 
 # 添加 src 目录到路径（必须在其他导入之前）
 src_path = Path(__file__).parent.parent / "src"
@@ -70,7 +70,7 @@ def get_seed_modules() -> dict[str, Callable[[bool], Coroutine[None, None, int]]
         模块名到种子函数的映射
     """
     try:
-        from demo.seeds import SEED_MODULES
+        from demo.seeds import SEED_MODULES  # type: ignore[import-untyped]
 
         return SEED_MODULES
     except ImportError as e:
