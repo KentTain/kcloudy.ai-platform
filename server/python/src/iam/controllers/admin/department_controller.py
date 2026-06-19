@@ -31,6 +31,8 @@ async def list_departments(
     from iam.schemas.department import DepartmentListItem
 
     tenant_id = get_tenant_id()
+    if not tenant_id:
+        raise HTTPException(status_code=400, detail="缺少租户上下文")
     departments = await department_service.list_by_tenant(session, tenant_id)
     # 使用 Schema 转换方法，但保持原始数组格式
     items = [DepartmentListItem.from_department(d).model_dump() for d in departments]
@@ -43,6 +45,8 @@ async def get_department_tree(
 ):
     """获取部门树形结构"""
     tenant_id = get_tenant_id()
+    if not tenant_id:
+        raise HTTPException(status_code=400, detail="缺少租户上下文")
     tree = await department_service.get_tree(session, tenant_id)
     return Success(data=tree)
 
@@ -54,6 +58,8 @@ async def create_department(
 ):
     """创建部门"""
     tenant_id = get_tenant_id()
+    if not tenant_id:
+        raise HTTPException(status_code=400, detail="缺少租户上下文")
     dept = await department_service.create(
         session,
         tenant_id=tenant_id,
@@ -199,10 +205,12 @@ async def get_department_detail(
 async def batch_add_users_to_department(
     department_id: str,
     data: DepartmentUserBatchRequest,
+    session: AsyncSession = Depends(get_db_session),
 ):
     """批量添加用户到部门"""
     try:
         added = await department_service.batch_add_users(
+            session,
             department_id=department_id,
             user_ids=data.user_ids,
         )
@@ -212,31 +220,42 @@ async def batch_add_users_to_department(
 
 
 @router.post("/departments/{department_id}/users/{user_id}/enable")
-async def enable_department_user(department_id: str, user_id: str):
+async def enable_department_user(
+    department_id: str,
+    user_id: str,
+    session: AsyncSession = Depends(get_db_session),
+):
     """启用部门成员"""
     from iam.services.user_service import UserService
 
     try:
-        user = await UserService.set_status(user_id, "active")
+        user = await UserService.set_status(session, user_id, "active")
         return Success(data={"user_id": user.id, "status": user.status})
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
 
 @router.post("/departments/{department_id}/users/{user_id}/disable")
-async def disable_department_user(department_id: str, user_id: str):
+async def disable_department_user(
+    department_id: str,
+    user_id: str,
+    session: AsyncSession = Depends(get_db_session),
+):
     """停用部门成员"""
     from iam.services.user_service import UserService
 
     try:
-        user = await UserService.set_status(user_id, "inactive")
+        user = await UserService.set_status(session, user_id, "inactive")
         return Success(data={"user_id": user.id, "status": user.status})
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
 
 @router.get("/departments/{department_id}/members")
-async def get_department_members(department_id: str):
+async def get_department_members(
+    department_id: str,
+    session: AsyncSession = Depends(get_db_session),
+):
     """获取部门成员列表（详细版）"""
-    users = await department_service.get_department_users(department_id)
+    users = await department_service.get_department_users(session, department_id)
     return Success(data=users)

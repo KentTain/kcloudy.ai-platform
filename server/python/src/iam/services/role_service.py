@@ -154,7 +154,9 @@ class RoleService:
         return roles, total
 
     @staticmethod
-    async def assign_permissions(session: AsyncSession, role_id: str, permission_ids: list[str]) -> None:
+    async def assign_permissions(
+        session: AsyncSession, role_id: str, permission_ids: list[str]
+    ) -> None:
         """
         为角色分配权限
 
@@ -195,10 +197,14 @@ class RoleService:
 
         # 触发权限缓存失效
         if actual_tenant_id:
-            await PermissionCheckService.invalidate_tenant_permission_cache(actual_tenant_id)
+            await PermissionCheckService.invalidate_tenant_permission_cache(
+                session, actual_tenant_id
+            )
 
     @staticmethod
-    async def get_role_permissions(session: AsyncSession, role_id: str) -> list[Permission]:
+    async def get_role_permissions(
+        session: AsyncSession, role_id: str
+    ) -> list[Permission]:
         """获取角色的权限列表"""
         stmt = (
             select(Permission)
@@ -213,7 +219,9 @@ class UserRoleService:
     """用户-角色关联服务"""
 
     @staticmethod
-    async def assign_roles(session: AsyncSession, user_id: str, role_ids: list[str]) -> None:
+    async def assign_roles(
+        session: AsyncSession, user_id: str, role_ids: list[str]
+    ) -> None:
         """
         为用户分配角色
 
@@ -226,6 +234,7 @@ class UserRoleService:
         """
         # 获取用户的 tenant_id
         from iam.models import User
+
         stmt = select(User).where(User.id == user_id)
         result = await session.execute(stmt)
         user = result.scalar_one_or_none()
@@ -278,7 +287,6 @@ class UserRoleService:
             await session.flush()
             return True
         return False
-
 
     @staticmethod
     async def get_role_options(

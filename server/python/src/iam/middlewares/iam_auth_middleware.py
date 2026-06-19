@@ -149,7 +149,7 @@ def require_permission(permission_code: str):
     """
 
     def decorator(func):
-        async def wrapper(*args, request: Request = None, **kwargs):
+        async def wrapper(*args, request: Request | None = None, **kwargs):
             # 从 Context 获取用户信息
             from framework.common.ctx import get_user_id
 
@@ -160,11 +160,13 @@ def require_permission(permission_code: str):
                 raise HTTPException(status_code=401, detail="未登录")
 
             # 检查权限
+            from framework.database.dependencies import get_task_session
             from iam.services import permission_check_service
 
-            has_perm = await permission_check_service.has_permission(
-                user_id, permission_code
-            )
+            async with get_task_session() as session:
+                has_perm = await permission_check_service.has_permission(
+                    session, user_id, permission_code
+                )
             if not has_perm:
                 from fastapi import HTTPException
 

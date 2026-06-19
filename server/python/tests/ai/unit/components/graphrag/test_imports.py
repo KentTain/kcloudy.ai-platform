@@ -32,7 +32,6 @@ class TestGraphRAGImports:
         assert hasattr(module, "CacheType")
         assert hasattr(module, "StorageType")
 
-    @pytest.mark.skip(reason="需要 datashaper 依赖")
     def test_import_config_defaults(self):
         """测试导入 config.defaults"""
         import importlib.util

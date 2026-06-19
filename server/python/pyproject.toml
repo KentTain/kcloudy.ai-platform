@@ -90,10 +90,55 @@ langchain = [
   # RAG 知识库示例
   "pypdf>=5.0.0",
   # AI 组件依赖
-  "datashaper>=0.0.17",
   "tiktoken>=0.9.0",
   "aiolimiter>=1.2.1",
   "json-repair>=0.44.0",
+]
+
+# GraphRAG 图谱化依赖
+graphrag = [
+  # Core
+  "environs==14.1.1",
+  "datashaper==0.0.49",
+  "pyaml-env==1.2.1",
+  "python-dotenv==1.1.0",
+
+  # Async IO
+  "aiolimiter==1.2.1",
+
+  # Data-Sci
+  "numpy==1.26.4",
+  "numba==0.61.2",
+  "scipy==1.15.3",
+  "graspologic==3.4.4",
+  "networkx==3.4.2",
+  "fastparquet==2024.11.0",
+  "pyarrow==15.0.2",
+
+  # LLM
+  "openai==1.76.0",
+  "nltk==3.9.1",
+
+  # Vector Stores
+  "lancedb==0.17.0",
+
+  # Network & Utils
+  "tenacity==9.1.2",
+  "rich==14.0.0",
+  "devtools==0.12.2",
+  "json-repair==0.44.1",
+  "swifter==1.4.0",
+
+  # Azure
+  "azure-identity==1.22.0",
+  "azure-storage-blob==12.25.1",
+  "azure-search-documents==11.5.3",
+
+  # Neo4j
+  "neo4j==5.28.1",
+
+  # Plotting
+  "plotly==6.0.1",
 ]
 
 [build-system]
@@ -101,7 +146,18 @@ requires      = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/demo", "src/iam", "src/framework", "src/ai", "src/ai_plugin", "src/extended", "src/application_web.py", "src/application_task.py", "src/application_listener.py", "scripts"]
+packages = [
+  "src/demo",
+  "src/iam",
+  "src/framework",
+  "src/ai",
+  "src/ai_plugin",
+  "src/extended",
+  "src/application_web.py",
+  "src/application_task.py",
+  "src/application_listener.py",
+  "scripts",
+]
 
 [[tool.uv.index]]
 name    = "huaweicloud"
@@ -109,9 +165,9 @@ url     = "https://mirrors.huaweicloud.com/repository/pypi/simple"
 default = true
 
 [tool.pytest.ini_options]
-asyncio_mode = "auto"
+asyncio_mode                       = "auto"
 asyncio_default_fixture_loop_scope = "function"
-testpaths = ["tests"]
-python_files = ["test_*.py"]
-python_classes = ["Test*"]
-python_functions = ["test_*"]
+testpaths                          = ["tests"]
+python_files                       = ["test_*.py"]
+python_classes                     = ["Test*"]
+python_functions                   = ["test_*"]

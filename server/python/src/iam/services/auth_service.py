@@ -211,12 +211,12 @@ class AuthService:
         if not payload:
             raise ValueError("登录已过期，请重新登录")
 
-        if not payload.__contains__("session_id"):
-            raise ValueError("登录已过期，请重新登录")
-
         user_id = payload.get("user_id")
         session_id = payload.get("session_id")
         tenant_id = payload.get("tenant_id")
+
+        if not session_id:
+            raise ValueError("登录已过期，请重新登录")
 
         # 检查会话是否存在
         session_data = await get_session(session_id)
