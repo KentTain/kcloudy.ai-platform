@@ -92,7 +92,7 @@ const breadcrumbs = computed(() => {
   <Separator orientation="vertical" class="mt-2 mr-2 data-[orientation=vertical]:h-8" />
 
   <!-- 面包屑 -->
-  <Breadcrumb v-if="breadcrumbs.length > 0">
+  <Breadcrumb v-if="breadcrumbs.length > 0" class="hidden md:block">
     <BreadcrumbList>
       <template v-for="(item, index) in breadcrumbs" :key="index">
         <BreadcrumbItem v-if="index < breadcrumbs.length - 1">

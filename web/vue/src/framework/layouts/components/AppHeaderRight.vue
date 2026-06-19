@@ -45,10 +45,12 @@ function handleLogout() {
 <template>
   <div class="flex items-center gap-2">
     <!-- 通知 -->
-    <AppNotificationPanel />
+    <div class="hidden sm:block">
+      <AppNotificationPanel />
+    </div>
 
     <!-- 待办 -->
-    <Button variant="ghost" size="icon" class="relative h-9 w-9" @click="navigateTo('/todos')">
+    <Button variant="ghost" size="icon" class="relative h-9 w-9 hidden sm:flex" @click="navigateTo('/todos')">
       <ClipboardList class="size-4" />
       <span
         v-if="todoCount > 0"
@@ -57,12 +59,12 @@ function handleLogout() {
     </Button>
 
     <!-- 帮助 -->
-    <Button variant="ghost" size="icon" class="h-9 w-9">
+    <Button variant="ghost" size="icon" class="h-9 w-9 hidden sm:flex">
       <HelpCircle class="size-4" />
     </Button>
 
     <!-- 分隔线 -->
-    <Separator orientation="vertical" class="mt-2 mr-2 h-10" />
+    <Separator orientation="vertical" class="mt-2 mr-2 h-10 hidden sm:block" />
 
     <!-- 用户面板 -->
     <DropdownMenu>

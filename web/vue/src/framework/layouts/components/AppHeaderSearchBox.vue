@@ -92,7 +92,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="flex-1 flex justify-center relative">
+  <div class="flex-1 hidden md:flex justify-center relative">
     <!-- 搜索框 -->
     <button
       ref="searchBoxRef"
