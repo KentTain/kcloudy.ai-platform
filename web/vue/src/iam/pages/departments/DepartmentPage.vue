@@ -7,8 +7,9 @@
  * - Body: 左侧 300px 组织树 + 右侧 Tabs（组织信息、下级组织、直属成员）
  */
 
-import { ref, computed, onMounted, watch } from "vue"
+import { ref, computed, onMounted, h } from "vue"
 import { useRouter } from "vue-router"
+import type { ColumnDef } from "@tanstack/vue-table"
 import {
   Building2,
   Plus,
@@ -19,6 +20,10 @@ import {
   Info,
   Search,
   UserPlus,
+  Eye,
+  UserCheck,
+  UserX,
+  X,
 } from "@lucide/vue"
 import AppPage from "@/framework/layouts/components/AppPage.vue"
 import {
@@ -27,7 +32,8 @@ import {
   Skeleton,
   DescriptionList,
   type DescriptionItem,
-  Table,
+  DataTable,
+  useDataTable,
   Input,
   PeopleSelectDialog,
   type OrgTreeNode,
@@ -35,13 +41,6 @@ import {
 } from "@/components"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import {
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
 import {
   Dialog,
   DialogContent,
@@ -96,6 +95,174 @@ const membersLoading = ref(false)
 // 添加成员弹窗
 const addMemberDialogOpen = ref(false)
 
+// ========== 下级组织 DataTable ==========
+
+const childDeptColumns: ColumnDef<Department>[] = [
+  {
+    accessorKey: "name",
+    header: "组织名称",
+    size: 160,
+    cell: ({ row }) => h("span", { class: "font-medium" }, row.original.name),
+  },
+  {
+    accessorKey: "code",
+    header: "组织编码",
+    size: 120,
+    cell: ({ row }) => row.original.code || "--",
+  },
+  {
+    accessorKey: "direct_member_count",
+    header: "成员数",
+    size: 80,
+    cell: ({ row }) => row.original.direct_member_count ?? "--",
+  },
+  {
+    accessorKey: "status",
+    header: "状态",
+    size: 80,
+    cell: ({ row }) => {
+      const status = row.original.status
+      return h(
+        Badge,
+        { variant: status === "active" ? "default" : "secondary" },
+        () => (status === "active" ? "启用" : "停用")
+      )
+    },
+  },
+  {
+    id: "actions",
+    header: "操作",
+    size: 80,
+    cell: ({ row }) => {
+      const dept = row.original
+      return h(
+        Button,
+        {
+          variant: "link",
+          size: "sm",
+          onClick: () => viewChildDepartment(dept),
+        },
+        () => [h(Eye, { class: "mr-1 h-3.5 w-3.5" }), "查看"]
+      )
+    },
+  },
+]
+
+const childDeptTable = useDataTable<Department>({
+  columns: childDeptColumns,
+  remoteFetchFn: async () => {
+    // 数据在 loadDepartmentDetail 中加载
+    return {
+      data: childDepartments.value,
+      total: childDepartments.value.length,
+      page: 1,
+      page_size: 100,
+    }
+  },
+  enabled: () => !!selectedId.value && activeTab.value === "children",
+})
+
+// ========== 直属成员 DataTable ==========
+
+const memberColumns: ColumnDef<DepartmentUser>[] = [
+  {
+    accessorKey: "nickname",
+    header: "姓名",
+    size: 120,
+    cell: ({ row }) =>
+      h("span", { class: "font-medium" }, row.original.nickname || row.original.username),
+  },
+  {
+    accessorKey: "username",
+    header: "账号",
+    size: 120,
+    cell: ({ row }) => h("span", { class: "font-mono text-sm" }, row.original.username),
+  },
+  {
+    accessorKey: "phone",
+    header: "联系方式",
+    size: 140,
+    cell: ({ row }) => row.original.phone || row.original.email || "--",
+  },
+  {
+    accessorKey: "status",
+    header: "状态",
+    size: 80,
+    cell: ({ row }) => {
+      const status = row.original.status
+      return h(
+        Badge,
+        { variant: status === "active" ? "default" : "secondary" },
+        () => (status === "active" ? "启用" : "停用")
+      )
+    },
+  },
+  {
+    id: "actions",
+    header: "操作",
+    size: 160,
+    cell: ({ row }) => {
+      const member = row.original
+      const buttons = []
+
+      if (member.status === "active") {
+        buttons.push(
+          h(
+            Button,
+            {
+              variant: "ghost",
+              size: "sm",
+              onClick: () => handleDisableMember(member),
+            },
+            () => [h(UserX, { class: "mr-1 h-3.5 w-3.5" }), "停用"]
+          )
+        )
+      } else {
+        buttons.push(
+          h(
+            Button,
+            {
+              variant: "ghost",
+              size: "sm",
+              onClick: () => handleEnableMember(member),
+            },
+            () => [h(UserCheck, { class: "mr-1 h-3.5 w-3.5" }), "启用"]
+          )
+        )
+      }
+
+      buttons.push(
+        h(
+          Button,
+          {
+            variant: "ghost",
+            size: "sm",
+            class: "text-destructive hover:text-destructive",
+            onClick: () => handleRemoveMember(member),
+          },
+          () => [h(X, { class: "mr-1 h-3.5 w-3.5" }), "移除"]
+        )
+      )
+
+      return h("div", { class: "flex items-center gap-1" }, buttons)
+    },
+  },
+]
+
+const memberTable = useDataTable<DepartmentUser>({
+  columns: memberColumns,
+  remoteFetchFn: async () => {
+    // 数据在 loadDepartmentDetail 中加载
+    return {
+      data: members.value,
+      total: members.value.length,
+      page: 1,
+      page_size: 100,
+    }
+  },
+  enabled: () => !!selectedId.value && activeTab.value === "members",
+})
+
 // ========== 计算属性 ==========
 
 const hasSelection = computed(() => !!selectedId.value)
@@ -139,6 +306,9 @@ async function loadDepartmentDetail() {
       return items.filter((item) => item.parent_id === parentId)
     }
     childDepartments.value = findChildren(departmentTree.value, selectedId.value)
+
+    // 刷新 DataTable
+    await Promise.all([childDeptTable.refresh(true), memberTable.refresh(true)])
   } catch (error) {
     notifyError(getErrorMessage(error, "加载组织详情失败"))
   } finally {
@@ -519,34 +689,7 @@ onMounted(() => {
                 <div v-if="childDepartments.length === 0" class="py-8 text-center text-muted-foreground">
                   当前组织暂无下级组织
                 </div>
-                <Table v-else>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>组织名称</TableHead>
-                      <TableHead>组织编码</TableHead>
-                      <TableHead>成员数</TableHead>
-                      <TableHead>状态</TableHead>
-                      <TableHead class="w-[80px]">操作</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    <TableRow v-for="dept in childDepartments" :key="dept.id">
-                      <TableCell class="font-medium">{{ dept.name }}</TableCell>
-                      <TableCell>{{ dept.code || "--" }}</TableCell>
-                      <TableCell>--</TableCell>
-                      <TableCell>
-                        <Badge :variant="dept.status === 'active' ? 'default' : 'secondary'">
-                          {{ dept.status === "active" ? "启用" : "停用" }}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Button variant="link" size="sm" @click="viewChildDepartment(dept)">
-                          查看
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  </TableBody>
-                </Table>
+                <DataTable v-else :data-table="childDeptTable" :fixed-layout="true" />
               </TabsContent>
 
               <!-- 直属成员 Tab -->
@@ -569,59 +712,7 @@ onMounted(() => {
                   当前组织暂无直属成员
                 </div>
 
-                <Table v-else>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>姓名</TableHead>
-                      <TableHead>账号</TableHead>
-                      <TableHead>联系方式</TableHead>
-                      <TableHead>状态</TableHead>
-                      <TableHead class="w-[160px]">操作</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    <TableRow v-for="member in members" :key="member.user_id">
-                      <TableCell class="font-medium">
-                        {{ member.nickname || member.username }}
-                      </TableCell>
-                      <TableCell>{{ member.username }}</TableCell>
-                      <TableCell>{{ member.phone || member.email || "--" }}</TableCell>
-                      <TableCell>
-                        <Badge :variant="member.status === 'active' ? 'default' : 'secondary'">
-                          {{ member.status === "active" ? "启用" : "停用" }}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div class="flex items-center gap-1">
-                          <Button
-                            v-if="member.status === 'active'"
-                            variant="ghost"
-                            size="sm"
-                            @click="handleDisableMember(member)"
-                          >
-                            停用
-                          </Button>
-                          <Button
-                            v-else
-                            variant="ghost"
-                            size="sm"
-                            @click="handleEnableMember(member)"
-                          >
-                            启用
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            class="text-destructive hover:text-destructive"
-                            @click="handleRemoveMember(member)"
-                          >
-                            移除
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  </TableBody>
-                </Table>
+                <DataTable v-else :data-table="memberTable" :fixed-layout="true" />
               </TabsContent>
             </ScrollArea>
           </Tabs>
