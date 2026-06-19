@@ -40,7 +40,7 @@ class TenantModule:
 
         格式: [(router, prefix, tags), ...]
         """
-        from tenant.controllers.admin.resource_config_controller import (
+        from tenant.controllers.admin.resource_controller import (
             router as admin_resource_router,
         )
 

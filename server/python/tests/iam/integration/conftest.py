@@ -21,11 +21,14 @@ os.environ["TZ"] = "Asia/Shanghai"
 # Event Loop (Session Scope)
 # =============================================================================
 
+# 注意：session 作用域的异步 fixtures 需要手动定义 event_loop
+
 @pytest.fixture(scope="session")
 def event_loop():
     """创建 session 作用域的事件循环"""
     import asyncio
-    loop = asyncio.new_event_loop()
+    policy = asyncio.get_event_loop_policy()
+    loop = policy.new_event_loop()
     yield loop
     loop.close()
 
