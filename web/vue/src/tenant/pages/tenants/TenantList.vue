@@ -1,135 +1,235 @@
-﻿<script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
-import { useRouter } from 'vue-router'
-import { useTenantStore } from '@/tenant/stores/tenant'
-import { useUserStore } from '@/framework/stores'
-import type { Tenant } from '@/tenant/types'
-import { confirmAction, notifySuccess, notifyError, getErrorMessage } from '@/framework/utils/feedback'
-import { Button, Input, Badge, Skeleton, Pagination, Card } from '@/components'
+<script setup lang="ts">
+import {
+  Building2,
+  Clock,
+  Pencil,
+  Plus,
+  RefreshCw,
+  RotateCcw,
+  Search,
+  ShieldCheck,
+  ShieldOff,
+  Trash2,
+  UserX,
+} from "@lucide/vue";
+import type { ColumnDef } from "@tanstack/vue-table";
+import { computed, h, ref } from "vue";
+import { useRouter } from "vue-router";
+import { Badge, Button, Card, DataTable, Input, useDataTable } from "@/components";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
-import { Plus, Search, RotateCcw, Pencil, Trash2, ShieldCheck, ShieldOff, Building2, UserX, Clock, RefreshCw } from '@lucide/vue'
+} from "@/components/ui/select";
+import { useUserStore } from "@/framework/stores";
+import { confirmAction } from "@/framework/utils/feedback";
+import { getTenants } from "@/tenant/api/tenant";
+import { useTenantStore } from "@/tenant/stores/tenant";
+import type { Tenant, TenantListStats } from "@/tenant/types";
 
-const router = useRouter()
-const tenantStore = useTenantStore()
-const frameworkUserStore = useUserStore()
+const router = useRouter();
+const tenantStore = useTenantStore();
+const frameworkUserStore = useUserStore();
 
 const searchForm = ref({
-  keyword: '',
-  status: '',
-})
+  keyword: "",
+  status: "",
+});
 
-const pagination = ref({
-  page: 1,
-  pageSize: 20,
-})
+const stats = ref<TenantListStats>({
+  total_count: 0,
+  inactive_count: 0,
+  expired_count: 0,
+});
 
 const statusOptions = [
-  { label: '激活', value: 'active' },
-  { label: '停用', value: 'inactive' },
-]
+  { label: "激活", value: "active" },
+  { label: "停用", value: "inactive" },
+];
 
-const loadTenants = async () => {
-  await tenantStore.fetchTenants({
-    page: pagination.value.page,
-    page_size: pagination.value.pageSize,
-    keyword: searchForm.value.keyword || undefined,
-    status: searchForm.value.status === 'all' ? undefined : searchForm.value.status || undefined,
-  })
+const canCreate = computed(() => frameworkUserStore.hasRole("admin"));
+const canEdit = computed(() => frameworkUserStore.hasRole("admin"));
+
+function formatDate(dateStr?: string): string {
+  if (!dateStr) return "永久";
+  return new Date(dateStr).toLocaleDateString();
 }
+
+// 列定义
+const tenantColumns: ColumnDef<Tenant>[] = [
+  {
+    accessorKey: "name",
+    header: "租户信息",
+    size: 200,
+    cell: ({ row }) => {
+      const tenant = row.original;
+      return h("div", { class: "space-y-1" }, [
+        h("div", { class: "font-medium" }, tenant.name),
+        h("div", { class: "text-muted-foreground text-xs" }, tenant.code),
+      ]);
+    },
+  },
+  {
+    accessorKey: "contact_name",
+    header: "联系人",
+    size: 100,
+    cell: ({ row }) => row.original.contact_name || "--",
+  },
+  {
+    accessorKey: "contact_email",
+    header: "联系人邮箱",
+    size: 150,
+    cell: ({ row }) => row.original.contact_email || "--",
+  },
+  {
+    accessorKey: "status",
+    header: "状态",
+    size: 80,
+    cell: ({ row }) => {
+      const status = row.original.status;
+      return h(Badge, { variant: status === "active" ? "default" : "secondary" }, () =>
+        status === "active" ? "激活" : "停用"
+      );
+    },
+  },
+  {
+    accessorKey: "expired_at",
+    header: "过期时间",
+    size: 180,
+    cell: ({ row }) => formatDate(row.original.expired_at),
+  },
+  {
+    id: "actions",
+    header: "操作",
+    size: 200,
+    cell: ({ row }) => {
+      const tenant = row.original;
+      const buttons = [
+        h(
+          Button,
+          { variant: "ghost", size: "sm", onClick: () => handleDetail(tenant) },
+          () => "详情"
+        ),
+      ];
+
+      if (canEdit.value) {
+        buttons.push(
+          h(Button, { variant: "ghost", size: "sm", onClick: () => handleEdit(tenant) }, () => [
+            h(Pencil, { class: "mr-1 h-3.5 w-3.5" }),
+            "编辑",
+          ])
+        );
+      }
+
+      if (canEdit.value && tenant.status === "inactive") {
+        buttons.push(
+          h(Button, { variant: "ghost", size: "sm", onClick: () => handleActivate(tenant) }, () => [
+            h(ShieldCheck, { class: "mr-1 h-3.5 w-3.5" }),
+            "激活",
+          ])
+        );
+      }
+
+      if (canEdit.value && tenant.status === "active") {
+        buttons.push(
+          h(
+            Button,
+            { variant: "ghost", size: "sm", onClick: () => handleDeactivate(tenant) },
+            () => [h(ShieldOff, { class: "mr-1 h-3.5 w-3.5" }), "停用"]
+          )
+        );
+      }
+
+      if (canEdit.value) {
+        buttons.push(
+          h(
+            Button,
+            {
+              variant: "ghost",
+              size: "sm",
+              class: "text-destructive hover:text-destructive",
+              onClick: () => handleDelete(tenant),
+            },
+            () => [h(Trash2, { class: "mr-1 h-3.5 w-3.5" }), "删除"]
+          )
+        );
+      }
+
+      return h("div", { class: "flex items-center gap-1" }, buttons);
+    },
+  },
+];
+
+// 初始化 DataTable
+const dataTable = useDataTable<Tenant>({
+  columns: tenantColumns,
+  remoteFetchFn: async ({ page, page_size }) => {
+    const response = await getTenants({
+      page,
+      page_size,
+      keyword: searchForm.value.keyword || undefined,
+      status: searchForm.value.status === "all" ? undefined : searchForm.value.status || undefined,
+    });
+    // 提取 stats 供统计卡片使用
+    stats.value = response.data.stats ?? stats.value;
+    return response;
+  },
+});
 
 const handleSearch = () => {
-  pagination.value.page = 1
-  loadTenants()
-}
+  dataTable.refresh(true);
+};
 
 const handleReset = () => {
-  searchForm.value = { keyword: '', status: '' }
-  pagination.value.page = 1
-  loadTenants()
-}
-
-const handlePageChange = (page: number) => {
-  pagination.value.page = page
-  loadTenants()
-}
-
-const handlePageSizeChange = (pageSize: number) => {
-  pagination.value.pageSize = pageSize
-  pagination.value.page = 1
-  loadTenants()
-}
+  searchForm.value = { keyword: "", status: "" };
+  dataTable.refresh(true);
+};
 
 const handleCreate = () => {
-  router.push('/tenants/create')
-}
+  router.push("/tenants/create");
+};
 
 const handleEdit = (row: Tenant) => {
-  router.push(`/tenants/${row.id}/edit`)
-}
+  router.push(`/tenants/${row.id}/edit`);
+};
 
 const handleDetail = (row: Tenant) => {
-  router.push(`/tenants/${row.id}`)
-}
+  router.push(`/tenants/${row.id}`);
+};
 
 const handleDelete = async (row: Tenant) => {
-  if (!await confirmAction(`确定要删除租户 "${row.name}" 吗？删除后不可恢复。`)) return
+  if (!(await confirmAction(`确定要删除租户 "${row.name}" 吗？删除后不可恢复。`))) return;
 
   try {
-    await tenantStore.removeTenant(row.id)
-    notifySuccess('租户已删除')
-    loadTenants()
-  } catch (error: any) {
-    console.error('删除租户失败:', error)
-    const errorMessage = error?.response?.data?.msg || error?.message || '删除失败'
-    notifyError(errorMessage)
+    await tenantStore.removeTenant(row.id);
+    dataTable.refresh();
+  } catch (error: unknown) {
+    console.error("删除租户失败:", error);
+    // Store 会处理错误通知
   }
-}
+};
 
 const handleActivate = async (row: Tenant) => {
   try {
-    await tenantStore.activate(row.id)
-    notifySuccess('激活成功')
-    loadTenants()
+    await tenantStore.activate(row.id);
+    dataTable.refresh();
   } catch (error: unknown) {
-    notifyError(getErrorMessage(error, '激活失败'))
+    console.error("激活租户失败:", error);
+    // Store 会处理错误通知
   }
-}
+};
 
 const handleDeactivate = async (row: Tenant) => {
   try {
-    await tenantStore.deactivate(row.id)
-    notifySuccess('停用成功')
-    loadTenants()
+    await tenantStore.deactivate(row.id);
+    dataTable.refresh();
   } catch (error: unknown) {
-    notifyError(getErrorMessage(error, '停用失败'))
+    console.error("停用租户失败:", error);
+    // Store 会处理错误通知
   }
-}
-
-const canCreate = computed(() => frameworkUserStore.hasRole('admin'))
-const canEdit = computed(() => frameworkUserStore.hasRole('admin'))
-
-function formatDate(dateStr?: string): string {
-  if (!dateStr) return '永久'
-  return new Date(dateStr).toLocaleDateString()
-}
-
-onMounted(() => {
-  loadTenants()
-})
+};
 </script>
 
 <template>
@@ -143,7 +243,7 @@ onMounted(() => {
         </p>
       </div>
       <div class="flex items-center gap-2">
-        <Button variant="outline" @click="loadTenants">
+        <Button variant="outline" @click="dataTable.refresh()">
           <RefreshCw class="mr-1 h-4 w-4" />
           刷新
         </Button>
@@ -156,49 +256,30 @@ onMounted(() => {
 
     <!-- 统计卡片区 -->
     <div class="grid gap-4 md:grid-cols-3">
-      <template v-if="tenantStore.loading">
-        <Card class="gap-2 px-5 py-4">
-          <Skeleton class="h-4 w-20" />
-          <Skeleton class="h-8 w-16" />
-          <Skeleton class="h-3 w-32" />
-        </Card>
-        <Card class="gap-2 px-5 py-4">
-          <Skeleton class="h-4 w-20" />
-          <Skeleton class="h-8 w-16" />
-          <Skeleton class="h-3 w-32" />
-        </Card>
-        <Card class="gap-2 px-5 py-4">
-          <Skeleton class="h-4 w-20" />
-          <Skeleton class="h-8 w-16" />
-          <Skeleton class="h-3 w-32" />
-        </Card>
-      </template>
-      <template v-else>
-        <Card class="gap-2 px-5 py-4">
-          <div class="flex items-center gap-2">
-            <Building2 class="text-muted-foreground h-4 w-4" />
-            <span class="text-muted-foreground text-sm">租户总数</span>
-          </div>
-          <div class="text-2xl font-semibold">{{ tenantStore.stats.total_count }}</div>
-          <div class="text-muted-foreground text-xs">系统中的租户总数</div>
-        </Card>
-        <Card class="gap-2 px-5 py-4">
-          <div class="flex items-center gap-2">
-            <UserX class="text-muted-foreground h-4 w-4" />
-            <span class="text-muted-foreground text-sm">未激活数</span>
-          </div>
-          <div class="text-2xl font-semibold">{{ tenantStore.stats.inactive_count }}</div>
-          <div class="text-muted-foreground text-xs">状态为停用的租户数量</div>
-        </Card>
-        <Card class="gap-2 px-5 py-4">
-          <div class="flex items-center gap-2">
-            <Clock class="text-muted-foreground h-4 w-4" />
-            <span class="text-muted-foreground text-sm">过期数</span>
-          </div>
-          <div class="text-2xl font-semibold">{{ tenantStore.stats.expired_count }}</div>
-          <div class="text-muted-foreground text-xs">已过期的租户数量</div>
-        </Card>
-      </template>
+      <Card class="gap-2 px-5 py-4">
+        <div class="flex items-center gap-2">
+          <Building2 class="text-muted-foreground h-4 w-4" />
+          <span class="text-muted-foreground text-sm">租户总数</span>
+        </div>
+        <div class="text-2xl font-semibold">{{ stats.total_count }}</div>
+        <div class="text-muted-foreground text-xs">系统中的租户总数</div>
+      </Card>
+      <Card class="gap-2 px-5 py-4">
+        <div class="flex items-center gap-2">
+          <UserX class="text-muted-foreground h-4 w-4" />
+          <span class="text-muted-foreground text-sm">未激活数</span>
+        </div>
+        <div class="text-2xl font-semibold">{{ stats.inactive_count }}</div>
+        <div class="text-muted-foreground text-xs">状态为停用的租户数量</div>
+      </Card>
+      <Card class="gap-2 px-5 py-4">
+        <div class="flex items-center gap-2">
+          <Clock class="text-muted-foreground h-4 w-4" />
+          <span class="text-muted-foreground text-sm">过期数</span>
+        </div>
+        <div class="text-2xl font-semibold">{{ stats.expired_count }}</div>
+        <div class="text-muted-foreground text-xs">已过期的租户数量</div>
+      </Card>
     </div>
 
     <!-- 搜索筛选区 + 数据表格区 -->
@@ -239,96 +320,9 @@ onMounted(() => {
         </div>
       </div>
 
-      <div class="min-h-0 flex-1 overflow-auto px-5 py-4">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead class="w-[200px]">租户信息</TableHead>
-              <TableHead class="w-[100px]">联系人</TableHead>
-              <TableHead class="w-[150px]">联系人邮箱</TableHead>
-              <TableHead class="w-[80px]">状态</TableHead>
-              <TableHead class="w-[180px]">过期时间</TableHead>
-              <TableHead class="w-[200px]">操作</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            <TableRow v-if="tenantStore.loading">
-              <TableCell v-for="n in 6" :key="n">
-                <Skeleton class="h-5 w-full" />
-              </TableCell>
-            </TableRow>
-            <TableRow v-else-if="!tenantStore.tenants.length">
-              <TableCell colspan="6" class="h-24 text-center text-muted-foreground">
-                暂无租户数据
-              </TableCell>
-            </TableRow>
-            <TableRow v-else v-for="row in tenantStore.tenants" :key="row.id">
-              <TableCell>
-                <div class="space-y-1">
-                  <div class="font-medium">{{ row.name }}</div>
-                  <div class="text-muted-foreground text-xs">{{ row.code }}</div>
-                </div>
-              </TableCell>
-              <TableCell>{{ row.contact_name || '--' }}</TableCell>
-              <TableCell>{{ row.contact_email || '--' }}</TableCell>
-              <TableCell>
-                <Badge :variant="row.status === 'active' ? 'default' : 'secondary'">
-                  {{ row.status === 'active' ? '激活' : '停用' }}
-                </Badge>
-              </TableCell>
-              <TableCell>{{ formatDate(row.expired_at) }}</TableCell>
-              <TableCell>
-                <div class="flex items-center gap-1">
-                  <Button variant="ghost" size="sm" @click="handleDetail(row)">
-                    详情
-                  </Button>
-                  <Button v-if="canEdit" variant="ghost" size="sm" @click="handleEdit(row)">
-                    <Pencil class="mr-1 h-3.5 w-3.5" />
-                    编辑
-                  </Button>
-                  <Button
-                    v-if="canEdit && row.status === 'inactive'"
-                    variant="ghost"
-                    size="sm"
-                    @click="handleActivate(row)"
-                  >
-                    <ShieldCheck class="mr-1 h-3.5 w-3.5" />
-                    激活
-                  </Button>
-                  <Button
-                    v-if="canEdit && row.status === 'active'"
-                    variant="ghost"
-                    size="sm"
-                    @click="handleDeactivate(row)"
-                  >
-                    <ShieldOff class="mr-1 h-3.5 w-3.5" />
-                    停用
-                  </Button>
-                  <Button
-                    v-if="canEdit"
-                    variant="ghost"
-                    size="sm"
-                    class="text-destructive hover:text-destructive"
-                    @click="handleDelete(row)"
-                  >
-                    <Trash2 class="mr-1 h-3.5 w-3.5" />
-                    删除
-                  </Button>
-                </div>
-              </TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
+      <div class="min-h-0 flex-1 overflow-hidden px-5 py-4">
+        <DataTable :data-table="dataTable" :fixed-layout="true" />
       </div>
     </Card>
-
-    <!-- 分页 -->
-    <Pagination
-      :total="tenantStore.total"
-      :page="pagination.page"
-      :page-size="pagination.pageSize"
-      @update:page="handlePageChange"
-      @update:page-size="handlePageSizeChange"
-    />
   </div>
 </template>

@@ -12,12 +12,12 @@
 
 ## 3. TenantList 页面迁移
 
-- [ ] 3.1 移除手动状态管理（loading、total、pagination refs）
-- [ ] 3.2 创建 Tenant 类型列定义（ColumnDef<Tenant>[]）
-- [ ] 3.3 使用 useDataTable 初始化表格状态
-- [ ] 3.4 替换模板中的原生 Table 为 DataTable 组件
-- [ ] 3.5 实现搜索筛选集成（handleSearch 调用 dataTable.refresh）
-- [ ] 3.6 保留统计卡片区独立逻辑
+- [x] 3.1 移除手动状态管理（loading、total、pagination refs）
+- [x] 3.2 创建 Tenant 类型列定义（ColumnDef<Tenant>[]）
+- [x] 3.3 使用 useDataTable 初始化表格状态
+- [x] 3.4 替换模板中的原生 Table 为 DataTable 组件
+- [x] 3.5 实现搜索筛选集成（handleSearch 调用 dataTable.refresh）
+- [x] 3.6 保留统计卡片区独立逻辑
 
 ## 4. ModuleList 页面迁移
 
