@@ -145,7 +145,7 @@ function initForm() {
       nickname: props.user.nickname || "",
       email: props.user.email || "",
       phone: props.user.phone || "",
-      organization_id: props.user.dept_id || "",
+      organization_id: props.user.organization_id || "",
     })
     selectedRoleIds.value = props.user.role_ids || []
   } else {

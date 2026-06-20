@@ -6,7 +6,7 @@ import {
   updateUser,
   deleteUser,
   assignUserRoles,
-  assignUserDepartments,
+  assignUserOrganizations,
   resetUserPassword,
 } from "@/iam/api/user";
 import * as client from "@/framework/api/client";
@@ -121,15 +121,15 @@ describe("User API", () => {
     });
   });
 
-  describe("assignUserDepartments", () => {
-    it("calls POST /iam/admin/v1/users/:id/departments with department ids", async () => {
+  describe("assignUserOrganizations", () => {
+    it("calls POST /iam/admin/v1/users/:id/organizations with organization ids", async () => {
       const mockResponse = { code: 0, msg: "success", data: undefined };
       vi.mocked(client.post).mockResolvedValue(mockResponse);
 
-      const result = await assignUserDepartments("1", ["dept-1"]);
+      const result = await assignUserOrganizations("1", ["org-1"]);
 
-      expect(client.post).toHaveBeenCalledWith("/iam/admin/v1/users/1/departments", {
-        department_ids: ["dept-1"],
+      expect(client.post).toHaveBeenCalledWith("/iam/admin/v1/users/1/organizations", {
+        organization_ids: ["org-1"],
       });
       expect(result).toEqual(mockResponse);
     });

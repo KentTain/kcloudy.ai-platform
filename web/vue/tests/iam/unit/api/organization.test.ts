@@ -1,14 +1,14 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import {
-  getDepartments,
-  getDepartmentTree,
-  createDepartment,
-  updateDepartment,
-  deleteDepartment,
-  getDepartmentUsers,
-  addDepartmentUser,
-  removeDepartmentUser,
-} from "@/iam/api/department";
+  getOrganizations,
+  getOrganizationTree,
+  createOrganization,
+  updateOrganization,
+  deleteOrganization,
+  getOrganizationUsers,
+  addOrganizationUser,
+  removeOrganizationUser,
+} from "@/iam/api/organization";
 import * as client from "@/framework/api/client";
 
 vi.mock("@/framework/api/client", () => ({
@@ -18,13 +18,13 @@ vi.mock("@/framework/api/client", () => ({
   del: vi.fn(),
 }));
 
-describe("Department API", () => {
+describe("Organization API", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  describe("getDepartments", () => {
-    it("calls GET /iam/admin/v1/departments with params", async () => {
+  describe("getOrganizations", () => {
+    it("calls GET /iam/admin/v1/organizations with params", async () => {
       const mockResponse = {
         code: 0,
         msg: "success",
@@ -32,15 +32,15 @@ describe("Department API", () => {
       };
       vi.mocked(client.get).mockResolvedValue(mockResponse);
 
-      const result = await getDepartments({ keyword: "研发" });
+      const result = await getOrganizations({ keyword: "研发" });
 
-      expect(client.get).toHaveBeenCalledWith("/iam/admin/v1/departments", { params: { keyword: "研发" } });
+      expect(client.get).toHaveBeenCalledWith("/iam/admin/v1/organizations", { params: { keyword: "研发" } });
       expect(result).toEqual(mockResponse);
     });
   });
 
-  describe("getDepartmentTree", () => {
-    it("calls GET /iam/admin/v1/departments/tree", async () => {
+  describe("getOrganizationTree", () => {
+    it("calls GET /iam/admin/v1/organizations/tree", async () => {
       const mockResponse = {
         code: 0,
         msg: "success",
@@ -58,15 +58,15 @@ describe("Department API", () => {
       };
       vi.mocked(client.get).mockResolvedValue(mockResponse);
 
-      const result = await getDepartmentTree();
+      const result = await getOrganizationTree();
 
-      expect(client.get).toHaveBeenCalledWith("/iam/admin/v1/departments/tree");
+      expect(client.get).toHaveBeenCalledWith("/iam/admin/v1/organizations/tree");
       expect(result).toEqual(mockResponse);
     });
   });
 
-  describe("createDepartment", () => {
-    it("calls POST /iam/admin/v1/departments with department data", async () => {
+  describe("createOrganization", () => {
+    it("calls POST /iam/admin/v1/organizations with organization data", async () => {
       const mockResponse = {
         code: 0,
         msg: "success",
@@ -74,9 +74,9 @@ describe("Department API", () => {
       };
       vi.mocked(client.post).mockResolvedValue(mockResponse);
 
-      const result = await createDepartment({ name: "研发部", parent_id: "1" });
+      const result = await createOrganization({ name: "研发部", parent_id: "1" });
 
-      expect(client.post).toHaveBeenCalledWith("/iam/admin/v1/departments", {
+      expect(client.post).toHaveBeenCalledWith("/iam/admin/v1/organizations", {
         name: "研发部",
         parent_id: "1",
       });
@@ -84,8 +84,8 @@ describe("Department API", () => {
     });
   });
 
-  describe("updateDepartment", () => {
-    it("calls PUT /iam/admin/v1/departments/:id with update data", async () => {
+  describe("updateOrganization", () => {
+    it("calls PUT /iam/admin/v1/organizations/:id with update data", async () => {
       const mockResponse = {
         code: 0,
         msg: "success",
@@ -93,27 +93,27 @@ describe("Department API", () => {
       };
       vi.mocked(client.put).mockResolvedValue(mockResponse);
 
-      const result = await updateDepartment("1", { name: "研发一部" });
+      const result = await updateOrganization("1", { name: "研发一部" });
 
-      expect(client.put).toHaveBeenCalledWith("/iam/admin/v1/departments/1", { name: "研发一部" });
+      expect(client.put).toHaveBeenCalledWith("/iam/admin/v1/organizations/1", { name: "研发一部" });
       expect(result).toEqual(mockResponse);
     });
   });
 
-  describe("deleteDepartment", () => {
-    it("calls DELETE /iam/admin/v1/departments/:id", async () => {
+  describe("deleteOrganization", () => {
+    it("calls DELETE /iam/admin/v1/organizations/:id", async () => {
       const mockResponse = { code: 0, msg: "success", data: undefined };
       vi.mocked(client.del).mockResolvedValue(mockResponse);
 
-      const result = await deleteDepartment("1");
+      const result = await deleteOrganization("1");
 
-      expect(client.del).toHaveBeenCalledWith("/iam/admin/v1/departments/1");
+      expect(client.del).toHaveBeenCalledWith("/iam/admin/v1/organizations/1");
       expect(result).toEqual(mockResponse);
     });
   });
 
-  describe("getDepartmentUsers", () => {
-    it("calls GET /iam/admin/v1/departments/:id/users", async () => {
+  describe("getOrganizationUsers", () => {
+    it("calls GET /iam/admin/v1/organizations/:id/users", async () => {
       const mockResponse = {
         code: 0,
         msg: "success",
@@ -121,21 +121,21 @@ describe("Department API", () => {
       };
       vi.mocked(client.get).mockResolvedValue(mockResponse);
 
-      const result = await getDepartmentUsers("1");
+      const result = await getOrganizationUsers("1");
 
-      expect(client.get).toHaveBeenCalledWith("/iam/admin/v1/departments/1/users");
+      expect(client.get).toHaveBeenCalledWith("/iam/admin/v1/organizations/1/users");
       expect(result).toEqual(mockResponse);
     });
   });
 
-  describe("addDepartmentUser", () => {
-    it("calls POST /iam/admin/v1/departments/:id/users with user id", async () => {
+  describe("addOrganizationUser", () => {
+    it("calls POST /iam/admin/v1/organizations/:id/users with user id", async () => {
       const mockResponse = { code: 0, msg: "success", data: undefined };
       vi.mocked(client.post).mockResolvedValue(mockResponse);
 
-      const result = await addDepartmentUser("1", "user-1");
+      const result = await addOrganizationUser("1", "user-1");
 
-      expect(client.post).toHaveBeenCalledWith("/iam/admin/v1/departments/1/users", {
+      expect(client.post).toHaveBeenCalledWith("/iam/admin/v1/organizations/1/users", {
         user_id: "user-1",
         is_leader: false,
       });
@@ -143,14 +143,14 @@ describe("Department API", () => {
     });
   });
 
-  describe("removeDepartmentUser", () => {
-    it("calls DELETE /iam/admin/v1/departments/:id/users/:userId", async () => {
+  describe("removeOrganizationUser", () => {
+    it("calls DELETE /iam/admin/v1/organizations/:id/users/:userId", async () => {
       const mockResponse = { code: 0, msg: "success", data: undefined };
       vi.mocked(client.del).mockResolvedValue(mockResponse);
 
-      const result = await removeDepartmentUser("1", "user-1");
+      const result = await removeOrganizationUser("1", "user-1");
 
-      expect(client.del).toHaveBeenCalledWith("/iam/admin/v1/departments/1/users/user-1");
+      expect(client.del).toHaveBeenCalledWith("/iam/admin/v1/organizations/1/users/user-1");
       expect(result).toEqual(mockResponse);
     });
   });

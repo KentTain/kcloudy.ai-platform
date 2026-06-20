@@ -1,14 +1,13 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest'
+import { describe, expect, it, beforeEach } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
-import { nextTick } from 'vue'
-import DepartmentPage from '@/iam/pages/departments/DepartmentPage.vue'
-import type { Department } from '@/iam/types'
+import OrganizationPage from '@/iam/pages/organizations/OrganizationPage.vue'
+import type { Organization } from '@/iam/types'
 
 // 使用 vi.hoisted 确保 mock 数据在 vi.mock 之前初始化
-const mockDepartments = vi.hoisted(() => [
+const mockOrganizations = vi.hoisted(() => [
   {
-    id: 'dept-1',
+    id: 'org-1',
     tenant_id: 'tenant-1',
     name: '总公司',
     sort_order: 0,
@@ -16,9 +15,9 @@ const mockDepartments = vi.hoisted(() => [
     created_at: '2024-01-01',
     children: [
       {
-        id: 'dept-2',
+        id: 'org-2',
         tenant_id: 'tenant-1',
-        parent_id: 'dept-1',
+        parent_id: 'org-1',
         name: '研发部',
         sort_order: 0,
         status: 'active',
@@ -27,9 +26,9 @@ const mockDepartments = vi.hoisted(() => [
         total_member_count: 15,
       },
       {
-        id: 'dept-3',
+        id: 'org-3',
         tenant_id: 'tenant-1',
-        parent_id: 'dept-1',
+        parent_id: 'org-1',
         name: '市场部',
         sort_order: 1,
         status: 'active',
@@ -39,17 +38,17 @@ const mockDepartments = vi.hoisted(() => [
       },
     ],
   },
-] as Department[])
+] as Organization[])
 
 // Mock API
-vi.mock('@/iam/api/department', () => ({
-  getDepartmentTree: vi.fn().mockResolvedValue({
-    data: mockDepartments,
+vi.mock('@/iam/api/organization', () => ({
+  getOrganizationTree: vi.fn().mockResolvedValue({
+    data: mockOrganizations,
   }),
-  getDepartment: vi.fn().mockResolvedValue({
-    data: mockDepartments[0],
+  getOrganization: vi.fn().mockResolvedValue({
+    data: mockOrganizations[0],
   }),
-  getDepartmentMembers: vi.fn().mockResolvedValue({
+  getOrganizationMembers: vi.fn().mockResolvedValue({
     data: [
       {
         user_id: 'user-1',
@@ -61,10 +60,10 @@ vi.mock('@/iam/api/department', () => ({
       },
     ],
   }),
-  createDepartment: vi.fn().mockResolvedValue({
-    data: { id: 'new-dept' },
+  createOrganization: vi.fn().mockResolvedValue({
+    data: { id: 'new-org' },
   }),
-  updateDepartment: vi.fn().mockResolvedValue({}),
+  updateOrganization: vi.fn().mockResolvedValue({}),
 }))
 
 vi.mock('@/iam/api/user', () => ({
@@ -73,14 +72,14 @@ vi.mock('@/iam/api/user', () => ({
   }),
 }))
 
-describe('DepartmentPage', () => {
+describe('OrganizationPage', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
   })
 
   describe('基础渲染', () => {
     it('组件存在且可挂载', () => {
-      const wrapper = mount(DepartmentPage, {
+      const wrapper = mount(OrganizationPage, {
         global: {
           stubs: {
             AppPage: true,
@@ -91,7 +90,7 @@ describe('DepartmentPage', () => {
     })
 
     it('使用 AppPage 作为页面骨架', () => {
-      const wrapper = mount(DepartmentPage, {
+      const wrapper = mount(OrganizationPage, {
         global: {
           stubs: {
             AppPage: true,
@@ -104,7 +103,7 @@ describe('DepartmentPage', () => {
 
   describe('布局结构', () => {
     it('包含左侧组织树区域', () => {
-      const wrapper = mount(DepartmentPage, {
+      const wrapper = mount(OrganizationPage, {
         global: {
           stubs: {
             AppPage: true,
@@ -116,7 +115,7 @@ describe('DepartmentPage', () => {
     })
 
     it('包含右侧详情区域', () => {
-      const wrapper = mount(DepartmentPage, {
+      const wrapper = mount(OrganizationPage, {
         global: {
           stubs: {
             AppPage: true,
@@ -129,7 +128,7 @@ describe('DepartmentPage', () => {
 
   describe('Tabs 功能', () => {
     it('包含三个 Tab 标签', () => {
-      const wrapper = mount(DepartmentPage, {
+      const wrapper = mount(OrganizationPage, {
         global: {
           stubs: {
             AppPage: true,
@@ -145,9 +144,9 @@ describe('DepartmentPage', () => {
     })
   })
 
-  describe('部门选择', () => {
-    it('点击部门节点更新详情', async () => {
-      const wrapper = mount(DepartmentPage, {
+  describe('组织选择', () => {
+    it('点击组织节点更新详情', async () => {
+      const wrapper = mount(OrganizationPage, {
         global: {
           stubs: {
             AppPage: true,
@@ -160,8 +159,8 @@ describe('DepartmentPage', () => {
   })
 
   describe('搜索功能', () => {
-    it('支持部门树搜索', () => {
-      const wrapper = mount(DepartmentPage, {
+    it('支持组织树搜索', () => {
+      const wrapper = mount(OrganizationPage, {
         global: {
           stubs: {
             AppPage: true,
@@ -173,9 +172,9 @@ describe('DepartmentPage', () => {
     })
   })
 
-  describe('创建部门弹窗', () => {
+  describe('创建组织弹窗', () => {
     it('点击新建按钮打开弹窗', async () => {
-      const wrapper = mount(DepartmentPage, {
+      const wrapper = mount(OrganizationPage, {
         global: {
           stubs: {
             AppPage: true,

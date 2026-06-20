@@ -30,9 +30,9 @@ export interface User {
   permissions: string[];
   tenants?: UserTenant[];
   // 扩展字段
-  dept_id?: string;
-  dept_name?: string;
-  dept_path?: string;
+  organization_id?: string;
+  organization_name?: string;
+  organization_path?: string;
   role_ids?: string[];
 }
 
@@ -142,7 +142,6 @@ export interface UserPaginatedQuery extends BasePaginatedQuery {
   keyword?: string;
   organization_id?: string;
   role_id?: string;
-  dept_id?: string;
   include_children?: boolean;
 }
 

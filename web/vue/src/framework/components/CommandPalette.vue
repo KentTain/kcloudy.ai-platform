@@ -28,7 +28,7 @@ const menuItems = [
   { title: "知识库", url: "/datasets", keywords: ["datasets", "知识库", "数据"] },
   { title: "用户管理", url: "/iam/users", keywords: ["users", "用户", "IAM"] },
   { title: "角色管理", url: "/iam/roles", keywords: ["roles", "角色", "IAM"] },
-  { title: "部门管理", url: "/iam/departments", keywords: ["departments", "部门", "IAM"] },
+  { title: "组织管理", url: "/iam/organizations", keywords: ["organizations", "组织", "IAM"] },
   { title: "租户管理", url: "/iam/tenants", keywords: ["tenants", "租户", "IAM"] },
   { title: "权限管理", url: "/iam/permissions", keywords: ["permissions", "权限", "IAM"] },
   { title: "账号设置", url: "/settings/account", keywords: ["account", "账号", "设置"] },

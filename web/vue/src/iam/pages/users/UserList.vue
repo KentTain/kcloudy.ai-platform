@@ -73,12 +73,12 @@ const filters = ref({
   keyword: "",
   status: "__all__",
   role_id: "__all__",
-  dept_id: "",
+  organization_id: "",
   include_children: true,
 })
 
-// 当前选中的部门名称
-const selectedDeptName = ref("")
+// 当前选中的组织名称
+const selectedOrgName = ref("")
 
 // 弹窗
 const formDialogOpen = ref(false)
@@ -188,10 +188,10 @@ const userColumns: ColumnDef<User>[] = [
     cell: ({ row }) => row.original.nickname || "--",
   },
   {
-    accessorKey: "dept_name",
-    header: "部门",
+    accessorKey: "organization_name",
+    header: "组织",
     size: 140,
-    cell: ({ row }) => row.original.dept_name || "--",
+    cell: ({ row }) => row.original.organization_name || "--",
   },
   {
     accessorKey: "email",
@@ -285,7 +285,7 @@ const dataTable = useDataTable<User>({
       keyword: filters.value.keyword || undefined,
       status: status,
       role_id: roleId,
-      dept_id: filters.value.dept_id || undefined,
+      organization_id: filters.value.organization_id || undefined,
       include_children: filters.value.include_children,
     })
     return {
@@ -301,7 +301,7 @@ const dataTable = useDataTable<User>({
 
 /** 选择组织筛选 */
 function selectOrganization(orgId: string | undefined) {
-  filters.value.dept_id = orgId || ""
+  filters.value.organization_id = orgId || ""
 
   // 查找组织名称
   if (orgId) {
@@ -315,9 +315,9 @@ function selectOrganization(orgId: string | undefined) {
       }
     }
     const org = findOrg(organizationTree.value)
-    selectedDeptName.value = org?.name || ""
+    selectedOrgName.value = org?.name || ""
   } else {
-    selectedDeptName.value = ""
+    selectedOrgName.value = ""
   }
 
   dataTable.refresh(true)
@@ -330,8 +330,8 @@ function handleSearch() {
 
 /** 重置筛选 */
 function handleReset() {
-  filters.value = { keyword: "", status: "__all__", role_id: "__all__", dept_id: "", include_children: true }
-  selectedDeptName.value = ""
+  filters.value = { keyword: "", status: "__all__", role_id: "__all__", organization_id: "", include_children: true }
+  selectedOrgName.value = ""
   dataTable.refresh(true)
 }
 
@@ -471,7 +471,7 @@ onMounted(() => {
         <div class="p-3 border-b bg-muted/30 flex items-center justify-between">
           <span class="text-sm font-medium">组织筛选</span>
           <Button
-            v-if="filters.dept_id"
+            v-if="filters.organization_id"
             variant="ghost"
             size="sm"
             class="h-6 px-2 text-xs"
@@ -490,7 +490,7 @@ onMounted(() => {
             <template v-for="org in organizationTree" :key="org.id">
               <button
                 class="flex items-center w-full px-3 py-2 text-sm hover:bg-accent transition-colors text-left"
-                :class="{ 'bg-accent': filters.dept_id === org.id }"
+                :class="{ 'bg-accent': filters.organization_id === org.id }"
                 @click="selectOrganization(org.id)"
               >
                 <Building2 class="h-4 w-4 mr-2 shrink-0 text-blue-500" />
@@ -503,7 +503,7 @@ onMounted(() => {
               <template v-if="org.children" v-for="child in org.children" :key="child.id">
                 <button
                   class="flex items-center w-full px-3 py-2 text-sm hover:bg-accent transition-colors text-left pl-8"
-                  :class="{ 'bg-accent': filters.dept_id === child.id }"
+                  :class="{ 'bg-accent': filters.organization_id === child.id }"
                   @click="selectOrganization(child.id)"
                 >
                   <Building2 class="h-4 w-4 mr-2 shrink-0 text-blue-500" />
