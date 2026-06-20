@@ -79,19 +79,32 @@ class ModuleRoleService:
         return result.scalar_one_or_none()
 
     @staticmethod
-    async def get_by_code(session: AsyncSession, module_id: str, code: str) -> ModuleRole | None:
-        """根据模块 ID 和编码获取角色"""
-        stmt = select(ModuleRole).where(
-            ModuleRole.module_id == module_id,
-            ModuleRole.code == code,
-        )
+    async def get_by_code(session: AsyncSession, module_id: str | None, code: str) -> ModuleRole | None:
+        """根据模块 ID 和编码获取角色
+
+        Args:
+            session: 数据库会话
+            module_id: 模块 ID，传 None 查询全局角色
+            code: 角色编码
+        """
+        if module_id is None:
+            # 查询全局角色
+            stmt = select(ModuleRole).where(
+                ModuleRole.module_id.is_(None),
+                ModuleRole.code == code,
+            )
+        else:
+            stmt = select(ModuleRole).where(
+                ModuleRole.module_id == module_id,
+                ModuleRole.code == code,
+            )
         result = await session.execute(stmt)
         return result.scalar_one_or_none()
 
     @staticmethod
     async def create(
         session: AsyncSession,
-        module_id: str,
+        module_id: str | None,
         code: str,
         name: str,
         description: str | None = None,
@@ -102,7 +115,7 @@ class ModuleRoleService:
 
         Args:
             session: 数据库会话
-            module_id: 模块 ID
+            module_id: 模块 ID，传 None 创建全局角色
             code: 角色编码
             name: 角色名称
             description: 角色描述
@@ -126,7 +139,7 @@ class ModuleRoleService:
 
         # 发布 ModuleRoleCreated 事件
         await event_publisher.publish(
-            ModuleRoleCreated(module_role_id=role.id, module_id=module_id)
+            ModuleRoleCreated(module_role_id=role.id, module_id=module_id or "")
         )
 
         return role

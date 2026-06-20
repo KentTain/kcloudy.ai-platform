@@ -10,7 +10,6 @@ from framework.module.definition import (
     MenuDef,
     ModuleDefinition,
     PermissionDef,
-    RoleDef,
 )
 from tenant.models import Base
 
@@ -88,6 +87,9 @@ class TenantModule:
         注意：Python 3.7+ 字典保持插入顺序，resource_config 必须在 tenant 之前执行，
         因为 tenant_seed 可能需要引用默认资源配置。
         """
+        from tenant.migrations.seeds.global_role_seed import (
+            run as global_role_seed_run,
+        )
         from tenant.migrations.seeds.resource_config_seed import (
             run as resource_config_seed_run,
         )
@@ -96,6 +98,7 @@ class TenantModule:
         return {
             "resource_config": resource_config_seed_run,
             "tenant": tenant_seed_run,
+            "global_role": global_role_seed_run,
         }
 
     def get_task_setup(self) -> tuple | None:
@@ -136,21 +139,5 @@ class TenantModule:
                 PermissionDef(code="tenant:resource:read", name="查看资源配置", resource="resource", action="read"),
                 PermissionDef(code="tenant:resource:write", name="编辑资源配置", resource="resource", action="write"),
                 PermissionDef(code="tenant:resource:delete", name="删除资源配置", resource="resource", action="delete"),
-            ],
-            default_roles=[
-                RoleDef(
-                    code="admin",
-                    name="管理员",
-                    description="Tenant 模块管理员，拥有所有权限",
-                    permission_codes=["tenant:*:*"],
-                    is_system=True,
-                ),
-                RoleDef(
-                    code="viewer",
-                    name="查看者",
-                    description="Tenant 模块只读用户",
-                    permission_codes=["tenant:*:read"],
-                    is_system=True,
-                ),
             ],
         )

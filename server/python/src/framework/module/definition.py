@@ -104,3 +104,25 @@ class ModuleDefinition:
     menus: list[MenuDef] = field(default_factory=list)
     permissions: list[PermissionDef] = field(default_factory=list)
     default_roles: list[RoleDef] = field(default_factory=list)
+
+
+# =============================================================================
+# 全局角色定义
+# =============================================================================
+
+GLOBAL_ROLES: list[RoleDef] = [
+    RoleDef(
+        code="sysAdmin",
+        name="系统管理员",
+        description="拥有所有模块的所有权限",
+        permission_codes=["*:*:*"],
+        is_system=True,
+    ),
+    RoleDef(
+        code="normalUser",
+        name="普通用户",
+        description="拥有所有模块的只读权限",
+        permission_codes=["*:*:read"],
+        is_system=True,
+    ),
+]

@@ -267,7 +267,15 @@ class ModuleSyncService:
                 )
                 session.add(role_permission)
 
-        # 8. 创建租户实例层的菜单权限关联
+        # 8. 同步全局角色到租户实例层
+        await ModuleSyncService._sync_global_roles_to_tenant(
+            session,
+            tenant_id,
+            module_id,
+            perm_id_map,
+        )
+
+        # 9. 创建租户实例层的菜单权限关联
         for mmp in module_menu_permissions:
             tenant_menu_id = menu_id_map.get(mmp.module_menu_id)
             tenant_perm_id = perm_id_map.get(mmp.module_permission_id)
@@ -416,6 +424,120 @@ class ModuleSyncService:
             _logger.info(f"删除租户菜单: {len(tenant_menu_ids)} 个")
 
         _logger.info(f"模块取消分配同步完成: tenant_id={tenant_id}")
+
+    @staticmethod
+    async def _sync_global_roles_to_tenant(
+        session: AsyncSession,
+        tenant_id: str,
+        module_id: str,
+        perm_id_map: dict[str, str],
+    ) -> None:
+        """
+        同步全局角色到租户实例层
+
+        当租户分配模块时，确保全局角色（sysAdmin、normalUser）在租户实例层存在，
+        并关联当前模块的权限到这些全局角色。
+
+        Args:
+            session: 数据库会话
+            tenant_id: 租户 ID
+            module_id: 模块 ID
+            perm_id_map: 模块权限 ID -> 租户权限 ID 的映射
+        """
+        from tenant.models import ModuleRole, ModuleRolePermission
+
+        # 1. 查询全局角色（module_id 为 NULL）
+        global_role_stmt = select(ModuleRole).where(ModuleRole.module_id.is_(None))
+        global_role_result = await session.execute(global_role_stmt)
+        global_roles = list(global_role_result.scalars().all())
+
+        if not global_roles:
+            return
+
+        # 2. 查询全局角色的权限关联
+        global_role_ids = [r.id for r in global_roles]
+        global_rp_stmt = select(ModuleRolePermission).where(
+            ModuleRolePermission.module_role_id.in_(global_role_ids)
+        )
+        global_rp_result = await session.execute(global_rp_stmt)
+        global_role_permissions = list(global_rp_result.scalars().all())
+
+        # 构建全局角色 ID -> 模块权限 ID 列表映射
+        global_role_perms_map: dict[str, list[str]] = defaultdict(list)
+        for mrp in global_role_permissions:
+            global_role_perms_map[mrp.module_role_id].append(
+                mrp.module_permission_id
+            )
+
+        # 3. 查询已存在的租户角色（用于幂等检查）
+        existing_role_stmt = select(Role).where(Role.tenant_id == tenant_id)
+        existing_role_result = await session.execute(existing_role_stmt)
+        existing_roles_by_code: dict[str, Role] = {}
+        for r in existing_role_result.scalars().all():
+            existing_roles_by_code[r.code] = r
+
+        # 4. 为每个全局角色创建或更新租户实例层的角色和权限关联
+        for global_role in global_roles:
+            # 通过 code 匹配全局角色
+            tenant_role = existing_roles_by_code.get(global_role.code)
+
+            if not tenant_role:
+                # 创建租户实例层的全局角色
+                tenant_role = Role(
+                    tenant_id=tenant_id,
+                    code=global_role.code,
+                    name=global_role.name,
+                    description=global_role.description,
+                    is_system=global_role.is_system,
+                    ref_id=global_role.id,
+                )
+                session.add(tenant_role)
+                await session.flush()
+                # 更新映射，避免后续全局角色重复创建
+                existing_roles_by_code[global_role.code] = tenant_role
+            else:
+                # 如果历史数据缺少 ref_id，补全它
+                if not tenant_role.ref_id:
+                    tenant_role.ref_id = global_role.id
+                    await session.flush()
+
+            # 5. 为全局角色关联当前模块的权限
+            module_perm_ids_for_role = global_role_perms_map.get(global_role.id, [])
+            if not module_perm_ids_for_role:
+                continue
+
+            # 查询已存在的角色权限关联
+            existing_rp_stmt = select(RolePermission).where(
+                RolePermission.tenant_id == tenant_id,
+                RolePermission.role_id == tenant_role.id,
+            )
+            existing_rp_result = await session.execute(existing_rp_stmt)
+            existing_rps = {
+                (rp.role_id, rp.permission_id)
+                for rp in existing_rp_result.scalars().all()
+            }
+
+            # 添加新的权限关联（仅关联当前模块的权限）
+            for module_perm_id in module_perm_ids_for_role:
+                tenant_perm_id = perm_id_map.get(module_perm_id)
+                if not tenant_perm_id:
+                    continue
+
+                # 幂等检查
+                if (tenant_role.id, tenant_perm_id) in existing_rps:
+                    continue
+
+                role_permission = RolePermission(
+                    tenant_id=tenant_id,
+                    role_id=tenant_role.id,
+                    permission_id=tenant_perm_id,
+                )
+                session.add(role_permission)
+
+        _logger.info(
+            f"全局角色同步完成: tenant_id={tenant_id}, module_id={module_id}, "
+            f"global_roles={len(global_roles)}"
+        )
 
     @staticmethod
     async def sync_module_menu_created(

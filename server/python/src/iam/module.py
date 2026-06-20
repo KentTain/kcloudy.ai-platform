@@ -10,7 +10,6 @@ from framework.module.definition import (
     MenuDef,
     ModuleDefinition,
     PermissionDef,
-    RoleDef,
 )
 from iam.models import Base
 
@@ -304,22 +303,6 @@ class IAMModule:
                     name="删除权限",
                     resource="permission",
                     action="delete",
-                ),
-            ],
-            default_roles=[
-                RoleDef(
-                    code="admin",
-                    name="管理员",
-                    description="IAM 模块管理员，拥有所有权限",
-                    permission_codes=["iam:*:*"],
-                    is_system=True,
-                ),
-                RoleDef(
-                    code="viewer",
-                    name="查看者",
-                    description="IAM 模块只读用户",
-                    permission_codes=["iam:*:read"],
-                    is_system=True,
                 ),
             ],
         )

@@ -12,6 +12,7 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from framework.module.definition import (
+    GLOBAL_ROLES,
     MenuDef,
     ModuleDefinition,
     PermissionDef,
@@ -94,6 +95,15 @@ class ModuleDefinitionSyncService:
                 _logger.error(f"模块 {definition.code} 同步失败: {e}")
                 write_error(f"模块 {definition.code} 同步失败")
                 raise
+
+        # 同步全局角色（在所有模块同步完成后，确保所有权限已入库）
+        try:
+            await self.sync_global_roles(session)
+            write_info("全局角色同步完成")
+        except Exception as e:
+            _logger.error(f"全局角色同步失败: {e}")
+            write_error("全局角色同步失败")
+            raise
 
     async def sync_module(
         self, session: AsyncSession, definition: ModuleDefinition
@@ -511,3 +521,98 @@ class ModuleDefinitionSyncService:
                 # 删除角色
                 stmt = delete(ModuleRole).where(ModuleRole.module_id == module_id)
                 await session.execute(stmt)
+
+    async def sync_global_roles(self, session: AsyncSession) -> None:
+        """
+        同步全局角色定义
+
+        将全局共享角色（sysAdmin、normalUser）同步到数据库。
+        全局角色的 module_id 为 NULL，权限通过通配符匹配所有模块的权限。
+
+        Args:
+            session: 数据库会话
+        """
+        # 1. 获取所有模块的所有权限的 code -> id 映射
+        stmt = select(ModulePermission.id, ModulePermission.code)
+        result = await session.execute(stmt)
+        all_perm_code_to_id = {row.code: row.id for row in result.all()}
+
+        for role_def in GLOBAL_ROLES:
+            # 2. 通过 code 匹配全局角色（module_id 为 NULL）
+            stmt = select(ModuleRole).where(
+                ModuleRole.module_id.is_(None),
+                ModuleRole.code == role_def.code,
+            )
+            result = await session.execute(stmt)
+            existing_role = result.scalar_one_or_none()
+
+            if existing_role:
+                # 更新已有全局角色
+                existing_role.name = role_def.name
+                existing_role.description = role_def.description
+                existing_role.is_system = role_def.is_system
+                await session.flush()
+                role_id = existing_role.id
+            else:
+                # 创建新的全局角色
+                role = ModuleRole(
+                    module_id=None,
+                    code=role_def.code,
+                    name=role_def.name,
+                    description=role_def.description,
+                    is_system=role_def.is_system,
+                )
+                session.add(role)
+                await session.flush()
+                role_id = role.id
+
+            # 3. 同步角色权限关联
+            if role_def.permission_codes:
+                # 展开通配符权限码为具体权限码列表
+                expanded_codes = _expand_permission_codes(
+                    role_def.permission_codes, all_perm_code_to_id
+                )
+
+                # 删除旧的权限关联
+                stmt = delete(ModuleRolePermission).where(
+                    ModuleRolePermission.module_role_id == role_id
+                )
+                await session.execute(stmt)
+
+                # 创建新的权限关联
+                for perm_code in expanded_codes:
+                    perm_id = all_perm_code_to_id.get(perm_code)
+                    if not perm_id:
+                        # 全局角色匹配时，某些权限可能尚未入库，跳过
+                        continue
+                    stmt = (
+                        insert(ModuleRolePermission)
+                        .values(
+                            module_role_id=role_id,
+                            module_permission_id=perm_id,
+                        )
+                        .on_conflict_do_nothing(
+                            constraint="uq_module_role_permissions_role_perm"
+                        )
+                    )
+                    await session.execute(stmt)
+
+        # 4. 清理不再存在的全局角色
+        global_role_codes = [role.code for role in GLOBAL_ROLES]
+        stmt = select(ModuleRole.id).where(
+            ModuleRole.module_id.is_(None),
+            ModuleRole.code.not_in(global_role_codes),
+        )
+        result = await session.execute(stmt)
+        orphan_role_ids = [row.id for row in result.all()]
+
+        if orphan_role_ids:
+            # 删除孤儿角色的权限关联
+            stmt = delete(ModuleRolePermission).where(
+                ModuleRolePermission.module_role_id.in_(orphan_role_ids)
+            )
+            await session.execute(stmt)
+
+            # 删除孤儿角色
+            stmt = delete(ModuleRole).where(ModuleRole.id.in_(orphan_role_ids))
+            await session.execute(stmt)

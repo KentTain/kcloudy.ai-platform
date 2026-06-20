@@ -7,7 +7,7 @@ import logging
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from tenant.models import Module, ModuleRole, TenantModule
+from tenant.models import Module, TenantModule
 
 _logger = logging.getLogger(__name__)
 
@@ -139,44 +139,8 @@ class ModuleService:
         await session.flush()
         await session.refresh(module)
 
-        # 创建默认角色（在同一事务中）
-        await ModuleService._create_default_roles(session, module)
-
         _logger.info(f"创建模块: {module.id} ({module.code})")
         return module
-
-    @staticmethod
-    async def _create_default_roles(session: AsyncSession, module: Module) -> None:
-        """
-        创建模块默认角色
-
-        为每个模块自动创建两个系统角色：
-        - 系统管理员（code: "admin"）- 拥有模块所有权限
-        - 普通用户（code: "user"）- 只有 read 权限
-
-        注意：此方法不提交事务，由调用方统一提交以保证事务原子性。
-        """
-        # 创建管理员角色
-        admin_role = ModuleRole(
-            module_id=module.id,
-            code="admin",
-            name="系统管理员",
-            description=f"{module.name}模块的系统管理员，拥有所有权限",
-            is_system=True,
-        )
-        session.add(admin_role)
-
-        # 创建普通用户角色
-        user_role = ModuleRole(
-            module_id=module.id,
-            code="user",
-            name="普通用户",
-            description=f"{module.name}模块的普通用户，只有读取权限",
-            is_system=True,
-        )
-        session.add(user_role)
-
-        # 不在此处提交事务，由调用方统一提交
         _logger.info(f"为模块 {module.code} 创建默认角色: admin, user")
 
     @staticmethod

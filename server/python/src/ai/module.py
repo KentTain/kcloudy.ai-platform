@@ -11,7 +11,6 @@ from framework.module.definition import (
     MenuDef,
     ModuleDefinition,
     PermissionDef,
-    RoleDef,
 )
 
 
@@ -117,21 +116,5 @@ class AIModule:
                 PermissionDef(code="ai:plugin:read", name="查看插件", resource="plugin", action="read"),
                 PermissionDef(code="ai:plugin:write", name="编辑插件", resource="plugin", action="write"),
                 PermissionDef(code="ai:plugin:delete", name="删除插件", resource="plugin", action="delete"),
-            ],
-            default_roles=[
-                RoleDef(
-                    code="admin",
-                    name="管理员",
-                    description="AI 模块管理员，拥有所有权限",
-                    permission_codes=["ai:*:*"],
-                    is_system=True,
-                ),
-                RoleDef(
-                    code="viewer",
-                    name="查看者",
-                    description="AI 模块只读用户",
-                    permission_codes=["ai:*:read"],
-                    is_system=True,
-                ),
             ],
         )
