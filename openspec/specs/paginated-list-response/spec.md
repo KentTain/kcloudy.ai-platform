@@ -85,13 +85,13 @@
 - **当** 前端代码需要分页响应类型
 - **那么** 禁止使用 `PageResult<T>`，必须使用 `SuccessExtra<T[]>` 或 `PaginatedListResponse<T>`
 
-### 需求:ApiResponse 字段对齐
+### 需求:Success 字段对齐
 
-前端 `ApiResponse<T>` 类型必须与后端响应格式对齐。后端已统一使用 `msg` 字段，前端必须同步更新。
+前端 `Success<T>` 类型必须与后端响应格式对齐。后端已统一使用 `msg` 字段，前端必须同步更新。
 
-#### 场景:ApiResponse 字段更新
+#### 场景:Success 字段定义
 
-- **当** 定义 `ApiResponse<T>` 接口
+- **当** 定义 `Success<T>` 接口
 - **那么** 该接口必须包含以下字段：
   - `code: number`
   - `msg: string`
