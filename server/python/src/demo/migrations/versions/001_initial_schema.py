@@ -1,18 +1,20 @@
-"""add demo tables
+"""Demo 模块初始数据库模式
 
-Revision ID: 001_demo
+Revision ID: 001_demo_initial
 Revises:
-Create Date: 2026-05-29
+Create Date: 2026-06-20
+
+合并原 001 迁移的最终状态，创建所有 demo schema 下的表。
+本迁移是破坏性重建，不保留历史数据。
 
 """
-
 from collections.abc import Sequence
 
 import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision: str = "001_demo"
+revision: str = "001_demo_initial"
 down_revision: str | None = None
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
@@ -60,5 +62,5 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    op.drop_table("dataset", schema=MODULE_SCHEMA)
+    # 删除所有表和 schema（CASCADE 自动处理依赖顺序）
     op.execute(f"DROP SCHEMA IF EXISTS {MODULE_SCHEMA} CASCADE")
