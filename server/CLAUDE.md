@@ -252,7 +252,7 @@ Schema 层提供 `from_entity()` 类方法，用于处理复杂转换逻辑。
 | 枚举 | 大驼峰 | `DatasetStatus`, `TreeNodeEventType` |
 | 常量 | 大写下划线 | `HEARTBEAT_TOPIC`, `DEFAULT_SORT` |
 
-### 字段命名（与前端对齐）
+### 树结构的字段命名
 
 | 字段 | 说明 | 示例 |
 |------|------|------|
@@ -283,7 +283,7 @@ GET /health → {"status": "healthy", "timestamp": "..."}
 
 - URL 设计：资源导向，小写连字符分隔
 - HTTP 方法：GET 查询、POST 创建、PUT 更新、DELETE 删除
-- 响应格式：统一 JSON 结构，包含 `code`、`message`、`data` 字段
+- 响应格式：统一 JSON 结构，包含 `code`、`msg`、`data` 字段
 - API 路由规范：遵循 `/{模块}/{类型}/v1/{功能}` 格式
 
 ### 响应结构
@@ -298,6 +298,41 @@ GET /health → {"status": "healthy", "timestamp": "..."}
   "page_size": 10
 }
 ```
+
+### 统一响应工具类
+
+各技术栈应提供统一的响应工具类，用于 Controller 层封装 HTTP 响应：
+
+| 技术栈 | 文件位置 | 工具类 |
+|--------|---------|--------|
+| Python | `python/src/framework/schemas/base.py` | `Success`、`SuccessExtra`、`Fail` |
+| Rust | `rust/src/demo/common/error.rs` | `ApiResponse<T>` |
+
+## 数据模型规范
+
+各技术栈应遵循统一的数据模型命名和结构规范，确保跨技术栈一致性。
+
+### 查询模型
+
+| 模型名 | 用途 | 必含字段 |
+|--------|------|----------|
+| `BaseQuery` | 列表查询基类 | `keyword: str \| None` |
+| `BasePaginatedQuery` | 分页查询基类 | 继承 `BaseQuery`，添加 `page: int`、`page_size: int` |
+
+**字段约束**：
+
+- `page`：页码，最小值 1，默认值 1
+- `page_size`：每页条数，最小值 1，最大值 100，默认值 20
+
+### Mixin 模型
+
+各技术栈应提供可复用的 Mixin 组件：
+
+| Mixin 名 | 用途 | 字段 |
+|----------|------|------|
+| `TreeNodeMixin` | 树形结构 | `parent_id`、`tree_level`、`tree_leaf`、`tree_sort`、`parent_ids`、`tree_sorts`、`tree_names` |
+| `TimestampMixin` | 时间戳 | `created_at`、`updated_at` |
+| `AuditMixin` | 审计信息 | `created_by`、`updated_by`、`created_at`、`updated_at` |
 
 ## API 路由规范
 
