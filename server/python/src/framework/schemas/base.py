@@ -18,7 +18,6 @@ from starlette.status import (
 
 from extended.fastapi.responses import ORJSONResponse
 
-
 # ==============================================================================
 # 统一响应工具类
 # ==============================================================================
@@ -95,34 +94,6 @@ class SuccessExtra(ORJSONResponse):
             content=content,
             status_code=code,
         )
-
-
-class Fail(ORJSONResponse):
-    """失败响应"""
-
-    def __init__(
-        self,
-        code: int = HTTP_400_BAD_REQUEST,
-        msg: str | None = None,
-        data: Any | None = None,
-        **kwargs,
-    ) -> None:
-        """
-        初始化实例。
-
-        Args:
-            code (int): code 参数。
-            msg (str | None): msg 参数。
-            data (Any | None): data 参数。
-            kwargs: kwargs 参数。
-        """
-        content: dict[str, Any] = {
-            "code": code,
-            "msg": msg,
-            "data": data,
-        }
-        content.update(kwargs)
-        super().__init__(content=content, status_code=code)
 
 
 # ==============================================================================

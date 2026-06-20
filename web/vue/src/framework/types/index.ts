@@ -25,7 +25,7 @@ export interface RouteMeta {
  *
  * 与后端 `framework.schemas.base.Success` 对齐
  */
-export interface ApiResponse<T = unknown> {
+export interface Success<T = unknown> {
   code: number;
   msg: string;
   data: T;
