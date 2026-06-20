@@ -166,72 +166,11 @@ Service 层提供聚合方法，用于组合多个数据源并返回完整的响
 
 ### 数据库查询规范
 
-#### 禁止在循环中调用数据库查询（N+1 问题）
-
-**错误示例**（N+1 问题）：
-
-```python
-# ❌ 禁止：循环中查询，导致 N+1 问题
-async def build_responses(tenants: list[Tenant]) -> list[TenantResponse]:
-    responses = []
-    for t in tenants:
-        # 每次循环查询数据库，10 个租户 = 10 次查询
-        config = await database_config_service.get_by_id(session, t.db_config_id)
-        responses.append(TenantResponse.from_tenant(t, config))
-    return responses
-```
-
-**正确示例**（批量查询）：
-
-```python
-# ✅ 正确：批量收集 ID，一次性查询
-async def build_responses_batch(tenants: list[Tenant]) -> list[TenantResponse]:
-    # 1. 收集所有 ID
-    config_ids = {t.db_config_id for t in tenants if t.db_config_id}
-
-    # 2. 批量查询（一次查询）
-    stmt = select(DatabaseConfig).where(DatabaseConfig.id.in_(config_ids))
-    result = await session.execute(stmt)
-    configs_map = {c.id: c for c in result.scalars().all()}
-
-    # 3. 组装响应
-    return [
-        TenantResponse.from_tenant(t, configs_map.get(t.db_config_id))
-        for t in tenants
-    ]
-```
-
-**查询次数对比**：
-
-| 租户数量 | 循环查询 | 批量查询 | 性能提升 |
-|----------|----------|----------|----------|
-| 10 | 10 次 | 1 次 | 10x |
-| 50 | 50 次 | 1 次 | 50x |
-| 100 | 100 次 | 1 次 | 100x |
-
-#### 禁止在同一个 Session 上并发执行查询
-
-**错误示例**：
-
-```python
-# ❌ 禁止：asyncio.gather 在同一个 session 上并发查询
-results = await asyncio.gather(
-    service1.query(session),
-    service2.query(session),
-    service3.query(session),
-)
-```
-
-**正确示例**：
-
-```python
-# ✅ 正确：顺序执行
-result1 = await service1.query(session)
-result2 = await service2.query(session)
-result3 = await service3.query(session)
-```
-
-**原因**：SQLAlchemy 的 `AsyncSession` 不支持在同一个 session 对象上并发执行操作，会导致 `IllegalStateChangeError`。
+| 禁止事项 | 原因 | 正确做法 |
+|----------|------|----------|
+| 循环中查询数据库 | N+1 问题 | 批量收集 ID，一次性查询 |
+| asyncio.gather 在同一 Session 上并发 | SQLAlchemy 不支持 | 顺序执行 |
+| 转换方法中执行查询 | 违反分层职责 | 所需数据由 Service 传入 |
 
 ## Schema 层转换规范
 
