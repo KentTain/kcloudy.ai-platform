@@ -217,18 +217,144 @@ async def my_task():
 
 ## Schema 层开发规范
 
-### Pydantic 配置
+### 基类使用规范
+
+**所有业务模块（iam、tenant、ai、demo）的 Schema 类必须继承 `framework.schemas.BaseModel` 或其子类。**
 
 ```python
+# ✅ 推荐：使用 framework 提供的基类
+from framework.schemas import BaseModel
+
+class UserResponse(BaseModel):
+    id: str
+    username: str
+    # 无需手动配置，已自动包含 from_attributes=True 等
+```
+
+**禁止直接继承 `pydantic.BaseModel`：**
+
+```python
+# ❌ 禁止：直接使用 pydantic 原生基类
 from pydantic import BaseModel, ConfigDict
 
-# 简单映射：使用 from_attributes=True
 class UserResponse(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True)  # 冗余配置
+    id: str
+    username: str
+```
+
+### 基类选择指南
+
+| 场景 | 使用基类 | 示例 |
+|------|---------|------|
+| 普通 Schema | `framework.schemas.BaseModel` | `UserResponse`, `UserCreate` |
+| 非分页查询 | `framework.schemas.BaseQuery` | `UserQuery` |
+| 分页查询 | `framework.schemas.BasePaginatedQuery` | `UserPaginatedQuery` |
+| 树形响应 | `framework.schemas.TreeNodeVo` | `DepartmentTreeResponse` |
+| 树形嵌套响应 | `framework.schemas.TreeNodeTreeVo` | `MenuTreeResponse` |
+
+### framework.schemas.BaseModel 的优势
+
+继承 `framework.schemas.BaseModel` 自动获得以下配置：
+
+```python
+model_config = ConfigDict(
+    from_attributes=True,      # 自动从 ORM 模型转换
+    populate_by_name=True,     # 支持别名填充
+    use_enum_values=True,      # 枚举序列化为值
+    validate_default=True,     # 验证默认值
+    str_strip_whitespace=True, # 字符串自动去空格
+    extra="ignore",            # 忽略额外字段
+)
+```
+
+无需手动配置 `model_config = ConfigDict(from_attributes=True)`。
+
+### 禁止冗余配置
+
+如果 Schema 类继承 `framework.schemas.BaseModel`，禁止重复配置已包含的选项：
+
+```python
+# ❌ 禁止：冗余配置
+class UserResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)  # 已包含，冗余
     id: str
     username: str
 
-# 复杂转换：提供 from_entity() 方法
+# ✅ 正确：仅配置额外选项
+class StrictResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")  # 仅额外配置
+    id: str
+```
+
+### 导入语句规范
+
+必须从 `framework.schemas` 导入基类：
+
+```python
+# ✅ 推荐
+from framework.schemas import BaseModel
+from framework.schemas import BaseModel, BaseQuery, BasePaginatedQuery
+
+# ✅ 也可接受
+from framework.schemas.base import BaseModel
+
+# ❌ 禁止（业务模块）
+from pydantic import BaseModel
+```
+
+### 豁免场景
+
+以下场景可豁免使用 `framework.schemas.BaseModel`：
+
+1. **`ai_plugin/sdk/*`**：独立插件 SDK，保持零依赖
+2. **第三方库集成接口**：需在代码注释中说明原因
+
+```python
+# ai_plugin/sdk/schemas/model.py - 豁免
+from pydantic import BaseModel  # ✅ 允许：独立 SDK
+
+class ModelUsage(BaseModel):
+    """模型使用统计基类"""
+    pass
+```
+
+### 类型注解
+
+使用 `from __future__ import annotations` 支持前向引用：
+
+```python
+from __future__ import annotations
+from typing import TYPE_CHECKING
+
+from framework.schemas import BaseModel
+
+if TYPE_CHECKING:
+    from iam.models import User
+
+
+class UserResponse(BaseModel):
+    id: str
+    username: str
+```
+
+### 响应命名规范
+
+| 场景 | 命名 | 示例 |
+|------|------|------|
+| 单实体响应 | `{Entity}Response` | `UserResponse` |
+| 聚合响应 | `{Entity}DetailResponse` | `UserDetailResponse` |
+| 列表响应 | `{Entity}ListResponse` | `ModelListResponse` |
+| 分页列表响应 | `{Entity}PaginatedListResponse` | `UserPaginatedListResponse` |
+| 树结构响应 | `{Entity}TreeResponse` | `ModuleMenuTreeResponse` |
+
+### 复杂转换方法
+
+对于复杂转换，Schema 类可提供 `from_entity()` 类方法：
+
+```python
+from framework.schemas import BaseModel
+
 class ModelItem(BaseModel):
     id: str
     name: str
@@ -242,25 +368,11 @@ class ModelItem(BaseModel):
         )
 ```
 
-### 类型注解
+**转换方法禁止事项：**
 
-使用 `from __future__ import annotations` 支持前向引用：
-
-```python
-from __future__ import annotations
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from iam.models import User
-```
-
-### 响应命名
-
-| 场景 | 命名 | 示例 |
-|------|------|------|
-| 单实体响应 | `{Entity}Response` | `UserResponse` |
-| 聚合响应 | `{Entity}DetailResponse` | `UserDetailResponse` |
-| 列表响应 | `{Entity}ListResponse` | `ModelListResponse` |
+- ❌ 禁止在转换方法中执行数据库查询
+- ❌ 禁止在转换方法中进行业务规则验证
+- ❌ 禁止在转换方法中产生副作用
 
 ## 测试
 

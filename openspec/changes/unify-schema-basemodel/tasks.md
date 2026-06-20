@@ -2,7 +2,7 @@
 
 ## 1. 准备工作
 
-- [ ] 1.1 更新 `server/python/CLAUDE.md`，添加 Schema 层开发规范章节
+- [x] 1.1 更新 `server/python/CLAUDE.md`，添加 Schema 层开发规范章节
 - [ ] 1.2 创建迁移脚本 `server/python/scripts/migrate_schema_basemodel.py`
 - [ ] 1.3 创建检测脚本 `server/python/scripts/check_schema_basemodel.sh`
 - [ ] 1.4 验证 framework.schemas.BaseModel 的配置符合预期
