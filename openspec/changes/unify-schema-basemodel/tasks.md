@@ -9,12 +9,12 @@
 
 ## 2. 迁移 tenant 模块
 
-- [ ] 2.1 迁移 `tenant/schemas/admin/tenant.py`
-- [ ] 2.2 迁移 `tenant/schemas/admin/module.py`
-- [ ] 2.3 迁移 `tenant/schemas/admin/resource_config.py`
-- [ ] 2.4 迁移 `tenant/schemas/admin/tenant_module.py`
-- [ ] 2.5 迁移 `tenant/schemas/console/tenant.py`
-- [ ] 2.6 运行 tenant 模块测试：`uv run pytest tests/tenant/ -v`
+- [x] 2.1 迁移 `tenant/schemas/admin/tenant.py`
+- [x] 2.2 迁移 `tenant/schemas/admin/module.py`
+- [x] 2.3 迁移 `tenant/schemas/admin/resource_config.py`
+- [x] 2.4 迁移 `tenant/schemas/admin/tenant_module.py`
+- [x] 2.5 迁移 `tenant/schemas/console/tenant.py`
+- [x] 2.6 运行 tenant 模块测试：`uv run pytest tests/tenant/ -v`
 - [ ] 2.7 提交变更：`git commit -m "refactor(tenant): 统一使用 framework.schemas.BaseModel"`
 
 ## 3. 迁移 iam 模块

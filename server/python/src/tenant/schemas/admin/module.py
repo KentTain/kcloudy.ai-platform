@@ -6,12 +6,12 @@
 
 from datetime import datetime
 
-from pydantic import BaseModel, Field
+from framework.schemas import BaseModel
+from pydantic import Field
 
 # =============================================================================
 # 模块 Schema
 # =============================================================================
-
 
 class ModuleCreate(BaseModel):
     """创建模块请求"""
@@ -24,7 +24,6 @@ class ModuleCreate(BaseModel):
     is_active: bool = Field(True, description="是否启用")
     is_need: bool = Field(False, description="是否必须模块")
 
-
 class ModuleUpdate(BaseModel):
     """更新模块请求"""
 
@@ -34,7 +33,6 @@ class ModuleUpdate(BaseModel):
     version: str | None = Field(None, max_length=20, description="模块版本")
     is_active: bool | None = Field(None, description="是否启用")
     is_need: bool | None = Field(None, description="是否必须模块")
-
 
 class ModuleResponse(BaseModel):
     """模块响应"""
@@ -50,7 +48,6 @@ class ModuleResponse(BaseModel):
     created_at: datetime = Field(..., description="创建时间")
     updated_at: datetime = Field(..., description="更新时间")
 
-
 class ModulePaginatedListResponse(BaseModel):
     """模块分页列表响应"""
 
@@ -59,11 +56,9 @@ class ModulePaginatedListResponse(BaseModel):
     page: int = Field(..., description="页码")
     page_size: int = Field(..., description="每页数量")
 
-
 # =============================================================================
 # 模块菜单 Schema
 # =============================================================================
-
 
 class ModuleMenuCreate(BaseModel):
     """创建模块菜单请求"""
@@ -76,7 +71,6 @@ class ModuleMenuCreate(BaseModel):
     sort_order: int = Field(0, ge=0, description="排序号")
     is_visible: bool = Field(True, description="是否显示")
 
-
 class ModuleMenuUpdate(BaseModel):
     """更新模块菜单请求"""
 
@@ -86,7 +80,6 @@ class ModuleMenuUpdate(BaseModel):
     icon: str | None = Field(None, max_length=100, description="图标标识")
     sort_order: int | None = Field(None, ge=0, description="排序号")
     is_visible: bool | None = Field(None, description="是否显示")
-
 
 class ModuleMenuTreeResponse(BaseModel):
     """模块菜单响应"""
@@ -104,17 +97,14 @@ class ModuleMenuTreeResponse(BaseModel):
     updated_at: datetime = Field(..., description="更新时间")
     children: list["ModuleMenuTreeResponse"] = Field(default_factory=list, description="子菜单列表")
 
-
 class ModuleMenuListResponse(BaseModel):
     """模块菜单列表响应（树形）"""
 
     items: list[ModuleMenuTreeResponse] = Field(default_factory=list, description="菜单树")
 
-
 # =============================================================================
 # 模块权限 Schema
 # =============================================================================
-
 
 class ModulePermissionCreate(BaseModel):
     """创建模块权限请求"""
@@ -125,7 +115,6 @@ class ModulePermissionCreate(BaseModel):
     action: str = Field(..., min_length=1, max_length=20, description="操作类型（read/write/delete）")
     description: str | None = Field(None, max_length=500, description="权限描述")
 
-
 class ModulePermissionUpdate(BaseModel):
     """更新模块权限请求"""
 
@@ -133,7 +122,6 @@ class ModulePermissionUpdate(BaseModel):
     resource: str | None = Field(None, min_length=1, max_length=50, description="资源名称")
     action: str | None = Field(None, min_length=1, max_length=20, description="操作类型")
     description: str | None = Field(None, max_length=500, description="权限描述")
-
 
 class ModulePermissionResponse(BaseModel):
     """模块权限响应"""
@@ -148,7 +136,6 @@ class ModulePermissionResponse(BaseModel):
     created_at: datetime = Field(..., description="创建时间")
     updated_at: datetime = Field(..., description="更新时间")
 
-
 class ModulePermissionPaginatedListResponse(BaseModel):
     """模块权限分页列表响应"""
 
@@ -157,11 +144,9 @@ class ModulePermissionPaginatedListResponse(BaseModel):
     page: int = Field(..., description="页码")
     page_size: int = Field(..., description="每页数量")
 
-
 # =============================================================================
 # 模块角色 Schema
 # =============================================================================
-
 
 class ModuleRoleCreate(BaseModel):
     """创建模块角色请求"""
@@ -171,19 +156,16 @@ class ModuleRoleCreate(BaseModel):
     description: str | None = Field(None, max_length=500, description="角色描述")
     is_system: bool = Field(False, description="是否系统内置角色")
 
-
 class ModuleRoleUpdate(BaseModel):
     """更新模块角色请求"""
 
     name: str | None = Field(None, min_length=1, max_length=100, description="角色名称")
     description: str | None = Field(None, max_length=500, description="角色描述")
 
-
 class ModuleRolePermissionUpdateRequest(BaseModel):
     """更新角色权限请求"""
 
     permission_ids: list[str] = Field(default_factory=list, description="权限ID列表")
-
 
 class ModuleRoleResponse(BaseModel):
     """模块角色响应"""
@@ -198,7 +180,6 @@ class ModuleRoleResponse(BaseModel):
     updated_at: datetime = Field(..., description="更新时间")
     permissions: list[ModulePermissionResponse] = Field(default_factory=list, description="权限列表")
 
-
 class ModuleRolePaginatedListResponse(BaseModel):
     """模块角色分页列表响应"""
 
@@ -207,11 +188,9 @@ class ModuleRolePaginatedListResponse(BaseModel):
     page: int = Field(..., description="页码")
     page_size: int = Field(..., description="每页数量")
 
-
 # =============================================================================
 # 模块菜单权限 Schema
 # =============================================================================
-
 
 class ModuleMenuPermissionUpdateRequest(BaseModel):
     """更新菜单权限请求（整体替换）"""

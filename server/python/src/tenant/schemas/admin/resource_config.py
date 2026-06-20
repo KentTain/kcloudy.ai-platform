@@ -6,26 +6,23 @@
 
 from datetime import datetime
 
-from pydantic import BaseModel, Field
-
+from framework.schemas import BaseModel
 from framework.schemas.base import BasePaginatedQuery, BaseQuery
+from pydantic import Field
 
 # =============================================================================
 # 通用响应模型
 # =============================================================================
-
 
 class ResourceQuery(BaseQuery):
     """资源列表查询参数（非分页）"""
 
     keyword: str | None = Field(None, max_length=100, description="搜索关键词")
 
-
 class ResourcePaginatedQuery(ResourceQuery, BasePaginatedQuery):
     """资源列表查询参数（分页）"""
 
     pass
-
 
 class ConnectionTestResult(BaseModel):
     """连接测试结果"""
@@ -34,11 +31,9 @@ class ConnectionTestResult(BaseModel):
     message: str = Field(..., description="测试结果消息")
     latency_ms: int | None = Field(None, description="延迟（毫秒）")
 
-
 # =============================================================================
 # 数据库配置 Schema
 # =============================================================================
-
 
 class DatabaseConfigCreate(BaseModel):
     """创建数据库配置请求"""
@@ -51,7 +46,6 @@ class DatabaseConfigCreate(BaseModel):
     username: str = Field(..., min_length=1, max_length=100, description="数据库用户名")
     password: str = Field(..., min_length=1, description="数据库密码")
 
-
 class DatabaseConfigUpdate(BaseModel):
     """更新数据库配置请求"""
 
@@ -62,7 +56,6 @@ class DatabaseConfigUpdate(BaseModel):
     database: str | None = Field(None, min_length=1, max_length=100, description="数据库名称")
     username: str | None = Field(None, min_length=1, max_length=100, description="数据库用户名")
     password: str | None = Field(None, min_length=1, description="数据库密码")
-
 
 class DatabasePropertyResponse(BaseModel):
     """数据库配置响应"""
@@ -79,7 +72,6 @@ class DatabasePropertyResponse(BaseModel):
     created_at: datetime = Field(..., description="创建时间")
     updated_at: datetime = Field(..., description="更新时间")
 
-
 class DatabasePropertyPaginatedListResponse(BaseModel):
     """数据库配置分页列表响应"""
 
@@ -90,11 +82,9 @@ class DatabasePropertyPaginatedListResponse(BaseModel):
     page: int = Field(..., description="页码")
     page_size: int = Field(..., description="每页数量")
 
-
 # =============================================================================
 # 存储配置 Schema
 # =============================================================================
-
 
 class StorageConfigCreate(BaseModel):
     """创建存储配置请求"""
@@ -106,7 +96,6 @@ class StorageConfigCreate(BaseModel):
     access_key: str | None = Field(None, max_length=100, description="访问密钥")
     secret_key: str | None = Field(None, description="私密密钥")
 
-
 class StorageConfigUpdate(BaseModel):
     """更新存储配置请求"""
 
@@ -116,7 +105,6 @@ class StorageConfigUpdate(BaseModel):
     endpoint: str | None = Field(None, max_length=255, description="服务端点")
     access_key: str | None = Field(None, max_length=100, description="访问密钥")
     secret_key: str | None = Field(None, description="私密密钥")
-
 
 class StoragePropertyResponse(BaseModel):
     """存储配置响应"""
@@ -132,7 +120,6 @@ class StoragePropertyResponse(BaseModel):
     created_at: datetime = Field(..., description="创建时间")
     updated_at: datetime = Field(..., description="更新时间")
 
-
 class StoragePropertyPaginatedListResponse(BaseModel):
     """存储配置分页列表响应"""
 
@@ -143,11 +130,9 @@ class StoragePropertyPaginatedListResponse(BaseModel):
     page: int = Field(..., description="页码")
     page_size: int = Field(..., description="每页数量")
 
-
 # =============================================================================
 # 缓存配置 Schema
 # =============================================================================
-
 
 class CacheConfigCreate(BaseModel):
     """创建缓存配置请求"""
@@ -159,7 +144,6 @@ class CacheConfigCreate(BaseModel):
     db: int = Field(0, ge=0, le=15, description="数据库编号")
     prefix: str | None = Field(None, max_length=50, description="键前缀")
 
-
 class CacheConfigUpdate(BaseModel):
     """更新缓存配置请求"""
 
@@ -169,7 +153,6 @@ class CacheConfigUpdate(BaseModel):
     password: str | None = Field(None, description="缓存密码")
     db: int | None = Field(None, ge=0, le=15, description="数据库编号")
     prefix: str | None = Field(None, max_length=50, description="键前缀")
-
 
 class CachePropertyResponse(BaseModel):
     """缓存配置响应"""
@@ -185,7 +168,6 @@ class CachePropertyResponse(BaseModel):
     created_at: datetime = Field(..., description="创建时间")
     updated_at: datetime = Field(..., description="更新时间")
 
-
 class CachePropertyPaginatedListResponse(BaseModel):
     """缓存配置分页列表响应"""
 
@@ -196,11 +178,9 @@ class CachePropertyPaginatedListResponse(BaseModel):
     page: int = Field(..., description="页码")
     page_size: int = Field(..., description="每页数量")
 
-
 # =============================================================================
 # 队列配置 Schema
 # =============================================================================
-
 
 class QueueConfigCreate(BaseModel):
     """创建队列配置请求"""
@@ -213,7 +193,6 @@ class QueueConfigCreate(BaseModel):
     password: str | None = Field(None, description="密码")
     vhost: str | None = Field(None, max_length=100, description="虚拟主机")
 
-
 class QueueConfigUpdate(BaseModel):
     """更新队列配置请求"""
 
@@ -224,7 +203,6 @@ class QueueConfigUpdate(BaseModel):
     username: str | None = Field(None, max_length=100, description="用户名")
     password: str | None = Field(None, description="密码")
     vhost: str | None = Field(None, max_length=100, description="虚拟主机")
-
 
 class QueuePropertyResponse(BaseModel):
     """队列配置响应"""
@@ -241,7 +219,6 @@ class QueuePropertyResponse(BaseModel):
     created_at: datetime = Field(..., description="创建时间")
     updated_at: datetime = Field(..., description="更新时间")
 
-
 class QueuePropertyPaginatedListResponse(BaseModel):
     """队列配置分页列表响应"""
 
@@ -252,11 +229,9 @@ class QueuePropertyPaginatedListResponse(BaseModel):
     page: int = Field(..., description="页码")
     page_size: int = Field(..., description="每页数量")
 
-
 # =============================================================================
 # 发布订阅配置 Schema
 # =============================================================================
-
 
 class PubSubConfigCreate(BaseModel):
     """创建发布订阅配置请求"""
@@ -268,7 +243,6 @@ class PubSubConfigCreate(BaseModel):
     username: str | None = Field(None, max_length=100, description="用户名")
     password: str | None = Field(None, description="密码")
 
-
 class PubSubConfigUpdate(BaseModel):
     """更新发布订阅配置请求"""
 
@@ -278,7 +252,6 @@ class PubSubConfigUpdate(BaseModel):
     port: int | None = Field(None, ge=1, le=65535, description="端口")
     username: str | None = Field(None, max_length=100, description="用户名")
     password: str | None = Field(None, description="密码")
-
 
 class PubSubPropertyResponse(BaseModel):
     """发布订阅配置响应"""
@@ -293,7 +266,6 @@ class PubSubPropertyResponse(BaseModel):
     is_default: bool = Field(..., description="是否为默认配置")
     created_at: datetime = Field(..., description="创建时间")
     updated_at: datetime = Field(..., description="更新时间")
-
 
 class PubSubPropertyPaginatedListResponse(BaseModel):
     """发布订阅配置分页列表响应"""

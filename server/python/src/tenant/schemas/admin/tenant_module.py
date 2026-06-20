@@ -4,10 +4,10 @@
 
 from datetime import datetime
 
-from pydantic import BaseModel, Field
+from framework.schemas import BaseModel
+from pydantic import Field
 
 # ============== 请求 Schema ==============
-
 
 class AssignModuleRequest(BaseModel):
     """分配模块请求"""
@@ -16,9 +16,7 @@ class AssignModuleRequest(BaseModel):
     started_at: datetime = Field(..., description="生效时间")
     expired_at: datetime | None = Field(None, description="过期时间（可选）")
 
-
 # ============== 响应 Schema ==============
-
 
 class TenantModuleResponse(BaseModel):
     """租户模块响应"""
@@ -34,7 +32,6 @@ class TenantModuleResponse(BaseModel):
     is_active: bool = Field(..., description="是否启用")
     created_at: datetime = Field(..., description="创建时间")
     updated_at: datetime = Field(..., description="更新时间")
-
 
 class TenantModulePaginatedListResponse(BaseModel):
     """租户模块分页列表响应"""

@@ -7,7 +7,8 @@ from __future__ import annotations
 from datetime import datetime
 from typing import TYPE_CHECKING, Any
 
-from pydantic import BaseModel, Field
+from framework.schemas import BaseModel
+from pydantic import Field
 
 if TYPE_CHECKING:
     from tenant.models import Tenant
@@ -16,7 +17,6 @@ if TYPE_CHECKING:
     from tenant.models.pubsub_config import PubSubConfig
     from tenant.models.queue_config import QueueConfig
     from tenant.models.storage_config import StorageConfig
-
 
 # ============== 请求 Schema ==============
 
@@ -36,7 +36,6 @@ class TenantCreate(BaseModel):
     queue_config_id: str | None = Field(None, description="队列配置ID")
     pubsub_config_id: str | None = Field(None, description="发布订阅配置ID")
 
-
 class TenantUpdate(BaseModel):
     """更新租户请求"""
     name: str | None = Field(None, min_length=1, max_length=100, description="租户名称")
@@ -46,18 +45,15 @@ class TenantUpdate(BaseModel):
     expired_at: datetime | None = Field(None, description="过期时间")
     settings: dict[str, Any] | None = Field(None, description="扩展设置")
 
-
 class AdminLoginRequest(BaseModel):
     """管理员登录请求"""
     username: str = Field(..., min_length=1, max_length=50, description="用户名")
     password: str = Field(..., min_length=1, max_length=100, description="密码")
 
-
 class ResourceValidateResponse(BaseModel):
     """资源验证响应"""
     valid: bool = Field(..., description="是否有效")
     message: str = Field(..., description="验证消息")
-
 
 # ============== 响应 Schema ==============
 
@@ -83,7 +79,6 @@ class ResourceConfigReferenceResponse(BaseModel):
         if config is None:
             return None
         return cls(id=config.id, name=config.name)
-
 
 class TenantResponse(BaseModel):
     """租户响应"""
@@ -148,14 +143,12 @@ class TenantResponse(BaseModel):
             updated_at=tenant.updated_at,
         )
 
-
 class TenantListStats(BaseModel):
     """租户列表统计"""
 
     total_count: int = Field(..., description="租户总数")
     inactive_count: int = Field(..., description="未激活租户数")
     expired_count: int = Field(..., description="已过期租户数")
-
 
 class TenantPaginatedListResponse(BaseModel):
     """租户分页列表响应"""
@@ -165,7 +158,6 @@ class TenantPaginatedListResponse(BaseModel):
     page_size: int = Field(..., description="每页数量")
     stats: TenantListStats = Field(..., description="租户统计")
 
-
 class TenantStatsResponse(BaseModel):
     """租户统计响应"""
     tenant_id: str = Field(..., description="租户ID")
@@ -173,13 +165,11 @@ class TenantStatsResponse(BaseModel):
     storage_usage: int = Field(0, description="存储用量（字节）")
     active_users: int = Field(0, description="活跃用户数")
 
-
 class AdminLoginResponse(BaseModel):
     """管理员登录响应"""
     token: str = Field(..., description="访问令牌")
     username: str = Field(..., description="用户名")
     is_default: bool = Field(..., description="是否默认管理员")
-
 
 class AdminInfoResponse(BaseModel):
     """管理员信息响应"""
@@ -189,9 +179,7 @@ class AdminInfoResponse(BaseModel):
     is_active: bool = Field(..., description="是否激活")
     created_at: datetime = Field(..., description="创建时间")
 
-
 # ============== 资源绑定 Schema ==============
-
 
 class ResourceBindingRequest(BaseModel):
     """资源绑定请求"""
@@ -201,7 +189,6 @@ class ResourceBindingRequest(BaseModel):
     cache_config_id: str | None = Field(None, description="缓存配置ID")
     queue_config_id: str | None = Field(None, description="队列配置ID")
     pubsub_config_id: str | None = Field(None, description="发布订阅配置ID")
-
 
 class ResourceBindingResponse(BaseModel):
     """资源绑定响应"""
