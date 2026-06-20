@@ -10,7 +10,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from framework.database.dependencies import get_db_session
-from framework.schemas.base import Success, SuccessExtra
+from framework.common.response import ApiResponse
 from framework.tenant.context import get_tenant_id
 from iam.models import UserDepartment
 from iam.schemas.user import (
@@ -52,7 +52,7 @@ async def list_users(
         dept_id=query.dept_id,
         include_children=query.include_children,
     )
-    return SuccessExtra(
+    return ApiResponse.paginated(
         data=[UserResponse.model_validate(u) for u in users],
         total=total,
         page=query.page,
@@ -74,7 +74,7 @@ async def get_user_stats(
     tenant_id = get_tenant_id()
     stats = await user_service.get_user_stats(session, tenant_id)
 
-    return Success(data=UserStatsResponse(**stats).model_dump())
+    return ApiResponse.success(data=UserStatsResponse(**stats).model_dump())
 
 
 @router.post("/users")
@@ -101,7 +101,7 @@ async def create_user(
             phone=data.phone,
             nickname=data.nickname,
         )
-        return Success(data=UserResponse.model_validate(user).model_dump())
+        return ApiResponse.success(data=UserResponse.model_validate(user).model_dump())
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -120,7 +120,7 @@ async def get_user(
     if not user:
         raise HTTPException(status_code=404, detail="用户不存在")
 
-    return Success(data=UserResponse.model_validate(user).model_dump())
+    return ApiResponse.success(data=UserResponse.model_validate(user).model_dump())
 
 
 @router.put("/users/{user_id}")
@@ -143,7 +143,7 @@ async def update_user(
             email=data.email,
             phone=data.phone,
         )
-        return Success(data=UserResponse.model_validate(user).model_dump())
+        return ApiResponse.success(data=UserResponse.model_validate(user).model_dump())
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -160,7 +160,7 @@ async def delete_user(
     """
     try:
         await user_service.soft_delete(session, user_id)
-        return Success(data=None)
+        return ApiResponse.success(data=None)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -177,7 +177,7 @@ async def enable_user(
     """
     try:
         user = await user_service.set_status(session, user_id, "active")
-        return Success(data=UserResponse.model_validate(user).model_dump())
+        return ApiResponse.success(data=UserResponse.model_validate(user).model_dump())
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -194,7 +194,7 @@ async def disable_user(
     """
     try:
         user = await user_service.set_status(session, user_id, "inactive")
-        return Success(data=UserResponse.model_validate(user).model_dump())
+        return ApiResponse.success(data=UserResponse.model_validate(user).model_dump())
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -211,7 +211,7 @@ async def lock_user(
     """
     try:
         user = await user_service.set_status(session, user_id, "locked")
-        return Success(data=UserResponse.model_validate(user).model_dump())
+        return ApiResponse.success(data=UserResponse.model_validate(user).model_dump())
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -229,7 +229,7 @@ async def update_user_status(
     """
     try:
         user = await user_service.set_status(session, user_id, data.status)
-        return Success(data=UserResponse.model_validate(user).model_dump())
+        return ApiResponse.success(data=UserResponse.model_validate(user).model_dump())
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -251,7 +251,7 @@ async def reset_user_password(
             user_id=user_id,
             new_password=data.new_password if data else None,
         )
-        return Success(data=AdminPasswordResetResponse(password=password).model_dump())
+        return ApiResponse.success(data=AdminPasswordResetResponse(password=password).model_dump())
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -271,7 +271,7 @@ async def get_user_roles(
     roles = await user_roles_service.get_user_roles(session, user_id)
     # 使用 Schema 转换方法，但保持原始数组格式
     items = [UserRoleItem.from_role(r).model_dump() for r in roles]
-    return Success(data=items)
+    return ApiResponse.success(data=items)
 
 
 @router.post("/users/{user_id}/roles")
@@ -287,7 +287,7 @@ async def assign_user_roles(
     """
     try:
         await user_roles_service.assign_roles(session, user_id, data.role_ids)
-        return Success(data=None)
+        return ApiResponse.success(data=None)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -303,7 +303,7 @@ async def get_user_departments(
     返回用户所属的部门。
     """
     departments = await user_service.get_user_departments(session, user_id)
-    return Success(data=departments)
+    return ApiResponse.success(data=departments)
 
 
 @router.post("/users/{user_id}/departments")
@@ -334,6 +334,6 @@ async def assign_user_departments(
             except ValueError:
                 pass
 
-        return Success(data=None)
+        return ApiResponse.success(data=None)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))

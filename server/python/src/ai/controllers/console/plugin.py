@@ -24,7 +24,7 @@ from ai.schemas import (
 from ai.services import plugin_management_service
 from framework.common.exceptions import BadRequestError
 from framework.database.dependencies import get_db_session
-from framework.schemas.base import Success, SuccessExtra
+from framework.common.response import ApiResponse
 
 _logger = logger.bind(name=__name__)
 
@@ -66,7 +66,7 @@ async def get_plugin_list(
             limit=limit,
             offset=offset,
         )
-        return Success(data=result.model_dump())
+        return ApiResponse.success(data=result.model_dump())
     except Exception as e:
         _logger.exception("获取插件列表失败")
         raise BadRequestError(f"获取插件列表失败: {str(e)}")
@@ -96,7 +96,7 @@ async def get_plugin_detail(
     """
     try:
         result = await plugin_management_service.get_plugin_info(session, plugin_id)
-        return Success(data=result.model_dump())
+        return ApiResponse.success(data=result.model_dump())
     except ValueError as e:
         raise BadRequestError(f"插件不存在: {str(e)}")
     except Exception as e:
@@ -134,7 +134,7 @@ async def list_credentials(
             page_size=page_size,
             name=name,
         )
-        return SuccessExtra(
+        return ApiResponse.paginated(
             data=[item.model_dump() for item in items],
             total=total,
             page=page,
@@ -167,7 +167,7 @@ async def get_credential_detail(
     """
     try:
         data = await plugin_management_service.get_credential(session, credential_id)
-        return Success(data=data.model_dump())
+        return ApiResponse.success(data=data.model_dump())
     except Exception as e:
         _logger.exception("获取凭证详情失败")
         raise BadRequestError(f"获取凭证详情失败: {str(e)}")
@@ -199,7 +199,7 @@ async def get_plugin_credentials_schema(
         schema = await plugin_management_service.get_plugin_credentials_schema(
             session, plugin_id
         )
-        return Success(
+        return ApiResponse.success(
             data=[PluginCredentialsSchemaVo.model_validate(cred) for cred in schema]
         )
     except Exception as e:
@@ -233,7 +233,7 @@ async def create_credential(
         data = await plugin_management_service.create_credential(
             session, plugin_id, obj_in
         )
-        return Success(data=data.model_dump())
+        return ApiResponse.success(data=data.model_dump())
     except Exception as e:
         _logger.exception("创建插件凭证失败")
         raise BadRequestError(f"创建插件凭证失败: {str(e)}")
@@ -264,7 +264,7 @@ async def update_credential(
         data = await plugin_management_service.update_credential(
             session, plugin_id, credential_id, obj_in
         )
-        return Success(data=data.model_dump())
+        return ApiResponse.success(data=data.model_dump())
     except Exception as e:
         _logger.exception("更新插件凭证失败")
         raise BadRequestError(f"更新插件凭证失败: {str(e)}")
@@ -289,7 +289,7 @@ async def delete_credential(
     """
     try:
         await plugin_management_service.delete_credential(session, credential_id)
-        return Success(data=True)
+        return ApiResponse.success(data=True)
     except Exception as e:
         _logger.exception("删除插件凭证失败")
         raise BadRequestError(f"删除插件凭证失败: {str(e)}")

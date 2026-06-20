@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from framework.database.dependencies import get_db_session
-from framework.schemas.base import Success, SuccessExtra
+from framework.common.response import ApiResponse
 from iam.schemas.role import (
     RoleCreate,
     RoleMemberAssignRequest,
@@ -38,7 +38,7 @@ async def list_roles(
         page=query.page,
         page_size=query.page_size,
     )
-    return SuccessExtra(
+    return ApiResponse.paginated(
         data=[RoleResponse.model_validate(r) for r in roles],
         total=total,
         page=query.page,
@@ -59,7 +59,7 @@ async def create_role(
             name=data.name,
             description=data.description,
         )
-        return Success(data=RoleResponse.model_validate(role).model_dump())
+        return ApiResponse.success(data=RoleResponse.model_validate(role).model_dump())
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -68,7 +68,7 @@ async def create_role(
 async def get_role_options(session: AsyncSession = Depends(get_db_session)):
     """获取角色选项列表（不分页，供下拉选择用）"""
     roles = await user_role_service.get_role_options(session)
-    return Success(
+    return ApiResponse.success(
         data=[RoleOptionResponse.model_validate(r).model_dump() for r in roles]
     )
 
@@ -82,7 +82,7 @@ async def get_role(
     role = await role_service.get_by_id(session, role_id)
     if not role:
         raise HTTPException(status_code=404, detail="角色不存在")
-    return Success(data=RoleResponse.model_validate(role).model_dump())
+    return ApiResponse.success(data=RoleResponse.model_validate(role).model_dump())
 
 
 @router.put("/roles/{role_id}")
@@ -99,7 +99,7 @@ async def update_role(
             name=data.name,
             description=data.description,
         )
-        return Success(data=RoleResponse.model_validate(role).model_dump())
+        return ApiResponse.success(data=RoleResponse.model_validate(role).model_dump())
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -112,7 +112,7 @@ async def delete_role(
     """删除角色"""
     try:
         await role_service.delete(session, role_id)
-        return Success(data=None)
+        return ApiResponse.success(data=None)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -124,7 +124,7 @@ async def get_role_permissions(
 ):
     """获取角色的权限列表"""
     permissions = await role_service.get_role_permissions(session, role_id)
-    return Success(
+    return ApiResponse.success(
         data=[
             {
                 "id": p.id,
@@ -146,7 +146,7 @@ async def assign_permissions(
 ):
     """为角色分配权限"""
     await role_service.assign_permissions(session, role_id, data.permission_ids)
-    return Success(data=None)
+    return ApiResponse.success(data=None)
 
 
 @router.get("/roles/{role_id}/members")
@@ -155,7 +155,7 @@ async def get_role_members(
 ):
     """获取角色成员列表"""
     members = await role_member_service.get_role_members(session, role_id)
-    return Success(data=members)
+    return ApiResponse.success(data=members)
 
 
 @router.post("/roles/{role_id}/members")
@@ -169,7 +169,7 @@ async def add_role_members(
         added = await role_member_service.add_role_members(
             session, role_id, data.user_ids
         )
-        return Success(data={"added": added})
+        return ApiResponse.success(data={"added": added})
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -184,7 +184,7 @@ async def remove_role_member(
     removed = await role_member_service.remove_role_member(session, role_id, user_id)
     if not removed:
         raise HTTPException(status_code=404, detail="该用户不是此角色成员")
-    return Success(data=None)
+    return ApiResponse.success(data=None)
 
 
 @router.get("/roles/{role_id}/menus")
@@ -193,7 +193,7 @@ async def get_role_menus(
 ):
     """获取角色已分配的菜单 ID 列表"""
     menu_ids = await role_member_service.get_role_menus(session, role_id)
-    return Success(data=menu_ids)
+    return ApiResponse.success(data=menu_ids)
 
 
 @router.post("/roles/{role_id}/menus")
@@ -205,6 +205,6 @@ async def assign_role_menus(
     """为角色分配菜单"""
     try:
         await role_member_service.assign_role_menus(session, role_id, data.menu_ids)
-        return Success(data=None)
+        return ApiResponse.success(data=None)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))

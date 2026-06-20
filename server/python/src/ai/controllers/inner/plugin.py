@@ -13,7 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from ai.services import plugin_management_service
 from framework.database.dependencies import get_db_session
-from framework.schemas.base import Success
+from framework.common.response import ApiResponse
 
 router = APIRouter()
 
@@ -78,7 +78,7 @@ async def get_plugin(
     """
     try:
         result = await plugin_management_service.get_plugin_info(session, plugin_id)
-        return Success(data=result.model_dump())
+        return ApiResponse.success(data=result.model_dump())
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
@@ -119,7 +119,7 @@ async def invoke_plugin(
         else:
             result = {"chunks": result_chunks}
 
-        return Success(
+        return ApiResponse.success(
             data=PluginInvokeResponse(
                 plugin_id=plugin_id,
                 result=result,
@@ -128,7 +128,7 @@ async def invoke_plugin(
             ).model_dump()
         )
     except Exception as e:
-        return Success(
+        return ApiResponse.success(
             data=PluginInvokeResponse(
                 plugin_id=plugin_id,
                 result=None,
@@ -158,7 +158,7 @@ async def get_plugin_credentials(
             page_size=100,  # 内部接口默认返回较多数据
             name=None,
         )
-        return Success(
+        return ApiResponse.success(
             data={
                 "plugin_id": plugin_id,
                 "credentials": [item.model_dump() for item in items],
@@ -185,6 +185,6 @@ async def get_plugin_credentials_schema(
         schema = await plugin_management_service.get_plugin_credentials_schema(
             session, plugin_id
         )
-        return Success(data=schema)
+        return ApiResponse.success(data=schema)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))

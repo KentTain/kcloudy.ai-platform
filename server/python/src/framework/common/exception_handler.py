@@ -8,10 +8,10 @@ from fastapi import Request
 from fastapi.exceptions import HTTPException
 
 from framework.common.exceptions import AppException
-from framework.schemas.base import Fail
+from framework.common.response import ApiResponse
 
 
-async def http_exception_handler(request: Request, exc: HTTPException) -> Fail:
+async def http_exception_handler(request: Request, exc: HTTPException) -> ApiResponse:
     """
     处理 HTTP 异常
 
@@ -20,12 +20,12 @@ async def http_exception_handler(request: Request, exc: HTTPException) -> Fail:
         exc: HTTP 异常实例
 
     Returns:
-        Fail: 错误响应
+        ApiResponse: 错误响应
     """
-    return Fail(code=exc.status_code, msg=str(exc.detail))
+    return ApiResponse.fail(code=exc.status_code, msg=str(exc.detail))
 
 
-async def app_exception_handler(request: Request, exc: AppException) -> Fail:
+async def app_exception_handler(request: Request, exc: AppException) -> ApiResponse:
     """
     处理应用异常
 
@@ -34,12 +34,12 @@ async def app_exception_handler(request: Request, exc: AppException) -> Fail:
         exc: 异常实例
 
     Returns:
-        Fail: 错误响应
+        ApiResponse: 错误响应
     """
-    return Fail(code=exc.code, msg=exc.message, data=exc.data)
+    return ApiResponse.fail(code=exc.code, msg=exc.message, data=exc.data)
 
 
-async def generic_exception_handler(request: Request, exc: Exception) -> Fail:
+async def generic_exception_handler(request: Request, exc: Exception) -> ApiResponse:
     """
     处理未捕获的异常
 
@@ -48,14 +48,14 @@ async def generic_exception_handler(request: Request, exc: Exception) -> Fail:
         exc: 异常实例
 
     Returns:
-        Fail: 错误响应
+        ApiResponse: 错误响应
     """
     # 在生产环境中，不应该暴露详细错误信息
     import traceback
 
     traceback.print_exc()
 
-    return Fail(code=500, msg="服务器内部错误")
+    return ApiResponse.internal_error()
 
 
 def register_exception_handlers(app):
@@ -77,8 +77,8 @@ def register_exception_handlers(app):
 
     @app.exception_handler(RequestValidationError)
     async def handle_validation_error(request: Request, exc: RequestValidationError):
-        return Fail(
-            code=422, msg="请求参数验证失败", data=exc.errors()
+        return ApiResponse.validation_error(
+            msg="请求参数验证失败", data=exc.errors()
         )
 
     @app.exception_handler(Exception)

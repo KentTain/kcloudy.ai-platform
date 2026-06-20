@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from framework.database.dependencies import get_db_session
-from framework.schemas.base import Success
+from framework.common.response import ApiResponse
 from iam.schemas.menu import MenuListResponse, MenuTreeNode
 from iam.services import menu_service
 
@@ -25,7 +25,7 @@ async def get_all_menus(
     场景：管理员配置角色权限
     """
     menus = await menu_service.get_all_menus(session)
-    return Success(
+    return ApiResponse.success(
         data=MenuListResponse(
             menus=[MenuTreeNode.model_validate(m) for m in menus]
         ).model_dump()

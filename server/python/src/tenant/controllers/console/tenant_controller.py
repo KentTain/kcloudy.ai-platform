@@ -7,7 +7,7 @@ from fastapi.responses import ORJSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from framework.database.dependencies import get_db_session
-from framework.schemas.base import Success
+from framework.common.response import ApiResponse
 from framework.tenant.context import TenantContext, get_tenant_id
 from tenant.models import TenantStatus
 from tenant.schemas.console.tenant import (
@@ -42,7 +42,7 @@ async def list_user_tenants(
     iam_client = get_iam_client()
     user_tenants = await iam_client.get_user_tenants(session, user_id)
     if not user_tenants:
-        return Success(data=[])
+        return ApiResponse.success(data=[])
 
     # 构建租户 ID 到用户租户信息的映射
     user_tenant_map = {ut.tenant_id: ut for ut in user_tenants}
@@ -65,7 +65,7 @@ async def list_user_tenants(
             )
         )
 
-    return Success(data=items)
+    return ApiResponse.success(data=items)
 
 
 @router.get("/current")
@@ -91,7 +91,7 @@ async def get_current_tenant_info(
     if not tenant:
         raise HTTPException(status_code=404, detail="租户不存在")
 
-    return Success(
+    return ApiResponse.success(
         data=CurrentTenantResponse(
             id=tenant.id,
             name=tenant.name,
@@ -148,7 +148,7 @@ async def switch_tenant(
     # 设置新的租户上下文（实际应用中应该返回新的 Token）
     TenantContext.set_current_tenant(tenant)
 
-    return Success(
+    return ApiResponse.success(
         data=SwitchTenantResponse(
             tenant_id=tenant.id,
             tenant_name=tenant.name,

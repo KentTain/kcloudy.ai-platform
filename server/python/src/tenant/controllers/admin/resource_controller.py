@@ -8,8 +8,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import ORJSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from framework.common.response import ApiResponse
 from framework.database.dependencies import get_db_session
-from framework.schemas.base import Success, SuccessExtra
 from tenant.middlewares.admin_auth_middleware import get_current_admin
 from tenant.schemas.admin.resource_config import (
     # 缓存
@@ -64,7 +64,7 @@ async def list_database_configs(
     items, total = await DatabaseConfigService.list_configs(
         session, page=page, page_size=page_size, keyword=keyword
     )
-    return SuccessExtra(
+    return ApiResponse.paginated(
         data=[
             DatabasePropertyResponse(**DatabaseConfigService.build_response(item))
             for item in items
@@ -85,7 +85,7 @@ async def create_database_config(
     创建数据库配置
     """
     config = await DatabaseConfigService.create(session, **data.model_dump())
-    return Success(
+    return ApiResponse.success(
         data=DatabasePropertyResponse(**DatabaseConfigService.build_response(config))
     )
 
@@ -102,7 +102,7 @@ async def get_database_config(
     config = await DatabaseConfigService.get_by_id(session, config_id)
     if not config:
         raise HTTPException(status_code=404, detail="数据库配置不存在")
-    return Success(
+    return ApiResponse.success(
         data=DatabasePropertyResponse(**DatabaseConfigService.build_response(config))
     )
 
@@ -122,7 +122,7 @@ async def update_database_config(
     config = await DatabaseConfigService.update(session, config_id, **update_data)
     if not config:
         raise HTTPException(status_code=404, detail="数据库配置不存在")
-    return Success(
+    return ApiResponse.success(
         data=DatabasePropertyResponse(**DatabaseConfigService.build_response(config))
     )
 
@@ -139,7 +139,7 @@ async def delete_database_config(
     success = await DatabaseConfigService.delete(session, config_id)
     if not success:
         raise HTTPException(status_code=404, detail="数据库配置不存在")
-    return Success(data=success)
+    return ApiResponse.success(data=success)
 
 
 @router.post(f"{DB_PREFIX}/{{config_id}}/test-connection")
@@ -154,7 +154,7 @@ async def test_database_connection(
     success, message, latency = await DatabaseConfigService.test_connection(
         session, config_id
     )
-    return Success(
+    return ApiResponse.success(
         data=ConnectionTestResult(
             success=success, message=message, latency_ms=latency
         ).model_dump()
@@ -180,7 +180,7 @@ async def list_storage_configs(
     items, total = await StorageConfigService.list_configs(
         session, page=page, page_size=page_size, keyword=keyword
     )
-    return SuccessExtra(
+    return ApiResponse.paginated(
         data=[
             StoragePropertyResponse(**StorageConfigService.build_response(item))
             for item in items
@@ -199,7 +199,7 @@ async def create_storage_config(
 ) -> ORJSONResponse:
     """创建存储配置"""
     config = await StorageConfigService.create(session, **data.model_dump())
-    return Success(
+    return ApiResponse.success(
         data=StoragePropertyResponse(**StorageConfigService.build_response(config))
     )
 
@@ -214,7 +214,7 @@ async def get_storage_config(
     config = await StorageConfigService.get_by_id(session, config_id)
     if not config:
         raise HTTPException(status_code=404, detail="存储配置不存在")
-    return Success(
+    return ApiResponse.success(
         data=StoragePropertyResponse(**StorageConfigService.build_response(config))
     )
 
@@ -231,7 +231,7 @@ async def update_storage_config(
     config = await StorageConfigService.update(session, config_id, **update_data)
     if not config:
         raise HTTPException(status_code=404, detail="存储配置不存在")
-    return Success(
+    return ApiResponse.success(
         data=StoragePropertyResponse(**StorageConfigService.build_response(config))
     )
 
@@ -246,7 +246,7 @@ async def delete_storage_config(
     success = await StorageConfigService.delete(session, config_id)
     if not success:
         raise HTTPException(status_code=404, detail="存储配置不存在")
-    return Success(data=success)
+    return ApiResponse.success(data=success)
 
 
 @router.post(f"{STORAGE_PREFIX}/{{config_id}}/test-connection")
@@ -259,7 +259,7 @@ async def test_storage_connection(
     success, message, latency = await StorageConfigService.test_connection(
         session, config_id
     )
-    return Success(
+    return ApiResponse.success(
         data=ConnectionTestResult(
             success=success, message=message, latency_ms=latency
         ).model_dump()
@@ -285,7 +285,7 @@ async def list_cache_configs(
     items, total = await CacheConfigService.list_configs(
         session, page=page, page_size=page_size, keyword=keyword
     )
-    return SuccessExtra(
+    return ApiResponse.paginated(
         data=[
             CachePropertyResponse(**CacheConfigService.build_response(item))
             for item in items
@@ -304,7 +304,7 @@ async def create_cache_config(
 ) -> ORJSONResponse:
     """创建缓存配置"""
     config = await CacheConfigService.create(session, **data.model_dump())
-    return Success(
+    return ApiResponse.success(
         data=CachePropertyResponse(**CacheConfigService.build_response(config))
     )
 
@@ -319,7 +319,7 @@ async def get_cache_config(
     config = await CacheConfigService.get_by_id(session, config_id)
     if not config:
         raise HTTPException(status_code=404, detail="缓存配置不存在")
-    return Success(
+    return ApiResponse.success(
         data=CachePropertyResponse(**CacheConfigService.build_response(config))
     )
 
@@ -336,7 +336,7 @@ async def update_cache_config(
     config = await CacheConfigService.update(session, config_id, **update_data)
     if not config:
         raise HTTPException(status_code=404, detail="缓存配置不存在")
-    return Success(
+    return ApiResponse.success(
         data=CachePropertyResponse(**CacheConfigService.build_response(config))
     )
 
@@ -351,7 +351,7 @@ async def delete_cache_config(
     success = await CacheConfigService.delete(session, config_id)
     if not success:
         raise HTTPException(status_code=404, detail="缓存配置不存在")
-    return Success(data=success)
+    return ApiResponse.success(data=success)
 
 
 @router.post(f"{CACHE_PREFIX}/{{config_id}}/test-connection")
@@ -364,7 +364,7 @@ async def test_cache_connection(
     success, message, latency = await CacheConfigService.test_connection(
         session, config_id
     )
-    return Success(
+    return ApiResponse.success(
         data=ConnectionTestResult(
             success=success, message=message, latency_ms=latency
         ).model_dump()
@@ -390,7 +390,7 @@ async def list_queue_configs(
     items, total = await QueueConfigService.list_configs(
         session, page=page, page_size=page_size, keyword=keyword
     )
-    return SuccessExtra(
+    return ApiResponse.paginated(
         data=[
             QueuePropertyResponse(**QueueConfigService.build_response(item))
             for item in items
@@ -409,7 +409,7 @@ async def create_queue_config(
 ) -> ORJSONResponse:
     """创建队列配置"""
     config = await QueueConfigService.create(session, **data.model_dump())
-    return Success(
+    return ApiResponse.success(
         data=QueuePropertyResponse(**QueueConfigService.build_response(config))
     )
 
@@ -424,7 +424,7 @@ async def get_queue_config(
     config = await QueueConfigService.get_by_id(session, config_id)
     if not config:
         raise HTTPException(status_code=404, detail="队列配置不存在")
-    return Success(
+    return ApiResponse.success(
         data=QueuePropertyResponse(**QueueConfigService.build_response(config))
     )
 
@@ -441,7 +441,7 @@ async def update_queue_config(
     config = await QueueConfigService.update(session, config_id, **update_data)
     if not config:
         raise HTTPException(status_code=404, detail="队列配置不存在")
-    return Success(
+    return ApiResponse.success(
         data=QueuePropertyResponse(**QueueConfigService.build_response(config))
     )
 
@@ -456,7 +456,7 @@ async def delete_queue_config(
     success = await QueueConfigService.delete(session, config_id)
     if not success:
         raise HTTPException(status_code=404, detail="队列配置不存在")
-    return Success(data=success)
+    return ApiResponse.success(data=success)
 
 
 @router.post(f"{QUEUE_PREFIX}/{{config_id}}/test-connection")
@@ -469,7 +469,7 @@ async def test_queue_connection(
     success, message, latency = await QueueConfigService.test_connection(
         session, config_id
     )
-    return Success(
+    return ApiResponse.success(
         data=ConnectionTestResult(
             success=success, message=message, latency_ms=latency
         ).model_dump()
@@ -495,7 +495,7 @@ async def list_pubsub_configs(
     items, total = await PubSubConfigService.list_configs(
         session, page=page, page_size=page_size, keyword=keyword
     )
-    return SuccessExtra(
+    return ApiResponse.paginated(
         data=[
             PubSubPropertyResponse(**PubSubConfigService.build_response(item))
             for item in items
@@ -514,7 +514,7 @@ async def create_pubsub_config(
 ) -> ORJSONResponse:
     """创建发布订阅配置"""
     config = await PubSubConfigService.create(session, **data.model_dump())
-    return Success(
+    return ApiResponse.success(
         data=PubSubPropertyResponse(**PubSubConfigService.build_response(config))
     )
 
@@ -529,7 +529,7 @@ async def get_pubsub_config(
     config = await PubSubConfigService.get_by_id(session, config_id)
     if not config:
         raise HTTPException(status_code=404, detail="发布订阅配置不存在")
-    return Success(
+    return ApiResponse.success(
         data=PubSubPropertyResponse(**PubSubConfigService.build_response(config))
     )
 
@@ -546,7 +546,7 @@ async def update_pubsub_config(
     config = await PubSubConfigService.update(session, config_id, **update_data)
     if not config:
         raise HTTPException(status_code=404, detail="发布订阅配置不存在")
-    return Success(
+    return ApiResponse.success(
         data=PubSubPropertyResponse(**PubSubConfigService.build_response(config))
     )
 
@@ -561,7 +561,7 @@ async def delete_pubsub_config(
     success = await PubSubConfigService.delete(session, config_id)
     if not success:
         raise HTTPException(status_code=404, detail="发布订阅配置不存在")
-    return Success(data=success)
+    return ApiResponse.success(data=success)
 
 
 @router.post(f"{PUBSUB_PREFIX}/{{config_id}}/test-connection")
@@ -574,7 +574,7 @@ async def test_pubsub_connection(
     success, message, latency = await PubSubConfigService.test_connection(
         session, config_id
     )
-    return Success(
+    return ApiResponse.success(
         data=ConnectionTestResult(
             success=success, message=message, latency_ms=latency
         ).model_dump()

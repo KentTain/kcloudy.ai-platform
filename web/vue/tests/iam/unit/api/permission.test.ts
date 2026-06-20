@@ -14,9 +14,12 @@ describe("Permission API", () => {
   describe("getPermissions", () => {
     it("calls GET /iam/admin/v1/permissions with params", async () => {
       const mockResponse = {
-        code: 0,
-        msg: "success",
-        data: { items: [], total: 0, page: 1, page_size: 20 },
+        code: 200,
+        msg: "OK",
+        data: [],
+        total: 0,
+        page: 1,
+        page_size: 20,
       };
       vi.mocked(client.get).mockResolvedValue(mockResponse);
 
@@ -28,23 +31,21 @@ describe("Permission API", () => {
 
     it("calls GET /iam/admin/v1/permissions with resource filter", async () => {
       const mockResponse = {
-        code: 0,
-        msg: "success",
-        data: {
-          items: [
-            {
-              id: "perm-1",
-              code: "user:read",
-              name: "查看用户",
-              resource: "user",
-              action: "read",
-              created_at: "2024-01-01",
-            },
-          ],
-          total: 1,
-          page: 1,
-          page_size: 20,
-        },
+        code: 200,
+        msg: "OK",
+        data: [
+          {
+            id: "perm-1",
+            code: "user:read",
+            name: "查看用户",
+            resource: "user",
+            action: "read",
+            created_at: "2024-01-01",
+          },
+        ],
+        total: 1,
+        page: 1,
+        page_size: 20,
       };
       vi.mocked(client.get).mockResolvedValue(mockResponse);
 
@@ -58,38 +59,36 @@ describe("Permission API", () => {
   describe("getAllPermissions", () => {
     it("calls GET /iam/admin/v1/permissions and returns all items", async () => {
       const mockResponse = {
-        code: 0,
-        msg: "success",
-        data: {
-          items: [
-            {
-              id: "perm-1",
-              code: "user:read",
-              name: "查看用户",
-              resource: "user",
-              action: "read",
-              created_at: "2024-01-01",
-            },
-          ],
-          total: 1,
-          page: 1,
-          page_size: 1000,
-        },
+        code: 200,
+        msg: "OK",
+        data: [
+          {
+            id: "perm-1",
+            code: "user:read",
+            name: "查看用户",
+            resource: "user",
+            action: "read",
+            created_at: "2024-01-01",
+          },
+        ],
+        total: 1,
+        page: 1,
+        page_size: 1000,
       };
       vi.mocked(client.get).mockResolvedValue(mockResponse);
 
       const result = await getAllPermissions();
 
       expect(client.get).toHaveBeenCalledWith("/iam/admin/v1/permissions", { params: { page: 1, page_size: 1000 } });
-      expect(result.data).toEqual(mockResponse.data.items);
+      expect(result.data).toEqual(mockResponse.data);
     });
   });
 
   describe("getPermissionsByResource", () => {
     it("calls GET /iam/admin/v1/permissions/grouped", async () => {
       const mockResponse = {
-        code: 0,
-        msg: "success",
+        code: 200,
+        msg: "OK",
         data: [
           {
             resource: "user",

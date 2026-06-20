@@ -1,6 +1,6 @@
 import { get, post, put } from "@/framework/api/client";
 import { resetUserPassword } from "./user";
-import type { Success, SuccessExtra } from "@/framework/types";
+import type { ApiResponse } from "@/framework/api/types";
 import type {
   LoginHistory,
   LoginHistoryPaginatedQuery,
@@ -14,29 +14,29 @@ import type {
  * 用户登录
  */
 export const login = (data: LoginRequest) =>
-  post<Success<LoginResponse>>("/iam/console/v1/auth/login", data);
+  post<ApiResponse<LoginResponse>>("/iam/console/v1/auth/login", data);
 
 /**
  * 用户登出
  */
-export const logout = () => post<Success<void>>("/iam/console/v1/auth/logout");
+export const logout = () => post<ApiResponse<void>>("/iam/console/v1/auth/logout");
 
 /**
  * 刷新 Token
  */
 export const refreshToken = (refresh_token: string) =>
-  post<Success<LoginResponse>>("/iam/console/v1/auth/token/refresh", { refresh_token });
+  post<ApiResponse<LoginResponse>>("/iam/console/v1/auth/token/refresh", { refresh_token });
 
 /**
  * 获取当前用户信息
  */
-export const getCurrentUser = () => get<Success<User>>("/iam/console/v1/users/me");
+export const getCurrentUser = () => get<ApiResponse<User>>("/iam/console/v1/users/me");
 
 /**
  * 更新当前用户资料
  */
 export const updateCurrentUser = (data: UserUpdate) =>
-  put<Success<User>>("/iam/console/v1/users/me", data);
+  put<ApiResponse<User>>("/iam/console/v1/users/me", data);
 
 export const updateProfile = updateCurrentUser;
 
@@ -44,7 +44,7 @@ export const updateProfile = updateCurrentUser;
  * 修改密码
  */
 export const changePassword = (old_password: string, new_password: string) =>
-  put<Success<void>>("/iam/console/v1/users/password", {
+  put<ApiResponse<void>>("/iam/console/v1/users/password", {
     old_password,
     new_password,
   });
@@ -58,4 +58,4 @@ export const resetPassword = resetUserPassword;
  * 获取登录历史
  */
 export const getLoginHistory = (params?: LoginHistoryPaginatedQuery) =>
-  get<SuccessExtra<LoginHistory[]>>("/iam/console/v1/auth/login-history", { params });
+  get<ApiResponse<LoginHistory[]>>("/iam/console/v1/auth/login-history", { params });

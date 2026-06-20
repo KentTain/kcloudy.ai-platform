@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from framework.database.dependencies import get_db_session
-from framework.schemas.base import Success
+from framework.common.response import ApiResponse
 from framework.tenant.context import get_tenant_id
 from iam.schemas.department import (
     DepartmentCreate,
@@ -35,7 +35,7 @@ async def list_departments(
     departments = await department_service.list_by_tenant(session, tenant_id)
     # 使用 Schema 转换方法，但保持原始数组格式
     items = [DepartmentListItem.from_department(d).model_dump() for d in departments]
-    return Success(data=items)
+    return ApiResponse.success(data=items)
 
 
 @router.get("/departments/tree")
@@ -47,7 +47,7 @@ async def get_department_tree(
     if not tenant_id:
         raise HTTPException(status_code=400, detail="缺少租户上下文")
     tree = await department_service.get_tree(session, tenant_id)
-    return Success(data=tree)
+    return ApiResponse.success(data=tree)
 
 
 @router.post("/departments")
@@ -68,7 +68,7 @@ async def create_department(
         sort_order=data.sort_order or 0,
         leader_id=data.leader_id,
     )
-    return Success(
+    return ApiResponse.success(
         data={
             "id": dept.id,
             "name": dept.name,
@@ -94,7 +94,7 @@ async def update_department(
             leader_id=data.leader_id,
             status=data.status,
         )
-        return Success(
+        return ApiResponse.success(
             data={
                 "id": dept.id,
                 "name": dept.name,
@@ -112,7 +112,7 @@ async def delete_department(
     """删除部门"""
     try:
         await department_service.delete(session, department_id)
-        return Success(data=None)
+        return ApiResponse.success(data=None)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -124,7 +124,7 @@ async def get_department_users(
 ):
     """获取部门用户列表"""
     users = await department_service.get_department_users(session, department_id)
-    return Success(data=users)
+    return ApiResponse.success(data=users)
 
 
 @router.post("/departments/{department_id}/users")
@@ -141,7 +141,7 @@ async def add_user_to_department(
             user_id=data.user_id,
             is_leader=data.is_leader,
         )
-        return Success(data=None)
+        return ApiResponse.success(data=None)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -161,7 +161,7 @@ async def remove_user_from_department(
         )
         if not removed:
             raise HTTPException(status_code=404, detail="用户不在该部门中")
-        return Success(data=None)
+        return ApiResponse.success(data=None)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -182,7 +182,7 @@ async def get_department_detail(
 
     stats = await department_service.get_department_stats(session, department_id)
 
-    return Success(
+    return ApiResponse.success(
         data=DepartmentDetailResponse(
             id=dept.id,
             name=dept.name,
@@ -213,7 +213,7 @@ async def batch_add_users_to_department(
             department_id=department_id,
             user_ids=data.user_ids,
         )
-        return Success(data={"added": added})
+        return ApiResponse.success(data={"added": added})
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -229,7 +229,7 @@ async def enable_department_user(
 
     try:
         user = await UserService.set_status(session, user_id, "active")
-        return Success(data={"user_id": user.id, "status": user.status})
+        return ApiResponse.success(data={"user_id": user.id, "status": user.status})
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -245,7 +245,7 @@ async def disable_department_user(
 
     try:
         user = await UserService.set_status(session, user_id, "inactive")
-        return Success(data={"user_id": user.id, "status": user.status})
+        return ApiResponse.success(data={"user_id": user.id, "status": user.status})
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -257,4 +257,4 @@ async def get_department_members(
 ):
     """获取部门成员列表（详细版）"""
     users = await department_service.get_department_users(session, department_id)
-    return Success(data=users)
+    return ApiResponse.success(data=users)

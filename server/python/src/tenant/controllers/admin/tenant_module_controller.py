@@ -8,7 +8,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from framework.database.dependencies import get_db_session
-from framework.schemas.base import Success, SuccessExtra
+from framework.common.response import ApiResponse
 from tenant.middlewares.admin_auth_middleware import get_current_admin
 from tenant.models import Module, TenantModule
 from tenant.schemas.admin.tenant_module import (
@@ -75,7 +75,7 @@ async def list_tenant_modules(
         vo = await build_tenant_module_vo(session, tm)
         items.append(vo)
 
-    return SuccessExtra(
+    return ApiResponse.paginated(
         data=items,
         total=total,
         page=page,
@@ -129,7 +129,7 @@ async def assign_module(
         raise HTTPException(status_code=400, detail=str(e))
 
     vo = await build_tenant_module_vo(session, tenant_module)
-    return Success(data=vo.model_dump())
+    return ApiResponse.success(data=vo.model_dump())
 
 
 @router.delete("/tenants/{tenant_id}/modules/{module_id}")
@@ -173,4 +173,4 @@ async def unassign_module(
     if not success:
         raise HTTPException(status_code=404, detail="租户未分配该模块")
 
-    return Success(data=success)
+    return ApiResponse.success(data=success)

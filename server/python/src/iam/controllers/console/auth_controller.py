@@ -9,7 +9,7 @@ from fastapi.responses import ORJSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from framework.database.dependencies import get_db_session
-from framework.schemas.base import Success
+from framework.common.response import ApiResponse
 from iam.schemas.login import LoginRequest
 from iam.schemas.token import TokenRefreshRequest
 from iam.services import auth_service
@@ -36,7 +36,7 @@ async def login(
             password=data.password,
             ip=ip,
         )
-        return Success(data=result.model_dump())
+        return ApiResponse.success(data=result.model_dump())
     except ValueError as e:
         raise HTTPException(status_code=401, detail=str(e))
 
@@ -57,7 +57,7 @@ async def logout(
         access_token = auth_header[7:]
         await auth_service.logout(access_token)
 
-    return Success(data=None)
+    return ApiResponse.success(data=None)
 
 
 @router.post("/auth/token/refresh")
@@ -72,6 +72,6 @@ async def refresh_token(
     """
     try:
         result = await auth_service.refresh_token(data.refresh_token)
-        return Success(data=result.model_dump())
+        return ApiResponse.success(data=result.model_dump())
     except ValueError as e:
         raise HTTPException(status_code=401, detail=str(e))

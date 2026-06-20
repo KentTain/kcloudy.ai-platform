@@ -3,10 +3,10 @@
  */
 
 // 从 framework 导入统一类型
-import type { Success, SuccessExtra, BasePaginatedQuery } from "@/framework/types";
+import type { ApiResponse, BasePaginatedQuery } from "@/framework/api/types";
 
 // 重新导出统一类型
-export type { Success, SuccessExtra, BasePaginatedQuery };
+export type { ApiResponse, BasePaginatedQuery };
 
 // 导出管理员类型
 export type {
@@ -92,8 +92,8 @@ export interface TenantListStats {
   expired_count: number;
 }
 
-// 带统计的租户列表响应（继承自 SuccessExtra）
-export interface TenantListResponse extends SuccessExtra<Tenant[]> {
+// 带统计的租户列表响应（继承自 ApiResponse）
+export interface TenantListResponse extends ApiResponse<Tenant[]> {
   stats: TenantListStats;
 }
 

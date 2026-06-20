@@ -9,7 +9,7 @@ from fastapi.responses import ORJSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from framework.database.dependencies import get_db_session
-from framework.schemas.base import Success
+from framework.common.response import ApiResponse
 from framework.utils.jwt import generate_access_token, generate_refresh_token
 from iam.dependencies import get_current_user_id
 from iam.schemas.oauth import OAuthCompleteProfileRequest
@@ -31,7 +31,7 @@ async def get_oauth_authorize(
     """
     try:
         result = await oauth_service.get_authorize_url(provider, redirect_uri)
-        return Success(data=result)
+        return ApiResponse.success(data=result)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -80,7 +80,7 @@ async def oauth_callback(
             jwt_secret,
         )
 
-        return Success(
+        return ApiResponse.success(
             data={
                 "user_id": user.id,
                 "username": user.username,
@@ -114,6 +114,6 @@ async def complete_oauth_profile(
             email=data.email,
             phone=data.phone,
         )
-        return Success(data=None)
+        return ApiResponse.success(data=None)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))

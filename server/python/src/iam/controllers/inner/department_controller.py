@@ -11,7 +11,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from framework.database.dependencies import get_db_session
-from framework.schemas.base import Success
+from framework.common.response import ApiResponse
 from iam.models import Department
 from iam.services.department_service import DepartmentService
 
@@ -91,7 +91,7 @@ async def get_department_tree(
 
     tree = build_department_tree(departments)
 
-    return Success(data=[t.model_dump() for t in tree])
+    return ApiResponse.success(data=[t.model_dump() for t in tree])
 
 
 @router.get("/departments/{department_id}")
@@ -115,4 +115,4 @@ async def get_department(
     if not dept:
         raise HTTPException(status_code=404, detail=f"部门 {department_id} 不存在")
 
-    return Success(data=build_department_info(dept).model_dump())
+    return ApiResponse.success(data=build_department_info(dept).model_dump())

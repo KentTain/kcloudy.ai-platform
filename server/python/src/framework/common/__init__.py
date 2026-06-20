@@ -13,10 +13,12 @@ from framework.common.exceptions import (
     UnauthorizedError,
 )
 from framework.common.instance import get_instance_id, set_instance_id
+from framework.common.response import ApiResponse
 from framework.common.singleton import AbstractSingleton, Singleton
 from framework.common.time import ChinaTimeZone
 
 __all__ = [
+    "ApiResponse",
     "UnauthorizedError",
     "ForbiddenError",
     "NotFoundError",

@@ -31,7 +31,7 @@ from ai.schemas import (
 )
 from ai.services import plugin_management_service
 from framework.database.dependencies import get_db_session
-from framework.schemas.base import Success
+from framework.common.response import ApiResponse
 
 _logger = logger.bind(name=__name__)
 
@@ -73,7 +73,7 @@ async def get_plugin_list(
             limit=limit,
             offset=offset,
         )
-        return Success(data=result.model_dump())
+        return ApiResponse.success(data=result.model_dump())
     except Exception as e:
         _logger.exception("获取插件列表失败")
         raise HTTPException(status_code=400, detail=str(e))
@@ -136,7 +136,7 @@ async def upload_plugin(
             install_config=config,
         )
 
-        return Success(data=result.model_dump())
+        return ApiResponse.success(data=result.model_dump())
 
     except HTTPException:
         raise
@@ -169,7 +169,7 @@ async def start_plugin(
     """
     try:
         result = await plugin_management_service.start_plugin(session, plugin_id)
-        return Success(data=result.model_dump())
+        return ApiResponse.success(data=result.model_dump())
     except Exception as e:
         _logger.exception(f"插件启动失败: {plugin_id}")
         raise HTTPException(status_code=400, detail=str(e))
@@ -199,7 +199,7 @@ async def stop_plugin(
     """
     try:
         result = await plugin_management_service.stop_plugin(session, plugin_id)
-        return Success(data=result.model_dump())
+        return ApiResponse.success(data=result.model_dump())
     except Exception as e:
         _logger.exception(f"插件停止失败: {plugin_id}")
         raise HTTPException(status_code=400, detail=str(e))
@@ -260,7 +260,7 @@ async def upgrade_plugin(
             auto_start=auto_start if auto_start is not None else True,
             install_config=config,
         )
-        return Success(data=result.model_dump())
+        return ApiResponse.success(data=result.model_dump())
 
     except HTTPException:
         raise
@@ -295,7 +295,7 @@ async def uninstall_plugin(
     """
     try:
         result = await plugin_management_service.uninstall_plugin(session, plugin_id)
-        return Success(data=result.model_dump())
+        return ApiResponse.success(data=result.model_dump())
     except HTTPException:
         raise
     except Exception as e:
@@ -458,7 +458,7 @@ async def get_plugin_info(
     """
     try:
         result = await plugin_management_service.get_plugin_info(session, plugin_id)
-        return Success(data=result.model_dump())
+        return ApiResponse.success(data=result.model_dump())
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:

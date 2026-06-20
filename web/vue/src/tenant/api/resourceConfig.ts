@@ -1,5 +1,5 @@
 import { rawDel, rawGet, rawPost, rawPut } from "@/framework/api/client";
-import type { Success, SuccessExtra } from "@/framework/types";
+import type { ApiResponse } from "@/framework/api/types";
 import type {
   CacheConfig,
   ConnectionTestResult,
@@ -18,37 +18,37 @@ import type {
  * 获取数据库配置列表
  */
 export const getDatabaseConfigs = (params?: ResourcePaginatedQuery) =>
-  rawGet<SuccessExtra<DatabaseConfig[]>>("/tenant/admin/v1/resources/databases", { params });
+  rawGet<ApiResponse<DatabaseConfig[]>>("/tenant/admin/v1/resources/databases", { params });
 
 /**
  * 获取数据库配置详情
  */
 export const getDatabaseConfig = (id: string) =>
-  rawGet<Success<DatabaseConfig>>(`/tenant/admin/v1/resources/databases/${id}`);
+  rawGet<ApiResponse<DatabaseConfig>>(`/tenant/admin/v1/resources/databases/${id}`);
 
 /**
  * 创建数据库配置
  */
 export const createDatabaseConfig = (data: ResourceCreate) =>
-  rawPost<Success<DatabaseConfig>>("/tenant/admin/v1/resources/databases", data);
+  rawPost<ApiResponse<DatabaseConfig>>("/tenant/admin/v1/resources/databases", data);
 
 /**
  * 更新数据库配置
  */
 export const updateDatabaseConfig = (id: string, data: ResourceUpdate) =>
-  rawPut<Success<DatabaseConfig>>(`/tenant/admin/v1/resources/databases/${id}`, data);
+  rawPut<ApiResponse<DatabaseConfig>>(`/tenant/admin/v1/resources/databases/${id}`, data);
 
 /**
  * 删除数据库配置
  */
 export const deleteDatabaseConfig = (id: string) =>
-  rawDel<Success<void>>(`/tenant/admin/v1/resources/databases/${id}`);
+  rawDel<ApiResponse<void>>(`/tenant/admin/v1/resources/databases/${id}`);
 
 /**
  * 测试数据库连接
  */
 export const testDatabaseConnection = (id: string) =>
-  rawPost<Success<ConnectionTestResult>>(
+  rawPost<ApiResponse<ConnectionTestResult>>(
     `/tenant/admin/v1/resources/databases/${id}/test-connection`
   );
 
@@ -58,37 +58,37 @@ export const testDatabaseConnection = (id: string) =>
  * 获取存储配置列表
  */
 export const getStorageConfigs = (params?: ResourcePaginatedQuery) =>
-  rawGet<SuccessExtra<StorageConfig[]>>("/tenant/admin/v1/resources/storages", { params });
+  rawGet<ApiResponse<StorageConfig[]>>("/tenant/admin/v1/resources/storages", { params });
 
 /**
  * 获取存储配置详情
  */
 export const getStorageConfig = (id: string) =>
-  rawGet<Success<StorageConfig>>(`/tenant/admin/v1/resources/storages/${id}`);
+  rawGet<ApiResponse<StorageConfig>>(`/tenant/admin/v1/resources/storages/${id}`);
 
 /**
  * 创建存储配置
  */
 export const createStorageConfig = (data: ResourceCreate) =>
-  rawPost<Success<StorageConfig>>("/tenant/admin/v1/resources/storages", data);
+  rawPost<ApiResponse<StorageConfig>>("/tenant/admin/v1/resources/storages", data);
 
 /**
  * 更新存储配置
  */
 export const updateStorageConfig = (id: string, data: ResourceUpdate) =>
-  rawPut<Success<StorageConfig>>(`/tenant/admin/v1/resources/storages/${id}`, data);
+  rawPut<ApiResponse<StorageConfig>>(`/tenant/admin/v1/resources/storages/${id}`, data);
 
 /**
  * 删除存储配置
  */
 export const deleteStorageConfig = (id: string) =>
-  rawDel<Success<void>>(`/tenant/admin/v1/resources/storages/${id}`);
+  rawDel<ApiResponse<void>>(`/tenant/admin/v1/resources/storages/${id}`);
 
 /**
  * 测试存储连接
  */
 export const testStorageConnection = (id: string) =>
-  rawPost<Success<ConnectionTestResult>>(
+  rawPost<ApiResponse<ConnectionTestResult>>(
     `/tenant/admin/v1/resources/storages/${id}/test-connection`
   );
 
@@ -98,37 +98,37 @@ export const testStorageConnection = (id: string) =>
  * 获取缓存配置列表
  */
 export const getCacheConfigs = (params?: ResourcePaginatedQuery) =>
-  rawGet<SuccessExtra<CacheConfig[]>>("/tenant/admin/v1/resources/caches", { params });
+  rawGet<ApiResponse<CacheConfig[]>>("/tenant/admin/v1/resources/caches", { params });
 
 /**
  * 获取缓存配置详情
  */
 export const getCacheConfig = (id: string) =>
-  rawGet<Success<CacheConfig>>(`/tenant/admin/v1/resources/caches/${id}`);
+  rawGet<ApiResponse<CacheConfig>>(`/tenant/admin/v1/resources/caches/${id}`);
 
 /**
  * 创建缓存配置
  */
 export const createCacheConfig = (data: ResourceCreate) =>
-  rawPost<Success<CacheConfig>>("/tenant/admin/v1/resources/caches", data);
+  rawPost<ApiResponse<CacheConfig>>("/tenant/admin/v1/resources/caches", data);
 
 /**
  * 更新缓存配置
  */
 export const updateCacheConfig = (id: string, data: ResourceUpdate) =>
-  rawPut<Success<CacheConfig>>(`/tenant/admin/v1/resources/caches/${id}`, data);
+  rawPut<ApiResponse<CacheConfig>>(`/tenant/admin/v1/resources/caches/${id}`, data);
 
 /**
  * 删除缓存配置
  */
 export const deleteCacheConfig = (id: string) =>
-  rawDel<Success<void>>(`/tenant/admin/v1/resources/caches/${id}`);
+  rawDel<ApiResponse<void>>(`/tenant/admin/v1/resources/caches/${id}`);
 
 /**
  * 测试缓存连接
  */
 export const testCacheConnection = (id: string) =>
-  rawPost<Success<ConnectionTestResult>>(
+  rawPost<ApiResponse<ConnectionTestResult>>(
     `/tenant/admin/v1/resources/caches/${id}/test-connection`
   );
 
@@ -138,37 +138,37 @@ export const testCacheConnection = (id: string) =>
  * 获取队列配置列表
  */
 export const getQueueConfigs = (params?: ResourcePaginatedQuery) =>
-  rawGet<SuccessExtra<QueueConfig[]>>("/tenant/admin/v1/resources/queues", { params });
+  rawGet<ApiResponse<QueueConfig[]>>("/tenant/admin/v1/resources/queues", { params });
 
 /**
  * 获取队列配置详情
  */
 export const getQueueConfig = (id: string) =>
-  rawGet<Success<QueueConfig>>(`/tenant/admin/v1/resources/queues/${id}`);
+  rawGet<ApiResponse<QueueConfig>>(`/tenant/admin/v1/resources/queues/${id}`);
 
 /**
  * 创建队列配置
  */
 export const createQueueConfig = (data: ResourceCreate) =>
-  rawPost<Success<QueueConfig>>("/tenant/admin/v1/resources/queues", data);
+  rawPost<ApiResponse<QueueConfig>>("/tenant/admin/v1/resources/queues", data);
 
 /**
  * 更新队列配置
  */
 export const updateQueueConfig = (id: string, data: ResourceUpdate) =>
-  rawPut<Success<QueueConfig>>(`/tenant/admin/v1/resources/queues/${id}`, data);
+  rawPut<ApiResponse<QueueConfig>>(`/tenant/admin/v1/resources/queues/${id}`, data);
 
 /**
  * 删除队列配置
  */
 export const deleteQueueConfig = (id: string) =>
-  rawDel<Success<void>>(`/tenant/admin/v1/resources/queues/${id}`);
+  rawDel<ApiResponse<void>>(`/tenant/admin/v1/resources/queues/${id}`);
 
 /**
  * 测试队列连接
  */
 export const testQueueConnection = (id: string) =>
-  rawPost<Success<ConnectionTestResult>>(
+  rawPost<ApiResponse<ConnectionTestResult>>(
     `/tenant/admin/v1/resources/queues/${id}/test-connection`
   );
 
@@ -178,36 +178,36 @@ export const testQueueConnection = (id: string) =>
  * 获取发布订阅配置列表
  */
 export const getPubsubConfigs = (params?: ResourcePaginatedQuery) =>
-  rawGet<SuccessExtra<PubsubConfig[]>>("/tenant/admin/v1/resources/pubsubs", { params });
+  rawGet<ApiResponse<PubsubConfig[]>>("/tenant/admin/v1/resources/pubsubs", { params });
 
 /**
  * 获取发布订阅配置详情
  */
 export const getPubsubConfig = (id: string) =>
-  rawGet<Success<PubsubConfig>>(`/tenant/admin/v1/resources/pubsubs/${id}`);
+  rawGet<ApiResponse<PubsubConfig>>(`/tenant/admin/v1/resources/pubsubs/${id}`);
 
 /**
  * 创建发布订阅配置
  */
 export const createPubsubConfig = (data: ResourceCreate) =>
-  rawPost<Success<PubsubConfig>>("/tenant/admin/v1/resources/pubsubs", data);
+  rawPost<ApiResponse<PubsubConfig>>("/tenant/admin/v1/resources/pubsubs", data);
 
 /**
  * 更新发布订阅配置
  */
 export const updatePubsubConfig = (id: string, data: ResourceUpdate) =>
-  rawPut<Success<PubsubConfig>>(`/tenant/admin/v1/resources/pubsubs/${id}`, data);
+  rawPut<ApiResponse<PubsubConfig>>(`/tenant/admin/v1/resources/pubsubs/${id}`, data);
 
 /**
  * 删除发布订阅配置
  */
 export const deletePubsubConfig = (id: string) =>
-  rawDel<Success<void>>(`/tenant/admin/v1/resources/pubsubs/${id}`);
+  rawDel<ApiResponse<void>>(`/tenant/admin/v1/resources/pubsubs/${id}`);
 
 /**
  * 测试发布订阅连接
  */
 export const testPubsubConnection = (id: string) =>
-  rawPost<Success<ConnectionTestResult>>(
+  rawPost<ApiResponse<ConnectionTestResult>>(
     `/tenant/admin/v1/resources/pubsubs/${id}/test-connection`
   );

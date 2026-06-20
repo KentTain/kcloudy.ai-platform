@@ -12,8 +12,8 @@ from fastapi.responses import ORJSONResponse
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from framework.common.response import ApiResponse
 from framework.database.dependencies import get_db_session
-from framework.schemas.base import Success
 from framework.tenant.context import SimpleTenant
 from tenant.models import Tenant, TenantStatus
 from tenant.services.tenant_service import TenantService
@@ -287,7 +287,7 @@ async def get_tenant(
     if not simple_tenant:
         raise HTTPException(status_code=404, detail=f"租户 {tenant_id} 不存在")
 
-    return Success(data=build_tenant_full_info(simple_tenant).model_dump())
+    return ApiResponse.success(data=build_tenant_full_info(simple_tenant).model_dump())
 
 
 @router.get("/tenants/{tenant_id}/basic")
@@ -307,7 +307,7 @@ async def get_tenant_basic(
     if not tenant:
         raise HTTPException(status_code=404, detail=f"租户 {tenant_id} 不存在")
 
-    return Success(data=build_tenant_info(tenant, include_secrets=False).model_dump())
+    return ApiResponse.success(data=build_tenant_info(tenant, include_secrets=False).model_dump())
 
 
 @router.post("/tenants/batch")
@@ -326,7 +326,7 @@ async def get_tenants_batch(
     """
     tenants = await TenantService.get_tenants_batch(session, data.tenant_ids)
 
-    return Success(
+    return ApiResponse.success(
         data=[
             build_tenant_info(t, include_secrets=False).model_dump()
             for t in tenants
@@ -355,7 +355,7 @@ async def get_tenants_batch_full(
         session, [t for t in tenants if t is not None]
     )
 
-    return Success(
+    return ApiResponse.success(
         data=[build_tenant_full_info(st).model_dump() for st in simple_tenants]
     )
 
@@ -375,7 +375,7 @@ async def validate_tenant_access(
     """
     simple_tenant = await TenantService.get_by_id(session, tenant_id)
     if not simple_tenant:
-        return Success(
+        return ApiResponse.success(
             data=ValidateAccessResponse(
                 valid=False,
                 tenant_id=tenant_id,
@@ -384,7 +384,7 @@ async def validate_tenant_access(
         )
 
     if simple_tenant.status != TenantStatus.ACTIVE:
-        return Success(
+        return ApiResponse.success(
             data=ValidateAccessResponse(
                 valid=False,
                 tenant_id=tenant_id,
@@ -400,7 +400,7 @@ async def validate_tenant_access(
     tenant_ids = [ut.tenant_id for ut in user_tenants]
     valid = tenant_id in tenant_ids
 
-    return Success(
+    return ApiResponse.success(
         data=ValidateAccessResponse(
             valid=valid,
             tenant_id=tenant_id,

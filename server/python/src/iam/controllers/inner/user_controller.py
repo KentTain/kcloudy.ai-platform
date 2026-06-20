@@ -11,7 +11,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from framework.database.dependencies import get_db_session
-from framework.schemas.base import Success
+from framework.common.response import ApiResponse
 from iam.models import User, UserDepartment, UserTenant
 from iam.services.department_service import DepartmentService
 from iam.services.user_service import UserService
@@ -138,7 +138,7 @@ async def get_user(
     user_tenant = result.scalar_one_or_none()
     tenant_id = user_tenant.tenant_id if user_tenant else None
 
-    return Success(data=build_user_info(user, tenant_id).model_dump())
+    return ApiResponse.success(data=build_user_info(user, tenant_id).model_dump())
 
 
 @router.post("/users/batch")
@@ -155,7 +155,7 @@ async def get_users_batch(
     THEN 返回多个用户的信息列表
     """
     if not data.user_ids:
-        return Success(data=[])
+        return ApiResponse.success(data=[])
 
     users = await UserService.get_by_ids(session, data.user_ids)
 
@@ -169,7 +169,7 @@ async def get_users_batch(
     for ut in result.scalars().all():
         user_tenant_map[ut.user_id] = ut.tenant_id
 
-    return Success(data=[build_user_info(u, user_tenant_map.get(u.id)).model_dump() for u in users if u])
+    return ApiResponse.success(data=[build_user_info(u, user_tenant_map.get(u.id)).model_dump() for u in users if u])
 
 
 @router.get("/users/{user_id}/departments")
@@ -191,7 +191,7 @@ async def get_user_departments(
     department_ids = [ud.department_id for ud in user_departments]
 
     if not department_ids:
-        return Success(
+        return ApiResponse.success(
             data=UserDepartmentResponse(
                 user_id=user_id,
                 departments=[],
@@ -212,7 +212,7 @@ async def get_user_departments(
         for d in departments if d
     ]
 
-    return Success(
+    return ApiResponse.success(
         data=UserDepartmentResponse(
             user_id=user_id,
             departments=dept_list,
@@ -234,7 +234,7 @@ async def get_user_tenants(
     """
     tenants = await UserService.get_user_tenants_detail(session, user_id)
 
-    return Success(
+    return ApiResponse.success(
         data=UserTenantsResponse(
             user_id=user_id,
             tenants=[
@@ -263,7 +263,7 @@ async def get_tenant_users(
     """
     user_ids = await UserService.get_user_ids_by_tenant_id(session, tenant_id)
 
-    return Success(
+    return ApiResponse.success(
         data=TenantUsersResponse(
             tenant_id=tenant_id,
             user_ids=user_ids,

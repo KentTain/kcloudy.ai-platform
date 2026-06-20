@@ -10,8 +10,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from demo.schemas.dataset import DatasetCreate, DatasetResponse, DatasetUpdate
 from demo.services.dataset import dataset_service
+from framework.common.response import ApiResponse
 from framework.database.dependencies import get_db_session
-from framework.schemas.base import Success, SuccessExtra
 
 router = APIRouter()
 
@@ -24,7 +24,7 @@ async def list_datasets(
 ) -> ORJSONResponse:
     """获取知识库列表"""
     total, datasets = await dataset_service.list_datasets(session, page, page_size)
-    return SuccessExtra(
+    return ApiResponse.paginated(
         data=[DatasetResponse.model_validate(d).model_dump() for d in datasets],
         total=total,
         page=page,
@@ -39,7 +39,7 @@ async def create_dataset(
 ) -> ORJSONResponse:
     """创建知识库"""
     dataset = await dataset_service.create_dataset(session, data)
-    return Success(data=DatasetResponse.model_validate(dataset).model_dump())
+    return ApiResponse.success(data=DatasetResponse.model_validate(dataset).model_dump())
 
 
 @router.get("/{dataset_id}")
@@ -51,7 +51,7 @@ async def get_dataset(
     dataset = await dataset_service.get_dataset(session, dataset_id)
     if not dataset:
         raise HTTPException(status_code=404, detail="知识库不存在")
-    return Success(data=DatasetResponse.model_validate(dataset).model_dump())
+    return ApiResponse.success(data=DatasetResponse.model_validate(dataset).model_dump())
 
 
 @router.put("/{dataset_id}")
@@ -64,7 +64,7 @@ async def update_dataset(
     dataset = await dataset_service.update_dataset(session, dataset_id, data)
     if not dataset:
         raise HTTPException(status_code=404, detail="知识库不存在")
-    return Success(data=DatasetResponse.model_validate(dataset).model_dump())
+    return ApiResponse.success(data=DatasetResponse.model_validate(dataset).model_dump())
 
 
 @router.delete("/{dataset_id}")
@@ -76,4 +76,4 @@ async def delete_dataset(
     success = await dataset_service.delete_dataset(session, dataset_id)
     if not success:
         raise HTTPException(status_code=404, detail="知识库不存在")
-    return Success(data=success)
+    return ApiResponse.success(data=success)

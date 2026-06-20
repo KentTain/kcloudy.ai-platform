@@ -12,7 +12,7 @@ import {
   type VisibilityState,
 } from "@tanstack/vue-table";
 import { computed, effect, type Ref, ref, shallowRef } from "vue";
-import type { SuccessExtra } from "@/framework/types";
+import type { ApiResponse } from "@/framework/api/types";
 
 export interface DataTableState<TData extends RowData> {
   loading: Ref<boolean>;
@@ -24,7 +24,7 @@ export function useDataTable<TData extends RowData>(initialOptions: {
   columns: ColumnDef<TData>[];
   columnVisibility?: () => VisibilityState;
   initialState?: InitialTableState;
-  remoteFetchFn: (pageQuery: { page: number; page_size: number; signal: AbortSignal }) => Promise<SuccessExtra<TData[]>>;
+  remoteFetchFn: (pageQuery: { page: number; page_size: number; signal: AbortSignal }) => Promise<ApiResponse<TData[]>>;
   enabled?: () => boolean;
 }): DataTableState<TData> {
   const dataList = shallowRef<TData[]>([]);

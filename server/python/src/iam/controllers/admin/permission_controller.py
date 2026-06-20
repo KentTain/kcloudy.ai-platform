@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from framework.database.dependencies import get_db_session
-from framework.schemas.base import Success
+from framework.common.response import ApiResponse
 from iam.services import permission_service
 
 router = APIRouter()
@@ -20,7 +20,7 @@ async def list_permissions(
 ):
     """获取所有权限列表"""
     permissions = await permission_service.get_all_permissions(session)
-    return Success(
+    return ApiResponse.success(
         data=[
             {
                 "id": p.id,
@@ -41,7 +41,7 @@ async def get_permissions_grouped(
 ):
     """获取按资源分组的权限"""
     grouped = await permission_service.get_permissions_grouped(session)
-    return Success(
+    return ApiResponse.success(
         data={
             resource: [
                 {

@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING
 from loguru import logger
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from framework.schemas.base import Fail
+from framework.common.response import ApiResponse
 from framework.tenant.context import TenantContext
 from framework.tenant.exceptions import (
     TenantAccessDeniedError,
@@ -153,10 +153,10 @@ class TenantMiddleware(BaseHTTPMiddleware):
 
     def _error_response(
         self, error: TenantError, status_code: int | None = None
-    ) -> Fail:
+    ) -> ApiResponse:
         """生成错误响应"""
         status_code = status_code or self._get_error_status_code(error)
-        return Fail(code=status_code, msg=str(error))
+        return ApiResponse.fail(code=status_code, msg=str(error))
 
     def _get_error_status_code(self, error: TenantError) -> int:
         """获取错误状态码"""

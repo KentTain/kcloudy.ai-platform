@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from framework.database.dependencies import get_db_session
-from framework.schemas.base import Success, SuccessExtra
+from framework.common.response import ApiResponse
 from iam.schemas.admin.system_setting import (
     SystemSettingCreate,
     SystemSettingPaginatedQuery,
@@ -46,7 +46,7 @@ async def list_settings(
         keyword=query.keyword,
     )
 
-    return SuccessExtra(
+    return ApiResponse.paginated(
         data=[build_setting_response(s) for s in settings],
         total=total,
         page=query.page,
@@ -94,7 +94,7 @@ async def create_setting(
         attributes=[attr.model_dump() for attr in data.attributes],
     )
 
-    return Success(data=build_setting_response(setting).model_dump())
+    return ApiResponse.success(data=build_setting_response(setting).model_dump())
 
 
 @router.get("/{setting_id}")
@@ -118,7 +118,7 @@ async def get_setting(
     if not setting:
         raise HTTPException(status_code=404, detail="设置不存在")
 
-    return Success(data=build_setting_response(setting).model_dump())
+    return ApiResponse.success(data=build_setting_response(setting).model_dump())
 
 
 @router.put("/{setting_id}")
@@ -159,7 +159,7 @@ async def update_setting(
     if not setting:
         raise HTTPException(status_code=404, detail="设置不存在")
 
-    return Success(data=build_setting_response(setting).model_dump())
+    return ApiResponse.success(data=build_setting_response(setting).model_dump())
 
 
 @router.delete("/{setting_id}")
@@ -179,4 +179,4 @@ async def delete_setting(
     if not success:
         raise HTTPException(status_code=404, detail="设置不存在")
 
-    return Success(data=None)
+    return ApiResponse.success(data=None)

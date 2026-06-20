@@ -9,7 +9,7 @@ from fastapi.responses import ORJSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from framework.database.dependencies import get_db_session
-from framework.schemas.base import Success, SuccessExtra
+from framework.common.response import ApiResponse
 from tenant.middlewares.admin_auth_middleware import get_current_admin
 from tenant.schemas.admin.module import (
     ModuleCreate,
@@ -136,7 +136,7 @@ async def list_modules(
         is_active=is_active,
     )
 
-    return SuccessExtra(
+    return ApiResponse.paginated(
         data=[build_module_vo(m) for m in modules],
         total=total,
         page=page,
@@ -177,7 +177,7 @@ async def create_module(
         is_need=data.is_need,
     )
 
-    return Success(data=build_module_vo(module).model_dump())
+    return ApiResponse.success(data=build_module_vo(module).model_dump())
 
 
 @router.get("/modules/{module_id}")
@@ -201,7 +201,7 @@ async def get_module(
     if not module:
         raise HTTPException(status_code=404, detail="模块不存在")
 
-    return Success(data=build_module_vo(module).model_dump())
+    return ApiResponse.success(data=build_module_vo(module).model_dump())
 
 
 @router.put("/modules/{module_id}")
@@ -232,7 +232,7 @@ async def update_module(
     if not module:
         raise HTTPException(status_code=404, detail="模块不存在")
 
-    return Success(data=build_module_vo(module).model_dump())
+    return ApiResponse.success(data=build_module_vo(module).model_dump())
 
 
 @router.delete("/modules/{module_id}")
@@ -259,7 +259,7 @@ async def delete_module(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-    return Success(data=success)
+    return ApiResponse.success(data=success)
 
 
 # =============================================================================
@@ -288,7 +288,7 @@ async def list_module_menus(
     menus = await ModuleMenuService.list_menus(session, module_id)
     tree = ModuleMenuService.build_tree(menus)
 
-    return Success(data=ModuleMenuListResponse(items=tree).model_dump())
+    return ApiResponse.success(data=ModuleMenuListResponse(items=tree).model_dump())
 
 
 @router.post("/modules/{module_id}/menus")
@@ -339,7 +339,7 @@ async def create_module_menu(
         is_visible=data.is_visible,
     )
 
-    return Success(data=build_menu_vo(menu).model_dump())
+    return ApiResponse.success(data=build_menu_vo(menu).model_dump())
 
 
 @router.put("/modules/{module_id}/menus/{menu_id}")
@@ -378,7 +378,7 @@ async def update_module_menu(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-    return Success(data=build_menu_vo(menu).model_dump())
+    return ApiResponse.success(data=build_menu_vo(menu).model_dump())
 
 
 @router.delete("/modules/{module_id}/menus/{menu_id}")
@@ -413,7 +413,7 @@ async def delete_module_menu(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-    return Success(data=success)
+    return ApiResponse.success(data=success)
 
 
 # =============================================================================
@@ -452,7 +452,7 @@ async def list_module_permissions(
         action=action,
     )
 
-    return SuccessExtra(
+    return ApiResponse.paginated(
         data=[build_permission_vo(p) for p in permissions],
         total=total,
         page=page,
@@ -502,7 +502,7 @@ async def create_module_permission(
         description=data.description,
     )
 
-    return Success(data=build_permission_vo(permission).model_dump())
+    return ApiResponse.success(data=build_permission_vo(permission).model_dump())
 
 
 @router.put("/modules/{module_id}/permissions/{permission_id}")
@@ -540,7 +540,7 @@ async def update_module_permission(
         description=data.description,
     )
 
-    return Success(data=build_permission_vo(permission).model_dump())
+    return ApiResponse.success(data=build_permission_vo(permission).model_dump())
 
 
 @router.delete("/modules/{module_id}/permissions/{permission_id}")
@@ -568,7 +568,7 @@ async def delete_module_permission(
     if not success:
         raise HTTPException(status_code=404, detail="权限不存在")
 
-    return Success(data=success)
+    return ApiResponse.success(data=success)
 
 
 # =============================================================================
@@ -609,7 +609,7 @@ async def list_module_roles(
         permissions = await ModuleRoleService.get_role_permissions(session, role.id)
         role_vos.append(build_role_vo(role, permissions))
 
-    return SuccessExtra(
+    return ApiResponse.paginated(
         data=role_vos,
         total=total,
         page=page,
@@ -654,7 +654,7 @@ async def create_module_role(
         is_system=data.is_system,
     )
 
-    return Success(data=build_role_vo(role).model_dump())
+    return ApiResponse.success(data=build_role_vo(role).model_dump())
 
 
 @router.put("/modules/{module_id}/roles/{role_id}")
@@ -694,7 +694,7 @@ async def update_module_role(
         raise HTTPException(status_code=400, detail=str(e))
 
     permissions = await ModuleRoleService.get_role_permissions(session, role.id)
-    return Success(data=build_role_vo(role, permissions).model_dump())
+    return ApiResponse.success(data=build_role_vo(role, permissions).model_dump())
 
 
 @router.delete("/modules/{module_id}/roles/{role_id}")
@@ -729,7 +729,7 @@ async def delete_module_role(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-    return Success(data=success)
+    return ApiResponse.success(data=success)
 
 
 @router.put("/modules/{module_id}/roles/{role_id}/permissions")
@@ -767,7 +767,7 @@ async def update_role_permissions(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-    return Success(data=build_role_vo(role, permissions).model_dump())
+    return ApiResponse.success(data=build_role_vo(role, permissions).model_dump())
 
 
 # =============================================================================
@@ -798,7 +798,7 @@ async def list_menu_permissions(
 
     permissions = await ModuleMenuPermissionService.get_menu_permissions(session, menu_id)
 
-    return Success(data=[build_permission_vo(p) for p in permissions])
+    return ApiResponse.success(data=[build_permission_vo(p) for p in permissions])
 
 
 @router.put("/modules/{module_id}/menus/{menu_id}/permissions")
@@ -832,4 +832,4 @@ async def update_menu_permissions(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-    return Success(data=[build_permission_vo(p) for p in permissions])
+    return ApiResponse.success(data=[build_permission_vo(p) for p in permissions])

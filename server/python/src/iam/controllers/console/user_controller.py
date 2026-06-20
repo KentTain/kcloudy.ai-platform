@@ -9,7 +9,7 @@ from fastapi.responses import ORJSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from framework.database.dependencies import get_db_session
-from framework.schemas.base import Success
+from framework.common.response import ApiResponse
 from framework.tenant.context import get_tenant_id
 from iam.dependencies import get_current_user_id
 from iam.schemas.user import (
@@ -59,7 +59,7 @@ async def register(
             password=data.password,
         )
 
-        return Success(
+        return ApiResponse.success(
             data={
                 "user": UserResponse.model_validate(user).model_dump(),
                 "access_token": login_result.access_token,
@@ -85,7 +85,7 @@ async def get_current_user(
     if not user_detail:
         raise HTTPException(status_code=404, detail="用户不存在")
 
-    return Success(data=user_detail.model_dump())
+    return ApiResponse.success(data=user_detail.model_dump())
 
 
 @router.put("/users/me")
@@ -108,7 +108,7 @@ async def update_current_user(
             email=data.email,
             phone=data.phone,
         )
-        return Success(data=UserResponse.model_validate(user).model_dump())
+        return ApiResponse.success(data=UserResponse.model_validate(user).model_dump())
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -131,7 +131,7 @@ async def change_password(
             old_password=data.old_password,
             new_password=data.new_password,
         )
-        return Success(data=None)
+        return ApiResponse.success(data=None)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -147,7 +147,7 @@ async def send_reset_code(
     向邮箱或手机号发送 6 位验证码。
     """
     # TODO: 实现验证码发送
-    return Success(data=None)
+    return ApiResponse.success(data=None)
 
 
 @router.post("/users/password/reset")
@@ -168,7 +168,7 @@ async def reset_password(
             code=data.code,
             new_password=data.new_password,
         )
-        return Success(data=None)
+        return ApiResponse.success(data=None)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -215,4 +215,4 @@ async def get_user_menus(
 
     data = [to_vo(m) for m in menus]
 
-    return Success(data=[d.model_dump() for d in data])
+    return ApiResponse.success(data=[d.model_dump() for d in data])

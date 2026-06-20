@@ -4,126 +4,12 @@
 提供统一的 Pydantic 模型基类。
 """
 
-import warnings
 from datetime import UTC, datetime, timedelta, timezone
 from enum import Enum
 from typing import Any
 
 from pydantic import BaseModel as PydanticBaseModel
 from pydantic import ConfigDict, Field
-from starlette.status import (
-    HTTP_200_OK,
-    HTTP_400_BAD_REQUEST,
-)
-
-from extended.fastapi.responses import ORJSONResponse
-
-# ==============================================================================
-# 统一响应工具类
-# ==============================================================================
-# 用途：Controller 层返回 HTTP 响应
-# 特点：继承 ORJSONResponse，运行时对象，直接 return Success(data=...)
-# 场景：API 响应封装，统一响应格式
-# ==============================================================================
-
-
-class Success(ORJSONResponse):
-    """成功响应"""
-
-    def __init__(
-        self,
-        code: int = HTTP_200_OK,
-        msg: str | None = "OK",
-        data: Any | None = None,
-        **kwargs,
-    ) -> None:
-        """
-        初始化实例。
-
-        Args:
-            code (int): code 参数。
-            msg (str | None): msg 参数。
-            data (Any | None): data 参数。
-            kwargs: kwargs 参数。
-        """
-        content: dict[str, Any] = {
-            "code": code,
-            "msg": msg,
-            "data": data,
-        }
-        # 添加额外的参数，如conversation_id, has_more, limit等
-        content.update(kwargs)
-        super().__init__(content=content, status_code=code)
-
-
-class SuccessExtra(ORJSONResponse):
-    """分页成功响应"""
-
-    def __init__(
-        self,
-        code: int = HTTP_200_OK,
-        msg: str | None = None,
-        data: Any | None = None,
-        total: int = 0,
-        page: int = 1,
-        page_size: int = 20,
-        **kwargs,
-    ) -> None:
-        """
-        初始化实例。
-
-        Args:
-            code (int): code 参数。
-            msg (str | None): msg 参数。
-            data (Any | None): data 参数。
-            total (int): total 参数。
-            page (int): page 参数。
-            page_size (int): page_size 参数。
-            kwargs: kwargs 参数。
-        """
-        content: dict[str, Any] = {
-            "code": code,
-            "msg": msg,
-            "data": data,
-            "total": total,
-            "page": page,
-            "page_size": page_size,
-        }
-        content.update(kwargs)
-        super().__init__(
-            content=content,
-            status_code=code,
-        )
-
-
-class Fail(ORJSONResponse):
-    """成功响应"""
-
-    def __init__(
-        self,
-        code: int = HTTP_400_BAD_REQUEST,
-        msg: str | None = None,
-        data: Any | None = None,
-        **kwargs,
-    ) -> None:
-        """
-        初始化实例。
-
-        Args:
-            code (int): code 参数。
-            msg (str | None): msg 参数。
-            data (Any | None): data 参数。
-            kwargs: kwargs 参数。
-        """
-        content: dict[str, Any] = {
-            "code": code,
-            "msg": msg,
-            "data": data,
-        }
-        # 添加额外的参数，如conversation_id, has_more, limit等
-        content.update(kwargs)
-        super().__init__(content=content, status_code=code)
-
 
 # ==============================================================================
 # 数据模型基类（Pydantic）

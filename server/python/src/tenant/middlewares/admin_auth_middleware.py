@@ -16,7 +16,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from framework.schemas.base import Fail
+from framework.common.response import ApiResponse
 from framework.utils.crypto import verify_password
 from tenant.models import TenantAdmin
 
@@ -148,9 +148,9 @@ class AdminAuthMiddleware(BaseHTTPMiddleware):
             _logger.exception("管理员认证中间件处理异常")
             return self._error_response(500, str(e))
 
-    def _error_response(self, status_code: int, message: str) -> Fail:
+    def _error_response(self, status_code: int, message: str) -> ApiResponse:
         """生成错误响应"""
-        return Fail(code=status_code, msg=message)
+        return ApiResponse.fail(code=status_code, msg=message)
 
 
 # 依赖注入：获取当前管理员

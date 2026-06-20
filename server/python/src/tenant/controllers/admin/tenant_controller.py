@@ -9,8 +9,8 @@ from fastapi.responses import ORJSONResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from framework.common.response import ApiResponse
 from framework.database.dependencies import get_db_session
-from framework.schemas.base import Success, SuccessExtra
 from tenant.middlewares.admin_auth_middleware import AdminAuthService, get_current_admin
 from tenant.models import ModuleMenu, Tenant
 from tenant.schemas.admin.module import ModuleMenuTreeResponse
@@ -175,7 +175,7 @@ async def admin_login(
         raise HTTPException(status_code=401, detail="用户名或密码错误")
 
     token, admin = result
-    return Success(
+    return ApiResponse.success(
         data=AdminLoginResponse(
             token=token,
             username=admin.username,
@@ -197,7 +197,7 @@ async def admin_logout(
     )
     if token:
         AdminAuthService.logout(token)
-    return Success(data=True)
+    return ApiResponse.success(data=True)
 
 
 # ============== 租户管理 API ==============
@@ -238,7 +238,7 @@ async def list_tenants(
     # 批量构建 TenantResponse（避免 N+1 查询）
     tenant_vos = await build_tenant_vos_batch(session, tenants)
 
-    return SuccessExtra(
+    return ApiResponse.paginated(
         data=tenant_vos,
         total=total,
         page=page,
@@ -285,7 +285,7 @@ async def create_tenant(
         pubsub_config_id=data.pubsub_config_id,
     )
 
-    return Success(data=(await build_tenant_vo(session, tenant)).model_dump())
+    return ApiResponse.success(data=(await build_tenant_vo(session, tenant)).model_dump())
 
 
 @router.get("/tenants/{tenant_id}")
@@ -311,7 +311,7 @@ async def get_tenant(
 
     # get_by_id 返回的是 SimpleTenant，需要重新获取 ORM 模型来构建完整的 VO
     tenant_model = await TenantService.get_resource_bindings(session, tenant_id)
-    return Success(data=(await build_tenant_vo(session, tenant_model)).model_dump())
+    return ApiResponse.success(data=(await build_tenant_vo(session, tenant_model)).model_dump())
 
 
 @router.put("/tenants/{tenant_id}")
@@ -342,7 +342,7 @@ async def update_tenant(
     if not tenant:
         raise HTTPException(status_code=404, detail="租户不存在")
 
-    return Success(data=(await build_tenant_vo(session, tenant)).model_dump())
+    return ApiResponse.success(data=(await build_tenant_vo(session, tenant)).model_dump())
 
 
 @router.delete("/tenants/{tenant_id}")
@@ -374,7 +374,7 @@ async def delete_tenant(
     if not success:
         raise HTTPException(status_code=404, detail="租户不存在")
 
-    return Success(data=success)
+    return ApiResponse.success(data=success)
 
 
 @router.post("/tenants/{tenant_id}/activate")
@@ -394,7 +394,7 @@ async def activate_tenant(
     if not tenant:
         raise HTTPException(status_code=404, detail="租户不存在")
 
-    return Success(data=(await build_tenant_vo(session, tenant)).model_dump())
+    return ApiResponse.success(data=(await build_tenant_vo(session, tenant)).model_dump())
 
 
 @router.post("/tenants/{tenant_id}/deactivate")
@@ -414,7 +414,7 @@ async def deactivate_tenant(
     if not tenant:
         raise HTTPException(status_code=404, detail="租户不存在")
 
-    return Success(data=(await build_tenant_vo(session, tenant)).model_dump())
+    return ApiResponse.success(data=(await build_tenant_vo(session, tenant)).model_dump())
 
 
 @router.get("/tenants/{tenant_id}/stats")
@@ -448,7 +448,7 @@ async def get_tenant_stats(
         active_users=0,  # TODO: 实现活跃用户统计
     )
 
-    return Success(data=stats.model_dump())
+    return ApiResponse.success(data=stats.model_dump())
 
 
 # ============== 资源绑定 API ==============
@@ -486,7 +486,7 @@ async def get_tenant_resources(
     queue_ref = await _get_resource_ref(session, tenant.queue_config_id, QueueConfigService)
     pubsub_ref = await _get_resource_ref(session, tenant.pubsub_config_id, PubSubConfigService)
 
-    return Success(
+    return ApiResponse.success(
         data=ResourceBindingResponse(
             tenant_id=tenant.id,
             db_config=db_ref,
@@ -568,7 +568,7 @@ async def update_tenant_resources(
     queue_ref = await _get_resource_ref(session, tenant.queue_config_id, QueueConfigService)
     pubsub_ref = await _get_resource_ref(session, tenant.pubsub_config_id, PubSubConfigService)
 
-    return Success(
+    return ApiResponse.success(
         data=ResourceBindingResponse(
             tenant_id=tenant.id,
             db_config=db_ref,
@@ -629,7 +629,7 @@ async def get_admin_menus(
     module = await ModuleService.get_by_code(session, "tenant")
 
     if not module:
-        return Success(data=[])
+        return ApiResponse.success(data=[])
 
     result: list[ModuleMenuTreeResponse] = []
 
@@ -658,4 +658,4 @@ async def get_admin_menus(
 
     result.append(module_menu)
 
-    return Success(data=[r.model_dump() for r in result])
+    return ApiResponse.success(data=[r.model_dump() for r in result])
