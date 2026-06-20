@@ -4,9 +4,10 @@
 
 from datetime import datetime
 
-from pydantic import BaseModel, Field
+from pydantic import Field
 
 from framework.schemas import (
+    BaseModel,
     BasePaginatedQuery,
     BaseQuery,
     PropertyAttributeVoMixin,

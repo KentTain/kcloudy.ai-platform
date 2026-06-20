@@ -5,10 +5,11 @@
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import Field
 
 from framework.database import AttributeDataType
 from framework.schemas import (
+    BaseModel,
     BasePaginatedQuery,
     BaseQuery,
     PropertyAttributeVoMixin,
