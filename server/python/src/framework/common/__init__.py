@@ -12,8 +12,8 @@ from framework.common.exceptions import (
     ServiceUnavailableError,
     UnauthorizedError,
 )
+from framework.common.exception_handler import error_response
 from framework.common.instance import get_instance_id, set_instance_id
-from framework.common.responses import error_response, success_response
 from framework.common.singleton import AbstractSingleton, Singleton
 from framework.common.time import ChinaTimeZone
 
@@ -23,7 +23,6 @@ __all__ = [
     "NotFoundError",
     "BadRequestError",
     "ServiceUnavailableError",
-    "success_response",
     "error_response",
     "Context",
     "get_context",

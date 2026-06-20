@@ -4,12 +4,41 @@
 将自定义异常转换为统一的 API 响应格式。
 """
 
+from typing import Any
+
 from fastapi import Request
 from fastapi.exceptions import HTTPException
 from fastapi.responses import JSONResponse
+from pydantic import BaseModel
 
 from framework.common.exceptions import AppException
-from framework.common.responses import error_response
+
+
+class ApiResponse(BaseModel):
+    """统一 API 响应格式"""
+
+    code: int = 0
+    message: str = "success"
+    data: Any | None = None
+
+
+def error_response(
+    message: str = "error",
+    code: int = 1,
+    data: Any | None = None
+) -> dict:
+    """
+    创建错误响应
+
+    Args:
+        message: 错误消息
+        code: 错误代码
+        data: 附加数据
+
+    Returns:
+        dict: 响应字典
+    """
+    return ApiResponse(code=code, message=message, data=data).model_dump()
 
 
 async def http_exception_handler(request: Request, exc: HTTPException) -> JSONResponse:

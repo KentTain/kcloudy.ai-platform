@@ -734,10 +734,9 @@ result = await client.post("/inner/v1/users", json={"username": "test"})
 |------|------|------|
 | `ctx` | `ctx.py` | 请求上下文管理（`tenant_id`、`user_id` 等） |
 | `exceptions` | `exceptions.py` | 自定义异常体系（`AppException`、`NotFoundError` 等） |
-| `responses` | `responses.py` | 统一响应格式（`success_response`、`error_response`） |
 | `enums` | `enums.py` | 通用枚举（`ErrorCode`、`HttpStatus`） |
 | `singleton` | `singleton.py` | 单例装饰器 |
-| `exception_handler` | `exception_handler.py` | FastAPI 全局异常处理器 |
+| `exception_handler` | `exception_handler.py` | FastAPI 全局异常处理器、统一错误响应格式（`error_response`） |
 
 #### 11.2 异常体系设计
 

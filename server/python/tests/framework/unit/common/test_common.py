@@ -17,11 +17,7 @@ from framework.common.exceptions import (
     ServiceUnavailableError,
     UnauthorizedError,
 )
-from framework.common.responses import (
-    error_response,
-    paginated_response,
-    success_response,
-)
+from framework.common.exception_handler import error_response
 
 
 class TestExceptions:
@@ -82,27 +78,6 @@ class TestExceptions:
 class TestResponses:
     """响应函数测试"""
 
-    def test_success_response(self):
-        """
-        场景：成功响应
-        WHEN: 调用 success_response
-        THEN: 返回正确格式
-        """
-        result = success_response(data={"id": 1})
-        assert result["code"] == 0
-        assert result["message"] == "success"
-        assert result["data"] == {"id": 1}
-
-    def test_success_response_with_message(self):
-        """
-        场景：成功响应自定义消息
-        WHEN: 传入自定义消息
-        THEN: 使用自定义消息
-        """
-        result = success_response(data=None, message="创建成功")
-        assert result["code"] == 0
-        assert result["message"] == "创建成功"
-
     def test_error_response(self):
         """
         场景：错误响应
@@ -113,24 +88,6 @@ class TestResponses:
         assert result["code"] == 1001
         assert result["message"] == "操作失败"
         assert result["data"] is None
-
-    def test_paginated_response(self):
-        """
-        场景：分页响应
-        WHEN: 调用 paginated_response
-        THEN: 返回正确格式
-        """
-        items = [{"id": 1}, {"id": 2}]
-        result = paginated_response(items, total=100, page=1, page_size=10)
-
-        assert result["code"] == 0
-        assert result["data"]["items"] == items
-        assert result["data"]["pagination"]["total"] == 100
-        assert result["data"]["pagination"]["page"] == 1
-        assert result["data"]["pagination"]["page_size"] == 10
-        assert result["data"]["pagination"]["total_pages"] == 10
-        assert result["data"]["pagination"]["has_next"] is True
-        assert result["data"]["pagination"]["has_prev"] is False
 
 
 class TestContext:
