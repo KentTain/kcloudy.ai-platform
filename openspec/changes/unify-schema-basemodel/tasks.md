@@ -75,11 +75,11 @@
 
 ## 6. 验证与清理
 
-- [ ] 6.1 运行完整测试套件：`uv run pytest`
-- [ ] 6.2 运行 Ruff 检查：`uv run ruff check src/`
-- [ ] 6.3 运行 Ruff 格式化检查：`uv run ruff format --check src/`
-- [ ] 6.4 清理未使用的导入：`uv run ruff check --fix --select F401 src/`
-- [ ] 6.5 验证检测脚本：`bash scripts/check_schema_basemodel.sh`
+- [x] 6.1 运行完整测试套件：`uv run pytest`
+- [x] 6.2 运行 Ruff 检查：`uv run ruff check src/`
+- [x] 6.3 运行 Ruff 格式化检查：`uv run ruff format --check src/`
+- [x] 6.4 清理未使用的导入：`uv run ruff check --fix --select F401 src/`
+- [x] 6.5 验证检测脚本：`bash scripts/check_schema_basemodel.sh`
 
 ## 7. 持续保障
 
