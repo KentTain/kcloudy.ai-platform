@@ -177,6 +177,7 @@ export interface PermissionPaginatedQuery extends BasePaginatedQuery {
 export interface OrganizationCreate {
   name: string;
   code?: string;
+  description?: string;
   parent_id?: string;
   sort_order?: number;
   leader_id?: string;

@@ -1,3 +1,10 @@
+/**
+ * Organization Store
+ *
+ * 注意：当前 OrganizationPage 直接调用 API 管理状态。
+ * 此 Store 保留供未来需要跨组件共享组织状态时使用。
+ */
+
 import { defineStore } from "pinia";
 import { ref } from "vue";
 import {

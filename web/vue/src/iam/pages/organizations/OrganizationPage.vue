@@ -7,7 +7,7 @@
  * - Body: 左侧 300px 组织树 + 右侧 Tabs（组织信息、下级组织、直属成员）
  */
 
-import { ref, computed, onMounted, h } from "vue"
+import { ref, computed, onMounted, h, defineComponent, type PropType } from "vue"
 import { useRouter } from "vue-router"
 import type { ColumnDef } from "@tanstack/vue-table"
 import {
@@ -66,6 +66,58 @@ import {
 import CreateOrganizationDialog, { type SubmitData } from "@/iam/components/CreateOrganizationDialog.vue"
 
 const router = useRouter()
+
+// ========== 递归树节点组件 ==========
+
+const OrganizationTreeNode = defineComponent({
+  name: "OrganizationTreeNode",
+  props: {
+    organizations: { type: Array as PropType<Organization[]>, required: true },
+    selectedId: { type: String, default: null },
+    depth: { type: Number, default: 0 },
+  },
+  emits: ["select"],
+  setup(props, { emit }) {
+    return () =>
+      props.organizations.map((org) => {
+        const isSelected = props.selectedId === org.id
+        const indent = 12 + props.depth * 20
+
+        return [
+          h(
+            "button",
+            {
+              class: [
+                "flex items-center w-full px-3 py-2 text-sm hover:bg-accent transition-colors text-left",
+                { "bg-accent": isSelected },
+              ],
+              style: { paddingLeft: `${indent}px` },
+              onClick: () => emit("select", org),
+            },
+            [
+              h(Building2, { class: "h-4 w-4 mr-2 shrink-0 text-blue-500" }),
+              h("span", { class: "truncate" }, org.name),
+              org.children?.length
+                ? h(
+                    Badge,
+                    { variant: "secondary", class: "ml-auto shrink-0 text-xs" },
+                    () => String(org.children!.length),
+                  )
+                : null,
+            ],
+          ),
+          org.children?.length
+            ? h(OrganizationTreeNode, {
+                organizations: org.children,
+                selectedId: props.selectedId,
+                depth: props.depth + 1,
+                onSelect: (org: Organization) => emit("select", org),
+              })
+            : null,
+        ]
+      })
+  },
+})
 
 // ========== 状态 ==========
 
@@ -599,30 +651,12 @@ onMounted(() => {
           </div>
 
           <div v-else class="py-1">
-            <template v-for="org in filteredTree" :key="org.id">
-              <button
-                class="flex items-center w-full px-3 py-2 text-sm hover:bg-accent transition-colors text-left"
-                :class="{ 'bg-accent': selectedId === org.id }"
-                @click="selectOrganization(org)"
-              >
-                <Building2 class="h-4 w-4 mr-2 shrink-0 text-blue-500" />
-                <span class="truncate">{{ org.name }}</span>
-                <Badge v-if="org.children?.length" variant="secondary" class="ml-auto shrink-0 text-xs">
-                  {{ org.children.length }}
-                </Badge>
-              </button>
-              <!-- 子节点 -->
-              <template v-if="org.children" v-for="child in org.children" :key="child.id">
-                <button
-                  class="flex items-center w-full px-3 py-2 text-sm hover:bg-accent transition-colors text-left pl-8"
-                  :class="{ 'bg-accent': selectedId === child.id }"
-                  @click="selectOrganization(child)"
-                >
-                  <Building2 class="h-4 w-4 mr-2 shrink-0 text-blue-500" />
-                  <span class="truncate">{{ child.name }}</span>
-                </button>
-              </template>
-            </template>
+            <OrganizationTreeNode
+              :organizations="filteredTree"
+              :selected-id="selectedId"
+              :depth="0"
+              @select="selectOrganization"
+            />
           </div>
         </ScrollArea>
 

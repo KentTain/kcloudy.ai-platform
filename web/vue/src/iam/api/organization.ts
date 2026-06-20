@@ -1,22 +1,6 @@
 import { del, get, post, put } from "@/framework/api/client";
 import type { ApiResponse } from "@/framework/api/types";
-import type { Organization, OrganizationUser, OrganizationDetail, OrganizationQuery } from "@/iam/types";
-
-export interface OrganizationCreate {
-  name: string;
-  code?: string;
-  parent_id?: string;
-  sort_order?: number;
-  leader_id?: string;
-}
-
-export interface OrganizationUpdate {
-  name?: string;
-  code?: string;
-  sort_order?: number;
-  leader_id?: string;
-  status?: string;
-}
+import type { Organization, OrganizationUser, OrganizationDetail, OrganizationQuery, OrganizationCreate, OrganizationUpdate } from "@/iam/types";
 
 /**
  * 获取组织列表
