@@ -272,3 +272,7 @@ class ModulePermissionService:
 
         _logger.info(f"删除模块 {module_id} 的 {count} 个权限")
         return count
+
+
+# 单例实例
+module_permission_service = ModulePermissionService()

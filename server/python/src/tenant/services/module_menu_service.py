@@ -301,3 +301,7 @@ class ModuleMenuService:
         for child in children:
             descendants.extend(await ModuleMenuService.get_all_descendants(session, child.id))
         return descendants
+
+
+# 单例实例
+module_menu_service = ModuleMenuService()

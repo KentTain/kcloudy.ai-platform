@@ -478,3 +478,7 @@ class ModuleRoleService:
                 ],
             })
         return result
+
+
+# 单例实例
+module_role_service = ModuleRoleService()

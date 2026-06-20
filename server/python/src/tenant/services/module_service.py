@@ -277,3 +277,7 @@ class ModuleService:
         result = await session.execute(stmt)
         count = result.scalar() or 0
         return count > 0
+
+
+# 单例实例
+module_service = ModuleService()
