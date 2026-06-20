@@ -98,6 +98,9 @@ class TestRBACSyncFlow:
                 empty_result,       # 7: 已存在 Permission 检查
                 empty_result,       # 8: 已存在 Role 检查
                 empty_result,       # 9: 已存在 RolePermission 检查
+                empty_result,       # 10: 全局角色查询 (返回空列表)
+                empty_result,       # 11: 全局角色权限关联查询
+                empty_result,       # 12: 已存在租户角色查询
             ]
 
             await ModuleSyncService.sync_module_assigned(
@@ -186,6 +189,9 @@ class TestRBACSyncFlow:
                 empty_result,       # 7: 已存在 Permission 检查
                 empty_result,       # 8: 已存在 Role 检查
                 empty_result,       # 9: 已存在 RolePermission 检查
+                empty_result,       # 10: 全局角色查询 (返回空列表)
+                empty_result,       # 11: 全局角色权限关联查询
+                empty_result,       # 12: 已存在租户角色查询
             ]
 
             await ModuleSyncService.sync_module_assigned(
