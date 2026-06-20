@@ -31,7 +31,7 @@ server/{技术栈}/
 │   │   │   ├── factory.*          # - 工厂函数
 │   │   │   ├── impl/              # - 实现类
 │   │   │   ├── handler.*          # - 处理器基类：基础设施 queue-消息队列、pubsub-发布订阅 所独有
-│   │   │   └── tenant_*_manager.* # - 租户管理器
+│   │   │   └── tenant_*_manager.* # - 租户管理器：不同基础设施的多租户实现
 │   │   ├── lock/                  # 分布式锁
 │   │   │   ├── factory.*
 │   │   │   └── impl/
