@@ -90,9 +90,9 @@ pnpm test:e2e:ui tests/ai/e2e/
 
 | 目录 | 说明 |
 |------|------|
-| unit/api/ | auth、user、role、permission、department API 测试 |
-| unit/components/ | DepartmentTree、PermissionTree 组件测试 |
-| unit/stores/ | auth、user、role、department Store 测试 |
+| unit/api/ | auth、user、role、permission、organization API 测试 |
+| unit/components/ | OrganizationTree、PermissionTree 组件测试 |
+| unit/stores/ | auth、user、role、organization Store 测试 |
 
 ### Framework 模块测试
 

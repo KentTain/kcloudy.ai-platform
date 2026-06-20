@@ -228,7 +228,7 @@ class UserResponse(BaseModel):
 | 普通 Schema | `framework.schemas.BaseModel` | `UserResponse`, `UserCreate` |
 | 非分页查询 | `framework.schemas.BaseQuery` | `UserQuery` |
 | 分页查询 | `framework.schemas.BasePaginatedQuery` | `UserPaginatedQuery` |
-| 树形响应 | `framework.schemas.TreeNodeVo` | `DepartmentTreeResponse` |
+| 树形响应 | `framework.schemas.TreeNodeVo` | `OrganizationTreeResponse` |
 | 树形嵌套响应 | `framework.schemas.TreeNodeTreeVo` | `MenuTreeResponse` |
 
 ### framework.schemas.BaseModel 的优势

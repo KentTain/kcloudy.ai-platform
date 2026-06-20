@@ -238,7 +238,7 @@ Schema 层提供 `from_entity()` 类方法，用于处理复杂转换逻辑。
 
 | 分类 | 命名模式 | 示例 |
 |------|----------|------|
-| 非分页查询 | `{Entity}Query` | `DepartmentQuery` |
+| 非分页查询 | `{Entity}Query` | `OrganizationQuery` |
 | 分页查询 | `{Entity}PaginatedQuery` | `TenantPaginatedQuery` |
 | 新增（创建） | `{Entity}Create` | `TenantCreate` |
 | 编辑（更新） | `{Entity}Update` | `TenantUpdate` |

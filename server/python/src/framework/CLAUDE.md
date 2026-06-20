@@ -363,7 +363,7 @@ def get_module_definition(self) -> ModuleDefinition:
         menus=[
             MenuDef(code="iam.users", name="用户管理", path="/iam/users", icon="Users", sort_order=1),
             MenuDef(code="iam.roles", name="角色管理", path="/iam/roles", icon="Badge", sort_order=2),
-            MenuDef(code="iam.departments", name="部门管理", path="/iam/departments", icon="Building", sort_order=3),
+            MenuDef(code="iam.organizations", name="组织管理", path="/iam/organizations", icon="Building", sort_order=3),
         ],
         permissions=[
             PermissionDef(code="iam:user:read", name="查看用户", resource="user", action="read"),

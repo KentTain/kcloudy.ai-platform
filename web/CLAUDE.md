@@ -205,7 +205,7 @@ web/{技术栈}/
 
 | 分类 | 命名模式 | 示例 |
 |------|----------|------|
-| 非分页查询 | `{Entity}Query` | `DepartmentQuery` |
+| 非分页查询 | `{Entity}Query` | `OrganizationQuery` |
 | 分页查询 | `{Entity}PaginatedQuery` | `TenantPaginatedQuery` |
 | 新增（创建参数） | `{Entity}Create` | `TenantCreate` |
 | 编辑（更新参数） | `{Entity}Update` | `TenantUpdate` |
