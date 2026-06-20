@@ -15,7 +15,7 @@
 - [x] 2.4 迁移 `tenant/schemas/admin/tenant_module.py`
 - [x] 2.5 迁移 `tenant/schemas/console/tenant.py`
 - [x] 2.6 运行 tenant 模块测试：`uv run pytest tests/tenant/ -v`
-- [ ] 2.7 提交变更：`git commit -m "refactor(tenant): 统一使用 framework.schemas.BaseModel"`
+- [x] 2.7 提交变更：`git commit -m "refactor(tenant): 统一使用 framework.schemas.BaseModel"`
 
 ## 3. 迁移 iam 模块
 
