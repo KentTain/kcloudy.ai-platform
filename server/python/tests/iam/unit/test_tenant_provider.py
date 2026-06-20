@@ -33,7 +33,7 @@ class TestTenantProvider:
         # Mock get_task_session 返回 mock session
         # Mock TenantService.get_by_id 返回 SimpleTenant
         with patch("framework.tenant.cache.TenantCache.get", new_callable=AsyncMock, return_value=None):
-            with patch("framework.database.dependencies.get_task_session") as mock_session_ctx:
+            with patch("tenant.services.tenant_provider_impl.get_task_session") as mock_session_ctx:
                 mock_session = AsyncMock()
                 mock_session_ctx.return_value.__aenter__ = AsyncMock(return_value=mock_session)
                 mock_session_ctx.return_value.__aexit__ = AsyncMock(return_value=None)
@@ -61,7 +61,7 @@ class TestTenantProvider:
         """
         # Mock TenantCache.get 返回 None（缓存未命中）
         with patch("framework.tenant.cache.TenantCache.get", new_callable=AsyncMock, return_value=None):
-            with patch("framework.database.dependencies.get_task_session") as mock_session_ctx:
+            with patch("tenant.services.tenant_provider_impl.get_task_session") as mock_session_ctx:
                 mock_session = AsyncMock()
                 mock_session_ctx.return_value.__aenter__ = AsyncMock(return_value=mock_session)
                 mock_session_ctx.return_value.__aexit__ = AsyncMock(return_value=None)
@@ -165,7 +165,7 @@ class TestTenantProvider:
             mock_client.get_user_tenants.return_value = [mock_user_tenant1, mock_user_tenant2]
             mock_get_client.return_value = mock_client
 
-            with patch("framework.database.dependencies.get_task_session") as mock_session_ctx:
+            with patch("tenant.services.tenant_provider_impl.get_task_session") as mock_session_ctx:
                 mock_session = AsyncMock()
                 mock_session_ctx.return_value.__aenter__ = AsyncMock(return_value=mock_session)
                 mock_session_ctx.return_value.__aexit__ = AsyncMock(return_value=None)
