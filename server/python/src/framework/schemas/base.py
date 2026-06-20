@@ -96,6 +96,35 @@ class SuccessExtra(ORJSONResponse):
         )
 
 
+class Fail(ORJSONResponse):
+    """成功响应"""
+
+    def __init__(
+        self,
+        code: int = HTTP_400_BAD_REQUEST,
+        msg: str | None = None,
+        data: Any | None = None,
+        **kwargs,
+    ) -> None:
+        """
+        初始化实例。
+
+        Args:
+            code (int): code 参数。
+            msg (str | None): msg 参数。
+            data (Any | None): data 参数。
+            kwargs: kwargs 参数。
+        """
+        content: dict[str, Any] = {
+            "code": code,
+            "msg": msg,
+            "data": data,
+        }
+        # 添加额外的参数，如conversation_id, has_more, limit等
+        content.update(kwargs)
+        super().__init__(content=content, status_code=code)
+
+
 # ==============================================================================
 # 数据模型基类（Pydantic）
 # ==============================================================================
