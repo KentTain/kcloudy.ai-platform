@@ -18,14 +18,12 @@ class ApiResponse(BaseModel):
     """统一 API 响应格式"""
 
     code: int = 0
-    message: str = "success"
+    msg: str = "success"
     data: Any | None = None
 
 
 def error_response(
-    message: str = "error",
-    code: int = 1,
-    data: Any | None = None
+    message: str = "error", code: int = 1, data: Any | None = None
 ) -> dict:
     """
     创建错误响应
@@ -38,7 +36,7 @@ def error_response(
     Returns:
         dict: 响应字典
     """
-    return ApiResponse(code=code, message=message, data=data).model_dump()
+    return ApiResponse(code=code, msg=message, data=data).model_dump()
 
 
 async def http_exception_handler(request: Request, exc: HTTPException) -> JSONResponse:
@@ -54,10 +52,7 @@ async def http_exception_handler(request: Request, exc: HTTPException) -> JSONRe
     """
     return JSONResponse(
         status_code=exc.status_code,
-        content=error_response(
-            message=str(exc.detail),
-            code=exc.status_code
-        )
+        content=error_response(message=str(exc.detail), code=exc.status_code),
     )
 
 
@@ -74,11 +69,7 @@ async def app_exception_handler(request: Request, exc: AppException) -> JSONResp
     """
     return JSONResponse(
         status_code=exc.code,
-        content=error_response(
-            message=exc.message,
-            code=exc.code,
-            data=exc.data
-        )
+        content=error_response(message=exc.message, code=exc.code, data=exc.data),
     )
 
 
@@ -95,14 +86,11 @@ async def generic_exception_handler(request: Request, exc: Exception) -> JSONRes
     """
     # 在生产环境中，不应该暴露详细错误信息
     import traceback
+
     traceback.print_exc()
 
     return JSONResponse(
-        status_code=500,
-        content=error_response(
-            message="服务器内部错误",
-            code=500
-        )
+        status_code=500, content=error_response(message="服务器内部错误", code=500)
     )
 
 
@@ -128,10 +116,8 @@ def register_exception_handlers(app):
         return JSONResponse(
             status_code=422,
             content=error_response(
-                message="请求参数验证失败",
-                code=422,
-                data=exc.errors()
-            )
+                message="请求参数验证失败", code=422, data=exc.errors()
+            ),
         )
 
     @app.exception_handler(Exception)

@@ -1,4 +1,5 @@
 import { get, post, put } from "@/framework/api/client";
+import { resetUserPassword } from "./user";
 import type { Success, PaginatedListResponse } from "@/framework/types";
 import type {
   LoginHistory,
@@ -8,7 +9,6 @@ import type {
   UserUpdate,
   User,
 } from "@/iam/types";
-import { resetUserPassword } from "./user";
 
 /**
  * 用户登录

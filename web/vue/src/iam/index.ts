@@ -30,7 +30,6 @@ export type {
   LoginRequest,
   LoginResponse,
   PaginatedListResponse,
-  PageResult,
   UserCreate,
   UserUpdate,
   UserPaginatedQuery,

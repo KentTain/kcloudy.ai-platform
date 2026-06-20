@@ -4,18 +4,13 @@
 
 // 从 framework 导入统一类型
 import type {
-    BaseQuery,
-    BasePaginatedQuery,
-    PaginatedListResponse,
+  BaseQuery,
+  BasePaginatedQuery,
+  PaginatedListResponse,
 } from "@/framework/types";
 
 // 重新导出统一类型
 export type { BaseQuery, BasePaginatedQuery, PaginatedListResponse };
-
-/**
- * @deprecated 使用 PaginatedListResponse<T> 替代
- */
-export type PageResult<T> = PaginatedListResponse<T>;
 
 // 用户类型
 export interface User {
