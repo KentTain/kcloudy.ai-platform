@@ -3,10 +3,10 @@
  */
 
 // 从 framework 导入统一类型
-import type { ApiResponse, SuccessExtra, BasePaginatedQuery } from "@/framework/types";
+import type { Success, SuccessExtra, BasePaginatedQuery } from "@/framework/types";
 
 // 重新导出统一类型
-export type { ApiResponse, SuccessExtra, BasePaginatedQuery };
+export type { Success, SuccessExtra, BasePaginatedQuery };
 
 // 导出管理员类型
 export type {

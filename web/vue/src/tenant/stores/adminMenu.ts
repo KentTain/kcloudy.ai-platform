@@ -7,7 +7,7 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
 import { rawGet } from "@/framework/api/client";
-import type { ApiResponse } from "@/framework/types";
+import type { Success } from "@/framework/types";
 
 /**
  * 管理员菜单项
@@ -41,7 +41,7 @@ export const useAdminMenuStore = defineStore("admin-menu", () => {
     error.value = null;
 
     try {
-      const response = await rawGet<ApiResponse<AdminMenuItem[]>>(
+      const response = await rawGet<Success<AdminMenuItem[]>>(
         "/tenant/admin/v1/admin/menus"
       );
       adminMenus.value = response.data || [];

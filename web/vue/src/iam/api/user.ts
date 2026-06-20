@@ -1,6 +1,6 @@
 import { del, get, post, put } from "@/framework/api/client";
-import type { ApiResponse, PaginatedListResponse, User, Role, Department, RoleOption, UserStats } from "../types";
-import type { UserPaginatedQuery } from "../types";
+import type { Success, PaginatedListResponse } from "@/framework/types";
+import type { User, Role, Department, RoleOption, UserStats, UserPaginatedQuery } from "@/iam/types";
 
 export interface UserCreate {
   username: string;
@@ -21,88 +21,88 @@ export interface UserUpdate {
  * 获取用户列表
  */
 export const getUsers = (params?: UserPaginatedQuery) =>
-  get<ApiResponse<PaginatedListResponse<User>>>("/iam/admin/v1/users", { params });
+  get<Success<PaginatedListResponse<User>>>("/iam/admin/v1/users", { params });
 
 /**
  * 获取用户详情
  */
 export const getUser = (id: string) =>
-  get<ApiResponse<User>>(`/iam/admin/v1/users/${id}`);
+  get<Success<User>>(`/iam/admin/v1/users/${id}`);
 
 /**
  * 创建用户
  */
 export const createUser = (data: UserCreate) =>
-  post<ApiResponse<User>>("/iam/admin/v1/users", data);
+  post<Success<User>>("/iam/admin/v1/users", data);
 
 /**
  * 更新用户
  */
 export const updateUser = (id: string, data: UserUpdate) =>
-  put<ApiResponse<User>>(`/iam/admin/v1/users/${id}`, data);
+  put<Success<User>>(`/iam/admin/v1/users/${id}`, data);
 
 /**
  * 删除用户
  */
 export const deleteUser = (id: string) =>
-  del<ApiResponse<void>>(`/iam/admin/v1/users/${id}`);
+  del<Success<void>>(`/iam/admin/v1/users/${id}`);
 
 /**
  * 停用用户
  */
 export const disableUser = (id: string) =>
-  post<ApiResponse<void>>(`/iam/admin/v1/users/${id}/disable`);
+  post<Success<void>>(`/iam/admin/v1/users/${id}/disable`);
 
 /**
  * 激活用户
  */
 export const enableUser = (id: string) =>
-  post<ApiResponse<void>>(`/iam/admin/v1/users/${id}/enable`);
+  post<Success<void>>(`/iam/admin/v1/users/${id}/enable`);
 
 /**
  * 锁定用户
  */
 export const lockUser = (id: string) =>
-  post<ApiResponse<void>>(`/iam/admin/v1/users/${id}/lock`);
+  post<Success<void>>(`/iam/admin/v1/users/${id}/lock`);
 
 /**
  * 分配角色
  */
 export const assignUserRoles = (user_id: string, role_ids: string[]) =>
-  post<ApiResponse<void>>(`/iam/admin/v1/users/${user_id}/roles`, { role_ids });
+  post<Success<void>>(`/iam/admin/v1/users/${user_id}/roles`, { role_ids });
 
 /**
  * 分配部门
  */
 export const assignUserDepartments = (user_id: string, department_ids: string[]) =>
-  post<ApiResponse<void>>(`/iam/admin/v1/users/${user_id}/departments`, { department_ids });
+  post<Success<void>>(`/iam/admin/v1/users/${user_id}/departments`, { department_ids });
 
 /**
  * 获取用户角色
  */
 export const getUserRoles = (user_id: string) =>
-  get<ApiResponse<Role[]>>(`/iam/admin/v1/users/${user_id}/roles`);
+  get<Success<Role[]>>(`/iam/admin/v1/users/${user_id}/roles`);
 
 /**
  * 获取用户部门
  */
 export const getUserDepartments = (user_id: string) =>
-  get<ApiResponse<Department[]>>(`/iam/admin/v1/users/${user_id}/departments`);
+  get<Success<Department[]>>(`/iam/admin/v1/users/${user_id}/departments`);
 
 export const resetUserPassword = (id: string, data: { new_password?: string } = {}) =>
-  post<ApiResponse<{ password: string }>>(`/iam/admin/v1/users/${id}/reset-password`, data);
+  post<Success<{ password: string }>>(`/iam/admin/v1/users/${id}/reset-password`, data);
 
 export const updateUserStatus = (id: string, status: User["status"]) =>
-  put<ApiResponse<User>>(`/iam/admin/v1/users/${id}/status`, { status });
+  put<Success<User>>(`/iam/admin/v1/users/${id}/status`, { status });
 
 /**
  * 获取用户统计
  */
 export const getUserStats = () =>
-  get<ApiResponse<UserStats>>("/iam/admin/v1/users/stats");
+  get<Success<UserStats>>("/iam/admin/v1/users/stats");
 
 /**
  * 获取角色选项列表（不分页，供下拉选择用）
  */
 export const getRoleOptions = () =>
-  get<ApiResponse<RoleOption[]>>("/iam/admin/v1/roles/options");
+  get<Success<RoleOption[]>>("/iam/admin/v1/roles/options");

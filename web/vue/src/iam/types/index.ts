@@ -4,15 +4,13 @@
 
 // 从 framework 导入统一类型
 import type {
-  ApiResponse as ApiResponseBase,
-  BaseQuery,
-  BasePaginatedQuery,
-  PaginatedListResponse,
+    BaseQuery,
+    BasePaginatedQuery,
+    PaginatedListResponse,
 } from "@/framework/types";
 
 // 重新导出统一类型
 export type { BaseQuery, BasePaginatedQuery, PaginatedListResponse };
-export type ApiResponse<T = unknown> = ApiResponseBase<T>;
 
 /**
  * @deprecated 使用 PaginatedListResponse<T> 替代
