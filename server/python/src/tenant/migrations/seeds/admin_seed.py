@@ -1,7 +1,8 @@
 """
-管理员模块数据初始化
+管理员种子数据初始化
 
-初始化默认管理员账户。
+创建默认全局管理员账户（TenantAdmin）。
+管理员依赖于默认租户，应在 tenant_seed 之后执行。
 """
 
 from __future__ import annotations
@@ -31,7 +32,7 @@ async def run(*, dry_run: bool = False) -> int:
     async with get_session() as session:
         # 检查是否已存在默认管理员
         result = await session.execute(
-            select(TenantAdmin).where(TenantAdmin.is_default == True).limit(1)
+            select(TenantAdmin).where(TenantAdmin.is_default == True).limit(1)  # noqa: E712
         )
         existing = result.scalar_one_or_none()
 
@@ -55,14 +56,14 @@ async def run(*, dry_run: bool = False) -> int:
         )
 
         if dry_run:
-            write_info(f"    [DRY-RUN] 将创建管理员: {admin.username}")
-            write_info(f"    [DRY-RUN] 默认密码: {default_password}")
+            write_info(f"[DRY-RUN] 将创建管理员: {admin.username}")
+            write_info(f"[DRY-RUN] 默认密码: {default_password}")
             return 1
 
         session.add(admin)
         await session.commit()
 
-        write_success(f"    已创建管理员: {admin.username}")
-        write_success(f"    默认密码: {default_password}")
-        write_warning("    [WARN] 请在生产环境中修改默认密码!")
+        write_success(f"已创建管理员: {admin.username}")
+        write_success(f"默认密码: {default_password}")
+        write_warning("[WARN] 请在生产环境中修改默认密码!")
         return 1

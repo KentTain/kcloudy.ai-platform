@@ -1,4 +1,4 @@
-﻿"""
+"""
 数据初始化模块
 
 每个业务模块的种子脚本放在此目录下，支持幂等执行和 dry-run 预览。
@@ -8,7 +8,7 @@
 
 示例：
     SEED_MODULES = {
-        "tenant": tenant_seed.run,
+        "organization": organization_seed.run,
         "user": user_seed.run,
     }
 """
@@ -26,16 +26,16 @@ def _register_modules() -> None:
     global SEED_MODULES
 
     try:
-        from iam.migrations.seeds import user_seed
+        from iam.migrations.seeds import organization_seed
 
-        SEED_MODULES["user"] = user_seed.run
+        SEED_MODULES["organization"] = organization_seed.run
     except ImportError:
         pass
 
     try:
-        from iam.migrations.seeds import admin_seed
+        from iam.migrations.seeds import user_seed
 
-        SEED_MODULES["admin"] = admin_seed.run
+        SEED_MODULES["user"] = user_seed.run
     except ImportError:
         pass
 

@@ -136,13 +136,19 @@ class IAMModule:
         返回 seed 注册表
 
         格式: {seed_name: seed_func}
+
+        注意：Python 3.7+ 字典保持插入顺序，seed 按依赖顺序注册：
+          5. organization  # 默认组织（依赖 tenant）
+          6. user          # 默认用户（依赖 tenant, role, organization）
         """
-        from iam.migrations.seeds.admin_seed import run as admin_seed_run
+        from iam.migrations.seeds.organization_seed import (
+            run as organization_seed_run,
+        )
         from iam.migrations.seeds.user_seed import run as user_seed_run
 
         return {
+            "organization": organization_seed_run,
             "user": user_seed_run,
-            "admin": admin_seed_run,
         }
 
     def get_task_setup(self) -> tuple | None:
