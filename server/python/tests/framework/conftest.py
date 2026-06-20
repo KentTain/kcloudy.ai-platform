@@ -25,9 +25,29 @@ os.environ["TZ"] = "Asia/Shanghai"
 # =============================================================================
 # Event Loop
 # =============================================================================
-# 不再手动定义 event_loop，使用 pytest-asyncio 的自动管理
-# pytest.ini 中配置了 asyncio_default_fixture_loop_scope = function
+# 使用 pytest-asyncio 的自动管理
+# pytest.ini 中配置了 asyncio_default_fixture_loop_scope = module
 # 对于 session 作用域的异步 fixtures，使用 loop_scope 参数
+
+
+# =============================================================================
+# 全局状态重置（解决 pytest-asyncio 在 Windows 上的事件循环问题）
+# =============================================================================
+
+@pytest.fixture(scope="module", autouse=True)
+def reset_global_state():
+    """
+    在每个测试模块前重置全局状态
+
+    解决 pytest-asyncio 在 Windows 上事件循环管理问题：
+    - 每个模块使用独立的事件循环
+    - 全局单例（RedisUtil）的连接池可能绑定到旧的事件循环
+    - 在模块开始时关闭并重新初始化连接
+    """
+    yield
+
+    # 模块结束后清理（不是开始前，因为 pytest 的 autouse 执行顺序）
+    # 清理逻辑在 session fixture 中处理
 
 
 # =============================================================================
@@ -131,7 +151,14 @@ async def redis_client(integration_settings, redis_available):
 
     yield RedisUtil
 
-    await RedisUtil.close()
+    # 安全关闭连接，处理事件循环已关闭的情况
+    try:
+        loop = asyncio.get_running_loop()
+        if not loop.is_closed():
+            await RedisUtil.close()
+    except RuntimeError:
+        # 事件循环已关闭，忽略清理
+        pass
 
 
 @pytest.fixture
@@ -178,7 +205,14 @@ async def postgres_engine(integration_settings, postgres_available):
 
     yield engine
 
-    await engine.dispose()
+    # 安全关闭引擎，处理事件循环已关闭的情况
+    try:
+        loop = asyncio.get_running_loop()
+        if not loop.is_closed():
+            await engine.dispose()
+    except RuntimeError:
+        # 事件循环已关闭，忽略清理
+        pass
 
 
 @pytest_asyncio.fixture

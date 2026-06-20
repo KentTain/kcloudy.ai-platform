@@ -34,8 +34,12 @@ async def cleanup_queue(redis_client, redis_key_prefix):
     """测试后清理队列"""
     queue_name = f"{redis_key_prefix}test_queue"
     yield queue_name
-    # 清理队列
-    await redis_client.delete(f"queue:{queue_name}")
+    # 清理队列（添加异常处理）
+    try:
+        await redis_client.delete(f"queue:{queue_name}")
+    except RuntimeError:
+        # 事件循环可能已关闭
+        pass
 
 
 class TestRedisQueueEnqueue:

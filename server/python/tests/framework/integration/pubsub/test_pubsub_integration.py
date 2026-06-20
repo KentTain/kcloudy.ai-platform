@@ -29,8 +29,8 @@ async def redis_pubsub(integration_settings):
     return RedisPubSub(config)
 
 
-@pytest_asyncio.fixture
-async def cleanup_topic(redis_key_prefix):
+@pytest.fixture
+def cleanup_topic(redis_key_prefix):
     """生成唯一的测试主题名"""
     return f"{redis_key_prefix}topic"
 

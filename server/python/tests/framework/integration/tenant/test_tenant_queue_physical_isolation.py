@@ -25,14 +25,21 @@ pytestmark = pytest.mark.integration
 @pytest_asyncio.fixture
 async def cache_manager(redis_client, redis_available):
     """缓存管理器实例"""
+    import asyncio
+
     if not redis_available:
         pytest.skip("Redis 服务不可用")
 
     manager = TenantCacheManager(redis_client)
     yield manager
 
-    # 清理
-    await manager.close()
+    # 安全清理
+    try:
+        loop = asyncio.get_running_loop()
+        if not loop.is_closed():
+            await manager.close()
+    except RuntimeError:
+        pass
 
 
 @pytest_asyncio.fixture

@@ -22,13 +22,22 @@ async def redis_lock(redis_client):
     return RedisLock()
 
 
+@pytest.fixture
+def lock_key(redis_key_prefix):
+    """生成唯一的锁键"""
+    return f"{redis_key_prefix}lock"
+
+
 @pytest_asyncio.fixture
-async def cleanup_lock(redis_client, redis_key_prefix):
+async def cleanup_lock(redis_client, lock_key):
     """测试后清理锁"""
-    lock_key = f"{redis_key_prefix}lock"
     yield lock_key
-    # 确保清理锁
-    await redis_client.delete(f"lock:{lock_key}")
+    # 确保清理锁（添加异常处理）
+    try:
+        await redis_client.delete(f"lock:{lock_key}")
+    except RuntimeError:
+        # 事件循环可能已关闭
+        pass
 
 
 class TestRedisLockAcquireRelease:

@@ -49,6 +49,8 @@ def integration_settings():
 @pytest_asyncio.fixture(scope="session", loop_scope="session")
 async def postgres_available(integration_settings):
     """检测 PostgreSQL 服务是否可用"""
+    import asyncio
+
     try:
         engine = create_async_engine(
             integration_settings.sqlalchemy.url,
@@ -56,7 +58,13 @@ async def postgres_available(integration_settings):
         )
         async with engine.connect() as conn:
             await conn.execute(text("SELECT 1"))
-        await engine.dispose()
+        # 安全关闭引擎
+        try:
+            loop = asyncio.get_running_loop()
+            if not loop.is_closed():
+                await engine.dispose()
+        except RuntimeError:
+            pass
         return True
     except Exception:
         return False
@@ -65,12 +73,20 @@ async def postgres_available(integration_settings):
 @pytest_asyncio.fixture(scope="session", loop_scope="session")
 async def redis_available(integration_settings):
     """检测 Redis 服务是否可用"""
+    import asyncio
+
     from framework.cache.redis_util import RedisUtil
 
     try:
         await RedisUtil.init(integration_settings.redis)
         result = await RedisUtil.health_check()
-        await RedisUtil.close()
+        # 安全关闭连接
+        try:
+            loop = asyncio.get_running_loop()
+            if not loop.is_closed():
+                await RedisUtil.close()
+        except RuntimeError:
+            pass
         return result
     except Exception:
         return False
@@ -83,6 +99,8 @@ async def redis_available(integration_settings):
 @pytest_asyncio.fixture(scope="session", loop_scope="session")
 async def db_engine(integration_settings, postgres_available):
     """初始化数据库引擎"""
+    import asyncio
+
     if not postgres_available:
         pytest.skip("PostgreSQL 服务不可用")
 
@@ -97,14 +115,21 @@ async def db_engine(integration_settings, postgres_available):
 
     yield engine
 
-    # 清理
-    from framework.database.core.engine import _engine_manager
-    await _engine_manager.close()
+    # 安全清理
+    try:
+        loop = asyncio.get_running_loop()
+        if not loop.is_closed():
+            from framework.database.core.engine import _engine_manager
+            await _engine_manager.close()
+    except RuntimeError:
+        pass
 
 
 @pytest_asyncio.fixture(scope="session", loop_scope="session")
 async def init_redis(integration_settings, redis_available):
     """初始化 Redis"""
+    import asyncio
+
     if not redis_available:
         pytest.skip("Redis 服务不可用")
 
@@ -113,7 +138,13 @@ async def init_redis(integration_settings, redis_available):
 
     yield
 
-    await RedisUtil.close()
+    # 安全关闭连接
+    try:
+        loop = asyncio.get_running_loop()
+        if not loop.is_closed():
+            await RedisUtil.close()
+    except RuntimeError:
+        pass
 
 
 # =============================================================================

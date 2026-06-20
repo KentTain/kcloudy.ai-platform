@@ -35,7 +35,6 @@ from .admin.tenant import (
     ResourceBindingResponse,
     ResourceValidateResponse,
     TenantCreate,
-    TenantPaginatedListResponse,
     TenantResponse,
     TenantStatsResponse,
     TenantUpdate,
@@ -86,7 +85,6 @@ __all__ = [
     # 响应
     "ResourceValidateResponse",
     "TenantResponse",
-    "TenantPaginatedListResponse",
     "TenantStatsResponse",
     "AdminLoginResponse",
     "AdminInfoResponse",

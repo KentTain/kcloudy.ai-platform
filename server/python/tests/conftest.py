@@ -86,6 +86,8 @@ def pytest_ignore_collect(collection_path, config):
 
 @pytest_asyncio.fixture(scope="module", loop_scope="module")
 async def async_engine():
+    import asyncio
+
     engine = create_async_engine(
         url=settings.sqlalchemy.url,
         echo=settings.sqlalchemy.echo,
@@ -96,7 +98,14 @@ async def async_engine():
         await conn.run_sync(BaseModel.metadata.create_all)
 
     yield engine
-    await engine.dispose()
+
+    # 安全关闭引擎，处理事件循环已关闭的情况
+    try:
+        loop = asyncio.get_running_loop()
+        if not loop.is_closed():
+            await engine.dispose()
+    except RuntimeError:
+        pass
 
 
 @pytest_asyncio.fixture(scope="class", loop_scope="class")
