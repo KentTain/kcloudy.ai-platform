@@ -1,17 +1,17 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { getDepartments } from '@/iam/api/department'
+import { getOrganizations } from '@/iam/api/organization'
 import { getRoles } from '@/iam/api/role'
 import {
-  assignUserDepartments,
+  assignUserOrganizations,
   assignUserRoles,
-  getUserDepartments,
+  getUserOrganizations,
   getUserRoles,
   resetUserPassword,
 } from '@/iam/api/user'
 import { useUserStore } from '@/iam/stores/user'
-import type { Department, Role } from '@/iam/types'
+import type { Organization, Role } from '@/iam/types'
 import { getErrorMessage, notifyError, notifySuccess } from '@/framework/utils/feedback'
 import AppPage from '@/framework/layouts/components/AppPage.vue'
 import { Button, Badge, DescriptionList, type DescriptionItem } from '@/components'
@@ -30,32 +30,32 @@ const userStore = useUserStore()
 
 const userId = computed(() => route.params.id as string)
 const roles = ref<Role[]>([])
-const departments = ref<Department[]>([])
+const organizations = ref<Organization[]>([])
 const allRoles = ref<Role[]>([])
-const allDepartments = ref<Department[]>([])
+const allOrganizations = ref<Organization[]>([])
 const selectedRoleIds = ref<string[]>([])
-const selectedDepartmentIds = ref<string[]>([])
+const selectedOrganizationIds = ref<string[]>([])
 const loading = ref(false)
 const savingRoles = ref(false)
-const savingDepartments = ref(false)
+const savingOrganizations = ref(false)
 const resettingPassword = ref(false)
 
 const loadUserDetail = async () => {
   loading.value = true
   try {
     await userStore.fetchUser(userId.value)
-    const [rolesRes, deptsRes, allRolesRes, allDepartmentsRes] = await Promise.all([
+    const [rolesRes, orgsRes, allRolesRes, allOrganizationsRes] = await Promise.all([
       getUserRoles(userId.value),
-      getUserDepartments(userId.value),
+      getUserOrganizations(userId.value),
       getRoles({ page: 1, page_size: 100 }),
-      getDepartments(),
+      getOrganizations(),
     ])
     roles.value = rolesRes.data
-    departments.value = deptsRes.data
+    organizations.value = orgsRes.data
     selectedRoleIds.value = rolesRes.data.map(role => role.id)
     allRoles.value = allRolesRes.data.items
-    allDepartments.value = allDepartmentsRes.data
-    selectedDepartmentIds.value = deptsRes.data.map(dept => dept.id)
+    allOrganizations.value = allOrganizationsRes.data
+    selectedOrganizationIds.value = orgsRes.data.map(org => org.id)
   } catch (error) {
     notifyError(getErrorMessage(error, '加载用户详情失败'))
   } finally {
@@ -98,18 +98,18 @@ const handleSaveRoles = async () => {
   }
 }
 
-const handleSaveDepartments = async () => {
-  savingDepartments.value = true
+const handleSaveOrganizations = async () => {
+  savingOrganizations.value = true
   try {
-    await assignUserDepartments(userId.value, selectedDepartmentIds.value)
-    const deptsRes = await getUserDepartments(userId.value)
-    departments.value = deptsRes.data
-    selectedDepartmentIds.value = deptsRes.data.map(dept => dept.id)
-    notifySuccess('部门分配保存成功')
+    await assignUserOrganizations(userId.value, selectedOrganizationIds.value)
+    const orgsRes = await getUserOrganizations(userId.value)
+    organizations.value = orgsRes.data
+    selectedOrganizationIds.value = orgsRes.data.map(org => org.id)
+    notifySuccess('组织分配保存成功')
   } catch (error) {
-    notifyError(getErrorMessage(error, '部门分配保存失败'))
+    notifyError(getErrorMessage(error, '组织分配保存失败'))
   } finally {
-    savingDepartments.value = false
+    savingOrganizations.value = false
   }
 }
 
@@ -188,30 +188,30 @@ onMounted(() => {
       </Select>
     </div>
 
-    <!-- 当前部门 -->
+    <!-- 当前组织 -->
     <div v-if="!loading" class="flex flex-col gap-2">
-      <h3 class="text-sm font-medium">当前部门</h3>
+      <h3 class="text-sm font-medium">当前组织</h3>
       <div class="flex flex-wrap gap-2">
-        <Badge v-for="dept in departments" :key="dept.id" variant="outline">
-          {{ dept.name }}
+        <Badge v-for="org in organizations" :key="org.id" variant="outline">
+          {{ org.name }}
         </Badge>
-        <span v-if="departments.length === 0" class="text-sm text-muted-foreground">暂无</span>
+        <span v-if="organizations.length === 0" class="text-sm text-muted-foreground">暂无</span>
       </div>
     </div>
 
-    <!-- 部门分配 -->
+    <!-- 组织分配 -->
     <div v-if="!loading" class="flex flex-col gap-2">
       <div class="flex items-center justify-between">
-        <h3 class="text-sm font-medium">部门分配</h3>
-        <Button size="sm" :disabled="savingDepartments" @click="handleSaveDepartments">保存部门</Button>
+        <h3 class="text-sm font-medium">组织分配</h3>
+        <Button size="sm" :disabled="savingOrganizations" @click="handleSaveOrganizations">保存组织</Button>
       </div>
-      <Select v-model="selectedDepartmentIds" multiple>
+      <Select v-model="selectedOrganizationIds" multiple>
         <SelectTrigger class="w-full">
-          <SelectValue placeholder="请选择部门" />
+          <SelectValue placeholder="请选择组织" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem v-for="dept in allDepartments" :key="dept.id" :value="dept.id">
-            {{ dept.name }}
+          <SelectItem v-for="org in allOrganizations" :key="org.id" :value="org.id">
+            {{ org.name }}
           </SelectItem>
         </SelectContent>
       </Select>

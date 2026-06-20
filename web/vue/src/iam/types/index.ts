@@ -72,14 +72,14 @@ export interface PermissionGroup {
   permissions: Permission[];
 }
 
-// 部门用户类型
-export interface DepartmentUser extends User {
-  department_id?: string;
-  department_name?: string;
+// 组织用户类型
+export interface OrganizationUser extends User {
+  organization_id?: string;
+  organization_name?: string;
 }
 
-// 部门类型
-export interface Department {
+// 组织类型
+export interface Organization {
   id: string;
   tenant_id: string;
   parent_id?: string;
@@ -89,7 +89,7 @@ export interface Department {
   leader_id?: string;
   status: "active" | "inactive";
   created_at: string;
-  children?: Department[];
+  children?: Organization[];
   // 扩展字段
   direct_member_count?: number;
   total_member_count?: number;
@@ -121,7 +121,7 @@ export interface UserCreate {
   nickname?: string;
   password: string;
   role_ids?: string[];
-  department_id?: string;
+  organization_id?: string;
 }
 
 export interface UserUpdate {
@@ -130,7 +130,7 @@ export interface UserUpdate {
   nickname?: string;
   avatar?: string;
   role_ids?: string[];
-  department_id?: string;
+  organization_id?: string;
   status?: "active" | "inactive" | "locked";
 }
 
@@ -140,7 +140,7 @@ export interface UserUpdate {
 export interface UserPaginatedQuery extends BasePaginatedQuery {
   status?: string;
   keyword?: string;
-  department_id?: string;
+  organization_id?: string;
   role_id?: string;
   dept_id?: string;
   include_children?: boolean;
@@ -174,8 +174,8 @@ export interface PermissionPaginatedQuery extends BasePaginatedQuery {
   resource?: string;
 }
 
-// 部门相关类型
-export interface DepartmentCreate {
+// 组织相关类型
+export interface OrganizationCreate {
   name: string;
   code?: string;
   parent_id?: string;
@@ -183,7 +183,7 @@ export interface DepartmentCreate {
   leader_id?: string;
 }
 
-export interface DepartmentUpdate {
+export interface OrganizationUpdate {
   name?: string;
   code?: string;
   parent_id?: string;
@@ -193,9 +193,9 @@ export interface DepartmentUpdate {
 }
 
 /**
- * 部门查询参数（非分页）
+ * 组织查询参数（非分页）
  */
-export interface DepartmentQuery extends BaseQuery {
+export interface OrganizationQuery extends BaseQuery {
   status?: string;
   parent_id?: string;
 }
@@ -286,8 +286,8 @@ export interface PeopleItem {
   is_leader?: boolean;
 }
 
-/** 部门详情（含统计信息） */
-export interface DepartmentDetail {
+/** 组织详情（含统计信息） */
+export interface OrganizationDetail {
   id: string;
   name: string;
   code?: string;

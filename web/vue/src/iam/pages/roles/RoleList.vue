@@ -56,7 +56,7 @@ import {
   deleteRole,
 } from "@/iam/api/role"
 import { getPermissions } from "@/iam/api/permission"
-import { getDepartmentTree, getDepartmentMembers } from "@/iam/api/department"
+import { getOrganizationTree, getOrganizationMembers } from "@/iam/api/organization"
 import { getUsers } from "@/iam/api/user"
 
 // ========== 状态 ==========
@@ -382,7 +382,7 @@ async function handleDelete() {
 // PeopleSelect 回调函数
 async function loadOrgNodesCallback(): Promise<OrgTreeNode[]> {
   try {
-    const res = await getDepartmentTree()
+    const res = await getOrganizationTree()
     function toNodes(depts: any[]): OrgTreeNode[] {
       return depts.map((d) => ({
         id: d.id,
@@ -419,7 +419,7 @@ async function searchPeopleCallback(keyword: string): Promise<PeopleItem[]> {
 
 async function loadOrgPeopleCallback(orgId: string): Promise<PeopleItem[]> {
   try {
-    const res = await getDepartmentMembers(orgId)
+    const res = await getOrganizationMembers(orgId)
     return (res.data || []) as unknown as PeopleItem[]
   } catch {
     return []

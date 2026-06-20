@@ -66,12 +66,12 @@ export const iamRoutes: RouteRecordRaw[] = [
         meta: { title: "权限管理", icon: "lock", requiresAuth: true },
       },
 
-      // 部门管理
+      // 组织管理
       {
-        path: "departments",
-        name: "DepartmentManagement",
-        component: () => import("@/iam/pages/departments/DepartmentPage.vue"),
-        meta: { title: "部门管理", icon: "department", requiresAuth: true },
+        path: "organizations",
+        name: "OrganizationManagement",
+        component: () => import("@/iam/pages/organizations/OrganizationPage.vue"),
+        meta: { title: "组织管理", icon: "organization", requiresAuth: true },
       },
 
       // 菜单管理

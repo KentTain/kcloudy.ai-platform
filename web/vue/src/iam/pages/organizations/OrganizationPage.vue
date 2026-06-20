@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * DepartmentPage — 部门管理页面
+ * OrganizationPage — 组织管理页面
  *
  * 布局参照 kbhub organization.vue:
  * - Header: 左侧标题 + 描述，右侧操作按钮组（根据选中状态动态禁用）
@@ -50,29 +50,29 @@ import {
   DialogFooter,
 } from "@/components"
 import { confirmAction, notifySuccess, notifyError, getErrorMessage } from "@/framework/utils/feedback"
-import type { Department, DepartmentDetail, DepartmentUser } from "@/iam/types"
+import type { Organization, OrganizationDetail, OrganizationUser } from "@/iam/types"
 import {
-  getDepartmentTree,
-  getDepartmentDetail,
-  createDepartment,
-  updateDepartment,
-  deleteDepartment,
-  getDepartmentMembers,
-  batchAddDepartmentUsers,
-  enableDepartmentUser,
-  disableDepartmentUser,
-  removeDepartmentUser,
-} from "@/iam/api/department"
-import CreateDepartmentDialog, { type SubmitData } from "@/iam/components/CreateDepartmentDialog.vue"
+  getOrganizationTree,
+  getOrganizationDetail,
+  createOrganization,
+  updateOrganization,
+  deleteOrganization,
+  getOrganizationMembers,
+  batchAddOrganizationUsers,
+  enableOrganizationUser,
+  disableOrganizationUser,
+  removeOrganizationUser,
+} from "@/iam/api/organization"
+import CreateOrganizationDialog, { type SubmitData } from "@/iam/components/CreateOrganizationDialog.vue"
 
 const router = useRouter()
 
 // ========== 状态 ==========
 
 const loading = ref(false)
-const departmentTree = ref<Department[]>([])
+const organizationTree = ref<Organization[]>([])
 const selectedId = ref<string | null>(null)
-const selectedDepartment = ref<DepartmentDetail | null>(null)
+const selectedOrganization = ref<OrganizationDetail | null>(null)
 const detailLoading = ref(false)
 
 // 搜索
@@ -86,10 +86,10 @@ const createDialogMode = ref<"create-root" | "create-child" | "create-sibling" |
 const activeTab = ref("info")
 
 // 下级组织
-const childDepartments = ref<Department[]>([])
+const childOrganizations = ref<Organization[]>([])
 
 // 直属成员
-const members = ref<DepartmentUser[]>([])
+const members = ref<OrganizationUser[]>([])
 const membersLoading = ref(false)
 
 // 添加成员弹窗
@@ -97,7 +97,7 @@ const addMemberDialogOpen = ref(false)
 
 // ========== 下级组织 DataTable ==========
 
-const childDeptColumns: ColumnDef<Department>[] = [
+const childOrgColumns: ColumnDef<Organization>[] = [
   {
     accessorKey: "name",
     header: "组织名称",
@@ -134,13 +134,13 @@ const childDeptColumns: ColumnDef<Department>[] = [
     header: "操作",
     size: 80,
     cell: ({ row }) => {
-      const dept = row.original
+      const org = row.original
       return h(
         Button,
         {
           variant: "link",
           size: "sm",
-          onClick: () => viewChildDepartment(dept),
+          onClick: () => viewChildOrganization(org),
         },
         () => [h(Eye, { class: "mr-1 h-3.5 w-3.5" }), "查看"]
       )
@@ -148,13 +148,13 @@ const childDeptColumns: ColumnDef<Department>[] = [
   },
 ]
 
-const childDeptTable = useDataTable<Department>({
-  columns: childDeptColumns,
+const childOrgTable = useDataTable<Organization>({
+  columns: childOrgColumns,
   remoteFetchFn: async () => {
-    // 数据在 loadDepartmentDetail 中加载
+    // 数据在 loadOrganizationDetail 中加载
     return {
-      data: childDepartments.value,
-      total: childDepartments.value.length,
+      data: childOrganizations.value,
+      total: childOrganizations.value.length,
       page: 1,
       page_size: 100,
     }
@@ -164,7 +164,7 @@ const childDeptTable = useDataTable<Department>({
 
 // ========== 直属成员 DataTable ==========
 
-const memberColumns: ColumnDef<DepartmentUser>[] = [
+const memberColumns: ColumnDef<OrganizationUser>[] = [
   {
     accessorKey: "nickname",
     header: "姓名",
@@ -249,10 +249,10 @@ const memberColumns: ColumnDef<DepartmentUser>[] = [
   },
 ]
 
-const memberTable = useDataTable<DepartmentUser>({
+const memberTable = useDataTable<OrganizationUser>({
   columns: memberColumns,
   remoteFetchFn: async () => {
-    // 数据在 loadDepartmentDetail 中加载
+    // 数据在 loadOrganizationDetail 中加载
     return {
       data: members.value,
       total: members.value.length,
@@ -273,8 +273,8 @@ const hasSelection = computed(() => !!selectedId.value)
 async function loadTree() {
   loading.value = true
   try {
-    const res = await getDepartmentTree()
-    departmentTree.value = res.data || []
+    const res = await getOrganizationTree()
+    organizationTree.value = res.data || []
   } catch (error) {
     notifyError(getErrorMessage(error, "加载组织树失败"))
   } finally {
@@ -283,32 +283,32 @@ async function loadTree() {
 }
 
 /** 选择组织节点 */
-async function selectDepartment(dept: Department) {
-  selectedId.value = dept.id
-  await loadDepartmentDetail()
+async function selectOrganization(org: Organization) {
+  selectedId.value = org.id
+  await loadOrganizationDetail()
 }
 
 /** 加载组织详情 */
-async function loadDepartmentDetail() {
+async function loadOrganizationDetail() {
   if (!selectedId.value) return
 
   detailLoading.value = true
   try {
     const [detailRes, membersRes] = await Promise.all([
-      getDepartmentDetail(selectedId.value),
-      getDepartmentMembers(selectedId.value),
+      getOrganizationDetail(selectedId.value),
+      getOrganizationMembers(selectedId.value),
     ])
-    selectedDepartment.value = detailRes.data
+    selectedOrganization.value = detailRes.data
     members.value = membersRes.data || []
 
     // 提取下级组织
-    const findChildren = (items: Department[], parentId: string): Department[] => {
+    const findChildren = (items: Organization[], parentId: string): Organization[] => {
       return items.filter((item) => item.parent_id === parentId)
     }
-    childDepartments.value = findChildren(departmentTree.value, selectedId.value)
+    childOrganizations.value = findChildren(organizationTree.value, selectedId.value)
 
     // 刷新 DataTable
-    await Promise.all([childDeptTable.refresh(true), memberTable.refresh(true)])
+    await Promise.all([childOrgTable.refresh(true), memberTable.refresh(true)])
   } catch (error) {
     notifyError(getErrorMessage(error, "加载组织详情失败"))
   } finally {
@@ -318,27 +318,27 @@ async function loadDepartmentDetail() {
 
 /** 组织信息描述项 */
 const infoItems = computed<DescriptionItem[]>(() => {
-  const dept = selectedDepartment.value
-  if (!dept) return []
+  const org = selectedOrganization.value
+  if (!org) return []
   return [
-    { label: "组织名称", value: dept.name },
-    { label: "组织编码", value: dept.code || "--" },
-    { label: "组织路径", value: dept.path || "--" },
-    { label: "排序号", value: String(dept.sort_order) },
-    { label: "直属成员数", value: String(dept.direct_member_count) },
-    { label: "累计成员数", value: String(dept.total_member_count) },
-    { label: "状态", value: dept.status === "active" ? "启用" : "停用" },
+    { label: "组织名称", value: org.name },
+    { label: "组织编码", value: org.code || "--" },
+    { label: "组织路径", value: org.path || "--" },
+    { label: "排序号", value: String(org.sort_order) },
+    { label: "直属成员数", value: String(org.direct_member_count) },
+    { label: "累计成员数", value: String(org.total_member_count) },
+    { label: "状态", value: org.status === "active" ? "启用" : "停用" },
   ]
 })
 
 /** 搜索过滤 */
 const filteredTree = computed(() => {
-  if (!searchKeyword.value.trim()) return departmentTree.value
+  if (!searchKeyword.value.trim()) return organizationTree.value
 
   const keyword = searchKeyword.value.toLowerCase()
 
-  function filterNodes(nodes: Department[]): Department[] {
-    return nodes.reduce<Department[]>((acc, node) => {
+  function filterNodes(nodes: Organization[]): Organization[] {
+    return nodes.reduce<Organization[]>((acc, node) => {
       const matches = node.name.toLowerCase().includes(keyword) || (node.code?.toLowerCase().includes(keyword) ?? false)
       const filteredChildren = node.children ? filterNodes(node.children) : []
 
@@ -350,7 +350,7 @@ const filteredTree = computed(() => {
     }, [])
   }
 
-  return filterNodes(departmentTree.value)
+  return filterNodes(organizationTree.value)
 })
 
 /** 新增一级组织 */
@@ -381,15 +381,15 @@ function handleEdit() {
 async function handleDelete() {
   if (!selectedId.value) return
 
-  if (!await confirmAction(`确定要删除组织「${selectedDepartment.value?.name}」吗？删除后不可恢复。`)) {
+  if (!await confirmAction(`确定要删除组织「${selectedOrganization.value?.name}」吗？删除后不可恢复。`)) {
     return
   }
 
   try {
-    await deleteDepartment(selectedId.value)
+    await deleteOrganization(selectedId.value)
     notifySuccess("删除成功")
     selectedId.value = null
-    selectedDepartment.value = null
+    selectedOrganization.value = null
     await loadTree()
   } catch (error) {
     notifyError(getErrorMessage(error, "删除失败"))
@@ -400,20 +400,20 @@ async function handleDelete() {
 async function handleCreateSubmit(data: SubmitData) {
   try {
     if (createDialogMode.value === "edit" && selectedId.value) {
-      await updateDepartment(selectedId.value, data)
+      await updateOrganization(selectedId.value, data)
       notifySuccess("更新成功")
     } else {
       // 创建时根据 mode 决定 parent_id
       let parentId = data.parent_id
       if (createDialogMode.value === "create-child" && selectedId.value) {
         parentId = selectedId.value
-      } else if (createDialogMode.value === "create-sibling" && selectedDepartment.value) {
-        parentId = selectedDepartment.value.parent_id || undefined
+      } else if (createDialogMode.value === "create-sibling" && selectedOrganization.value) {
+        parentId = selectedOrganization.value.parent_id || undefined
       } else if (createDialogMode.value === "create-root") {
         parentId = undefined
       }
 
-      await createDepartment({ ...data, parent_id: parentId })
+      await createOrganization({ ...data, parent_id: parentId })
       notifySuccess("创建成功")
     }
 
@@ -425,8 +425,8 @@ async function handleCreateSubmit(data: SubmitData) {
 }
 
 /** 查看下级组织 */
-function viewChildDepartment(dept: Department) {
-  selectDepartment(dept)
+function viewChildOrganization(org: Organization) {
+  selectOrganization(org)
 }
 
 /** 添加成员 */
@@ -439,29 +439,29 @@ async function handleConfirmMembers(userIds: string[]) {
   if (!selectedId.value || userIds.length === 0) return
 
   try {
-    const res = await batchAddDepartmentUsers(selectedId.value, userIds)
+    const res = await batchAddOrganizationUsers(selectedId.value, userIds)
     notifySuccess(`成功添加 ${res.data?.added || 0} 个成员`)
-    await loadDepartmentDetail()
+    await loadOrganizationDetail()
   } catch (error) {
     notifyError(getErrorMessage(error, "添加成员失败"))
   }
 }
 
 /** 启用成员 */
-async function handleEnableMember(user: DepartmentUser) {
+async function handleEnableMember(user: OrganizationUser) {
   if (!selectedId.value) return
 
   try {
-    await enableDepartmentUser(selectedId.value, user.user_id)
+    await enableOrganizationUser(selectedId.value, user.user_id)
     notifySuccess("已启用")
-    await loadDepartmentDetail()
+    await loadOrganizationDetail()
   } catch (error) {
     notifyError(getErrorMessage(error, "启用失败"))
   }
 }
 
 /** 停用成员 */
-async function handleDisableMember(user: DepartmentUser) {
+async function handleDisableMember(user: OrganizationUser) {
   if (!selectedId.value) return
 
   if (!await confirmAction(`确定要停用「${user.nickname || user.username}」吗？`)) {
@@ -469,16 +469,16 @@ async function handleDisableMember(user: DepartmentUser) {
   }
 
   try {
-    await disableDepartmentUser(selectedId.value, user.user_id)
+    await disableOrganizationUser(selectedId.value, user.user_id)
     notifySuccess("已停用")
-    await loadDepartmentDetail()
+    await loadOrganizationDetail()
   } catch (error) {
     notifyError(getErrorMessage(error, "停用失败"))
   }
 }
 
 /** 移除成员 */
-async function handleRemoveMember(user: DepartmentUser) {
+async function handleRemoveMember(user: OrganizationUser) {
   if (!selectedId.value) return
 
   if (!await confirmAction(`确定要将「${user.nickname || user.username}」移出本组织吗？`)) {
@@ -486,9 +486,9 @@ async function handleRemoveMember(user: DepartmentUser) {
   }
 
   try {
-    await removeDepartmentUser(selectedId.value, user.user_id)
+    await removeOrganizationUser(selectedId.value, user.user_id)
     notifySuccess("已移除")
-    await loadDepartmentDetail()
+    await loadOrganizationDetail()
   } catch (error) {
     notifyError(getErrorMessage(error, "移除失败"))
   }
@@ -497,9 +497,9 @@ async function handleRemoveMember(user: DepartmentUser) {
 // PeopleSelectDialog API 回调
 async function loadOrgNodesCallback(): Promise<OrgTreeNode[]> {
   try {
-    const res = await getDepartmentTree()
-    const depts = res.data || []
-    function toOrgTreeNodes(nodes: Department[]): OrgTreeNode[] {
+    const res = await getOrganizationTree()
+    const orgs = res.data || []
+    function toOrgTreeNodes(nodes: Organization[]): OrgTreeNode[] {
       return nodes.map((d) => ({
         id: d.id,
         name: d.name,
@@ -511,7 +511,7 @@ async function loadOrgNodesCallback(): Promise<OrgTreeNode[]> {
         children: d.children ? toOrgTreeNodes(d.children) : undefined,
       }))
     }
-    return toOrgTreeNodes(depts)
+    return toOrgTreeNodes(orgs)
   } catch {
     return []
   }
@@ -537,7 +537,7 @@ async function searchPeopleCallback(keyword: string): Promise<PeopleItem[]> {
 
 async function loadOrgPeopleCallback(orgId: string): Promise<PeopleItem[]> {
   try {
-    const res = await getDepartmentMembers(orgId)
+    const res = await getOrganizationMembers(orgId)
     return (res.data || []) as PeopleItem[]
   } catch {
     return []
@@ -551,7 +551,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <AppPage title="部门管理" variant="workbench" description="管理组织架构，添加、编辑、删除部门，查看部门成员">
+  <AppPage title="组织管理" variant="workbench" description="管理组织架构，添加、编辑、删除组织，查看组织成员">
     <!-- Header 操作按钮 -->
     <template #actions>
       <div class="flex items-center gap-2">
@@ -599,24 +599,24 @@ onMounted(() => {
           </div>
 
           <div v-else class="py-1">
-            <template v-for="dept in filteredTree" :key="dept.id">
+            <template v-for="org in filteredTree" :key="org.id">
               <button
                 class="flex items-center w-full px-3 py-2 text-sm hover:bg-accent transition-colors text-left"
-                :class="{ 'bg-accent': selectedId === dept.id }"
-                @click="selectDepartment(dept)"
+                :class="{ 'bg-accent': selectedId === org.id }"
+                @click="selectOrganization(org)"
               >
                 <Building2 class="h-4 w-4 mr-2 shrink-0 text-blue-500" />
-                <span class="truncate">{{ dept.name }}</span>
-                <Badge v-if="dept.children?.length" variant="secondary" class="ml-auto shrink-0 text-xs">
-                  {{ dept.children.length }}
+                <span class="truncate">{{ org.name }}</span>
+                <Badge v-if="org.children?.length" variant="secondary" class="ml-auto shrink-0 text-xs">
+                  {{ org.children.length }}
                 </Badge>
               </button>
               <!-- 子节点 -->
-              <template v-if="dept.children" v-for="child in dept.children" :key="child.id">
+              <template v-if="org.children" v-for="child in org.children" :key="child.id">
                 <button
                   class="flex items-center w-full px-3 py-2 text-sm hover:bg-accent transition-colors text-left pl-8"
                   :class="{ 'bg-accent': selectedId === child.id }"
-                  @click="selectDepartment(child)"
+                  @click="selectOrganization(child)"
                 >
                   <Building2 class="h-4 w-4 mr-2 shrink-0 text-blue-500" />
                   <span class="truncate">{{ child.name }}</span>
@@ -636,24 +636,24 @@ onMounted(() => {
 
       <!-- 右侧：详情 + Tabs -->
       <div class="flex-1 flex flex-col border rounded-lg overflow-hidden">
-        <template v-if="selectedDepartment">
+        <template v-if="selectedOrganization">
           <!-- 头部信息 -->
           <div class="p-4 border-b bg-muted/20">
             <div class="flex items-center justify-between">
               <div>
-                <h2 class="text-lg font-semibold">{{ selectedDepartment.name }}</h2>
+                <h2 class="text-lg font-semibold">{{ selectedOrganization.name }}</h2>
                 <p class="text-sm text-muted-foreground mt-1">
-                  {{ selectedDepartment.path || "根级组织" }}
+                  {{ selectedOrganization.path || "根级组织" }}
                 </p>
               </div>
               <div class="flex items-center gap-4 text-sm">
                 <div class="flex items-center gap-1">
                   <Users class="h-4 w-4 text-muted-foreground" />
-                  <span>直属成员 {{ selectedDepartment.direct_member_count }}</span>
+                  <span>直属成员 {{ selectedOrganization.direct_member_count }}</span>
                 </div>
                 <div class="flex items-center gap-1">
                   <FolderTree class="h-4 w-4 text-muted-foreground" />
-                  <span>下级组织 {{ selectedDepartment.children_count }}</span>
+                  <span>下级组织 {{ selectedOrganization.children_count }}</span>
                 </div>
               </div>
             </div>
@@ -686,10 +686,10 @@ onMounted(() => {
 
               <!-- 下级组织 Tab -->
               <TabsContent value="children" class="p-4 m-0">
-                <div v-if="childDepartments.length === 0" class="py-8 text-center text-muted-foreground">
+                <div v-if="childOrganizations.length === 0" class="py-8 text-center text-muted-foreground">
                   当前组织暂无下级组织
                 </div>
-                <DataTable v-else :data-table="childDeptTable" :fixed-layout="true" />
+                <DataTable v-else :data-table="childOrgTable" :fixed-layout="true" />
               </TabsContent>
 
               <!-- 直属成员 Tab -->
@@ -728,11 +728,11 @@ onMounted(() => {
     </div>
 
     <!-- 创建/编辑弹窗 -->
-    <CreateDepartmentDialog
+    <CreateOrganizationDialog
       v-model:open="createDialogOpen"
       :mode="createDialogMode"
-      :current-department="selectedDepartment"
-      :department-tree="departmentTree"
+      :current-organization="selectedOrganization"
+      :organization-tree="organizationTree"
       @submit="handleCreateSubmit"
     />
 

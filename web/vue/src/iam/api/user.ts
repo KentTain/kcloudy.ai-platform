@@ -1,6 +1,6 @@
 import { del, get, post, put } from "@/framework/api/client";
 import type { ApiResponse } from "@/framework/api/types";
-import type { User, Role, Department, RoleOption, UserStats, UserPaginatedQuery } from "@/iam/types";
+import type { User, Role, Organization, RoleOption, UserStats, UserPaginatedQuery } from "@/iam/types";
 
 export interface UserCreate {
   username: string;
@@ -72,10 +72,10 @@ export const assignUserRoles = (user_id: string, role_ids: string[]) =>
   post<ApiResponse<void>>(`/iam/admin/v1/users/${user_id}/roles`, { role_ids });
 
 /**
- * 分配部门
+ * 分配组织
  */
-export const assignUserDepartments = (user_id: string, department_ids: string[]) =>
-  post<ApiResponse<void>>(`/iam/admin/v1/users/${user_id}/departments`, { department_ids });
+export const assignUserOrganizations = (user_id: string, organization_ids: string[]) =>
+  post<ApiResponse<void>>(`/iam/admin/v1/users/${user_id}/organizations`, { organization_ids });
 
 /**
  * 获取用户角色
@@ -84,10 +84,10 @@ export const getUserRoles = (user_id: string) =>
   get<ApiResponse<Role[]>>(`/iam/admin/v1/users/${user_id}/roles`);
 
 /**
- * 获取用户部门
+ * 获取用户组织
  */
-export const getUserDepartments = (user_id: string) =>
-  get<ApiResponse<Department[]>>(`/iam/admin/v1/users/${user_id}/departments`);
+export const getUserOrganizations = (user_id: string) =>
+  get<ApiResponse<Organization[]>>(`/iam/admin/v1/users/${user_id}/organizations`);
 
 export const resetUserPassword = (id: string, data: { new_password?: string } = {}) =>
   post<ApiResponse<{ password: string }>>(`/iam/admin/v1/users/${id}/reset-password`, data);

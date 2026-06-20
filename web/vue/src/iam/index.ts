@@ -5,7 +5,7 @@
  * - 用户管理
  * - 角色管理
  * - 权限管理
- * - 部门管理
+ * - 组织管理
  */
 
 import type { ModuleDescriptor } from "@/framework/module/types";
@@ -26,7 +26,7 @@ export type {
   User,
   Role,
   Permission,
-  Department,
+  Organization,
   LoginRequest,
   LoginResponse,
   UserCreate,
@@ -36,9 +36,9 @@ export type {
   RoleUpdate,
   RolePaginatedQuery,
   PermissionPaginatedQuery,
-  DepartmentCreate,
-  DepartmentUpdate,
-  DepartmentQuery,
+  OrganizationCreate,
+  OrganizationUpdate,
+  OrganizationQuery,
   LoginHistoryPaginatedQuery,
 } from "./types";
 
@@ -78,12 +78,12 @@ export {
   getPermission,
 } from "./api";
 
-// 导出部门管理 API
+// 导出组织管理 API
 export {
-  getDepartments,
-  getDepartmentTree,
-  getDepartment,
-  createDepartment,
-  updateDepartment,
-  deleteDepartment,
+  getOrganizations,
+  getOrganizationTree,
+  getOrganization,
+  createOrganization,
+  updateOrganization,
+  deleteOrganization,
 } from "./api";

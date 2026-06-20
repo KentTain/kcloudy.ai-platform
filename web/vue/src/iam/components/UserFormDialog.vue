@@ -31,9 +31,9 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { toTypedSchema } from "@vee-validate/zod"
 import { useForm } from "vee-validate"
 import * as z from "zod"
-import type { User, Department, RoleOption } from "@/iam/types"
+import type { User, Organization, RoleOption } from "@/iam/types"
 import type { TreeSelectNode } from "@/framework/types/tree"
-import { getDepartmentTree } from "@/iam/api/department"
+import { getOrganizationTree } from "@/iam/api/organization"
 import { getRoleOptions } from "@/iam/api/user"
 
 interface Props {
@@ -59,7 +59,7 @@ export interface UserSubmitData {
   nickname?: string
   email?: string
   phone?: string
-  department_id?: string
+  organization_id?: string
   role_ids: string[]
 }
 
@@ -77,7 +77,7 @@ const createSchema = toTypedSchema(
     nickname: z.string().max(100, "昵称不能超过 100 个字符").optional().or(z.literal("")),
     email: z.string().email("请输入有效的邮箱").optional().or(z.literal("")),
     phone: z.string().max(20, "手机号格式不正确").optional().or(z.literal("")),
-    department_id: z.string().optional().or(z.literal("")),
+    organization_id: z.string().optional().or(z.literal("")),
   })
 )
 
@@ -86,7 +86,7 @@ const editSchema = toTypedSchema(
     nickname: z.string().max(100, "昵称不能超过 100 个字符").optional().or(z.literal("")),
     email: z.string().email("请输入有效的邮箱").optional().or(z.literal("")),
     phone: z.string().max(20, "手机号格式不正确").optional().or(z.literal("")),
-    department_id: z.string().optional().or(z.literal("")),
+    organization_id: z.string().optional().or(z.literal("")),
   })
 )
 
@@ -95,30 +95,30 @@ const { handleSubmit, setValues, resetForm } = useForm({
 })
 
 const saving = ref(false)
-const departmentTree = ref<Department[]>([])
+const organizationTree = ref<Organization[]>([])
 const roleOptions = ref<RoleOption[]>([])
 const selectedRoleIds = ref<string[]>([])
 
 // 弹窗标题
 const dialogTitle = computed(() => (props.mode === "edit" ? "编辑用户" : "创建用户"))
 
-// 将 Department 转换为 TreeSelectNode
-function toTreeSelectNodes(departments: Department[]): TreeSelectNode[] {
-  return departments.map((dept) => ({
-    id: dept.id,
-    name: dept.name,
-    children: dept.children ? toTreeSelectNodes(dept.children) : undefined,
-    isLeaf: !dept.children || dept.children.length === 0,
+// 将 Organization 转换为 TreeSelectNode
+function toTreeSelectNodes(organizations: Organization[]): TreeSelectNode[] {
+  return organizations.map((org) => ({
+    id: org.id,
+    name: org.name,
+    children: org.children ? toTreeSelectNodes(org.children) : undefined,
+    isLeaf: !org.children || org.children.length === 0,
   }))
 }
 
-const treeSelectData = computed(() => toTreeSelectNodes(departmentTree.value))
+const treeSelectData = computed(() => toTreeSelectNodes(organizationTree.value))
 
-// 加载部门树和角色选项
+// 加载组织树和角色选项
 async function loadOptions() {
   try {
-    const [deptRes, roleRes] = await Promise.all([getDepartmentTree(), getRoleOptions()])
-    departmentTree.value = deptRes.data || []
+    const [orgRes, roleRes] = await Promise.all([getOrganizationTree(), getRoleOptions()])
+    organizationTree.value = orgRes.data || []
     roleOptions.value = roleRes.data || []
   } catch (error) {
     console.error("加载选项失败:", error)
@@ -145,7 +145,7 @@ function initForm() {
       nickname: props.user.nickname || "",
       email: props.user.email || "",
       phone: props.user.phone || "",
-      department_id: props.user.dept_id || "",
+      organization_id: props.user.dept_id || "",
     })
     selectedRoleIds.value = props.user.role_ids || []
   } else {
@@ -155,7 +155,7 @@ function initForm() {
       nickname: "",
       email: "",
       phone: "",
-      department_id: "",
+      organization_id: "",
     })
   }
 }
@@ -180,7 +180,7 @@ const onSubmit = handleSubmit(async (values) => {
       nickname: values.nickname || undefined,
       email: values.email || undefined,
       phone: values.phone || undefined,
-      department_id: values.department_id || undefined,
+      organization_id: values.organization_id || undefined,
       role_ids: selectedRoleIds.value,
     }
     emit("submit", data)
@@ -256,16 +256,16 @@ const onSubmit = handleSubmit(async (values) => {
           </FormItem>
         </FormField>
 
-        <!-- 所属部门 -->
-        <FormField v-slot="{ componentField }" name="department_id">
+        <!-- 所属组织 -->
+        <FormField v-slot="{ componentField }" name="organization_id">
           <FormItem>
-            <FormLabel>所属部门</FormLabel>
+            <FormLabel>所属组织</FormLabel>
             <FormControl>
               <TreeSelect
                 v-bind="componentField"
                 :data="treeSelectData"
                 :searchable="true"
-                placeholder="请选择所属部门"
+                placeholder="请选择所属组织"
                 :clearable="true"
               />
             </FormControl>

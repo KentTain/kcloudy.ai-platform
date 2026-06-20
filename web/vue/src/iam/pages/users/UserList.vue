@@ -4,7 +4,7 @@
  *
  * 布局：
  * - 顶部统计卡片（人员总数、启用账号数、当前部门人数、多角色成员数）
- * - 左侧 300px 部门树筛选
+ * - 左侧 300px 组织树筛选
  * - 右侧 DataTable 人员列表 + 多条件筛选 + 行内操作
  */
 
@@ -41,7 +41,7 @@ import {
 } from "@/components/ui/select"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { confirmAction, notifySuccess, notifyError, getErrorMessage } from "@/framework/utils/feedback"
-import type { User, UserStats, Department, RoleOption } from "@/iam/types"
+import type { User, UserStats, Organization, RoleOption } from "@/iam/types"
 import {
   getUsers,
   getUserStats,
@@ -54,7 +54,7 @@ import {
   resetUserPassword,
   assignUserRoles,
 } from "@/iam/api/user"
-import { getDepartmentTree } from "@/iam/api/department"
+import { getOrganizationTree } from "@/iam/api/organization"
 import UserFormDialog, { type UserSubmitData } from "@/iam/components/UserFormDialog.vue"
 
 // ========== 状态 ==========
@@ -62,8 +62,8 @@ import UserFormDialog, { type UserSubmitData } from "@/iam/components/UserFormDi
 // 统计
 const stats = ref<UserStats>({ total: 0, enabled: 0, disabled: 0, multi_role: 0 })
 
-// 部门树
-const departmentTree = ref<Department[]>([])
+// 组织树
+const organizationTree = ref<Organization[]>([])
 
 // 角色选项
 const roleOptions = ref<RoleOption[]>([])
@@ -142,13 +142,13 @@ function getStatusLabel(status: string): string {
   return "停用"
 }
 
-/** 加载部门树 */
-async function loadDepartmentTree() {
+/** 加载组织树 */
+async function loadOrganizationTree() {
   try {
-    const res = await getDepartmentTree()
-    departmentTree.value = res.data || []
+    const res = await getOrganizationTree()
+    organizationTree.value = res.data || []
   } catch (error) {
-    console.error("加载部门树失败:", error)
+    console.error("加载组织树失败:", error)
   }
 }
 
@@ -299,23 +299,23 @@ const dataTable = useDataTable<User>({
   },
 })
 
-/** 选择部门筛选 */
-function selectDepartment(deptId: string | undefined) {
-  filters.value.dept_id = deptId || ""
+/** 选择组织筛选 */
+function selectOrganization(orgId: string | undefined) {
+  filters.value.dept_id = orgId || ""
 
-  // 查找部门名称
-  if (deptId) {
-    const findDept = (depts: Department[]): Department | undefined => {
-      for (const d of depts) {
-        if (d.id === deptId) return d
+  // 查找组织名称
+  if (orgId) {
+    const findOrg = (orgs: Organization[]): Organization | undefined => {
+      for (const d of orgs) {
+        if (d.id === orgId) return d
         if (d.children) {
-          const found = findDept(d.children)
+          const found = findOrg(d.children)
           if (found) return found
         }
       }
     }
-    const dept = findDept(departmentTree.value)
-    selectedDeptName.value = dept?.name || ""
+    const org = findOrg(organizationTree.value)
+    selectedDeptName.value = org?.name || ""
   } else {
     selectedDeptName.value = ""
   }
@@ -431,14 +431,14 @@ async function handleDelete(user: User) {
 
 // 初始化
 onMounted(() => {
-  loadDepartmentTree()
+  loadOrganizationTree()
   loadRoleOptions()
   loadStats()
 })
 </script>
 
 <template>
-  <AppPage title="人员管理" variant="workbench" description="管理系统用户，查看人员统计，按部门筛选">
+  <AppPage title="人员管理" variant="workbench" description="管理系统用户，查看人员统计，按组织筛选">
     <!-- 操作按钮 -->
     <template #actions>
       <Button @click="handleCreate">
@@ -466,7 +466,7 @@ onMounted(() => {
     </div>
 
     <div class="flex gap-4 flex-1 min-h-0">
-      <!-- 左侧：部门树筛选 -->
+      <!-- 左侧：组织树筛选 -->
       <div class="w-[300px] shrink-0 flex flex-col border rounded-lg overflow-hidden">
         <div class="p-3 border-b bg-muted/30 flex items-center justify-between">
           <span class="text-sm font-medium">组织筛选</span>
@@ -475,36 +475,36 @@ onMounted(() => {
             variant="ghost"
             size="sm"
             class="h-6 px-2 text-xs"
-            @click="selectDepartment(undefined)"
+            @click="selectOrganization(undefined)"
           >
             查看全部
           </Button>
         </div>
 
         <ScrollArea class="flex-1">
-          <div v-if="departmentTree.length === 0" class="p-4 text-center text-muted-foreground text-sm">
+          <div v-if="organizationTree.length === 0" class="p-4 text-center text-muted-foreground text-sm">
             暂无组织数据
           </div>
 
           <div v-else class="py-1">
-            <template v-for="dept in departmentTree" :key="dept.id">
+            <template v-for="org in organizationTree" :key="org.id">
               <button
                 class="flex items-center w-full px-3 py-2 text-sm hover:bg-accent transition-colors text-left"
-                :class="{ 'bg-accent': filters.dept_id === dept.id }"
-                @click="selectDepartment(dept.id)"
+                :class="{ 'bg-accent': filters.dept_id === org.id }"
+                @click="selectOrganization(org.id)"
               >
                 <Building2 class="h-4 w-4 mr-2 shrink-0 text-blue-500" />
-                <span class="truncate">{{ dept.name }}</span>
-                <Badge v-if="dept.total_member_count" variant="secondary" class="ml-auto shrink-0 text-xs">
-                  {{ dept.total_member_count }}
+                <span class="truncate">{{ org.name }}</span>
+                <Badge v-if="org.total_member_count" variant="secondary" class="ml-auto shrink-0 text-xs">
+                  {{ org.total_member_count }}
                 </Badge>
               </button>
               <!-- 子节点 -->
-              <template v-if="dept.children" v-for="child in dept.children" :key="child.id">
+              <template v-if="org.children" v-for="child in org.children" :key="child.id">
                 <button
                   class="flex items-center w-full px-3 py-2 text-sm hover:bg-accent transition-colors text-left pl-8"
                   :class="{ 'bg-accent': filters.dept_id === child.id }"
-                  @click="selectDepartment(child.id)"
+                  @click="selectOrganization(child.id)"
                 >
                   <Building2 class="h-4 w-4 mr-2 shrink-0 text-blue-500" />
                   <span class="truncate">{{ child.name }}</span>

@@ -1,16 +1,16 @@
 <script setup lang="ts">
 /**
- * DepartmentTree 部门树组件
+ * OrganizationTree 组织树组件
  * 支持单选和多选模式
  */
 import { computed, ref, watch } from 'vue'
 import { CheckboxTree } from '@/components'
 import type { TreeSelectNode } from '@/framework/types/tree'
 import { useTreeData } from '@/framework/composables/useTreeData'
-import type { Department } from '@/iam/types'
+import type { Organization } from '@/iam/types'
 
 interface Props {
-  departments: Department[]
+  organizations: Organization[]
   modelValue: string | string[]
   mode?: 'single' | 'multiple'
   defaultExpandLevel?: number
@@ -25,12 +25,12 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<{
   'update:modelValue': [value: string | string[]]
-  'node-click': [node: { id: string; data?: Department }]
+  'node-click': [node: { id: string; data?: Organization }]
 }>()
 
-// 使用 useTreeData 转换部门数据
-const { treeData, selectedIds } = useTreeData<Department, TreeSelectNode>({
-  source: computed(() => props.departments),
+// 使用 useTreeData 转换组织数据
+const { treeData, selectedIds } = useTreeData<Organization, TreeSelectNode>({
+  source: computed(() => props.organizations),
   modelValue: () => {
     if (props.mode === 'single') {
       return typeof props.modelValue === 'string' && props.modelValue ? [props.modelValue] : []
@@ -40,15 +40,15 @@ const { treeData, selectedIds } = useTreeData<Department, TreeSelectNode>({
   mode: props.mode,
 })
 
-// 扁平化部门列表用于查找
-function flattenDepartments(depts: Department[]): Department[] {
-  return depts.flatMap(d => [d, ...flattenDepartments(d.children || [])])
+// 扁平化组织列表用于查找
+function flattenOrganizations(depts: Organization[]): Organization[] {
+  return depts.flatMap(d => [d, ...flattenOrganizations(d.children || [])])
 }
 
-// 根据 ID 查找部门
-function findDeptById(id: string): Department | undefined {
-  const flatDepts = flattenDepartments(props.departments)
-  return flatDepts.find(d => d.id === id)
+// 根据 ID 查找组织
+function findOrgById(id: string): Organization | undefined {
+  const flatOrgs = flattenOrganizations(props.organizations)
+  return flatOrgs.find(d => d.id === id)
 }
 
 // 处理节点选择变化
@@ -56,8 +56,8 @@ const handleNodeSelect = (value: (string | number)[]) => {
   if (props.mode === 'single') {
     const selected = value.length > 0 ? String(value[value.length - 1]) : ''
     emit('update:modelValue', selected)
-    const dept = findDeptById(selected)
-    emit('node-click', { id: selected, data: dept })
+    const org = findOrgById(selected)
+    emit('node-click', { id: selected, data: org })
   } else {
     emit('update:modelValue', value as string[])
   }
@@ -71,7 +71,7 @@ const handleNodeSelect = (value: (string | number)[]) => {
     :disabled="disabled"
     :default-expand-level="defaultExpandLevel"
     searchable
-    placeholder="搜索部门名称"
+    placeholder="搜索组织名称"
     @update:model-value="handleNodeSelect"
   />
 </template>

@@ -1,8 +1,8 @@
 <script setup lang="ts">
 /**
- * CreateDepartmentDialog — 部门创建/编辑弹窗
+ * CreateOrganizationDialog — 组织创建/编辑弹窗
  *
- * 支持新增一级部门、新增子部门、新增同级部门、编辑部门。
+ * 支持新增一级组织、新增子组织、新增同级组织、编辑组织。
  * 使用 vee-validate + zod 表单验证。
  */
 
@@ -29,24 +29,24 @@ import {
 import { toTypedSchema } from "@vee-validate/zod"
 import { useForm } from "vee-validate"
 import * as z from "zod"
-import type { Department } from "@/iam/types"
+import type { Organization } from "@/iam/types"
 import type { TreeSelectNode } from "@/framework/types/tree"
 
 interface Props {
   open: boolean
   mode: "create-root" | "create-child" | "create-sibling" | "edit"
-  parentDepartment?: Department | null
-  currentDepartment?: Department | null
-  /** 组织树数据（用于 TreeSelect 选择上级部门） */
-  departmentTree?: Department[]
+  parentOrganization?: Organization | null
+  currentOrganization?: Organization | null
+  /** 组织树数据（用于 TreeSelect 选择上级组织） */
+  organizationTree?: Organization[]
 }
 
 const props = withDefaults(defineProps<Props>(), {
   open: false,
   mode: "create-root",
-  parentDepartment: null,
-  currentDepartment: null,
-  departmentTree: () => [],
+  parentOrganization: null,
+  currentOrganization: null,
+  organizationTree: () => [],
 })
 
 const emit = defineEmits<{
@@ -66,8 +66,8 @@ export interface SubmitData {
 // 表单验证 schema
 const formSchema = toTypedSchema(
   z.object({
-    name: z.string().min(1, "请输入部门名称").max(100, "部门名称不能超过 100 个字符"),
-    code: z.string().max(50, "部门编码不能超过 50 个字符").optional().or(z.literal("")),
+    name: z.string().min(1, "请输入组织名称").max(100, "组织名称不能超过 100 个字符"),
+    code: z.string().max(50, "组织编码不能超过 50 个字符").optional().or(z.literal("")),
     sort_order: z.coerce.number().int().min(0, "排序号不能为负数").optional().default(0),
     parent_id: z.string().optional().or(z.literal("")),
     leader_id: z.string().optional().or(z.literal("")),
@@ -97,17 +97,17 @@ const dialogTitle = computed(() => {
   }
 })
 
-// 将 Department 转换为 TreeSelectNode
-function toTreeSelectNodes(departments: Department[]): TreeSelectNode[] {
-  return departments.map((dept) => ({
-    id: dept.id,
-    name: dept.name,
-    children: dept.children ? toTreeSelectNodes(dept.children) : undefined,
-    isLeaf: !dept.children || dept.children.length === 0,
+// 将 Organization 转换为 TreeSelectNode
+function toTreeSelectNodes(organizations: Organization[]): TreeSelectNode[] {
+  return organizations.map((org) => ({
+    id: org.id,
+    name: org.name,
+    children: org.children ? toTreeSelectNodes(org.children) : undefined,
+    isLeaf: !org.children || org.children.length === 0,
   }))
 }
 
-const treeSelectData = computed(() => toTreeSelectNodes(props.departmentTree))
+const treeSelectData = computed(() => toTreeSelectNodes(props.organizationTree))
 
 // 初始化表单数据
 function initForm() {
@@ -120,16 +120,16 @@ function initForm() {
     case "create-root":
       break
     case "create-child":
-      parentId = props.currentDepartment?.id || ""
+      parentId = props.currentOrganization?.id || ""
       break
     case "create-sibling":
-      parentId = props.currentDepartment?.parent_id || ""
+      parentId = props.currentOrganization?.parent_id || ""
       break
     case "edit":
-      formName = props.currentDepartment?.name || ""
-      formCode = props.currentDepartment?.code || ""
-      formSortOrder = props.currentDepartment?.sort_order ?? 0
-      parentId = props.currentDepartment?.parent_id || ""
+      formName = props.currentOrganization?.name || ""
+      formCode = props.currentOrganization?.code || ""
+      formSortOrder = props.currentOrganization?.sort_order ?? 0
+      parentId = props.currentOrganization?.parent_id || ""
       break
   }
 
@@ -184,16 +184,16 @@ const onSubmit = handleSubmit(async (values) => {
       </DialogHeader>
 
       <form @submit="onSubmit" class="flex flex-col gap-4">
-        <!-- 上级部门 -->
+        <!-- 上级组织 -->
         <FormField v-slot="{ componentField }" name="parent_id">
           <FormItem>
-            <FormLabel>上级部门</FormLabel>
+            <FormLabel>上级组织</FormLabel>
             <FormControl>
               <TreeSelect
                 v-bind="componentField"
                 :data="treeSelectData"
                 :searchable="true"
-                placeholder="请选择上级部门（留空为一级组织）"
+                placeholder="请选择上级组织（留空为一级组织）"
                 :clearable="true"
               />
             </FormControl>
