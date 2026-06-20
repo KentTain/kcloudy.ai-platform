@@ -87,6 +87,9 @@ class RoleService:
         if not role:
             raise ValueError("角色不存在")
 
+        if role.is_system:
+            raise ValueError("系统内置角色禁止修改")
+
         if name is not None:
             role.name = name
         if description is not None:
@@ -109,7 +112,7 @@ class RoleService:
             return False
 
         if role.is_system:
-            raise ValueError("系统内置角色不可删除")
+            raise ValueError("系统内置角色禁止修改")
 
         await session.delete(role)
         await session.flush()
@@ -172,6 +175,9 @@ class RoleService:
         role = result.scalar_one_or_none()
         if not role:
             raise ValueError("角色不存在")
+
+        if role.is_system:
+            raise ValueError("系统内置角色禁止修改")
 
         # 使用角色的 tenant_id（全局角色则 tenant_id 为 None）
         actual_tenant_id = role.tenant_id
@@ -480,6 +486,9 @@ class RoleMemberService:
         role = result.scalar_one_or_none()
         if not role:
             raise ValueError("角色不存在")
+
+        if role.is_system:
+            raise ValueError("系统内置角色禁止修改")
 
         # 获取菜单关联的所有权限 ID
         stmt = (
