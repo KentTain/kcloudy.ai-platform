@@ -4,7 +4,8 @@
 定义用户菜单 API 的响应格式。
 """
 
-from pydantic import BaseModel, Field
+from framework.schemas import BaseModel
+from pydantic import Field
 
 
 class UserMenuTreeResponse(BaseModel):

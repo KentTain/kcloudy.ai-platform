@@ -2,7 +2,8 @@
 登录相关 Pydantic Schemas
 """
 
-from pydantic import BaseModel, Field
+from framework.schemas import BaseModel
+from pydantic import Field
 
 
 class LoginRequest(BaseModel):
