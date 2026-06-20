@@ -2,9 +2,8 @@
 菜单相关 Pydantic Schemas
 """
 
-from pydantic import BaseModel, Field
-
-from framework.schemas.tree import TreeNodeTreeVo
+from framework.schemas import BaseModel, TreeNodeTreeVo
+from pydantic import Field
 
 
 class MenuTreeNode(TreeNodeTreeVo):

@@ -4,9 +4,8 @@
 
 from datetime import datetime
 
-from pydantic import BaseModel, Field
-
-from framework.schemas.base import BasePaginatedQuery, BaseQuery
+from framework.schemas import BaseModel, BasePaginatedQuery, BaseQuery
+from pydantic import Field
 
 
 class PermissionQuery(BaseQuery):
