@@ -15,8 +15,8 @@ pytestmark = pytest.mark.integration
 
 
 @pytest_asyncio.fixture
-async def redis_queue(integration_settings):
-    """Redis Stream 队列实例"""
+async def redis_queue(integration_settings, redis_client):
+    """Redis Stream 队列实例（依赖 redis_client 确保 RedisUtil 已初始化）"""
     config = {
         "mode": integration_settings.redis.mode,
         "single": {

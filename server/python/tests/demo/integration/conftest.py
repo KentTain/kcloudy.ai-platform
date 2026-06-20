@@ -5,6 +5,7 @@ Demo 集成测试配置
 """
 
 import os
+import sys
 import uuid
 from pathlib import Path
 
@@ -15,13 +16,14 @@ import pytest_asyncio
 os.environ["PYTHON_SERVICE_ENV"] = "local"
 os.environ["TZ"] = "Asia/Shanghai"
 
-
 # =============================================================================
-# Event Loop
+# Windows 事件循环策略修复
 # =============================================================================
-# 不再手动定义 event_loop，使用 pytest-asyncio 的自动管理
-# pytest.ini 中配置了 asyncio_default_fixture_loop_scope = function
-# 对于 session 作用域的异步 fixtures，使用 loop_scope 参数
+if sys.platform == "win32":
+    if hasattr(__import__('asyncio'), 'WindowsSelectorEventLoopPolicy'):
+        __import__('asyncio').set_event_loop_policy(
+            __import__('asyncio').WindowsSelectorEventLoopPolicy()
+        )
 
 
 # =============================================================================
@@ -30,16 +32,9 @@ os.environ["TZ"] = "Asia/Shanghai"
 
 @pytest.fixture(scope="session")
 def integration_settings():
-    """
-    加载集成测试配置
-
-    使用 server/config/application-local.yml
-    """
+    """加载集成测试配置"""
     from framework.configs import init_settings
 
-    # conftest.py 在 server/python/tests/demo/integration/
-    # 配置在 server/config/
-    # 路径: conftest.py -> integration -> demo -> tests -> python -> server
     config_dir = Path(__file__).resolve().parent.parent.parent.parent.parent / "config"
     settings = init_settings(config_dir)
 
@@ -47,44 +42,59 @@ def integration_settings():
 
 
 # =============================================================================
-# 服务可用性检测
+# 服务可用性检测（同步检测）
 # =============================================================================
 
-@pytest_asyncio.fixture(scope="session", loop_scope="session")
-async def redis_available(integration_settings):
-    """检测 Redis 服务是否可用"""
-    from framework.cache.redis_util import RedisUtil
-
+@pytest.fixture(scope="session")
+def redis_available(integration_settings):
+    """检测 Redis 服务是否可用（同步检测）"""
+    import socket
     try:
-        await RedisUtil.init(integration_settings.redis)
-        result = await RedisUtil.health_check()
-        await RedisUtil.close()
-        return result
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(2)
+        result = sock.connect_ex((
+            integration_settings.redis.single.host,
+            integration_settings.redis.single.port
+        ))
+        sock.close()
+        return result == 0
     except Exception:
         return False
 
 
 # =============================================================================
-# Redis Fixtures
+# Redis Fixtures（function 级别）
 # =============================================================================
 
-@pytest_asyncio.fixture(scope="session", loop_scope="session")
+@pytest_asyncio.fixture
 async def redis_client(integration_settings, redis_available):
     """
-    Redis 客户端 fixture（session 作用域）
+    Redis 客户端 fixture（function 级别）
 
-    自动初始化和清理连接
+    每个测试获取独立的 Redis 连接，避免事件循环冲突。
     """
     if not redis_available:
         pytest.skip("Redis 服务不可用")
 
     from framework.cache.redis_util import RedisUtil
 
+    # 关闭现有连接（如果有）
+    if RedisUtil.is_initialized():
+        try:
+            await RedisUtil.close()
+        except Exception:
+            pass
+
+    # 初始化新连接
     await RedisUtil.init(integration_settings.redis)
 
     yield RedisUtil
 
-    await RedisUtil.close()
+    # 测试结束后关闭连接
+    try:
+        await RedisUtil.close()
+    except Exception:
+        pass
 
 
 @pytest.fixture

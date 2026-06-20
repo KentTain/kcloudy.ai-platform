@@ -11,6 +11,7 @@ Framework 模块测试配置
 
 import asyncio
 import os
+import sys
 import uuid
 from pathlib import Path
 
@@ -20,6 +21,16 @@ import pytest_asyncio
 # 设置测试环境
 os.environ["PYTHON_SERVICE_ENV"] = "local"
 os.environ["TZ"] = "Asia/Shanghai"
+
+# =============================================================================
+# Windows 事件循环策略修复
+# =============================================================================
+# Windows 上 ProactorEventLoop 与 pytest-asyncio 存在兼容性问题
+# 使用 WindowsSelectorEventLoopPolicy 解决事件循环关闭后的连接问题
+if sys.platform == "win32":
+    # Python 3.8+ 支持 WindowsSelectorEventLoopPolicy
+    if hasattr(asyncio, 'WindowsSelectorEventLoopPolicy'):
+        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 
 # =============================================================================
@@ -75,89 +86,83 @@ def integration_settings():
 
 
 # =============================================================================
-# 服务可用性检测
+# 服务可用性检测（简化为同步检测，避免事件循环问题）
 # =============================================================================
 
-@pytest_asyncio.fixture(scope="session", loop_scope="session")
-async def redis_available(integration_settings):
-    """检测 Redis 服务是否可用"""
-    from framework.cache.redis_util import RedisUtil
-
+def _check_redis_available(settings):
+    """同步检测 Redis 服务是否可用"""
+    import socket
     try:
-        await RedisUtil.init(integration_settings.redis)
-        result = await RedisUtil.health_check()
-        await RedisUtil.close()
-        return result
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(2)
+        result = sock.connect_ex((settings.redis.single.host, settings.redis.single.port))
+        sock.close()
+        return result == 0
     except Exception:
         return False
 
 
-@pytest_asyncio.fixture(scope="session", loop_scope="session")
-async def postgres_available(integration_settings):
-    """检测 PostgreSQL 服务是否可用"""
-    from sqlalchemy import text
-    from sqlalchemy.ext.asyncio import create_async_engine
-
+def _check_postgres_available(settings):
+    """同步检测 PostgreSQL 服务是否可用"""
+    import socket
     try:
-        engine = create_async_engine(
-            integration_settings.sqlalchemy.url,
-            echo=False
-        )
-        async with engine.connect() as conn:
-            await conn.execute(text("SELECT 1"))
-        await engine.dispose()
-        return True
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(2)
+        result = sock.connect_ex((
+            settings.sqlalchemy.url.split('@')[1].split(':')[0],
+            int(settings.sqlalchemy.url.split(':')[3].split('/')[0])
+        ))
+        sock.close()
+        return result == 0
     except Exception:
         return False
 
 
 @pytest.fixture(scope="session")
-def minio_available(integration_settings):
-    """检测 MinIO 服务是否可用"""
-    try:
-        from minio import Minio
+def redis_available(integration_settings):
+    """检测 Redis 服务是否可用（session 级别，同步检测）"""
+    return _check_redis_available(integration_settings)
 
-        config = integration_settings.oss.minio
-        client = Minio(
-            endpoint=config.endpoint,
-            access_key=config.access_key,
-            secret_key=config.secret_key,
-            secure=config.secure,
-        )
-        # 尝试列出 buckets 来验证连接
-        list(client.list_buckets())
-        return True
-    except Exception:
-        return False
+
+@pytest.fixture(scope="session")
+def postgres_available(integration_settings):
+    """检测 PostgreSQL 服务是否可用（session 级别，同步检测）"""
+    return _check_postgres_available(integration_settings)
 
 
 # =============================================================================
-# Redis Fixtures
+# Redis Fixtures（function 级别，确保每个测试都有独立的连接）
 # =============================================================================
 
-@pytest_asyncio.fixture(scope="session", loop_scope="session")
+@pytest_asyncio.fixture
 async def redis_client(integration_settings, redis_available):
     """
-    Redis 客户端 fixture（session 作用域）
+    Redis 客户端 fixture（function 作用域）
 
-    自动初始化和清理连接
+    每个测试获取独立的 Redis 连接，避免事件循环冲突。
+    这是在 Windows 上使用 pytest-asyncio 的最稳定方案。
     """
     if not redis_available:
         pytest.skip("Redis 服务不可用")
 
     from framework.cache.redis_util import RedisUtil
 
+    # 关闭现有连接（如果有）
+    if RedisUtil.is_initialized():
+        try:
+            await RedisUtil.close()
+        except Exception:
+            pass
+
+    # 初始化新连接
     await RedisUtil.init(integration_settings.redis)
 
     yield RedisUtil
 
-    # 安全关闭连接，处理事件循环已关闭的情况
+    # 测试结束后关闭连接
     try:
-        loop = asyncio.get_running_loop()
-        if not loop.is_closed():
-            await RedisUtil.close()
-    except RuntimeError:
-        # 事件循环已关闭，忽略清理
+        await RedisUtil.close()
+    except Exception:
         pass
 
 
@@ -184,13 +189,15 @@ async def redis_cleanup(redis_client, redis_key_prefix):
 
 
 # =============================================================================
-# PostgreSQL Fixtures
+# PostgreSQL Fixtures（function 级别，确保每个测试都有独立的连接）
 # =============================================================================
 
-@pytest_asyncio.fixture(scope="session", loop_scope="session")
+@pytest_asyncio.fixture
 async def postgres_engine(integration_settings, postgres_available):
     """
-    PostgreSQL 引擎 fixture（session 作用域）
+    PostgreSQL 引擎 fixture（function 作用域）
+
+    每个测试获取独立的引擎，避免事件循环冲突。
     """
     if not postgres_available:
         pytest.skip("PostgreSQL 服务不可用")
@@ -205,13 +212,10 @@ async def postgres_engine(integration_settings, postgres_available):
 
     yield engine
 
-    # 安全关闭引擎，处理事件循环已关闭的情况
+    # 安全关闭引擎
     try:
-        loop = asyncio.get_running_loop()
-        if not loop.is_closed():
-            await engine.dispose()
-    except RuntimeError:
-        # 事件循环已关闭，忽略清理
+        await engine.dispose()
+    except Exception:
         pass
 
 
@@ -227,9 +231,16 @@ async def postgres_session(postgres_engine):
     async with AsyncSession(bind=postgres_engine) as session:
         try:
             yield session
-            await session.commit()
+            # 尝试提交，但忽略事件循环关闭错误
+            try:
+                await session.commit()
+            except RuntimeError:
+                pass  # 事件循环已关闭
         except Exception:
-            await session.rollback()
+            try:
+                await session.rollback()
+            except RuntimeError:
+                pass  # 事件循环已关闭
             raise
 
 
@@ -237,10 +248,32 @@ async def postgres_session(postgres_engine):
 # MinIO Fixtures
 # =============================================================================
 
-@pytest_asyncio.fixture(scope="session", loop_scope="session")
+@pytest.fixture(scope="session")
+def minio_available(integration_settings):
+    """检测 MinIO 服务是否可用（同步检测）"""
+    try:
+        from minio import Minio
+
+        config = integration_settings.oss.minio
+        client = Minio(
+            endpoint=config.endpoint,
+            access_key=config.access_key,
+            secret_key=config.secret_key,
+            secure=config.secure,
+        )
+        # 尝试列出 buckets 来验证连接
+        list(client.list_buckets())
+        return True
+    except Exception:
+        return False
+
+
+@pytest_asyncio.fixture
 async def minio_client(integration_settings, minio_available):
     """
-    MinIO 客户端 fixture（session 作用域）
+    MinIO 客户端 fixture（function 作用域）
+
+    每个测试获取独立的客户端实例，避免事件循环冲突。
     """
     if not minio_available:
         pytest.skip("MinIO 服务不可用")

@@ -12,6 +12,17 @@ if str(src_path) not in sys.path:
 os.environ["PYTHON_SERVICE_ENV"] = "local"
 os.environ["TZ"] = "Asia/Shanghai"
 
+# =============================================================================
+# Windows 事件循环策略修复
+# =============================================================================
+# Windows 上 ProactorEventLoop 与 pytest-asyncio 存在兼容性问题
+# 使用 WindowsSelectorEventLoopPolicy 解决事件循环关闭后的连接问题
+if sys.platform == "win32":
+    if hasattr(__import__('asyncio'), 'WindowsSelectorEventLoopPolicy'):
+        __import__('asyncio').set_event_loop_policy(
+            __import__('asyncio').WindowsSelectorEventLoopPolicy()
+        )
+
 
 import pytest_asyncio
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine

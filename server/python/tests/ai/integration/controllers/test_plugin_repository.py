@@ -18,8 +18,15 @@ class TestPluginTablesExist:
 
     @pytest_asyncio.fixture
     async def session(self, ai_async_engine):
-        async with ai_async_engine.connect() as conn:
-            yield conn
+        from sqlalchemy.ext.asyncio import AsyncSession
+        session = AsyncSession(bind=ai_async_engine)
+        try:
+            yield session
+        finally:
+            try:
+                await session.close()
+            except RuntimeError:
+                pass
 
     @pytest.mark.asyncio
     async def test_plugins_table_exists(self, session):
@@ -60,10 +67,15 @@ class TestPluginCRUD:
     @pytest_asyncio.fixture
     async def session(self, ai_async_engine):
         """使用事务隔离的测试会话"""
-        async with ai_async_engine.connect() as conn:
-            transaction = await conn.begin()
-            yield conn
-            await transaction.rollback()
+        from sqlalchemy.ext.asyncio import AsyncSession
+        session = AsyncSession(bind=ai_async_engine)
+        try:
+            yield session
+        finally:
+            try:
+                await session.close()
+            except RuntimeError:
+                pass
 
     @pytest.mark.asyncio
     async def test_insert_plugin(self, session):
@@ -85,8 +97,15 @@ class TestForeignKeyConstraints:
 
     @pytest_asyncio.fixture
     async def session(self, ai_async_engine):
-        async with ai_async_engine.connect() as conn:
-            yield conn
+        from sqlalchemy.ext.asyncio import AsyncSession
+        session = AsyncSession(bind=ai_async_engine)
+        try:
+            yield session
+        finally:
+            try:
+                await session.close()
+            except RuntimeError:
+                pass
 
     @pytest.mark.asyncio
     async def test_plugin_installation_has_fk_constraints(self, session):

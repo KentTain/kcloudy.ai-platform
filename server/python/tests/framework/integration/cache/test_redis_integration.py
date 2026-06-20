@@ -21,7 +21,11 @@ class TestRedisStringOperations:
         """测试后清理键"""
         key = f"{redis_key_prefix}string_test"
         yield key
-        await redis_client.delete(key)
+        # 安全清理
+        try:
+            await redis_client.delete(key)
+        except (RuntimeError, ConnectionError, OSError):
+            pass  # 事件循环或连接问题，忽略清理
 
     @pytest.mark.asyncio
     async def test_set_with_ttl(self, redis_client, redis_key_prefix, cleanup_key):

@@ -1,37 +1,30 @@
-﻿"""
+"""
 AI 模块集成测试配置
 
 提供 ai 集成测试所需的 fixtures。
 """
 
-import asyncio
 import os
+import sys
 import uuid
 from pathlib import Path
 
 import pytest
 import pytest_asyncio
-from sqlalchemy.ext.asyncio import create_async_engine
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 
 # 设置测试环境
 os.environ["PYTHON_SERVICE_ENV"] = "local"
 os.environ["TZ"] = "Asia/Shanghai"
 
-
 # =============================================================================
-# Event Loop (Session Scope)
+# Windows 事件循环策略修复
 # =============================================================================
-
-# 注意：session 作用域的异步 fixtures 需要手动定义 event_loop
-
-@pytest.fixture(scope="session")
-def event_loop():
-    """创建 session 作用域的事件循环"""
-    import asyncio
-    policy = asyncio.get_event_loop_policy()
-    loop = policy.new_event_loop()
-    yield loop
-    loop.close()
+if sys.platform == "win32":
+    if hasattr(__import__('asyncio'), 'WindowsSelectorEventLoopPolicy'):
+        __import__('asyncio').set_event_loop_policy(
+            __import__('asyncio').WindowsSelectorEventLoopPolicy()
+        )
 
 
 # =============================================================================
@@ -43,9 +36,6 @@ def integration_settings():
     """加载集成测试配置"""
     from framework.configs import init_settings
 
-    # conftest.py 在 server/python/tests/ai/integration/
-    # 配置在 server/config/
-    # 路径: conftest.py -> integration -> ai -> tests -> python -> server
     config_dir = Path(__file__).resolve().parent.parent.parent.parent.parent / "config"
     settings = init_settings(config_dir)
 
@@ -53,12 +43,12 @@ def integration_settings():
 
 
 # =============================================================================
-# 数据库连接
+# 数据库连接（function 级别）
 # =============================================================================
 
-@pytest_asyncio.fixture(scope="session")
+@pytest_asyncio.fixture
 async def ai_async_engine(integration_settings):
-    """AI 模块异步数据库引擎"""
+    """AI 模块异步数据库引擎（function 级别）"""
     engine = create_async_engine(
         url=integration_settings.sqlalchemy.url,
         echo=False,
@@ -66,7 +56,11 @@ async def ai_async_engine(integration_settings):
     )
 
     yield engine
-    await engine.dispose()
+
+    try:
+        await engine.dispose()
+    except Exception:
+        pass
 
 
 # =============================================================================
