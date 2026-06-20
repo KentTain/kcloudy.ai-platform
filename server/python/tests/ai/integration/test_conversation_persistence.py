@@ -1,6 +1,7 @@
 """会话与消息模型集成测试 — 多租户隔离和 CRUD"""
 
 import os
+import sys
 import uuid
 
 import pytest
@@ -8,6 +9,13 @@ import pytest_asyncio
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
 os.environ["PYTHON_SERVICE_ENV"] = "local"
+
+# Windows 事件循环策略修复
+if sys.platform == "win32":
+    if hasattr(__import__('asyncio'), 'WindowsSelectorEventLoopPolicy'):
+        __import__('asyncio').set_event_loop_policy(
+            __import__('asyncio').WindowsSelectorEventLoopPolicy()
+        )
 
 from ai.models.conversation import Conversation
 from ai.models.enums import (
@@ -19,7 +27,7 @@ from ai.models.enums import (
 from ai.models.message import Message
 
 
-@pytest_asyncio.fixture(scope="module")
+@pytest_asyncio.fixture
 async def db_engine():
     from pathlib import Path
 
@@ -36,16 +44,24 @@ async def db_engine():
         pool_pre_ping=True,
     )
     yield engine
-    await engine.dispose()
+    try:
+        await engine.dispose()
+    except Exception:
+        pass
 
 
 @pytest_asyncio.fixture
 async def db_session(db_engine):
-    """每个测试独立的数据库会话，测试后回滚"""
+    """每个测试独立的数据库会话"""
     session_factory = async_sessionmaker(db_engine, expire_on_commit=False)
-    async with session_factory() as session, session.begin():
+    session = session_factory()
+    try:
         yield session
-        await session.rollback()
+    finally:
+        try:
+            await session.close()
+        except RuntimeError:
+            pass
 
 
 @pytest.fixture
