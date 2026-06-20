@@ -7,7 +7,8 @@ from __future__ import annotations
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
+from framework.schemas import BaseModel
+from pydantic import EmailStr, Field, field_validator
 
 from framework.schemas.base import BasePaginatedQuery, BaseQuery
 
@@ -161,8 +162,6 @@ class UserTenantResponse(BaseModel):
 
 class UserResponse(BaseModel):
     """用户视图对象"""
-
-    model_config = ConfigDict(from_attributes=True)
 
     id: str
     tenant_id: str

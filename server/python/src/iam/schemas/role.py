@@ -4,7 +4,8 @@
 
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, Field
+from framework.schemas import BaseModel
+from pydantic import Field
 
 from framework.schemas.base import BasePaginatedQuery, BaseQuery
 from iam.schemas.permission import PermissionResponse
@@ -46,8 +47,6 @@ class RolePaginatedQuery(RoleQuery, BasePaginatedQuery):
 class RoleResponse(BaseModel):
     """角色视图对象"""
 
-    model_config = ConfigDict(from_attributes=True)
-
     id: str
     tenant_id: str | None
     code: str
@@ -68,8 +67,6 @@ class RolePaginatedListResponse(BaseModel):
 
 class RoleWithPermissionsResponse(BaseModel):
     """角色及其权限视图对象"""
-
-    model_config = ConfigDict(from_attributes=True)
 
     id: str
     tenant_id: str | None
