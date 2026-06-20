@@ -180,6 +180,7 @@ def upgrade() -> None:
     op.create_index("ix_user_organizations_tenant_id", "user_organizations", ["tenant_id"], schema=MODULE_SCHEMA)
     op.create_index("ix_user_organizations_user_id", "user_organizations", ["user_id"], schema=MODULE_SCHEMA)
     op.create_index("ix_user_organizations_organization_id", "user_organizations", ["organization_id"], schema=MODULE_SCHEMA)
+    op.create_unique_constraint("uq_user_organizations", "user_organizations", ["tenant_id", "user_id", "organization_id"], schema=MODULE_SCHEMA)
 
     # 创建 user_tenants 表
     op.create_table(

@@ -103,7 +103,8 @@ class OrganizationService:
             UserOrganization.organization_id == organization_id
         )
         result = await session.execute(stmt)
-        if not result and result.scalar() > 0:
+        count = result.scalar() or 0
+        if count > 0:
             raise ValueError("组织下存在用户，无法删除")
 
         count = await Organization.delete_node(session, organization_id)
@@ -259,14 +260,16 @@ class OrganizationService:
         tenant_id = org.tenant_id
         added = 0
 
+        # 批量查询已存在的关联记录，避免 N+1 查询
+        stmt = select(UserOrganization.user_id).where(
+            UserOrganization.organization_id == organization_id,
+            UserOrganization.user_id.in_(user_ids),
+        )
+        result = await session.execute(stmt)
+        existing = {row[0] for row in result.fetchall()}
+
         for user_id in user_ids:
-            # 检查是否已在组织中
-            stmt = select(UserOrganization).where(
-                UserOrganization.organization_id == organization_id,
-                UserOrganization.user_id == user_id,
-            )
-            result = await session.execute(stmt)
-            if result.scalar_one_or_none():
+            if user_id in existing:
                 continue  # 跳过已存在的
 
             uo = UserOrganization(

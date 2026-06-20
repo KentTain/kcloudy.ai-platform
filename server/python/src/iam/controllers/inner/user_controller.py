@@ -42,7 +42,7 @@ class OrganizationInfoInnerResponse(BaseModel):
     name: str = Field(..., description="组织名称")
     parent_id: str | None = Field(None, description="父组织ID")
     tree_level: int = Field(..., description="树层级")
-    tree_path: str = Field(..., description="树路径")
+    parent_ids: str = Field(..., description="父ID路径")
 
 
 class UserOrganizationResponse(BaseModel):
@@ -57,7 +57,7 @@ class OrganizationTreeInnerResponse(BaseModel):
     name: str = Field(..., description="组织名称")
     parent_id: str | None = Field(None, description="父组织ID")
     tree_level: int = Field(..., description="树层级")
-    tree_path: str = Field(..., description="树路径")
+    parent_ids: str = Field(..., description="父ID路径")
     children: list["OrganizationTreeInnerResponse"] = Field(default_factory=list, description="子组织")
 
 
@@ -207,7 +207,7 @@ async def get_user_organizations(
             name=d.name,
             parent_id=d.parent_id,
             tree_level=d.tree_level,
-            tree_path=d.tree_path,
+            parent_ids=d.parent_ids,
         )
         for d in organizations if d
     ]
