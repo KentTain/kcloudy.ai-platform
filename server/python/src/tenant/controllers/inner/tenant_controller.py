@@ -349,13 +349,13 @@ async def get_tenants_batch_full(
     THEN 返回多个租户的完整信息列表（含资源配置）
     """
     tenants = await TenantService.get_tenants_batch(session, data.tenant_ids)
-    simple_tenants = await asyncio.gather(
-        *[
-            TenantService.build_simple_tenant(session, t)
-            for t in tenants
-            if t is not None
-        ]
-    )
+
+    # 顺序构建 SimpleTenant，避免 SQLAlchemy Session 并发问题
+    simple_tenants = []
+    for t in tenants:
+        if t is not None:
+            st = await TenantService.build_simple_tenant(session, t)
+            simple_tenants.append(st)
 
     return Success(
         data=[build_tenant_full_info(st).model_dump() for st in simple_tenants]

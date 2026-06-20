@@ -54,14 +54,12 @@ async def build_tenant_vo(session: AsyncSession, tenant: Tenant) -> TenantRespon
         StorageConfigService,
     )
 
-    # 使用 asyncio.gather 并行查询 5 个资源配置
-    db_ref, storage_ref, cache_ref, queue_ref, pubsub_ref = await asyncio.gather(
-        _get_resource_ref(session, tenant.db_config_id, DatabaseConfigService),
-        _get_resource_ref(session, tenant.storage_config_id, StorageConfigService),
-        _get_resource_ref(session, tenant.cache_config_id, CacheConfigService),
-        _get_resource_ref(session, tenant.queue_config_id, QueueConfigService),
-        _get_resource_ref(session, tenant.pubsub_config_id, PubSubConfigService),
-    )
+    # 顺序查询 5 个资源配置，避免 SQLAlchemy Session 并发问题
+    db_ref = await _get_resource_ref(session, tenant.db_config_id, DatabaseConfigService)
+    storage_ref = await _get_resource_ref(session, tenant.storage_config_id, StorageConfigService)
+    cache_ref = await _get_resource_ref(session, tenant.cache_config_id, CacheConfigService)
+    queue_ref = await _get_resource_ref(session, tenant.queue_config_id, QueueConfigService)
+    pubsub_ref = await _get_resource_ref(session, tenant.pubsub_config_id, PubSubConfigService)
 
     return TenantResponse.from_tenant(
         tenant=tenant,
@@ -141,21 +139,23 @@ async def list_tenants(
     WHEN 管理员请求 GET /tenant/admin/v1/tenants?keyword=acme
     THEN 返回名称或编码包含 "acme" 的租户列表
     """
-    # 并行查询租户列表和统计数据
-    result, stats = await asyncio.gather(
-        TenantService.list_tenants(
-            session,
-            page=page,
-            page_size=page_size,
-            keyword=keyword,
-            status=status,
-        ),
-        TenantService.get_tenant_stats(session),
+    # 顺序查询，避免 SQLAlchemy Session 并发问题
+    result = await TenantService.list_tenants(
+        session,
+        page=page,
+        page_size=page_size,
+        keyword=keyword,
+        status=status,
     )
     tenants, total = result
 
-    # 并行构建 TenantResponse
-    tenant_vos = await asyncio.gather(*[build_tenant_vo(session, t) for t in tenants])
+    stats = await TenantService.get_tenant_stats(session)
+
+    # 顺序构建 TenantResponse，避免 Session 并发问题
+    tenant_vos = []
+    for t in tenants:
+        vo = await build_tenant_vo(session, t)
+        tenant_vos.append(vo)
 
     return SuccessExtra(
         data=tenant_vos,
@@ -398,14 +398,12 @@ async def get_tenant_resources(
         StorageConfigService,
     )
 
-    # 使用 asyncio.gather 并行查询 5 个资源配置
-    db_ref, storage_ref, cache_ref, queue_ref, pubsub_ref = await asyncio.gather(
-        _get_resource_ref(session, tenant.db_config_id, DatabaseConfigService),
-        _get_resource_ref(session, tenant.storage_config_id, StorageConfigService),
-        _get_resource_ref(session, tenant.cache_config_id, CacheConfigService),
-        _get_resource_ref(session, tenant.queue_config_id, QueueConfigService),
-        _get_resource_ref(session, tenant.pubsub_config_id, PubSubConfigService),
-    )
+    # 顺序查询 5 个资源配置，避免 SQLAlchemy Session 并发问题
+    db_ref = await _get_resource_ref(session, tenant.db_config_id, DatabaseConfigService)
+    storage_ref = await _get_resource_ref(session, tenant.storage_config_id, StorageConfigService)
+    cache_ref = await _get_resource_ref(session, tenant.cache_config_id, CacheConfigService)
+    queue_ref = await _get_resource_ref(session, tenant.queue_config_id, QueueConfigService)
+    pubsub_ref = await _get_resource_ref(session, tenant.pubsub_config_id, PubSubConfigService)
 
     return Success(
         data=ResourceBindingResponse(
@@ -482,14 +480,12 @@ async def update_tenant_resources(
     if not tenant:
         raise HTTPException(status_code=404, detail="租户不存在")
 
-    # 使用 asyncio.gather 并行查询 5 个资源配置
-    db_ref, storage_ref, cache_ref, queue_ref, pubsub_ref = await asyncio.gather(
-        _get_resource_ref(session, tenant.db_config_id, DatabaseConfigService),
-        _get_resource_ref(session, tenant.storage_config_id, StorageConfigService),
-        _get_resource_ref(session, tenant.cache_config_id, CacheConfigService),
-        _get_resource_ref(session, tenant.queue_config_id, QueueConfigService),
-        _get_resource_ref(session, tenant.pubsub_config_id, PubSubConfigService),
-    )
+    # 顺序查询 5 个资源配置，避免 SQLAlchemy Session 并发问题
+    db_ref = await _get_resource_ref(session, tenant.db_config_id, DatabaseConfigService)
+    storage_ref = await _get_resource_ref(session, tenant.storage_config_id, StorageConfigService)
+    cache_ref = await _get_resource_ref(session, tenant.cache_config_id, CacheConfigService)
+    queue_ref = await _get_resource_ref(session, tenant.queue_config_id, QueueConfigService)
+    pubsub_ref = await _get_resource_ref(session, tenant.pubsub_config_id, PubSubConfigService)
 
     return Success(
         data=ResourceBindingResponse(

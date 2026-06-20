@@ -116,28 +116,6 @@ async def get_current_user(user_id: str):
     # ... 手动组装 30+ 行代码
 ```
 
-### 聚合方法实现
-
-Service 聚合方法使用 `asyncio.gather` 并行查询：
-
-```python
-async def get_user_detail(self, user_id: str) -> UserDetailResponse | None:
-    user = await self.get_by_id(user_id)
-    if not user:
-        return None
-
-    # 并行查询独立数据源
-    roles_task = user_roles_service.get_user_roles(user_id)
-    permissions_task = permission_check_service.get_user_permissions(user_id)
-    tenants_task = self._get_user_tenants_with_detail(user_id)
-
-    roles, permissions, tenants = await asyncio.gather(
-        roles_task, permissions_task, tenants_task
-    )
-
-    return UserDetailResponse.from_user(user, [r.code for r in roles], permissions, tenants)
-```
-
 ### 跨模块调用
 
 | 场景 | 方式 | 示例 |

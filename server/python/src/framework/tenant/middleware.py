@@ -74,6 +74,8 @@ class TenantMiddleware(BaseHTTPMiddleware):
         """处理请求"""
         # 检查是否跳过租户验证
         if self._should_skip(request):
+            # 跳过的路径需要确保上下文是干净的
+            TenantContext.clear()
             return await call_next(request)
 
         try:
