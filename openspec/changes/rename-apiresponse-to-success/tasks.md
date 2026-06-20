@@ -33,6 +33,6 @@
 
 ## 5. 验证
 
-- [ ] 5.1 前端 TypeScript 编译通过，无类型错误
-- [ ] 5.2 Python 后端测试通过
-- [ ] 5.3 检查无遗漏的 `ApiResponse` 引用
+- [x] 5.1 前端 TypeScript 编译通过，无类型错误
+- [x] 5.2 Python 后端测试通过
+- [x] 5.3 检查无遗漏的 `ApiResponse` 引用
