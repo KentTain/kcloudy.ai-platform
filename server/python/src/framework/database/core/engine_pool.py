@@ -187,9 +187,6 @@ class DatabaseEnginePool:
         Yields:
             AsyncSession: 数据库会话
         """
-        # 清理待释放的引擎
-        await self._cleanup_pending_dispose()
-
         session_factory = self.get_session_factory(tenant_id, config)
         async with session_factory() as session:
             try:
