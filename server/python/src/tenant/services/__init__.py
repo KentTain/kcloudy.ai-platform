@@ -4,6 +4,7 @@ Tenant 模块服务层
 
 from .cache_config_service import CacheConfigService, cache_config_service
 from .database_config_service import DatabaseConfigService, database_config_service
+from .module_menu_permission_service import ModuleMenuPermissionService
 from .module_menu_service import ModuleMenuService
 from .module_permission_service import ModulePermissionService
 from .module_role_service import ModuleRoleService
@@ -34,6 +35,7 @@ __all__ = [
     # 模块定义层服务
     "ModuleService",
     "ModuleMenuService",
+    "ModuleMenuPermissionService",
     "ModulePermissionService",
     "ModuleRoleService",
     # 租户模块分配服务

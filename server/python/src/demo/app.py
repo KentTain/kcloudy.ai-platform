@@ -49,11 +49,11 @@ async def lifespan(app: FastAPI):
 
     # 注册 TenantProvider
     try:
-        from iam.services.tenant_provider_impl import iam_tenant_provider
+        from tenant.services.tenant_provider_impl import tenant_provider_impl
 
-        register_tenant_provider(iam_tenant_provider)
+        register_tenant_provider(tenant_provider_impl)
     except ImportError:
-        _logger.warning("IAM TenantProvider 不可用，跳过注册")
+        _logger.warning("TenantProvider 不可用，跳过注册")
 
     # 启动任务调度器
     try:

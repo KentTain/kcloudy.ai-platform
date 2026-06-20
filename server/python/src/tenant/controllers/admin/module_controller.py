@@ -15,6 +15,7 @@ from tenant.schemas.admin.module import (
     ModuleCreate,
     ModuleMenuCreate,
     ModuleMenuListResponse,
+    ModuleMenuPermissionUpdateRequest,
     ModuleMenuTreeResponse,
     ModuleMenuUpdate,
     ModulePermissionCreate,
@@ -28,6 +29,7 @@ from tenant.schemas.admin.module import (
     ModuleUpdate,
 )
 from tenant.services import (
+    ModuleMenuPermissionService,
     ModuleMenuService,
     ModulePermissionService,
     ModuleRoleService,
@@ -766,3 +768,68 @@ async def update_role_permissions(
         raise HTTPException(status_code=400, detail=str(e))
 
     return Success(data=build_role_vo(role, permissions).model_dump())
+
+
+# =============================================================================
+# 模块菜单权限 API
+# =============================================================================
+
+
+@router.get("/modules/{module_id}/menus/{menu_id}/permissions")
+async def list_menu_permissions(
+    module_id: str,
+    menu_id: str,
+    admin: dict = Depends(get_current_admin),
+    session: AsyncSession = Depends(get_db_session),
+) -> ORJSONResponse:
+    """
+    获取菜单关联的权限列表
+
+    场景：查询菜单权限
+    WHEN 管理员请求 GET /admin/v1/modules/{id}/menus/{menuId}/permissions
+    THEN 返回菜单关联的权限列表
+    """
+    # 检查菜单是否存在且属于该模块
+    menu = await ModuleMenuService.get_by_id(session, menu_id)
+    if not menu:
+        raise HTTPException(status_code=404, detail="菜单不存在")
+    if menu.module_id != module_id:
+        raise HTTPException(status_code=400, detail="菜单不属于该模块")
+
+    permissions = await ModuleMenuPermissionService.get_menu_permissions(session, menu_id)
+
+    return Success(data=[build_permission_vo(p) for p in permissions])
+
+
+@router.put("/modules/{module_id}/menus/{menu_id}/permissions")
+async def update_menu_permissions(
+    module_id: str,
+    menu_id: str,
+    data: ModuleMenuPermissionUpdateRequest,
+    admin: dict = Depends(get_current_admin),
+    session: AsyncSession = Depends(get_db_session),
+) -> ORJSONResponse:
+    """
+    更新菜单权限列表（整体替换）
+
+    场景：更新菜单权限
+    WHEN 管理员请求 PUT /admin/v1/modules/{id}/menus/{menuId}/permissions 并提供权限 ID 列表
+    THEN 更新菜单权限并返回更新后的权限列表
+    """
+    # 检查菜单是否存在且属于该模块
+    menu = await ModuleMenuService.get_by_id(session, menu_id)
+    if not menu:
+        raise HTTPException(status_code=404, detail="菜单不存在")
+    if menu.module_id != module_id:
+        raise HTTPException(status_code=400, detail="菜单不属于该模块")
+
+    try:
+        permissions = await ModuleMenuPermissionService.update_menu_permissions(
+            session,
+            menu_id=menu_id,
+            permission_ids=data.permission_ids,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    return Success(data=[build_permission_vo(p) for p in permissions])

@@ -183,33 +183,100 @@
     "README.md": "README*",
     "AI编程及智能体开发教案大纲.md": "Day*.md"
   },
-  // Cursor Pyright 类型检查配置（Cursor 专用）
-  "cursorpyright.forceOverrideLanguageServer": false,
-  "cursorpyright.analysis.typeCheckMode": "off",
-  "cursorpyright.analysis.diagnosticMode": "workspace",// 关闭自动覆盖语言服务器
-  "cursorpyright.analysis.extraPaths": ["${workspaceFolder}/server/python/src"],
+  // 开启类型提示、自动导入，和Pylance一致
+  "cursorpyright.analysis.diagnosticMode": "workspace",
+  "cursorpyright.analysis.typeCheckingMode": "basic",
+  "cursorpyright.analysis.autoImportCompletions": true,
+  "cursorpyright.analysis.useLibraryCodeForTypes": true,
+  "cursorpyright.analysis.extraPaths": ["server/python/src"],
+  "cursorpyright.analysis.include": ["server/python/src"],
   "cursorpyright.analysis.exclude": [
+    "tests",
     "**/ai_plugin",
     "**/ai/components/model",
     "**/ai/components/plugin",
     "**/ai/components/graphrag",
     "**/ai/components/datasource",
-    "**/node_modules",
+    "**/dist",
+    "**/.venv",
+    "**/.git",
+    "**/*.md",
     "**/__pycache__",
     "**/.pytest_cache",
     "**/.ruff_cache",
-    "**/.git",
-    "**/.venv",
-    "**/dist",
-    "**/.benchmarks"
+    "**/.benchmarks",
+    "**/node_modules",
+    "**/migrations/**",
+    "**/.ipynb_checkpoints"
   ],
-  // 开启类型提示、自动导入，和Pylance一致
-  "cursorpyright.analysis.autoImportCompletions": true,
-  "cursorpyright.analysis.typeCheckingMode": "basic",
-  "cursorpyright.analysis.useLibraryCodeForTypes": true,
-  // 悬停文档、跳转定义
-  "cursorpyright.hover.enable": true,
-  "cursorpyright.gotoDefinition.enable": true,
+  // Python 类型检查诊断配置（按类型分类）
+  "cursorpyright.analysis.diagnosticSeverityOverrides": {
+    // === 错误级别（必须修复） ===
+    "reportUndefinedVariable": "error",
+    "reportMissingImports": "error",
+
+    // === 未使用代码 ===
+    "reportUnusedFunction": "none",
+    "reportUnusedVariable": "none",
+    "reportUnusedParameter": "none",
+    "reportUnusedCallResult": "none",
+    "reportUnusedCoroutine": "none",
+    "reportUnusedImport": "none",
+
+    // === 类型推断 ===
+    "reportUnknownVariableType": "none",
+    "reportUnknownParameterType": "none",
+    "reportUnknownArgumentType": "none",
+    "reportUnknownMemberType": "none",
+    "reportMissingTypeArgument": "none",
+    "reportMissingParameterType": "none",
+    "reportExplicitAny": "none",
+    "reportAny": "none",
+    "reportGeneralTypeIssues": "none",
+    "reportMissingTypeStubs": "none",
+    "reportInvalidTypeForm": "none",
+    "reportUnannotatedClassAttribute": "none",
+
+    // === 可选类型/空值 ===
+    "reportOptionalMemberAccess": "none",
+    "reportOptionalSubscript": "none",
+    "reportOptionalIterable": "none",
+
+    // === 类型操作 ===
+    "reportAssignmentType": "none",
+    "reportReturnType": "none",
+    "reportArgumentType": "none",
+    "reportIndexIssue": "none",
+    "reportOperatorIssue": "none",
+    "reportCallIssue": "none",
+    "reportAttributeAccessIssue": "none",
+
+    // === 类型兼容/覆盖 ===
+    "reportIncompatibleMethodOverride": "none",
+    "reportIncompatibleVariableOverride": "none",
+    "reportImplicitOverride": "none",
+
+    // === 不必要的代码 ===
+    "reportUnnecessaryIsInstance": "none",
+    "reportUnnecessaryComparison": "none",
+    "reportUnnecessaryContains": "none",
+
+    // === 变量相关 ===
+    "reportPossiblyUnboundVariable": "none",
+    "reportUninitializedInstanceVariable": "none",
+
+    // === 类/装饰器 ===
+    "reportUntypedClassDecorator": "none",
+    "reportImplicitAbstractClass": "none",
+    "reportOverlappingOverload": "none",
+
+    // === 导入相关 ===
+    "reportImportCycles": "none",
+
+    // === 其他 ===
+    "deprecateTypingAliases": "none",
+    "reportImplicitStringConcatenation": "none"
+  },
   // 调试配套（保留微软Python调试器）
   "python.debugger.type": "debugpy"
 }

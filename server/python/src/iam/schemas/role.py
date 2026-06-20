@@ -7,6 +7,7 @@ from datetime import datetime
 from pydantic import BaseModel, ConfigDict, Field
 
 from framework.schemas.base import BasePaginatedQuery, BaseQuery
+from iam.schemas.permission import PermissionResponse
 
 
 class RoleCreate(BaseModel):
@@ -76,7 +77,7 @@ class RoleWithPermissionsResponse(BaseModel):
     name: str
     description: str | None
     is_system: bool
-    permissions: list["PermissionVo"]
+    permissions: list[PermissionResponse]
     created_at: datetime
 
 

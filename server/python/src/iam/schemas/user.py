@@ -179,7 +179,9 @@ class UserResponse(BaseModel):
     created_at: datetime
     roles: list[str] = Field(default_factory=list, description="用户角色编码列表")
     permissions: list[str] = Field(default_factory=list, description="用户权限编码列表")
-    tenants: list[UserTenantResponse] = Field(default_factory=list, description="用户所属租户列表")
+    tenants: list[UserTenantResponse] = Field(
+        default_factory=list, description="用户所属租户列表"
+    )
 
 
 class UserDetailResponse(BaseModel):
@@ -204,12 +206,14 @@ class UserDetailResponse(BaseModel):
     created_at: datetime
     roles: list[str] = Field(default_factory=list, description="用户角色编码列表")
     permissions: list[str] = Field(default_factory=list, description="用户权限编码列表")
-    tenants: list[UserTenantResponse] = Field(default_factory=list, description="用户所属租户列表")
+    tenants: list[UserTenantResponse] = Field(
+        default_factory=list, description="用户所属租户列表"
+    )
 
     @classmethod
     def from_user(
         cls,
-        user: User,
+        user: UserResponse,
         role_codes: list[str],
         permissions: list[str],
         tenants: list[UserTenantResponse],
