@@ -4,42 +4,14 @@
 将自定义异常转换为统一的 API 响应格式。
 """
 
-from typing import Any
-
 from fastapi import Request
 from fastapi.exceptions import HTTPException
-from fastapi.responses import JSONResponse
-from pydantic import BaseModel
 
 from framework.common.exceptions import AppException
+from framework.schemas.base import Fail
 
 
-class ApiResponse(BaseModel):
-    """统一 API 响应格式"""
-
-    code: int = 0
-    msg: str = "success"
-    data: Any | None = None
-
-
-def error_response(
-    message: str = "error", code: int = 1, data: Any | None = None
-) -> dict:
-    """
-    创建错误响应
-
-    Args:
-        message: 错误消息
-        code: 错误代码
-        data: 附加数据
-
-    Returns:
-        dict: 响应字典
-    """
-    return ApiResponse(code=code, msg=message, data=data).model_dump()
-
-
-async def http_exception_handler(request: Request, exc: HTTPException) -> JSONResponse:
+async def http_exception_handler(request: Request, exc: HTTPException) -> Fail:
     """
     处理 HTTP 异常
 
@@ -48,15 +20,12 @@ async def http_exception_handler(request: Request, exc: HTTPException) -> JSONRe
         exc: HTTP 异常实例
 
     Returns:
-        JSONResponse: JSON 响应
+        Fail: 错误响应
     """
-    return JSONResponse(
-        status_code=exc.status_code,
-        content=error_response(message=str(exc.detail), code=exc.status_code),
-    )
+    return Fail(code=exc.status_code, msg=str(exc.detail))
 
 
-async def app_exception_handler(request: Request, exc: AppException) -> JSONResponse:
+async def app_exception_handler(request: Request, exc: AppException) -> Fail:
     """
     处理应用异常
 
@@ -65,15 +34,12 @@ async def app_exception_handler(request: Request, exc: AppException) -> JSONResp
         exc: 异常实例
 
     Returns:
-        JSONResponse: JSON 响应
+        Fail: 错误响应
     """
-    return JSONResponse(
-        status_code=exc.code,
-        content=error_response(message=exc.message, code=exc.code, data=exc.data),
-    )
+    return Fail(code=exc.code, msg=exc.message, data=exc.data)
 
 
-async def generic_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+async def generic_exception_handler(request: Request, exc: Exception) -> Fail:
     """
     处理未捕获的异常
 
@@ -82,16 +48,14 @@ async def generic_exception_handler(request: Request, exc: Exception) -> JSONRes
         exc: 异常实例
 
     Returns:
-        JSONResponse: JSON 响应
+        Fail: 错误响应
     """
     # 在生产环境中，不应该暴露详细错误信息
     import traceback
 
     traceback.print_exc()
 
-    return JSONResponse(
-        status_code=500, content=error_response(message="服务器内部错误", code=500)
-    )
+    return Fail(code=500, msg="服务器内部错误")
 
 
 def register_exception_handlers(app):
@@ -113,11 +77,8 @@ def register_exception_handlers(app):
 
     @app.exception_handler(RequestValidationError)
     async def handle_validation_error(request: Request, exc: RequestValidationError):
-        return JSONResponse(
-            status_code=422,
-            content=error_response(
-                message="请求参数验证失败", code=422, data=exc.errors()
-            ),
+        return Fail(
+            code=422, msg="请求参数验证失败", data=exc.errors()
         )
 
     @app.exception_handler(Exception)

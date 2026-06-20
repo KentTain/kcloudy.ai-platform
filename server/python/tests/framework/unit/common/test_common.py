@@ -17,7 +17,6 @@ from framework.common.exceptions import (
     ServiceUnavailableError,
     UnauthorizedError,
 )
-from framework.common.exception_handler import error_response
 
 
 class TestExceptions:
@@ -73,21 +72,6 @@ class TestExceptions:
         exc = ServiceUnavailableError()
         assert exc.code == 503
         assert exc.message == "服务暂时不可用"
-
-
-class TestResponses:
-    """响应函数测试"""
-
-    def test_error_response(self):
-        """
-        场景：错误响应
-        WHEN: 调用 error_response
-        THEN: 返回正确格式
-        """
-        result = error_response(message="操作失败", code=1001)
-        assert result["code"] == 1001
-        assert result["message"] == "操作失败"
-        assert result["data"] is None
 
 
 class TestContext:

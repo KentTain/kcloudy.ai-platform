@@ -10,8 +10,8 @@ from typing import TYPE_CHECKING
 
 from loguru import logger
 from starlette.middleware.base import BaseHTTPMiddleware
-from starlette.responses import JSONResponse
 
+from framework.schemas.base import Fail
 from framework.tenant.context import TenantContext
 from framework.tenant.exceptions import (
     TenantAccessDeniedError,
@@ -153,17 +153,10 @@ class TenantMiddleware(BaseHTTPMiddleware):
 
     def _error_response(
         self, error: TenantError, status_code: int | None = None
-    ) -> JSONResponse:
+    ) -> Fail:
         """生成错误响应"""
         status_code = status_code or self._get_error_status_code(error)
-        return JSONResponse(
-            status_code=status_code,
-            content={
-                "code": status_code,
-                "message": str(error),
-                "data": None,
-            },
-        )
+        return Fail(code=status_code, msg=str(error))
 
     def _get_error_status_code(self, error: TenantError) -> int:
         """获取错误状态码"""
