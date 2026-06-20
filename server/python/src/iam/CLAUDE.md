@@ -18,7 +18,7 @@ IAM ──▶ tenant（通过 inner 接口获取租户信息）
 | 目录 | 职责 |
 |------|------|
 | controllers/ | FastAPI 路由控制器（admin/console/inner 三层） |
-| services/ | 认证、用户、部门、角色、权限、OAuth 业务逻辑 |
+| services/ | 认证、用户、组织、角色、权限、OAuth 业务逻辑 |
 | models/ | IAM 数据库模型与枚举 |
 | schemas/ | 请求、响应、Token、登录等 Pydantic 模型 |
 | migrations/ | IAM 数据库迁移与种子数据 |
@@ -54,7 +54,7 @@ IAM 模块 API 路由遵循 `/{模块}/{类型}/v1/{功能}` 格式：
 |------|------|
 | 用户认证 | 登录、密码验证、JWT 令牌 |
 | 权限控制 | 基于角色的访问控制 |
-| 组织架构 | 部门、用户、用户租户关系管理 |
+| 组织架构 | 组织、用户、用户租户关系管理 |
 | OAuth 集成 | 第三方 OAuth 连接与用户同步 |
 
 ## 数据库模型
@@ -64,7 +64,7 @@ IAM 模块 API 路由遵循 `/{模块}/{类型}/v1/{功能}` 格式：
 | User | 用户实体 | iam.users |
 | Role | 角色 | iam.roles |
 | Permission | 权限 | iam.permissions |
-| Department | 部门 | iam.departments |
+| Organization | 组织 | iam.organizations |
 | UserRole | 用户-角色关联 | iam.user_roles |
 | UserTenant | 用户-租户关联 | iam.user_tenants |
 | RolePermission | 角色-权限关联 | iam.role_permissions |
@@ -114,7 +114,7 @@ ModuleMenuPermission.module_permission_id → Permission.ref_id
 
 - Controller 只处理路由、参数校验、鉴权依赖和响应封装
 - Service 负责事务边界、业务校验和跨模型协作
-- Department 模型继承 `TreeNodeMixin`，树字段由 Mixin 自动维护
+- Organization 模型继承 `TreeNodeMixin`，树字段由 Mixin 自动维护
 
 ## 测试
 
