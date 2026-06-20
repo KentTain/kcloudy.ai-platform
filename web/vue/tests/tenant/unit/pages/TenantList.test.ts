@@ -6,7 +6,7 @@ import { mount } from "@vue/test-utils";
 import { nextTick } from "vue";
 import { createPinia, setActivePinia } from "pinia";
 import TenantList from "@/tenant/pages/tenants/TenantList.vue";
-import type { Tenant, TenantListStats, TenantPaginatedListResponse } from "@/tenant/types";
+import type { Tenant, TenantListStats, TenantListResponse } from "@/tenant/types";
 
 // Mock vue-router
 const mockPush = vi.fn();
@@ -17,7 +17,7 @@ vi.mock("vue-router", () => ({
 }));
 
 // Mock getTenants API - 这是关键：组件使用 getTenants 而不是 tenantStore.fetchTenants
-const mockGetTenants = vi.fn<() => Promise<TenantPaginatedListResponse>>();
+const mockGetTenants = vi.fn<() => Promise<TenantListResponse>>();
 vi.mock("@/tenant/api/tenant", () => ({
   getTenants: (...args: unknown[]) => mockGetTenants(...args),
 }));
@@ -73,8 +73,10 @@ const mockStatsData: TenantListStats = {
 };
 
 // 默认响应
-const defaultResponse: TenantPaginatedListResponse = {
-  items: [],
+const defaultResponse: TenantListResponse = {
+  code: 0,
+  msg: "success",
+  data: [],
   total: 0,
   page: 1,
   page_size: 10,
@@ -164,7 +166,7 @@ describe("TenantList", () => {
     it("显示空状态", async () => {
       mockGetTenants.mockResolvedValue({
         ...defaultResponse,
-        items: [],
+        data: [],
         total: 0,
       });
 
@@ -184,7 +186,8 @@ describe("TenantList", () => {
 
     it("显示租户列表", async () => {
       mockGetTenants.mockResolvedValue({
-        items: mockTenantList,
+        ...defaultResponse,
+        data: mockTenantList,
         total: 2,
         page: 1,
         page_size: 10,
@@ -329,7 +332,8 @@ describe("TenantList", () => {
   describe("状态显示", () => {
     it("激活租户显示激活标签", async () => {
       mockGetTenants.mockResolvedValue({
-        items: [mockTenantList[0]], // status: 'active'
+        ...defaultResponse,
+        data: [mockTenantList[0]], // status: 'active'
         total: 1,
         page: 1,
         page_size: 10,
@@ -350,7 +354,8 @@ describe("TenantList", () => {
 
     it("停用租户显示停用标签", async () => {
       mockGetTenants.mockResolvedValue({
-        items: [mockTenantList[1]], // status: 'inactive'
+        ...defaultResponse,
+        data: [mockTenantList[1]], // status: 'inactive'
         total: 1,
         page: 1,
         page_size: 10,
@@ -377,7 +382,8 @@ describe("TenantList", () => {
         expired_at: "2025-12-31T00:00:00Z",
       };
       mockGetTenants.mockResolvedValue({
-        items: [tenantWithExpiry],
+        ...defaultResponse,
+        data: [tenantWithExpiry],
         total: 1,
         page: 1,
         page_size: 10,
@@ -402,7 +408,8 @@ describe("TenantList", () => {
         expired_at: undefined,
       };
       mockGetTenants.mockResolvedValue({
-        items: [tenantWithoutExpiry],
+        ...defaultResponse,
+        data: [tenantWithoutExpiry],
         total: 1,
         page: 1,
         page_size: 10,

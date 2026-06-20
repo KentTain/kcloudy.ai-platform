@@ -1,6 +1,6 @@
 import { get, post, put } from "@/framework/api/client";
 import { resetUserPassword } from "./user";
-import type { Success, PaginatedListResponse } from "@/framework/types";
+import type { Success, SuccessExtra } from "@/framework/types";
 import type {
   LoginHistory,
   LoginHistoryPaginatedQuery,
@@ -58,4 +58,4 @@ export const resetPassword = resetUserPassword;
  * 获取登录历史
  */
 export const getLoginHistory = (params?: LoginHistoryPaginatedQuery) =>
-  get<Success<PaginatedListResponse<LoginHistory>>>("/iam/console/v1/auth/login-history", { params });
+  get<SuccessExtra<LoginHistory[]>>("/iam/console/v1/auth/login-history", { params });

@@ -6,11 +6,10 @@
 import type {
   BaseQuery,
   BasePaginatedQuery,
-  PaginatedListResponse,
 } from "@/framework/types";
 
 // 重新导出统一类型
-export type { BaseQuery, BasePaginatedQuery, PaginatedListResponse };
+export type { BaseQuery, BasePaginatedQuery };
 
 // 用户类型
 export interface User {

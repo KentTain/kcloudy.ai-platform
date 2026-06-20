@@ -1,5 +1,5 @@
 import { del, get, post, put } from "@/framework/api/client";
-import type { Success, PaginatedListResponse } from "@/framework/types";
+import type { Success, SuccessExtra } from "@/framework/types";
 import type { User, Role, Department, RoleOption, UserStats, UserPaginatedQuery } from "@/iam/types";
 
 export interface UserCreate {
@@ -21,7 +21,7 @@ export interface UserUpdate {
  * 获取用户列表
  */
 export const getUsers = (params?: UserPaginatedQuery) =>
-  get<Success<PaginatedListResponse<User>>>("/iam/admin/v1/users", { params });
+  get<SuccessExtra<User[]>>("/iam/admin/v1/users", { params });
 
 /**
  * 获取用户详情

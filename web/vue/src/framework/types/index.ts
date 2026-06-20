@@ -25,7 +25,7 @@ export interface RouteMeta {
  *
  * 与后端 `framework.schemas.base.Success` 对齐
  */
-export interface Success<T = unknown> {
+export interface Success<T> {
   code: number;
   msg: string;
   data: T;
@@ -64,14 +64,6 @@ export interface BasePaginatedQuery extends BaseQuery {
   page_size?: number;
 }
 
-/**
- * 分页请求参数
- * @deprecated 使用 BasePaginatedQuery 替代
- */
-export interface PageParams {
-  page: number;
-  page_size: number;
-}
 
 /**
  * 分页列表响应
@@ -85,12 +77,6 @@ export interface PaginatedListResponse<T> {
   page: number;
   page_size: number;
 }
-
-/**
- * 分页响应数据
- * @deprecated 使用 PaginatedListResponse<T> 替代
- */
-export type PageResult<T> = PaginatedListResponse<T>;
 
 // 树节点类型
 export type { TreeNode, TreeNodeTree, TreeAction, TreeSelectNode } from './tree'

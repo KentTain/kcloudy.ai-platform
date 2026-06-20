@@ -29,7 +29,6 @@ export type {
   Department,
   LoginRequest,
   LoginResponse,
-  PaginatedListResponse,
   UserCreate,
   UserUpdate,
   UserPaginatedQuery,

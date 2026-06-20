@@ -1,5 +1,5 @@
 import { del, get, post, put } from "@/framework/api/client";
-import type { Success, PaginatedListResponse } from "@/framework/types";
+import type { Success, SuccessExtra } from "@/framework/types";
 import type { Permission, Role, RolePaginatedQuery } from "@/iam/types";
 
 export interface RoleCreate {
@@ -21,7 +21,7 @@ export interface AssignPermissionsParams {
  * 获取角色列表
  */
 export const getRoles = (params?: RolePaginatedQuery) =>
-  get<Success<PaginatedListResponse<Role>>>("/iam/admin/v1/roles", { params });
+  get<SuccessExtra<Role[]>>("/iam/admin/v1/roles", { params });
 
 /**
  * 获取角色详情（含权限）
