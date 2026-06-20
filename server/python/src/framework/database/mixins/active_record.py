@@ -7,7 +7,7 @@ ActiveRecord 混入
 import math
 from collections.abc import Sequence
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING, Any, Self, TypeVar
+from typing import TYPE_CHECKING, Any, Self
 
 from loguru import logger
 from sqlalchemy import and_, asc, desc, func, select, update
@@ -18,7 +18,6 @@ from framework.database.pagination import Pagination
 if TYPE_CHECKING:
     from sqlalchemy import Table
 
-T = TypeVar("T", bound="ActiveRecordMixin")
 _logger = logger.bind(name=__name__)
 
 
@@ -63,7 +62,7 @@ class ActiveRecordMixin:
 
     # ==================== 实例方法 ====================
 
-    async def save(self: T, session: AsyncSession) -> T:
+    async def save(self: Self, session: AsyncSession) -> Self:
         """
         保存实体到数据库
 
@@ -77,7 +76,7 @@ class ActiveRecordMixin:
         await session.flush()
         return self
 
-    async def delete(self: T, session: AsyncSession) -> None:
+    async def delete(self: Self, session: AsyncSession) -> None:
         """
         删除实体（支持软删除）
 
@@ -98,8 +97,8 @@ class ActiveRecordMixin:
             await session.flush()
 
     async def update(
-        self: T, session: AsyncSession, source: dict[str, Any] | Any | None = None
-    ) -> T:
+        self: Self, session: AsyncSession, source: dict[str, Any] | Any | None = None
+    ) -> Self:
         """
         更新实体属性
 
@@ -128,7 +127,7 @@ class ActiveRecordMixin:
         await self._publish_event("updated", self)
         return self
 
-    async def refresh(self: T, session: AsyncSession) -> T:
+    async def refresh(self: Self, session: AsyncSession) -> Self:
         """
         从数据库刷新对象
 
