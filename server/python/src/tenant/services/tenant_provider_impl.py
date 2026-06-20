@@ -90,12 +90,10 @@ class TenantProviderImpl(TenantProvider):
         async with get_task_session() as session:
             tenants = await TenantService.get_tenants_batch(session, tenant_ids)
 
-            # 顺序构建 SimpleTenant，避免 Session 并发问题
-            simple_tenants = []
-            for t in tenants:
-                if t is not None:
-                    simple_tenant = await TenantService.build_simple_tenant(session, t)
-                    simple_tenants.append(simple_tenant)
+            # 批量构建 SimpleTenant（避免 N+1 查询）
+            simple_tenants = await TenantService.build_simple_tenants_batch(
+                session, [t for t in tenants if t is not None]
+            )
             return simple_tenants
 
 

@@ -613,6 +613,113 @@ class TenantService:
         return [tenants_map.get(tid) for tid in tenant_ids if tid in tenants_map]
 
     @staticmethod
+    async def build_simple_tenants_batch(
+        session: AsyncSession, tenants: list[Tenant]
+    ) -> list[SimpleTenant]:
+        """
+        批量构建 SimpleTenant（优化版，避免 N+1 查询）
+
+        Args:
+            session: 数据库会话
+            tenants: 租户列表
+
+        Returns:
+            list[SimpleTenant]: 包含完整资源配置的租户信息列表
+        """
+        if not tenants:
+            return []
+
+        # 1. 收集所有 config_ids
+        db_config_ids = {t.db_config_id for t in tenants if t.db_config_id}
+        storage_config_ids = {t.storage_config_id for t in tenants if t.storage_config_id}
+        cache_config_ids = {t.cache_config_id for t in tenants if t.cache_config_id}
+        queue_config_ids = {t.queue_config_id for t in tenants if t.queue_config_id}
+        pubsub_config_ids = {t.pubsub_config_id for t in tenants if t.pubsub_config_id}
+
+        # 2. 批量查询所有配置（每个配置类型一次查询）
+        db_configs = {}
+        if db_config_ids:
+            stmt = select(DatabaseConfig).where(DatabaseConfig.id.in_(db_config_ids))
+            result = await session.execute(stmt)
+            for c in result.scalars().all():
+                db_configs[c.id] = TenantDatabaseConfig(
+                    type=DatabaseType(c.type),
+                    host=c.host,
+                    port=c.port,
+                    database=c.database,
+                    username=c.username,
+                    password=decrypt_password(c.password) if c.password else "",
+                )
+
+        storage_configs = {}
+        if storage_config_ids:
+            stmt = select(StorageConfig).where(StorageConfig.id.in_(storage_config_ids))
+            result = await session.execute(stmt)
+            for c in result.scalars().all():
+                storage_configs[c.id] = TenantStorageConfig(
+                    type=StorageType(c.type),
+                    endpoint=c.endpoint or "",
+                    access_key=c.access_key or "",
+                    secret_key=decrypt_password(c.secret_key) if c.secret_key else "",
+                    bucket=c.bucket,
+                )
+
+        cache_configs = {}
+        if cache_config_ids:
+            stmt = select(CacheConfig).where(CacheConfig.id.in_(cache_config_ids))
+            result = await session.execute(stmt)
+            for c in result.scalars().all():
+                cache_configs[c.id] = TenantCacheConfig(
+                    host=c.host,
+                    port=c.port,
+                    password=decrypt_password(c.password) if c.password else "",
+                    db=c.db,
+                    prefix=c.prefix or "",
+                )
+
+        queue_configs = {}
+        if queue_config_ids:
+            stmt = select(QueueConfig).where(QueueConfig.id.in_(queue_config_ids))
+            result = await session.execute(stmt)
+            for c in result.scalars().all():
+                queue_configs[c.id] = TenantQueueConfig(
+                    type=QueueType(c.type),
+                    host=c.host,
+                    port=c.port,
+                    username=c.username or "",
+                    password=decrypt_password(c.password) if c.password else "",
+                    vhost=c.vhost or "/",
+                )
+
+        pubsub_configs = {}
+        if pubsub_config_ids:
+            stmt = select(PubSubConfig).where(PubSubConfig.id.in_(pubsub_config_ids))
+            result = await session.execute(stmt)
+            for c in result.scalars().all():
+                pubsub_configs[c.id] = TenantPubSubConfig(
+                    type=PubSubType(c.type),
+                    host=c.host,
+                    port=c.port,
+                    username=c.username or "",
+                    password=decrypt_password(c.password) if c.password else "",
+                )
+
+        # 3. 组装 SimpleTenant
+        result = []
+        for t in tenants:
+            simple_tenant = SimpleTenant.from_model(
+                t,
+                database=db_configs.get(t.db_config_id),
+                storage=storage_configs.get(t.storage_config_id),
+                cache=cache_configs.get(t.cache_config_id),
+                queue=queue_configs.get(t.queue_config_id),
+                pubsub=pubsub_configs.get(t.pubsub_config_id),
+            )
+            result.append(simple_tenant)
+
+        return result
+
+    @staticmethod
     async def get_resource_bindings(
         session: AsyncSession, tenant_id: str
     ) -> Tenant | None:

@@ -350,12 +350,10 @@ async def get_tenants_batch_full(
     """
     tenants = await TenantService.get_tenants_batch(session, data.tenant_ids)
 
-    # 顺序构建 SimpleTenant，避免 SQLAlchemy Session 并发问题
-    simple_tenants = []
-    for t in tenants:
-        if t is not None:
-            st = await TenantService.build_simple_tenant(session, t)
-            simple_tenants.append(st)
+    # 批量构建 SimpleTenant（避免 N+1 查询）
+    simple_tenants = await TenantService.build_simple_tenants_batch(
+        session, [t for t in tenants if t is not None]
+    )
 
     return Success(
         data=[build_tenant_full_info(st).model_dump() for st in simple_tenants]

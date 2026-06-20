@@ -6,6 +6,7 @@ import asyncio
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import ORJSONResponse
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from framework.database.dependencies import get_db_session
@@ -69,6 +70,89 @@ async def build_tenant_vo(session: AsyncSession, tenant: Tenant) -> TenantRespon
         queue_config=queue_ref,
         pubsub_config=pubsub_ref,
     )
+
+
+async def build_tenant_vos_batch(
+    session: AsyncSession, tenants: list[Tenant]
+) -> list[TenantResponse]:
+    """
+    批量构建租户响应对象（优化版，避免 N+1 查询）
+
+    Args:
+        session: 数据库会话
+        tenants: 租户列表
+
+    Returns:
+        list[TenantResponse]: 租户响应列表
+    """
+    if not tenants:
+        return []
+
+    from tenant.models import (
+        CacheConfig,
+        DatabaseConfig,
+        PubSubConfig,
+        QueueConfig,
+        StorageConfig,
+    )
+
+    # 1. 收集所有 config_ids
+    db_config_ids = {t.db_config_id for t in tenants if t.db_config_id}
+    storage_config_ids = {t.storage_config_id for t in tenants if t.storage_config_id}
+    cache_config_ids = {t.cache_config_id for t in tenants if t.cache_config_id}
+    queue_config_ids = {t.queue_config_id for t in tenants if t.queue_config_id}
+    pubsub_config_ids = {t.pubsub_config_id for t in tenants if t.pubsub_config_id}
+
+    # 2. 批量查询所有配置
+    db_configs = {}
+    if db_config_ids:
+        stmt = select(DatabaseConfig).where(DatabaseConfig.id.in_(db_config_ids))
+        result = await session.execute(stmt)
+        for c in result.scalars().all():
+            db_configs[c.id] = ResourceConfigReferenceResponse.from_config(c)
+
+    storage_configs = {}
+    if storage_config_ids:
+        stmt = select(StorageConfig).where(StorageConfig.id.in_(storage_config_ids))
+        result = await session.execute(stmt)
+        for c in result.scalars().all():
+            storage_configs[c.id] = ResourceConfigReferenceResponse.from_config(c)
+
+    cache_configs = {}
+    if cache_config_ids:
+        stmt = select(CacheConfig).where(CacheConfig.id.in_(cache_config_ids))
+        result = await session.execute(stmt)
+        for c in result.scalars().all():
+            cache_configs[c.id] = ResourceConfigReferenceResponse.from_config(c)
+
+    queue_configs = {}
+    if queue_config_ids:
+        stmt = select(QueueConfig).where(QueueConfig.id.in_(queue_config_ids))
+        result = await session.execute(stmt)
+        for c in result.scalars().all():
+            queue_configs[c.id] = ResourceConfigReferenceResponse.from_config(c)
+
+    pubsub_configs = {}
+    if pubsub_config_ids:
+        stmt = select(PubSubConfig).where(PubSubConfig.id.in_(pubsub_config_ids))
+        result = await session.execute(stmt)
+        for c in result.scalars().all():
+            pubsub_configs[c.id] = ResourceConfigReferenceResponse.from_config(c)
+
+    # 3. 组装 TenantResponse
+    result = []
+    for t in tenants:
+        vo = TenantResponse.from_tenant(
+            tenant=t,
+            db_config=db_configs.get(t.db_config_id),
+            storage_config=storage_configs.get(t.storage_config_id),
+            cache_config=cache_configs.get(t.cache_config_id),
+            queue_config=queue_configs.get(t.queue_config_id),
+            pubsub_config=pubsub_configs.get(t.pubsub_config_id),
+        )
+        result.append(vo)
+
+    return result
 
 
 # ============== 认证 API ==============
@@ -151,11 +235,8 @@ async def list_tenants(
 
     stats = await TenantService.get_tenant_stats(session)
 
-    # 顺序构建 TenantResponse，避免 Session 并发问题
-    tenant_vos = []
-    for t in tenants:
-        vo = await build_tenant_vo(session, t)
-        tenant_vos.append(vo)
+    # 批量构建 TenantResponse（避免 N+1 查询）
+    tenant_vos = await build_tenant_vos_batch(session, tenants)
 
     return SuccessExtra(
         data=tenant_vos,
