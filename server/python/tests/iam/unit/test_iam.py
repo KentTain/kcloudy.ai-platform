@@ -36,13 +36,13 @@ class TestIAMImports:
 
     def test_import_admin_user_management_schemas(self):
         """测试管理员用户管理 Schema 导入"""
-        from iam.schemas.department import UserDepartmentRequest
+        from iam.schemas.organization import UserOrganizationRequest
         from iam.schemas.user import (
             AdminPasswordResetRequest,
             AdminPasswordResetResponse,
             AdminUserCreate,
             AdminUserUpdate,
-            UserDepartmentAssignRequest,
+            UserOrganizationAssignRequest,
             UserRoleAssignRequest,
             UserStatusUpdateRequest,
         )
@@ -51,10 +51,10 @@ class TestIAMImports:
         assert AdminUserUpdate(nickname="管理员").nickname == "管理员"
         assert UserStatusUpdateRequest(status="active").status == "active"
         assert UserRoleAssignRequest(role_ids=["role-1"]).role_ids == ["role-1"]
-        assert UserDepartmentAssignRequest(department_ids=["dept-1"]).department_ids == ["dept-1"]
+        assert UserOrganizationAssignRequest(organization_ids=["org-1"]).organization_ids == ["org-1"]
         assert AdminPasswordResetRequest(new_password=None).new_password is None
         assert AdminPasswordResetResponse(password="Tempabcd123").password == "Tempabcd123"
-        assert UserDepartmentRequest(user_id="user-1").user_id == "user-1"
+        assert UserOrganizationRequest(user_id="user-1").user_id == "user-1"
 
     def test_import_services(self):
         """测试服务导入"""
@@ -84,13 +84,13 @@ class TestIAMImports:
         assert ("PUT", "/users/{user_id}") in routes
         assert ("DELETE", "/users/{user_id}") in routes
 
-    def test_department_user_remove_route_registered(self):
-        """测试部门用户移除路由已注册"""
-        from iam.controllers.admin.department_controller import router
+    def test_organization_user_remove_route_registered(self):
+        """测试组织用户移除路由已注册"""
+        from iam.controllers.admin.organization_controller import router
 
         routes = {(next(iter(route.methods)), route.path) for route in router.routes}
 
-        assert ("DELETE", "/departments/{department_id}/users/{user_id}") in routes
+        assert ("DELETE", "/organizations/{organization_id}/users/{user_id}") in routes
 
 
 class TestPasswordStrength:

@@ -22,11 +22,11 @@ class UserInfo(BaseModel):
     tenant_id: str | None = Field(None, description="当前租户ID")
 
 
-class DepartmentInfo(BaseModel):
-    """部门信息"""
-    id: str = Field(..., description="部门ID")
-    name: str = Field(..., description="部门名称")
-    parent_id: str | None = Field(None, description="父部门ID")
+class OrganizationInfo(BaseModel):
+    """组织信息"""
+    id: str = Field(..., description="组织ID")
+    name: str = Field(..., description="组织名称")
+    parent_id: str | None = Field(None, description="父组织ID")
 
 
 class UserTenantInfo(BaseModel):
@@ -183,52 +183,52 @@ class IamClient:
                 for u in users if u
             ]
 
-    async def get_user_departments(
+    async def get_user_organizations(
         self, session: AsyncSession, user_id: str
-    ) -> list[DepartmentInfo]:
+    ) -> list[OrganizationInfo]:
         """
-        获取用户部门
+        获取用户组织
 
         Args:
             session: 数据库会话
             user_id: 用户 ID
 
         Returns:
-            list[DepartmentInfo]
+            list[OrganizationInfo]
         """
         if self._http_client:
             # 微服务模式
             data = await self._http_client.get(
-                f"/iam/inner/v1/users/{user_id}/departments",
+                f"/iam/inner/v1/users/{user_id}/organizations",
             )
-            if data and isinstance(data, dict) and "departments" in data:
-                return [DepartmentInfo.model_validate(d) for d in data["departments"]]
+            if data and isinstance(data, dict) and "organizations" in data:
+                return [OrganizationInfo.model_validate(o) for o in data["organizations"]]
             return []
         else:
             # 单体模式
             from sqlalchemy import select
 
-            from iam.models import Department, UserDepartment
+            from iam.models import Organization, UserOrganization
 
-            stmt = select(UserDepartment).where(UserDepartment.user_id == user_id)
+            stmt = select(UserOrganization).where(UserOrganization.user_id == user_id)
             result = await session.execute(stmt)
-            user_departments = result.scalars().all()
+            user_organizations = result.scalars().all()
 
-            department_ids = [ud.department_id for ud in user_departments]
-            if not department_ids:
+            organization_ids = [uo.organization_id for uo in user_organizations]
+            if not organization_ids:
                 return []
 
-            stmt = select(Department).where(Department.id.in_(department_ids))
+            stmt = select(Organization).where(Organization.id.in_(organization_ids))
             result = await session.execute(stmt)
-            departments = result.scalars().all()
+            organizations = result.scalars().all()
 
             return [
-                DepartmentInfo(
+                OrganizationInfo(
                     id=d.id,
                     name=d.name,
                     parent_id=d.parent_id,
                 )
-                for d in departments
+                for d in organizations
             ]
 
     async def get_user_tenants(

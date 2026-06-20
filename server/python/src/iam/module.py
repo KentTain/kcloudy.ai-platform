@@ -41,8 +41,8 @@ class IAMModule:
         格式: [(router, prefix, tags), ...]
         """
         # Admin 层
-        from iam.controllers.admin.department_controller import (
-            router as admin_department_router,
+        from iam.controllers.admin.organization_controller import (
+            router as admin_organization_router,
         )
         from iam.controllers.admin.menu_controller import router as admin_menu_router
         from iam.controllers.admin.permission_controller import (
@@ -67,8 +67,8 @@ class IAMModule:
         from iam.controllers.console.user_controller import (
             router as console_user_router,
         )
-        from iam.controllers.inner.department_controller import (
-            router as inner_department_router,
+        from iam.controllers.inner.organization_controller import (
+            router as inner_organization_router,
         )
         from iam.controllers.inner.tenant_menu_controller import (
             router as inner_tenant_menu_router,
@@ -88,7 +88,7 @@ class IAMModule:
             (admin_user_router, "/iam/admin/v1", ["Admin - User"]),
             (admin_role_router, "/iam/admin/v1", ["Admin - Role"]),
             (admin_permission_router, "/iam/admin/v1", ["Admin - Permission"]),
-            (admin_department_router, "/iam/admin/v1", ["Admin - Department"]),
+            (admin_organization_router, "/iam/admin/v1", ["Admin - Organization"]),
             (admin_menu_router, "/iam/admin/v1", ["Admin - Menu"]),
             (
                 admin_system_setting_router,
@@ -106,7 +106,7 @@ class IAMModule:
             ),
             # Inner 层路由
             (inner_user_router, "/iam/inner/v1", ["Inner - User"]),
-            (inner_department_router, "/iam/inner/v1", ["Inner - Department"]),
+            (inner_organization_router, "/iam/inner/v1", ["Inner - Organization"]),
             (inner_tenant_menu_router, "/iam/inner/v1", ["Inner - Tenant Menu"]),
             (
                 inner_tenant_permission_router,
@@ -188,9 +188,9 @@ class IAMModule:
                     sort_order=2,
                 ),
                 MenuDef(
-                    code="iam.departments",
-                    name="部门管理",
-                    path="/iam/departments",
+                    code="iam.organizations",
+                    name="组织管理",
+                    path="/iam/organizations",
                     icon="Building",
                     sort_order=3,
                 ),
@@ -248,23 +248,23 @@ class IAMModule:
                     resource="role",
                     action="delete",
                 ),
-                # 部门权限
+                # 组织权限
                 PermissionDef(
-                    code="iam:department:read",
-                    name="查看部门",
-                    resource="department",
+                    code="iam:organization:read",
+                    name="查看组织",
+                    resource="organization",
                     action="read",
                 ),
                 PermissionDef(
-                    code="iam:department:write",
-                    name="编辑部门",
-                    resource="department",
+                    code="iam:organization:write",
+                    name="编辑组织",
+                    resource="organization",
                     action="write",
                 ),
                 PermissionDef(
-                    code="iam:department:delete",
-                    name="删除部门",
-                    resource="department",
+                    code="iam:organization:delete",
+                    name="删除组织",
+                    resource="organization",
                     action="delete",
                 ),
                 # 菜单权限

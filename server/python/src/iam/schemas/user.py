@@ -118,10 +118,10 @@ class UserRoleAssignRequest(BaseModel):
     role_ids: list[str] = Field(default_factory=list)
 
 
-class UserDepartmentAssignRequest(BaseModel):
-    """用户部门分配请求"""
+class UserOrganizationAssignRequest(BaseModel):
+    """用户组织分配请求"""
 
-    department_ids: list[str] = Field(default_factory=list)
+    organization_ids: list[str] = Field(default_factory=list)
 
 
 class AdminPasswordResetRequest(BaseModel):

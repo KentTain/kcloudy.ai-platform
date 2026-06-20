@@ -12,19 +12,19 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from framework.database.dependencies import get_db_session
 from framework.common.response import ApiResponse
 from framework.tenant.context import get_tenant_id
-from iam.models import UserDepartment
+from iam.models import UserOrganization
 from iam.schemas.user import (
     AdminPasswordResetRequest,
     AdminPasswordResetResponse,
     AdminUserCreate,
     AdminUserUpdate,
-    UserDepartmentAssignRequest,
+    UserOrganizationAssignRequest,
     UserPaginatedQuery,
     UserResponse,
     UserRoleAssignRequest,
     UserStatusUpdateRequest,
 )
-from iam.services import department_service, user_service
+from iam.services import organization_service, user_service
 from iam.services.role_service import user_role_service as user_roles_service
 
 router = APIRouter()
@@ -292,43 +292,43 @@ async def assign_user_roles(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.get("/users/{user_id}/departments")
-async def get_user_departments(
+@router.get("/users/{user_id}/organizations")
+async def get_user_organizations(
     user_id: str,
     session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """
-    获取用户部门列表
+    获取用户组织列表
 
-    返回用户所属的部门。
+    返回用户所属的组织。
     """
-    departments = await user_service.get_user_departments(session, user_id)
-    return ApiResponse.success(data=departments)
+    organizations = await user_service.get_user_organizations(session, user_id)
+    return ApiResponse.success(data=organizations)
 
 
-@router.post("/users/{user_id}/departments")
-async def assign_user_departments(
+@router.post("/users/{user_id}/organizations")
+async def assign_user_organizations(
     user_id: str,
-    data: UserDepartmentAssignRequest,
+    data: UserOrganizationAssignRequest,
     session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """
-    分配用户部门
+    分配用户组织
 
-    为用户分配部门（覆盖式分配）。
+    为用户分配组织（覆盖式分配）。
     """
     try:
-        stmt = select(UserDepartment).where(UserDepartment.user_id == user_id)
+        stmt = select(UserOrganization).where(UserOrganization.user_id == user_id)
         result = await session.execute(stmt)
-        for ud in result.scalars().all():
-            await session.delete(ud)
+        for uo in result.scalars().all():
+            await session.delete(uo)
         await session.flush()
 
-        for dept_id in data.department_ids:
+        for org_id in data.organization_ids:
             try:
-                await department_service.add_user(
+                await organization_service.add_user(
                     session,
-                    department_id=dept_id,
+                    organization_id=org_id,
                     user_id=user_id,
                 )
             except ValueError:

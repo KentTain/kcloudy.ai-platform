@@ -3,7 +3,7 @@ IAM 服务模块
 """
 
 from iam.services.auth_service import AuthService, auth_service
-from iam.services.department_service import DepartmentService, department_service
+from iam.services.organization_service import OrganizationService, organization_service
 from iam.services.menu_service import MenuService, menu_service
 from iam.services.module_sync_service import ModuleSyncService, module_sync_service
 from iam.services.oauth_service import OAuthService, oauth_service
@@ -42,9 +42,9 @@ __all__ = [
     "permission_service",
     "PermissionCheckService",
     "permission_check_service",
-    # 部门管理
-    "DepartmentService",
-    "department_service",
+    # 组织管理
+    "OrganizationService",
+    "organization_service",
     # 菜单管理
     "MenuService",
     "menu_service",

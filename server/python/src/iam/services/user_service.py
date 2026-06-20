@@ -18,7 +18,7 @@ from framework.utils.crypto import (
     verify_password,
 )
 from framework.utils.session import delete_user_sessions
-from iam.models import User, UserDepartment, UserStatus, UserTenant
+from iam.models import User, UserOrganization, UserStatus, UserTenant
 from iam.schemas.user import UserDetailResponse, UserTenantResponse
 
 _logger = logger.bind(name=__name__)
@@ -336,7 +336,7 @@ class UserService:
         page_size: int = 20,
         keyword: str | None = None,
         status: str | None = None,
-        dept_id: str | None = None,
+        org_id: str | None = None,
         include_children: bool = False,
     ) -> tuple[list[User], int]:
         """
@@ -349,15 +349,15 @@ class UserService:
             page_size: 每页数量
             keyword: 搜索关键词
             status: 状态过滤
-            dept_id: 部门 ID 过滤
-            include_children: 是否包含子部门用户
+            org_id: 组织 ID 过滤
+            include_children: 是否包含子组织用户
 
         Returns:
             tuple[list[User], int]
         """
         from sqlalchemy import func
 
-        from iam.models import Department
+        from iam.models import Organization
 
         # 构建查询条件
         conditions = []
@@ -374,31 +374,31 @@ class UserService:
         if status:
             conditions.append(User.status == status)
 
-        # 部门筛选
-        if dept_id:
+        # 组织筛选
+        if org_id:
             if include_children:
-                # 获取部门及其所有子部门的 ID
-                dept = await session.get(Department, dept_id)
-                if dept:
-                    # 使用 parent_ids 前缀匹配所有子部门
-                    parent_ids_prefix = dept.descendant_parent_ids_prefix()
-                    dept_stmt = select(Department.id).where(
+                # 获取组织及其所有子组织的 ID
+                org = await session.get(Organization, org_id)
+                if org:
+                    # 使用 parent_ids 前缀匹配所有子组织
+                    parent_ids_prefix = org.descendant_parent_ids_prefix()
+                    org_stmt = select(Organization.id).where(
                         or_(
-                            Department.id == dept_id,
-                            Department.parent_ids.like(f"{parent_ids_prefix}%"),
+                            Organization.id == org_id,
+                            Organization.parent_ids.like(f"{parent_ids_prefix}%"),
                         )
                     )
-                    dept_result = await session.execute(dept_stmt)
-                    dept_ids = [row[0] for row in dept_result.all()]
+                    org_result = await session.execute(org_stmt)
+                    org_ids = [row[0] for row in org_result.all()]
                 else:
-                    dept_ids = [dept_id]
+                    org_ids = [org_id]
             else:
-                dept_ids = [dept_id]
+                org_ids = [org_id]
 
-            # 通过 UserDepartment 关联查询
+            # 通过 UserOrganization 关联查询
             user_id_stmt = (
-                select(UserDepartment.user_id)
-                .where(UserDepartment.department_id.in_(dept_ids))
+                select(UserOrganization.user_id)
+                .where(UserOrganization.organization_id.in_(org_ids))
                 .distinct()
             )
             user_id_result = await session.execute(user_id_stmt)
@@ -725,9 +725,9 @@ class UserService:
         return password
 
     @staticmethod
-    async def get_user_departments(session: AsyncSession, user_id: str) -> list[dict]:
+    async def get_user_organizations(session: AsyncSession, user_id: str) -> list[dict]:
         """
-        获取用户所属部门列表
+        获取用户所属组织列表
 
         Args:
             session: 数据库会话
@@ -736,28 +736,28 @@ class UserService:
         Returns:
             list[dict]
         """
-        from iam.models import Department
+        from iam.models import Organization
 
         stmt = (
-            select(Department, UserDepartment.is_leader)
-            .join(UserDepartment, Department.id == UserDepartment.department_id)
-            .where(UserDepartment.user_id == user_id)
-            .order_by(Department.sort_order, Department.created_at)
+            select(Organization, UserOrganization.is_leader)
+            .join(UserOrganization, Organization.id == UserOrganization.organization_id)
+            .where(UserOrganization.user_id == user_id)
+            .order_by(Organization.sort_order, Organization.created_at)
         )
         result = await session.execute(stmt)
 
-        departments = []
+        organizations = []
         for row in result:
-            dept, is_leader = row
-            departments.append(
+            org, is_leader = row
+            organizations.append(
                 {
-                    "id": dept.id,
-                    "name": dept.name,
-                    "code": dept.code,
+                    "id": org.id,
+                    "name": org.name,
+                    "code": org.code,
                     "is_leader": is_leader,
                 }
             )
-        return departments
+        return organizations
 
     @staticmethod
     async def get_user_tenant_ids(session: AsyncSession, user_id: str) -> list[str]:

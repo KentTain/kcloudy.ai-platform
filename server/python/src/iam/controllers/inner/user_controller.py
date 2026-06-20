@@ -12,8 +12,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from framework.database.dependencies import get_db_session
 from framework.common.response import ApiResponse
-from iam.models import User, UserDepartment, UserTenant
-from iam.services.department_service import DepartmentService
+from iam.models import User, UserOrganization, UserTenant
+from iam.services.organization_service import OrganizationService
 from iam.services.user_service import UserService
 
 router = APIRouter()
@@ -36,29 +36,29 @@ class BatchUsersRequest(BaseModel):
     user_ids: list[str] = Field(..., description="用户ID列表")
 
 
-class DepartmentInfoResponse(BaseModel):
-    """部门信息响应"""
-    id: str = Field(..., description="部门ID")
-    name: str = Field(..., description="部门名称")
-    parent_id: str | None = Field(None, description="父部门ID")
+class OrganizationInfoInnerResponse(BaseModel):
+    """组织信息响应"""
+    id: str = Field(..., description="组织ID")
+    name: str = Field(..., description="组织名称")
+    parent_id: str | None = Field(None, description="父组织ID")
     tree_level: int = Field(..., description="树层级")
     tree_path: str = Field(..., description="树路径")
 
 
-class UserDepartmentResponse(BaseModel):
-    """用户部门响应"""
+class UserOrganizationResponse(BaseModel):
+    """用户组织响应"""
     user_id: str = Field(..., description="用户ID")
-    departments: list[DepartmentInfoResponse] = Field(default_factory=list, description="部门列表")
+    organizations: list[OrganizationInfoInnerResponse] = Field(default_factory=list, description="组织列表")
 
 
-class DepartmentTreeResponse(BaseModel):
-    """部门树响应"""
-    id: str = Field(..., description="部门ID")
-    name: str = Field(..., description="部门名称")
-    parent_id: str | None = Field(None, description="父部门ID")
+class OrganizationTreeInnerResponse(BaseModel):
+    """组织树响应"""
+    id: str = Field(..., description="组织ID")
+    name: str = Field(..., description="组织名称")
+    parent_id: str | None = Field(None, description="父组织ID")
     tree_level: int = Field(..., description="树层级")
     tree_path: str = Field(..., description="树路径")
-    children: list["DepartmentTreeResponse"] = Field(default_factory=list, description="子部门")
+    children: list["OrganizationTreeInnerResponse"] = Field(default_factory=list, description="子组织")
 
 
 class UserTenantInfo(BaseModel):
@@ -172,50 +172,50 @@ async def get_users_batch(
     return ApiResponse.success(data=[build_user_info(u, user_tenant_map.get(u.id)).model_dump() for u in users if u])
 
 
-@router.get("/users/{user_id}/departments")
-async def get_user_departments(
+@router.get("/users/{user_id}/organizations")
+async def get_user_organizations(
     user_id: str,
     session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """
-    获取用户部门
+    获取用户组织
 
-    场景：获取用户部门
-    WHEN 请求 GET /iam/inner/v1/users/{user_id}/departments
-    THEN 返回用户所属的部门列表
+    场景：获取用户组织
+    WHEN 请求 GET /iam/inner/v1/users/{user_id}/organizations
+    THEN 返回用户所属的组织列表
     """
-    stmt = select(UserDepartment).where(UserDepartment.user_id == user_id)
+    stmt = select(UserOrganization).where(UserOrganization.user_id == user_id)
     result = await session.execute(stmt)
-    user_departments = result.scalars().all()
+    user_organizations = result.scalars().all()
 
-    department_ids = [ud.department_id for ud in user_departments]
+    organization_ids = [uo.organization_id for uo in user_organizations]
 
-    if not department_ids:
+    if not organization_ids:
         return ApiResponse.success(
-            data=UserDepartmentResponse(
+            data=UserOrganizationResponse(
                 user_id=user_id,
-                departments=[],
+                organizations=[],
             ).model_dump()
         )
 
-    # 获取部门详情
-    departments = await DepartmentService.get_by_ids(session, department_ids)
+    # 获取组织详情
+    organizations = await OrganizationService.get_by_ids(session, organization_ids)
 
-    dept_list = [
-        DepartmentInfoResponse(
+    org_list = [
+        OrganizationInfoInnerResponse(
             id=d.id,
             name=d.name,
             parent_id=d.parent_id,
             tree_level=d.tree_level,
             tree_path=d.tree_path,
         )
-        for d in departments if d
+        for d in organizations if d
     ]
 
     return ApiResponse.success(
-        data=UserDepartmentResponse(
+        data=UserOrganizationResponse(
             user_id=user_id,
-            departments=dept_list,
+            organizations=org_list,
         ).model_dump()
     )
 

@@ -19,16 +19,16 @@ from iam.schemas.console.system_setting import (
     ConsoleSystemSettingQuery,
     ConsoleSystemSettingResponse,
 )
-from iam.schemas.department import (
-    DepartmentCreate,
-    DepartmentDetailResponse,
-    DepartmentResponse,
-    DepartmentTreeResponse,
-    DepartmentUpdate,
-    DepartmentUserBatchRequest,
-    DepartmentUserResponse,
+from iam.schemas.organization import (
     MemberInfo,
-    UserDepartmentRequest,
+    OrganizationCreate,
+    OrganizationDetailResponse,
+    OrganizationResponse,
+    OrganizationTreeResponse,
+    OrganizationUpdate,
+    OrganizationUserBatchRequest,
+    OrganizationUserResponse,
+    UserOrganizationRequest,
 )
 from iam.schemas.login import (
     LoginRequest,
@@ -128,15 +128,15 @@ __all__ = [
     "PermissionPaginatedQuery",
     "PermissionPaginatedListResponse",
     "PermissionGroupResponse",
-    # 部门
-    "DepartmentCreate",
-    "DepartmentUpdate",
-    "DepartmentResponse",
-    "DepartmentTreeResponse",
-    "UserDepartmentRequest",
-    "DepartmentUserResponse",
-    "DepartmentUserBatchRequest",
-    "DepartmentDetailResponse",
+    # 组织
+    "OrganizationCreate",
+    "OrganizationUpdate",
+    "OrganizationResponse",
+    "OrganizationTreeResponse",
+    "UserOrganizationRequest",
+    "OrganizationUserResponse",
+    "OrganizationUserBatchRequest",
+    "OrganizationDetailResponse",
     "MemberInfo",
     # OAuth
     "OAuthAuthorizeResponse",

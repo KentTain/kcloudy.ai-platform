@@ -14,9 +14,9 @@ Base = create_module_base("iam")
 BaseModel = create_base_model(Base)
 
 # 导入模型（必须在 Base 和 BaseModel 定义之后）
-from .department import Department, UserDepartment
+from .organization import Organization, UserOrganization
 from .enums import (
-    DepartmentStatus,
+    OrganizationStatus,
     OAuthProvider,
     RoleCode,
     TenantStatus,
@@ -39,15 +39,15 @@ __all__ = [
     "UserStatus",
     "OAuthProvider",
     "RoleCode",
-    "DepartmentStatus",
+    "OrganizationStatus",
     "TenantStatus",  # 保留，用于 IAM 模块验证租户状态
     # 用户相关
     "User",
     "OAuthConnection",
     "UserTenant",  # 用户-租户关联，保留在 IAM 模块
     # 组织架构
-    "Department",
-    "UserDepartment",
+    "Organization",
+    "UserOrganization",
     # RBAC
     "Role",
     "Permission",

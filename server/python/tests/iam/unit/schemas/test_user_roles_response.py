@@ -1,6 +1,6 @@
 """测试 IAM 模块 Schema 转换方法
 
-测试 UserRoleItem、UserRolesResponse、DepartmentListItem、DepartmentListResponse 转换方法。
+测试 UserRoleItem、UserRolesResponse、OrganizationListItem、OrganizationListResponse 转换方法。
 """
 
 from unittest.mock import MagicMock
@@ -77,26 +77,26 @@ class TestUserRolesResponse:
         assert result.roles[1].code == "editor"
 
 
-class TestDepartmentListItem:
-    """测试 DepartmentListItem Schema"""
+class TestOrganizationListItem:
+    """测试 OrganizationListItem Schema"""
 
-    def test_from_department_basic_fields(self):
-        """测试 from_department() 方法基础字段映射"""
-        from iam.schemas.department import DepartmentListItem
+    def test_from_organization_basic_fields(self):
+        """测试 from_organization() 方法基础字段映射"""
+        from iam.schemas.organization import OrganizationListItem
 
-        # 创建 mock Department 对象
-        dept = MagicMock()
-        dept.id = "dept-123"
-        dept.name = "技术部"
-        dept.code = "tech"
-        dept.parent_id = None
-        dept.sort_order = 1
-        dept.leader_id = "user-456"
-        dept.status = "active"
+        # 创建 mock Organization 对象
+        org = MagicMock()
+        org.id = "org-123"
+        org.name = "技术部"
+        org.code = "tech"
+        org.parent_id = None
+        org.sort_order = 1
+        org.leader_id = "user-456"
+        org.status = "active"
 
-        result = DepartmentListItem.from_department(dept)
+        result = OrganizationListItem.from_organization(org)
 
-        assert result.id == "dept-123"
+        assert result.id == "org-123"
         assert result.name == "技术部"
         assert result.code == "tech"
         assert result.parent_id is None
@@ -104,62 +104,62 @@ class TestDepartmentListItem:
         assert result.leader_id == "user-456"
         assert result.status == "active"
 
-    def test_from_department_null_fields(self):
-        """测试 from_department() 方法处理空字段"""
-        from iam.schemas.department import DepartmentListItem
+    def test_from_organization_null_fields(self):
+        """测试 from_organization() 方法处理空字段"""
+        from iam.schemas.organization import OrganizationListItem
 
-        dept = MagicMock()
-        dept.id = "dept-456"
-        dept.name = "新部门"
-        dept.code = None
-        dept.parent_id = "dept-123"
-        dept.sort_order = 0
-        dept.leader_id = None
-        dept.status = "inactive"
+        org = MagicMock()
+        org.id = "org-456"
+        org.name = "新组织"
+        org.code = None
+        org.parent_id = "org-123"
+        org.sort_order = 0
+        org.leader_id = None
+        org.status = "inactive"
 
-        result = DepartmentListItem.from_department(dept)
+        result = OrganizationListItem.from_organization(org)
 
         assert result.code is None
-        assert result.parent_id == "dept-123"
+        assert result.parent_id == "org-123"
         assert result.leader_id is None
         assert result.status == "inactive"
 
 
-class TestDepartmentListResponse:
-    """测试 DepartmentListResponse Schema"""
+class TestOrganizationListResponse:
+    """测试 OrganizationListResponse Schema"""
 
-    def test_from_departments_empty_list(self):
-        """测试 from_departments() 方法处理空列表"""
-        from iam.schemas.department import DepartmentListResponse
+    def test_from_organizations_empty_list(self):
+        """测试 from_organizations() 方法处理空列表"""
+        from iam.schemas.organization import OrganizationListResponse
 
-        result = DepartmentListResponse.from_departments([])
+        result = OrganizationListResponse.from_organizations([])
 
         assert result.items == []
 
-    def test_from_departments_multiple_departments(self):
-        """测试 from_departments() 方法处理多个部门"""
-        from iam.schemas.department import DepartmentListResponse
+    def test_from_organizations_multiple_organizations(self):
+        """测试 from_organizations() 方法处理多个组织"""
+        from iam.schemas.organization import OrganizationListResponse
 
-        # 创建多个 mock Department 对象
-        dept1 = MagicMock()
-        dept1.id = "dept-1"
-        dept1.name = "技术部"
-        dept1.code = "tech"
-        dept1.parent_id = None
-        dept1.sort_order = 1
-        dept1.leader_id = None
-        dept1.status = "active"
+        # 创建多个 mock Organization 对象
+        org1 = MagicMock()
+        org1.id = "org-1"
+        org1.name = "技术部"
+        org1.code = "tech"
+        org1.parent_id = None
+        org1.sort_order = 1
+        org1.leader_id = None
+        org1.status = "active"
 
-        dept2 = MagicMock()
-        dept2.id = "dept-2"
-        dept2.name = "产品部"
-        dept2.code = "product"
-        dept2.parent_id = None
-        dept2.sort_order = 2
-        dept2.leader_id = None
-        dept2.status = "active"
+        org2 = MagicMock()
+        org2.id = "org-2"
+        org2.name = "产品部"
+        org2.code = "product"
+        org2.parent_id = None
+        org2.sort_order = 2
+        org2.leader_id = None
+        org2.status = "active"
 
-        result = DepartmentListResponse.from_departments([dept1, dept2])
+        result = OrganizationListResponse.from_organizations([org1, org2])
 
         assert len(result.items) == 2
         assert result.items[0].name == "技术部"

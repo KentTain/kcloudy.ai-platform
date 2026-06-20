@@ -54,8 +54,8 @@ class RoleCode(str, EnumBase):
         return labels.get(self, self.name)
 
 
-class DepartmentStatus(str, EnumBase):
-    """部门状态枚举"""
+class OrganizationStatus(str, EnumBase):
+    """组织状态枚举"""
 
     ACTIVE = "active"
     INACTIVE = "inactive"
@@ -63,8 +63,8 @@ class DepartmentStatus(str, EnumBase):
     @property
     def label(self) -> str:
         labels = {
-            DepartmentStatus.ACTIVE: "启用",
-            DepartmentStatus.INACTIVE: "停用",
+            OrganizationStatus.ACTIVE: "启用",
+            OrganizationStatus.INACTIVE: "停用",
         }
         return labels.get(self, self.name)
 
