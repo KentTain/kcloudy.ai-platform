@@ -173,7 +173,7 @@
   },
   "explorer.fileNesting.enabled": true,
   "explorer.fileNesting.patterns": {
-    ".gitignore": ".*ignore, .gitattributes",
+    ".gitignore": ".*ignore, .gitattributes, .markdownlint.json",
     ".mcp.json": ".mcp*",
     "Dockerfile": "Dockerfile-*, .dockerignore, docker-entrypoint.sh, nginx.conf, .env*, index.html",
     "pyproject.toml": "uv.lock, pyrightconfig.json, pytest.ini, alembic.ini, .pre-commit-config.yaml, .ruff.toml, .cz.toml, .python-version",
