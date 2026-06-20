@@ -97,9 +97,6 @@ export interface TenantListResponse extends ApiResponse<Tenant[]> {
   stats: TenantListStats;
 }
 
-/** @deprecated 使用 TenantListResponse 替代 */
-export type TenantPaginatedListResponse = TenantListResponse;
-
 // 用户租户信息
 export interface UserTenantResponse {
   tenant_id: string;
