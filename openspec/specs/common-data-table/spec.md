@@ -50,7 +50,7 @@ interface UseDataTableOptions<TData> {
   columns: ColumnDef<TData>[]
   columnVisibility?: () => VisibilityState
   initialState?: InitialTableState
-  remoteFetchFn: (pageQuery: { page: number; page_size: number; signal: AbortSignal }) => Promise<SuccessExtra<TData[]>>
+  remoteFetchFn: (pageQuery: { page: number; page_size: number; signal: AbortSignal }) => Promise<ApiResponse<TData[]>>
   enabled?: () => boolean
 }
 ```

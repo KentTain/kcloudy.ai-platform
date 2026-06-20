@@ -313,7 +313,7 @@ GET /health → {"status": "healthy", "timestamp": "..."}
 
 | 技术栈 | 文件位置 | 工具类 |
 |--------|---------|--------|
-| Python | `python/src/framework/schemas/base.py` | `Success`、`SuccessExtra`、`Fail` |
+| Python | `python/src/framework/common/response.py` | `ApiResponse`（提供 success/paginated/fail 工厂方法） |
 | Rust | `rust/src/demo/common/error.rs` | `ApiResponse<T>` |
 
 ## 数据模型规范

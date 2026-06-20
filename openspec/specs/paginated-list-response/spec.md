@@ -53,9 +53,9 @@
   - `page: number`
   - `page_size: number`
 
-#### 场景:SuccessExtra 泛型定义（新格式）
+#### 场景:ApiResponse 分页响应定义
 
-- **当** 定义 `SuccessExtra<T>` 接口
+- **当** 定义 `ApiResponse<T>` 接口用于分页响应
 - **那么** 该接口必须包含以下字段：
   - `code: number`
   - `msg: string`
@@ -64,17 +64,17 @@
   - `page: number`
   - `page_size: number`
 
-#### 场景:DataTable 使用 SuccessExtra
+#### 场景:DataTable 使用 ApiResponse
 
 - **当** useDataTable 的 `remoteFetchFn` 返回数据
-- **那么** 返回类型必须为 `Promise<SuccessExtra<TData[]>>`
+- **那么** 返回类型必须为 `Promise<ApiResponse<TData[]>>`
 - **那么** `data` 字段直接是数组，不是嵌套对象
 
 #### 场景:API 调用使用泛型
 
 - **当** API 函数返回分页数据
-- **那么** 推荐使用 `SuccessExtra<XxxResponse[]>` 类型
-- **那么** `PaginatedListResponse` 和 `ApiResponse<PaginatedListResponse<XxxResponse>>` 已废弃
+- **那么** 推荐使用 `ApiResponse<XxxResponse[]>` 类型
+- **那么** `PaginatedListResponse` 和嵌套的响应格式已废弃
 
 ### 需求:PageResult 废弃
 
@@ -83,29 +83,32 @@
 #### 场景:PageResult 不再使用
 
 - **当** 前端代码需要分页响应类型
-- **那么** 禁止使用 `PageResult<T>`，必须使用 `SuccessExtra<T[]>` 或 `PaginatedListResponse<T>`
+- **那么** 禁止使用 `PageResult<T>`，必须使用 `ApiResponse<T[]>` 或 `PaginatedListResponse<T>`
 
-### 需求:Success 字段对齐
+### 需求:ApiResponse 字段对齐
 
-前端 `Success<T>` 类型必须与后端响应格式对齐。后端已统一使用 `msg` 字段，前端必须同步更新。
+前端 `ApiResponse<T>` 类型必须与后端响应格式对齐。后端已统一使用 `msg` 字段，前端必须同步更新。
 
-#### 场景:Success 字段定义
+#### 场景:ApiResponse 字段定义
 
-- **当** 定义 `Success<T>` 接口
+- **当** 定义 `ApiResponse<T>` 接口
 - **那么** 该接口必须包含以下字段：
   - `code: number`
   - `msg: string`
-  - `data: T`
+  - `data: T | null`
+  - `total?: number`（分页响应时存在）
+  - `page?: number`（分页响应时存在）
+  - `page_size?: number`（分页响应时存在）
 - **那么** 禁止使用 `message` 字段名
 
 ### 需求:PaginatedListResponse 废弃标记
 
-`PaginatedListResponse<T>` 必须标记为废弃，推荐使用 `SuccessExtra<T[]>` 替代。
+`PaginatedListResponse<T>` 必须标记为废弃，推荐使用 `ApiResponse<T[]>` 替代。
 
 #### 场景:类型迁移提示
 
 - **当** 代码使用 `PaginatedListResponse<T>`
-- **那么** TypeScript 显示废弃警告，提示使用 `SuccessExtra<T[]>`
+- **那么** TypeScript 显示废弃警告，提示使用 `ApiResponse<T[]>`
 
 ### 需求:后端分页响应函数对齐
 
