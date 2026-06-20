@@ -156,34 +156,6 @@ class BasePaginatedQuery(BaseQuery):
     page_size: int = Field(default=20, ge=1, le=100, description="每页条数")
 
 
-class BaseQueryParams(BaseModel):
-    """基础查询参数Schema
-
-    .. deprecated::
-        使用 BaseQuery 或 BasePaginatedQuery 替代。
-        BaseQueryParams 将在未来版本中移除。
-    """
-
-    page: int = Field(default=1, description="页码")
-    page_size: int = Field(default=20, description="每页条数")
-
-    def __init__(self, **data):
-        warnings.warn(
-            "BaseQueryParams 已废弃，请使用 BaseQuery 或 BasePaginatedQuery 替代",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        super().__init__(**data)
-
-    def __init_subclass__(cls, **kwargs):
-        warnings.warn(
-            "BaseQueryParams 已废弃，请使用 BaseQuery 或 BasePaginatedQuery 替代",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        super().__init_subclass__(**kwargs)
-
-
 class VoMixin(BaseModel):
     """VO模型基类"""
 
@@ -386,7 +358,6 @@ __all__ = [
     "BaseModel",
     "BaseQuery",
     "BasePaginatedQuery",
-    "BaseQueryParams",  # deprecated, use BaseQuery or BasePaginatedQuery
     "VoMixin",
     "TreeNodeVoMixin",
     "AuditedOperatorVoMixin",

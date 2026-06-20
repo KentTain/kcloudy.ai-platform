@@ -9,7 +9,6 @@ from framework.schemas.base import (
     BaseModel,
     BasePaginatedQuery,
     BaseQuery,
-    BaseQueryParams,
     I18nConvertibleBaseModel,
     PropertyAttributeVoMixin,
     PropertyVoMixin,
@@ -22,7 +21,6 @@ __all__ = [
     "BaseModel",
     "BaseQuery",
     "BasePaginatedQuery",
-    "BaseQueryParams",  # deprecated
     "VoMixin",
     # Mixin
     "TreeNodeVoMixin",
