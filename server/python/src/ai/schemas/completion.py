@@ -5,7 +5,8 @@
 
 from typing import Any, Literal
 
-from pydantic import BaseModel, Field, field_validator
+from framework.schemas import BaseModel
+from pydantic import Field, field_validator
 
 
 class ModelConfig(BaseModel):

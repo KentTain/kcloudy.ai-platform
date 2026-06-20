@@ -7,7 +7,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from pydantic import BaseModel, Field
+from framework.schemas import BaseModel
+from pydantic import Field
 
 if TYPE_CHECKING:
     from ai_plugin.sdk.entities import I18nObject

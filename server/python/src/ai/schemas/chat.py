@@ -5,7 +5,8 @@
 
 from typing import Any, Literal
 
-from pydantic import BaseModel, Field
+from framework.schemas import BaseModel
+from pydantic import Field
 
 from .completion import FileItem, ModelConfig, SearchConfig
 

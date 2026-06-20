@@ -6,7 +6,8 @@
 
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field
+from framework.schemas import BaseModel
+from pydantic import Field
 
 
 class PluginConfig(BaseModel):
@@ -39,8 +40,6 @@ class PluginConfig(BaseModel):
 
 class PluginInfoVo(BaseModel):
     """插件信息"""
-
-    model_config = ConfigDict(from_attributes=True)
 
     plugin_id: str = Field(description="插件ID", examples=["author/plugin_name"])
     plugin_name: str = Field(description="插件名称", examples=["Plugin Name"])
@@ -116,8 +115,6 @@ class PluginInvokeResponseVo(BaseModel):
 
 class PluginCredentialVo(BaseModel):
     """插件扩展凭证VO"""
-
-    model_config = ConfigDict(from_attributes=True)
 
     id: str = Field(description="凭证ID")
     plugin_id: str = Field(description="插件ID")

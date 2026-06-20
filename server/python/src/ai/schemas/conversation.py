@@ -5,7 +5,8 @@
 
 from datetime import datetime
 
-from pydantic import BaseModel, Field
+from framework.schemas import BaseModel
+from pydantic import Field
 
 
 class ConversationListItem(BaseModel):
