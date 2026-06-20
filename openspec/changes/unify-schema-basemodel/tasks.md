@@ -21,32 +21,32 @@
 
 ### 3.1 第一批：核心 Schema
 
-- [ ] 3.1.1 迁移 `iam/schemas/user.py`
-- [ ] 3.1.2 迁移 `iam/schemas/role.py`
-- [ ] 3.1.3 运行部分测试验证变更
+- [x] 3.1.1 迁移 `iam/schemas/user.py`
+- [x] 3.1.2 迁移 `iam/schemas/role.py`
+- [x] 3.1.3 运行部分测试验证变更
 
 ### 3.2 第二批：权限和组织架构
 
-- [ ] 3.2.1 迁移 `iam/schemas/permission.py`
-- [ ] 3.2.2 迁移 `iam/schemas/department.py`
-- [ ] 3.2.3 迁移 `iam/schemas/menu.py`
+- [x] 3.2.1 迁移 `iam/schemas/permission.py`
+- [x] 3.2.2 迁移 `iam/schemas/department.py`
+- [x] 3.2.3 迁移 `iam/schemas/menu.py`
 
 ### 3.3 第三批：认证相关
 
-- [ ] 3.3.1 迁移 `iam/schemas/login.py`
-- [ ] 3.3.2 迁移 `iam/schemas/oauth.py`
-- [ ] 3.3.3 迁移 `iam/schemas/token.py`
-- [ ] 3.3.4 迁移 `iam/schemas/user_menu.py`
+- [x] 3.3.1 迁移 `iam/schemas/login.py`
+- [x] 3.3.2 迁移 `iam/schemas/oauth.py`
+- [x] 3.3.3 迁移 `iam/schemas/token.py`
+- [x] 3.3.4 迁移 `iam/schemas/user_menu.py`
 
 ### 3.4 第四批：系统设置
 
-- [ ] 3.4.1 迁移 `iam/schemas/admin/system_setting.py`
-- [ ] 3.4.2 迁移 `iam/schemas/console/system_setting.py`
+- [x] 3.4.1 迁移 `iam/schemas/admin/system_setting.py`
+- [x] 3.4.2 迁移 `iam/schemas/console/system_setting.py`
 
 ### 3.5 验证与提交
 
-- [ ] 3.5.1 运行 iam 模块测试：`uv run pytest tests/iam/ -v`
-- [ ] 3.5.2 提交变更：`git commit -m "refactor(iam): 统一使用 framework.schemas.BaseModel"`
+- [x] 3.5.1 运行 iam 模块测试：`uv run pytest tests/iam/ -v`
+- [x] 3.5.2 提交变更：`git commit -m "refactor(iam): 统一使用 framework.schemas.BaseModel"`
 
 ## 4. 迁移 ai 模块
 
