@@ -338,16 +338,6 @@ class UserResponse(BaseModel):
     username: str
 ```
 
-### 响应命名规范
-
-| 场景 | 命名 | 示例 |
-|------|------|------|
-| 单实体响应 | `{Entity}Response` | `UserResponse` |
-| 聚合响应 | `{Entity}DetailResponse` | `UserDetailResponse` |
-| 列表响应 | `{Entity}ListResponse` | `ModelListResponse` |
-| 分页列表响应 | `{Entity}PaginatedListResponse` | `UserPaginatedListResponse` |
-| 树结构响应 | `{Entity}TreeResponse` | `ModuleMenuTreeResponse` |
-
 ### 复杂转换方法
 
 对于复杂转换，Schema 类可提供 `from_entity()` 类方法：

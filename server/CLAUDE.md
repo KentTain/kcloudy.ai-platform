@@ -21,30 +21,17 @@
 server/{技术栈}/
 ├── src/
 │   ├── framework/                 # 基础设施层（跨模块共享）
-│   │   ├── database/              # 数据库
+│   │   ├── database/              # 基础设施：数据库-database
 │   │   │   ├── core/              # - 核心（engine, session, base）
 │   │   │   ├── mixins/            # - 模型混入（tree, tenant, audit...）
 │   │   │   ├── types/             # - 自定义类型（datetime, enum, uuid...）
 │   │   │   ├── events/            # - 事件监听
 │   │   │   └── interceptors/      # - 拦截器
-│   │   ├── cache/                 # 缓存
+│   │   ├── {基础设施}/             # 基础设施：Cache-缓存、storage-对象存储、queue-消息队列、pubsub-发布订阅
 │   │   │   ├── factory.*          # - 工厂函数
 │   │   │   ├── impl/              # - 实现类
+│   │   │   ├── handler.*          # - 处理器基类：基础设施 queue-消息队列、pubsub-发布订阅 所独有
 │   │   │   └── tenant_*_manager.* # - 租户管理器
-│   │   ├── storage/               # 对象存储
-│   │   │   ├── factory.*
-│   │   │   ├── impl/
-│   │   │   └── tenant_storage_manager.*
-│   │   ├── queue/                 # 消息队列
-│   │   │   ├── factory.*
-│   │   │   ├── impl/
-│   │   │   ├── handler.*          # - 处理器基类
-│   │   │   └── tenant_queue_manager.*
-│   │   ├── pubsub/                # 发布订阅
-│   │   │   ├── factory.*
-│   │   │   ├── impl/
-│   │   │   ├── handler.*          # - 处理器基类
-│   │   │   └── tenant_pubsub_manager.*
 │   │   ├── lock/                  # 分布式锁
 │   │   │   ├── factory.*
 │   │   │   └── impl/
@@ -56,7 +43,7 @@ server/{技术栈}/
 │   │   ├── module/                # 模块系统
 │   │   └── tenant/                # 多租户支持
 │   │
-│   └── {module}/                  # 业务模块
+│   └── {module}/                  # 业务模块：tenant、iam、demo 等
 │       ├── controllers/           # API 控制器
 │       ├── services/              # 业务逻辑层
 │       ├── models/                # 数据库模型
@@ -160,23 +147,9 @@ Service 层是业务逻辑的核心，负责：
 Service 层提供聚合方法，用于组合多个数据源并返回完整的响应 Schema 对象。
 
 **命名规范**：
+
 - 聚合方法命名为 `get_<entity>_detail()` 或 `get_<entity>_full()`
 - 返回类型为对应的响应 Schema 类型，如 `UserDetailResponse | None`
-
-**并行查询优化**：
-```python
-async def get_user_detail(self, user_id: str) -> UserDetailResponse | None:
-    # 并行查询独立数据源
-    roles_task = user_roles_service.get_user_roles(user_id)
-    permissions_task = permission_check_service.get_user_permissions(user_id)
-    tenants_task = self._get_user_tenants_with_detail(user_id)
-
-    roles, permissions, tenants = await asyncio.gather(
-        roles_task, permissions_task, tenants_task
-    )
-
-    return UserDetailResponse.from_user(user, roles, permissions, tenants)
-```
 
 ### Service 调用规则
 
@@ -186,6 +159,7 @@ async def get_user_detail(self, user_id: str) -> UserDetailResponse | None:
 | 跨模块 Service 调用 | ⚠️ 通过 Inner 接口 | `tenant_service.get_tenants_by_ids(tenant_ids)` |
 
 **跨模块调用原则**：
+
 - 禁止直接导入其他模块的 Service
 - 通过 `/{module}/inner/v1` 接口或框架机制调用
 - 明确模块依赖方向，避免循环依赖
@@ -196,29 +170,9 @@ async def get_user_detail(self, user_id: str) -> UserDetailResponse | None:
 
 Schema 层提供 `from_entity()` 类方法，用于处理复杂转换逻辑。
 
-**简单转换**：使用 Pydantic 的 `from_attributes=True` 自动映射
-```python
-class UserResponse(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-    id: str
-    username: str
-```
+**简单转换**：提供 `from_attributes` 属性的自动映射
 
-**复杂转换**：提供 `from_entity()` 类方法
-```python
-class ModelItem(BaseModel):
-    id: str
-    name: str
-    description: str | None
-
-    @classmethod
-    def from_entity(cls, provider: str, model: ProviderModel) -> "ModelItem":
-        return cls(
-            id=f"{provider}/{model.model}",  # 计算字段
-            name=model.model,
-            description=model.label.zh_Hans or model.label.en_US,
-        )
-```
+**复杂转换**：提供 `from_entity()` 类方法，处理计算、合并、裁剪等复杂操作
 
 ### 转换方法参数规范
 
@@ -241,6 +195,9 @@ class ModelItem(BaseModel):
 |------|----------|------|
 | 简单响应 | `{Entity}Response` | `UserResponse` |
 | 聚合响应 | `{Entity}DetailResponse` | `UserDetailResponse` |
+| 列表响应 | `{Entity}ListResponse` | `ModelListResponse` |
+| 分页列表响应 | `{Entity}PaginatedListResponse` | `UserPaginatedListResponse` |
+| 树结构响应 | `{Entity}TreeResponse` | `ModuleMenuTreeResponse` |
 
 ## 命名规范
 
