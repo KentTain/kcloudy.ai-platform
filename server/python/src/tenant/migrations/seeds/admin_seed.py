@@ -7,6 +7,7 @@
 
 from __future__ import annotations
 
+import os
 import uuid
 
 from sqlalchemy import select
@@ -43,8 +44,8 @@ async def run(*, dry_run: bool = False) -> int:
         # 创建默认管理员
         admin_id = str(uuid.uuid4())
 
-        # 默认密码: admin123 (生产环境应使用环境变量或配置文件)
-        default_password = "admin123"
+        # 默认密码：支持通过环境变量 DEFAULT_ADMIN_PASSWORD 覆盖
+        default_password = os.environ.get("DEFAULT_ADMIN_PASSWORD", "admin123")
         password_hash = hash_password(default_password)
 
         admin = TenantAdmin(

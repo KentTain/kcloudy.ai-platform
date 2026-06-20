@@ -10,9 +10,9 @@ import uuid
 
 from sqlalchemy import select
 
+from framework.module.definition import GLOBAL_ROLES
 from framework.utils.log_util import write_info, write_success, write_warning
 from iam.models import Organization, User, UserOrganization, UserRole, UserStatus, UserTenant
-from tenant.models import ModuleRole
 
 # 默认系统管理员配置
 DEFAULT_ADMIN_USERNAME = "admin"
@@ -35,9 +35,18 @@ async def run(*, dry_run: bool = False) -> int:
     from framework.database.core.engine import get_session
     from framework.utils.crypto import hash_password
 
+    # 种子数据特殊场景：需跨模块查询 tenant.models.ModuleRole，
+    # 使用局部导入避免模块级循环依赖
+    from tenant.models import ModuleRole
+
     settings = get_settings()
     tenant_config = settings.tenant
     tenant_id = tenant_config.default_tenant_id
+
+    # 从全局角色定义中获取 sysAdmin 角色编码，避免硬编码
+    sysadmin_role_def = next((r for r in GLOBAL_ROLES if r.code == "sysAdmin"), None)
+    if not sysadmin_role_def:
+        raise ValueError("sysAdmin 角色定义不存在")
 
     async with get_session() as session:
         # 检查是否已存在默认管理员
@@ -50,11 +59,11 @@ async def run(*, dry_run: bool = False) -> int:
             write_warning("默认系统管理员已存在，跳过初始化")
             return 0
 
-        # 获取全局角色 ID（通过 code="sysAdmin" 查找）
+        # 获取全局角色 ID（通过角色编码查找）
         role_result = await session.execute(
             select(ModuleRole.id).where(
                 ModuleRole.module_id.is_(None),
-                ModuleRole.code == "sysAdmin",
+                ModuleRole.code == sysadmin_role_def.code,
             )
         )
         role_id = role_result.scalar_one_or_none()
@@ -73,7 +82,7 @@ async def run(*, dry_run: bool = False) -> int:
             write_info(f"[DRY-RUN] 默认密码: {DEFAULT_ADMIN_PASSWORD}")
             write_info(f"[DRY-RUN] 关联租户: {tenant_id}")
             if role_id:
-                write_info("[DRY-RUN] 分配角色: sysAdmin")
+                write_info(f"[DRY-RUN] 分配角色: {sysadmin_role_def.code}")
             if org:
                 write_info(f"[DRY-RUN] 关联组织: {org.name}")
             return 1
@@ -112,7 +121,7 @@ async def run(*, dry_run: bool = False) -> int:
             )
             session.add(userRole)
             await session.flush()
-            write_success("    分配角色: sysAdmin")
+            write_success(f"    分配角色: {sysadmin_role_def.code}")
 
         # 创建用户-组织关联
         if org:

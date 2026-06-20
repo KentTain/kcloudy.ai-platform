@@ -47,7 +47,8 @@ async def run(*, dry_run: bool = False) -> int:
             write_warning("默认组织已存在，跳过初始化")
             return 0
 
-        # 获取租户信息用于组织名称和编码
+        # 种子数据特殊场景：需跨模块查询 tenant.models.Tenant，
+        # 使用局部导入避免模块级循环依赖
         from tenant.models import Tenant
 
         tenant_result = await session.execute(
