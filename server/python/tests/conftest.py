@@ -84,7 +84,7 @@ def pytest_ignore_collect(collection_path, config):
 # pytest.ini_options 中配置了 asyncio_mode = "auto"
 
 
-@pytest_asyncio.fixture(scope="module")
+@pytest_asyncio.fixture(scope="module", loop_scope="module")
 async def async_engine():
     engine = create_async_engine(
         url=settings.sqlalchemy.url,
@@ -99,7 +99,7 @@ async def async_engine():
     await engine.dispose()
 
 
-@pytest_asyncio.fixture(scope="class")
+@pytest_asyncio.fixture(scope="class", loop_scope="class")
 async def async_session(async_engine):
     async with AsyncSession(bind=async_engine) as session:
         try:
@@ -110,7 +110,7 @@ async def async_session(async_engine):
             raise
 
 
-@pytest_asyncio.fixture(scope="class")
+@pytest_asyncio.fixture(scope="class", loop_scope="class")
 async def cleanup_resources():
     async def _cleanup(cleanup_func, *args, **kwargs):
         try:

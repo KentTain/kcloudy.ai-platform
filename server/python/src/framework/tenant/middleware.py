@@ -89,10 +89,13 @@ class TenantMiddleware(BaseHTTPMiddleware):
                     400,
                 )
 
+            # 先设置 tenant_id，确保后续的 session 创建可以使用正确的上下文
+            TenantContext.set_tenant_id(tenant_id)
+
             # 加载租户信息并验证
             tenant = await self._load_and_validate_tenant(tenant_id, request)
 
-            # 注入租户上下文
+            # 更新租户上下文（包含完整信息）
             TenantContext.set_current_tenant(tenant)
 
             # 执行后续处理

@@ -171,18 +171,13 @@ class TenantService:
         Returns:
             SimpleTenant: 包含完整资源配置的租户信息
         """
-        # 并行加载所有资源配置
-        import asyncio
+        # 顺序加载所有资源配置，避免 SQLAlchemy Session 并发问题
+        db_config = await TenantService._load_database_config(session, tenant.db_config_id)
+        storage_config = await TenantService._load_storage_config(session, tenant.storage_config_id)
+        cache_config = await TenantService._load_cache_config(session, tenant.cache_config_id)
+        queue_config = await TenantService._load_queue_config(session, tenant.queue_config_id)
+        pubsub_config = await TenantService._load_pubsub_config(session, tenant.pubsub_config_id)
 
-        db_config, storage_config, cache_config, queue_config, pubsub_config = (
-            await asyncio.gather(
-                TenantService._load_database_config(session, tenant.db_config_id),
-                TenantService._load_storage_config(session, tenant.storage_config_id),
-                TenantService._load_cache_config(session, tenant.cache_config_id),
-                TenantService._load_queue_config(session, tenant.queue_config_id),
-                TenantService._load_pubsub_config(session, tenant.pubsub_config_id),
-            )
-        )
         return SimpleTenant.from_model(
             tenant,
             database=db_config,

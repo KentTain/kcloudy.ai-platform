@@ -6,6 +6,7 @@ Tenant 模块的 TenantProvider 实现
 
 from loguru import logger
 
+from framework.database.dependencies import get_task_session
 from framework.tenant.context import SimpleTenant
 from framework.tenant.protocols import TenantInfo, TenantProvider
 from tenant.services.tenant_service import TenantService
@@ -30,11 +31,21 @@ class TenantProviderImpl(TenantProvider):
         Returns:
             TenantInfo | None
         """
-        # get_by_id 已经返回包含完整资源配置的 SimpleTenant
-        tenant = await TenantService.get_by_id(tenant_id)
-        if tenant and isinstance(tenant, SimpleTenant):
-            return tenant
-        return None
+        # 优先从缓存获取（避免创建 session）
+        from framework.tenant.cache import TenantCache
+
+        cached = await TenantCache.get(tenant_id)
+        if cached and isinstance(cached, SimpleTenant):
+            return cached
+
+        # 缓存未命中，查询数据库
+        async with get_task_session() as session:
+            tenant = await TenantService.get_by_id(session, tenant_id, use_cache=False)
+            if tenant and isinstance(tenant, SimpleTenant):
+                # 手动写入缓存
+                await TenantCache.set(tenant)
+                return tenant
+            return None
 
     async def validate_access(self, user_id: str, tenant_id: str) -> bool:
         """
@@ -76,14 +87,16 @@ class TenantProviderImpl(TenantProvider):
 
         # 批量获取租户信息
         tenant_ids = [ut.tenant_id for ut in user_tenants]
-        tenants = await TenantService.get_tenants_batch(tenant_ids)
+        async with get_task_session() as session:
+            tenants = await TenantService.get_tenants_batch(session, tenant_ids)
 
-        # 为每个租户构建完整的 SimpleTenant（包含资源配置）
-        import asyncio
-        simple_tenants = await asyncio.gather(
-            *[TenantService.build_simple_tenant(t) for t in tenants if t is not None]
-        )
-        return list(simple_tenants)
+            # 顺序构建 SimpleTenant，避免 Session 并发问题
+            simple_tenants = []
+            for t in tenants:
+                if t is not None:
+                    simple_tenant = await TenantService.build_simple_tenant(session, t)
+                    simple_tenants.append(simple_tenant)
+            return simple_tenants
 
 
 # 单例实例

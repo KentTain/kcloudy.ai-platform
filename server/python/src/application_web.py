@@ -14,6 +14,7 @@ from loguru import logger
 from demo.configs import settings
 from framework.common.time import ChinaTimeZone
 from framework.database.core.engine import setup_engine
+from framework.database.core.engine_pool import init_default_engine
 from framework.database.dependencies import get_task_session
 from framework.middlewares.test_user_middleware import TestUserMiddleware
 from framework.module import get_registry, load_modules
@@ -52,6 +53,13 @@ async def lifespan(app: FastAPI):
         # 初始化数据库引擎
         sqlalchemy_config = settings.sqlalchemy
         setup_engine(
+            database_url=sqlalchemy_config.url,
+            echo=sqlalchemy_config.echo,
+            pool_size=sqlalchemy_config.pool.size,
+            max_overflow=sqlalchemy_config.pool.max_overflow,
+        )
+        # 初始化 DatabaseEnginePool（用于多租户引擎池管理）
+        init_default_engine(
             database_url=sqlalchemy_config.url,
             echo=sqlalchemy_config.echo,
             pool_size=sqlalchemy_config.pool.size,

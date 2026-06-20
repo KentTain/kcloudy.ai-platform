@@ -18,19 +18,11 @@ os.environ["TZ"] = "Asia/Shanghai"
 
 
 # =============================================================================
-# Event Loop (Session Scope)
+# Event Loop
 # =============================================================================
-
-# 注意：session 作用域的异步 fixtures 需要手动定义 event_loop
-
-@pytest.fixture(scope="session")
-def event_loop():
-    """创建 session 作用域的事件循环"""
-    import asyncio
-    policy = asyncio.get_event_loop_policy()
-    loop = policy.new_event_loop()
-    yield loop
-    loop.close()
+# 不再手动定义 event_loop，使用 pytest-asyncio 的自动管理
+# pytest.ini 中配置了 asyncio_default_fixture_loop_scope = function
+# 对于 session 作用域的异步 fixtures，使用 loop_scope 参数
 
 
 # =============================================================================
@@ -54,7 +46,7 @@ def integration_settings():
 # 服务可用性检测
 # =============================================================================
 
-@pytest_asyncio.fixture(scope="session")
+@pytest_asyncio.fixture(scope="session", loop_scope="session")
 async def postgres_available(integration_settings):
     """检测 PostgreSQL 服务是否可用"""
     try:
@@ -70,7 +62,7 @@ async def postgres_available(integration_settings):
         return False
 
 
-@pytest_asyncio.fixture(scope="session")
+@pytest_asyncio.fixture(scope="session", loop_scope="session")
 async def redis_available(integration_settings):
     """检测 Redis 服务是否可用"""
     from framework.cache.redis_util import RedisUtil
@@ -88,7 +80,7 @@ async def redis_available(integration_settings):
 # 数据库引擎初始化
 # =============================================================================
 
-@pytest_asyncio.fixture(scope="session")
+@pytest_asyncio.fixture(scope="session", loop_scope="session")
 async def db_engine(integration_settings, postgres_available):
     """初始化数据库引擎"""
     if not postgres_available:
@@ -110,7 +102,7 @@ async def db_engine(integration_settings, postgres_available):
     await _engine_manager.close()
 
 
-@pytest_asyncio.fixture(scope="session")
+@pytest_asyncio.fixture(scope="session", loop_scope="session")
 async def init_redis(integration_settings, redis_available):
     """初始化 Redis"""
     if not redis_available:
@@ -132,7 +124,7 @@ TEST_TENANT_ID = "00000000-0000-0000-0000-000000000001"
 TEST_TENANT_CODE = "TEST_TENANT"
 
 
-@pytest_asyncio.fixture(scope="session")
+@pytest_asyncio.fixture(scope="session", loop_scope="session")
 async def test_tenant(db_engine):
     """创建或获取测试租户"""
 

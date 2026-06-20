@@ -68,25 +68,27 @@ class TenantClient:
             return data
         else:
             # 单体模式：直接调用 Service
+            from framework.database.dependencies import get_task_session
             from framework.tenant.context import SimpleTenant
             from tenant.services.tenant_service import TenantService
 
-            tenant = await TenantService.get_by_id(tenant_id)
-            if tenant:
-                if isinstance(tenant, SimpleTenant):
+            async with get_task_session() as session:
+                tenant = await TenantService.get_by_id(session, tenant_id)
+                if tenant:
+                    if isinstance(tenant, SimpleTenant):
+                        return TenantInfo(
+                            id=tenant.id,
+                            name=tenant.name,
+                            code=tenant.code,
+                            status=tenant.status,
+                        )
                     return TenantInfo(
                         id=tenant.id,
                         name=tenant.name,
                         code=tenant.code,
                         status=tenant.status,
                     )
-                return TenantInfo(
-                    id=tenant.id,
-                    name=tenant.name,
-                    code=tenant.code,
-                    status=tenant.status,
-                )
-            return None
+                return None
 
     async def get_tenants_batch(self, tenant_ids: list[str]) -> list[TenantInfo]:
         """
@@ -118,18 +120,20 @@ class TenantClient:
             return []
         else:
             # 单体模式
+            from framework.database.dependencies import get_task_session
             from tenant.services.tenant_service import TenantService
 
-            tenants = await TenantService.get_tenants_batch(tenant_ids)
-            return [
-                TenantInfo(
-                    id=t.id,
-                    name=t.name,
-                    code=t.code,
-                    status=t.status,
-                )
-                for t in tenants if t
-            ]
+            async with get_task_session() as session:
+                tenants = await TenantService.get_tenants_batch(session, tenant_ids)
+                return [
+                    TenantInfo(
+                        id=t.id,
+                        name=t.name,
+                        code=t.code,
+                        status=t.status,
+                    )
+                    for t in tenants if t
+                ]
 
     async def validate_access(
         self, session: AsyncSession, user_id: str, tenant_id: str

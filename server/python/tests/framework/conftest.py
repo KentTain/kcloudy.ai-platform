@@ -23,20 +23,11 @@ os.environ["TZ"] = "Asia/Shanghai"
 
 
 # =============================================================================
-# Event Loop (Session Scope)
+# Event Loop
 # =============================================================================
-
-# 注意：虽然 pytest-asyncio 推荐使用 loop_scope 参数，
-# 但 session 作用域的异步 fixtures 需要手动定义 event_loop
-# 参考：https://pytest-asyncio.readthedocs.io/en/stable/reference/fixtures.html
-
-@pytest.fixture(scope="session")
-def event_loop():
-    """创建 session 作用域的事件循环"""
-    policy = asyncio.get_event_loop_policy()
-    loop = policy.new_event_loop()
-    yield loop
-    loop.close()
+# 不再手动定义 event_loop，使用 pytest-asyncio 的自动管理
+# pytest.ini 中配置了 asyncio_default_fixture_loop_scope = function
+# 对于 session 作用域的异步 fixtures，使用 loop_scope 参数
 
 
 # =============================================================================
@@ -67,7 +58,7 @@ def integration_settings():
 # 服务可用性检测
 # =============================================================================
 
-@pytest_asyncio.fixture(scope="session")
+@pytest_asyncio.fixture(scope="session", loop_scope="session")
 async def redis_available(integration_settings):
     """检测 Redis 服务是否可用"""
     from framework.cache.redis_util import RedisUtil
@@ -81,7 +72,7 @@ async def redis_available(integration_settings):
         return False
 
 
-@pytest_asyncio.fixture(scope="session")
+@pytest_asyncio.fixture(scope="session", loop_scope="session")
 async def postgres_available(integration_settings):
     """检测 PostgreSQL 服务是否可用"""
     from sqlalchemy import text
@@ -124,7 +115,7 @@ def minio_available(integration_settings):
 # Redis Fixtures
 # =============================================================================
 
-@pytest_asyncio.fixture(scope="session")
+@pytest_asyncio.fixture(scope="session", loop_scope="session")
 async def redis_client(integration_settings, redis_available):
     """
     Redis 客户端 fixture（session 作用域）
@@ -169,7 +160,7 @@ async def redis_cleanup(redis_client, redis_key_prefix):
 # PostgreSQL Fixtures
 # =============================================================================
 
-@pytest_asyncio.fixture(scope="session")
+@pytest_asyncio.fixture(scope="session", loop_scope="session")
 async def postgres_engine(integration_settings, postgres_available):
     """
     PostgreSQL 引擎 fixture（session 作用域）
@@ -212,7 +203,7 @@ async def postgres_session(postgres_engine):
 # MinIO Fixtures
 # =============================================================================
 
-@pytest_asyncio.fixture(scope="session")
+@pytest_asyncio.fixture(scope="session", loop_scope="session")
 async def minio_client(integration_settings, minio_available):
     """
     MinIO 客户端 fixture（session 作用域）
