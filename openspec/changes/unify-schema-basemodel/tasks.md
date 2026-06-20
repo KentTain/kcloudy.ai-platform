@@ -52,26 +52,26 @@
 
 ### 4.1 核心插件 Schema
 
-- [ ] 4.1.1 迁移 `ai/schemas/plugin.py`
-- [ ] 4.1.2 迁移 `ai/schemas/model.py`
+- [x] 4.1.1 迁移 `ai/schemas/plugin.py`
+- [x] 4.1.2 迁移 `ai/schemas/model.py`
 
 ### 4.2 对话和补全 Schema
 
-- [ ] 4.2.1 迁移 `ai/schemas/chat.py`
-- [ ] 4.2.2 迁移 `ai/schemas/completion.py`
-- [ ] 4.2.3 迁移 `ai/schemas/conversation.py`
+- [x] 4.2.1 迁移 `ai/schemas/chat.py`
+- [x] 4.2.2 迁移 `ai/schemas/completion.py`
+- [x] 4.2.3 迁移 `ai/schemas/conversation.py`
 
 ### 4.3 验证与提交
 
-- [ ] 4.3.1 运行 ai 模块测试：`uv run pytest tests/ai/ -v`
-- [ ] 4.3.2 提交变更：`git commit -m "refactor(ai): 统一使用 framework.schemas.BaseModel"`
+- [x] 4.3.1 运行 ai 模块测试：`uv run pytest tests/ai/ -v`
+- [x] 4.3.2 提交变更：`git commit -m "refactor(ai): 统一使用 framework.schemas.BaseModel"`
 
 ## 5. 迁移 demo 模块
 
-- [ ] 5.1 迁移 `demo/schemas/dataset.py`
-- [ ] 5.2 迁移 `demo/schemas/__init__.py`
-- [ ] 5.3 运行 demo 模块测试：`uv run pytest tests/demo/ -v`
-- [ ] 5.4 提交变更：`git commit -m "refactor(demo): 统一使用 framework.schemas.BaseModel"`
+- [x] 5.1 迁移 `demo/schemas/dataset.py`
+- [x] 5.2 迁移 `demo/schemas/__init__.py`
+- [x] 5.3 运行 demo 模块测试：`uv run pytest tests/demo/ -v`
+- [x] 5.4 提交变更：`git commit -m "refactor(demo): 统一使用 framework.schemas.BaseModel"`
 
 ## 6. 验证与清理
 
