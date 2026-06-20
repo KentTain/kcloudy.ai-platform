@@ -2,7 +2,7 @@
 Pydantic 校验模型
 """
 
-from pydantic import BaseModel
+from framework.schemas import BaseModel
 
 
 class SuccessRespModel(BaseModel):
