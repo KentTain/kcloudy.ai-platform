@@ -616,3 +616,5 @@ class ModuleDefinitionSyncService:
             # 删除孤儿角色
             stmt = delete(ModuleRole).where(ModuleRole.id.in_(orphan_role_ids))
             await session.execute(stmt)
+
+        await session.commit()

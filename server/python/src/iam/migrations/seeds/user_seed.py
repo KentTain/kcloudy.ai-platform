@@ -8,10 +8,11 @@ from __future__ import annotations
 
 import uuid
 
-from sqlalchemy import select, text
+from sqlalchemy import select
 
 from framework.utils.log_util import write_info, write_success, write_warning
 from iam.models import User, UserRole, UserStatus, UserTenant
+from tenant.models import ModuleRole
 
 # 默认系统管理员配置
 DEFAULT_ADMIN_USERNAME = "admin"
@@ -51,12 +52,14 @@ async def run(*, dry_run: bool = False) -> int:
         # 获取默认租户 ID
         tenant_id = tenant_config.default_tenant_id
 
-        # 获取 IAM 模块管理员角色 ID（由模块定义同步创建）
+        # 获取全局角色 ID（由模块定义同步创建，存储在 tenant.module_roles 表中）
         role_result = await session.execute(
-            text("SELECT id FROM iam.roles WHERE code = 'sysAdmin' LIMIT 1")
+            select(ModuleRole.id).where(
+                ModuleRole.module_id.is_(None),
+                ModuleRole.code == "sysAdmin",
+            )
         )
-        role_row = role_result.fetchone()
-        role_id = role_row[0] if role_row else None
+        role_id = role_result.scalar_one_or_none()
 
         if dry_run:
             write_info(f"[DRY-RUN] 将创建用户: {DEFAULT_ADMIN_USERNAME}")
