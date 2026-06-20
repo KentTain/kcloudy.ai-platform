@@ -98,14 +98,24 @@ class OrganizationService:
     @staticmethod
     async def delete(session: AsyncSession, organization_id: str) -> bool:
         """删除组织"""
-        # 检查是否有用户
-        stmt = select(func.count(UserOrganization.id)).where(
-            UserOrganization.organization_id == organization_id
-        )
+        # 获取组织信息
+        stmt = select(Organization).where(Organization.id == organization_id)
         result = await session.execute(stmt)
-        count = result.scalar() or 0
+        org = result.scalar_one_or_none()
+        if not org:
+            raise ValueError("组织不存在")
+
+        # 检查该组织及其子组织是否有关联用户
+        stmt = select(func.count(UserOrganization.id)).where(
+            UserOrganization.organization_id.in_(
+                select(Organization.id).where(
+                    Organization.parent_ids.like(f"{org.parent_ids}{org.id},%")
+                )
+            )
+        )
+        count = (await session.execute(stmt)).scalar() or 0
         if count > 0:
-            raise ValueError("组织下存在用户，无法删除")
+            raise ValueError("组织或其子组织下存在用户，无法删除")
 
         count = await Organization.delete_node(session, organization_id)
         await session.flush()
@@ -313,7 +323,7 @@ class OrganizationService:
         # 下级组织 ID（通过 parent_ids 前缀匹配）
         stmt = select(Organization.id).where(
             Organization.tenant_id == org.tenant_id,
-            Organization.parent_ids.like(f"{org.parent_ids}{org.id}/%"),
+            Organization.parent_ids.like(f"{org.parent_ids}{org.id},%"),
         )
         result = await session.execute(stmt)
         child_org_ids = [row[0] for row in result.fetchall()]
