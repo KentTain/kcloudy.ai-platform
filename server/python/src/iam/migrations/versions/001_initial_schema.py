@@ -12,7 +12,7 @@ Create Date: 2026-06-20
 - roles 表包含 tenant_id（FK -> tenant.tenants）和 ref_id
 - permissions 表包含 tenant_id 和 ref_id，唯一约束为 (tenant_id, code)
 - menus 表包含 tenant_id 和 ref_id，唯一约束为 (tenant_id, code)
-- departments 和 menus 表的 parent_id 无外键约束（TreeNodeMixin 虚拟根节点设计）
+- organizations 和 menus 表的 parent_id 无外键约束（TreeNodeMixin 虚拟根节点设计）
 - user_roles 和 role_permissions 唯一约束包含 tenant_id
 
 """
@@ -105,16 +105,16 @@ def upgrade() -> None:
     op.create_index("ix_permissions_ref_id", "permissions", ["ref_id"], schema=MODULE_SCHEMA)
     op.create_unique_constraint("uq_permissions_tenant_code", "permissions", ["tenant_id", "code"], schema=MODULE_SCHEMA)
 
-    # 创建 departments 表（最终状态：parent_id 无外键约束）
+    # 创建 organizations 表（最终状态：parent_id 无外键约束）
     op.create_table(
-        "departments",
+        "organizations",
         sa.Column("id", sa.String(36), primary_key=True),
-        sa.Column("parent_id", sa.String(36), nullable=True, comment="父部门ID"),
+        sa.Column("parent_id", sa.String(36), nullable=True, comment="父组织ID"),
         sa.Column("tenant_id", sa.String(36), sa.ForeignKey("tenant.tenants.id", ondelete="CASCADE"), nullable=False, comment="租户ID"),
-        sa.Column("name", sa.String(100), nullable=False, comment="部门名称"),
-        sa.Column("code", sa.String(50), nullable=True, comment="部门编码"),
+        sa.Column("name", sa.String(100), nullable=False, comment="组织名称"),
+        sa.Column("code", sa.String(50), nullable=True, comment="组织编码"),
         sa.Column("sort_order", sa.Integer, nullable=False, server_default="0", comment="排序号"),
-        sa.Column("leader_id", sa.String(36), sa.ForeignKey(f"{MODULE_SCHEMA}.users.id", ondelete="SET NULL"), nullable=True, comment="部门负责人ID"),
+        sa.Column("leader_id", sa.String(36), sa.ForeignKey(f"{MODULE_SCHEMA}.users.id", ondelete="SET NULL"), nullable=True, comment="组织负责人ID"),
         sa.Column("status", sa.String(20), nullable=False, server_default="active", comment="状态"),
         # TreeNodeMixin 字段
         sa.Column("tree_leaf", sa.Boolean, nullable=False, server_default="true", comment="是否叶子节点"),
@@ -127,9 +127,9 @@ def upgrade() -> None:
         sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False, comment="更新时间"),
         schema=MODULE_SCHEMA,
     )
-    op.create_index("ix_departments_tenant_id", "departments", ["tenant_id"], schema=MODULE_SCHEMA)
-    op.create_index("ix_departments_parent_id", "departments", ["parent_id"], schema=MODULE_SCHEMA)
-    op.create_index("ix_departments_leader_id", "departments", ["leader_id"], schema=MODULE_SCHEMA)
+    op.create_index("ix_organizations_tenant_id", "organizations", ["tenant_id"], schema=MODULE_SCHEMA)
+    op.create_index("ix_organizations_parent_id", "organizations", ["parent_id"], schema=MODULE_SCHEMA)
+    op.create_index("ix_organizations_leader_id", "organizations", ["leader_id"], schema=MODULE_SCHEMA)
 
     # ==================== 关联表 ====================
 
@@ -165,21 +165,21 @@ def upgrade() -> None:
     op.create_index("ix_role_permissions_permission_id", "role_permissions", ["permission_id"], schema=MODULE_SCHEMA)
     op.create_unique_constraint("uq_role_permissions", "role_permissions", ["tenant_id", "role_id", "permission_id"], schema=MODULE_SCHEMA)
 
-    # 创建 user_departments 表（最终状态：含 tenant_id NOT NULL）
+    # 创建 user_organizations 表（最终状态：含 tenant_id NOT NULL）
     op.create_table(
-        "user_departments",
+        "user_organizations",
         sa.Column("id", sa.String(36), primary_key=True),
         sa.Column("tenant_id", sa.String(36), nullable=False, comment="租户ID"),
         sa.Column("user_id", sa.String(36), sa.ForeignKey(f"{MODULE_SCHEMA}.users.id", ondelete="CASCADE"), nullable=False, comment="用户ID"),
-        sa.Column("department_id", sa.String(36), sa.ForeignKey(f"{MODULE_SCHEMA}.departments.id", ondelete="CASCADE"), nullable=False, comment="部门ID"),
-        sa.Column("is_leader", sa.Boolean, nullable=False, server_default="false", comment="是否部门负责人"),
+        sa.Column("organization_id", sa.String(36), sa.ForeignKey(f"{MODULE_SCHEMA}.organizations.id", ondelete="CASCADE"), nullable=False, comment="组织ID"),
+        sa.Column("is_leader", sa.Boolean, nullable=False, server_default="false", comment="是否组织负责人"),
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False, comment="创建时间"),
         sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False, comment="更新时间"),
         schema=MODULE_SCHEMA,
     )
-    op.create_index("ix_user_departments_tenant_id", "user_departments", ["tenant_id"], schema=MODULE_SCHEMA)
-    op.create_index("ix_user_departments_user_id", "user_departments", ["user_id"], schema=MODULE_SCHEMA)
-    op.create_index("ix_user_departments_department_id", "user_departments", ["department_id"], schema=MODULE_SCHEMA)
+    op.create_index("ix_user_organizations_tenant_id", "user_organizations", ["tenant_id"], schema=MODULE_SCHEMA)
+    op.create_index("ix_user_organizations_user_id", "user_organizations", ["user_id"], schema=MODULE_SCHEMA)
+    op.create_index("ix_user_organizations_organization_id", "user_organizations", ["organization_id"], schema=MODULE_SCHEMA)
 
     # 创建 user_tenants 表
     op.create_table(
