@@ -7,10 +7,8 @@ from __future__ import annotations
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from framework.schemas import BaseModel
+from framework.schemas import BaseModel, BasePaginatedQuery, BaseQuery
 from pydantic import EmailStr, Field, field_validator
-
-from framework.schemas.base import BasePaginatedQuery, BaseQuery
 
 if TYPE_CHECKING:
     from iam.models import Role
