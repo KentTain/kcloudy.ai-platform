@@ -1,10 +1,14 @@
 # Schema 基类规范
 
+## 目的
+
+本规范定义了 Python 后端项目中 Schema 层的基类使用规范，确保代码一致性、减少冗余配置、提高可维护性。
+
 ## 新增需求
 
 ### 需求: 所有 Schema 必须使用 framework 提供的基类
 
-所有业务模块（iam、tenant、ai、demo）的 Pydantic Schema 类必须继承 `framework.schemas.BaseModel` 或其子类，禁止直接继承 `pydantic.BaseModel`。
+所有业务模块（iam、tenant、ai、demo）的 Pydantic Schema 类**必须**继承 `framework.schemas.BaseModel` 或其子类，**禁止**直接继承 `pydantic.BaseModel`。
 
 #### 场景: 创建响应 Schema
 
