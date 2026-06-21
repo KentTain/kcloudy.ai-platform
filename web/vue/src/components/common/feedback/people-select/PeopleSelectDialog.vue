@@ -90,7 +90,7 @@ function handleCancel() {
 
 <template>
   <Dialog :open="open" @update:open="$emit('update:open', $event)">
-    <DialogContent class="max-w-[720px] p-0">
+    <DialogContent class="sm:max-w-[720px] p-0">
       <DialogHeader class="px-4 pt-4 pb-2">
         <DialogTitle>{{ title }}</DialogTitle>
       </DialogHeader>
@@ -107,7 +107,7 @@ function handleCancel() {
         />
       </div>
 
-      <DialogFooter class="px-4 py-3 border-t">
+      <DialogFooter class="mx-0 mb-0 px-4 py-3 border-t rounded-b-xl bg-muted/50">
         <Button variant="outline" @click="handleCancel">
           取消
         </Button>
