@@ -15,7 +15,15 @@ import {
   Shield,
   Search,
   FolderOpen,
+  Users,
+  Building,
+  Badge,
+  Lock,
+  Puzzle,
+  Settings,
+  Organization,
 } from "@lucide/vue"
+import type { LucideIcon } from "@lucide/vue"
 import AppPage from "@/framework/layouts/components/AppPage.vue"
 import {
   Button,
@@ -36,6 +44,19 @@ import { notifyError, getErrorMessage } from "@/framework/utils/feedback"
 
 const menuStore = useMenuStore()
 
+// ========== 图标映射 ==========
+
+const iconMap: Record<string, LucideIcon> = {
+  Menu,
+  Users,
+  Building,
+  Badge,
+  Lock,
+  Puzzle,
+  Settings,
+  Organization,
+}
+
 // ========== 递归树节点组件 ==========
 
 const MenuTreeNodeComponent = defineComponent({
@@ -53,6 +74,9 @@ const MenuTreeNodeComponent = defineComponent({
         const isSelected = props.selectedId === menu.id
         const indent = 12 + props.depth * 20
 
+        // 动态选择图标
+        const IconComponent = menu.icon ? iconMap[menu.icon] || Menu : Menu
+
         nodes.push(
           h(
             "button",
@@ -65,7 +89,7 @@ const MenuTreeNodeComponent = defineComponent({
               onClick: () => emit("select", menu),
             },
             [
-              h(Menu, { class: "h-4 w-4 mr-2 shrink-0 text-blue-500" }),
+              h(IconComponent, { class: "h-4 w-4 mr-2 shrink-0 text-blue-500" }),
               h("span", { class: "truncate" }, menu.name),
               menu.children?.length
                 ? h(
