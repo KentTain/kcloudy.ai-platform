@@ -138,7 +138,7 @@ const dataTable = useDataTable<Module>({
       page_size,
       keyword: searchForm.value.keyword || undefined,
       is_active:
-        searchForm.value.is_active === "all"
+        searchForm.value.is_active === "" || searchForm.value.is_active === "all"
           ? undefined
           : searchForm.value.is_active === "true",
     });
