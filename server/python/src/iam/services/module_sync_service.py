@@ -126,19 +126,23 @@ class ModuleSyncService:
             if mm.parent_id:
                 tenant_parent_id = menu_id_map.get(mm.parent_id)
 
-            menu = Menu(
-                tenant_id=tenant_id,
-                parent_id=tenant_parent_id,
-                module=module_code,
-                code=mm.code,
-                name=mm.name,
-                path=mm.path,
-                icon=mm.icon,
-                is_visible=mm.is_visible,
-                ref_id=mm.id,
+            # 使用 Menu.create_node() 创建菜单，自动维护树形字段
+            # 将 sort_order 映射到 tree_sort
+            menu = await Menu.create_node(
+                session,
+                {
+                    "tenant_id": tenant_id,
+                    "parent_id": tenant_parent_id or None,
+                    "module": module_code,
+                    "code": mm.code,
+                    "name": mm.name,
+                    "path": mm.path,
+                    "icon": mm.icon,
+                    "is_visible": mm.is_visible,
+                    "ref_id": mm.id,
+                    "tree_sort": mm.sort_order,  # 映射 sort_order -> tree_sort
+                },
             )
-            session.add(menu)
-            await session.flush()  # 获取 menu.id
             menu_id_map[mm.id] = menu.id
 
         # 5. 创建租户实例层的权限
@@ -593,18 +597,22 @@ class ModuleSyncService:
                 parent_result = await session.execute(parent_stmt)
                 tenant_parent_id = parent_result.scalar_one_or_none()
 
-            menu = Menu(
-                tenant_id=tenant_id,
-                parent_id=tenant_parent_id,
-                module=module.code,
-                code=module_menu.code,
-                name=module_menu.name,
-                path=module_menu.path,
-                icon=module_menu.icon,
-                is_visible=module_menu.is_visible,
-                ref_id=module_menu.id,
+            # 使用 Menu.create_node() 创建菜单，自动维护树形字段
+            menu = await Menu.create_node(
+                session,
+                {
+                    "tenant_id": tenant_id,
+                    "parent_id": tenant_parent_id or None,
+                    "module": module.code,
+                    "code": module_menu.code,
+                    "name": module_menu.name,
+                    "path": module_menu.path,
+                    "icon": module_menu.icon,
+                    "is_visible": module_menu.is_visible,
+                    "ref_id": module_menu.id,
+                    "tree_sort": module_menu.sort_order,  # 映射 sort_order -> tree_sort
+                },
             )
-            session.add(menu)
 
         _logger.info(
             f"模块菜单创建同步完成: menu={module_menu.code}, tenants={len(tenant_ids)}"
@@ -654,11 +662,19 @@ class ModuleSyncService:
             tenant_menu = tenant_menu_result.scalar_one_or_none()
 
             if tenant_menu:
-                # 更新菜单属性
-                tenant_menu.name = module_menu.name
-                tenant_menu.path = module_menu.path
-                tenant_menu.icon = module_menu.icon
-                tenant_menu.is_visible = module_menu.is_visible
+                # 使用 Menu.update_node() 更新菜单，自动维护树形字段
+                await Menu.update_node(
+                    session,
+                    tenant_menu.id,
+                    {
+                        "name": module_menu.name,
+                        "path": module_menu.path,
+                        "icon": module_menu.icon,
+                        "is_visible": module_menu.is_visible,
+                        "tree_sort": module_menu.sort_order,  # 映射 sort_order -> tree_sort
+                        "parent_id": None,  # 临时值，下面会根据 parent_id 更新
+                    },
+                )
 
                 # 更新父菜单（如果变化）
                 if module_menu.parent_id:
@@ -668,9 +684,13 @@ class ModuleSyncService:
                     )
                     parent_result = await session.execute(parent_stmt)
                     tenant_parent_id = parent_result.scalar_one_or_none()
-                    tenant_menu.parent_id = tenant_parent_id
-                else:
-                    tenant_menu.parent_id = None
+                    if tenant_parent_id and tenant_parent_id != tenant_menu.parent_id:
+                        # 再次调用 update_node 更新 parent_id
+                        await Menu.update_node(
+                            session,
+                            tenant_menu.id,
+                            {"parent_id": tenant_parent_id},
+                        )
 
         _logger.info(
             f"模块菜单更新同步完成: menu={module_menu.code}, tenants={len(tenant_ids)}"

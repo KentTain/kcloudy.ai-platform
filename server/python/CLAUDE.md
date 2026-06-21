@@ -84,6 +84,18 @@ uv run pytest tests/demo/ -v
 - 异步测试：使用 `pytest.mark.asyncio`
 - API 路由：遵循 `/{模块}/{类型}/v1/{功能}` 格式
 
+## 数据库自动迁移及初始化数据
+
+应用启动时支持自动执行数据库迁移和种子数据初始化，通过配置控制行为。
+
+### 配置说明
+
+| 环境 | 配置文件 | `auto_migrate` | 行为 |
+| --- | --- | --- | --- |
+| 开发环境 | `application-local.yml` | `true` | 启动时自动运行迁移 |
+| 生产环境 | `application-prod.yml` | `false` | 禁用自动迁移，需手动执行 |
+| 默认 | `application.yml` | `false` | 默认禁用 |
+
 ## Service 层开发规范
 
 ### 分层职责

@@ -282,7 +282,9 @@ class StartupMigrationValidator:
             "tenant.modules": "SELECT COUNT(*) FROM tenant.modules",
             "tenant.tenants": "SELECT COUNT(*) FROM tenant.tenants",
             "tenant.module_roles": "SELECT COUNT(*) FROM tenant.module_roles WHERE module_id IS NULL",
+            "tenant.module_menus": "SELECT COUNT(*) FROM tenant.module_menus",
             "iam.roles": "SELECT COUNT(*) FROM iam.roles",
+            "iam.menus": "SELECT COUNT(*) FROM iam.menus",
             "iam.users": "SELECT COUNT(*) FROM iam.users",
         }
 
