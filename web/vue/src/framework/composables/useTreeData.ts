@@ -101,14 +101,14 @@ export interface UseTreeDataReturn<TNode extends TreeSelectNode> {
 /**
  * 获取对象字段值
  */
-function getFieldValue<T>(obj: T, field: string): unknown {
+function getFieldValue<T extends object>(obj: T, field: string): unknown {
   return (obj as Record<string, unknown>)[field]
 }
 
 /**
  * 转换单个节点数据
  */
-function transformNode<TInput>(
+function transformNode<TInput extends object>(
   input: TInput,
   mapping: Required<FieldMapping>
 ): TreeSelectNode {
@@ -140,7 +140,7 @@ function transformNode<TInput>(
 /**
  * 转换输入数据为标准树节点格式
  */
-function transformTreeData<TInput>(
+function transformTreeData<TInput extends object>(
   source: TInput[],
   mapping: Required<FieldMapping>
 ): TreeSelectNode[] {
@@ -263,7 +263,7 @@ function getAncestorsInTree<TNode extends TreeSelectNode>(
  * ```
  */
 export function useTreeData<
-  TInput extends Record<string, unknown> = Record<string, unknown>,
+  TInput extends object = Record<string, unknown>,
   TNode extends TreeSelectNode = TreeSelectNode,
 >(options: UseTreeDataOptions<TInput>): UseTreeDataReturn<TNode> {
   const {

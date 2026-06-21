@@ -36,9 +36,11 @@ const emit = defineEmits<{
 }>()
 
 // 使用 useTreeData composable 转换菜单数据
+const selectedIdModel = computed(() => (props.selectedId ? [props.selectedId] : []))
+
 const { treeData, selectedIds } = useTreeData<MenuTreeNode, MenuTreeSelectNode>({
   source: () => props.menus,
-  modelValue: () => props.selectedId ? [props.selectedId] : [],
+  modelValue: selectedIdModel,
   mode: 'single',
 })
 

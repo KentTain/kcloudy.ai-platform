@@ -195,7 +195,7 @@ const childOrgColumns: ColumnDef<Organization>[] = [
       return h(
         Button,
         {
-          variant: "link",
+          variant: "ghost",
           size: "sm",
           onClick: () => viewChildOrganization(org),
         },
@@ -635,7 +635,7 @@ onMounted(() => {
           <Pencil class="mr-1 h-4 w-4" />
           编辑
         </Button>
-        <Button variant="destructive" :disabled="!hasSelection" @click="handleDelete">
+        <Button variant="danger" :disabled="!hasSelection" @click="handleDelete">
           <Trash2 class="mr-1 h-4 w-4" />
           删除
         </Button>
