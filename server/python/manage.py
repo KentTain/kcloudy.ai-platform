@@ -414,7 +414,8 @@ def rebuild(ctx, module, all_modules, yes, dry_run):
             write_warning("已取消重建操作")
             return
 
-    async def do_rebuild():
+    async def do_drop_create_schemas():
+        """异步删除和创建 schema"""
         from framework.database.core.engine import get_session, setup_engine
 
         db_url = get_database_url()
@@ -441,7 +442,8 @@ def rebuild(ctx, module, all_modules, yes, dry_run):
                 await session.commit()
                 write_success(f"[{m.name}] 已创建 schema: {m.schema}")
 
-        # 运行迁移
+    def do_run_migrations():
+        """同步运行迁移"""
         from alembic import command
 
         for m in modules:
@@ -450,7 +452,8 @@ def rebuild(ctx, module, all_modules, yes, dry_run):
                 command.upgrade(config, "head")
                 write_success(f"[{m.name}] 已应用迁移")
 
-        # 运行 seed
+    async def do_run_seeds():
+        """异步运行种子数据"""
         for m in modules:
             seeds = m.get_seeds()
             for seed_name, seed_func in seeds.items():
@@ -464,10 +467,14 @@ def rebuild(ctx, module, all_modules, yes, dry_run):
                 except Exception as e:
                     write_error(f"[{m.name}/{seed_name}] {e}")
 
-    if not dry_run:
-        asyncio.run(do_rebuild())
-    else:
-        asyncio.run(do_rebuild())
+    # 执行步骤 1-2: 删除和创建 schema
+    asyncio.run(do_drop_create_schemas())
+
+    # 执行步骤 3: 运行迁移（同步调用，避免嵌套事件循环）
+    do_run_migrations()
+
+    # 执行步骤 4: 运行种子数据
+    asyncio.run(do_run_seeds())
 
     write_empty_line()
     if dry_run:

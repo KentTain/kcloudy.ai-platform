@@ -137,9 +137,9 @@ def run_upgrade(dry_run: bool = False) -> None:
 
     if dry_run:
         print("[DRY-RUN] 预览待执行的迁移...")
-        run_alembic(["upgrade", "head", "--sql"], "待执行的 SQL")
+        run_alembic(["upgrade", "heads", "--sql"], "待执行的 SQL")
     else:
-        success, _ = run_alembic(["upgrade", "head"], "执行数据库迁移")
+        success, _ = run_alembic(["upgrade", "heads"], "执行数据库迁移")
 
         if success:
             print()

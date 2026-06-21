@@ -115,59 +115,12 @@ const permSearchKeyword = ref("")
 
 /** 构建三级权限树：模块 → 资源 → 权限 */
 const permissionTree = computed<PermissionModule[]>(() => {
-  // 从菜单获取模块列表
-  const moduleMap = new Map<string, Set<string>>()
-
-  // 遍历菜单树，建立 module → resources 映射
-  function collectMenuModules(menuList: MenuTreeNode[]) {
-    for (const menu of menuList) {
-      if (menu.module) {
-        if (!moduleMap.has(menu.module)) {
-          moduleMap.set(menu.module, new Set())
-        }
-        // 将菜单 code 作为资源名
-        if (menu.code) {
-          moduleMap.get(menu.module)!.add(menu.code)
-        }
-      }
-      if (menu.children?.length) {
-        collectMenuModules(menu.children)
-      }
-    }
+  // 如果没有权限数据，返回空数组
+  if (allPermissions.value.length === 0) {
+    return []
   }
 
-  if (menus.value.length > 0) {
-    collectMenuModules(menus.value)
-  }
-
-  // 如果没有菜单模块，从权限的 resource 字段推断
-  const resourceSet = new Set<string>()
-  for (const perm of allPermissions.value) {
-    resourceSet.add(perm.resource)
-  }
-
-  // 如果没有菜单模块，使用 resource 作为模块
-  if (moduleMap.size === 0) {
-    for (const resource of resourceSet) {
-      // 简单的模块推断：根据资源名称前缀
-      let moduleName = "通用"
-      if (resource.includes("user") || resource.includes("role") || resource.includes("permission") || resource.includes("org")) {
-        moduleName = "iam"
-      } else if (resource.includes("chat") || resource.includes("conversation") || resource.includes("model")) {
-        moduleName = "ai"
-      } else if (resource.includes("tenant") || resource.includes("module") || resource.includes("config")) {
-        moduleName = "tenant"
-      }
-
-      if (!moduleMap.has(moduleName)) {
-        moduleMap.set(moduleName, new Set())
-      }
-      moduleMap.get(moduleName)!.add(resource)
-    }
-  }
-
-  // 构建树结构
-  const modules: PermissionModule[] = []
+  // 模块标签映射
   const moduleLabels: Record<string, string> = {
     iam: "身份认证",
     ai: "AI 服务",
@@ -175,29 +128,54 @@ const permissionTree = computed<PermissionModule[]>(() => {
     通用: "通用权限",
   }
 
+  // 推断资源所属模块
+  function inferModule(resource: string): string {
+    const r = resource.toLowerCase()
+    if (r.includes("user") || r.includes("role") || r.includes("permission") || r.includes("org") || r.includes("menu")) {
+      return "iam"
+    }
+    if (r.includes("chat") || r.includes("conversation") || r.includes("model") || r.includes("message")) {
+      return "ai"
+    }
+    if (r.includes("tenant") || r.includes("module") || r.includes("config") || r.includes("resource")) {
+      return "tenant"
+    }
+    return "通用"
+  }
+
+  // 按资源分组权限
+  const resourceMap = new Map<string, Permission[]>()
+  for (const perm of allPermissions.value) {
+    const resource = perm.resource
+    if (!resourceMap.has(resource)) {
+      resourceMap.set(resource, [])
+    }
+    resourceMap.get(resource)!.push(perm)
+  }
+
+  // 按模块组织资源
+  const moduleMap = new Map<string, PermissionResource[]>()
+  for (const [resourceName, perms] of resourceMap) {
+    const moduleName = inferModule(resourceName)
+    if (!moduleMap.has(moduleName)) {
+      moduleMap.set(moduleName, [])
+    }
+    moduleMap.get(moduleName)!.push({
+      name: resourceName,
+      permissions: perms,
+      expanded: resourceExpandState.value.get(resourceName) ?? false,
+    })
+  }
+
+  // 构建树结构
+  const modules: PermissionModule[] = []
   for (const [moduleName, resources] of moduleMap) {
-    const resourceList: PermissionResource[] = []
-
-    for (const resourceName of resources) {
-      // 找到该资源下的所有权限
-      const perms = allPermissions.value.filter((p) => p.resource === resourceName)
-      if (perms.length > 0) {
-        resourceList.push({
-          name: resourceName,
-          permissions: perms,
-          expanded: resourceExpandState.value.get(resourceName) ?? false,
-        })
-      }
-    }
-
-    if (resourceList.length > 0) {
-      modules.push({
-        name: moduleName,
-        label: moduleLabels[moduleName] || moduleName,
-        resources: resourceList,
-        expanded: moduleExpandState.value.get(moduleName) ?? false,
-      })
-    }
+    modules.push({
+      name: moduleName,
+      label: moduleLabels[moduleName] || moduleName,
+      resources,
+      expanded: moduleExpandState.value.get(moduleName) ?? false,
+    })
   }
 
   return modules
@@ -234,6 +212,28 @@ const filteredPermissionTree = computed(() => {
 
 /** 角色权限 ID 集合 */
 const rolePermissionIds = computed(() => new Set(rolePermissions.value.map((p) => p.id)))
+
+/** 角色权限树（只包含角色拥有的权限） */
+const rolePermissionTree = computed<PermissionModule[]>(() => {
+  if (rolePermissions.value.length === 0) return []
+
+  const rolePermIds = rolePermissionIds.value
+
+  return permissionTree.value
+    .map(module => {
+      const resources = module.resources
+        .map(resource => {
+          const permissions = resource.permissions.filter(p => rolePermIds.has(p.id))
+          if (permissions.length === 0) return null
+          return { ...resource, permissions }
+        })
+        .filter((r): r is PermissionResource => r !== null)
+
+      if (resources.length === 0) return null
+      return { ...module, resources }
+    })
+    .filter((m): m is PermissionModule => m !== null)
+})
 
 // ========== 旧的计算属性（兼容弹窗搜索）==========
 
@@ -382,7 +382,8 @@ async function selectRole(role: Role) {
   activeTab.value = "members"
   // 成员列表由 DataTable 自动加载（enabled 条件触发）
   if (isUnmounted.value) return
-  await loadRolePermissions()
+  // 同时加载权限数据和菜单数据（权限列表 Tab 需要）
+  await Promise.all([loadRolePermissions(), loadAllPermissions(), loadMenus()])
 }
 
 /** 加载角色权限 */
@@ -399,7 +400,6 @@ async function loadRolePermissions() {
 
 /** 加载所有权限 */
 async function loadAllPermissions() {
-  if (allPermissions.value.length > 0) return
   try {
     const res = await getPermissions({ page: 1, page_size: 1000 })
     // 权限 API 直接返回数组
@@ -461,19 +461,41 @@ async function handleRemoveMember(user: { user_id: string; username: string; nic
 /** 打开分配权限弹窗 */
 async function handleOpenAssignPerm() {
   if (!selectedRole.value) return
+
+  // 确保权限数据已加载
   await Promise.all([loadAllPermissions(), loadMenus()])
-  // 设置已选权限
-  selectedPermIds.value = rolePermissions.value.map((p) => p.id)
+
+  // 确保角色权限已加载
+  if (rolePermissions.value.length === 0) {
+    await loadRolePermissions()
+  }
+
+  // 设置已选权限（确保类型一致）
+  selectedPermIds.value = rolePermissions.value.map((p) => String(p.id))
+
+  // 自动展开包含已选权限的模块和资源
+  const rolePermIds = new Set(selectedPermIds.value)
+
+  for (const module of permissionTree.value) {
+    for (const resource of module.resources) {
+      if (resource.permissions.some(p => rolePermIds.has(String(p.id)))) {
+        moduleExpandState.value.set(module.name, true)
+        resourceExpandState.value.set(resource.name, true)
+      }
+    }
+  }
+
   assignPermDialogOpen.value = true
 }
 
 /** 切换权限选中 */
-function togglePermission(permId: string) {
-  const index = selectedPermIds.value.indexOf(permId)
+function togglePermission(permId: string | number) {
+  const id = String(permId)
+  const index = selectedPermIds.value.indexOf(id)
   if (index > -1) {
     selectedPermIds.value.splice(index, 1)
   } else {
-    selectedPermIds.value.push(permId)
+    selectedPermIds.value.push(id)
   }
 }
 
@@ -717,67 +739,93 @@ onUnmounted(() => {
                 </TabsTrigger>
               </TabsList>
             </div>
+            <!-- 角色成员 Tab -->
+            <TabsContent value="members" class="p-4 m-0">
+              <div class="mb-3 flex items-center justify-between">
+                <span class="text-sm text-muted-foreground">
+                  共 {{ memberTable.table.getRowCount() }} 个成员
+                </span>
+                <Button size="sm" @click="addMemberDialogOpen = true">
+                  <UserPlus class="h-3.5 w-3.5 mr-1" />
+                  添加成员
+                </Button>
+              </div>
 
-            <ScrollArea class="flex-1">
-              <!-- 角色成员 Tab -->
-              <TabsContent value="members" class="p-4 m-0">
-                <div class="mb-3 flex items-center justify-between">
-                  <span class="text-sm text-muted-foreground">
-                    共 {{ memberTable.table.getRowCount() }} 个成员
-                  </span>
-                  <Button size="sm" @click="addMemberDialogOpen = true">
-                    <UserPlus class="h-3.5 w-3.5 mr-1" />
-                    添加成员
-                  </Button>
+              <!-- 成员表格 -->
+              <DataTable :data-table="memberTable" :fixed-layout="true" />
+            </TabsContent>
+
+            <!-- 权限列表 Tab -->
+            <TabsContent value="permissions" class="p-4 m-0 flex-none!">
+              <div class="mb-3 flex items-center justify-between">
+                <span class="text-sm text-muted-foreground">
+                  共 {{ rolePermissions.length }} 个权限
+                </span>
+                <Button size="sm" @click="handleOpenAssignPerm">
+                  <Settings class="h-3.5 w-3.5 mr-1" />
+                  分配权限
+                </Button>
+              </div>
+              <ScrollArea class="h-[400px]">
+                <div v-if="rolePermissions.length === 0" class="py-8 text-center text-muted-foreground">
+                  <Shield class="h-12 w-12 mx-auto mb-3 opacity-30" />
+                  <p>暂无权限</p>
                 </div>
 
-                <!-- 成员表格 -->
-                <DataTable :data-table="memberTable" :fixed-layout="true" />
-              </TabsContent>
+                <div v-else class="space-y-2">
+                  <div v-for="module in rolePermissionTree" :key="module.name" class="mb-2">
+                    <!-- 模块级 -->
+                    <button
+                      class="flex items-center w-full py-2 px-2 text-sm font-medium hover:bg-accent rounded transition-colors text-left"
+                      @click="toggleModule(module.name)"
+                    >
+                      <ChevronRight
+                        :class="['h-4 w-4 mr-1 shrink-0 transition-transform', module.expanded && 'rotate-90']"
+                      />
+                      <Package class="h-4 w-4 mr-2 shrink-0 text-primary" />
+                      <span>{{ module.label }}</span>
+                      <Badge variant="secondary" class="ml-2 text-xs">
+                        {{ module.resources.reduce((sum, r) => sum + r.permissions.length, 0) }}
+                      </Badge>
+                    </button>
 
-              <!-- 权限列表 Tab -->
-              <TabsContent value="permissions" class="p-4 m-0 flex flex-col">
-                <div class="mb-3 flex items-center justify-between">
-                  <span class="text-sm text-muted-foreground">
-                    共 {{ rolePermissions.length }} 个权限
-                  </span>
-                  <Button size="sm" @click="handleOpenAssignPerm">
-                    <Settings class="h-3.5 w-3.5 mr-1" />
-                    分配权限
-                  </Button>
-                </div>
+                    <!-- 资源级 -->
+                    <div v-show="module.expanded" class="ml-4">
+                      <div v-for="resource in module.resources" :key="resource.name" class="mb-1">
+                        <button
+                          class="flex items-center w-full py-1.5 px-2 text-sm hover:bg-accent rounded transition-colors text-left"
+                          @click="toggleResource(resource.name)"
+                        >
+                          <ChevronRight
+                            :class="['h-3.5 w-3.5 mr-1 shrink-0 transition-transform', resource.expanded && 'rotate-90']"
+                          />
+                          <Menu class="h-4 w-4 mr-2 shrink-0 text-muted-foreground" />
+                          <span>{{ resource.name }}</span>
+                          <Badge variant="outline" class="ml-2 text-xs">
+                            {{ resource.permissions.length }}
+                          </Badge>
+                        </button>
 
-                <div v-if="rolePermissions.length === 0" class="flex-1 flex items-center justify-center text-muted-foreground">
-                  <div class="text-center">
-                    <Shield class="h-12 w-12 mx-auto mb-3 opacity-30" />
-                    <p>暂无权限</p>
-                  </div>
-                </div>
-
-                <ScrollArea v-else class="flex-1">
-                  <div class="space-y-1">
-                    <!-- 三级树：模块 → 资源 → 权限 -->
-                    <template v-for="module in permissionTree" :key="module.name">
-                      <template v-for="resource in module.resources" :key="resource.name">
-                        <template v-for="perm in resource.permissions" :key="perm.id">
+                        <!-- 权限级 -->
+                        <div v-show="resource.expanded" class="ml-6 grid grid-cols-2 gap-x-4 gap-y-1">
                           <div
-                            v-if="rolePermissionIds.has(perm.id)"
-                            class="flex items-center gap-2 py-2 px-2 rounded hover:bg-accent"
+                            v-for="perm in resource.permissions"
+                            :key="perm.id"
+                            class="flex items-center gap-2 py-1.5 px-2 rounded hover:bg-accent"
                           >
                             <Shield class="h-4 w-4 text-blue-500 shrink-0" />
                             <div class="flex-1 min-w-0">
-                              <div class="font-medium truncate">{{ perm.name }}</div>
-                              <div class="text-xs text-muted-foreground">{{ perm.code }}</div>
+                              <div class="text-sm truncate">{{ perm.name }}</div>
+                              <div class="text-xs text-muted-foreground truncate">{{ perm.code }}</div>
                             </div>
-                            <Badge variant="outline" class="text-xs shrink-0">{{ perm.action }}</Badge>
                           </div>
-                        </template>
-                      </template>
-                    </template>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                </ScrollArea>
-              </TabsContent>
-            </ScrollArea>
+                </div>
+              </ScrollArea>
+            </TabsContent>
           </Tabs>
         </template>
       </div>
@@ -858,8 +906,8 @@ onUnmounted(() => {
                     class="flex items-center gap-2 py-1.5"
                   >
                     <Checkbox
-                      :checked="selectedPermIds.includes(perm.id)"
-                      @update:checked="togglePermission(perm.id)"
+                      :model-value="selectedPermIds.includes(String(perm.id))"
+                      @update:model-value="togglePermission(perm.id)"
                     />
                     <div class="flex-1 min-w-0">
                       <div class="text-sm truncate">{{ perm.name }}</div>

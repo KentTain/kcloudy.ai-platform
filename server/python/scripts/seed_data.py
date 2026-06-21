@@ -70,7 +70,7 @@ def get_seed_modules() -> dict[str, Callable[[bool], Coroutine[None, None, int]]
         模块名到种子函数的映射
     """
     try:
-        from demo.seeds import SEED_MODULES  # type: ignore[import-untyped]
+        from iam.migrations.seeds import SEED_MODULES  # type: ignore[import-untyped]
 
         return SEED_MODULES
     except ImportError as e:
