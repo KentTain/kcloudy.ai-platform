@@ -16,12 +16,11 @@ import {
   Search,
   FolderOpen,
   Users,
-  Building,
+  Building2,
   Badge as BadgeIcon,
   Lock,
   Puzzle,
   Settings,
-  Organization,
 } from "@lucide/vue"
 import type { LucideIcon } from "@lucide/vue"
 import AppPage from "@/framework/layouts/components/AppPage.vue"
@@ -49,12 +48,13 @@ const menuStore = useMenuStore()
 const iconMap: Record<string, LucideIcon> = {
   Menu,
   Users,
-  Building,
+  Building: Building2,
+  Building2,
   Badge: BadgeIcon,
   Lock,
   Puzzle,
   Settings,
-  Organization,
+  Organization: Building2,
 }
 
 // ========== 递归树节点组件 ==========
