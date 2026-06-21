@@ -62,6 +62,10 @@ class SqlalchemySettings(BaseSettings):
 
     url: str = Field(default="", description="数据库连接 URL")
     echo: bool = Field(default=False, description="是否打印 SQL")
+    auto_migrate: bool = Field(
+        default=False,
+        description="启动时自动运行数据库迁移（仅开发环境建议开启）"
+    )
     pool: SqlalchemyPoolSettings = Field(
         default_factory=SqlalchemyPoolSettings, description="连接池配置"
     )

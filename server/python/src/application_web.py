@@ -16,6 +16,7 @@ from framework.common.time import ChinaTimeZone
 from framework.database.core.engine import setup_engine
 from framework.database.core.engine_pool import init_default_engine
 from framework.database.dependencies import get_task_session
+from framework.database.migration_validator import StartupMigrationValidator
 from framework.middlewares.test_user_middleware import TestUserMiddleware
 from framework.module import get_registry, load_modules
 from framework.module.sync_service import ModuleDefinitionSyncService
@@ -29,6 +30,7 @@ from framework.utils.log_util import (
     write_error,
     write_info,
     write_success,
+    write_warning,
 )
 from framework.utils.startup_timer import StartupTimer
 from iam.middlewares.iam_auth_middleware import IAMAuthMiddleware
@@ -95,13 +97,64 @@ async def lifespan(app: FastAPI):
             _logger.exception(f"TenantRoleCreator 注册失败: {e}")
             phase.details["TenantRoleCreator"] = "不可用"
 
-    with timer.phase("模块定义同步", order=3) as phase:
-        # 同步模块定义（菜单、权限、角色）到数据库
-        await _run_module_definition_sync(phase)
+    with timer.phase("数据库迁移验证", order=2.5) as phase:
+        # 验证并自动运行数据库迁移
+        src_path = Path(__file__).parent
+        auto_migrate = settings.sqlalchemy.auto_migrate
+        migration_validator = StartupMigrationValidator(src_path, auto_migrate=auto_migrate)
 
-    with timer.phase("数据初始化", order=4):
-        # 自动执行各模块 seed 初始化（异常不阻止应用启动）
-        await _run_seed_initialization()
+        if auto_migrate:
+            write_info("自动迁移模式已启用 (auto_migrate=true)")
+
+        async with get_task_session() as session:
+            migration_result = await migration_validator.validate_and_migrate(session)
+
+        if migration_result["all_migrated"]:
+            if migration_result.get("auto_migrated"):
+                phase.details["迁移状态"] = f"✓ 自动迁移完成: {migration_result['auto_migrated']}"
+            else:
+                phase.details["迁移状态"] = "✓ 全部完成"
+            write_success("数据库迁移验证通过")
+        else:
+            failed = migration_result.get("need_migration", [])
+            phase.details["迁移状态"] = f"⚠ 需要迁移: {failed}"
+            write_error(
+                f"数据库迁移缺失: {failed}。"
+                f"请先运行: uv run python manage.py db migrate --all --yes"
+            )
+            # 迁移缺失时跳过后续初始化步骤
+            app.state.migration_needed = True
+
+    # 仅在迁移完成时执行后续初始化
+    migration_needed = getattr(app.state, "migration_needed", False)
+
+    if not migration_needed:
+        with timer.phase("模块定义同步", order=3) as phase:
+            # 同步模块定义（菜单、权限、角色）到数据库
+            await _run_module_definition_sync(phase)
+
+        with timer.phase("数据初始化", order=4):
+            # 自动执行各模块 seed 初始化（异常不阻止应用启动）
+            await _run_seed_initialization()
+
+        with timer.phase("数据完整性验证", order=5) as phase:
+            # 验证关键数据是否存在
+            src_path = Path(__file__).parent
+            migration_validator = StartupMigrationValidator(src_path)
+            async with get_task_session() as session:
+                verification = await migration_validator.verify_data_integrity(session)
+
+            if verification["all_passed"]:
+                phase.details["验证状态"] = "✓ 全部通过"
+                write_success("数据完整性验证通过")
+            else:
+                failed = [k for k, v in verification.items()
+                         if k != "all_passed" and not v.get("passed")]
+                phase.details["验证状态"] = f"⚠ 部分缺失: {failed}"
+                write_warning(f"数据完整性验证未通过，部分功能可能异常: {failed}")
+    else:
+        write_warning("检测到迁移缺失，跳过模块定义同步和数据初始化")
+        write_info("请运行迁移后重启应用: uv run python manage.py db migrate --all --yes")
 
     registry = get_registry()
     modules = [module.name for module in registry.get_all_modules()]

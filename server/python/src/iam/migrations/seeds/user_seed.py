@@ -12,7 +12,7 @@ from sqlalchemy import select
 
 from framework.module.definition import GLOBAL_ROLES
 from framework.utils.log_util import write_info, write_success, write_warning
-from iam.models import Organization, User, UserOrganization, UserRole, UserStatus, UserTenant
+from iam.models import Organization, Role, User, UserOrganization, UserRole, UserStatus, UserTenant
 
 # 默认系统管理员配置
 DEFAULT_ADMIN_USERNAME = "admin"
@@ -35,10 +35,6 @@ async def run(*, dry_run: bool = False) -> int:
     from framework.database.core.engine import get_session
     from framework.utils.crypto import hash_password
 
-    # 种子数据特殊场景：需跨模块查询 tenant.models.ModuleRole，
-    # 使用局部导入避免模块级循环依赖
-    from tenant.models import ModuleRole
-
     settings = get_settings()
     tenant_config = settings.tenant
     tenant_id = tenant_config.default_tenant_id
@@ -59,11 +55,12 @@ async def run(*, dry_run: bool = False) -> int:
             write_warning("默认系统管理员已存在，跳过初始化")
             return 0
 
-        # 获取全局角色 ID（通过角色编码查找）
+        # 获取租户实例层的角色 ID（iam.roles 表）
+        # 全局角色已通过 sync_module_assigned 同步到租户实例层
         role_result = await session.execute(
-            select(ModuleRole.id).where(
-                ModuleRole.module_id.is_(None),
-                ModuleRole.code == sysadmin_role_def.code,
+            select(Role.id).where(
+                Role.tenant_id == tenant_id,
+                Role.code == sysadmin_role_def.code,
             )
         )
         role_id = role_result.scalar_one_or_none()

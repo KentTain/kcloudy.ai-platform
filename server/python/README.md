@@ -242,6 +242,162 @@ uv run format-code
 uv run format-code --check-only
 ```
 
+### 自动迁移及初始化数据
+
+应用启动时支持自动执行数据库迁移和种子数据初始化，通过配置控制行为。
+
+#### 配置说明
+
+| 环境 | 配置文件 | `auto_migrate` | 行为 |
+| --- | --- | --- | --- |
+| 开发环境 | `application-local.yml` | `true` | 启动时自动运行迁移 |
+| 生产环境 | `application-prod.yml` | `false` | 禁用自动迁移，需手动执行 |
+| 默认 | `application.yml` | `false` | 默认禁用 |
+
+配置示例：
+
+```yaml
+# application-local.yml
+sqlalchemy:
+  url: "postgresql+asyncpg://admin:password@127.0.0.1:5432/ai_platform"
+  echo: false
+  auto-migrate: true  # 开发环境开启自动迁移
+  pool:
+    size: 20
+    max-overflow: 30
+```
+
+#### 启动流程
+
+```
+Phase 1: 数据库迁移验证
+├── 检查 schema 是否存在
+├── 检查 alembic_version 表是否存在
+├── auto_migrate=true  → 自动创建 schema 并运行迁移
+└── auto_migrate=false → 提示手动运行迁移命令
+
+Phase 2: 模块定义同步
+├── 创建模块记录（tenant.modules）
+├── 同步菜单定义（iam.menus）
+├── 同步权限定义（iam.permissions）
+├── 同步角色定义（iam.roles）
+└── 同步全局角色（sysAdmin、normalUser）
+
+Phase 3: 种子数据初始化
+├── 资源配置（database_configs、cache_configs 等）
+├── 全局角色（sysAdmin、normalUser）
+├── 默认租户（tenant.tenants）
+├── 模块分配（tenant.tenant_modules）
+├── 默认组织（iam.organizations）
+└── 默认用户（iam.users）
+
+Phase 4: 数据完整性验证
+└── 检查关键数据是否存在
+```
+
+#### 使用方式
+
+**开发环境（auto_migrate: true）**
+
+```bash
+# 直接启动，自动完成所有初始化
+uv run python manage.py runserver
+```
+
+启动日志示例：
+
+```
+[Phase 1] Auto Migration
+  - [tenant] 自动创建 Schema
+  - [tenant] 迁移执行成功
+  - [tenant] 自动迁移完成
+  - ... (iam, ai, demo 同样)
+
+[Phase 2] Module Sync
+  - 模块 tenant 同步完成
+  - 全局角色同步完成
+
+[Phase 3] Seeds
+  - 已创建默认资源配置
+  - 已创建租户: 默认租户
+  - 已创建用户: admin
+
+[Phase 4] Verification
+  SUCCESS
+```
+
+**生产环境（auto_migrate: false）**
+
+```bash
+# 1. 手动运行迁移
+uv run python manage.py db migrate --all --yes
+
+# 2. 启动服务（自动执行种子数据初始化）
+uv run python manage.py runserver
+```
+
+启动日志示例：
+
+```
+[Phase 1] Migration Validation
+  - 检测到迁移缺失: ['tenant', 'iam']
+  - 请运行: uv run python manage.py db migrate --all --yes
+  - 或在配置中设置 sqlalchemy.auto_migrate: true 自动运行迁移
+```
+
+#### 新增迁移和种子
+
+| 类型 | 自动执行 | 说明 |
+| --- | --- | --- |
+| Migration | ✅（需 `auto_migrate: true`） | 新增迁移文件后，启动时自动执行 |
+| Seed | ✅（始终） | 新增种子数据后，启动时自动执行（幂等检查） |
+
+**新增迁移示例：**
+
+```bash
+# 创建新迁移文件
+uv run python manage.py db makemigrations --module iam -m "add new feature"
+
+# 开发环境：启动时自动执行
+# 生产环境：手动运行 migrate 命令
+```
+
+**新增种子示例：**
+
+```python
+# src/iam/migrations/seeds/new_seed.py
+async def run(*, dry_run: bool = False) -> int:
+    """新增种子数据"""
+    # 幂等检查：已存在则跳过
+    existing = await session.execute(select(Model).where(...))
+    if existing.scalar_one_or_none():
+        return 0
+
+    # 创建数据
+    session.add(Model(...))
+    await session.commit()
+    return 1
+```
+
+```python
+# src/iam/module.py - 注册种子
+def get_seeds(self) -> dict[str, Callable]:
+    from iam.migrations.seeds.new_seed import run as new_seed_run
+    return {
+        "new_seed": new_seed_run,
+        # ... 其他种子
+    }
+```
+
+#### 注意事项
+
+| 场景 | 建议 |
+| --- | --- |
+| 开发环境 | 使用 `auto_migrate: true`，快速迭代 |
+| 测试/CI 环境 | 使用 `auto_migrate: true`，自动化流程 |
+| 生产环境 | 使用 `auto_migrate: false`，控制变更时机 |
+| 多实例部署 | 确保只有一个实例执行迁移，或使用分布式锁 |
+
 ### 数据库迁移
 
 项目采用模块化迁移架构，每个模块拥有独立的 PostgreSQL schema 和迁移版本表。
