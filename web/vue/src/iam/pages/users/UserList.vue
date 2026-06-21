@@ -469,7 +469,7 @@ onMounted(() => {
 
     <div class="flex min-h-0 flex-1 gap-4">
       <!-- 左侧：组织树筛选 -->
-      <div class="w-[300px] shrink-0 flex flex-col border rounded-lg overflow-hidden">
+      <div class="w-[300px] shrink-0 flex flex-col border rounded-lg overflow-hidden bg-card">
         <div class="p-3 border-b bg-muted/30 flex items-center justify-between">
           <span class="text-sm font-medium">组织筛选</span>
           <Button
@@ -518,7 +518,7 @@ onMounted(() => {
       </div>
 
       <!-- 右侧：用户列表 -->
-      <div class="flex min-w-0 flex-1 flex-col border rounded-lg overflow-hidden">
+      <div class="flex min-w-0 flex-1 flex-col border rounded-lg overflow-hidden bg-card">
         <!-- 筛选栏 -->
         <div class="p-3 border-b bg-muted/30">
           <div class="flex flex-wrap items-end gap-3">

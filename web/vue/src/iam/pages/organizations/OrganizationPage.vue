@@ -649,7 +649,7 @@ onMounted(() => {
     <!-- Body -->
     <div class="flex gap-4 h-[calc(100vh-200px)]">
       <!-- 左侧：组织树 -->
-      <div class="w-[300px] shrink-0 flex flex-col border rounded-lg overflow-hidden">
+      <div class="w-[300px] shrink-0 flex flex-col border rounded-lg overflow-hidden bg-card">
         <div class="p-3 border-b bg-muted/30">
           <div class="relative">
             <Search class="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -689,7 +689,7 @@ onMounted(() => {
       </div>
 
       <!-- 右侧：详情 + Tabs -->
-      <div class="flex-1 flex flex-col border rounded-lg overflow-hidden">
+      <div class="flex-1 flex flex-col border rounded-lg overflow-hidden bg-card">
         <template v-if="selectedOrganization">
           <!-- 头部信息 -->
           <div class="p-4 border-b bg-muted/20">

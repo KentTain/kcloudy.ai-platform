@@ -18,7 +18,10 @@ import {
   Settings,
   UserPlus,
   X,
-  Search,
+  ChevronRight,
+  ChevronDown,
+  Menu,
+  Package,
 } from "@lucide/vue"
 import AppPage from "@/framework/layouts/components/AppPage.vue"
 import {
@@ -42,7 +45,7 @@ import {
   DialogFooter,
 } from "@/components"
 import { confirmAction, notifySuccess, notifyError, getErrorMessage } from "@/framework/utils/feedback"
-import type { Role, Permission, PermissionGroup, RoleMember } from "@/iam/types"
+import type { Role, Permission, PermissionGroup, RoleMember, MenuTreeNode } from "@/iam/types"
 import type { OrgTreeNode, PeopleItem } from "@/components/common/feedback/people-select"
 import {
   getRoles,
@@ -56,8 +59,26 @@ import {
   deleteRole,
 } from "@/iam/api/role"
 import { getPermissions } from "@/iam/api/permission"
+import { getMenus } from "@/iam/api/menu"
 import { getOrganizationTree, getOrganizationMembers } from "@/iam/api/organization"
 import { getUsers } from "@/iam/api/user"
+
+// ========== 类型定义 ==========
+
+/** 权限树节点 - 模块级 */
+interface PermissionModule {
+  name: string
+  label: string
+  resources: PermissionResource[]
+  expanded: boolean
+}
+
+/** 权限树节点 - 资源级 */
+interface PermissionResource {
+  name: string
+  permissions: Permission[]
+  expanded: boolean
+}
 
 // ========== 状态 ==========
 
@@ -70,6 +91,11 @@ const activeTab = ref("members")
 // 角色权限
 const allPermissions = ref<Permission[]>([])
 const rolePermissions = ref<Permission[]>([])
+const menus = ref<MenuTreeNode[]>([])
+
+// 权限树展开状态
+const moduleExpandState = ref<Map<string, boolean>>(new Map())
+const resourceExpandState = ref<Map<string, boolean>>(new Map())
 
 // 弹窗
 const addMemberDialogOpen = ref(false)
@@ -86,6 +112,130 @@ const formSubmitting = ref(false)
 const permSearchKeyword = ref("")
 
 // ========== 计算属性 ==========
+
+/** 构建三级权限树：模块 → 资源 → 权限 */
+const permissionTree = computed<PermissionModule[]>(() => {
+  // 从菜单获取模块列表
+  const moduleMap = new Map<string, Set<string>>()
+
+  // 遍历菜单树，建立 module → resources 映射
+  function collectMenuModules(menuList: MenuTreeNode[]) {
+    for (const menu of menuList) {
+      if (menu.module) {
+        if (!moduleMap.has(menu.module)) {
+          moduleMap.set(menu.module, new Set())
+        }
+        // 将菜单 code 作为资源名
+        if (menu.code) {
+          moduleMap.get(menu.module)!.add(menu.code)
+        }
+      }
+      if (menu.children?.length) {
+        collectMenuModules(menu.children)
+      }
+    }
+  }
+
+  if (menus.value.length > 0) {
+    collectMenuModules(menus.value)
+  }
+
+  // 如果没有菜单模块，从权限的 resource 字段推断
+  const resourceSet = new Set<string>()
+  for (const perm of allPermissions.value) {
+    resourceSet.add(perm.resource)
+  }
+
+  // 如果没有菜单模块，使用 resource 作为模块
+  if (moduleMap.size === 0) {
+    for (const resource of resourceSet) {
+      // 简单的模块推断：根据资源名称前缀
+      let moduleName = "通用"
+      if (resource.includes("user") || resource.includes("role") || resource.includes("permission") || resource.includes("org")) {
+        moduleName = "iam"
+      } else if (resource.includes("chat") || resource.includes("conversation") || resource.includes("model")) {
+        moduleName = "ai"
+      } else if (resource.includes("tenant") || resource.includes("module") || resource.includes("config")) {
+        moduleName = "tenant"
+      }
+
+      if (!moduleMap.has(moduleName)) {
+        moduleMap.set(moduleName, new Set())
+      }
+      moduleMap.get(moduleName)!.add(resource)
+    }
+  }
+
+  // 构建树结构
+  const modules: PermissionModule[] = []
+  const moduleLabels: Record<string, string> = {
+    iam: "身份认证",
+    ai: "AI 服务",
+    tenant: "租户管理",
+    通用: "通用权限",
+  }
+
+  for (const [moduleName, resources] of moduleMap) {
+    const resourceList: PermissionResource[] = []
+
+    for (const resourceName of resources) {
+      // 找到该资源下的所有权限
+      const perms = allPermissions.value.filter((p) => p.resource === resourceName)
+      if (perms.length > 0) {
+        resourceList.push({
+          name: resourceName,
+          permissions: perms,
+          expanded: resourceExpandState.value.get(resourceName) ?? false,
+        })
+      }
+    }
+
+    if (resourceList.length > 0) {
+      modules.push({
+        name: moduleName,
+        label: moduleLabels[moduleName] || moduleName,
+        resources: resourceList,
+        expanded: moduleExpandState.value.get(moduleName) ?? false,
+      })
+    }
+  }
+
+  return modules
+})
+
+/** 筛选后的权限树 */
+const filteredPermissionTree = computed(() => {
+  if (!permSearchKeyword.value.trim()) {
+    return permissionTree.value
+  }
+
+  const keyword = permSearchKeyword.value.toLowerCase()
+
+  return permissionTree.value
+    .map((module) => {
+      const filteredResources = module.resources
+        .map((resource) => {
+          const filteredPerms = resource.permissions.filter(
+            (p) =>
+              p.name.toLowerCase().includes(keyword) ||
+              p.code.toLowerCase().includes(keyword) ||
+              p.resource.toLowerCase().includes(keyword)
+          )
+          if (filteredPerms.length === 0) return null
+          return { ...resource, permissions: filteredPerms }
+        })
+        .filter((r): r is PermissionResource => r !== null)
+
+      if (filteredResources.length === 0) return null
+      return { ...module, resources: filteredResources }
+    })
+    .filter((m): m is PermissionModule => m !== null)
+})
+
+/** 角色权限 ID 集合 */
+const rolePermissionIds = computed(() => new Set(rolePermissions.value.map((p) => p.id)))
+
+// ========== 旧的计算属性（兼容弹窗搜索）==========
 
 // 按资源分组权限
 const permissionGroups = computed<PermissionGroup[]>(() => {
@@ -259,6 +409,29 @@ async function loadAllPermissions() {
   }
 }
 
+/** 加载菜单 */
+async function loadMenus() {
+  if (menus.value.length > 0) return
+  try {
+    const res = await getMenus()
+    menus.value = res.data?.menus || []
+  } catch {
+    menus.value = []
+  }
+}
+
+/** 切换模块展开 */
+function toggleModule(moduleName: string) {
+  const currentState = moduleExpandState.value.get(moduleName) ?? false
+  moduleExpandState.value.set(moduleName, !currentState)
+}
+
+/** 切换资源展开 */
+function toggleResource(resourceName: string) {
+  const currentState = resourceExpandState.value.get(resourceName) ?? false
+  resourceExpandState.value.set(resourceName, !currentState)
+}
+
 /** 添加成员 */
 async function handleAddMembers(userIds: string[]) {
   if (!selectedRole.value || userIds.length === 0) return
@@ -288,7 +461,8 @@ async function handleRemoveMember(user: { user_id: string; username: string; nic
 /** 打开分配权限弹窗 */
 async function handleOpenAssignPerm() {
   if (!selectedRole.value) return
-  await loadAllPermissions()
+  await Promise.all([loadAllPermissions(), loadMenus()])
+  // 设置已选权限
   selectedPermIds.value = rolePermissions.value.map((p) => p.id)
   assignPermDialogOpen.value = true
 }
@@ -435,6 +609,7 @@ async function loadOrgPeopleCallback(orgId: string): Promise<PeopleItem[]> {
 // 初始化
 onMounted(() => {
   loadRoles()
+  loadMenus()
 })
 
 // 清理
@@ -447,7 +622,7 @@ onUnmounted(() => {
   <AppPage title="角色管理" variant="workbench" description="管理系统角色、成员和权限">
     <div class="flex gap-4 flex-1 min-h-0">
       <!-- 左侧：角色列表 -->
-      <div class="w-[300px] shrink-0 flex flex-col border rounded-lg overflow-hidden">
+      <div class="w-[300px] shrink-0 flex flex-col border rounded-lg overflow-hidden bg-card">
         <div class="p-3 border-b bg-muted/30 flex items-center justify-between">
           <span class="text-sm font-medium">角色列表</span>
           <Button size="sm" @click="handleCreate">
@@ -487,7 +662,7 @@ onUnmounted(() => {
       </div>
 
       <!-- 右侧：Tabs -->
-      <div class="flex-1 flex flex-col border rounded-lg overflow-hidden">
+      <div class="flex-1 flex flex-col border rounded-lg overflow-hidden bg-card">
         <template v-if="!selectedRole">
           <div class="flex-1 flex items-center justify-center text-muted-foreground">
             <div class="text-center">
@@ -561,48 +736,46 @@ onUnmounted(() => {
               </TabsContent>
 
               <!-- 权限列表 Tab -->
-              <TabsContent value="permissions" class="p-4 m-0">
+              <TabsContent value="permissions" class="p-4 m-0 flex flex-col">
                 <div class="mb-3 flex items-center justify-between">
-                  <div class="relative flex-1 max-w-[300px]">
-                    <Search class="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      v-model="permSearchKeyword"
-                      placeholder="搜索权限..."
-                      class="pl-8"
-                    />
-                  </div>
+                  <span class="text-sm text-muted-foreground">
+                    共 {{ rolePermissions.length }} 个权限
+                  </span>
                   <Button size="sm" @click="handleOpenAssignPerm">
                     <Settings class="h-3.5 w-3.5 mr-1" />
                     分配权限
                   </Button>
                 </div>
 
-                <div v-if="rolePermissions.length === 0" class="py-8 text-center text-muted-foreground">
-                  <Shield class="h-12 w-12 mx-auto mb-3 opacity-30" />
-                  <p>暂无权限</p>
-                </div>
-
-                <div v-else class="space-y-4">
-                  <div
-                    v-for="group in filteredPermissionGroups.filter(g => g.permissions.some(p => rolePermissions.some(rp => rp.id === p.id)))"
-                    :key="group.resource"
-                    class="border rounded-lg p-3"
-                  >
-                    <h4 class="font-medium text-sm mb-2 flex items-center gap-2">
-                      <Shield class="h-4 w-4 text-blue-500" />
-                      {{ group.resource }}
-                    </h4>
-                    <div class="flex flex-wrap gap-2">
-                      <Badge
-                        v-for="perm in group.permissions.filter(p => rolePermissions.some(rp => rp.id === p.id))"
-                        :key="perm.id"
-                        variant="secondary"
-                      >
-                        {{ perm.name }}
-                      </Badge>
-                    </div>
+                <div v-if="rolePermissions.length === 0" class="flex-1 flex items-center justify-center text-muted-foreground">
+                  <div class="text-center">
+                    <Shield class="h-12 w-12 mx-auto mb-3 opacity-30" />
+                    <p>暂无权限</p>
                   </div>
                 </div>
+
+                <ScrollArea v-else class="flex-1">
+                  <div class="space-y-1">
+                    <!-- 三级树：模块 → 资源 → 权限 -->
+                    <template v-for="module in permissionTree" :key="module.name">
+                      <template v-for="resource in module.resources" :key="resource.name">
+                        <template v-for="perm in resource.permissions" :key="perm.id">
+                          <div
+                            v-if="rolePermissionIds.has(perm.id)"
+                            class="flex items-center gap-2 py-2 px-2 rounded hover:bg-accent"
+                          >
+                            <Shield class="h-4 w-4 text-blue-500 shrink-0" />
+                            <div class="flex-1 min-w-0">
+                              <div class="font-medium truncate">{{ perm.name }}</div>
+                              <div class="text-xs text-muted-foreground">{{ perm.code }}</div>
+                            </div>
+                            <Badge variant="outline" class="text-xs shrink-0">{{ perm.action }}</Badge>
+                          </div>
+                        </template>
+                      </template>
+                    </template>
+                  </div>
+                </ScrollArea>
               </TabsContent>
             </ScrollArea>
           </Tabs>
@@ -624,7 +797,7 @@ onUnmounted(() => {
 
     <!-- 分配权限弹窗 -->
     <Dialog v-model:open="assignPermDialogOpen">
-      <DialogContent class="sm:max-w-[600px]">
+      <DialogContent class="sm:max-w-[700px]">
         <DialogHeader>
           <DialogTitle>分配权限</DialogTitle>
           <DialogDescription>
@@ -634,7 +807,7 @@ onUnmounted(() => {
 
         <div class="mb-3">
           <div class="relative">
-            <Search class="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Shield class="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               v-model="permSearchKeyword"
               placeholder="搜索权限..."
@@ -644,24 +817,55 @@ onUnmounted(() => {
         </div>
 
         <ScrollArea class="h-[400px] pr-4">
-          <div v-for="group in filteredPermissionGroups" :key="group.resource" class="mb-4">
-            <h4 class="font-medium text-sm mb-2 flex items-center gap-2">
-              <Shield class="h-4 w-4" />
-              {{ group.resource }}
-            </h4>
-            <div class="space-y-1 pl-6">
-              <div
-                v-for="perm in group.permissions"
-                :key="perm.id"
-                class="flex items-center gap-2 py-1"
-              >
-                <Checkbox
-                  :checked="selectedPermIds.includes(perm.id)"
-                  @update:checked="togglePermission(perm.id)"
-                />
-                <div class="flex-1 min-w-0">
-                  <span class="text-sm">{{ perm.name }}</span>
-                  <Badge variant="outline" class="ml-2 text-xs">{{ perm.action }}</Badge>
+          <div v-for="module in filteredPermissionTree" :key="module.name" class="mb-2">
+            <!-- 模块级 -->
+            <button
+              class="flex items-center w-full py-2 px-2 text-sm font-medium hover:bg-accent rounded transition-colors text-left"
+              @click="toggleModule(module.name)"
+            >
+              <ChevronRight
+                :class="['h-4 w-4 mr-1 shrink-0 transition-transform', module.expanded && 'rotate-90']"
+              />
+              <Package class="h-4 w-4 mr-2 shrink-0 text-primary" />
+              <span>{{ module.label }}</span>
+              <Badge variant="secondary" class="ml-2 text-xs">
+                {{ module.resources.reduce((sum, r) => sum + r.permissions.length, 0) }}
+              </Badge>
+            </button>
+
+            <!-- 资源级 -->
+            <div v-show="module.expanded" class="ml-4">
+              <div v-for="resource in module.resources" :key="resource.name" class="mb-1">
+                <button
+                  class="flex items-center w-full py-1.5 px-2 text-sm hover:bg-accent rounded transition-colors text-left"
+                  @click="toggleResource(resource.name)"
+                >
+                  <ChevronRight
+                    :class="['h-3.5 w-3.5 mr-1 shrink-0 transition-transform', resource.expanded && 'rotate-90']"
+                  />
+                  <Menu class="h-4 w-4 mr-2 shrink-0 text-muted-foreground" />
+                  <span>{{ resource.name }}</span>
+                  <Badge variant="outline" class="ml-2 text-xs">
+                    {{ resource.permissions.length }}
+                  </Badge>
+                </button>
+
+                <!-- 权限级 -->
+                <div v-show="resource.expanded" class="ml-6 grid grid-cols-2 gap-x-4 gap-y-1">
+                  <div
+                    v-for="perm in resource.permissions"
+                    :key="perm.id"
+                    class="flex items-center gap-2 py-1.5"
+                  >
+                    <Checkbox
+                      :checked="selectedPermIds.includes(perm.id)"
+                      @update:checked="togglePermission(perm.id)"
+                    />
+                    <div class="flex-1 min-w-0">
+                      <div class="text-sm truncate">{{ perm.name }}</div>
+                      <div class="text-xs text-muted-foreground truncate">{{ perm.code }}</div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>

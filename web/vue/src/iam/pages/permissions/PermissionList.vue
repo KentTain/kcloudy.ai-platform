@@ -3,15 +3,14 @@
  * PermissionList — 权限管理页面
  *
  * 布局：
- * - 左侧：权限树（按资源分组）
+ * - 左侧：权限列表（300px 固定宽度）
  * - 右侧：Tabs（角色列表、菜单列表）
  */
 
-import { ref, computed, onMounted, h } from "vue"
+import { ref, computed, onMounted, onUnmounted, h } from "vue"
 import type { ColumnDef } from "@tanstack/vue-table"
 import {
   Shield,
-  Search,
   Users,
   Menu,
   Settings,
@@ -21,8 +20,6 @@ import {
   Button,
   Badge,
   Skeleton,
-  Input,
-  Checkbox,
   DataTable,
   useDataTable,
 } from "@/components"
@@ -36,6 +33,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components"
+import { Checkbox, Input } from "@/components"
 import { notifySuccess, notifyError, getErrorMessage } from "@/framework/utils/feedback"
 import type { Permission, Role, PermissionGroup, MenuTreeNode } from "@/iam/types"
 import { getPermissions } from "@/iam/api/permission"
@@ -48,15 +46,13 @@ import { getMenus } from "@/iam/api/menu"
 
 // ========== 状态 ==========
 
+const isUnmounted = ref(false)
 const loading = ref(false)
 const permissions = ref<Permission[]>([])
 const menus = ref<MenuTreeNode[]>([])
 
-// 权限树搜索
-const searchKeyword = ref("")
-
-// 当前选中的资源
-const selectedResource = ref<string | null>(null)
+// 当前选中的权限
+const selectedPermission = ref<Permission | null>(null)
 
 // Tabs
 const activeTab = ref("roles")
@@ -67,9 +63,12 @@ const currentRole = ref<Role | null>(null)
 const selectedPermissionIds = ref<string[]>([])
 const assignLoading = ref(false)
 
+// 权限搜索（弹窗内）
+const permSearchKeyword = ref("")
+
 // ========== 计算属性 ==========
 
-// 按资源分组的权限
+// 按资源分组的权限（弹窗内使用）
 const permissionGroups = computed<PermissionGroup[]>(() => {
   const groups: Map<string, Permission[]> = new Map()
 
@@ -87,22 +86,13 @@ const permissionGroups = computed<PermissionGroup[]>(() => {
   }))
 })
 
-// 资源列表（用于左侧树）
-const resources = computed(() => {
-  return permissionGroups.value.map((g) => ({
-    id: g.resource,
-    name: g.resource,
-    count: g.permissions.length,
-  }))
-})
-
-// 筛选后的权限组
-const filteredGroups = computed(() => {
-  if (!searchKeyword.value.trim()) {
+// 筛选后的权限组（弹窗内）
+const filteredPermissionGroups = computed(() => {
+  if (!permSearchKeyword.value.trim()) {
     return permissionGroups.value
   }
 
-  const keyword = searchKeyword.value.toLowerCase()
+  const keyword = permSearchKeyword.value.toLowerCase()
   return permissionGroups.value
     .map((g) => ({
       ...g,
@@ -118,7 +108,6 @@ const filteredGroups = computed(() => {
 
 // ========== 角色列表 DataTable ==========
 
-// 列定义
 const roleColumns: ColumnDef<Role>[] = [
   {
     accessorKey: "name",
@@ -156,7 +145,6 @@ const roleColumns: ColumnDef<Role>[] = [
   },
 ]
 
-// DataTable 初始化
 const roleTable = useDataTable<Role>({
   columns: roleColumns,
   remoteFetchFn: async ({ page, page_size }) => {
@@ -164,6 +152,89 @@ const roleTable = useDataTable<Role>({
     return response
   },
 })
+
+// ========== 菜单列表 DataTable ==========
+
+interface MenuFlatItem {
+  id: string
+  name: string
+  code: string
+  path: string
+  icon: string
+  sort_order: number
+  parent_id: string | null
+  tree_level: number
+}
+
+const menuColumns: ColumnDef<MenuFlatItem>[] = [
+  {
+    accessorKey: "name",
+    header: "菜单名称",
+    size: 180,
+    cell: ({ row }) => {
+      const item = row.original
+      const indent = item.tree_level * 20
+      return h("div", { class: "flex items-center gap-2", style: { paddingLeft: `${indent}px` } }, [
+        h(Menu, { class: "h-4 w-4 text-muted-foreground shrink-0" }),
+        h("span", { class: "font-medium" }, item.name),
+      ])
+    },
+  },
+  {
+    accessorKey: "code",
+    header: "菜单编码",
+    size: 120,
+    cell: ({ row }) => h("span", { class: "font-mono text-sm" }, row.original.code),
+  },
+  {
+    accessorKey: "path",
+    header: "路径",
+    cell: ({ row }) => h("span", { class: "text-sm text-muted-foreground" }, row.original.path || "--"),
+  },
+  {
+    accessorKey: "sort_order",
+    header: "排序",
+    size: 80,
+    cell: ({ row }) => row.original.sort_order,
+  },
+]
+
+const menuTable = useDataTable<MenuFlatItem>({
+  columns: menuColumns,
+  remoteFetchFn: async () => {
+    const items = flattenMenus(menus.value)
+    return {
+      code: 200,
+      msg: "ok",
+      data: items,
+      total: items.length,
+      page: 1,
+      page_size: items.length || 10,
+    }
+  },
+  enabled: () => activeTab.value === "menus",
+})
+
+/** 扁平化菜单树 */
+function flattenMenus(menuList: MenuTreeNode[], level = 0): MenuFlatItem[] {
+  const result: MenuFlatItem[] = []
+  for (const menu of menuList) {
+    result.push({
+      id: menu.id,
+      name: menu.name,
+      code: menu.code || "",
+      path: menu.path || "",
+      icon: menu.icon || "",
+      sort_order: menu.sort_order || 0,
+      parent_id: menu.parent_id,
+      tree_level: level,
+    })
+    if (menu.children && menu.children.length > 0) {
+      result.push(...flattenMenus(menu.children, level + 1))
+    }
+  }
+  return result
+}
 
 // ========== 方法 ==========
 
@@ -175,12 +246,13 @@ async function loadData() {
       getPermissions({ page: 1, page_size: 1000 }),
       getMenus(),
     ])
+    if (isUnmounted.value) return
     // 权限 API 直接返回数组
     permissions.value = permRes.data || []
     menus.value = menusRes.data?.menus || []
-    // 默认选中第一个资源
-    if (resources.value.length > 0 && !selectedResource.value) {
-      selectedResource.value = resources.value[0].id
+    // 默认选中第一个权限
+    if (permissions.value.length > 0 && !selectedPermission.value) {
+      selectedPermission.value = permissions.value[0]
     }
     // 角色列表由 DataTable 自动加载
     await roleTable.refresh(true)
@@ -191,9 +263,9 @@ async function loadData() {
   }
 }
 
-/** 选择资源 */
-function selectResource(resource: string) {
-  selectedResource.value = resource
+/** 选择权限 */
+function selectPermission(perm: Permission) {
+  selectedPermission.value = perm
 }
 
 /** 打开分配权限弹窗 */
@@ -240,103 +312,115 @@ async function handleAssignSubmit() {
 onMounted(() => {
   loadData()
 })
+
+// 清理
+onUnmounted(() => {
+  isUnmounted.value = true
+})
 </script>
 
 <template>
   <AppPage title="权限管理" variant="workbench" description="管理系统权限、角色和菜单">
     <div class="flex gap-4 flex-1 min-h-0">
-      <!-- 左侧：权限树 -->
-      <div class="w-[280px] shrink-0 flex flex-col border rounded-lg overflow-hidden">
+      <!-- 左侧：权限列表 -->
+      <div class="w-[300px] shrink-0 flex flex-col border rounded-lg overflow-hidden bg-card">
         <div class="p-3 border-b bg-muted/30">
-          <div class="relative">
-            <Search class="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              v-model="searchKeyword"
-              placeholder="搜索权限..."
-              class="pl-8"
-            />
-          </div>
+          <span class="text-sm font-medium">权限列表</span>
         </div>
 
         <ScrollArea class="flex-1">
           <div v-if="loading" class="p-3 space-y-2">
-            <Skeleton v-for="i in 6" :key="i" class="h-6 w-full" />
+            <Skeleton v-for="i in 6" :key="i" class="h-10 w-full" />
           </div>
 
-          <div v-else-if="resources.length === 0" class="p-4 text-center text-muted-foreground text-sm">
+          <div v-else-if="permissions.length === 0" class="p-4 text-center text-muted-foreground text-sm">
             暂无权限数据
           </div>
 
           <div v-else class="py-1">
             <button
-              v-for="resource in resources"
-              :key="resource.id"
-              class="flex items-center w-full px-3 py-2 text-sm hover:bg-accent transition-colors text-left"
-              :class="{ 'bg-accent': selectedResource === resource.id }"
-              @click="selectResource(resource.id)"
+              v-for="perm in permissions"
+              :key="perm.id"
+              class="flex items-center w-full px-3 py-2.5 text-sm hover:bg-accent transition-colors text-left"
+              :class="{ 'bg-accent': selectedPermission?.id === perm.id }"
+              @click="selectPermission(perm)"
             >
               <Shield class="h-4 w-4 mr-2 shrink-0 text-blue-500" />
-              <span class="truncate">{{ resource.name }}</span>
-              <Badge variant="secondary" class="ml-auto shrink-0 text-xs">
-                {{ resource.count }}
-              </Badge>
+              <div class="flex-1 min-w-0">
+                <div class="font-medium truncate">{{ perm.name }}</div>
+                <div class="text-xs text-muted-foreground">{{ perm.code }}</div>
+              </div>
             </button>
           </div>
         </ScrollArea>
       </div>
 
       <!-- 右侧：Tabs -->
-      <div class="flex-1 flex flex-col border rounded-lg overflow-hidden">
-        <Tabs v-model="activeTab" class="flex-1 flex flex-col">
-          <div class="px-4 pt-2 border-b">
-            <TabsList>
-              <TabsTrigger value="roles">
-                <Users class="h-4 w-4 mr-1" />
-                角色列表
-              </TabsTrigger>
-              <TabsTrigger value="menus">
-                <Menu class="h-4 w-4 mr-1" />
-                菜单列表
-              </TabsTrigger>
-            </TabsList>
+      <div class="flex-1 flex flex-col border rounded-lg overflow-hidden bg-card">
+        <template v-if="!selectedPermission">
+          <div class="flex-1 flex items-center justify-center text-muted-foreground">
+            <div class="text-center">
+              <Shield class="h-12 w-12 mx-auto mb-3 opacity-30" />
+              <p>请从左侧选择一个权限</p>
+            </div>
+          </div>
+        </template>
+
+        <template v-else>
+          <!-- 权限详情头部 -->
+          <div class="p-4 border-b bg-muted/30">
+            <div class="flex items-start justify-between">
+              <div>
+                <h2 class="text-lg font-semibold">{{ selectedPermission.name }}</h2>
+                <div class="text-sm text-muted-foreground mt-1">
+                  <span class="font-mono">{{ selectedPermission.code }}</span>
+                  <span class="mx-2">·</span>
+                  <span>{{ selectedPermission.resource }}</span>
+                  <span class="mx-2">·</span>
+                  <Badge variant="outline" class="text-xs">{{ selectedPermission.action }}</Badge>
+                </div>
+              </div>
+            </div>
           </div>
 
-          <ScrollArea class="flex-1">
-            <!-- 角色列表 Tab -->
-            <TabsContent value="roles" class="p-4 m-0">
-              <DataTable :data-table="roleTable" :fixed-layout="true" />
-            </TabsContent>
+          <!-- Tabs 内容 -->
+          <Tabs v-model="activeTab" class="flex-1 flex flex-col">
+            <div class="px-4 pt-2 border-b">
+              <TabsList>
+                <TabsTrigger value="roles">
+                  <Users class="h-4 w-4 mr-1" />
+                  角色列表
+                </TabsTrigger>
+                <TabsTrigger value="menus">
+                  <Menu class="h-4 w-4 mr-1" />
+                  菜单列表
+                </TabsTrigger>
+              </TabsList>
+            </div>
 
-            <!-- 菜单列表 Tab -->
-            <TabsContent value="menus" class="p-4 m-0">
-              <div v-if="loading" class="py-4">
-                <Skeleton v-for="i in 5" :key="i" class="h-8 w-full mb-2" />
-              </div>
+            <ScrollArea class="flex-1">
+              <!-- 角色列表 Tab -->
+              <TabsContent value="roles" class="p-4 m-0">
+                <div class="mb-3 flex items-center justify-between">
+                  <span class="text-sm text-muted-foreground">
+                    共 {{ roleTable.table.getRowCount() }} 个角色
+                  </span>
+                </div>
+                <DataTable :data-table="roleTable" :fixed-layout="true" />
+              </TabsContent>
 
-              <div v-else-if="menus.length === 0" class="py-8 text-center text-muted-foreground">
-                暂无菜单数据
-              </div>
-
-              <div v-else class="space-y-1">
-                <template v-for="menu in menus" :key="menu.id">
-                  <div class="flex items-center gap-2 py-2 px-2 rounded hover:bg-accent">
-                    <Menu class="h-4 w-4 text-muted-foreground" />
-                    <span class="font-medium">{{ menu.name }}</span>
-                    <span class="text-xs text-muted-foreground">{{ menu.path }}</span>
-                  </div>
-                  <!-- 子菜单 -->
-                  <template v-if="menu.children" v-for="child in menu.children" :key="child.id">
-                    <div class="flex items-center gap-2 py-2 px-6 rounded hover:bg-accent">
-                      <Menu class="h-3.5 w-3.5 text-muted-foreground" />
-                      <span>{{ child.name }}</span>
-                      <span class="text-xs text-muted-foreground">{{ child.path }}</span>
-                    </div>
-                  </template>
-                </template>
-              </div>
-            </TabsContent>
-          </ScrollArea>
-        </Tabs>
+              <!-- 菜单列表 Tab -->
+              <TabsContent value="menus" class="p-4 m-0">
+                <div class="mb-3 flex items-center justify-between">
+                  <span class="text-sm text-muted-foreground">
+                    共 {{ menuTable.table.getRowCount() }} 个菜单
+                  </span>
+                </div>
+                <DataTable :data-table="menuTable" :fixed-layout="true" />
+              </TabsContent>
+            </ScrollArea>
+          </Tabs>
+        </template>
       </div>
     </div>
 
@@ -350,8 +434,19 @@ onMounted(() => {
           </DialogDescription>
         </DialogHeader>
 
+        <div class="mb-3">
+          <div class="relative">
+            <Shield class="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              v-model="permSearchKeyword"
+              placeholder="搜索权限..."
+              class="pl-8"
+            />
+          </div>
+        </div>
+
         <ScrollArea class="h-[400px] pr-4">
-          <div v-for="group in permissionGroups" :key="group.resource" class="mb-4">
+          <div v-for="group in filteredPermissionGroups" :key="group.resource" class="mb-4">
             <h4 class="font-medium text-sm mb-2 flex items-center gap-2">
               <Shield class="h-4 w-4" />
               {{ group.resource }}
