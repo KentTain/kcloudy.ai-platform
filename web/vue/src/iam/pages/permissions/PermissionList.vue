@@ -178,6 +178,10 @@ async function loadData() {
     // 权限 API 直接返回数组
     permissions.value = permRes.data || []
     menus.value = menusRes.data?.menus || []
+    // 默认选中第一个资源
+    if (resources.value.length > 0 && !selectedResource.value) {
+      selectedResource.value = resources.value[0].id
+    }
     // 角色列表由 DataTable 自动加载
     await roleTable.refresh(true)
   } catch (error) {

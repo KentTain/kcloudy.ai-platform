@@ -26,12 +26,12 @@ const containerClass = computed(() => {
 
 <template>
   <main :class="containerClass">
-    <div class="flex h-full min-h-0 flex-col gap-4 p-4 md:p-6">
+    <div class="flex h-full min-h-0 flex-col gap-3 p-4 md:p-6">
       <!-- 标题区域 -->
-      <div class="shrink-0 flex flex-wrap items-start justify-between gap-3">
-        <div class="min-w-0 space-y-1">
+      <div class="shrink-0 flex flex-wrap items-center justify-between gap-2">
+        <div class="min-w-0 space-y-0.5">
           <p v-if="eyebrow" class="text-muted-foreground text-xs font-medium">{{ eyebrow }}</p>
-          <h1 class="truncate text-2xl font-semibold tracking-normal">{{ title }}</h1>
+          <h1 class="truncate text-xl font-semibold tracking-normal">{{ title }}</h1>
           <p v-if="description" class="text-muted-foreground max-w-3xl text-sm">{{ description }}</p>
         </div>
         <div v-if="$slots.actions" class="flex shrink-0 flex-wrap items-center gap-2">

@@ -336,6 +336,10 @@ async function loadTree() {
   try {
     const res = await getOrganizationTree()
     organizationTree.value = res.data || []
+    // 默认选中第一个节点
+    if (organizationTree.value.length > 0 && !selectedId.value) {
+      await selectOrganization(organizationTree.value[0])
+    }
   } catch (error) {
     notifyError(getErrorMessage(error, "加载组织树失败"))
   } finally {

@@ -214,6 +214,10 @@ async function loadRoles() {
     const res = await getRoles({ page: 1, page_size: 100 })
     if (isUnmounted.value) return
     roles.value = res.data || []
+    // 默认选中第一个角色
+    if (roles.value.length > 0 && !selectedRole.value) {
+      await selectRole(roles.value[0])
+    }
   } catch (error) {
     if (isUnmounted.value) return
     notifyError(getErrorMessage(error, "加载角色列表失败"))

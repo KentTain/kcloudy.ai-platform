@@ -266,7 +266,12 @@ function findMenuById(menus: MenuTreeNode[], id: string): MenuTreeNode | null {
 
 // 初始化
 onMounted(() => {
-  menuStore.fetchMenus()
+  menuStore.fetchMenus().then(() => {
+    // 默认选中第一个菜单
+    if (menuStore.menus.length > 0 && !selectedId.value) {
+      selectMenu(menuStore.menus[0])
+    }
+  })
 })
 </script>
 
