@@ -53,6 +53,9 @@ async def run(*, dry_run: bool = False) -> int:
 
         if existing:
             write_warning("默认系统管理员已存在，跳过初始化")
+            user_id = existing.id
+            # 即使跳过用户创建，也要检查并分配角色
+            await _ensure_user_role(session, user_id, tenant_id, sysadmin_role_def.code)
             return 0
 
         # 获取租户实例层的角色 ID（iam.roles 表）
@@ -146,3 +149,52 @@ async def run(*, dry_run: bool = False) -> int:
         write_success(f"    关联租户: {tenant_id}")
         write_warning("    [WARN] 请在生产环境中修改默认密码!")
         return 1
+
+
+async def _ensure_user_role(
+    session, user_id: str, tenant_id: str, role_code: str
+) -> None:
+    """
+    确保用户拥有指定角色
+
+    检查用户是否已拥有角色，如果没有则分配。
+
+    Args:
+        session: 数据库会话
+        user_id: 用户 ID
+        tenant_id: 租户 ID
+        role_code: 角色编码
+    """
+    # 获取角色 ID
+    role_result = await session.execute(
+        select(Role.id).where(
+            Role.tenant_id == tenant_id,
+            Role.code == role_code,
+        )
+    )
+    role_id = role_result.scalar_one_or_none()
+
+    if not role_id:
+        write_warning(f"    角色不存在: {role_code}，无法分配")
+        return
+
+    # 检查用户是否已拥有该角色
+    existing_ur = await session.execute(
+        select(UserRole).where(
+            UserRole.tenant_id == tenant_id,
+            UserRole.user_id == user_id,
+            UserRole.role_id == role_id,
+        )
+    )
+    if existing_ur.scalar_one_or_none():
+        write_info(f"    用户已拥有角色: {role_code}")
+        return
+
+    # 分配角色
+    user_role_id = str(uuid.uuid4())
+    user_role = UserRole(
+        id=user_role_id, user_id=user_id, role_id=role_id, tenant_id=tenant_id
+    )
+    session.add(user_role)
+    await session.commit()
+    write_success(f"    分配角色: {role_code}")
