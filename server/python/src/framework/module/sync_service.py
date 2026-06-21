@@ -23,6 +23,7 @@ from framework.utils.log_util import write_error, write_info, write_warning
 from tenant.models import (
     Module,
     ModuleMenu,
+    ModuleMenuPermission,
     ModulePermission,
     ModuleRole,
     ModuleRolePermission,
@@ -154,12 +155,17 @@ class ModuleDefinitionSyncService:
             session, module_id, definition.code, definition.permissions
         )
 
-        # 4. 同步角色
+        # 4. 同步菜单权限关联
+        await self._sync_menu_permissions(
+            session, module_id, definition.code, definition.menus
+        )
+
+        # 5. 同步角色
         await self._sync_roles(
             session, module_id, definition.code, definition.default_roles
         )
 
-        # 5. 清理孤儿数据
+        # 6. 清理孤儿数据
         await self._cleanup_orphans(
             session,
             module_id,
@@ -339,6 +345,90 @@ class ModuleDefinitionSyncService:
             )
 
             await session.execute(stmt)
+
+    async def _sync_menu_permissions(
+        self,
+        session: AsyncSession,
+        module_id: str,
+        module_code: str,
+        menus: list[MenuDef],
+    ) -> None:
+        """
+        同步菜单权限关联
+
+        将菜单定义中的权限关联同步到数据库。
+
+        Args:
+            session: 数据库会话
+            module_id: 模块ID
+            module_code: 模块编码
+            menus: 菜单定义列表
+
+        Raises:
+            ValueError: 菜单引用的权限不存在
+        """
+        # 过滤出有权限定义的菜单
+        menus_with_perms = [m for m in menus if m.permission_codes]
+        if not menus_with_perms:
+            return
+
+        # 获取模块所有菜单和权限的 code -> id 映射
+        stmt = select(ModuleMenu.id, ModuleMenu.code).where(
+            ModuleMenu.module_id == module_id
+        )
+        result = await session.execute(stmt)
+        menu_code_to_id = {row.code: row.id for row in result.all()}
+
+        stmt = select(ModulePermission.id, ModulePermission.code).where(
+            ModulePermission.module_id == module_id
+        )
+        result = await session.execute(stmt)
+        perm_code_to_id = {row.code: row.id for row in result.all()}
+
+        for menu_def in menus_with_perms:
+            menu_id = menu_code_to_id.get(menu_def.code)
+            if not menu_id:
+                continue
+
+            # 展开通配符权限码
+            expanded_codes = _expand_permission_codes(
+                menu_def.permission_codes, perm_code_to_id
+            )
+
+            # 验证非通配符权限是否存在
+            missing_perms = [
+                code
+                for code in menu_def.permission_codes
+                if not _is_wildcard(code) and code not in perm_code_to_id
+            ]
+            if missing_perms:
+                raise ValueError(
+                    f"菜单 {menu_def.code} 引用的权限不存在: {missing_perms}"
+                )
+
+            # 删除旧的菜单权限关联
+            stmt = delete(ModuleMenuPermission).where(
+                ModuleMenuPermission.module_menu_id == menu_id
+            )
+            await session.execute(stmt)
+
+            # 创建新的菜单权限关联
+            for perm_code in expanded_codes:
+                perm_id = perm_code_to_id.get(perm_code)
+                if not perm_id:
+                    continue
+
+                stmt = (
+                    insert(ModuleMenuPermission)
+                    .values(
+                        module_menu_id=menu_id,
+                        module_permission_id=perm_id,
+                    )
+                    .on_conflict_do_nothing(
+                        constraint="uq_module_menu_permissions_menu_perm"
+                    )
+                )
+                await session.execute(stmt)
 
     async def _sync_roles(
         self,

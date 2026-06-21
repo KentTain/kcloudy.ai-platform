@@ -49,7 +49,7 @@ async def list_users(
         page_size=query.page_size,
         keyword=query.keyword,
         status=query.status,
-        dept_id=query.dept_id,
+        org_id=query.org_id,
         include_children=query.include_children,
     )
     return ApiResponse.paginated(

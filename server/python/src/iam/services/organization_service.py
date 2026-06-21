@@ -141,8 +141,10 @@ class OrganizationService:
         """
         获取组织树形结构
 
-        使用 TreeNodeMixin 内置方法构建树。
+        使用 TreeNodeMixin 内置方法构建树，并将 ORM 模型转换为字典。
         """
+        from iam.schemas.organization import OrganizationTreeResponse
+
         stmt = (
             select(Organization)
             .where(Organization.tenant_id == tenant_id)
@@ -150,7 +152,12 @@ class OrganizationService:
         )
         result = await session.execute(stmt)
         nodes = result.scalars().all()
-        return Organization.build_tree(nodes)
+
+        # 使用 transform_func 将 ORM 模型转换为字典
+        def transform(org: Organization) -> dict:
+            return OrganizationTreeResponse.from_organization(org).model_dump()
+
+        return Organization.build_tree(nodes, transform_func=transform)
 
     @staticmethod
     async def add_user(

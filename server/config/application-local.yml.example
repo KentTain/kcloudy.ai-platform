@@ -178,6 +178,12 @@ file-upload:
   # 图片文件（多模态使用）上传大小限制(字节)，默认10MB
   max-image-size: 10485760 # 10 * 1024 * 1024
 
+# 加密主密钥（用于敏感配置加密）
+# 开发环境固定密钥，生产环境必须通过环境变量设置
+# 生成方式: python -c "import secrets; print(secrets.token_hex(32))"
+encryption:
+  master-key: "e7af6614e1766b178e19eafc8503373e9be185006a51a3bff3409240ecf50c72"
+
 # 数据库配置
 sqlalchemy:
   # 数据库连接URL

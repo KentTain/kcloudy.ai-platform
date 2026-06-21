@@ -32,6 +32,8 @@ async def get_tenant_menus(
     Returns:
         菜单树列表
     """
+    from iam.schemas.menu import MenuTreeNode
+
     # 查询租户所有菜单
     stmt = (
         select(Menu)
@@ -44,8 +46,12 @@ async def get_tenant_menus(
     if not menus:
         return []
 
+    # 使用 transform_func 将 ORM 模型转换为字典
+    def transform(menu: Menu) -> dict:
+        return MenuTreeNode.from_menu(menu).model_dump()
+
     # 构建菜单树
-    return Menu.build_tree(menus)
+    return Menu.build_tree(menus, transform_func=transform)
 
 
 @router.get("/menus/{menu_id}", response_model=dict[str, Any])

@@ -57,6 +57,31 @@ class OrganizationTreeResponse(TreeNodeTreeVo):
     leader_id: str | None
     status: str
 
+    @classmethod
+    def from_organization(cls, org: "Organization") -> "OrganizationTreeResponse":
+        """从 Organization 实体构建 OrganizationTreeResponse
+
+        Args:
+            org: Organization 实体对象
+
+        Returns:
+            OrganizationTreeResponse 实例
+        """
+        return cls(
+            id=org.id,
+            parent_id=org.parent_id,
+            parent_ids=org.parent_ids,
+            tree_leaf=org.tree_leaf,
+            tree_sorts=org.tree_sorts,
+            tree_names=org.tree_names,
+            tenant_id=org.tenant_id,
+            name=org.name,
+            code=org.code,
+            sort_order=org.sort_order,
+            leader_id=org.leader_id,
+            status=org.status,
+        )
+
 
 class UserOrganizationRequest(BaseModel):
     """用户组织关联请求"""

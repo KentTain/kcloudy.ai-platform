@@ -145,8 +145,8 @@ class UserQuery(BaseQuery):
 class UserPaginatedQuery(UserQuery, BasePaginatedQuery):
     """用户分页查询参数"""
 
-    dept_id: str | None = Field(default=None, description="按部门 ID 筛选")
-    include_children: bool = Field(default=False, description="是否包含下级部门用户")
+    org_id: str | None = Field(default=None, description="按组织 ID 筛选")
+    include_children: bool = Field(default=False, description="是否包含下级组织用户")
 
 
 class UserTenantResponse(BaseModel):

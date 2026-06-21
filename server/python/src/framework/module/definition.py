@@ -22,6 +22,7 @@ class MenuDef:
         parent_code: 父菜单 code（可选）
         sort_order: 排序顺序，默认为 0
         is_visible: 是否可见，默认为 True
+        permission_codes: 菜单所需权限编码列表（可选）
     """
 
     code: str
@@ -31,6 +32,7 @@ class MenuDef:
     parent_code: str | None = None
     sort_order: int = 0
     is_visible: bool = True
+    permission_codes: list[str] = field(default_factory=list)
 
 
 @dataclass

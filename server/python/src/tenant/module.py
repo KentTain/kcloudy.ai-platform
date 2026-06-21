@@ -127,9 +127,30 @@ class TenantModule:
             icon="Organization",
             version="1.0.0",
             menus=[
-                MenuDef(code="tenant.modules", name="模块管理", path="/admin/modules", icon="Puzzle", sort_order=1),
-                MenuDef(code="tenant.tenants", name="租户管理", path="/admin/tenants", icon="Organization", sort_order=2),
-                MenuDef(code="tenant.resources", name="资源配置", path="/admin/resources", icon="Settings", sort_order=3),
+                MenuDef(
+                    code="tenant.modules",
+                    name="模块管理",
+                    path="/admin/modules",
+                    icon="Puzzle",
+                    sort_order=1,
+                    permission_codes=["tenant:module:read"],
+                ),
+                MenuDef(
+                    code="tenant.tenants",
+                    name="租户管理",
+                    path="/admin/tenants",
+                    icon="Organization",
+                    sort_order=2,
+                    permission_codes=["tenant:tenant:read"],
+                ),
+                MenuDef(
+                    code="tenant.resources",
+                    name="资源配置",
+                    path="/admin/resources",
+                    icon="Settings",
+                    sort_order=3,
+                    permission_codes=["tenant:resource:read"],
+                ),
             ],
             permissions=[
                 # 模块权限

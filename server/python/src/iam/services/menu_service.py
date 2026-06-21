@@ -38,6 +38,8 @@ class MenuService:
         WHEN 菜单未关联任何权限
         THEN 所有登录用户可见此菜单（is_visible = true 时）
         """
+        from iam.schemas.menu import MenuTreeNode
+
         # 1. 获取用户的所有权限 ID
         stmt = (
             select(Permission.id)
@@ -85,15 +87,27 @@ class MenuService:
 
         # 5. 过滤菜单列表并构建树
         visible_menus = [m for m in all_menus if m.id in visible_menu_ids]
-        return Menu.build_tree(visible_menus)
+
+        # 使用 transform_func 将 ORM 模型转换为字典
+        def transform(menu: Menu) -> dict:
+            return MenuTreeNode.from_menu(menu).model_dump()
+
+        return Menu.build_tree(visible_menus, transform_func=transform)
 
     @staticmethod
     async def get_all_menus(session: AsyncSession) -> list[MenuTreeDict]:
         """获取所有菜单树（管理用）"""
+        from iam.schemas.menu import MenuTreeNode
+
         stmt = select(Menu).order_by(Menu.tree_sorts)
         result = await session.execute(stmt)
         menus = list(result.scalars().all())
-        return Menu.build_tree(menus)
+
+        # 使用 transform_func 将 ORM 模型转换为字典
+        def transform(menu: Menu) -> dict:
+            return MenuTreeNode.from_menu(menu).model_dump()
+
+        return Menu.build_tree(menus, transform_func=transform)
 
 
 # 服务单例

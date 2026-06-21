@@ -184,6 +184,7 @@ class IAMModule:
                     path="/iam/users",
                     icon="Users",
                     sort_order=1,
+                    permission_codes=["iam:user:read"],
                 ),
                 MenuDef(
                     code="iam.roles",
@@ -191,6 +192,7 @@ class IAMModule:
                     path="/iam/roles",
                     icon="Badge",
                     sort_order=2,
+                    permission_codes=["iam:role:read"],
                 ),
                 MenuDef(
                     code="iam.organizations",
@@ -198,6 +200,7 @@ class IAMModule:
                     path="/iam/organizations",
                     icon="Building",
                     sort_order=3,
+                    permission_codes=["iam:organization:read"],
                 ),
                 MenuDef(
                     code="iam.menus",
@@ -205,6 +208,7 @@ class IAMModule:
                     path="/iam/menus",
                     icon="Menu",
                     sort_order=4,
+                    permission_codes=["iam:menu:read"],
                 ),
                 MenuDef(
                     code="iam.permissions",
@@ -212,6 +216,7 @@ class IAMModule:
                     path="/iam/permissions",
                     icon="Lock",
                     sort_order=5,
+                    permission_codes=["iam:permission:read"],
                 ),
             ],
             permissions=[
