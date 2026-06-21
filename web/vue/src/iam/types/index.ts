@@ -72,11 +72,6 @@ export interface PermissionGroup {
   permissions: Permission[];
 }
 
-// 权限列表响应类型
-export interface PermissionListResponse {
-  permissions: Permission[];
-}
-
 // 组织用户类型
 export interface OrganizationUser extends User {
   organization_id?: string;

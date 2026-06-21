@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from framework.database.dependencies import get_db_session
 from framework.common.response import ApiResponse
 from iam.schemas.menu import MenuListResponse, MenuTreeNode
-from iam.schemas.permission import PermissionListResponse
+from iam.schemas.permission import PermissionResponse
 from iam.services import menu_service
 
 router = APIRouter()
@@ -40,6 +40,4 @@ async def get_menu_permissions(
     场景：管理员配置菜单权限时查看已关联的权限
     """
     permissions = await menu_service.get_menu_permissions(session, menu_id)
-    return ApiResponse.success(
-        data=PermissionListResponse(permissions=permissions).model_dump()
-    )
+    return ApiResponse.success(data=permissions)

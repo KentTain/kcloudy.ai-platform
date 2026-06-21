@@ -32,12 +32,6 @@ class PermissionResponse(BaseModel):
     created_at: datetime
 
 
-class PermissionListResponse(BaseModel):
-    """权限列表响应"""
-
-    permissions: list[PermissionResponse] = Field(default_factory=list, description="权限列表")
-
-
 class PermissionPaginatedListResponse(BaseModel):
     """权限分页列表响应"""
 

@@ -141,7 +141,3 @@ class MenuService:
 
 # 服务单例
 menu_service = MenuService()
-
-
-# 服务单例
-menu_service = MenuService()
