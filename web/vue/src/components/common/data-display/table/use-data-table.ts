@@ -93,8 +93,8 @@ export function useDataTable<TData extends RowData>(initialOptions: {
     await initialOptions
       .remoteFetchFn({ page: paginationState.pageIndex + 1, page_size: paginationState.pageSize, signal: controller.signal })
       .then((res) => {
-        dataList.value = res.data;
-        rowCount.value = res.total;
+        dataList.value = res.data ?? [];
+        rowCount.value = res.total ?? 0;
       })
       .catch(() => {
         // 网络或后端错误由调用方处理，此处仅确保 loading 状态可恢复

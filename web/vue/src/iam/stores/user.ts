@@ -23,8 +23,8 @@ export const useUserStore = defineStore("iam-user", () => {
     loading.value = true;
     try {
       const response = await getUsers(params);
-      users.value = response.data.items ?? [];
-      total.value = response.data.total ?? 0;
+      users.value = response.data ?? [];
+      total.value = response.total ?? 0;
     } catch (error: any) {
       notifyError(getErrorMessage(error, "获取用户列表失败"));
       console.error("fetchUsers error:", error);

@@ -290,11 +290,11 @@ const dataTable = useDataTable<User>({
     })
     return {
       code: res.code,
-      data: res.data?.items || [],
+      data: res.data || [],
       msg: res.msg,
-      page: res.data?.page || page,
-      page_size: res.data?.page_size || page_size,
-      total: res.data?.total || 0,
+      page: res.page || page,
+      page_size: res.page_size || page_size,
+      total: res.total || 0,
     }
   },
 })

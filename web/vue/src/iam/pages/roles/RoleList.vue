@@ -190,15 +190,16 @@ const memberTable = useDataTable<RoleMember>({
   columns: memberColumns,
   remoteFetchFn: async () => {
     if (!selectedRole.value) {
-      return { data: [], total: 0, page: 1, page_size: 10 }
+      return { code: 200, msg: "ok", data: [], total: 0, page: 1, page_size: 10 }
     }
     const res = await getRoleMembers(selectedRole.value.id)
-    const items = res.data || []
+    const items = res.data ?? []
     return {
+      ...res,
       data: items,
-      total: items.length,
-      page: 1,
-      page_size: items.length || 10,
+      total: res.total ?? items.length,
+      page: res.page ?? 1,
+      page_size: res.page_size ?? (items.length || 10),
     }
   },
   enabled: () => !!selectedRole.value && activeTab.value === "members",
@@ -212,7 +213,7 @@ async function loadRoles() {
   try {
     const res = await getRoles({ page: 1, page_size: 100 })
     if (isUnmounted.value) return
-    roles.value = res.data?.items || []
+    roles.value = res.data || []
   } catch (error) {
     if (isUnmounted.value) return
     notifyError(getErrorMessage(error, "加载角色列表失败"))
@@ -247,7 +248,8 @@ async function loadAllPermissions() {
   if (allPermissions.value.length > 0) return
   try {
     const res = await getPermissions({ page: 1, page_size: 1000 })
-    allPermissions.value = res.data?.items || []
+    // 权限 API 直接返回数组
+    allPermissions.value = res.data || []
   } catch {
     allPermissions.value = []
   }
@@ -404,7 +406,7 @@ async function loadOrgNodesCallback(): Promise<OrgTreeNode[]> {
 async function searchPeopleCallback(keyword: string): Promise<PeopleItem[]> {
   try {
     const res = await getUsers({ keyword, page: 1, page_size: 100 })
-    return (res.data?.items || []).map((u) => ({
+    return (res.data || []).map((u) => ({
       user_id: u.id,
       username: u.username,
       nickname: u.nickname,

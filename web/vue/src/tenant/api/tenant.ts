@@ -4,18 +4,16 @@ import type {
   TenantCreate,
   SwitchTenantResponse,
   Tenant,
-  TenantPaginatedQuery,
-  TenantListResponse,
-  TenantStatsResponse,
+  TenantPaginatedQuery, TenantStatsResponse,
   TenantUpdate,
-  UserTenantResponse,
+  UserTenantResponse
 } from "@/tenant/types";
 
 /**
  * 获取租户列表（管理员）
  */
 export const getTenants = (params?: TenantPaginatedQuery) =>
-  rawGet<TenantListResponse>("/tenant/admin/v1/tenants", { params });
+  rawGet<ApiResponse<Tenant[]>>("/tenant/admin/v1/tenants", { params });
 
 /**
  * 获取租户详情（管理员）

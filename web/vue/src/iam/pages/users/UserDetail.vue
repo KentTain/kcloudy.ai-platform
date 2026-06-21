@@ -53,7 +53,7 @@ const loadUserDetail = async () => {
     roles.value = rolesRes.data
     organizations.value = orgsRes.data
     selectedRoleIds.value = rolesRes.data.map(role => role.id)
-    allRoles.value = allRolesRes.data.items
+    allRoles.value = allRolesRes.data
     allOrganizations.value = allOrganizationsRes.data
     selectedOrganizationIds.value = orgsRes.data.map(org => org.id)
   } catch (error) {

@@ -161,12 +161,7 @@ const roleTable = useDataTable<Role>({
   columns: roleColumns,
   remoteFetchFn: async ({ page, page_size }) => {
     const response = await getRoles({ page, page_size })
-    return {
-      data: response.data?.items || [],
-      total: response.data?.total || 0,
-      page: response.data?.page || 1,
-      page_size: response.data?.page_size || 10,
-    }
+    return response
   },
 })
 
@@ -180,7 +175,8 @@ async function loadData() {
       getPermissions({ page: 1, page_size: 1000 }),
       getMenus(),
     ])
-    permissions.value = permRes.data?.items || []
+    // 权限 API 直接返回数组
+    permissions.value = permRes.data || []
     menus.value = menusRes.data?.menus || []
     // 角色列表由 DataTable 自动加载
     await roleTable.refresh(true)
@@ -226,7 +222,7 @@ async function handleAssignSubmit() {
 
   assignLoading.value = true
   try {
-    await assignRolePermissions(currentRole.value.id, selectedPermissionIds.value)
+    await assignRolePermissions(currentRole.value.id, { permission_ids: selectedPermissionIds.value })
     notifySuccess("权限分配成功")
     assignDialogOpen.value = false
   } catch (error) {

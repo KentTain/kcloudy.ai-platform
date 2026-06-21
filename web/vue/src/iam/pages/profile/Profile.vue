@@ -214,12 +214,7 @@ const loginHistoryTable = useDataTable<LoginHistory>({
       params.end_date = dateRange.value[1]
     }
     const response = await getLoginHistory(params)
-    return {
-      data: response.data.items,
-      total: response.data.total,
-      page: response.data.page,
-      page_size: response.data.page_size,
-    }
+    return response
   },
 })
 

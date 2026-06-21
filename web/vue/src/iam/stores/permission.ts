@@ -13,8 +13,9 @@ export const usePermissionStore = defineStore("iam-permission", () => {
     loading.value = true;
     try {
       const response = await getPermissions(params);
-      permissions.value = response.data.items ?? [];
-      total.value = response.data.total ?? 0;
+      // 权限 API 直接返回数组
+      permissions.value = response.data ?? [];
+      total.value = response.data?.length ?? 0;
     } finally {
       loading.value = false;
     }

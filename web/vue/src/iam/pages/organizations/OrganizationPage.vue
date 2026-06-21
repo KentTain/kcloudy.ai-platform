@@ -7,7 +7,7 @@
  * - Body: 左侧 300px 组织树 + 右侧 Tabs（组织信息、下级组织、直属成员）
  */
 
-import { ref, computed, onMounted, h, defineComponent, type PropType } from "vue"
+import { ref, computed, onMounted, h, defineComponent, type PropType, type VNodeChild } from "vue"
 import { useRouter } from "vue-router"
 import type { ColumnDef } from "@tanstack/vue-table"
 import {
@@ -73,17 +73,18 @@ const OrganizationTreeNode = defineComponent({
   name: "OrganizationTreeNode",
   props: {
     organizations: { type: Array as PropType<Organization[]>, required: true },
-    selectedId: { type: String, default: null },
+    selectedId: { type: String as PropType<string | null>, default: null },
     depth: { type: Number, default: 0 },
   },
   emits: ["select"],
   setup(props, { emit }) {
-    return () =>
-      props.organizations.map((org) => {
+    return (): VNodeChild[] => {
+      const nodes: VNodeChild[] = []
+      for (const org of props.organizations) {
         const isSelected = props.selectedId === org.id
         const indent = 12 + props.depth * 20
 
-        return [
+        nodes.push(
           h(
             "button",
             {
@@ -106,16 +107,20 @@ const OrganizationTreeNode = defineComponent({
                 : null,
             ],
           ),
-          org.children?.length
-            ? h(OrganizationTreeNode, {
-                organizations: org.children,
-                selectedId: props.selectedId,
-                depth: props.depth + 1,
-                onSelect: (org: Organization) => emit("select", org),
-              })
-            : null,
-        ]
-      })
+        )
+        if (org.children?.length) {
+          nodes.push(
+            h(OrganizationTreeNode, {
+              organizations: org.children,
+              selectedId: props.selectedId,
+              depth: props.depth + 1,
+              onSelect: (org: Organization) => emit("select", org),
+            }),
+          )
+        }
+      }
+      return nodes
+    }
   },
 })
 
@@ -205,6 +210,8 @@ const childOrgTable = useDataTable<Organization>({
   remoteFetchFn: async () => {
     // 数据在 loadOrganizationDetail 中加载
     return {
+      code: 200,
+      msg: "OK",
       data: childOrganizations.value,
       total: childOrganizations.value.length,
       page: 1,
@@ -306,6 +313,8 @@ const memberTable = useDataTable<OrganizationUser>({
   remoteFetchFn: async () => {
     // 数据在 loadOrganizationDetail 中加载
     return {
+      code: 200,
+      msg: "OK",
       data: members.value,
       total: members.value.length,
       page: 1,
@@ -504,7 +513,7 @@ async function handleEnableMember(user: OrganizationUser) {
   if (!selectedId.value) return
 
   try {
-    await enableOrganizationUser(selectedId.value, user.user_id)
+    await enableOrganizationUser(selectedId.value, user.id)
     notifySuccess("已启用")
     await loadOrganizationDetail()
   } catch (error) {
@@ -521,7 +530,7 @@ async function handleDisableMember(user: OrganizationUser) {
   }
 
   try {
-    await disableOrganizationUser(selectedId.value, user.user_id)
+    await disableOrganizationUser(selectedId.value, user.id)
     notifySuccess("已停用")
     await loadOrganizationDetail()
   } catch (error) {
@@ -538,7 +547,7 @@ async function handleRemoveMember(user: OrganizationUser) {
   }
 
   try {
-    await removeOrganizationUser(selectedId.value, user.user_id)
+    await removeOrganizationUser(selectedId.value, user.id)
     notifySuccess("已移除")
     await loadOrganizationDetail()
   } catch (error) {
@@ -573,7 +582,7 @@ async function searchPeopleCallback(keyword: string): Promise<PeopleItem[]> {
   try {
     const { getUsers } = await import("@/iam/api/user")
     const res = await getUsers({ keyword, page: 1, page_size: 100 })
-    const users = res.data?.items || []
+    const users = res.data || []
     return users.map((u) => ({
       user_id: u.id,
       username: u.username,
@@ -775,7 +784,7 @@ onMounted(() => {
       v-model:open="addMemberDialogOpen"
       title="选择人员"
       :multiple="true"
-      :disabled-ids="members.map((m) => m.user_id)"
+      :disabled-ids="members.map((m) => m.id)"
       :load-org-nodes="loadOrgNodesCallback"
       :search-people="searchPeopleCallback"
       :load-org-people="loadOrgPeopleCallback"
