@@ -10,7 +10,6 @@ import AppNavMain from "./components/AppNavMain.vue";
 import AppHeaderLeft from "./components/AppHeaderLeft.vue";
 import AppHeaderSearchBox from "./components/AppHeaderSearchBox.vue";
 import AppHeaderRight from "./components/AppHeaderRight.vue";
-import AppMain from "./components/AppMain.vue";
 import { useNotificationStore } from "@/framework/stores/notification";
 
 const notificationStore = useNotificationStore();

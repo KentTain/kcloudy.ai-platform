@@ -40,10 +40,10 @@ class IAMModule:
         格式: [(router, prefix, tags), ...]
         """
         # Admin 层
+        from iam.controllers.admin.menu_controller import router as admin_menu_router
         from iam.controllers.admin.organization_controller import (
             router as admin_organization_router,
         )
-        from iam.controllers.admin.menu_controller import router as admin_menu_router
         from iam.controllers.admin.permission_controller import (
             router as admin_permission_router,
         )
@@ -179,12 +179,12 @@ class IAMModule:
             version="1.0.0",
             menus=[
                 MenuDef(
-                    code="iam.users",
-                    name="用户管理",
-                    path="/iam/users",
-                    icon="Users",
+                    code="iam.organizations",
+                    name="组织管理",
+                    path="/iam/organizations",
+                    icon="Building",
                     sort_order=1,
-                    permission_codes=["iam:user:read"],
+                    permission_codes=["iam:organization:read"],
                 ),
                 MenuDef(
                     code="iam.roles",
@@ -195,12 +195,12 @@ class IAMModule:
                     permission_codes=["iam:role:read"],
                 ),
                 MenuDef(
-                    code="iam.organizations",
-                    name="组织管理",
-                    path="/iam/organizations",
-                    icon="Building",
+                    code="iam.users",
+                    name="用户管理",
+                    path="/iam/users",
+                    icon="Users",
                     sort_order=3,
-                    permission_codes=["iam:organization:read"],
+                    permission_codes=["iam:user:read"],
                 ),
                 MenuDef(
                     code="iam.menus",
