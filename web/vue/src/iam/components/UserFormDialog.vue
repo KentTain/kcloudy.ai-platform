@@ -19,6 +19,7 @@ import {
   TreeSelect,
   Checkbox,
   Badge,
+  Label,
 } from "@/components"
 import {
   FormControl,
@@ -275,7 +276,7 @@ const onSubmit = handleSubmit(async (values) => {
 
         <!-- 角色分配 -->
         <div class="space-y-2">
-          <FormLabel>角色分配</FormLabel>
+          <Label>角色分配</Label>
           <ScrollArea class="h-[120px] border rounded-md p-2">
             <div v-if="roleOptions.length === 0" class="text-sm text-muted-foreground text-center py-4">
               暂无可分配的角色
