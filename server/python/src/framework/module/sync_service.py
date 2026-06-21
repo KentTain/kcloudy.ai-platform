@@ -188,7 +188,7 @@ class ModuleDefinitionSyncService:
         同步菜单定义
 
         将模块的菜单定义同步到数据库。
-        使用两阶段处理：先创建所有菜单，再更新父子关系。
+        使用 TreeNodeMixin 的 create_node 和 update_node 方法管理树形结构。
 
         Args:
             session: 数据库会话
@@ -208,60 +208,99 @@ class ModuleDefinitionSyncService:
         # 构建 code -> MenuDef 映射
         menu_def_map = {menu.code: menu for menu in menus}
 
-        # 第一阶段：创建所有菜单（不设置 parent_id）
+        # 拓扑排序：按层级顺序创建菜单（父节点先于子节点）
+        sorted_menus = self._topological_sort_menus(menus, menu_def_map)
+
+        # 查询已存在的菜单
+        stmt = select(ModuleMenu.id, ModuleMenu.code).where(
+            ModuleMenu.module_id == module_id
+        )
+        result = await session.execute(stmt)
+        existing_code_to_id = {row.code: row.id for row in result.all()}
+
+        # code -> id 映射（用于建立父子关系）
         code_to_id_map: dict[str, str] = {}
 
-        for menu_def in menus:
-            stmt = (
-                insert(ModuleMenu)
-                .values(
-                    module_id=module_id,
-                    parent_id=None,  # 先不设置父菜单
-                    code=menu_def.code,
-                    name=menu_def.name,
-                    path=menu_def.path,
-                    icon=menu_def.icon,
-                    sort_order=menu_def.sort_order,
-                    is_visible=menu_def.is_visible,
-                )
-                .on_conflict_do_update(
-                    index_elements=["code"],
-                    set_={
+        for menu_def in sorted_menus:
+            # 计算父菜单ID
+            parent_id = None
+            if menu_def.parent_code:
+                if menu_def.parent_code not in code_to_id_map:
+                    raise ValueError(
+                        f"菜单 {menu_def.code} 的父菜单 {menu_def.parent_code} 不存在或未创建"
+                    )
+                parent_id = code_to_id_map[menu_def.parent_code]
+
+            if menu_def.code in existing_code_to_id:
+                # 更新已存在的菜单
+                menu_id = existing_code_to_id[menu_def.code]
+                await ModuleMenu.update_node(
+                    session,
+                    menu_id,
+                    {
                         "name": menu_def.name,
                         "path": menu_def.path,
                         "icon": menu_def.icon,
-                        "sort_order": menu_def.sort_order,
+                        "tree_sort": menu_def.sort_order,
+                        "is_visible": menu_def.is_visible,
+                        "parent_id": parent_id,
+                    },
+                )
+                code_to_id_map[menu_def.code] = menu_id
+            else:
+                # 创建新菜单
+                menu = await ModuleMenu.create_node(
+                    session,
+                    {
+                        "module_id": module_id,
+                        "parent_id": parent_id,
+                        "code": menu_def.code,
+                        "name": menu_def.name,
+                        "path": menu_def.path,
+                        "icon": menu_def.icon,
+                        "tree_sort": menu_def.sort_order,
                         "is_visible": menu_def.is_visible,
                     },
                 )
-                .returning(ModuleMenu.id)
-            )
+                code_to_id_map[menu_def.code] = menu.id
 
-            result = await session.execute(stmt)
-            menu_id = result.scalar_one()
-            code_to_id_map[menu_def.code] = menu_id
+    def _topological_sort_menus(
+        self, menus: list[MenuDef], menu_def_map: dict[str, MenuDef]
+    ) -> list[MenuDef]:
+        """
+        对菜单进行拓扑排序，确保父节点在子节点之前创建
 
-        # 第二阶段：更新父子关系（使用 update 语句避免 N+1 问题）
-        for menu_def in menus:
-            if menu_def.parent_code is None:
-                continue
+        Args:
+            menus: 菜单定义列表
+            menu_def_map: code -> MenuDef 映射
 
-            # 检查父菜单是否存在
-            if menu_def.parent_code not in code_to_id_map:
-                raise ValueError(
-                    f"菜单 {menu_def.code} 的父菜单 {menu_def.parent_code} 不存在"
-                )
+        Returns:
+            排序后的菜单列表
+        """
+        # 计算每个菜单的层级深度
+        depth_cache: dict[str, int] = {}
 
-            parent_id = code_to_id_map[menu_def.parent_code]
-            menu_id = code_to_id_map[menu_def.code]
+        def get_depth(code: str) -> int:
+            if code in depth_cache:
+                return depth_cache[code]
 
-            # 使用 update 语句直接更新，避免 SELECT
-            stmt = (
-                update(ModuleMenu)
-                .where(ModuleMenu.id == menu_id)
-                .values(parent_id=parent_id)
-            )
-            await session.execute(stmt)
+            menu = menu_def_map.get(code)
+            if not menu or not menu.parent_code:
+                depth_cache[code] = 0
+                return 0
+
+            # 父菜单不在当前批次，视为根层菜单
+            if menu.parent_code not in menu_def_map:
+                depth_cache[code] = 0
+                return 0
+
+            parent_depth = get_depth(menu.parent_code)
+            depth_cache[code] = parent_depth + 1
+            return depth_cache[code]
+
+        # 按层级排序
+        sorted_menus = sorted(menus, key=lambda m: get_depth(m.code))
+        return sorted_menus
 
     def _detect_menu_cycles(self, menus: list[MenuDef]) -> None:
         """

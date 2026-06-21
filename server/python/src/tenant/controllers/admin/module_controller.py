@@ -65,7 +65,9 @@ def build_menu_vo(menu, children: list = None) -> ModuleMenuTreeResponse:
         name=menu.name,
         path=menu.path,
         icon=menu.icon,
-        sort_order=menu.sort_order,
+        tree_sort=menu.tree_sort,
+        tree_level=menu.tree_level,
+        tree_leaf=menu.tree_leaf,
         is_visible=menu.is_visible,
         created_at=menu.created_at,
         updated_at=menu.updated_at,
@@ -335,7 +337,7 @@ async def create_module_menu(
         path=data.path,
         parent_id=data.parent_id,
         icon=data.icon,
-        sort_order=data.sort_order,
+        tree_sort=data.tree_sort,
         is_visible=data.is_visible,
     )
 
@@ -372,7 +374,7 @@ async def update_module_menu(
             path=data.path,
             parent_id=data.parent_id,
             icon=data.icon,
-            sort_order=data.sort_order,
+            tree_sort=data.tree_sort,
             is_visible=data.is_visible,
         )
     except ValueError as e:

@@ -26,7 +26,12 @@ class TestModuleAssignmentIntegration:
         mock_menu.path = "/dashboard"
         mock_menu.icon = "dashboard"
         mock_menu.is_visible = True
-        mock_menu.sort_order = 0
+        mock_menu.tree_sort = 0
+        mock_menu.tree_level = 0
+        mock_menu.tree_leaf = True
+        mock_menu.parent_ids = "root,"
+        mock_menu.tree_sorts = "00000,"
+        mock_menu.tree_names = "仪表盘"
 
         menu_result = MagicMock()
         menu_result.scalars.return_value.all.return_value = [mock_menu]

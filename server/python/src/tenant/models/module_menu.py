@@ -5,10 +5,12 @@
 from sqlalchemy import Boolean, ForeignKey, Index, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
 
+from framework.database.mixins import TreeNodeMixin
+
 from . import BaseModel
 
 
-class ModuleMenu(BaseModel):
+class ModuleMenu(BaseModel, TreeNodeMixin):
     """模块菜单定义模型"""
 
     __tablename__ = "module_menus"
@@ -19,10 +21,14 @@ class ModuleMenu(BaseModel):
         nullable=False,
         comment="模块ID",
     )
+    # 覆盖 TreeNodeMixin 的 parent_id，保持外键约束
+    # 注意：不添加外键约束，因为顶级节点的 parent_id 为虚拟根节点 "root"（不存在于数据库）
+    # 树结构的父子关系通过 parent_ids 字段维护，应用层保证一致性
     parent_id: Mapped[str | None] = mapped_column(
         String(36),
         ForeignKey("module_menus.id", ondelete="SET NULL"),
         nullable=True,
+        index=True,
         comment="父菜单ID",
     )
     code: Mapped[str] = mapped_column(
@@ -35,9 +41,6 @@ class ModuleMenu(BaseModel):
     icon: Mapped[str | None] = mapped_column(
         String(100), nullable=True, comment="图标标识"
     )
-    sort_order: Mapped[int] = mapped_column(
-        Integer, nullable=False, default=0, comment="排序号"
-    )
     is_visible: Mapped[bool] = mapped_column(
         Boolean, nullable=False, default=True, comment="是否显示"
     )
@@ -45,3 +48,8 @@ class ModuleMenu(BaseModel):
     __table_args__ = (
         Index("ix_module_menus_code", "code"),
     )
+
+    @classmethod
+    def tree_name_field(cls) -> str:
+        """返回名称字段"""
+        return "name"

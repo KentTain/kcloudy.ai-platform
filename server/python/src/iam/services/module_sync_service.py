@@ -147,7 +147,7 @@ class ModuleSyncService:
                     "icon": mm.icon,
                     "is_visible": mm.is_visible,
                     "ref_id": mm.id,
-                    "tree_sort": mm.sort_order,  # 映射 sort_order -> tree_sort
+                    "tree_sort": mm.tree_sort,
                 },
             )
             menu_id_map[mm.id] = menu.id
@@ -622,7 +622,7 @@ class ModuleSyncService:
                     "icon": module_menu.icon,
                     "is_visible": module_menu.is_visible,
                     "ref_id": module_menu.id,
-                    "tree_sort": module_menu.sort_order,  # 映射 sort_order -> tree_sort
+                    "tree_sort": module_menu.tree_sort,
                 },
             )
 
@@ -695,7 +695,7 @@ class ModuleSyncService:
                         "path": module_menu.path,
                         "icon": module_menu.icon,
                         "is_visible": module_menu.is_visible,
-                        "tree_sort": module_menu.sort_order,  # 映射 sort_order -> tree_sort
+                        "tree_sort": module_menu.tree_sort,
                         "parent_id": None,  # 临时值，下面会根据 parent_id 更新
                     },
                 )

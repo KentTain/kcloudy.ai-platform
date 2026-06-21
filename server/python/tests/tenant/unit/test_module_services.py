@@ -180,13 +180,19 @@ class TestModuleMenuService:
         mock_menu1 = MagicMock()
         mock_menu1.id = "menu-1"
         mock_menu1.code = "dashboard"
-        mock_menu1.sort_order = 1
+        mock_menu1.tree_sort = 1
+        mock_menu1.tree_level = 0
+        mock_menu1.tree_leaf = True
+        mock_menu1.parent_ids = "root,"
 
         mock_menu2 = MagicMock()
         mock_menu2.id = "menu-2"
         mock_menu2.code = "users"
         mock_menu2.parent_id = "menu-1"
-        mock_menu2.sort_order = 2
+        mock_menu2.tree_sort = 2
+        mock_menu2.tree_level = 1
+        mock_menu2.tree_leaf = True
+        mock_menu2.parent_ids = "root,menu-1,"
 
         result = MagicMock()
         result.scalars.return_value.all.return_value = [mock_menu1, mock_menu2]
@@ -208,7 +214,12 @@ class TestModuleMenuService:
         mock_menu1.name = "仪表盘"
         mock_menu1.path = "/dashboard"
         mock_menu1.icon = "dashboard"
-        mock_menu1.sort_order = 1
+        mock_menu1.tree_sort = 1
+        mock_menu1.tree_level = 0
+        mock_menu1.tree_leaf = False
+        mock_menu1.parent_ids = "root,"
+        mock_menu1.tree_sorts = "00001,"
+        mock_menu1.tree_names = "仪表盘"
         mock_menu1.is_visible = True
         mock_menu1.created_at = datetime.now()
         mock_menu1.updated_at = datetime.now()
@@ -222,7 +233,12 @@ class TestModuleMenuService:
         mock_menu2.name = "用户管理"
         mock_menu2.path = "/dashboard/users"
         mock_menu2.icon = "user"
-        mock_menu2.sort_order = 1
+        mock_menu2.tree_sort = 1
+        mock_menu2.tree_level = 1
+        mock_menu2.tree_leaf = True
+        mock_menu2.parent_ids = "root,menu-1,"
+        mock_menu2.tree_sorts = "00001,00001,"
+        mock_menu2.tree_names = "仪表盘/用户管理"
         mock_menu2.is_visible = True
         mock_menu2.created_at = datetime.now()
         mock_menu2.updated_at = datetime.now()
@@ -257,7 +273,7 @@ class TestModuleMenuService:
                 code="dashboard",
                 name="仪表盘",
                 path="/dashboard",
-                sort_order=1,
+                tree_sort=1,
             )
 
         session.add.assert_called_once()

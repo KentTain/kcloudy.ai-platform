@@ -68,7 +68,7 @@ class ModuleMenuCreate(BaseModel):
     name: str = Field(..., min_length=1, max_length=100, description="菜单名称")
     path: str = Field(..., min_length=1, max_length=200, description="前端路由路径")
     icon: str | None = Field(None, max_length=100, description="图标标识")
-    sort_order: int = Field(0, ge=0, description="排序号")
+    tree_sort: int = Field(0, ge=0, description="排序号")
     is_visible: bool = Field(True, description="是否显示")
 
 class ModuleMenuUpdate(BaseModel):
@@ -78,7 +78,7 @@ class ModuleMenuUpdate(BaseModel):
     name: str | None = Field(None, min_length=1, max_length=100, description="菜单名称")
     path: str | None = Field(None, min_length=1, max_length=200, description="前端路由路径")
     icon: str | None = Field(None, max_length=100, description="图标标识")
-    sort_order: int | None = Field(None, ge=0, description="排序号")
+    tree_sort: int | None = Field(None, ge=0, description="排序号")
     is_visible: bool | None = Field(None, description="是否显示")
 
 class ModuleMenuTreeResponse(BaseModel):
@@ -91,7 +91,9 @@ class ModuleMenuTreeResponse(BaseModel):
     name: str = Field(..., description="菜单名称")
     path: str = Field(..., description="前端路由路径")
     icon: str | None = Field(None, description="图标标识")
-    sort_order: int = Field(..., description="排序号")
+    tree_sort: int = Field(..., description="排序号")
+    tree_level: int = Field(..., description="树层级")
+    tree_leaf: bool = Field(..., description="是否叶子节点")
     is_visible: bool = Field(..., description="是否显示")
     created_at: datetime = Field(..., description="创建时间")
     updated_at: datetime = Field(..., description="更新时间")

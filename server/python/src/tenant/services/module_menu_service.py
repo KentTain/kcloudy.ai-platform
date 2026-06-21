@@ -32,12 +32,12 @@ class ModuleMenuService:
             module_id: 模块 ID
 
         Returns:
-            菜单列表（按 sort_order 排序）
+            菜单列表（按 tree_sort 排序）
         """
         stmt = (
             select(ModuleMenu)
             .where(ModuleMenu.module_id == module_id)
-            .order_by(ModuleMenu.sort_order.asc(), ModuleMenu.created_at.asc())
+            .order_by(ModuleMenu.tree_sort.asc(), ModuleMenu.created_at.asc())
         )
         result = await session.execute(stmt)
         return list(result.scalars().all())
@@ -64,7 +64,9 @@ class ModuleMenuService:
                 "name": menu.name,
                 "path": menu.path,
                 "icon": menu.icon,
-                "sort_order": menu.sort_order,
+                "tree_sort": menu.tree_sort,
+                "tree_level": menu.tree_level,
+                "tree_leaf": menu.tree_leaf,
                 "is_visible": menu.is_visible,
                 "created_at": menu.created_at,
                 "updated_at": menu.updated_at,
@@ -82,7 +84,7 @@ class ModuleMenuService:
 
         # 递归排序子菜单
         def sort_children(menu_dict: dict[str, Any]) -> None:
-            menu_dict["children"].sort(key=lambda x: (x["sort_order"], x["created_at"]))
+            menu_dict["children"].sort(key=lambda x: (x["tree_sort"], x["created_at"]))
             for child in menu_dict["children"]:
                 sort_children(child)
 
@@ -114,7 +116,7 @@ class ModuleMenuService:
         path: str,
         parent_id: str | None = None,
         icon: str | None = None,
-        sort_order: int = 0,
+        tree_sort: int = 0,
         is_visible: bool = True,
     ) -> ModuleMenu:
         """
@@ -128,25 +130,25 @@ class ModuleMenuService:
             path: 前端路由路径
             parent_id: 父菜单 ID
             icon: 图标标识
-            sort_order: 排序号
+            tree_sort: 排序号
             is_visible: 是否显示
 
         Returns:
             ModuleMenu
         """
-        menu = ModuleMenu(
-            module_id=module_id,
-            parent_id=parent_id,
-            code=code,
-            name=name,
-            path=path,
-            icon=icon,
-            sort_order=sort_order,
-            is_visible=is_visible,
+        menu = await ModuleMenu.create_node(
+            session,
+            {
+                "module_id": module_id,
+                "parent_id": parent_id,
+                "code": code,
+                "name": name,
+                "path": path,
+                "icon": icon,
+                "tree_sort": tree_sort,
+                "is_visible": is_visible,
+            },
         )
-        session.add(menu)
-        await session.flush()
-        await session.refresh(menu)
 
         _logger.info(f"创建模块菜单: {menu.id} ({menu.code})")
 
@@ -165,7 +167,7 @@ class ModuleMenuService:
         path: str | None = None,
         parent_id: str | None = None,
         icon: str | None = None,
-        sort_order: int | None = None,
+        tree_sort: int | None = None,
         is_visible: bool | None = None,
     ) -> ModuleMenu | None:
         """
@@ -179,31 +181,29 @@ class ModuleMenuService:
         Returns:
             ModuleMenu | None
         """
-        stmt = select(ModuleMenu).where(ModuleMenu.id == menu_id)
-        result = await session.execute(stmt)
-        menu = result.scalar_one_or_none()
-
-        if not menu:
-            return None
-
+        # 构建更新数据
+        update_data: dict[str, Any] = {}
         if name is not None:
-            menu.name = name
+            update_data["name"] = name
         if path is not None:
-            menu.path = path
+            update_data["path"] = path
+        if icon is not None:
+            update_data["icon"] = icon
+        if tree_sort is not None:
+            update_data["tree_sort"] = tree_sort
+        if is_visible is not None:
+            update_data["is_visible"] = is_visible
+
+        # 检查是否会导致循环引用
         if parent_id is not None:
-            # 检查是否会导致循环引用
             if parent_id == menu_id:
                 raise ValueError("菜单不能以自己为父菜单")
-            menu.parent_id = parent_id
-        if icon is not None:
-            menu.icon = icon
-        if sort_order is not None:
-            menu.sort_order = sort_order
-        if is_visible is not None:
-            menu.is_visible = is_visible
+            update_data["parent_id"] = parent_id
 
-        await session.flush()
-        await session.refresh(menu)
+        if not update_data:
+            return await ModuleMenuService.get_by_id(session, menu_id)
+
+        menu = await ModuleMenu.update_node(session, menu_id, update_data)
 
         # 发布 ModuleMenuUpdated 事件
         await event_publisher.publish(
@@ -279,7 +279,7 @@ class ModuleMenuService:
         stmt = (
             select(ModuleMenu)
             .where(ModuleMenu.parent_id == menu_id)
-            .order_by(ModuleMenu.sort_order.asc())
+            .order_by(ModuleMenu.tree_sort.asc())
         )
         result = await session.execute(stmt)
         return list(result.scalars().all())
