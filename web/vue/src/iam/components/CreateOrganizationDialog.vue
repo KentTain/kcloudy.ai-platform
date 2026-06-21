@@ -32,11 +32,13 @@ import * as z from "zod"
 import type { Organization } from "@/iam/types"
 import type { TreeSelectNode } from "@/framework/types/tree"
 
+type OrganizationFormContext = Pick<Organization, "id" | "parent_id" | "name" | "code" | "sort_order">
+
 interface Props {
   open: boolean
   mode: "create-root" | "create-child" | "create-sibling" | "edit"
-  parentOrganization?: Organization | null
-  currentOrganization?: Organization | null
+  parentOrganization?: OrganizationFormContext | null
+  currentOrganization?: OrganizationFormContext | null
   /** 组织树数据（用于 TreeSelect 选择上级组织） */
   organizationTree?: Organization[]
 }

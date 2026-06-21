@@ -599,7 +599,14 @@ async function searchPeopleCallback(keyword: string): Promise<PeopleItem[]> {
 async function loadOrgPeopleCallback(orgId: string): Promise<PeopleItem[]> {
   try {
     const res = await getOrganizationMembers(orgId)
-    return (res.data || []) as PeopleItem[]
+    return (res.data || []).map((u) => ({
+      user_id: u.id,
+      username: u.username,
+      nickname: u.nickname,
+      email: u.email,
+      phone: u.phone,
+      status: u.status,
+    }))
   } catch {
     return []
   }

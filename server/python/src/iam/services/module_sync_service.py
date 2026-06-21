@@ -84,11 +84,14 @@ class ModuleSyncService:
         menu_perm_result = await session.execute(menu_perm_stmt)
         module_menu_permissions = list(menu_perm_result.scalars().all())
 
-        # 4. 创建租户实例层的菜单（先处理 parent_id 映射）
+        # 4. 创建租户实例层的菜单（tenant 模块的菜单不同步到 iam.menus）
+        # tenant 模块的菜单应该由 tenant 模块自己管理
+        skip_menu_sync = module_code == "tenant"
+
         menu_id_map: dict[str, str] = {}  # module_menu_id -> tenant_menu_id
 
         # 查询已存在的菜单（幂等检查：优先通过 ref_id，其次通过 tenant_id + module + code）
-        if module_menus:
+        if module_menus and not skip_menu_sync:
             existing_menu_stmt = select(Menu).where(
                 Menu.tenant_id == tenant_id,
                 Menu.module == module_code,
@@ -109,6 +112,10 @@ class ModuleSyncService:
         sorted_menus = sorted(module_menus, key=lambda m: m.parent_id or "")
 
         for mm in sorted_menus:
+            # 跳过 tenant 模块的菜单同步
+            if skip_menu_sync:
+                continue
+
             # 幂等检查：优先通过 ref_id，其次通过 code
             existing = existing_menus_by_ref.get(mm.id) or existing_menus_by_code.get(
                 mm.code
@@ -569,6 +576,11 @@ class ModuleSyncService:
             _logger.warning(f"模块不存在: {module_id}")
             return
 
+        # tenant 模块的菜单不同步到 iam.menus
+        if module.code == "tenant":
+            _logger.info(f"跳过 tenant 模块菜单同步: {module_menu_id}")
+            return
+
         # 2. 获取模块菜单信息
         menu_stmt = select(ModuleMenu).where(ModuleMenu.id == module_menu_id)
         menu_result = await session.execute(menu_stmt)
@@ -634,7 +646,19 @@ class ModuleSyncService:
             module_menu_id: 模块菜单 ID
             module_id: 模块 ID
         """
-        from tenant.models import ModuleMenu, TenantModule
+        from tenant.models import Module, ModuleMenu, TenantModule
+
+        # 获取模块信息，跳过 tenant 模块
+        module_stmt = select(Module).where(Module.id == module_id)
+        module_result = await session.execute(module_stmt)
+        module = module_result.scalar_one_or_none()
+        if not module:
+            _logger.warning(f"模块不存在: {module_id}")
+            return
+
+        if module.code == "tenant":
+            _logger.info(f"跳过 tenant 模块菜单同步: {module_menu_id}")
+            return
 
         # 1. 获取模块菜单信息
         menu_stmt = select(ModuleMenu).where(ModuleMenu.id == module_menu_id)
@@ -712,7 +736,19 @@ class ModuleSyncService:
             module_id: 模块 ID
             menu_code: 菜单编码
         """
-        from tenant.models import TenantModule
+        from tenant.models import Module, TenantModule
+
+        # 获取模块信息，跳过 tenant 模块
+        module_stmt = select(Module).where(Module.id == module_id)
+        module_result = await session.execute(module_stmt)
+        module = module_result.scalar_one_or_none()
+        if not module:
+            _logger.warning(f"模块不存在: {module_id}")
+            return
+
+        if module.code == "tenant":
+            _logger.info(f"跳过 tenant 模块菜单删除同步: {menu_code}")
+            return
 
         # 1. 查询所有已分配该模块的租户
         tm_stmt = select(TenantModule.tenant_id).where(
