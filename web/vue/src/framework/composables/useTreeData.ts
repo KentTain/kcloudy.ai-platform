@@ -34,8 +34,8 @@ export interface FieldMapping {
  * useTreeData 配置选项
  */
 export interface UseTreeDataOptions<TInput> {
-  /** 数据源，支持 Ref 或原始数组 */
-  source: Ref<TInput[]> | TInput[]
+  /** 数据源，支持 getter 函数、Ref 或原始数组 */
+  source: (() => TInput[]) | Ref<TInput[]> | TInput[]
 
   /** 字段映射配置 */
   fieldMapping?: FieldMapping
@@ -306,9 +306,10 @@ export function useTreeData<
    * 转换后的树数据
    */
   const treeData = computed<TNode[]>(() => {
-    const sourceData = unref(source)
-    if (!sourceData || sourceData.length === 0) return []
-    return transformTreeData<TInput>(sourceData, mapping) as TNode[]
+    // 支持 getter 函数、Ref 或原始数组
+    const sourceValue = typeof source === 'function' ? source() : unref(source)
+    if (!sourceValue || sourceValue.length === 0) return []
+    return transformTreeData<TInput>(sourceValue, mapping) as TNode[]
   })
 
   /**
