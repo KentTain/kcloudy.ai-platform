@@ -575,6 +575,10 @@ jwt:
 encryption:
   # 是否启用数据加密
   enabled: true
+  # 主密钥（用于敏感配置加密，如资源配置密码）
+  # 生成方式: python -c "import secrets; print(secrets.token_hex(32))"
+  # 生产环境必须通过环境变量 TENANT_ENCRYPTION_MASTER_KEY 设置
+  master-key: "your-64-character-hex-string-here-example-do-not-use-in-production"
   instance:
     - name: "db-in"
       algorithm: aes # aes, rsa

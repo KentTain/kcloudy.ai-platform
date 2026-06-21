@@ -95,6 +95,7 @@ class EncryptionSettings(BaseSettings):
 
     Attributes:
         enabled: 是否启用加密功能
+        master_key: 主密钥（32 字节的十六进制字符串，用于敏感配置加密）
         instance: 加密实例列表，定义可用的加密配置
         db_in: 落库加密配置
         web_in: 前端输入加密配置
@@ -102,6 +103,10 @@ class EncryptionSettings(BaseSettings):
     """
 
     enabled: bool = Field(default=True, description="是否启用加密功能")
+    master_key: str | None = Field(
+        default=None,
+        description="主密钥（32 字节的十六进制字符串，共 64 个字符）"
+    )
     instance: list[EncryptionInstanceSettings] = Field(
         default_factory=list, description="加密实例列表"
     )

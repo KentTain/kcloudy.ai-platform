@@ -113,7 +113,8 @@ def _get_master_key() -> bytes:
 
     优先级：
     1. 环境变量 TENANT_ENCRYPTION_MASTER_KEY
-    2. 自动生成（仅适用于开发环境）
+    2. 配置文件 encryption.master-key
+    3. 自动生成（仅适用于开发环境）
 
     Returns:
         bytes: 32 字节的主密钥
@@ -121,7 +122,7 @@ def _get_master_key() -> bytes:
     Raises:
         CryptoError: 生产环境未配置主密钥
     """
-    # 从环境变量获取
+    # 1. 从环境变量获取
     key_hex = os.environ.get("TENANT_ENCRYPTION_MASTER_KEY")
     if key_hex:
         try:
@@ -132,7 +133,26 @@ def _get_master_key() -> bytes:
         except ValueError as e:
             raise CryptoError(f"主密钥格式错误: {e}") from e
 
-    # 检查是否为开发环境
+    # 2. 从配置文件获取
+    try:
+        from framework.configs import get_settings
+
+        settings = get_settings()
+        if settings.encryption and hasattr(settings.encryption, 'master_key'):
+            key_hex = settings.encryption.master_key
+            if key_hex:
+                try:
+                    key = bytes.fromhex(key_hex)
+                    if len(key) != 32:
+                        raise CryptoError("主密钥长度必须为 32 字节（64 个十六进制字符）")
+                    return key
+                except ValueError as e:
+                    raise CryptoError(f"主密钥格式错误: {e}") from e
+    except RuntimeError:
+        # 配置未初始化，继续尝试其他方式
+        pass
+
+    # 3. 检查是否为开发环境
     env = os.environ.get("PYTHON_SERVICE_ENV", "local")
     if env in ("local", "dev", "development"):
         # 开发环境自动生成
