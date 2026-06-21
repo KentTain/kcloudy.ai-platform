@@ -109,6 +109,35 @@ class MenuService:
 
         return Menu.build_tree(menus, transform_func=transform)
 
+    @staticmethod
+    async def get_menu_permissions(
+        session: AsyncSession, menu_id: str
+    ) -> list["PermissionResponse"]:
+        """
+        获取菜单关联的权限列表
+
+        Args:
+            session: 数据库会话
+            menu_id: 菜单 ID
+
+        Returns:
+            权限列表
+        """
+        from iam.schemas.permission import PermissionResponse
+
+        # 查询菜单权限关联
+        stmt = (
+            select(Permission)
+            .join(MenuPermission, Permission.id == MenuPermission.permission_id)
+            .where(MenuPermission.menu_id == menu_id)
+            .order_by(Permission.resource, Permission.action)
+        )
+        result = await session.execute(stmt)
+        permissions = list(result.scalars().all())
+
+        # 转换为 Response
+        return [PermissionResponse.model_validate(p) for p in permissions]
+
 
 # 服务单例
 menu_service = MenuService()
