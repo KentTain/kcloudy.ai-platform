@@ -37,7 +37,7 @@ onMounted(() => {
     </Sidebar>
 
     <!-- 右侧：上下结构 -->
-    <SidebarInset class="flex flex-col">
+    <SidebarInset class="overflow-hidden flex flex-col">
       <!-- 上半部分：顶部导航栏 -->
       <header class="flex items-center gap-4 px-5 h-14 bg-background border-b shrink-0">
         <AppHeaderLeft />
@@ -46,10 +46,7 @@ onMounted(() => {
       </header>
 
       <!-- 下半部分：内容区 -->
-      <div class="flex-1 flex flex-col overflow-hidden">
-        <!-- 内容页 -->
-        <AppMain />
-      </div>
+      <router-view />
     </SidebarInset>
   </SidebarProvider>
 </template>

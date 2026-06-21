@@ -441,10 +441,12 @@ onMounted(() => {
   <AppPage title="人员管理" variant="workbench" description="管理系统用户，查看人员统计，按组织筛选">
     <!-- 操作按钮 -->
     <template #actions>
-      <Button @click="handleCreate">
-        <Users class="mr-1 h-4 w-4" />
-        新增人员
-      </Button>
+      <div class="flex items-center gap-2">
+        <Button @click="handleCreate">
+          <Users class="mr-1 h-4 w-4" />
+          新增人员
+        </Button>
+      </div>
     </template>
 
     <!-- 统计卡片 -->
@@ -465,7 +467,7 @@ onMounted(() => {
       </div>
     </div>
 
-    <div class="flex gap-4 flex-1 min-h-0">
+    <div class="flex min-h-0 flex-1 gap-4">
       <!-- 左侧：组织树筛选 -->
       <div class="w-[300px] shrink-0 flex flex-col border rounded-lg overflow-hidden">
         <div class="p-3 border-b bg-muted/30 flex items-center justify-between">
@@ -481,7 +483,7 @@ onMounted(() => {
           </Button>
         </div>
 
-        <ScrollArea class="flex-1">
+        <ScrollArea class="min-h-0 flex-1 px-3 py-3">
           <div v-if="organizationTree.length === 0" class="p-4 text-center text-muted-foreground text-sm">
             暂无组织数据
           </div>
@@ -516,7 +518,7 @@ onMounted(() => {
       </div>
 
       <!-- 右侧：用户列表 -->
-      <div class="flex-1 flex flex-col border rounded-lg overflow-hidden">
+      <div class="flex min-w-0 flex-1 flex-col border rounded-lg overflow-hidden">
         <!-- 筛选栏 -->
         <div class="p-3 border-b bg-muted/30">
           <div class="flex flex-wrap items-end gap-3">
@@ -568,7 +570,7 @@ onMounted(() => {
         </div>
 
         <!-- 用户列表 -->
-        <div class="flex-1 overflow-hidden p-3">
+        <div class="flex min-h-0 flex-1 flex-col p-3">
           <DataTable :data-table="dataTable" :fixed-layout="true" />
         </div>
       </div>
