@@ -11,6 +11,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from iam.models import Menu, MenuPermission, Permission, Role, RolePermission, UserRole
+from iam.schemas import PermissionResponse
 
 _logger = logger.bind(name=__name__)
 
@@ -53,11 +54,7 @@ class MenuService:
         user_permission_ids = {row[0] for row in result.fetchall()}
 
         # 2. 查询所有可见菜单
-        stmt = (
-            select(Menu)
-            .where(Menu.is_visible.is_(True))
-            .order_by(Menu.tree_sorts)
-        )
+        stmt = select(Menu).where(Menu.is_visible.is_(True)).order_by(Menu.tree_sorts)
         result = await session.execute(stmt)
         all_menus = list(result.scalars().all())
 
@@ -112,7 +109,7 @@ class MenuService:
     @staticmethod
     async def get_menu_permissions(
         session: AsyncSession, menu_id: str
-    ) -> list["PermissionResponse"]:
+    ) -> list[PermissionResponse]:
         """
         获取菜单关联的权限列表
 
