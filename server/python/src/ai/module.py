@@ -109,7 +109,42 @@ class AIModule:
             icon="Robot",
             version="1.0.0",
             menus=[
-                MenuDef(code="ai.plugins", name="插件管理", path="/ai/plugins", icon="Puzzle", sort_order=1),
+                MenuDef(
+                    code="ai.plugins",
+                    name="插件管理",
+                    path="/ai/plugins",
+                    icon="Puzzle",
+                    sort_order=1,
+                    permission_codes=["ai:plugin:read"],
+                ),
+                # plugins 隐藏二级菜单
+                MenuDef(
+                    code="ai.plugins.create",
+                    name="创建插件",
+                    path="/ai/plugins/create",
+                    parent_code="ai.plugins",
+                    sort_order=1,
+                    is_visible=False,
+                    permission_codes=["ai:plugin:write"],
+                ),
+                MenuDef(
+                    code="ai.plugins.detail",
+                    name="插件详情",
+                    path="/ai/plugins/{id}",
+                    parent_code="ai.plugins",
+                    sort_order=2,
+                    is_visible=False,
+                    permission_codes=["ai:plugin:read"],
+                ),
+                MenuDef(
+                    code="ai.plugins.edit",
+                    name="编辑插件",
+                    path="/ai/plugins/{id}/edit",
+                    parent_code="ai.plugins",
+                    sort_order=3,
+                    is_visible=False,
+                    permission_codes=["ai:plugin:write"],
+                ),
             ],
             permissions=[
                 # 插件权限

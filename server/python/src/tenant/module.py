@@ -10,6 +10,7 @@ from framework.module.definition import (
     MenuDef,
     ModuleDefinition,
     PermissionDef,
+    RoleDef,
 )
 from tenant.models import Base
 
@@ -135,6 +136,34 @@ class TenantModule:
                     sort_order=1,
                     permission_codes=["tenant:module:read"],
                 ),
+                # modules 隐藏二级菜单
+                MenuDef(
+                    code="tenant.modules.create",
+                    name="创建模块",
+                    path="/admin/modules/create",
+                    parent_code="tenant.modules",
+                    sort_order=1,
+                    is_visible=False,
+                    permission_codes=["tenant:module:write"],
+                ),
+                MenuDef(
+                    code="tenant.modules.detail",
+                    name="模块详情",
+                    path="/admin/modules/{id}",
+                    parent_code="tenant.modules",
+                    sort_order=2,
+                    is_visible=False,
+                    permission_codes=["tenant:module:read"],
+                ),
+                MenuDef(
+                    code="tenant.modules.edit",
+                    name="编辑模块",
+                    path="/admin/modules/{id}/edit",
+                    parent_code="tenant.modules",
+                    sort_order=3,
+                    is_visible=False,
+                    permission_codes=["tenant:module:write"],
+                ),
                 MenuDef(
                     code="tenant.tenants",
                     name="租户管理",
@@ -143,6 +172,34 @@ class TenantModule:
                     sort_order=2,
                     permission_codes=["tenant:tenant:read"],
                 ),
+                # tenants 隐藏二级菜单
+                MenuDef(
+                    code="tenant.tenants.create",
+                    name="创建租户",
+                    path="/admin/tenants/create",
+                    parent_code="tenant.tenants",
+                    sort_order=1,
+                    is_visible=False,
+                    permission_codes=["tenant:tenant:write"],
+                ),
+                MenuDef(
+                    code="tenant.tenants.detail",
+                    name="租户详情",
+                    path="/admin/tenants/{id}",
+                    parent_code="tenant.tenants",
+                    sort_order=2,
+                    is_visible=False,
+                    permission_codes=["tenant:tenant:read"],
+                ),
+                MenuDef(
+                    code="tenant.tenants.edit",
+                    name="编辑租户",
+                    path="/admin/tenants/{id}/edit",
+                    parent_code="tenant.tenants",
+                    sort_order=3,
+                    is_visible=False,
+                    permission_codes=["tenant:tenant:write"],
+                ),
                 MenuDef(
                     code="tenant.resources",
                     name="资源配置",
@@ -150,6 +207,50 @@ class TenantModule:
                     icon="Settings",
                     sort_order=3,
                     permission_codes=["tenant:resource:read"],
+                ),
+                # resources 隐藏二级菜单
+                MenuDef(
+                    code="tenant.resources.create",
+                    name="创建资源配置",
+                    path="/admin/resources/create",
+                    parent_code="tenant.resources",
+                    sort_order=1,
+                    is_visible=False,
+                    permission_codes=["tenant:resource:write"],
+                ),
+                MenuDef(
+                    code="tenant.resources.detail",
+                    name="资源配置详情",
+                    path="/admin/resources/{id}",
+                    parent_code="tenant.resources",
+                    sort_order=2,
+                    is_visible=False,
+                    permission_codes=["tenant:resource:read"],
+                ),
+                MenuDef(
+                    code="tenant.resources.edit",
+                    name="编辑资源配置",
+                    path="/admin/resources/{id}/edit",
+                    parent_code="tenant.resources",
+                    sort_order=3,
+                    is_visible=False,
+                    permission_codes=["tenant:resource:write"],
+                ),
+            ],
+            default_roles=[
+                RoleDef(
+                    code="tenantAdmin",
+                    name="租户管理员",
+                    description="拥有租户管理模块的所有读写权限",
+                    permission_codes=["tenant:*:*"],
+                    is_system=True,
+                ),
+                RoleDef(
+                    code="ordinaryAdmin",
+                    name="普通管理员",
+                    description="拥有租户管理模块的只读权限",
+                    permission_codes=["tenant:*:read"],
+                    is_system=True,
                 ),
             ],
             permissions=[
