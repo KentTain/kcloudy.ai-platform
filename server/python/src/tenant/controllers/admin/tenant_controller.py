@@ -12,7 +12,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from framework.common.response import ApiResponse
 from framework.database.dependencies import get_db_session
 from tenant.middlewares.admin_auth_middleware import AdminAuthService, get_current_admin
-from tenant.models import ModuleMenu, Tenant
+from tenant.models import (
+    ModuleMenu,
+    ModuleMenuPermission,
+    ModulePermission,
+    Tenant,
+)
 from tenant.schemas.admin.module import ModuleMenuTreeResponse
 from tenant.schemas.admin.tenant import (
     AdminLoginRequest,
@@ -175,10 +180,20 @@ async def admin_login(
         raise HTTPException(status_code=401, detail="用户名或密码错误")
 
     token, admin = result
+
+    # 从 token 数据中读取角色和权限信息
+    from tenant.middlewares.admin_auth_middleware import _admin_tokens
+
+    token_data = _admin_tokens.get(token, {})
+    role = token_data.get("role", admin.role)
+    permissions = token_data.get("permissions", [])
+
     return ApiResponse.success(
         data=AdminLoginResponse(
             token=token,
             username=admin.username,
+            role=role,
+            permissions=permissions,
             is_default=admin.is_default,
         ).model_dump()
     )
@@ -198,6 +213,29 @@ async def admin_logout(
     if token:
         AdminAuthService.logout(token)
     return ApiResponse.success(data=True)
+
+
+@router.get("/admin/me")
+async def get_admin_me(
+    admin: dict = Depends(get_current_admin),
+    session: AsyncSession = Depends(get_db_session),
+) -> ORJSONResponse:
+    """
+    获取当前管理员完整信息
+
+    场景：获取管理员信息
+    WHEN 管理员请求 GET /tenant/admin/v1/admin/me
+    THEN 返回管理员信息、角色、权限列表、过滤后的菜单树
+    """
+    admin_id = admin.get("admin_id")
+    if not admin_id:
+        raise HTTPException(status_code=401, detail="未认证")
+
+    admin_info = await AdminAuthService.get_admin_info(session, admin_id)
+    if not admin_info:
+        raise HTTPException(status_code=404, detail="管理员不存在")
+
+    return ApiResponse.success(data=admin_info)
 
 
 # ============== 租户管理 API ==============
@@ -633,7 +671,8 @@ async def get_admin_menus(
     if not module:
         return ApiResponse.success(data=[])
 
-    result: list[ModuleMenuTreeResponse] = []
+    # 获取当前管理员的角色权限（从 token_data 中获取）
+    permissions = admin.get("permissions", [])
 
     # 获取该模块的功能菜单（二级菜单）
     menus = await ModuleMenuService.list_menus(session, module.id)
@@ -641,6 +680,45 @@ async def get_admin_menus(
     # 过滤不可见菜单，转换为响应模型
     visible_menus = [_build_menu_item_from_dict(m) for m in menus]
     visible_menus = [m for m in visible_menus if m is not None]
+
+    # 根据角色权限过滤菜单（Task 5.3）
+    if permissions is not None:
+        # 查询该模块下所有权限 ID -> 权限码映射
+        perm_stmt = select(ModulePermission.id, ModulePermission.code).where(
+            ModulePermission.module_id == module.id
+        )
+        perm_result = await session.execute(perm_stmt)
+        perm_id_to_code: dict[str, str] = {
+            row[0]: row[1] for row in perm_result.all()
+        }
+
+        # 查询菜单权限关联
+        menu_ids = [m.id for m in menus if m.is_visible]
+        menu_perm_codes: dict[str, list[str]] = {}
+
+        if menu_ids:
+            mmp_stmt = select(ModuleMenuPermission).where(
+                ModuleMenuPermission.module_menu_id.in_(menu_ids)
+            )
+            mmp_result = await session.execute(mmp_stmt)
+            for mmp in mmp_result.scalars().all():
+                perm_code = perm_id_to_code.get(mmp.module_permission_id)
+                if perm_code:
+                    menu_perm_codes.setdefault(mmp.module_menu_id, []).append(perm_code)
+
+        # 过滤：菜单有关联权限但角色不拥有这些权限，则隐藏
+        filtered = []
+        for m in visible_menus:
+            linked_codes = menu_perm_codes.get(m.id, [])
+            if not linked_codes:
+                # 菜单没有权限关联，对所有角色可见
+                filtered.append(m)
+            elif any(code in permissions for code in linked_codes):
+                # 菜单有权限关联且角色拥有至少一个权限
+                filtered.append(m)
+        visible_menus = filtered
+
+    result: list[ModuleMenuTreeResponse] = []
 
     # 构建一级模块菜单
     module_menu = ModuleMenuTreeResponse(

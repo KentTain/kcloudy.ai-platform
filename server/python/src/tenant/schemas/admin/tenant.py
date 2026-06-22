@@ -162,12 +162,16 @@ class AdminLoginResponse(BaseModel):
     """管理员登录响应"""
     token: str = Field(..., description="访问令牌")
     username: str = Field(..., description="用户名")
+    role: str = Field(..., description="角色编码")
+    permissions: list[str] = Field(default_factory=list, description="权限码列表")
     is_default: bool = Field(..., description="是否默认管理员")
 
 class AdminInfoResponse(BaseModel):
     """管理员信息响应"""
     id: str = Field(..., description="管理员ID")
     username: str = Field(..., description="用户名")
+    role: str = Field("", description="角色编码")
+    permissions: list[str] = Field(default_factory=list, description="权限码列表")
     is_default: bool = Field(..., description="是否默认管理员")
     is_active: bool = Field(..., description="是否激活")
     created_at: datetime = Field(..., description="创建时间")
