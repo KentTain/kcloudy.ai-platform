@@ -210,6 +210,7 @@ async def get_user_menus(
             icon=menu_dict["icon"],
             path=menu_dict["path"],
             sort_order=menu_dict["sort_order"],
+            is_visible=menu_dict.get("is_visible", True),
             children=[to_vo(child) for child in menu_dict["children"]],
         )
 

@@ -39,6 +39,7 @@ export interface UserMenuItem {
   icon: string | null;
   path: string | null;
   sortOrder: number;
+  isVisible: boolean;
   children: UserMenuItem[];
 }
 
@@ -104,6 +105,7 @@ export const useMenuStore = defineStore("menu", () => {
       icon: vo.icon,
       path: vo.path,
       sortOrder: vo.sort_order,
+      isVisible: vo.is_visible,
       children: vo.children?.map(convertToUserMenuItem) || [],
     };
   }

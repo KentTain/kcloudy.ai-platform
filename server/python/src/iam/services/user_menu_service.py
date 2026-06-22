@@ -198,7 +198,11 @@ class UserMenuService:
         session, tenant_id: str | None, module_ids: set[str]
     ) -> list[Menu]:
         """
-        获取所有可见菜单
+        获取所有菜单（包含不可见菜单，用于面包屑导航）
+
+        注意：返回所有菜单（包括 is_visible=False 的菜单），
+        因为三级菜单（如"创建租户"、"租户详情"）通常是隐藏的，
+        但前端需要它们来构建面包屑导航。
 
         Args:
             session: 数据库会话
@@ -208,9 +212,8 @@ class UserMenuService:
         Returns:
             list[Menu]: 菜单列表
         """
-        # 构建菜单查询条件
+        # 构建菜单查询条件（不过滤 is_visible）
         conditions = [
-            Menu.is_visible == True,
             Menu.module.in_(module_ids) if module_ids else None,
         ]
         # 过滤 None 条件
@@ -264,6 +267,9 @@ class UserMenuService:
         """
         过滤用户有权限访问的菜单
 
+        注意：包含 is_visible=False 的菜单，因为它们可能是三级菜单，
+        需要用于面包屑导航。前端会根据 is_visible 决定是否在侧边栏显示。
+
         Args:
             all_menus: 所有菜单列表
             menu_permission_map: 菜单权限映射
@@ -276,7 +282,8 @@ class UserMenuService:
 
         for menu in all_menus:
             menu_perms = menu_permission_map.get(menu.id, set())
-            # 无权限限制的菜单，所有登录用户可见
+            # 无权限限制的菜单，所有登录用户可访问
+            # 或用户拥有该菜单的权限
             if not menu_perms or menu_perms & user_permission_ids:
                 visible_menu_ids.add(menu.id)
 
@@ -360,6 +367,7 @@ class UserMenuService:
                 "icon": module_icon,
                 "path": None,  # 模块节点无路由
                 "sort_order": module_info.get("sort_order", 0),
+                "is_visible": True,  # 模块节点始终可见
                 "children": [],
             }
 
@@ -375,6 +383,7 @@ class UserMenuService:
                     "icon": menu.icon,
                     "path": menu.path if menu.path else None,
                     "sort_order": menu.tree_sort,
+                    "is_visible": menu.is_visible,
                     "children": [],
                 }
 

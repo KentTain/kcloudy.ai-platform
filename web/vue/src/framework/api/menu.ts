@@ -14,6 +14,7 @@ export interface UserMenuTreeResponse {
   icon: string | null;
   path: string | null;
   sort_order: number;
+  is_visible: boolean;
   children: UserMenuTreeResponse[];
 }
 

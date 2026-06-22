@@ -821,7 +821,7 @@ class UserService:
         """
         获取用户详情聚合数据
 
-        聚合用户基础信息、角色、权限和租户列表。
+        聚合用户基础信息、角色、权限、租户列表和菜单树。
         使用 asyncio.gather 并行查询优化性能。
 
         Args:
@@ -848,6 +848,13 @@ class UserService:
             roles_task, permissions_task, tenants_task
         )
 
+        # 获取用户菜单树
+        from framework.tenant.context import get_tenant_id
+        from iam.services.user_menu_service import user_menu_service
+
+        tenant_id = get_tenant_id()
+        menus = await user_menu_service.get_user_menus(session, user_id, tenant_id)
+
         # 构建响应
         role_codes = [r.code for r in roles]
         return UserDetailResponse.from_user(
@@ -855,6 +862,7 @@ class UserService:
             role_codes=role_codes,
             permissions=permissions,
             tenants=tenants,
+            menus=menus,
         )
 
     @staticmethod

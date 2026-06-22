@@ -21,6 +21,7 @@ class UserMenuTreeResponse(BaseModel):
     icon: str | None = Field(None, description="图标标识")
     path: str | None = Field(None, description="前端路由路径")
     sort_order: int = Field(0, description="排序号")
+    is_visible: bool = Field(True, description="是否在侧边栏显示")
     children: list["UserMenuTreeResponse"] = Field(default_factory=list, description="子菜单列表")
 
 

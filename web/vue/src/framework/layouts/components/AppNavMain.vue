@@ -69,10 +69,17 @@ const menuStore = useMenuStore();
 
 /**
  * 将 UserMenuItem 转换为内部 MenuItem
+ * 过滤掉 is_visible=false 的菜单（这些菜单只用于面包屑导航）
  */
-function convertToMenuItem(item: UserMenuItem): MenuItem {
+function convertToMenuItem(item: UserMenuItem): MenuItem | null {
+  // 过滤不可见菜单（is_visible=false 的菜单只用于面包屑导航）
+  if (!item.isVisible) {
+    return null;
+  }
+
   const icon = getIconComponent(item.icon);
-  const children = item.children?.map(convertToMenuItem) || [];
+  // 递归过滤子菜单
+  const children = item.children?.map(convertToMenuItem).filter((i): i is MenuItem => i !== null) || [];
 
   return {
     icon,
@@ -89,7 +96,8 @@ function convertToMenuItem(item: UserMenuItem): MenuItem {
  */
 function convertToMenuGroups(items: UserMenuItem[]): MenuGroup[] {
   return items.map((item) => {
-    const children = item.children?.map(convertToMenuItem) || [];
+    // 递归过滤子菜单
+    const children = item.children?.map(convertToMenuItem).filter((i): i is MenuItem => i !== null) || [];
 
     // 如果有子菜单，第一级作为分组
     if (children.length > 0) {

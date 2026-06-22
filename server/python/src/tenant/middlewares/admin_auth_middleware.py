@@ -50,7 +50,9 @@ class AdminAuthService:
     """管理员认证服务"""
 
     @staticmethod
-    async def login(session: AsyncSession, username: str, password: str) -> tuple[str, TenantAdmin, list[str]] | None:
+    async def login(
+        session: AsyncSession, username: str, password: str
+    ) -> tuple[str, TenantAdmin, list[str]] | None:
         """
         管理员登录
 
@@ -59,8 +61,7 @@ class AdminAuthService:
         THEN 返回管理员 Token
         """
         stmt = select(TenantAdmin).where(
-            TenantAdmin.username == username,
-            TenantAdmin.is_active == True
+            TenantAdmin.username == username, TenantAdmin.is_active == True
         )
         result = await session.execute(stmt)
         admin = result.scalar_one_or_none()
@@ -198,11 +199,10 @@ class AdminAuthService:
         permissions: list[str] | None = None,
     ) -> list[dict]:
         """
-        获取管理后台菜单树（可选权限过滤）
+        获取管理后台菜单树（三级结构，包含不可见菜单用于面包屑导航）
 
         根据模块对象查询其下的所有菜单，并通过 ModuleMenuPermission
-        判断角色是否有权访问。若 permissions 为 None，不做权限过滤（返回所有可见菜单）。
-        若 permissions 为空列表，则过滤掉所有有权限关联的菜单（仅保留无权限关联的菜单）。
+        判断角色是否有权访问。
 
         Args:
             session: 数据库会话
@@ -217,11 +217,11 @@ class AdminAuthService:
 
         from tenant.services.module_menu_service import ModuleMenuService
 
-        # 获取该模块的所有菜单
-        menus = await ModuleMenuService.list_menus(session, module.id)
+        # 获取该模块的所有菜单（包括不可见菜单，用于面包屑导航）
+        all_menus = await ModuleMenuService.list_menus(session, module.id)
 
-        # 过滤可见菜单
-        visible_menus = [m for m in menus if m.is_visible]
+        if not all_menus:
+            return []
 
         # 权限过滤
         if permissions is not None:
@@ -235,7 +235,7 @@ class AdminAuthService:
             }
 
             # 查询菜单权限关联
-            menu_ids = [m.id for m in visible_menus]
+            menu_ids = [m.id for m in all_menus]
             menu_perm_codes: dict[str, list[str]] = {}
 
             if menu_ids:
@@ -246,37 +246,49 @@ class AdminAuthService:
                 for mmp in mmp_result.scalars().all():
                     perm_code = perm_id_to_code.get(mmp.module_permission_id)
                     if perm_code:
-                        menu_perm_codes.setdefault(mmp.module_menu_id, []).append(perm_code)
+                        menu_perm_codes.setdefault(mmp.module_menu_id, []).append(
+                            perm_code
+                        )
 
             # 过滤：菜单有关联权限但角色不拥有这些权限，则隐藏
-            filtered = []
-            for m in visible_menus:
+            visible_menu_ids = set()
+            for m in all_menus:
                 linked_codes = menu_perm_codes.get(m.id, [])
                 if not linked_codes:
                     # 菜单没有权限关联，对所有角色可见
-                    filtered.append(m)
+                    visible_menu_ids.add(m.id)
                 elif any(code in permissions for code in linked_codes):
                     # 菜单有权限关联且角色拥有至少一个权限
-                    filtered.append(m)
-            visible_menus = filtered
+                    visible_menu_ids.add(m.id)
 
-        # 转换为响应格式
-        children = [
-            {
-                "id": m.id,
-                "module_id": m.module_id,
-                "parent_id": m.parent_id,
-                "code": m.code,
-                "name": m.name,
-                "path": m.path,
-                "icon": m.icon,
-                "tree_sort": m.tree_sort,
-                "tree_level": m.tree_level,
-                "tree_leaf": m.tree_leaf,
-                "is_visible": m.is_visible,
-            }
-            for m in visible_menus
-        ]
+            # 包含父菜单（子菜单有权限时，父菜单也需要显示）
+            menu_map = {m.id: m for m in all_menus}
+            for menu_id in list(visible_menu_ids):
+                menu = menu_map.get(menu_id)
+                if menu and menu.parent_ids:
+                    for parent_id in menu.parent_ids.split(","):
+                        parent_id = parent_id.strip()
+                        if parent_id and parent_id != "root":
+                            visible_menu_ids.add(parent_id)
+
+            # 过滤菜单列表
+            filtered_menus = [m for m in all_menus if m.id in visible_menu_ids]
+        else:
+            filtered_menus = all_menus
+
+        # 使用 build_tree 构建树形结构
+        menu_tree = ModuleMenuService.build_tree(filtered_menus)
+
+        # 递归添加 is_visible 字段
+        def add_visible_field(node: dict) -> dict:
+            node["is_visible"] = node.get("is_visible", True)
+            if "children" in node:
+                node["children"] = [
+                    add_visible_field(child) for child in node["children"]
+                ]
+            return node
+
+        menu_tree = [add_visible_field(m) for m in menu_tree]
 
         # 构建模块级根菜单
         module_menu = {
@@ -291,7 +303,7 @@ class AdminAuthService:
             "tree_level": 0,
             "tree_leaf": False,
             "is_visible": True,
-            "children": children,
+            "children": menu_tree,
         }
 
         return [module_menu]
@@ -374,7 +386,9 @@ class AdminAuthMiddleware(BaseHTTPMiddleware):
             # API 级权限校验（Task 6.1），带路由级作用域
             if request.method in ("POST", "PUT", "DELETE"):
                 permissions = token_data.get("permissions", [])
-                if not self._check_api_permission(request.method, request.url.path, permissions):
+                if not self._check_api_permission(
+                    request.method, request.url.path, permissions
+                ):
                     return self._error_response(403, "权限不足")
 
             return await call_next(request)
@@ -383,7 +397,9 @@ class AdminAuthMiddleware(BaseHTTPMiddleware):
             _logger.exception("管理员认证中间件处理异常")
             return self._error_response(500, str(e))
 
-    def _check_api_permission(self, method: str, path: str, permissions: list[str]) -> bool:
+    def _check_api_permission(
+        self, method: str, path: str, permissions: list[str]
+    ) -> bool:
         """
         检查 API 权限（路由级作用域）
 

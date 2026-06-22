@@ -614,26 +614,32 @@ async def update_tenant_resources(
 # ============== 管理后台菜单 API ==============
 
 
-def _build_menu_item_from_dict(menu: ModuleMenu) -> ModuleMenuTreeResponse | None:
-    """将菜单 ModuleMenu 对象转换为 ModuleMenuTreeResponse（仅处理二级菜单项）"""
-    if not menu.is_visible:
-        return None
+def _build_menu_tree_item(menu_dict: dict) -> ModuleMenuTreeResponse:
+    """
+    将菜单字典转换为 ModuleMenuTreeResponse（递归构建）
 
+    Args:
+        menu_dict: 菜单字典（包含 children）
+
+    Returns:
+        ModuleMenuTreeResponse
+    """
+    children = menu_dict.get("children", [])
     return ModuleMenuTreeResponse(
-        id=menu.id,
-        module_id=menu.module_id,
-        parent_id=menu.parent_id,
-        code=menu.code,
-        name=menu.name,
-        path=menu.path,
-        icon=menu.icon,
-        tree_sort=menu.tree_sort,
-        tree_level=menu.tree_level,
-        tree_leaf=menu.tree_leaf,
-        is_visible=menu.is_visible,
-        created_at=menu.created_at,
-        updated_at=menu.updated_at,
-        children=[],  # 二级菜单无子菜单
+        id=menu_dict["id"],
+        module_id=menu_dict["module_id"],
+        parent_id=menu_dict["parent_id"],
+        code=menu_dict["code"],
+        name=menu_dict["name"],
+        path=menu_dict["path"],
+        icon=menu_dict["icon"],
+        tree_sort=menu_dict["tree_sort"],
+        tree_level=menu_dict["tree_level"],
+        tree_leaf=menu_dict["tree_leaf"],
+        is_visible=menu_dict["is_visible"],
+        created_at=menu_dict["created_at"],
+        updated_at=menu_dict["updated_at"],
+        children=[_build_menu_tree_item(child) for child in children],
     )
 
 
@@ -643,94 +649,115 @@ async def get_admin_menus(
     session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """
-    获取管理员菜单（二级结构）
+    获取管理员菜单（三级结构）
 
     菜单结构：
     - 一级菜单：模块菜单（来自 modules 表，无路由，不可点击）
-    - 二级菜单：功能菜单（来自 module_menus 表，有路由）
+    - 二级菜单：一级功能菜单（来自 module_menus 表，parent_id='root'，有路由）
+    - 三级菜单：二级功能菜单（来自 module_menus 表，parent_id 指向二级菜单，有路由）
 
     场景：成功获取菜单
     WHEN 管理员请求 GET /tenant/admin/v1/admin/menus
-    THEN 返回所有活跃模块及其功能菜单的树形结构
+    THEN 返回所有活跃模块及其功能菜单的树形结构（根据权限过滤）
 
     场景：无活跃模块
     WHEN 数据库中没有活跃模块
     THEN 返回空数组
     """
 
-    # 获取租户模块（一级菜单）
-    module = await ModuleService.get_by_code(session, "tenant")
+    # 获取所有活跃模块（一级菜单）
+    modules = await ModuleService.list_active_modules(session)
 
-    if not module:
+    if not modules:
         return ApiResponse.success(data=[])
 
     # 获取当前管理员的角色权限（从 token_data 中获取）
     permissions = admin.get("permissions", [])
 
-    # 获取该模块的功能菜单（二级菜单）
-    menus = await ModuleMenuService.list_menus(session, module.id)
-
-    # 过滤不可见菜单，转换为响应模型
-    visible_menus = [_build_menu_item_from_dict(m) for m in menus]
-    visible_menus = [m for m in visible_menus if m is not None]
-
-    # 根据角色权限过滤菜单（Task 5.3）
-    if permissions is not None:
-        # 查询该模块下所有权限 ID -> 权限码映射
-        perm_stmt = select(ModulePermission.id, ModulePermission.code).where(
-            ModulePermission.module_id == module.id
-        )
-        perm_result = await session.execute(perm_stmt)
-        perm_id_to_code: dict[str, str] = {
-            row[0]: row[1] for row in perm_result.all()
-        }
-
-        # 查询菜单权限关联
-        menu_ids = [m.id for m in menus if m.is_visible]
-        menu_perm_codes: dict[str, list[str]] = {}
-
-        if menu_ids:
-            mmp_stmt = select(ModuleMenuPermission).where(
-                ModuleMenuPermission.module_menu_id.in_(menu_ids)
-            )
-            mmp_result = await session.execute(mmp_stmt)
-            for mmp in mmp_result.scalars().all():
-                perm_code = perm_id_to_code.get(mmp.module_permission_id)
-                if perm_code:
-                    menu_perm_codes.setdefault(mmp.module_menu_id, []).append(perm_code)
-
-        # 过滤：菜单有关联权限但角色不拥有这些权限，则隐藏
-        filtered = []
-        for m in visible_menus:
-            linked_codes = menu_perm_codes.get(m.id, [])
-            if not linked_codes:
-                # 菜单没有权限关联，对所有角色可见
-                filtered.append(m)
-            elif any(code in permissions for code in linked_codes):
-                # 菜单有权限关联且角色拥有至少一个权限
-                filtered.append(m)
-        visible_menus = filtered
-
     result: list[ModuleMenuTreeResponse] = []
 
-    # 构建一级模块菜单
-    module_menu = ModuleMenuTreeResponse(
-        id=module.id,
-        module_id=module.id,
-        parent_id=None,
-        code=module.code,
-        name=module.name,
-        path="",  # 模块菜单无路由
-        icon=module.icon,
-        tree_sort=0,
-        tree_level=0,
-        tree_leaf=False,
-        is_visible=True,
-        created_at=module.created_at,
-        updated_at=module.updated_at,
-        children=visible_menus,
-    )
+    # 遍历每个模块，构建菜单树
+    for module in modules:
+        # 获取该模块的所有菜单（扁平列表）
+        all_menus = await ModuleMenuService.list_menus(session, module.id)
 
-    result.append(module_menu)
+        # 使用 build_tree 构建树形结构
+        menu_tree = ModuleMenuService.build_tree(all_menus)
+
+        # 根据权限过滤菜单
+        if permissions is not None and menu_tree:
+            # 查询该模块下所有权限 ID -> 权限码映射
+            perm_stmt = select(ModulePermission.id, ModulePermission.code).where(
+                ModulePermission.module_id == module.id
+            )
+            perm_result = await session.execute(perm_stmt)
+            perm_id_to_code: dict[str, str] = {
+                row[0]: row[1] for row in perm_result.all()
+            }
+
+            # 查询菜单权限关联
+            menu_ids = [m.id for m in all_menus]
+            menu_perm_codes: dict[str, list[str]] = {}
+
+            if menu_ids:
+                mmp_stmt = select(ModuleMenuPermission).where(
+                    ModuleMenuPermission.module_menu_id.in_(menu_ids)
+                )
+                mmp_result = await session.execute(mmp_stmt)
+                for mmp in mmp_result.scalars().all():
+                    perm_code = perm_id_to_code.get(mmp.module_permission_id)
+                    if perm_code:
+                        menu_perm_codes.setdefault(mmp.module_menu_id, []).append(perm_code)
+
+            # 递归过滤菜单树
+            def filter_menu_tree(menu_dict: dict) -> dict | None:
+                """递归过滤菜单树（根据权限）"""
+                linked_codes = menu_perm_codes.get(menu_dict["id"], [])
+
+                # 判断菜单是否可访问
+                has_access = (
+                    not linked_codes  # 无权限关联
+                    or any(code in permissions for code in linked_codes)  # 拥有权限
+                )
+
+                if not has_access:
+                    return None
+
+                # 递归过滤子菜单
+                filtered_children = []
+                for child in menu_dict.get("children", []):
+                    filtered_child = filter_menu_tree(child)
+                    if filtered_child:
+                        filtered_children.append(filtered_child)
+
+                # 返回过滤后的菜单（保持不可见菜单但过滤子菜单）
+                result_menu = {**menu_dict, "children": filtered_children}
+                return result_menu
+
+            menu_tree = [filter_menu_tree(m) for m in menu_tree]
+            menu_tree = [m for m in menu_tree if m is not None]
+
+        # 转换为 ModuleMenuTreeResponse
+        visible_menus = [_build_menu_tree_item(m) for m in menu_tree]
+
+        # 构建一级模块菜单
+        module_menu = ModuleMenuTreeResponse(
+            id=module.id,
+            module_id=module.id,
+            parent_id=None,
+            code=module.code,
+            name=module.name,
+            path="",  # 模块菜单无路由
+            icon=module.icon,
+            tree_sort=0,
+            tree_level=0,
+            tree_leaf=False,
+            is_visible=True,
+            created_at=module.created_at,
+            updated_at=module.updated_at,
+            children=visible_menus,
+        )
+
+        result.append(module_menu)
 
     return ApiResponse.success(data=[r.model_dump() for r in result])

@@ -5,6 +5,7 @@ import type { AdminLoginRequest, AdminInfo } from "../types/admin";
 import type { AdminMenuItem } from "./adminMenu";
 import { useAdminMenuStore } from "./adminMenu";
 import { notifyError } from "@/framework/utils/feedback";
+import { isSuccess } from "@/framework/api/types";
 
 const ADMIN_TOKEN_KEY = "admin_token";
 const ADMIN_INFO_KEY = "admin_info";
@@ -63,8 +64,13 @@ export const useAdminAuthStore = defineStore("admin-auth", () => {
   const login = async (data: AdminLoginRequest): Promise<boolean> => {
     try {
       const response = await adminLoginApi(data);
-      const result = response.data;
 
+      if (!isSuccess(response)) {
+        notifyError(response.msg || "登录失败");
+        return false;
+      }
+
+      const result = response.data;
       token.value = result.token;
 
       // 先保存 token 到 localStorage，后续请求需要携带
@@ -72,6 +78,11 @@ export const useAdminAuthStore = defineStore("admin-auth", () => {
 
       // 登录成功后获取完整管理员信息（角色、权限、菜单）
       const adminInfoResponse = await getCurrentAdmin();
+      if (!isSuccess(adminInfoResponse)) {
+        notifyError(adminInfoResponse.msg || "获取完整管理员信息失败");
+        return false;
+      }
+
       const adminInfoData = adminInfoResponse.data;
 
       adminInfo.value = adminInfoData;

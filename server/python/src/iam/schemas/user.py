@@ -184,7 +184,7 @@ class UserResponse(BaseModel):
 class UserDetailResponse(BaseModel):
     """用户详情聚合响应 Schema
 
-    聚合用户基础信息、角色、权限和租户列表的完整响应对象。
+    聚合用户基础信息、角色、权限、租户列表和菜单树的完整响应对象。
     由 Service 层聚合方法返回，Controller 直接使用。
     """
 
@@ -206,6 +206,7 @@ class UserDetailResponse(BaseModel):
     tenants: list[UserTenantResponse] = Field(
         default_factory=list, description="用户所属租户列表"
     )
+    menus: list[dict] = Field(default_factory=list, description="用户菜单树")
 
     @classmethod
     def from_user(
@@ -214,6 +215,7 @@ class UserDetailResponse(BaseModel):
         role_codes: list[str],
         permissions: list[str],
         tenants: list[UserTenantResponse],
+        menus: list[dict] | None = None,
     ) -> UserDetailResponse:
         """从 User 实体和相关数据构建 UserDetailResponse
 
@@ -222,6 +224,7 @@ class UserDetailResponse(BaseModel):
             role_codes: 用户角色编码列表
             permissions: 用户权限编码列表
             tenants: 用户租户列表
+            menus: 用户菜单树（可选）
 
         Returns:
             UserDetailResponse 实例
@@ -243,6 +246,7 @@ class UserDetailResponse(BaseModel):
             roles=role_codes,
             permissions=permissions,
             tenants=tenants,
+            menus=menus or [],
         )
 
 
