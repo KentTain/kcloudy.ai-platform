@@ -60,6 +60,18 @@ export const setupRouterGuards = (router: Router) => {
         next("/admin/login?redirect=" + to.path);
         return;
       }
+
+      // 权限检查
+      const requiredPermissions = to.meta?.permissions as string[] | undefined;
+      if (requiredPermissions && requiredPermissions.length > 0) {
+        const hasPermission = requiredPermissions.some((p) => adminAuthStore.hasPermission(p));
+        if (!hasPermission) {
+          console.log("[RouterGuard] Admin lacks permission for:", to.path, "required:", requiredPermissions);
+          next("/403");
+          return;
+        }
+      }
+
       next();
       return;
     }

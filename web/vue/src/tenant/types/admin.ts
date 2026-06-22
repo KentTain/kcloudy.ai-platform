@@ -3,6 +3,7 @@
  */
 
 import type { BasePaginatedQuery } from "@/framework/types";
+import type { AdminMenuItem } from "@/tenant/stores/adminMenu";
 
 // 管理员登录请求
 export interface AdminLoginRequest {
@@ -15,6 +16,8 @@ export interface AdminLoginResponse {
   token: string;
   username: string;
   is_default: boolean;
+  role: string;
+  permissions: string[];
 }
 
 // 管理员信息
@@ -23,6 +26,9 @@ export interface AdminInfo {
   username: string;
   is_default: boolean;
   is_active: boolean;
+  role: string;
+  permissions: string[];
+  menus: AdminMenuItem[];
 }
 
 /**
