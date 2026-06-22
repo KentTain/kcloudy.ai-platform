@@ -220,38 +220,46 @@ const handleDelete = async (row: Module) => {
 
     <!-- 统计卡片区 -->
     <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-      <Card class="gap-2 px-5 py-4">
-        <div class="flex items-center gap-2">
-          <Package class="text-muted-foreground h-4 w-4" />
-          <span class="text-muted-foreground text-sm">模块总数</span>
+      <div class="border rounded-lg p-4 bg-card">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm text-muted-foreground">模块总数</p>
+            <p class="text-2xl font-bold mt-1">{{ stats.totalCount }}</p>
+            <p class="text-xs text-muted-foreground mt-1">已配置的系统模块数量</p>
+          </div>
+          <Package class="h-8 w-8 opacity-20 text-blue-500" />
         </div>
-        <div class="text-2xl font-semibold">{{ stats.totalCount }}</div>
-        <div class="text-muted-foreground text-xs">已配置的系统模块数量</div>
-      </Card>
-      <Card class="gap-2 px-5 py-4">
-        <div class="flex items-center gap-2">
-          <CheckCircle class="text-muted-foreground h-4 w-4" />
-          <span class="text-muted-foreground text-sm">启用模块</span>
+      </div>
+      <div class="border rounded-lg p-4 bg-card">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm text-muted-foreground">启用模块</p>
+            <p class="text-2xl font-bold mt-1">{{ stats.activeCount }}</p>
+            <p class="text-xs text-muted-foreground mt-1">当前启用状态的模块数量</p>
+          </div>
+          <CheckCircle class="h-8 w-8 opacity-20 text-green-500" />
         </div>
-        <div class="text-2xl font-semibold">{{ stats.activeCount }}</div>
-        <div class="text-muted-foreground text-xs">当前启用状态的模块数量</div>
-      </Card>
-      <Card class="gap-2 px-5 py-4">
-        <div class="flex items-center gap-2">
-          <Star class="text-muted-foreground h-4 w-4" />
-          <span class="text-muted-foreground text-sm">必须模块</span>
+      </div>
+      <div class="border rounded-lg p-4 bg-card">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm text-muted-foreground">必须模块</p>
+            <p class="text-2xl font-bold mt-1">{{ stats.needCount }}</p>
+            <p class="text-xs text-muted-foreground mt-1">租户必须分配的模块数量</p>
+          </div>
+          <Star class="h-8 w-8 opacity-20 text-amber-500" />
         </div>
-        <div class="text-2xl font-semibold">{{ stats.needCount }}</div>
-        <div class="text-muted-foreground text-xs">租户必须分配的模块数量</div>
-      </Card>
-      <Card class="gap-2 px-5 py-4">
-        <div class="flex items-center gap-2">
-          <Users class="text-muted-foreground h-4 w-4" />
-          <span class="text-muted-foreground text-sm">已分配次数</span>
+      </div>
+      <div class="border rounded-lg p-4 bg-card">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm text-muted-foreground">已分配次数</p>
+            <p class="text-2xl font-bold mt-1">{{ stats.assignedCount }}</p>
+            <p class="text-xs text-muted-foreground mt-1">所有模块分配给租户的总次数</p>
+          </div>
+          <Users class="h-8 w-8 opacity-20 text-indigo-500" />
         </div>
-        <div class="text-2xl font-semibold">{{ stats.assignedCount }}</div>
-        <div class="text-muted-foreground text-xs">所有模块分配给租户的总次数</div>
-      </Card>
+      </div>
     </div>
 
     <!-- 搜索筛选区 + 数据表格区 -->

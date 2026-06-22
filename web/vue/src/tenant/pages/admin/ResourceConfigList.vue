@@ -60,7 +60,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components'
-import { Plus, Pencil, Trash2, Plug, RefreshCw, Search } from '@lucide/vue'
+import { Plus, Pencil, Trash2, Plug, RefreshCw, Search, Layers, CheckCircle, Ban } from '@lucide/vue'
 
 // 资源类型定义
 type ResourceType = 'database' | 'storage' | 'cache' | 'queue' | 'pubsub'
@@ -744,21 +744,36 @@ const confirmDelete = async () => {
 
     <!-- 统计卡片区 -->
     <div class="grid gap-4 md:grid-cols-3">
-      <Card class="gap-2 px-5 py-4">
-        <div class="text-muted-foreground text-sm">配置总数</div>
-        <div class="text-2xl font-semibold">{{ stats.total }}</div>
-        <div class="text-muted-foreground text-xs">当前类型的资源配置数量</div>
-      </Card>
-      <Card class="gap-2 px-5 py-4">
-        <div class="text-muted-foreground text-sm">已被引用</div>
-        <div class="text-2xl font-semibold">{{ stats.used }}</div>
-        <div class="text-muted-foreground text-xs">已被租户使用的配置数量</div>
-      </Card>
-      <Card class="gap-2 px-5 py-4">
-        <div class="text-muted-foreground text-sm">未被使用</div>
-        <div class="text-2xl font-semibold">{{ stats.unused }}</div>
-        <div class="text-muted-foreground text-xs">尚未分配给租户的配置</div>
-      </Card>
+      <div class="border rounded-lg p-4 bg-card">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm text-muted-foreground">配置总数</p>
+            <p class="text-2xl font-bold mt-1">{{ stats.total }}</p>
+            <p class="text-xs text-muted-foreground mt-1">当前类型的资源配置数量</p>
+          </div>
+          <Layers class="h-8 w-8 opacity-20 text-blue-500" />
+        </div>
+      </div>
+      <div class="border rounded-lg p-4 bg-card">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm text-muted-foreground">已被引用</p>
+            <p class="text-2xl font-bold mt-1">{{ stats.used }}</p>
+            <p class="text-xs text-muted-foreground mt-1">已被租户使用的配置数量</p>
+          </div>
+          <CheckCircle class="h-8 w-8 opacity-20 text-green-500" />
+        </div>
+      </div>
+      <div class="border rounded-lg p-4 bg-card">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm text-muted-foreground">未被使用</p>
+            <p class="text-2xl font-bold mt-1">{{ stats.unused }}</p>
+            <p class="text-xs text-muted-foreground mt-1">尚未分配给租户的配置</p>
+          </div>
+          <Ban class="h-8 w-8 opacity-20 text-gray-400" />
+        </div>
+      </div>
     </div>
 
     <!-- Tab 切换区 + 数据表格区 -->

@@ -256,30 +256,36 @@ const handleDeactivate = async (row: Tenant) => {
 
     <!-- 统计卡片区 -->
     <div class="grid gap-4 md:grid-cols-3">
-      <Card class="gap-2 px-5 py-4">
-        <div class="flex items-center gap-2">
-          <Building2 class="text-muted-foreground h-4 w-4" />
-          <span class="text-muted-foreground text-sm">租户总数</span>
+      <div class="border rounded-lg p-4 bg-card">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm text-muted-foreground">租户总数</p>
+            <p class="text-2xl font-bold mt-1">{{ stats.total_count }}</p>
+            <p class="text-xs text-muted-foreground mt-1">系统中的租户总数</p>
+          </div>
+          <Building2 class="h-8 w-8 opacity-20 text-blue-500" />
         </div>
-        <div class="text-2xl font-semibold">{{ stats.total_count }}</div>
-        <div class="text-muted-foreground text-xs">系统中的租户总数</div>
-      </Card>
-      <Card class="gap-2 px-5 py-4">
-        <div class="flex items-center gap-2">
-          <UserX class="text-muted-foreground h-4 w-4" />
-          <span class="text-muted-foreground text-sm">未激活数</span>
+      </div>
+      <div class="border rounded-lg p-4 bg-card">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm text-muted-foreground">未激活数</p>
+            <p class="text-2xl font-bold mt-1">{{ stats.inactive_count }}</p>
+            <p class="text-xs text-muted-foreground mt-1">状态为停用的租户数量</p>
+          </div>
+          <UserX class="h-8 w-8 opacity-20 text-red-500" />
         </div>
-        <div class="text-2xl font-semibold">{{ stats.inactive_count }}</div>
-        <div class="text-muted-foreground text-xs">状态为停用的租户数量</div>
-      </Card>
-      <Card class="gap-2 px-5 py-4">
-        <div class="flex items-center gap-2">
-          <Clock class="text-muted-foreground h-4 w-4" />
-          <span class="text-muted-foreground text-sm">过期数</span>
+      </div>
+      <div class="border rounded-lg p-4 bg-card">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm text-muted-foreground">过期数</p>
+            <p class="text-2xl font-bold mt-1">{{ stats.expired_count }}</p>
+            <p class="text-xs text-muted-foreground mt-1">已过期的租户数量</p>
+          </div>
+          <Clock class="h-8 w-8 opacity-20 text-amber-500" />
         </div>
-        <div class="text-2xl font-semibold">{{ stats.expired_count }}</div>
-        <div class="text-muted-foreground text-xs">已过期的租户数量</div>
-      </Card>
+      </div>
     </div>
 
     <!-- 搜索筛选区 + 数据表格区 -->
