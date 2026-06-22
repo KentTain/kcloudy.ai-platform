@@ -67,6 +67,9 @@ export const useAdminAuthStore = defineStore("admin-auth", () => {
 
       token.value = result.token;
 
+      // 先保存 token 到 localStorage，后续请求需要携带
+      localStorage.setItem(ADMIN_TOKEN_KEY, result.token);
+
       // 登录成功后获取完整管理员信息（角色、权限、菜单）
       const adminInfoResponse = await getCurrentAdmin();
       const adminInfoData = adminInfoResponse.data;
@@ -76,8 +79,7 @@ export const useAdminAuthStore = defineStore("admin-auth", () => {
       permissions.value = adminInfoData.permissions;
       menus.value = adminInfoData.menus;
 
-      // 同步保存到 localStorage
-      localStorage.setItem(ADMIN_TOKEN_KEY, result.token);
+      // 保存其他信息到 localStorage
       localStorage.setItem(ADMIN_INFO_KEY, JSON.stringify(adminInfo.value));
       localStorage.setItem(ADMIN_ROLE_KEY, role.value);
       localStorage.setItem(ADMIN_PERMISSIONS_KEY, JSON.stringify(permissions.value));
