@@ -94,7 +94,7 @@ const moduleColumns: ColumnDef<Module>[] = [
   {
     accessorKey: "created_at",
     header: "创建时间",
-    size: 180,
+    size: 120,
     cell: ({ row }) => formatDate(row.original.created_at),
   },
   {

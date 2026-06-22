@@ -215,7 +215,7 @@ const handleTestConnection = async (row: ResourceConfig, type: ResourceType) => 
 // 数据库列定义
 const databaseColumns: ColumnDef<DatabaseConfig>[] = [
   { accessorKey: 'name', header: '配置名称', size: 200, cell: ({ row }) => h('span', { class: 'font-medium' }, row.original.name) },
-  { accessorKey: 'host', header: '主机地址', size: 150 },
+  { accessorKey: 'host', header: '主机地址', size: 120 },
   { accessorKey: 'port', header: '端口', size: 80 },
   { accessorKey: 'database', header: '数据库名', size: 120 },
   {
@@ -225,7 +225,7 @@ const databaseColumns: ColumnDef<DatabaseConfig>[] = [
     cell: ({ row }) => h(Badge, { variant: getStatusBadge(row.original).variant }, () => getStatusBadge(row.original).label),
   },
   { accessorKey: 'tenant_count', header: '引用租户', size: 80, cell: ({ row }) => row.original.tenant_count || 0 },
-  { accessorKey: 'created_at', header: '创建时间', size: 160, cell: ({ row }) => formatDate(row.original.created_at) },
+  { accessorKey: 'created_at', header: '创建时间', size: 120, cell: ({ row }) => formatDate(row.original.created_at) },
   {
     id: 'actions',
     header: '操作',
@@ -247,10 +247,10 @@ const databaseColumns: ColumnDef<DatabaseConfig>[] = [
 
 // 存储列定义
 const storageColumns: ColumnDef<StorageConfig>[] = [
-  { accessorKey: 'name', header: '配置名称', size: 200, cell: ({ row }) => h('span', { class: 'font-medium' }, row.original.name) },
-  { accessorKey: 'endpoint', header: 'Endpoint', size: 200 },
-  { accessorKey: 'bucket', header: 'Bucket', size: 120 },
-  { accessorKey: 'region', header: 'Region', size: 100, cell: ({ row }) => row.original.region || '--' },
+  { accessorKey: 'name', header: '配置名称', size: 130, cell: ({ row }) => h('span', { class: 'font-medium' }, row.original.name) },
+  { accessorKey: 'endpoint', header: 'Endpoint', size: 180 },
+  { accessorKey: 'bucket', header: 'Bucket', size: 100 },
+  { accessorKey: 'region', header: 'Region', size: 80, cell: ({ row }) => row.original.region || '--' },
   {
     accessorKey: 'tenant_count',
     header: '状态',
@@ -258,7 +258,7 @@ const storageColumns: ColumnDef<StorageConfig>[] = [
     cell: ({ row }) => h(Badge, { variant: getStatusBadge(row.original).variant }, () => getStatusBadge(row.original).label),
   },
   { accessorKey: 'tenant_count', header: '引用租户', size: 80, cell: ({ row }) => row.original.tenant_count || 0 },
-  { accessorKey: 'created_at', header: '创建时间', size: 160, cell: ({ row }) => formatDate(row.original.created_at) },
+  { accessorKey: 'created_at', header: '创建时间', size: 120, cell: ({ row }) => formatDate(row.original.created_at) },
   {
     id: 'actions',
     header: '操作',
@@ -280,8 +280,8 @@ const storageColumns: ColumnDef<StorageConfig>[] = [
 
 // 缓存列定义
 const cacheColumns: ColumnDef<CacheConfig>[] = [
-  { accessorKey: 'name', header: '配置名称', size: 200, cell: ({ row }) => h('span', { class: 'font-medium' }, row.original.name) },
-  { accessorKey: 'host', header: '主机地址', size: 150 },
+  { accessorKey: 'name', header: '配置名称', size: 130, cell: ({ row }) => h('span', { class: 'font-medium' }, row.original.name) },
+  { accessorKey: 'host', header: '主机地址', size: 120 },
   { accessorKey: 'port', header: '端口', size: 80 },
   { accessorKey: 'db', header: '数据库', size: 80, cell: ({ row }) => row.original.db || 0 },
   {
@@ -291,7 +291,7 @@ const cacheColumns: ColumnDef<CacheConfig>[] = [
     cell: ({ row }) => h(Badge, { variant: getStatusBadge(row.original).variant }, () => getStatusBadge(row.original).label),
   },
   { accessorKey: 'tenant_count', header: '引用租户', size: 80, cell: ({ row }) => row.original.tenant_count || 0 },
-  { accessorKey: 'created_at', header: '创建时间', size: 160, cell: ({ row }) => formatDate(row.original.created_at) },
+  { accessorKey: 'created_at', header: '创建时间', size: 120, cell: ({ row }) => formatDate(row.original.created_at) },
   {
     id: 'actions',
     header: '操作',
@@ -313,7 +313,7 @@ const cacheColumns: ColumnDef<CacheConfig>[] = [
 
 // 队列列定义
 const queueColumns: ColumnDef<QueueConfig>[] = [
-  { accessorKey: 'name', header: '配置名称', size: 200, cell: ({ row }) => h('span', { class: 'font-medium' }, row.original.name) },
+  { accessorKey: 'name', header: '配置名称', size: 130, cell: ({ row }) => h('span', { class: 'font-medium' }, row.original.name) },
   { accessorKey: 'host', header: '主机地址', size: 150 },
   { accessorKey: 'port', header: '端口', size: 80 },
   { accessorKey: 'username', header: '用户名', size: 100, cell: ({ row }) => row.original.username || '--' },
@@ -346,7 +346,7 @@ const queueColumns: ColumnDef<QueueConfig>[] = [
 
 // 发布订阅列定义
 const pubsubColumns: ColumnDef<PubsubConfig>[] = [
-  { accessorKey: 'name', header: '配置名称', size: 200, cell: ({ row }) => h('span', { class: 'font-medium' }, row.original.name) },
+  { accessorKey: 'name', header: '配置名称', size: 130, cell: ({ row }) => h('span', { class: 'font-medium' }, row.original.name) },
   {
     accessorKey: 'type_name',
     header: '类型',
@@ -376,7 +376,7 @@ const pubsubColumns: ColumnDef<PubsubConfig>[] = [
     cell: ({ row }) => h(Badge, { variant: getStatusBadge(row.original).variant }, () => getStatusBadge(row.original).label),
   },
   { accessorKey: 'tenant_count', header: '引用租户', size: 80, cell: ({ row }) => row.original.tenant_count || 0 },
-  { accessorKey: 'created_at', header: '创建时间', size: 160, cell: ({ row }) => formatDate(row.original.created_at) },
+  { accessorKey: 'created_at', header: '创建时间', size: 120, cell: ({ row }) => formatDate(row.original.created_at) },
   {
     id: 'actions',
     header: '操作',

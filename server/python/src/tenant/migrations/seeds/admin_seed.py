@@ -50,7 +50,7 @@ async def run(*, dry_run: bool = False) -> int:
 
         admin = TenantAdmin(
             id=admin_id,
-            username="admin",
+            username="tenant_admin",
             password=password_hash,
             is_default=True,
             is_active=True,

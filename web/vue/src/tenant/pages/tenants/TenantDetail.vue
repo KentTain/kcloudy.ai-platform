@@ -147,7 +147,7 @@ const loadTenantDetail = async () => {
 }
 
 const handleEdit = () => {
-  router.push(`/tenants/${tenantId.value}/edit`)
+  router.push(`/admin/tenants/${tenantId.value}/edit`)
 }
 
 const handleBack = () => {
@@ -195,11 +195,11 @@ const loadResourceConfigs = async () => {
       getQueueConfigs({ page_size: 100 }),
       getPubsubConfigs({ page_size: 100 }),
     ])
-    databaseConfigs.value = dbRes.data?.items || []
-    storageConfigs.value = storageRes.data?.items || []
-    cacheConfigs.value = cacheRes.data?.items || []
-    queueConfigs.value = queueRes.data?.items || []
-    pubsubConfigs.value = pubsubRes.data?.items || []
+    databaseConfigs.value = dbRes.data || []
+    storageConfigs.value = storageRes.data || []
+    cacheConfigs.value = cacheRes.data || []
+    queueConfigs.value = queueRes.data || []
+    pubsubConfigs.value = pubsubRes.data || []
   } catch (error) {
     notifyError('加载资源配置列表失败')
   }
@@ -269,7 +269,7 @@ const loadTenantModules = async () => {
 const loadAllModules = async () => {
   try {
     const res = await getModules({ page_size: 100, is_active: true })
-    allModules.value = res.data?.items || []
+    allModules.value = res.data || []
   } catch (error) {
     notifyError('加载模块列表失败')
   }
@@ -534,7 +534,7 @@ onMounted(() => {
                 <TableRow v-for="tm in tenantModules" :key="tm.id">
                   <TableCell>
                     <Button
-                      variant="link"
+                      variant="ghost"
                       class="h-auto p-0 font-medium"
                       @click="router.push(`/admin/modules/${tm.module_id}`)"
                     >
@@ -641,7 +641,7 @@ onMounted(() => {
             取消
           </Button>
           <Button
-            variant="destructive"
+            variant="ghost"
             :disabled="unassignLoading"
             @click="handleUnassignModule"
           >

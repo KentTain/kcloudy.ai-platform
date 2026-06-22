@@ -23,7 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useUserStore } from "@/framework/stores";
+import { useAdminAuthStore } from "@/tenant/stores/adminAuth";
 import { confirmAction } from "@/framework/utils/feedback";
 import { getTenants } from "@/tenant/api/tenant";
 import { useTenantStore } from "@/tenant/stores/tenant";
@@ -31,7 +31,7 @@ import type { Tenant, TenantListStats } from "@/tenant/types";
 
 const router = useRouter();
 const tenantStore = useTenantStore();
-const frameworkUserStore = useUserStore();
+const adminAuthStore = useAdminAuthStore();
 
 const searchForm = ref({
   keyword: "",
@@ -49,8 +49,8 @@ const statusOptions = [
   { label: "停用", value: "inactive" },
 ];
 
-const canCreate = computed(() => frameworkUserStore.hasRole("admin"));
-const canEdit = computed(() => frameworkUserStore.hasRole("admin"));
+const canCreate = computed(() => adminAuthStore.isLoggedIn);
+const canEdit = computed(() => adminAuthStore.isLoggedIn);
 
 function formatDate(dateStr?: string): string {
   if (!dateStr) return "永久";
@@ -97,7 +97,7 @@ const tenantColumns: ColumnDef<Tenant>[] = [
   {
     accessorKey: "expired_at",
     header: "过期时间",
-    size: 180,
+    size: 80,
     cell: ({ row }) => formatDate(row.original.expired_at),
   },
   {
@@ -188,15 +188,15 @@ const handleReset = () => {
 };
 
 const handleCreate = () => {
-  router.push("/tenants/create");
+  router.push("/admin/tenants/create");
 };
 
 const handleEdit = (row: Tenant) => {
-  router.push(`/tenants/${row.id}/edit`);
+  router.push(`/admin/tenants/${row.id}/edit`);
 };
 
 const handleDetail = (row: Tenant) => {
-  router.push(`/tenants/${row.id}`);
+  router.push(`/admin/tenants/${row.id}`);
 };
 
 const handleDelete = async (row: Tenant) => {

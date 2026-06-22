@@ -3,7 +3,7 @@ import AdminLayout from "@/tenant/layouts/AdminLayout.vue";
 
 /**
  * Tenant 模块路由配置 - 管理后台
- * 注意：路由名称使用 Admin 前缀，避免与 tenantRoutes 冲突
+ * 注意：路由名称使用 Admin 前缀，避免冲突
  */
 export const adminRoutes: RouteRecordRaw[] = [
   {
@@ -80,35 +80,3 @@ export const adminRoutes: RouteRecordRaw[] = [
     ],
   },
 ];
-
-/**
- * 嵌套在 AdminLayout 下的路由（普通用户界面）
- */
-export const tenantRoutes: RouteRecordRaw[] = [
-  {
-    path: "tenants",
-    name: "TenantManagement",
-    component: () => import("@/tenant/pages/tenants/TenantList.vue"),
-    meta: { title: "租户管理", icon: "tenant", requiresAuth: true, roles: ["admin"] },
-  },
-  {
-    path: "tenants/create",
-    name: "TenantCreate",
-    component: () => import("@/tenant/pages/tenants/TenantForm.vue"),
-    meta: { title: "创建租户", hidden: true, requiresAuth: true, roles: ["admin"] },
-  },
-  {
-    path: "tenants/:id",
-    name: "TenantDetail",
-    component: () => import("@/tenant/pages/tenants/TenantDetail.vue"),
-    meta: { title: "租户详情", hidden: true, requiresAuth: true, roles: ["admin"] },
-  },
-  {
-    path: "tenants/:id/edit",
-    name: "TenantEdit",
-    component: () => import("@/tenant/pages/tenants/TenantForm.vue"),
-    meta: { title: "编辑租户", hidden: true, requiresAuth: true, roles: ["admin"] },
-  },
-];
-
-export default tenantRoutes;

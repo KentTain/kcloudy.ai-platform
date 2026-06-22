@@ -1,11 +1,7 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { toTypedSchema } from '@vee-validate/zod'
-import { useForm } from 'vee-validate'
-import * as z from 'zod'
-import { useTenantStore } from '@/tenant/stores/tenant'
-import type { TenantCreate, TenantUpdate, ResourceConfig } from '@/tenant/types'
+import { getTenant, createTenant, updateTenant } from '@/tenant/api/tenant'
 import {
   getDatabaseConfigs,
   getStorageConfigs,
@@ -13,39 +9,39 @@ import {
   getQueueConfigs,
   getPubsubConfigs,
 } from '@/tenant/api/resourceConfig'
-import AppPage from '@/framework/layouts/components/AppPage.vue'
-import { Button, Input, DateInput, Select } from '@/components'
-import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components'
+import type { TenantCreate, TenantUpdate, ResourceConfig } from '@/tenant/types'
+import { notifySuccess, notifyError } from '@/framework/utils/feedback'
+import { Button, Input, Label, Card, Select } from '@/components'
+import { ArrowLeft, Save } from '@lucide/vue'
+import DateInput from '@/components/common/form/date-input/DateInput.vue'
 
 const route = useRoute()
 const router = useRouter()
-const tenantStore = useTenantStore()
 
-const isEdit = computed(() => !!route.params.id)
 const tenantId = computed(() => route.params.id as string)
+const isEdit = computed(() => !!tenantId.value)
+const loading = ref(false)
+const saving = ref(false)
 
-const formSchema = toTypedSchema(z.object({
-  name: z.string().min(1, '请输入租户名称'),
-  code: z.string().min(1, '请输入租户编码'),
-  contact_name: z.string().optional(),
-  contact_email: z.string().email('请输入有效的邮箱地址').optional().or(z.literal('')),
-  contact_phone: z.string().optional(),
-  expired_at: z.string().optional(),
-}))
-
-const { handleSubmit, setValues } = useForm({
-  validationSchema: formSchema,
+// 表单数据
+const form = ref({
+  name: '',
+  code: '',
+  contact_name: '',
+  contact_email: '',
+  contact_phone: '',
+  expired_at: '',
 })
 
-const loading = ref(false)
-const expiredAt = ref<string | undefined>(undefined)
+// 表单验证错误
+const errors = ref<Record<string, string>>({})
 
 // 资源配置选择
-const dbConfigId = ref<string | number | null>(null)
-const storageConfigId = ref<string | number | null>(null)
-const cacheConfigId = ref<string | number | null>(null)
-const queueConfigId = ref<string | number | null>(null)
-const pubsubConfigId = ref<string | number | null>(null)
+const dbConfigId = ref<string | null>(null)
+const storageConfigId = ref<string | null>(null)
+const cacheConfigId = ref<string | null>(null)
+const queueConfigId = ref<string | null>(null)
+const pubsubConfigId = ref<string | null>(null)
 
 // 资源配置列表
 const databaseConfigs = ref<ResourceConfig[]>([])
@@ -96,11 +92,11 @@ async function loadResourceConfigs() {
       getPubsubConfigs({ page: 1, page_size: 100 }),
     ])
 
-    databaseConfigs.value = dbRes.data.items ?? []
-    storageConfigs.value = storageRes.data.items ?? []
-    cacheConfigs.value = cacheRes.data.items ?? []
-    queueConfigs.value = queueRes.data.items ?? []
-    pubsubConfigs.value = pubsubRes.data.items ?? []
+    databaseConfigs.value = dbRes.data ?? []
+    storageConfigs.value = storageRes.data ?? []
+    cacheConfigs.value = cacheRes.data ?? []
+    queueConfigs.value = queueRes.data ?? []
+    pubsubConfigs.value = pubsubRes.data ?? []
 
     // 自动选中默认配置
     dbConfigId.value = getDefaultConfigId(databaseConfigs.value)
@@ -113,195 +109,317 @@ async function loadResourceConfigs() {
   }
 }
 
-const onSubmit = handleSubmit(async (values) => {
+/**
+ * 加载租户详情（编辑模式）
+ */
+const loadTenant = async () => {
+  if (!isEdit.value) return
+
   loading.value = true
   try {
-    const submitData: TenantCreate & TenantUpdate = {
-      ...values,
-      expired_at: expiredAt.value,
-      db_config_id: (dbConfigId.value as string) || undefined,
-      storage_config_id: (storageConfigId.value as string) || undefined,
-      cache_config_id: (cacheConfigId.value as string) || undefined,
-      queue_config_id: (queueConfigId.value as string) || undefined,
-      pubsub_config_id: (pubsubConfigId.value as string) || undefined,
+    const response = await getTenant(tenantId.value)
+    if (response.data) {
+      const data = response.data
+      form.value = {
+        name: data.name,
+        code: data.code,
+        contact_name: data.contact_name || '',
+        contact_email: data.contact_email || '',
+        contact_phone: data.contact_phone || '',
+        expired_at: data.expired_at || '',
+      }
+      // 编辑模式下使用租户已绑定的资源配置
+      if (data.db_config) dbConfigId.value = data.db_config.id
+      if (data.storage_config) storageConfigId.value = data.storage_config.id
+      if (data.cache_config) cacheConfigId.value = data.cache_config.id
+      if (data.queue_config) queueConfigId.value = data.queue_config.id
+      if (data.pubsub_config) pubsubConfigId.value = data.pubsub_config.id
     }
-    if (isEdit.value) {
-      await tenantStore.editTenant(tenantId.value, submitData)
-    } else {
-      await tenantStore.addTenant(submitData)
-    }
-    router.back()
+  } catch (error) {
+    console.error('加载租户详情失败:', error)
+    notifyError('加载租户详情失败')
   } finally {
     loading.value = false
   }
-})
-
-const handleCancel = () => {
-  router.back()
 }
 
+/**
+ * 验证表单
+ */
+const validateForm = (): boolean => {
+  errors.value = {}
+
+  if (!form.value.name.trim()) {
+    errors.value.name = '请输入租户名称'
+  }
+
+  if (!form.value.code.trim()) {
+    errors.value.code = '请输入租户编码'
+  } else if (!/^[a-z][a-z0-9_]*$/.test(form.value.code)) {
+    errors.value.code = '租户编码必须以小写字母开头，只能包含小写字母、数字和下划线'
+  }
+
+  if (form.value.contact_email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.value.contact_email)) {
+    errors.value.contact_email = '请输入有效的邮箱地址'
+  }
+
+  return Object.keys(errors.value).length === 0
+}
+
+/**
+ * 保存租户
+ */
+const handleSave = async () => {
+  if (!validateForm()) return
+
+  saving.value = true
+  try {
+    if (isEdit.value) {
+      const updatePayload: TenantUpdate = {
+        name: form.value.name,
+        contact_name: form.value.contact_name || undefined,
+        contact_email: form.value.contact_email || undefined,
+        contact_phone: form.value.contact_phone || undefined,
+        expired_at: form.value.expired_at || undefined,
+        db_config_id: dbConfigId.value || undefined,
+        storage_config_id: storageConfigId.value || undefined,
+        cache_config_id: cacheConfigId.value || undefined,
+        queue_config_id: queueConfigId.value || undefined,
+        pubsub_config_id: pubsubConfigId.value || undefined,
+      }
+      await updateTenant(tenantId.value, updatePayload)
+      notifySuccess('租户已更新')
+    } else {
+      const createPayload: TenantCreate = {
+        name: form.value.name,
+        code: form.value.code,
+        contact_name: form.value.contact_name || undefined,
+        contact_email: form.value.contact_email || undefined,
+        contact_phone: form.value.contact_phone || undefined,
+        expired_at: form.value.expired_at || undefined,
+        db_config_id: dbConfigId.value || undefined,
+        storage_config_id: storageConfigId.value || undefined,
+        cache_config_id: cacheConfigId.value || undefined,
+        queue_config_id: queueConfigId.value || undefined,
+        pubsub_config_id: pubsubConfigId.value || undefined,
+      }
+      await createTenant(createPayload)
+      notifySuccess('租户已创建')
+    }
+    router.push('/admin/tenants')
+  } catch (error: any) {
+    console.error('保存租户失败:', error)
+    const errorMessage = error?.response?.data?.msg || error?.message || '保存失败'
+    notifyError(errorMessage)
+  } finally {
+    saving.value = false
+  }
+}
+
+/**
+ * 返回列表
+ */
+const handleBack = () => {
+  router.push('/admin/tenants')
+}
+
+/**
+ * 跳转到资源配置页面
+ */
 const goToResourceConfig = () => {
   router.push('/admin/resources')
 }
 
 onMounted(async () => {
-  // 加载资源配置列表
   await loadResourceConfigs()
-
-  if (isEdit.value) {
-    await tenantStore.fetchTenant(tenantId.value)
-    const tenant = tenantStore.currentTenant
-    if (tenant) {
-      setValues({
-        name: tenant.name,
-        code: tenant.code,
-        contact_name: tenant.contact_name || '',
-        contact_email: tenant.contact_email || '',
-        contact_phone: tenant.contact_phone || '',
-        expired_at: tenant.expired_at || '',
-      })
-      expiredAt.value = tenant.expired_at
-      // 编辑模式下使用租户已绑定的资源配置
-      if (tenant.db_config) dbConfigId.value = tenant.db_config.id
-      if (tenant.storage_config) storageConfigId.value = tenant.storage_config.id
-      if (tenant.cache_config) cacheConfigId.value = tenant.cache_config.id
-      if (tenant.queue_config) queueConfigId.value = tenant.queue_config.id
-      if (tenant.pubsub_config) pubsubConfigId.value = tenant.pubsub_config.id
-    }
-  }
+  await loadTenant()
 })
 </script>
 
 <template>
-  <AppPage :title="isEdit ? '编辑租户' : '创建租户'" variant="detail">
-    <form @submit="onSubmit" class="max-w-[600px] flex flex-col gap-6">
-      <FormField v-slot="{ componentField }" name="name">
-        <FormItem>
-          <FormLabel>租户名称</FormLabel>
-          <FormControl>
-            <Input v-bind="componentField" :disabled="isEdit" />
-          </FormControl>
-          <FormMessage />
-        </FormItem>
-      </FormField>
-
-      <FormField v-slot="{ componentField }" name="code">
-        <FormItem>
-          <FormLabel>租户编码</FormLabel>
-          <FormControl>
-            <Input v-bind="componentField" :disabled="isEdit" />
-          </FormControl>
-          <FormMessage />
-        </FormItem>
-      </FormField>
-
-      <FormField v-slot="{ componentField }" name="contact_name">
-        <FormItem>
-          <FormLabel>联系人</FormLabel>
-          <FormControl>
-            <Input v-bind="componentField" />
-          </FormControl>
-          <FormMessage />
-        </FormItem>
-      </FormField>
-
-      <FormField v-slot="{ componentField }" name="contact_email">
-        <FormItem>
-          <FormLabel>联系人邮箱</FormLabel>
-          <FormControl>
-            <Input v-bind="componentField" />
-          </FormControl>
-          <FormMessage />
-        </FormItem>
-      </FormField>
-
-      <FormField v-slot="{ componentField }" name="contact_phone">
-        <FormItem>
-          <FormLabel>联系人电话</FormLabel>
-          <FormControl>
-            <Input v-bind="componentField" />
-          </FormControl>
-          <FormMessage />
-        </FormItem>
-      </FormField>
-
-      <div class="flex flex-col gap-2">
-        <FormLabel>过期时间</FormLabel>
-        <DateInput
-          v-model="expiredAt"
-          type="single"
-          placeholder="选择过期时间（不选则永久）"
-        />
-      </div>
-
-      <!-- 资源配置选择区域 -->
-      <div class="flex flex-col gap-4 rounded-md border p-4">
-        <div class="flex items-center justify-between">
-          <h3 class="text-sm font-medium">资源配置</h3>
-          <Button type="button" variant="ghost" size="sm" @click="goToResourceConfig">
-            + 创建新配置
-          </Button>
-        </div>
-
-        <div class="flex flex-col gap-4">
-          <div class="flex flex-col gap-2">
-            <FormLabel>数据库配置</FormLabel>
-            <Select
-              v-model="dbConfigId"
-              :options="databaseOptions"
-              placeholder="选择数据库配置"
-              clearable
-            />
-          </div>
-
-          <div class="flex flex-col gap-2">
-            <FormLabel>存储配置</FormLabel>
-            <Select
-              v-model="storageConfigId"
-              :options="storageOptions"
-              placeholder="选择存储配置"
-              clearable
-            />
-          </div>
-
-          <div class="flex flex-col gap-2">
-            <FormLabel>缓存配置</FormLabel>
-            <Select
-              v-model="cacheConfigId"
-              :options="cacheOptions"
-              placeholder="选择缓存配置"
-              clearable
-            />
-          </div>
-
-          <div class="flex flex-col gap-2">
-            <FormLabel>队列配置</FormLabel>
-            <Select
-              v-model="queueConfigId"
-              :options="queueOptions"
-              placeholder="选择队列配置"
-              clearable
-            />
-          </div>
-
-          <div class="flex flex-col gap-2">
-            <FormLabel>发布订阅配置</FormLabel>
-            <Select
-              v-model="pubsubConfigId"
-              :options="pubsubOptions"
-              placeholder="选择发布订阅配置"
-              clearable
-            />
-          </div>
-        </div>
-      </div>
-
-      <div class="flex gap-2">
-        <Button type="submit" :disabled="loading">
-          {{ isEdit ? '保存' : '创建' }}
+  <div class="flex h-full min-h-0 flex-col gap-4 p-4">
+    <!-- 页面标题区 -->
+    <div class="flex flex-wrap items-start justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <Button variant="ghost" size="icon" @click="handleBack">
+          <ArrowLeft class="h-4 w-4" />
         </Button>
-        <Button variant="outline" @click="handleCancel">取消</Button>
+        <div>
+          <h2 class="text-xl font-semibold">{{ isEdit ? '编辑租户' : '新增租户' }}</h2>
+          <p class="text-muted-foreground mt-1 text-sm">
+            {{ isEdit ? '修改租户基本信息和资源配置' : '创建新的租户' }}
+          </p>
+        </div>
       </div>
-    </form>
-  </AppPage>
+      <div class="flex items-center gap-2">
+        <Button variant="outline" @click="handleBack">取消</Button>
+        <Button :disabled="saving" @click="handleSave">
+          <Save class="mr-1 h-4 w-4" />
+          {{ saving ? '保存中...' : '保存' }}
+        </Button>
+      </div>
+    </div>
+
+    <!-- 表单区域 -->
+    <Card class="flex min-h-0 flex-1 flex-col overflow-auto p-6">
+      <div v-if="loading" class="flex flex-col gap-4">
+        <div v-for="n in 10" :key="n" class="space-y-2">
+          <div class="h-4 w-20 bg-muted animate-pulse rounded" />
+          <div class="h-10 w-full bg-muted animate-pulse rounded" />
+        </div>
+      </div>
+
+      <div v-else class="mx-auto w-full max-w-2xl space-y-6">
+        <!-- 基本信息 -->
+        <div class="space-y-4">
+          <h3 class="text-sm font-medium text-muted-foreground">基本信息</h3>
+          
+          <!-- 租户名称 -->
+          <div class="space-y-2">
+            <Label for="name">租户名称 <span class="text-destructive">*</span></Label>
+            <Input
+              id="name"
+              v-model="form.name"
+              placeholder="请输入租户名称"
+              :class="{ 'border-destructive': errors.name }"
+            />
+            <p v-if="errors.name" class="text-destructive text-xs">{{ errors.name }}</p>
+          </div>
+
+          <!-- 租户编码 -->
+          <div class="space-y-2">
+            <Label for="code">租户编码 <span class="text-destructive">*</span></Label>
+            <Input
+              id="code"
+              v-model="form.code"
+              placeholder="例如: my_company"
+              :disabled="isEdit"
+              :class="{ 'border-destructive': errors.code }"
+            />
+            <p v-if="errors.code" class="text-destructive text-xs">{{ errors.code }}</p>
+            <p v-else class="text-muted-foreground text-xs">
+              租户编码只能包含小写字母、数字和下划线，创建后不可修改
+            </p>
+          </div>
+        </div>
+
+        <!-- 联系信息 -->
+        <div class="space-y-4">
+          <h3 class="text-sm font-medium text-muted-foreground">联系信息</h3>
+          
+          <div class="grid gap-4 md:grid-cols-2">
+            <!-- 联系人 -->
+            <div class="space-y-2">
+              <Label for="contact_name">联系人</Label>
+              <Input
+                id="contact_name"
+                v-model="form.contact_name"
+                placeholder="请输入联系人姓名"
+              />
+            </div>
+
+            <!-- 联系电话 -->
+            <div class="space-y-2">
+              <Label for="contact_phone">联系电话</Label>
+              <Input
+                id="contact_phone"
+                v-model="form.contact_phone"
+                placeholder="请输入联系电话"
+              />
+            </div>
+          </div>
+
+          <!-- 联系人邮箱 -->
+          <div class="space-y-2">
+            <Label for="contact_email">联系人邮箱</Label>
+            <Input
+              id="contact_email"
+              v-model="form.contact_email"
+              placeholder="请输入联系人邮箱"
+              :class="{ 'border-destructive': errors.contact_email }"
+            />
+            <p v-if="errors.contact_email" class="text-destructive text-xs">{{ errors.contact_email }}</p>
+          </div>
+        </div>
+
+        <!-- 过期时间 -->
+        <div class="space-y-2">
+          <Label>过期时间</Label>
+          <DateInput
+            v-model="form.expired_at"
+            type="single"
+            placeholder="选择过期时间（不选则永久）"
+          />
+          <p class="text-muted-foreground text-xs">不选择过期时间则表示租户永久有效</p>
+        </div>
+
+        <!-- 资源配置 -->
+        <div class="space-y-4">
+          <div class="flex items-center justify-between">
+            <h3 class="text-sm font-medium text-muted-foreground">资源配置</h3>
+            <Button type="button" variant="ghost" size="sm" @click="goToResourceConfig">
+              + 创建新配置
+            </Button>
+          </div>
+
+          <div class="grid gap-4 md:grid-cols-2">
+            <!-- 数据库配置 -->
+            <div class="space-y-2">
+              <Label>数据库配置</Label>
+              <Select
+                v-model="dbConfigId"
+                :options="databaseOptions"
+                placeholder="选择数据库配置"
+                clearable
+              />
+            </div>
+
+            <!-- 存储配置 -->
+            <div class="space-y-2">
+              <Label>存储配置</Label>
+              <Select
+                v-model="storageConfigId"
+                :options="storageOptions"
+                placeholder="选择存储配置"
+                clearable
+              />
+            </div>
+
+            <!-- 缓存配置 -->
+            <div class="space-y-2">
+              <Label>缓存配置</Label>
+              <Select
+                v-model="cacheConfigId"
+                :options="cacheOptions"
+                placeholder="选择缓存配置"
+                clearable
+              />
+            </div>
+
+            <!-- 队列配置 -->
+            <div class="space-y-2">
+              <Label>队列配置</Label>
+              <Select
+                v-model="queueConfigId"
+                :options="queueOptions"
+                placeholder="选择队列配置"
+                clearable
+              />
+            </div>
+
+            <!-- 发布订阅配置 -->
+            <div class="space-y-2">
+              <Label>发布订阅配置</Label>
+              <Select
+                v-model="pubsubConfigId"
+                :options="pubsubOptions"
+                placeholder="选择发布订阅配置"
+                clearable
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    </Card>
+  </div>
 </template>
