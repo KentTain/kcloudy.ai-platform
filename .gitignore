@@ -85,4 +85,5 @@ docs/Excalidraw
 .claude/settings.local.json
 
 # 本地pnpn缓存设置
-web/vue/pnpm-workspace.yaml
+web/vue/pnpm-workspace.yaml.claude/worktrees/
+.claude/worktrees/
