@@ -6,7 +6,6 @@
  */
 import { defineStore } from "pinia";
 import { ref } from "vue";
-import { rawGet } from "@/framework/api/client";
 import type { ApiResponse } from "@/framework/api/types";
 
 /**
@@ -35,16 +34,22 @@ export const useAdminMenuStore = defineStore("admin-menu", () => {
 
   /**
    * 获取管理员菜单
+   * 直接从 adminAuthStore.menus 获取，登录时已从 /admin/me 接口获取
    */
   async function fetchAdminMenus(): Promise<void> {
     loading.value = true;
     error.value = null;
 
     try {
-      const response = await rawGet<ApiResponse<AdminMenuItem[]>>(
-        "/tenant/admin/v1/admin/menus"
-      );
-      adminMenus.value = response.data || [];
+      const { useAdminAuthStore } = await import("./adminAuth");
+      const adminAuthStore = useAdminAuthStore();
+
+      // 直接使用登录时获取的菜单数据
+      if (adminAuthStore.menus && adminAuthStore.menus.length > 0) {
+        adminMenus.value = adminAuthStore.menus;
+      } else {
+        adminMenus.value = [];
+      }
     } catch (err) {
       error.value = err instanceof Error ? err.message : "获取菜单失败";
       adminMenus.value = [];

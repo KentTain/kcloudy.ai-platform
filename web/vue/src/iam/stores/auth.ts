@@ -1,5 +1,5 @@
 ﻿import { defineStore } from "pinia";
-import { computed, ref } from "vue";
+import { ref } from "vue";
 import { useUserStore } from "@/framework/stores";
 import { useMenuStore } from "@/framework/stores/menu";
 import type { UserInfo } from "@/framework/stores/user";
@@ -11,6 +11,7 @@ import {
 } from "../api/auth";
 import { getErrorMessage, notifyError, notifySuccess } from "@/framework/utils/feedback";
 import type { LoginRequest, LoginResponse, User } from "../types";
+import { isSuccess } from "@/framework/api/types";
 
 /**
  * 将 IAM User 转换为 Framework UserInfo
@@ -87,6 +88,11 @@ export const useAuthStore = defineStore("iam-auth", () => {
     loading.value = true;
     try {
       const response = await loginApi(data);
+      if (!isSuccess(response)) {
+        notifyError(response.msg || "登录失败");
+        throw new Error(response.msg || "登录失败");
+      }
+
       const { access_token, refresh_token, tenant_id } = response.data;
       const expires_at = getExpiresAt(access_token, response.data);
 
@@ -104,18 +110,20 @@ export const useAuthStore = defineStore("iam-auth", () => {
 
       try {
         const userResponse = await getCurrentUserApi();
-        userStore.setUserInfo(convertToUserInfo(userResponse.data));
+        if (!isSuccess(userResponse)) {
+          console.warn("getCurrentUser failed after login, using fallback user info");
+          userStore.setUserInfo(createFallbackUserInfo(data.account, access_token));
+        } else {
+          userStore.setUserInfo(convertToUserInfo(userResponse.data));
+
+          // 登录时已返回菜单数据，直接设置到 menuStore
+          if (userResponse.data.menus && Array.isArray(userResponse.data.menus)) {
+            menuStore.setUserMenus(userResponse.data.menus);
+          }
+        }
       } catch (error) {
         console.warn("getCurrentUser failed after login, using fallback user info:", error);
         userStore.setUserInfo(createFallbackUserInfo(data.account, access_token));
-      }
-
-      // 获取用户菜单
-      try {
-        await menuStore.fetchUserMenus();
-      } catch (error) {
-        console.warn("Failed to fetch user menus after login:", error);
-        // 菜单获取失败不阻塞登录流程
       }
 
       notifySuccess("登录成功");
@@ -152,6 +160,10 @@ export const useAuthStore = defineStore("iam-auth", () => {
     }
 
     const response = await refreshTokenApi(refresh_token);
+    if (!isSuccess(response)) {
+      throw new Error(response.msg || "Token refresh failed");
+    }
+
     const { access_token, refresh_token: new_refresh_token } = response.data;
 
     localStorage.setItem("token", access_token);

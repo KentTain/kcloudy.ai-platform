@@ -115,6 +115,32 @@ export const authApi = {
 }
 ```
 
+## 登录用户信息获取
+
+项目中经常需要获取当前登录用户的详细信息，使用方法：
+
+**普通用户**：
+```typescript
+import { useUserStore } from '@/framework/stores'
+
+const userStore = useUserStore()
+const userInfo = userStore.userInfo
+const canEdit = userStore.hasPermission('demo:dataset:write')
+const menus = useMenuStore().userMenus
+```
+
+**管理员**：
+```typescript
+import { useAdminAuthStore } from '@/tenant/stores/adminAuth'
+
+const adminAuthStore = useAdminAuthStore()
+const adminInfo = adminAuthStore.adminInfo
+const canManage = adminAuthStore.hasPermission('tenant:module:write')
+const menus = adminAuthStore.menus
+```
+
+> **注意**：菜单数据在登录时已从 `/me` 接口获取，无需额外调用菜单接口。
+
 ## 测试
 
 测试文件位于 `tests/` 目录，按模块组织，每个模块下按测试类型划分 `unit/` 和 `e2e/` 目录。

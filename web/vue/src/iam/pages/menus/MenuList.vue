@@ -25,7 +25,6 @@ import {
 import type { LucideIcon } from "@lucide/vue"
 import AppPage from "@/framework/layouts/components/AppPage.vue"
 import {
-  Button,
   Badge,
   Skeleton,
   DescriptionList,

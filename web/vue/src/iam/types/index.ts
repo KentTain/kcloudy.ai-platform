@@ -11,6 +11,10 @@ import type {
 // 重新导出统一类型
 export type { BaseQuery, BasePaginatedQuery };
 
+// 菜单类型（从 framework 导入并重新导出）
+import type { MenuTreeNode } from "@/framework/stores/menu";
+export type { MenuTreeNode };
+
 // 用户类型
 export interface User {
   id: string;
@@ -29,6 +33,7 @@ export interface User {
   roles: string[];
   permissions: string[];
   tenants?: UserTenant[];
+  menus?: MenuTreeNode[];
   // 扩展字段
   organization_id?: string;
   organization_name?: string;
@@ -221,10 +226,6 @@ export interface LoginHistoryPaginatedQuery extends BasePaginatedQuery {
   start_date?: string;
   end_date?: string;
 }
-
-// 菜单类型（从 framework 导入并重新导出）
-import type { MenuTreeNode } from "@/framework/stores/menu";
-export type { MenuTreeNode };
 
 // 菜单列表响应
 export interface MenuListResponse {

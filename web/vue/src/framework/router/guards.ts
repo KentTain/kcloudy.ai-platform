@@ -1,9 +1,11 @@
 ﻿import type { Router } from "vue-router";
-import { useUserStore, usePermissionStore } from "@/framework/stores";
+import { useUserStore } from "@/framework/stores";
 import { useMenuStore } from "@/framework/stores/menu";
 import { useAdminAuthStore } from "@/tenant/stores/adminAuth";
 import { getCurrentUser } from "@/iam/api/auth";
 import { isDynamicRoutesReady, waitForDynamicRoutes } from "@/framework/module";
+import { isSuccess } from "@/framework/api/types";
+import { notifyError } from "@/framework/utils/feedback";
 
 // 白名单路由
 const whiteList = ["/login", "/admin/login", "/403", "/404"];
@@ -30,7 +32,6 @@ export const setupRouterGuards = (router: Router) => {
     }
 
     const userStore = useUserStore();
-    const permissionStore = usePermissionStore();
     const menuStore = useMenuStore();
     const adminAuthStore = useAdminAuthStore();
 
@@ -89,6 +90,10 @@ export const setupRouterGuards = (router: Router) => {
       console.log("[RouterGuard] User logged in but userInfo is null, fetching...");
       try {
         const response = await getCurrentUser();
+        if (!isSuccess(response)) {
+          notifyError(response.msg || "登录失败");
+          throw new Error(response.msg || "登录失败");
+        }
         // 手动转换用户信息
         const user = response.data;
         const defaultTenant = user.tenants?.find((t: any) => t.is_default);
@@ -112,6 +117,11 @@ export const setupRouterGuards = (router: Router) => {
             is_default: t.is_default,
           })),
         });
+
+        // 同时设置菜单数据（/users/me 接口已返回 menus）
+        if (user.menus && Array.isArray(user.menus)) {
+          menuStore.setUserMenus(user.menus);
+        }
       } catch (error) {
         console.error("[RouterGuard] Failed to fetch user info:", error);
         // 获取用户信息失败，可能是 token 过期，重定向到登录页
@@ -146,13 +156,6 @@ export const setupRouterGuards = (router: Router) => {
         next("/403");
         return;
       }
-    }
-
-    // 加载菜单（仅首次）
-    if (!permissionStore.isLoaded) {
-      console.log("[RouterGuard] Loading menus...");
-      await menuStore.fetchUserMenus();
-      permissionStore.setLoaded(true);
     }
 
     next();

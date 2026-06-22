@@ -188,22 +188,42 @@ export const useMenuStore = defineStore("menu", () => {
   }
 
   /**
+   * 设置用户导航菜单（从登录接口获取时调用）
+   */
+  function setUserMenus(menus: MenuTreeNode[]): void {
+    userMenus.value = menus.map(convertMenuTreeNodeToUserMenuItem);
+  }
+
+  /**
    * 获取用户导航菜单
+   * 直接使用登录时从 /users/me 接口获取的菜单数据
    */
   async function fetchUserMenus(): Promise<void> {
-    loading.value = true;
-    error.value = null;
-
-    try {
-      const { getUserMenus } = await import("@/framework/api/menu");
-      const response = await getUserMenus();
-      userMenus.value = response.data.map(convertToUserMenuItem);
-    } catch (err) {
-      error.value = err instanceof Error ? err.message : "加载菜单失败";
-      console.error("Failed to fetch user menus:", err);
-    } finally {
-      loading.value = false;
+    // 如果已有菜单数据，直接返回
+    if (userMenus.value.length > 0) {
+      return;
     }
+
+    // 如果没有菜单数据，提示需要重新登录
+    console.warn("No menu data available, please login again");
+    userMenus.value = [];
+  }
+
+  /**
+   * 将 MenuTreeNode 转换为 UserMenuItem
+   * 用于处理从 /users/me 接口返回的菜单数据
+   */
+  function convertMenuTreeNodeToUserMenuItem(node: MenuTreeNode): UserMenuItem {
+    return {
+      id: node.id,
+      code: node.code,
+      name: node.name,
+      icon: node.icon || null,
+      path: node.path,
+      sortOrder: node.tree_sort,
+      isVisible: node.is_visible,
+      children: node.children?.map(convertMenuTreeNodeToUserMenuItem) || [],
+    };
   }
 
   /**
@@ -223,6 +243,7 @@ export const useMenuStore = defineStore("menu", () => {
     error,
     fetchMenus,
     fetchUserMenus,
+    setUserMenus,
     clearMenus,
   };
 });

@@ -73,6 +73,136 @@ web/vue/
 
 ## 开发说明
 
+### 登录用户信息获取
+
+项目中经常需要获取当前登录用户的详细信息（用户信息、角色、权限、菜单等）。以下是标准用法：
+
+#### 普通用户信息
+
+**数据来源**：`/iam/console/v1/users/me` 接口
+
+**状态管理**：`framework/stores/user.ts` → `useUserStore()`
+
+**使用示例**：
+
+```typescript
+import { useUserStore } from '@/framework/stores'
+
+const userStore = useUserStore()
+
+// 获取用户基本信息
+const userId = userStore.userInfo?.id
+const username = userStore.userInfo?.username
+const nickname = userStore.userInfo?.nickname
+
+// 权限检查
+const canEdit = userStore.hasPermission('demo:dataset:write')
+const isAdmin = userStore.hasRole('admin')
+
+// 当前租户信息
+const currentTenant = userStore.currentTenant
+const tenantId = userStore.userInfo?.tenantId
+
+// 租户列表
+const tenants = userStore.tenants
+```
+
+**返回数据结构**：
+
+```typescript
+interface UserInfo {
+  id: string
+  username: string
+  nickname: string
+  avatar?: string
+  email?: string
+  phone?: string
+  roles: string[]          // 角色编码列表
+  permissions: string[]    // 权限编码列表
+  tenantId?: string
+  tenantName?: string
+  tenantCode?: string
+  tenants?: TenantInfo[]   // 用户所属租户列表
+}
+```
+
+#### 管理员信息
+
+**数据来源**：`/tenant/admin/v1/admin/me` 接口
+
+**状态管理**：`tenant/stores/adminAuth.ts` → `useAdminAuthStore()`
+
+**使用示例**：
+
+```typescript
+import { useAdminAuthStore } from '@/tenant/stores/adminAuth'
+
+const adminAuthStore = useAdminAuthStore()
+
+// 获取管理员基本信息
+const adminId = adminAuthStore.adminInfo?.id
+const username = adminAuthStore.username
+
+// 权限检查（支持通配符）
+const canManage = adminAuthStore.hasPermission('tenant:module:write')
+const isSuperAdmin = adminAuthStore.hasPermission('*:*:*')  // 超级管理员
+
+// 角色检查
+const isDefaultAdmin = adminAuthStore.hasRole('superAdmin')
+
+// 菜单数据（登录时已获取）
+const menus = adminAuthStore.menus
+```
+
+**返回数据结构**：
+
+```typescript
+interface AdminInfo {
+  id: string
+  username: string
+  role: string              // 角色编码
+  permissions: string[]     // 权限编码列表
+  menus: AdminMenuItem[]    // 菜单树
+  is_default: boolean
+  is_active: boolean
+}
+```
+
+#### 菜单数据
+
+菜单数据在登录时从 `/me` 接口一并获取，无需额外请求。
+
+**普通用户菜单**：
+
+```typescript
+import { useMenuStore } from '@/framework/stores/menu'
+
+const menuStore = useMenuStore()
+const menus = menuStore.userMenus  // 用户导航菜单
+```
+
+**管理员菜单**：
+
+```typescript
+import { useAdminMenuStore } from '@/tenant/stores/adminMenu'
+
+const adminMenuStore = useAdminMenuStore()
+const menus = adminMenuStore.adminMenus  // 管理员菜单树
+```
+
+#### 数据流说明
+
+```
+登录流程：
+1. 调用登录接口 → 获取 token
+2. 调用 /me 接口 → 获取用户信息 + 菜单数据
+3. 存储到 Pinia Store + localStorage
+
+页面刷新：
+1. 路由守卫检测到 token 存在但 userInfo 为空
+2. 自动调用 /me 接口恢复用户信息 + 菜单数据
+```
+
 ### API 代理
 
 开发服务器配置了 API 代理，所有 `/api` 和 `/health` 请求会被转发到 `http://127.0.0.1:8000`。
