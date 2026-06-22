@@ -31,6 +31,7 @@ describe("adminRoutes", () => {
       expect(tenantRoute).toBeDefined();
       expect(tenantRoute?.name).toBe("AdminTenantManagement");
       expect(tenantRoute?.meta?.title).toBe("租户管理");
+      expect(tenantRoute?.meta?.permissions).toEqual(["tenant:tenant:read"]);
     });
 
     it("包含创建租户路由 /admin/tenants/create", () => {
@@ -41,6 +42,7 @@ describe("adminRoutes", () => {
       expect(createRoute).toBeDefined();
       expect(createRoute?.name).toBe("AdminTenantCreate");
       expect(createRoute?.meta?.hidden).toBe(true);
+      expect(createRoute?.meta?.permissions).toEqual(["tenant:tenant:write"]);
     });
 
     it("包含租户详情路由 /admin/tenants/:id", () => {
@@ -50,6 +52,7 @@ describe("adminRoutes", () => {
       );
       expect(detailRoute).toBeDefined();
       expect(detailRoute?.name).toBe("AdminTenantDetail");
+      expect(detailRoute?.meta?.permissions).toEqual(["tenant:tenant:read"]);
     });
 
     it("包含编辑租户路由 /admin/tenants/:id/edit", () => {
@@ -59,6 +62,7 @@ describe("adminRoutes", () => {
       );
       expect(editRoute).toBeDefined();
       expect(editRoute?.name).toBe("AdminTenantEdit");
+      expect(editRoute?.meta?.permissions).toEqual(["tenant:tenant:write"]);
     });
   });
 
@@ -71,6 +75,7 @@ describe("adminRoutes", () => {
       expect(resourcesRoute).toBeDefined();
       expect(resourcesRoute?.name).toBe("AdminResources");
       expect(resourcesRoute?.meta?.title).toBe("资源管理");
+      expect(resourcesRoute?.meta?.permissions).toEqual(["tenant:resource:read"]);
     });
   });
 
@@ -83,6 +88,37 @@ describe("adminRoutes", () => {
       expect(moduleRoute).toBeDefined();
       expect(moduleRoute?.name).toBe("AdminModuleList");
       expect(moduleRoute?.meta?.title).toBe("模块管理");
+      expect(moduleRoute?.meta?.permissions).toEqual(["tenant:module:read"]);
+    });
+
+    it("包含创建模块路由 /admin/modules/create", () => {
+      const adminRoot = adminRoutes.find((route) => route.path === "/admin");
+      const createRoute = adminRoot?.children?.find(
+        (route) => route.path === "modules/create"
+      );
+      expect(createRoute).toBeDefined();
+      expect(createRoute?.name).toBe("AdminModuleCreate");
+      expect(createRoute?.meta?.permissions).toEqual(["tenant:module:write"]);
+    });
+
+    it("包含模块详情路由 /admin/modules/:id", () => {
+      const adminRoot = adminRoutes.find((route) => route.path === "/admin");
+      const detailRoute = adminRoot?.children?.find(
+        (route) => route.path === "modules/:id"
+      );
+      expect(detailRoute).toBeDefined();
+      expect(detailRoute?.name).toBe("AdminModuleDetail");
+      expect(detailRoute?.meta?.permissions).toEqual(["tenant:module:read"]);
+    });
+
+    it("包含编辑模块路由 /admin/modules/:id/edit", () => {
+      const adminRoot = adminRoutes.find((route) => route.path === "/admin");
+      const editRoute = adminRoot?.children?.find(
+        (route) => route.path === "modules/:id/edit"
+      );
+      expect(editRoute).toBeDefined();
+      expect(editRoute?.name).toBe("AdminModuleEdit");
+      expect(editRoute?.meta?.permissions).toEqual(["tenant:module:write"]);
     });
   });
 });

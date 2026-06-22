@@ -52,6 +52,7 @@ async def run(*, dry_run: bool = False) -> int:
             id=admin_id,
             username="tenant_admin",
             password=password_hash,
+            role="tenantAdmin",
             is_default=True,
             is_active=True,
         )
