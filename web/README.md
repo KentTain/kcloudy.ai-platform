@@ -6,19 +6,20 @@
 
 ```text
 web/
-└── {技术栈}/                     # 技术栈目录
-    ├── src/                      # 源码目录
+└── {技术栈}/                   # 技术栈目录
+    ├── src/                    # 源码目录
     │   ├── components/           # 通用组件
+    │   │   ├── ai-elements/      # ai-UI 基础组件
     │   │   └── ui/               # UI 基础组件
-    │   ├── framework/            # 框架层（路由/状态/布局/权限）
-    │   └── {模块}/               # 业务模块
+    │   ├── framework/          # 框架层（路由/状态/布局/权限）
+    │   └── {模块}/              # 业务模块
     │       ├── api/              # API 客户端
     │       ├── components/       # 模块专用组件
     │       ├── pages/            # 页面组件
     │       ├── router/           # 路由配置
     │       └── stores/           # 状态管理
     │
-    └── tests/                    # 测试目录
+    └── tests/                  # 测试目录
         └── {模块}/               # 模块测试
 ```
 
@@ -50,6 +51,8 @@ web/
 | Vite 6.x | 开发服务器、构建工具 |
 | TypeScript 5.x | 类型系统 |
 | shadcn | UI 组件库 |
+| ai-sdk | AI 框架库 |
+| josn-render | UI 生成框架 |
 | Radix | 无样式原语（可访问性） |
 | Tailwind CSS v4 | 样式框架 |
 | Axios | HTTP 客户端 |

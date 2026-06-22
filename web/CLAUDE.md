@@ -110,6 +110,7 @@ web/{技术栈}/
 | 组件库 | shadcn-vue | shadcn/ui | 基于 Radix + Tailwind 的组件集 |
 | 无样式原语 | Radix Vue | Radix UI | 提供可访问性的底层原语 |
 | 样式方案 | Tailwind CSS v4 | Tailwind CSS v4 | 原子化 CSS |
+| UI生成方案 | Json-render | Json-render | 根据规范化json生成前端UI |
 
 ## 层次职责
 

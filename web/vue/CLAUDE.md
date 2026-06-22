@@ -15,6 +15,9 @@ Vue 前端使用 Vue 3 + TypeScript + Vite 构建，提供 AI 助手平台演示
 | 路由 | Vue Router 4.x |
 | 状态管理 | Pinia 3.x |
 | UI 组件库 | shadcn-vue |
+| UI 生成方案 | json-render/vue |
+| AI 框架 | ai-sdk/vue |
+| 工作流 框架 | vue-flow |
 | 无样式原语 | Radix Vue |
 | 样式 | Tailwind CSS v4 |
 | 代码质量 | Biome |

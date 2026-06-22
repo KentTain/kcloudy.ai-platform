@@ -14,6 +14,12 @@ importers:
       '@chenglou/pretext':
         specifier: 0.0.7
         version: 0.0.7
+      '@json-render/core':
+        specifier: ^0.19.0
+        version: 0.19.0(zod@3.25.76)
+      '@json-render/vue':
+        specifier: ^0.19.0
+        version: 0.19.0(vue@3.5.38(typescript@5.8.2))(zod@3.25.76)
       '@lucide/vue':
         specifier: ^1.16.0
         version: 1.18.0(vue@3.5.38(typescript@5.8.2))
@@ -327,6 +333,12 @@ packages:
     resolution: {integrity: sha512-Mn3Fwi3SA5fgmfCPqmzpWF2DLZnms3BVAhM088nTnGrTZmHS3wwIjcoZPqpXeNgd3DrrLH6xp8vTLIBuJoZiXw==}
     engines: {node: '>=14.21.3'}
     cpu: [arm64]
+    os: [darwin]
+
+  '@biomejs/cli-darwin-x64@2.5.0':
+    resolution: {integrity: sha512-rg3VPL5P8mYro6pqlXYXuJWph21slVp3SZtAqWSrkZs40d2gTzYmHF8E/X1iTID25btmNKltNDJ926sqVBp7DQ==}
+    engines: {node: '>=14.21.3'}
+    cpu: [x64]
     os: [darwin]
 
   '@biomejs/cli-linux-arm64-musl@2.5.0':
@@ -686,6 +698,17 @@ packages:
 
   '@jridgewell/trace-mapping@0.3.31':
     resolution: {integrity: sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw==}
+
+  '@json-render/core@0.19.0':
+    resolution: {integrity: sha512-vvcyZ+10EDZKbEyB1J2kXOGfDaiZR2LurZGSqi2r5STHyKr+Te85DWaBxTwRGgM7U1LtIvNx85BzzjElRKoAIg==}
+    peerDependencies:
+      zod: ^4.0.0
+
+  '@json-render/vue@0.19.0':
+    resolution: {integrity: sha512-WWvjQnsYJsHvc61Y18z3n0feFIGDrL00ltezh4d2FGs9yrpNXhw3bZVvAi1jB7yq8/rB7nC2VF/CVu+Qg56Wgg==}
+    peerDependencies:
+      vue: ^3.5.0
+      zod: ^4.0.0
 
   '@lucide/vue@1.18.0':
     resolution: {integrity: sha512-DmnUpDB85PlMZ+ofjZLcKq3JoJnaD1bk7SIj9xwUvqerfNqA6hCLa0/m3gIybH6rdrErABbqvTD8yYJdNqiZ3Q==}
@@ -4305,6 +4328,7 @@ snapshots:
   '@biomejs/biome@2.5.0':
     optionalDependencies:
       '@biomejs/cli-darwin-arm64': 2.5.0
+      '@biomejs/cli-darwin-x64': 2.5.0
       '@biomejs/cli-linux-arm64': 2.5.0
       '@biomejs/cli-linux-arm64-musl': 2.5.0
       '@biomejs/cli-linux-x64': 2.5.0
@@ -4313,6 +4337,9 @@ snapshots:
       '@biomejs/cli-win32-x64': 2.5.0
 
   '@biomejs/cli-darwin-arm64@2.5.0':
+    optional: true
+
+  '@biomejs/cli-darwin-x64@2.5.0':
     optional: true
 
   '@biomejs/cli-linux-arm64-musl@2.5.0':
@@ -4581,6 +4608,16 @@ snapshots:
     dependencies:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.4.14
+
+  '@json-render/core@0.19.0(zod@3.25.76)':
+    dependencies:
+      zod: 3.25.76
+
+  '@json-render/vue@0.19.0(vue@3.5.38(typescript@5.8.2))(zod@3.25.76)':
+    dependencies:
+      '@json-render/core': 0.19.0(zod@3.25.76)
+      vue: 3.5.38(typescript@5.8.2)
+      zod: 3.25.76
 
   '@lucide/vue@1.18.0(vue@3.5.38(typescript@5.8.2))':
     dependencies:

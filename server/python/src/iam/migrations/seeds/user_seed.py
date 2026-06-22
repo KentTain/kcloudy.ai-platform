@@ -12,7 +12,15 @@ from sqlalchemy import select
 
 from framework.module.definition import GLOBAL_ROLES
 from framework.utils.log_util import write_info, write_success, write_warning
-from iam.models import Organization, Role, User, UserOrganization, UserRole, UserStatus, UserTenant
+from iam.models import (
+    Organization,
+    Role,
+    User,
+    UserOrganization,
+    UserRole,
+    UserStatus,
+    UserTenant,
+)
 
 # 默认系统管理员配置
 DEFAULT_ADMIN_USERNAME = "admin"
@@ -70,10 +78,12 @@ async def run(*, dry_run: bool = False) -> int:
 
         # 获取默认组织
         org_result = await session.execute(
-            select(Organization).where(
+            select(Organization)
+            .where(
                 Organization.tenant_id == tenant_id,
                 Organization.code == "default",
-            ).limit(1)
+            )
+            .limit(1)
         )
         org = org_result.scalar_one_or_none()
 
@@ -121,7 +131,7 @@ async def run(*, dry_run: bool = False) -> int:
             )
             session.add(userRole)
             await session.flush()
-            write_success(f"    分配角色: {sysadmin_role_def.code}")
+            write_success(f"分配角色: {sysadmin_role_def.code}")
 
         # 创建用户-组织关联
         if org:
@@ -140,14 +150,14 @@ async def run(*, dry_run: bool = False) -> int:
             org.leader_id = user_id
             await session.flush()
 
-            write_success(f"    关联组织: {org.name}")
+            write_success(f"关联组织: {org.name}")
 
         await session.commit()
 
-        write_success(f"    已创建用户: {user.username}")
-        write_success(f"    默认密码: {DEFAULT_ADMIN_PASSWORD}")
-        write_success(f"    关联租户: {tenant_id}")
-        write_warning("    [WARN] 请在生产环境中修改默认密码!")
+        write_success(f"已创建用户: {user.username}")
+        write_success(f"默认密码: {DEFAULT_ADMIN_PASSWORD}")
+        write_success(f"关联租户: {tenant_id}")
+        write_warning("[WARN] 请在生产环境中修改默认密码!")
         return 1
 
 
@@ -175,7 +185,7 @@ async def _ensure_user_role(
     role_id = role_result.scalar_one_or_none()
 
     if not role_id:
-        write_warning(f"    角色不存在: {role_code}，无法分配")
+        write_warning(f"角色不存在: {role_code}，无法分配")
         return
 
     # 检查用户是否已拥有该角色
@@ -187,7 +197,7 @@ async def _ensure_user_role(
         )
     )
     if existing_ur.scalar_one_or_none():
-        write_info(f"    用户已拥有角色: {role_code}")
+        write_info(f"用户已拥有角色: {role_code}")
         return
 
     # 分配角色
@@ -197,4 +207,4 @@ async def _ensure_user_role(
     )
     session.add(user_role)
     await session.commit()
-    write_success(f"    分配角色: {role_code}")
+    write_success(f"分配角色: {role_code}")
