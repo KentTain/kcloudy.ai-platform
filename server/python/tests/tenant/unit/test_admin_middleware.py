@@ -53,7 +53,7 @@ class TestAdminAuthMiddlewarePermissionCheck:
             "admin_id": "admin-001",
             "username": "admin",
             "role": "tenantAdmin",
-            "permissions": ["tenant:module:write"],
+            "permissions": ["tenant:tenant:write"],
         }
 
         call_next = AsyncMock()
@@ -126,7 +126,7 @@ class TestAdminAuthMiddlewarePermissionCheck:
             "admin_id": "admin-001",
             "username": "admin",
             "role": "tenantAdmin",
-            "permissions": ["tenant:module:delete"],
+            "permissions": ["tenant:tenant:delete"],
         }
 
         call_next = AsyncMock()

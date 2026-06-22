@@ -50,7 +50,7 @@ class AdminAuthService:
     """管理员认证服务"""
 
     @staticmethod
-    async def login(session: AsyncSession, username: str, password: str) -> tuple[str, TenantAdmin] | None:
+    async def login(session: AsyncSession, username: str, password: str) -> tuple[str, TenantAdmin, list[str]] | None:
         """
         管理员登录
 
@@ -90,7 +90,7 @@ class AdminAuthService:
             "expires_at": datetime.now() + timedelta(hours=TOKEN_EXPIRE_HOURS),
         }
 
-        return token, admin
+        return token, admin, permissions
 
     @staticmethod
     async def _get_role_permissions(
@@ -331,6 +331,14 @@ class AdminAuthMiddleware(BaseHTTPMiddleware):
     THEN 返回 HTTP 401 错误
     """
 
+    # 路径前缀到模块权限的映射
+    PATH_MODULE_MAP: dict[str, str] = {
+        "/tenant/admin/v1/tenants": "tenant:tenant",
+        "/tenant/admin/v1/modules": "tenant:module",
+        "/tenant/admin/v1/resources": "tenant:resource",
+        "/tenant/admin/v1/resource-configs": "tenant:resource",
+    }
+
     def __init__(self, app: "ASGIApp"):
         super().__init__(app)
         self._security = HTTPBearer(auto_error=False)
@@ -363,10 +371,10 @@ class AdminAuthMiddleware(BaseHTTPMiddleware):
             request.state.admin = token_data
             request.state.authenticated = True  # 标记已认证，供后续中间件识别
 
-            # API 级权限校验（Task 6.1）
+            # API 级权限校验（Task 6.1），带路由级作用域
             if request.method in ("POST", "PUT", "DELETE"):
                 permissions = token_data.get("permissions", [])
-                if not self._check_api_permission(request.method, permissions):
+                if not self._check_api_permission(request.method, request.url.path, permissions):
                     return self._error_response(403, "权限不足")
 
             return await call_next(request)
@@ -375,18 +383,21 @@ class AdminAuthMiddleware(BaseHTTPMiddleware):
             _logger.exception("管理员认证中间件处理异常")
             return self._error_response(500, str(e))
 
-    def _check_api_permission(self, method: str, permissions: list[str]) -> bool:
+    def _check_api_permission(self, method: str, path: str, permissions: list[str]) -> bool:
         """
-        检查 API 权限
+        检查 API 权限（路由级作用域）
 
         针对非 GET 请求进行权限校验：
         - 通配权限 *:*:* 允许所有操作
-        - POST/PUT 需要 :write 权限
-        - DELETE 需要 :delete 权限
+        - 根据请求路径确定所需的模块权限前缀
+        - POST/PUT 需要对应模块的 :write 权限
+        - DELETE 需要对应模块的 :delete 权限
         - 空权限列表拒绝所有非 GET 请求
+        - 无法映射到模块的路径，根据方法放行
 
         Args:
             method: HTTP 方法
+            path: 请求路径
             permissions: 权限码列表
 
         Returns:
@@ -399,12 +410,24 @@ class AdminAuthMiddleware(BaseHTTPMiddleware):
         if "*:*:*" in permissions:
             return True
 
-        if method in ("POST", "PUT"):
-            return any(perm.endswith(":write") for perm in permissions)
-        elif method == "DELETE":
-            return any(perm.endswith(":delete") for perm in permissions)
+        if method not in ("POST", "PUT", "DELETE"):
+            return True  # GET requests pass through
 
-        return False
+        # 根据请求路径确定所需的模块权限前缀
+        required_module = None
+        for prefix, module_perm in self.PATH_MODULE_MAP.items():
+            if path.startswith(prefix):
+                required_module = module_perm
+                break
+
+        if required_module is None:
+            # 无法映射到模块的路径，根据方法放行
+            return True
+
+        suffix = ":write" if method in ("POST", "PUT") else ":delete"
+        required_perm = f"{required_module}{suffix}"
+
+        return required_perm in permissions
 
     def _error_response(self, status_code: int, message: str) -> ApiResponse:
         """生成错误响应"""

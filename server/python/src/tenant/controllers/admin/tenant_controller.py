@@ -179,20 +179,13 @@ async def admin_login(
     if not result:
         raise HTTPException(status_code=401, detail="用户名或密码错误")
 
-    token, admin = result
-
-    # 从 token 数据中读取角色和权限信息
-    from tenant.middlewares.admin_auth_middleware import _admin_tokens
-
-    token_data = _admin_tokens.get(token, {})
-    role = token_data.get("role", admin.role)
-    permissions = token_data.get("permissions", [])
+    token, admin, permissions = result
 
     return ApiResponse.success(
         data=AdminLoginResponse(
             token=token,
             username=admin.username,
-            role=role,
+            role=admin.role,
             permissions=permissions,
             is_default=admin.is_default,
         ).model_dump()

@@ -44,7 +44,7 @@ class TestAdminAuthServiceLoginRolePermission:
             "tenant.middlewares.admin_auth_middleware.ModuleService.get_by_code",
             AsyncMock(return_value=None),
         ):
-            token, admin = await AdminAuthService.login(session, "test_admin", "password")
+            token, admin, permissions = await AdminAuthService.login(session, "test_admin", "password")
 
         assert token is not None
         assert token in _admin_tokens
@@ -79,7 +79,7 @@ class TestAdminAuthServiceLoginRolePermission:
         ), patch.object(
             AdminAuthService, "_get_role_permissions", AsyncMock(return_value=["tenant:module:read", "tenant:module:write", "tenant:module:delete"])
         ):
-            token, admin = await AdminAuthService.login(session, "test_admin", "password")
+            token, admin, permissions = await AdminAuthService.login(session, "test_admin", "password")
 
         assert token in _admin_tokens
         assert "permissions" in _admin_tokens[token]
@@ -112,7 +112,7 @@ class TestAdminAuthServiceLoginRolePermission:
         ), patch.object(
             AdminAuthService, "_get_role_permissions", AsyncMock(return_value=[])
         ):
-            token, admin = await AdminAuthService.login(session, "test_admin", "password")
+            token, admin, permissions = await AdminAuthService.login(session, "test_admin", "password")
 
         assert token in _admin_tokens
         assert _admin_tokens[token]["permissions"] == []

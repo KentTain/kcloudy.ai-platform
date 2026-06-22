@@ -34,11 +34,22 @@ export const useAdminAuthStore = defineStore("admin-auth", () => {
   /**
    * 检查是否有指定权限码
    * 支持通配符 *:*:*（匹配所有权限）
+   * 支持 module:*:*（匹配模块下所有资源）
+   * 支持 module:resource:*（匹配资源下所有操作）
    */
   const hasPermission = (code: string): boolean => {
     if (!permissions.value.length) return false;
     if (permissions.value.includes("*:*:*")) return true;
-    return permissions.value.includes(code);
+    if (permissions.value.includes(code)) return true;
+
+    // 支持 module:*:* 和 module:resource:* 通配
+    const parts = code.split(":");
+    if (parts.length === 3) {
+      const [module, resource] = parts;
+      if (permissions.value.includes(`${module}:*:*`)) return true;
+      if (permissions.value.includes(`${module}:${resource}:*`)) return true;
+    }
+    return false;
   };
 
   /**
