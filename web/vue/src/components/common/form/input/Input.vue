@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 
 interface Props {
   modelValue?: string;
-  type?: "text" | "password" | "email" | "number";
+  type?: "text" | "password" | "email" | "number" | "datetime-local";
   placeholder?: string;
   disabled?: boolean;
   readonly?: boolean;

@@ -295,7 +295,7 @@ class StartupMigrationValidator:
             try:
                 result = await session.execute(text(query))
                 count = result.scalar()
-                passed = count > 0
+                passed = count is not None and count > 0
                 results[name] = {"count": count, "passed": passed}
                 if not passed:
                     all_passed = False

@@ -162,4 +162,6 @@ pnpm test:e2e:ui tests/ai/e2e/
 - Node.js 22+
 - pnpm 10+
 
-详细开发指南见 [src/CLAUDE.md](src/CLAUDE.md)，测试指南见 [tests/CLAUDE.md](tests/CLAUDE.md)，完整使用示例见 [README.md](README.md)。
+详细开发指南见 [src/CLAUDE.md](src/CLAUDE.md)
+测试指南见 [tests/CLAUDE.md](tests/CLAUDE.md)
+完整使用示例见 [README.md](README.md)。

@@ -8,8 +8,8 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { LoaderIcon } from "@lucide/vue";
 
-type ButtonVariant = "primary" | "secondary" | "outline" | "ghost" | "danger";
-type ButtonSize = "sm" | "md" | "lg";
+type ButtonVariant = "primary" | "secondary" | "outline" | "ghost" | "danger" | "destructive" | "default" | "link";
+type ButtonSize = "xs" | "sm" | "md" | "lg" | "icon" | "icon-xs" | "icon-sm" | "icon-lg";
 
 interface Props {
   variant?: ButtonVariant;
@@ -40,12 +40,20 @@ const variantMap: Record<ButtonVariant, ButtonVariants["variant"]> = {
   outline: "outline",
   ghost: "ghost",
   danger: "destructive",
+  destructive: "destructive",
+  default: "default",
+  link: "link",
 };
 
 const sizeMap: Record<ButtonSize, ButtonVariants["size"]> = {
+  xs: "xs",
   sm: "sm",
   md: "default",
   lg: "lg",
+  icon: "icon",
+  "icon-xs": "icon-xs",
+  "icon-sm": "icon-sm",
+  "icon-lg": "icon-lg",
 };
 
 // 业务兼容样式覆盖：确保各变体与原 Common 组件视觉契约一致
@@ -55,6 +63,9 @@ const variantOverride: Record<ButtonVariant, string> = {
   outline: "border-primary text-primary hover:bg-primary/10",
   ghost: "text-text-muted hover:text-primary hover:bg-primary/10",
   danger: "bg-destructive text-white hover:bg-destructive/90",
+  destructive: "bg-destructive text-white hover:bg-destructive/90",
+  default: "",
+  link: "text-primary underline-offset-4 hover:underline",
 };
 
 const handleClick = (event: MouseEvent) => {
