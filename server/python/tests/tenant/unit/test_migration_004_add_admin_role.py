@@ -82,7 +82,7 @@ class TestUpgrade:
         assert isinstance(column.type, String)
         assert column.type.length == 50
         assert column.nullable is False
-        assert column.server_default.arg == "ordinaryAdmin"
+        assert column.server_default.arg == "tenantAdmin"
         assert column.comment == "角色编码"
 
 

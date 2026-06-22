@@ -4,7 +4,7 @@ TenantAdmin 模型 role 字段单元测试
 测试 TenantAdmin 模型中 role 字段的映射定义：
 - 字段类型为 String(50)
 - 不可为空
-- 默认值为 "ordinaryAdmin"
+- 默认值为 "tenantAdmin"
 - 包含 comment 属性
 """
 
@@ -33,10 +33,10 @@ class TestTenantAdminRoleField:
         column = TenantAdmin.__table__.c.role
         assert column.nullable is False
 
-    def test_role_default_is_ordinary_admin(self):
-        """role 字段 Python 默认值为 ordinaryAdmin"""
+    def test_role_default_is_tenant_admin(self):
+        """role 字段 Python 默认值为 tenantAdmin"""
         column = TenantAdmin.__table__.c.role
-        assert column.default.arg == "ordinaryAdmin"
+        assert column.default.arg == "tenantAdmin"
 
     def test_role_comment_is_role_code(self):
         """role 字段 comment 为 角色编码"""
@@ -47,11 +47,11 @@ class TestTenantAdminRoleField:
 class TestTenantAdminRoleInstance:
     """TenantAdmin role 字段实例行为测试"""
 
-    def test_role_default_value_is_ordinary_admin(self):
-        """role 字段 Python 默认值为 ordinaryAdmin"""
+    def test_role_default_value_is_tenant_admin(self):
+        """role 字段 Python 默认值为 tenantAdmin"""
         admin = MagicMock(spec=TenantAdmin)
-        admin.role = "ordinaryAdmin"
-        assert admin.role == "ordinaryAdmin"
+        admin.role = "tenantAdmin"
+        assert admin.role == "tenantAdmin"
 
     def test_role_can_be_tenant_admin(self):
         """role 字段可以设置为 tenantAdmin"""
