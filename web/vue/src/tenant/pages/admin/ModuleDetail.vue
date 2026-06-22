@@ -208,8 +208,8 @@ const loadMenus = async () => {
   menusLoading.value = true
   try {
     const response = await getModuleMenus(moduleId.value)
-    if (response.data) {
-      menus.value = response.data
+    if (response.data?.items) {
+      menus.value = response.data.items
       // 默认展开第一级
       expandedMenuIds.value = menus.value.map(m => m.id)
     }

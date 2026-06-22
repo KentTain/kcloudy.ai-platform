@@ -7,6 +7,7 @@ import type {
   RoleCreate,
   Module,
   ModuleMenu,
+  ModuleMenuListResponse,
   ModulePermission,
   ModulePaginatedQuery,
   ModuleRole,
@@ -52,7 +53,7 @@ export const deleteModule = (id: string) => rawDel<ApiResponse<void>>(`/tenant/a
  * 获取模块菜单树
  */
 export const getModuleMenus = (moduleId: string) =>
-  rawGet<ApiResponse<ModuleMenu[]>>(`/tenant/admin/v1/modules/${moduleId}/menus`);
+  rawGet<ApiResponse<ModuleMenuListResponse>>(`/tenant/admin/v1/modules/${moduleId}/menus`);
 
 /**
  * 创建模块菜单

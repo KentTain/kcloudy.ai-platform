@@ -69,6 +69,11 @@ export interface ModuleMenu {
   updated_at?: string;
 }
 
+// 模块菜单列表响应（树形）
+export interface ModuleMenuListResponse {
+  items: ModuleMenu[];
+}
+
 // 模块权限
 export interface ModulePermission {
   id: string;
