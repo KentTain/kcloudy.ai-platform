@@ -1,20 +1,49 @@
-# 使用playwright进行e2e测试的需求
+# 使用 Playwright 进行 E2E 测试的需求
 
-## 使用playwright对本项目进行e2e测试，测试内容（tenant模块、iam模块），具体内容包括
+> 本文档为 Claude 提供 Playwright E2E 测试的完整需求说明，覆盖 tenant 管理端和 iam 用户端两个模块。
 
-### 1.服务器使用headless方式进行测试，需要实现自动登录后进行测试
+## 1. 测试环境与前置条件
 
-### 2.tenant模块的测试内容
+### 1.1 已安装工具
 
-### 2.1.登录测试地址：/admin/login，后端登录接口：<http://localhost:5173/api/iam/console/v1/auth/login，返回格式如下>
+- **Playwright** 1.60.0 + CLI 0.1.13
+- **配置文件**：[web/vue/playwright.config.ts](../web/vue/playwright.config.ts)
+- **测试运行方式**：headless（Chromium 无头模式）
 
-``` json
+### 1.2 测试账号
+
+| 模块 | 用户名 | 密码 | 登录地址 | 说明 |
+|------|--------|------|----------|------|
+| tenant（管理端） | `admin` | `admin123` | `/admin/login` | 租户管理员 |
+| iam（用户端） | `admin` | `admin123` | `/login` | 普通用户 |
+
+### 1.3 服务启动
+
+- **前端**：`http://localhost:5173/`（`pnpm dev`）
+- **后端**：`http://127.0.0.1:8080/`（`uv run python manage.py runserver --host 0.0.0.0 --port 8080`）
+- Docker 基础设施（PostgreSQL、Redis）需提前启动
+
+### 1.4 自动化登录策略
+
+测试使用 **API 辅助登录** 方式：通过后端登录接口获取 Token，注入浏览器 localStorage/sessionStorage 后直接访问受保护页面，避免每次都走 UI 登录流程。
+
+---
+
+## 2. Tenant 模块测试内容
+
+### 2.1 登录 API
+
+- **接口**：`POST /api/tenant/admin/v1/auth/login`
+- **请求体**：`{ "account": "admin", "password": "admin123" }`
+- **返回格式**：
+
+```json
 {
     "code": 200,
     "msg": "OK",
     "data": {
-        "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIj",
-        "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiNzRmZjBiNGQtMmFmNy00M2Y0L",
+        "access_token": "eyJhbGciOiJI...",
+        "refresh_token": "eyJhbGciOiJI...",
         "expires_in": 7200,
         "token_type": "Bearer",
         "need_complete_profile": false,
@@ -23,172 +52,161 @@
 }
 ```
 
-### 2.2.登录后获取登录用户的数据接口：<http://localhost:5173/api/tenant/admin/v1/admin/me，返回格式如下>
+### 2.2 用户信息 API
 
-``` json
-{
-    "code": 200,
-    "msg": "OK",
-    "data": {
-        "id": "74ff0b4d-2af7-43f4-bd6c-7090f9c982e0",
-        "tenant_id": "00000000-0000-0000-0000-000000000000",
-        "username": "admin",
-        "email": "admin@example.com",
-        "phone": null,
-        "nickname": "系统管理员",
-        "avatar": null,
-        "status": "active",
-        "profile_completed": true,
-        "is_email_verified": true,
-        "is_phone_verified": false,
-        "last_login_at": "2026-06-23T02:25:09.079868+00:00",
-        "created_at": "2026-06-22T11:21:37.867319+00:00",
-        "roles": [
-            "sysAdmin"
-        ],
-        "permissions": [
-            "tenant:module:delete",
-            "tenant:module:read",
-            "tenant:module:write",
-            "tenant:resource:delete",
-            "tenant:resource:read",
-            "tenant:resource:write",
-            "tenant:tenant:delete",
-            "tenant:tenant:read",
-            "tenant:tenant:write"
-        ],
-        "tenants": [
-            {
-                "id": "00000000-0000-0000-0000-000000000000",
-                "name": "默认租户",
-                "code": "default",
-                "is_default": true
-            }
-        ],
-        "menus": [
-            {
-                "id": "module_iam",
-                "code": "iam.module",
-                "name": "系统管理",
-                "icon": "Shield",
-                "path": null,
-                "sort_order": 0,
-                "is_visible": true,
-                "children": [
-                    {
-                        "id": "f47f270f-ae81-48fa-baac-980b412faae8",
-                        "code": "iam.roles.create",
-                        "name": "创建角色",
-                        "icon": null,
-                        "path": "/iam/roles/create",
-                        "sort_order": 1,
-                        "is_visible": false,
-                        "children": []
-                    },
-                    {
-                        "id": "263dd005-ba20-4f41-ad29-d3ac41bd4f9d",
-                        "code": "iam.menus.create",
-                        "name": "创建菜单",
-                        "icon": null,
-                        "path": "/iam/menus/create",
-                        "sort_order": 1,
-                        "is_visible": false,
-                        "children": []
-                    }
-                ]
-            },
-            {
-                "id": "module_ai",
-                "code": "ai.module",
-                "name": "AI 能力",
-                "icon": "Robot",
-                "path": null,
-                "sort_order": 1,
-                "is_visible": true,
-                "children": [
-                    {
-                        "id": "9736b9c8-69bd-41aa-aee0-9c01238c4d57",
-                        "code": "ai.plugins",
-                        "name": "插件管理",
-                        "icon": "Puzzle",
-                        "path": "/ai/plugins",
-                        "sort_order": 1,
-                        "is_visible": true,
-                        "children": []
-                    }
-                ]
-            }
-        ]
-    }
-}
+- **接口**：`GET /api/tenant/admin/v1/admin/me`
+- **请求头**：`Authorization: Bearer {access_token}`
+- **返回格式**：包含 `menus`（菜单树）、`permissions`（权限列表）、`roles`（角色列表）、`tenants`（关联租户）等完整用户信息（详见原始文档）
+
+### 2.3 冒烟测试：根据菜单数据遍历 Tenant 模块功能
+
+> 测试内容从 `/api/tenant/admin/v1/admin/me` 返回的 `menus` 中可见菜单项（`is_visible: true`）提取，按 `sort_order` 排序后遍历。以下为 Tenant 管理端完整功能清单：
+
+```text
+1. 资源配置（/admin/resources），包括以下功能：
+1.1. 页面加载后 Tab 页签区完整渲染（数据库、存储、缓存、队列、发布订阅 5 个页签）
+1.2. 默认选中"数据库" Tab，列表正确加载数据
+1.3. 数据库 Tab：列表显示配置名称、主机地址、端口、数据库名、状态（已引用/未使用）、引用租户数、创建时间
+1.4. 数据库 Tab：新增配置（填写配置名称、主机、端口、数据库名、用户名、密码、SSL 模式）
+1.5. 数据库 Tab：编辑配置
+1.6. 数据库 Tab：删除配置
+1.7. 存储 Tab：列表显示配置名称、Endpoint、Bucket、Region、状态、引用租户数、创建时间
+1.8. 存储 Tab：新增配置（填写配置名称、Endpoint、Bucket、Region、Access Key、Secret Key）
+1.9. 存储 Tab：编辑配置
+1.10. 存储 Tab：删除配置
+1.11. 缓存 Tab：列表显示配置名称、主机地址、端口、数据库编号、状态、引用租户数、创建时间
+1.12. 缓存 Tab：新增配置（填写配置名称、主机、端口、密码、数据库编号）
+1.13. 缓存 Tab：编辑配置
+1.14. 缓存 Tab：删除配置
+1.15. 队列 Tab：列表显示配置名称、主机地址、端口、用户名、VHost、状态、引用租户数、创建时间
+1.16. 队列 Tab：新增配置（填写配置名称、主机、端口、用户名、密码、VHost）
+1.17. 队列 Tab：编辑配置
+1.18. 队列 Tab：删除配置
+1.19. 发布订阅 Tab：列表显示配置名称、类型、地址信息、用户名、状态、引用租户数、创建时间
+1.20. 发布订阅 Tab：新增配置（根据类型填写 Brokers 或主机+端口）
+1.21. 发布订阅 Tab：编辑配置
+1.22. 发布订阅 Tab：删除配置
+1.23. 只测试 CRUD 功能，不测试"测试连接"功能按钮
+1.24. 实际操作过程中，每个 Tab 切换后列表数据显示正确
+1.25. 实际操作过程中，搜索配置名称功能正常工作
+1.26. 实际操作过程中，统计卡片（配置总数、已被引用、未被使用）数值是否与实际列表一致
+
+2. 模块管理（/admin/modules），包括以下功能：
+2.1. 页面加载后模块列表正确渲染，显示模块信息（名称、编码、描述、图标）
+2.2. 统计卡片正确展示：模块总数、启用模块、必须模块、已分配次数
+2.3. 模块基本操作：新增模块
+2.4. 模块基本操作：编辑模块
+2.5. 模块基本操作：查看模块详情（详情页包含 Tabs：模块信息、菜单管理、权限管理、角色管理）
+2.6. 模块基本操作：删除模块
+2.7. 搜索筛选：按模块名称或编码搜索，列表筛选结果正确
+2.8. 搜索筛选：按模块状态（全部/启用/停用）筛选，列表筛选结果正确
+2.9. 搜索筛选：重置按钮清空搜索条件并刷新列表
+2.10. 实际操作过程中，模块列表的数据总数与实际 API 返回总数是否一致
+2.11. 实际操作过程中，统计数据与列表数据是否一致
+
+3. 租户管理（/admin/tenants），包括以下功能：
+3.1. 页面加载后租户列表正确渲染，显示租户信息（名称、编码、状态、过期时间、创建时间）
+3.2. 统计卡片正确展示：租户总数、未激活数、过期数
+3.3. 租户基本操作：新建租户（填写租户名称、编码、描述等信息）
+3.4. 租户基本操作：编辑租户
+3.5. 租户基本操作：查看租户详情
+3.6. 租户基本操作：停用租户
+3.7. 租户基本操作：删除租户
+3.8. 搜索筛选：按租户名称或编码搜索，列表筛选结果正确
+3.9. 搜索筛选：按租户状态（全部/激活/停用）筛选，列表筛选结果正确
+3.10. 搜索筛选：重置按钮清空搜索条件并刷新列表
+3.11. 实际操作过程中，租户列表的数据总数与实际 API 返回总数是否一致
+3.12. 实际操作过程中，统计数据与实际列表数据是否一致
 ```
 
-### 2.3.根据登录用户的菜单数据，对tenant模块的整个功能进行冒烟测试，测试顺序如下
+**测试路径前缀**：`/admin`（如 `/admin/tenants`、`/admin/resources`、`/admin/modules`）
 
-``` text
-1.资源配置，包括以下功能：
-1.1.数据库tab页签，新增配置、编辑配置、删除配置；
-1.2.存储tab页签，新增配置、编辑配置、删除配置；
-1.3.其他资源配置（缓存、队列、发布订阅）的创建、编辑及删除；
-1.4.实际操作过程中，所有资源列表的显示数据总数是否正确；
-1.5.实际操作过程中，统计功能是否准确，包括：配置总数、已被引用、未被使用；
-1.6.只测试功能，不测试“测试”功能；
+---
 
-2.模块管理，包括以下功能：
-2.1.模块基本功能，新增、编辑、查看详情、删除；
-2.2.实际操作过程中，所有模块列表的显示数据总数是否正确；
-2.3.根据模块名称或编码、模块状态查询，所有模块列表的显示数据是否正确；
-2.4.实际操作过程中，统计功能是否准确，包括：模块总数、启用模块、必须模块、已分配次数；
+## 3. IAM 模块测试内容
 
-3.租户管理，包括以下功能：
-3.1.租户基本功能，新增、编辑、查看详情、停用、删除；
-3.2.实际操作过程中，所有租户列表的显示数据总数是否正确；
-3.3.根据租户名称或编码、租户状态查询，所有租户列表的显示数据是否正确；
-3.4.实际操作过程中，统计功能是否准确，包括：租户总数、未激活数、过期数；
+### 3.1 登录 API
+
+- **登录页面**：`/login`
+- **登录接口**：`POST /api/iam/console/v1/auth/login`
+- **请求体**：`{ "account": "admin", "password": "admin123" }`
+- **返回格式**：与 tenant 登录接口一致，包含 `access_token`、`refresh_token`、`tenant_id` 等字段
+
+> ⚠️ **注意**：IAM 登录的请求体字段名为 `account`，不是 `username`。
+
+### 3.2 用户信息 API
+
+- **接口**：`GET /api/iam/console/v1/users/me`
+- **请求头**：
+  - `Authorization: Bearer {access_token}`
+  - `X-Tenant-Id: {tenant_id}`（**必需**，从登录返回的 `tenant_id` 获取）
+- **返回格式**：与 tenant 的 `/admin/me` 接口一致，包含 `menus`、`permissions`、`roles` 等字段
+
+> ⚠️ **注意**：该接口必须携带 `X-Tenant-Id` 请求头，否则返回 400 错误。
+
+### 3.3 冒烟测试：根据菜单数据遍历 IAM 模块功能
+
+> 测试内容从 `/api/iam/console/v1/users/me` 返回的 `menus` 中可见菜单项（`is_visible: true`）提取，按 `sort_order` 排序后遍历。以下为 IAM 模块完整功能清单：
+
+```text
+1. 组织管理（/iam/organizations），包括以下功能：
+1.1. 左侧组织树正确渲染，支持展开/折叠节点
+1.2. 右侧 Tabs 切换：组织信息、下级组织、直属成员
+1.3. 组织基本操作：新增组织、编辑组织、删除组织
+1.4. 组织详情查看，信息展示完整
+1.5. 组织成员管理：添加成员、移除成员
+1.6. 实际操作过程中，组织树节点数量与实际数据是否一致
+1.7. 新增/删除组织后，组织树是否正确刷新
+
+2. 角色管理（/iam/roles），包括以下功能：
+2.1. 左侧角色列表正确渲染，显示角色名称
+2.2. 右侧 Tabs 切换：角色成员、权限列表
+2.3. 角色基本操作：新增角色、编辑角色、删除角色
+2.4. 角色详情查看，信息展示完整
+2.5. 角色成员管理：添加成员、移除成员
+2.6. 角色权限分配：勾选/取消权限项
+2.7. 实际操作过程中，角色列表总数与显示数据是否一致
+
+3. 用户管理（/iam/users），包括以下功能：
+3.1. 顶部统计卡片正确展示：人员总数、启用账号数、当前部门人数、多角色成员数
+3.2. 左侧组织树筛选功能：点击组织节点过滤用户列表
+3.3. 用户基本操作：新增用户、编辑用户、查看详情、删除用户
+3.4. 用户搜索筛选：按用户名、邮箱、状态筛选
+3.5. 用户状态管理：启用、停用、锁定
+3.6. 用户角色分配：为用户分配/取消角色
+3.7. 用户组织分配：为用户分配所属组织
+3.8. 重置密码功能
+3.9. 实际操作过程中，用户列表的显示数据总数是否正确
+3.10. 实际操作过程中，统计数据与实际列表数据是否一致
+
+4. 菜单管理（/iam/menus），包括以下功能：
+4.1. 左侧菜单树正确渲染，支持展开/折叠
+4.2. 右侧 Tabs 切换：菜单信息、权限列表
+4.3. 选中菜单节点后，右侧信息展示完整（名称、编码、路径、图标、可见性等）
+4.4. 菜单权限列表关联正确
+4.5. 实际操作过程中，菜单树节点数量与实际数据是否一致
+
+5. 权限管理（/iam/permissions），包括以下功能：
+5.1. 左侧权限列表正确渲染，显示权限名称和编码
+5.2. 右侧 Tabs 切换：角色列表、菜单列表
+5.3. 选中权限后，关联角色和菜单信息正确展示
+5.4. 权限搜索筛选功能
+5.5. 实际操作过程中，权限列表总数与显示数据是否一致
 ```
 
-### 3.iam模块的测试内容
+**测试路径前缀**：`/iam`（如 `/iam/users`、`/iam/roles`）
 
-### 3.1.登录测试：/login，登录接口：<http://localhost:5173/api/iam/console/v1/auth/login，返回格式同tenant接口后端登录接口>>
+---
 
-### 3.2.登录后获取登录用户的数据接口：<http://localhost:5173/api/iam/console/v1/users/me，返回格式同tenant接口后端获取登录用户信息接口>>
+## 4. 测试报告
 
-### 3.3.根据登录用户的菜单数据，对iam模块的整个功能进行冒烟测试
+测试完成后，将测试报告写入 `docs/tests/` 目录，按 `模块-YYYY-MM-DD-HHmm.md` 格式命名，例如：
 
-``` text
+- `docs/tests/tenant-2026-06-23-1430.md`
+- `docs/tests/iam-2026-06-23-1500.md`
 
-```
+报告应包含：
 
-### 4.测试完成后，将测试报告写入：docs\tests，按 模块 + 日期时间 进行命名，例如：tenant-2026-06-12.md
-
-## 本项目的测试环境如下
-
-### 1. 已经安装：playwright（1.60.0）及其cli（0.1.13），配置文件：web\vue\playwright.config.ts
-
-### 2. 已有的测试账号，tenant模块：tenant_admin/admin123，iam模块：admin/admin123
-
-### 3. 本地docker已经启动且基础设施完善，可通过配置进行连接：server\config\application-local.yml
-
-### 4. 后端项目地址：server\python，构建及启动命令
-
-``` bash
-# 同步所有依赖组
-uv sync --all-groups
-
-# 启动 Web 服务（加载所有模块）
-uv run python manage.py runserver --host 0.0.0.0 --port 8080
-```
-
-默认启动地址：<http://127.0.0.1:8080/>
-
-### 5. 前端项目地址：web\vue，构建及启动命令
-
-``` bash
-# 安装依赖
-pnpm install
-
-# 启动开发服务器
-pnpm dev，
-```
-
-默认启动地址：<http://127.0.0.1:5173/>
+- 每个测试用例的执行结果（通过/失败）
+- 失败用例的截图和错误信息
+- 总体统计（通过率、执行耗时）
