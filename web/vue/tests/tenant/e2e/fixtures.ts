@@ -1,5 +1,9 @@
 /**
  * Tenant E2E 测试 Fixtures
+ *
+ * 提供两种登录方式：
+ * 1. API 辅助登录：快速测试其他功能，绕过 UI
+ * 2. UI 登录：测试登录页面的 UI 交互
  */
 import { test, expect, type Page, type APIRequestContext } from '@playwright/test';
 
@@ -17,6 +21,17 @@ const ADMIN_MENUS_KEY = "admin_menus";
 // IAM 用户端常量（src/iam/stores/auth.ts:99-107）
 const TOKEN_KEY = "token";
 const TENANT_ID_KEY = "tenant_id";
+
+// 导出常量供测试使用
+export {
+  ADMIN_TOKEN_KEY,
+  ADMIN_INFO_KEY,
+  ADMIN_ROLE_KEY,
+  ADMIN_PERMISSIONS_KEY,
+  ADMIN_MENUS_KEY,
+  TOKEN_KEY,
+  TENANT_ID_KEY
+};
 
 // ============================================================================
 // API 辅助登录函数
