@@ -15,7 +15,7 @@
  *   tsx scripts/e2e-check-coverage.ts
  *
  * 环境变量：
- *   E2E_API_BASE - API 基础路径（默认: http://127.0.0.1:8000）
+ *   E2E_API_BASE - API 基础路径（默认: http://localhost:8080/api）
  */
 
 import { writeFileSync, existsSync, mkdirSync, readFileSync } from 'node:fs';
@@ -27,9 +27,9 @@ import { glob } from 'glob';
 // 配置常量
 // ============================================================================
 
-const API_BASE = process.env.E2E_API_BASE || 'http://127.0.0.1:8000';
-const ADMIN_LOGIN_URL = `${API_BASE}/api/tenant/admin/v1/auth/login`;
-const ADMIN_ME_URL = `${API_BASE}/api/tenant/admin/v1/admin/me`;
+const API_BASE = process.env.E2E_API_BASE || 'http://localhost:8080/api';
+const ADMIN_LOGIN_URL = `${API_BASE}/tenant/admin/v1/auth/login`;
+const ADMIN_ME_URL = `${API_BASE}/tenant/admin/v1/admin/me`;
 const DEFAULT_USERNAME = 'admin';
 const DEFAULT_PASSWORD = 'admin123';
 
@@ -224,11 +224,12 @@ function flattenMenus(menus: MenuItem[], result: MenuItem[] = []): MenuItem[] {
 
 /**
  * 匹配测试文件与菜单路径
+ * 返回完整相对路径和测试信息的组合
  */
 function matchTestFile(
   menuPath: string,
   testMap: Map<string, TestInfo[]>
-): string | null {
+): { filePath: string; tests: TestInfo[] } | null {
   // 从路径提取模块名（如 /admin/tenants -> admin）
   const pathParts = menuPath.split('/').filter(Boolean);
   const moduleName = pathParts[0] || '';
@@ -246,12 +247,42 @@ function matchTestFile(
       );
 
       if (hasRelatedTest) {
-        return file.split(/[\\/]/).pop() || file;
+        return { filePath: file, tests };
       }
     }
   }
 
   return null;
+}
+
+/**
+ * 判断测试覆盖是否完整
+ *
+ * 判断规则：
+ * - 无测试文件 -> 'uncovered'
+ * - 有测试文件，且测试数量 >= 3 -> 'covered'
+ * - 有测试文件，但测试数量 < 3 -> 'partial' (部分覆盖)
+ */
+function determineCoverageStatus(
+  testFile: string | null,
+  tests: TestInfo[] | undefined
+): 'covered' | 'partial' | 'uncovered' {
+  if (!testFile) {
+    return 'uncovered';
+  }
+
+  // 如果没有测试信息，视为部分覆盖
+  if (!tests || tests.length === 0) {
+    return 'partial';
+  }
+
+  // 测试数量 >= 3 视为完整覆盖
+  if (tests.length >= 3) {
+    return 'covered';
+  }
+
+  // 测试数量 < 3 视为部分覆盖
+  return 'partial';
 }
 
 /**
@@ -267,17 +298,20 @@ function analyzeCoverage(
   const menuCoverages: MenuCoverage[] = [];
 
   for (const menu of flatMenus) {
-    const testFile = matchTestFile(menu.path, testMap);
+    const matchResult = matchTestFile(menu.path, testMap);
+    const testFile = matchResult ? matchResult.filePath.split(/[\\/]/).pop() || matchResult.filePath : null;
+    const tests = matchResult?.tests;
 
     menuCoverages.push({
       name: menu.name,
       path: menu.path,
       testFile,
-      status: testFile ? 'covered' : 'uncovered',
+      status: determineCoverageStatus(testFile, tests),
     });
   }
 
   const coveredCount = menuCoverages.filter((m) => m.status === 'covered').length;
+  const partialCount = menuCoverages.filter((m) => m.status === 'partial').length;
   const totalCount = menuCoverages.length;
 
   return {
@@ -293,7 +327,7 @@ function analyzeCoverage(
     statistics: {
       totalMenus: totalCount,
       coveredMenus: coveredCount,
-      uncoveredMenus: totalCount - coveredCount,
+      uncoveredMenus: totalCount - coveredCount - partialCount,
       coverageRate: totalCount > 0 ? `${((coveredCount / totalCount) * 100).toFixed(1)}%` : '0%',
     },
   };
@@ -322,7 +356,18 @@ function generateMarkdownReport(report: CoverageReport): string {
   lines.push('|---------|------|---------|---------|');
 
   for (const menu of report.menus) {
-    const statusIcon = menu.status === 'covered' ? '✅' : '❌';
+    let statusIcon: string;
+    switch (menu.status) {
+      case 'covered':
+        statusIcon = '✅';
+        break;
+      case 'partial':
+        statusIcon = '⚠️';
+        break;
+      case 'uncovered':
+        statusIcon = '❌';
+        break;
+    }
     const testFile = menu.testFile || '-';
     lines.push(`| ${menu.name} | ${menu.path} | ${testFile} | ${statusIcon} |`);
   }
@@ -331,9 +376,10 @@ function generateMarkdownReport(report: CoverageReport): string {
 
   // 缺失测试清单
   const uncoveredMenus = report.menus.filter((m) => m.status === 'uncovered');
+  const partialMenus = report.menus.filter((m) => m.status === 'partial');
 
   if (uncoveredMenus.length > 0) {
-    lines.push('## 缺失测试清单');
+    lines.push('## 完全缺失测试');
     lines.push('');
 
     for (const menu of uncoveredMenus) {
@@ -343,11 +389,24 @@ function generateMarkdownReport(report: CoverageReport): string {
     }
   }
 
+  if (partialMenus.length > 0) {
+    lines.push('## 部分覆盖测试');
+    lines.push('');
+
+    for (const menu of partialMenus) {
+      lines.push(`### ${menu.path}`);
+      lines.push(`- 测试文件: ${menu.testFile}`);
+      lines.push(`- 建议补充更多测试场景`);
+      lines.push('');
+    }
+  }
+
   // 统计信息
   lines.push('## 统计');
   lines.push('');
   lines.push(`- 总菜单数: ${report.statistics.totalMenus}`);
-  lines.push(`- 已覆盖: ${report.statistics.coveredMenus}`);
+  lines.push(`- 完整覆盖: ${report.statistics.coveredMenus}`);
+  lines.push(`- 部分覆盖: ${report.menus.filter((m) => m.status === 'partial').length}`);
   lines.push(`- 未覆盖: ${report.statistics.uncoveredMenus}`);
   lines.push(`- 覆盖率: ${report.statistics.coverageRate}`);
   lines.push('');
