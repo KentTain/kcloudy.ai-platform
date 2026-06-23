@@ -87,3 +87,5 @@ docs/Excalidraw
 web/vue/pnpm-workspace.yaml
 
 .claude/worktrees/
+.ms-playwright/
+.ms-playwright/

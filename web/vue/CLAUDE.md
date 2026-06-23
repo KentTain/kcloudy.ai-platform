@@ -178,14 +178,21 @@ pnpm test:unit tests/framework/unit/ --run
 # 生成覆盖率报告
 pnpm test:unit -- --coverage
 
-# 安装 e2e 测试所需依赖（固定版本）
+# E2E 测试
+# 前置条件：启动后端服务 (server/python)
+cd server/python && .venv/bin/python manage.py runserver
+
+# 安装依赖（固定版本）
 pnpm add -D @playwright/test@1.60.0
 
-# 安装 e2e 测试所需浏览器
+# 安装浏览器
 npx playwright install chromium
 
-# 运行 E2E 测试
-pnpm test:e2e tests/ai/e2e/
+# 运行测试
+pnpm test:e2e tests/iam/e2e/
+
+# 使用全局浏览器（避免重复安装）
+PLAYWRIGHT_BROWSERS_PATH=/ms-playwright pnpm test:e2e tests/iam/e2e/
 
 # 带界面运行 E2E 测试
 pnpm test:e2e:ui tests/ai/e2e/
