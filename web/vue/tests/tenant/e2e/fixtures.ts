@@ -21,6 +21,8 @@ const ADMIN_MENUS_KEY = "admin_menus";
 // IAM 用户端常量（src/iam/stores/auth.ts:99-107）
 const TOKEN_KEY = "token";
 const TENANT_ID_KEY = "tenant_id";
+const REFRESH_TOKEN_KEY = "refresh_token";
+const TOKEN_EXPIRES_AT_KEY = "token_expires_at";
 
 // 导出常量供测试使用
 export {
@@ -30,7 +32,9 @@ export {
   ADMIN_PERMISSIONS_KEY,
   ADMIN_MENUS_KEY,
   TOKEN_KEY,
-  TENANT_ID_KEY
+  TENANT_ID_KEY,
+  REFRESH_TOKEN_KEY,
+  TOKEN_EXPIRES_AT_KEY
 };
 
 // ============================================================================
@@ -124,6 +128,12 @@ export async function adminLoginViaAPI(
  *
  * 通过 API 调用完成 IAM 用户认证，支持 X-Tenant-Id 请求头注入。
  *
+ * 存储到 localStorage 的字段（与 src/iam/stores/auth.ts 保持一致）：
+ * - token: access_token
+ * - tenant_id: 租户 ID
+ * - refresh_token: 刷新令牌
+ * - token_expires_at: Token 过期时间
+ *
  * @param page Playwright Page 对象
  * @param request Playwright APIRequestContext 对象
  * @param account 账号，默认 'admin'
@@ -150,7 +160,9 @@ export async function userLoginViaAPI(
 
   const loginData = await loginResponse.json();
   const access_token = loginData?.data?.access_token;
+  const refresh_token = loginData?.data?.refresh_token;
   const tenant_id = loginData?.data?.tenant_id;
+  const expires_in = loginData?.data?.expires_in || 3600;
 
   if (!access_token) {
     throw new Error(
@@ -158,21 +170,43 @@ export async function userLoginViaAPI(
     );
   }
 
-  // 2. 将 Token 和 tenant_id 注入浏览器 localStorage
+  // 2. 获取用户完整信息（遵循规范要求）
+  const meResponse = await request.get('/api/iam/console/v1/users/me', {
+    headers: {
+      Authorization: `Bearer ${access_token}`,
+      ...(tenant_id && { 'X-Tenant-Id': tenant_id })
+    }
+  });
+
+  // 计算过期时间
+  const expires_at = Date.now() + expires_in * 1000;
+
+  // 3. 将 Token 和相关信息注入浏览器 localStorage
   await page.evaluate(
-    ({ access_token, tenant_id, TOKEN_KEY, TENANT_ID_KEY }) => {
+    ({ access_token, refresh_token, tenant_id, expires_at, TOKEN_KEY, TENANT_ID_KEY, REFRESH_TOKEN_KEY, TOKEN_EXPIRES_AT_KEY }) => {
       localStorage.setItem(TOKEN_KEY, access_token);
+      if (refresh_token) {
+        localStorage.setItem(REFRESH_TOKEN_KEY, refresh_token);
+      }
+      localStorage.setItem(TOKEN_EXPIRES_AT_KEY, String(expires_at));
       if (tenant_id) {
         localStorage.setItem(TENANT_ID_KEY, tenant_id);
       }
     },
     {
       access_token,
+      refresh_token,
       tenant_id,
+      expires_at,
       TOKEN_KEY,
-      TENANT_ID_KEY
+      TENANT_ID_KEY,
+      REFRESH_TOKEN_KEY,
+      TOKEN_EXPIRES_AT_KEY
     }
   );
+
+  // 注意：用户信息不存储到 localStorage（与 IAM auth store 实现一致）
+  // 如果页面需要用户信息，会在加载时通过 /me API 获取
 }
 
 // ============================================================================
