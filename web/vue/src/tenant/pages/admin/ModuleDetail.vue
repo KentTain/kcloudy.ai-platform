@@ -669,11 +669,11 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="flex h-full min-h-0 flex-col gap-4 p-4">
+  <div class="flex h-full min-h-0 flex-col gap-4 p-4" data-testid="module-detail-page">
     <!-- 页面标题区 -->
     <div class="flex flex-wrap items-start justify-between gap-3">
       <div class="flex items-center gap-3">
-        <Button variant="ghost" size="icon" @click="handleBack">
+        <Button variant="ghost" size="icon" data-testid="back-btn" @click="handleBack">
           <ArrowLeft class="h-4 w-4" />
         </Button>
         <div>
@@ -688,7 +688,7 @@ onMounted(() => {
         </div>
       </div>
       <div class="flex items-center gap-2">
-        <Button @click="handleEdit">
+        <Button data-testid="edit-btn" @click="handleEdit">
           <Pencil class="mr-1 h-4 w-4" />
           编辑模块
         </Button>
@@ -737,20 +737,20 @@ onMounted(() => {
     <Card class="flex min-h-0 flex-1 flex-col gap-0 overflow-hidden py-0">
       <Tabs v-model="activeTab" class="flex h-full flex-col">
         <div class="border-b px-5 pt-4">
-          <TabsList>
-            <TabsTrigger value="info">
+          <TabsList data-testid="tabs-list">
+            <TabsTrigger value="info" data-testid="tab-info">
               <Package class="mr-1 h-4 w-4" />
               基本信息
             </TabsTrigger>
-            <TabsTrigger value="menus">
+            <TabsTrigger value="menus" data-testid="tab-menus">
               <Menu class="mr-1 h-4 w-4" />
               菜单管理
             </TabsTrigger>
-            <TabsTrigger value="permissions">
+            <TabsTrigger value="permissions" data-testid="tab-permissions">
               <Key class="mr-1 h-4 w-4" />
               权限管理
             </TabsTrigger>
-            <TabsTrigger value="roles">
+            <TabsTrigger value="roles" data-testid="tab-roles">
               <Users class="mr-1 h-4 w-4" />
               角色管理
             </TabsTrigger>

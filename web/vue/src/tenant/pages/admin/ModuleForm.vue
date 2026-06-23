@@ -119,11 +119,11 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="flex h-full min-h-0 flex-col gap-4 p-4">
+  <div class="flex h-full min-h-0 flex-col gap-4 p-4" data-testid="module-form-page">
     <!-- 页面标题区 -->
     <div class="flex flex-wrap items-start justify-between gap-3">
       <div class="flex items-center gap-3">
-        <Button variant="ghost" size="icon" @click="handleBack">
+        <Button variant="ghost" size="icon" data-testid="back-btn" @click="handleBack">
           <ArrowLeft class="h-4 w-4" />
         </Button>
         <div>
@@ -134,8 +134,8 @@ onMounted(() => {
         </div>
       </div>
       <div class="flex items-center gap-2">
-        <Button variant="outline" @click="handleBack">取消</Button>
-        <Button :disabled="saving" @click="handleSave">
+        <Button variant="outline" data-testid="cancel-btn" @click="handleBack">取消</Button>
+        <Button data-testid="save-btn" :disabled="saving" @click="handleSave">
           <Save class="mr-1 h-4 w-4" />
           {{ saving ? '保存中...' : '保存' }}
         </Button>
@@ -159,6 +159,7 @@ onMounted(() => {
             id="name"
             v-model="form.name"
             placeholder="请输入模块名称"
+            data-testid="name-input"
             :class="{ 'border-destructive': errors.name }"
           />
           <p v-if="errors.name" class="text-destructive text-xs">{{ errors.name }}</p>
@@ -171,6 +172,7 @@ onMounted(() => {
             id="code"
             v-model="form.code"
             placeholder="例如: user_management"
+            data-testid="code-input"
             :disabled="isEdit"
             :class="{ 'border-destructive': errors.code }"
           />
@@ -188,6 +190,7 @@ onMounted(() => {
             v-model="form.description"
             class="border-input placeholder:text-muted-foreground focus-visible:ring-ring flex min-h-[80px] w-full rounded-md border bg-transparent px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 disabled:cursor-not-allowed disabled:opacity-50"
             placeholder="请输入模块描述"
+            data-testid="description-input"
             rows="4"
           />
         </div>
@@ -199,6 +202,7 @@ onMounted(() => {
             id="icon"
             v-model="form.icon"
             placeholder="例如: Package"
+            data-testid="icon-input"
           />
           <p class="text-muted-foreground text-xs">
             图标名称，使用 Lucide Icons 图标库
@@ -216,6 +220,7 @@ onMounted(() => {
             <Switch
               id="is_active"
               v-model:checked="form.is_active"
+              data-testid="is-active-switch"
             />
           </div>
 
@@ -228,6 +233,7 @@ onMounted(() => {
             <Switch
               id="is_need"
               v-model:checked="form.is_need"
+              data-testid="is-need-switch"
               :disabled="isEdit"
             />
           </div>
