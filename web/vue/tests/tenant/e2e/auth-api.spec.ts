@@ -10,7 +10,7 @@ test.describe('API 辅助登录功能', () => {
   test.describe('管理员 API 登录', () => {
     test('使用正确的凭据登录成功', async ({ page, request }) => {
       // 调用 API 登录
-      await adminLoginViaAPI(page, request, 'admin', 'admin123');
+      await adminLoginViaAPI(page, request, 'tenant_admin', 'admin123');
 
       // 验证 Token 已注入 localStorage
       const token = await page.evaluate(() => localStorage.getItem('admin_token'));
@@ -20,7 +20,7 @@ test.describe('API 辅助登录功能', () => {
       const adminInfo = await page.evaluate(() => localStorage.getItem('admin_info'));
       expect(adminInfo).toBeTruthy();
       const adminData = JSON.parse(adminInfo!);
-      expect(adminData.username).toBe('admin');
+      expect(adminData.username).toBe('tenant_admin');
 
       // 验证页面可以正常访问受保护资源
       await page.goto('/admin/tenants');

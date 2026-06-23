@@ -114,14 +114,14 @@ interface ApiResponse<T> {
  * 获取管理员 Token
  *
  * @param request Playwright APIRequestContext
- * @param username 用户名，默认 'admin'
+ * @param username 用户名，默认 'tenant_admin'
  * @param password 密码，默认 'admin123'
  * @returns 管理员 Token
  * @throws 登录失败时抛出异常
  */
 export async function getAdminToken(
   request: APIRequestContext,
-  username = 'admin',
+  username = 'tenant_admin',
   password = 'admin123'
 ): Promise<string> {
   const loginResponse = await request.post('/api/tenant/admin/v1/auth/login', {

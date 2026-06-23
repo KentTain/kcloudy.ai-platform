@@ -48,14 +48,14 @@ export {
  *
  * @param page Playwright Page 对象
  * @param request Playwright APIRequestContext 对象
- * @param username 用户名，默认 'admin'
+ * @param username 用户名，默认 'tenant_admin'
  * @param password 密码，默认 'admin123'
  * @throws 登录失败时抛出包含 HTTP 状态码和错误消息的异常
  */
 export async function adminLoginViaAPI(
   page: Page,
   request: APIRequestContext,
-  username = 'admin',
+  username = 'tenant_admin',
   password = 'admin123'
 ) {
   // 1. 调用登录 API
@@ -102,7 +102,10 @@ export async function adminLoginViaAPI(
     );
   }
 
-  // 3. 将 Token 和管理员信息注入浏览器 localStorage
+  // 3. 先加载页面，确保 localStorage 可访问
+  await page.goto('/admin/login');
+
+  // 4. 将 Token 和管理员信息注入浏览器 localStorage
   await page.evaluate(
     ({ token, adminInfo, ADMIN_TOKEN_KEY, ADMIN_INFO_KEY, ADMIN_ROLE_KEY, ADMIN_PERMISSIONS_KEY, ADMIN_MENUS_KEY }) => {
       localStorage.setItem(ADMIN_TOKEN_KEY, token);
@@ -181,7 +184,10 @@ export async function userLoginViaAPI(
   // 计算过期时间
   const expires_at = Date.now() + expires_in * 1000;
 
-  // 3. 将 Token 和相关信息注入浏览器 localStorage
+  // 3. 先加载页面，确保 localStorage 可访问
+  await page.goto('/login');
+
+  // 4. 将 Token 和相关信息注入浏览器 localStorage
   await page.evaluate(
     ({ access_token, refresh_token, tenant_id, expires_at, TOKEN_KEY, TENANT_ID_KEY, REFRESH_TOKEN_KEY, TOKEN_EXPIRES_AT_KEY }) => {
       localStorage.setItem(TOKEN_KEY, access_token);
@@ -216,7 +222,7 @@ export async function userLoginViaAPI(
 /**
  * 管理员 UI 登录辅助函数
  */
-export async function adminLogin(page: Page, username = 'admin', password = 'admin123') {
+export async function adminLogin(page: Page, username = 'tenant_admin', password = 'admin123') {
   await page.goto('/admin/login');
   await page.waitForLoadState('networkidle');
 

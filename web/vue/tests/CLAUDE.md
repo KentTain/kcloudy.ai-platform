@@ -78,6 +78,12 @@ pnpm test:unit tests/tenant/unit/ --run
 # 生成覆盖率报告
 pnpm test:unit -- --coverage
 
+# 安装 e2e 测试所需依赖（固定版本）
+pnpm add -D @playwright/test@1.60.0
+
+# 安装 e2e 测试所需浏览器
+npx playwright install chromium
+
 # 运行所有 E2E 测试
 pnpm test:e2e
 

@@ -46,6 +46,18 @@ pnpm check:fix      # 检查并自动修复
 pnpm test:unit              # 运行测试（监听模式）
 pnpm test:unit -- --run     # 运行一次
 pnpm test:unit -- --coverage # 运行并生成覆盖率报告
+
+# 安装 e2e 测试所需依赖（固定版本）
+pnpm add -D @playwright/test@1.60.0
+
+# 安装 e2e 测试所需浏览器
+npx playwright install chromium
+
+# 运行 E2E 测试
+pnpm test:e2e tests/ai/e2e/
+
+# 带界面运行 E2E 测试
+pnpm test:e2e:ui tests/ai/e2e/
 ```
 
 ## 项目结构

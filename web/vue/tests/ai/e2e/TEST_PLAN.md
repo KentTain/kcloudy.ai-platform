@@ -6,7 +6,7 @@
 
 ## 前置条件
 
-- ✅ 安装 Playwright: `pnpm add -D @playwright/test`
+- ✅ 安装 Playwright: `pnpm add -D @playwright/test@1.60.0`
 - ✅ 配置 `playwright.config.ts`
 - 后端服务运行中
 - 测试租户和用户已配置
@@ -15,7 +15,7 @@
 
 ```bash
 # 安装浏览器
-npx playwright install
+npx playwright install chromium
 
 # 设置环境变量（可选）
 export E2E_BASE_URL=http://localhost:5173
@@ -298,11 +298,11 @@ export default defineConfig({
 ## 运行命令
 
 ```bash
-# 安装依赖
-pnpm add -D @playwright/test
+# 安装依赖（固定版本）
+pnpm add -D @playwright/test@1.60.0
 
 # 安装浏览器
-npx playwright install
+npx playwright install chromium
 
 # 运行所有 E2E 测试
 pnpm test:e2e

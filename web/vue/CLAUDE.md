@@ -120,6 +120,7 @@ export const authApi = {
 项目中经常需要获取当前登录用户的详细信息，使用方法：
 
 **普通用户**：
+
 ```typescript
 import { useUserStore } from '@/framework/stores'
 
@@ -130,6 +131,7 @@ const menus = useMenuStore().userMenus
 ```
 
 **管理员**：
+
 ```typescript
 import { useAdminAuthStore } from '@/tenant/stores/adminAuth'
 
@@ -175,6 +177,12 @@ pnpm test:unit tests/framework/unit/ --run
 
 # 生成覆盖率报告
 pnpm test:unit -- --coverage
+
+# 安装 e2e 测试所需依赖（固定版本）
+pnpm add -D @playwright/test@1.60.0
+
+# 安装 e2e 测试所需浏览器
+npx playwright install chromium
 
 # 运行 E2E 测试
 pnpm test:e2e tests/ai/e2e/
