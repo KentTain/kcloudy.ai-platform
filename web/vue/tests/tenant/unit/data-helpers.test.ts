@@ -79,7 +79,7 @@ describe('测试数据管理辅助函数', () => {
             data: {
               id: 'tenant_123',
               name: 'E2E测试租户',
-              code: 'e2e_tenant_test',
+              code: 'e2e-tenant-test',
               status: 'active',
             },
           },
@@ -102,7 +102,7 @@ describe('测试数据管理辅助函数', () => {
             data: {
               id: 'tenant_123',
               name: '自定义租户',
-              code: 'e2e_custom_tenant',
+              code: 'e2e-custom-tenant',
               status: 'active',
             },
           },
@@ -111,7 +111,7 @@ describe('测试数据管理辅助函数', () => {
 
       const result = await createTenantViaAPI(mockRequest, mockToken, {
         name: '自定义租户',
-        code: 'e2e_custom_tenant',
+        code: 'e2e-custom-tenant',
         contact_email: 'custom@test.com',
       });
 
@@ -205,7 +205,7 @@ describe('测试数据管理辅助函数', () => {
             data: {
               id: 'module_123',
               name: 'E2E测试模块',
-              code: 'e2e_module_test',
+              code: 'e2e-module-test',
             },
           },
         },
@@ -257,7 +257,7 @@ describe('测试数据管理辅助函数', () => {
           data: {
             data: {
               id: 'user_123',
-              username: 'e2e_user_test',
+              username: 'e2e-user-test',
               email: 'e2e@test.com',
             },
           },
@@ -286,7 +286,7 @@ describe('测试数据管理辅助函数', () => {
           data: {
             data: {
               id: 'user_123',
-              username: 'e2e_custom_user',
+              username: 'e2e-custom-user',
               email: 'custom@test.com',
             },
           },
@@ -298,14 +298,14 @@ describe('测试数据管理辅助函数', () => {
         mockToken,
         mockTenantId,
         {
-          username: 'e2e_custom_user',
+          username: 'e2e-custom-user',
           email: 'custom@test.com',
           nickname: '自定义用户',
         }
       );
 
       expect(result.id).toBe('user_123');
-      expect(result.username).toBe('e2e_custom_user');
+      expect(result.username).toBe('e2e-custom-user');
     });
 
     it('创建失败时抛出异常', async () => {
@@ -352,7 +352,7 @@ describe('测试数据管理辅助函数', () => {
             data: [
               {
                 id: 'tenant_1',
-                code: 'e2e_tenant_1',
+                code: 'e2e-tenant-1',
                 name: 'E2E租户1',
                 status: 'active',
               },
@@ -372,7 +372,7 @@ describe('测试数据管理辅助函数', () => {
             data: [
               {
                 id: 'module_1',
-                code: 'e2e_module_1',
+                code: 'e2e-module-1',
                 name: 'E2E模块1',
               },
             ],
@@ -407,7 +407,7 @@ describe('测试数据管理辅助函数', () => {
             data: [
               {
                 id: 'user_1',
-                username: 'e2e_user_1',
+                username: 'e2e-user-1',
                 email: 'e2e@test.com',
               },
               {
@@ -453,7 +453,7 @@ describe('测试数据管理辅助函数', () => {
             data: [
               {
                 id: 'tenant_1',
-                code: 'e2e_tenant_1',
+                code: 'e2e-tenant-1',
                 name: 'E2E租户1',
                 status: 'active',
               },
@@ -467,7 +467,7 @@ describe('测试数据管理辅助函数', () => {
             data: [
               {
                 id: 'module_1',
-                code: 'e2e_module_1',
+                code: 'e2e-module-1',
                 name: 'E2E模块1',
               },
             ],
@@ -496,8 +496,9 @@ describe('测试数据管理辅助函数', () => {
     describe('generateE2EId', () => {
       it('生成带前缀的唯一标识符', () => {
         const id = generateE2EId('tenant');
-        expect(id.startsWith(`${E2E_PREFIX}tenant_`)).toBe(true);
-        expect(id.length).toBeGreaterThan(`${E2E_PREFIX}tenant_`.length);
+        // 新格式：e2e-tenant-{timestamp}
+        expect(id.startsWith(`${E2E_PREFIX}tenant-`)).toBe(true);
+        expect(id.length).toBeGreaterThan(`${E2E_PREFIX}tenant-`.length);
       });
 
       it('不同调用生成不同标识符', async () => {
@@ -509,16 +510,23 @@ describe('测试数据管理辅助函数', () => {
     });
 
     describe('isE2EData', () => {
-      it('识别 E2E 测试数据', () => {
+      it('识别 e2e- 前缀的测试数据（新格式）', () => {
+        expect(isE2EData('e2e-tenant-123')).toBe(true);
+        expect(isE2EData('e2e-user-abc')).toBe(true);
+        expect(isE2EData('e2e-module-test')).toBe(true);
+      });
+
+      it('识别 e2e_ 前缀的测试数据（旧格式，向后兼容）', () => {
         expect(isE2EData('e2e_tenant_123')).toBe(true);
         expect(isE2EData('e2e_user_abc')).toBe(true);
         expect(isE2EData('e2e_module_test')).toBe(true);
       });
 
       it('排除非 E2E 数据', () => {
-        expect(isE2EData('prod_tenant')).toBe(false);
-        expect(isE2EData('user_123')).toBe(false);
-        expect(isE2EData('E2E_user')).toBe(false); // 区分大小写
+        expect(isE2EData('prod-tenant')).toBe(false);
+        expect(isE2EData('user-123')).toBe(false);
+        expect(isE2EData('E2E-user')).toBe(false); // 区分大小写
+        expect(isE2EData('test-tenant')).toBe(false);
       });
     });
   });

@@ -6,9 +6,10 @@
  * ## 设计原则
  *
  * 1. **幂等性**: 重复调用不会产生副作用
- * 2. **命名约定**: 自动添加 `e2e_` 前缀，便于识别和清理
- * 3. **错误容错**: 删除操作失败不阻塞清理流程
- * 4. **类型安全**: 完整的 TypeScript 类型定义
+ * 2. **命名约定**: 自动添加 `e2e-` 前缀（连字符），便于识别和清理
+ * 3. **向后兼容**: 清理时同时匹配 `e2e-` 和 `e2e_` 两种前缀
+ * 4. **错误容错**: 删除操作失败不阻塞清理流程
+ * 5. **类型安全**: 完整的 TypeScript 类型定义
  *
  * ## 使用示例
  *
@@ -111,15 +112,16 @@ interface ApiResponse<T> {
 
 /**
  * E2E 测试数据前缀
+ * 规格要求使用 `e2e-`（连字符），同时 cleanup 支持匹配 `e2e-` 和 `e2e_`
  */
-export const E2E_PREFIX = 'e2e_';
+export const E2E_PREFIX = 'e2e-';
 
 /**
  * 默认租户创建参数
  */
 const DEFAULT_TENANT_DATA: TenantCreateData = {
   name: 'E2E测试租户',
-  code: `e2e_tenant_${Date.now()}`,
+  code: `e2e-tenant-${Date.now()}`,
   contact_name: 'E2E测试联系人',
   contact_email: 'e2e@test.com',
 };
@@ -129,7 +131,7 @@ const DEFAULT_TENANT_DATA: TenantCreateData = {
  */
 const DEFAULT_MODULE_DATA: ModuleCreateData = {
   name: 'E2E测试模块',
-  code: `e2e_module_${Date.now()}`,
+  code: `e2e-module-${Date.now()}`,
   description: 'E2E测试模块描述',
 };
 
@@ -137,9 +139,9 @@ const DEFAULT_MODULE_DATA: ModuleCreateData = {
  * 默认用户创建参数
  */
 const DEFAULT_USER_DATA: UserCreateData = {
-  username: `e2e_user_${Date.now()}`,
+  username: `e2e-user-${Date.now()}`,
   password: 'Test123456!',
-  email: `e2e_${Date.now()}@test.com`,
+  email: `e2e-${Date.now()}@test.com`,
   nickname: 'E2E测试用户',
 };
 
@@ -164,7 +166,7 @@ export async function createTenantViaAPI(
   const payload = {
     ...DEFAULT_TENANT_DATA,
     ...data,
-    code: data?.code || `e2e_tenant_${Date.now()}`,
+    code: data?.code || `e2e-tenant-${Date.now()}`,
     name: data?.name || DEFAULT_TENANT_DATA.name,
   };
 
@@ -242,7 +244,7 @@ export async function createModuleViaAPI(
   const payload = {
     ...DEFAULT_MODULE_DATA,
     ...data,
-    code: data?.code || `e2e_module_${Date.now()}`,
+    code: data?.code || `e2e-module-${Date.now()}`,
     name: data?.name || DEFAULT_MODULE_DATA.name,
   };
 
@@ -323,7 +325,7 @@ export async function createUserViaAPI(
   const payload = {
     ...DEFAULT_USER_DATA,
     ...data,
-    username: data?.username || `e2e_user_${Date.now()}`,
+    username: data?.username || `e2e-user-${Date.now()}`,
     password: data?.password || DEFAULT_USER_DATA.password,
   };
 
@@ -392,7 +394,8 @@ export async function deleteUserViaAPI(
 /**
  * 清理所有 E2E 测试数据
  *
- * 根据命名约定（`e2e_` 前缀）识别并删除所有测试数据。
+ * 根据命名约定识别并删除所有测试数据。
+ * 同时匹配 `e2e-` 和 `e2e_` 两种前缀，确保清理所有历史数据。
  * 如果未提供 tenantId，仅清理租户和模块数据；
  * 如果提供 tenantId，额外清理该租户下的用户数据。
  *
@@ -414,7 +417,8 @@ export async function cleanupAllE2EData(
           'X-Tenant-Id': tenantId,
         },
         params: {
-          keyword: E2E_PREFIX,
+          // 使用通用前缀搜索，但实际匹配需要检查两种格式
+          keyword: 'e2e',
         },
       });
 
@@ -423,7 +427,8 @@ export async function cleanupAllE2EData(
         const users = usersResult?.data || [];
 
         for (const user of users) {
-          if (user.username?.startsWith(E2E_PREFIX)) {
+          // 同时匹配 e2e- 和 e2e_ 两种前缀
+          if (user.username && isE2EData(user.username)) {
             await deleteUserViaAPI(request, token, tenantId, user.id);
           }
         }
@@ -440,7 +445,8 @@ export async function cleanupAllE2EData(
         Authorization: `Bearer ${token}`,
       },
       params: {
-        keyword: E2E_PREFIX,
+        // 使用通用前缀搜索，但实际匹配需要检查两种格式
+        keyword: 'e2e',
       },
     });
 
@@ -449,7 +455,8 @@ export async function cleanupAllE2EData(
       const tenants = tenantsResult?.data || [];
 
       for (const tenant of tenants) {
-        if (tenant.code?.startsWith(E2E_PREFIX)) {
+        // 同时匹配 e2e- 和 e2e_ 两种前缀
+        if (tenant.code && isE2EData(tenant.code)) {
           await deleteTenantViaAPI(request, token, tenant.id);
         }
       }
@@ -465,7 +472,8 @@ export async function cleanupAllE2EData(
         Authorization: `Bearer ${token}`,
       },
       params: {
-        keyword: E2E_PREFIX,
+        // 使用通用前缀搜索，但实际匹配需要检查两种格式
+        keyword: 'e2e',
       },
     });
 
@@ -474,7 +482,8 @@ export async function cleanupAllE2EData(
       const modules = modulesResult?.data || [];
 
       for (const module of modules) {
-        if (module.code?.startsWith(E2E_PREFIX)) {
+        // 同时匹配 e2e- 和 e2e_ 两种前缀
+        if (module.code && isE2EData(module.code)) {
           await deleteModuleViaAPI(request, token, module.id);
         }
       }
@@ -492,18 +501,19 @@ export async function cleanupAllE2EData(
  * 生成带 E2E 前缀的唯一标识符
  *
  * @param prefix 标识符前缀（如 'tenant', 'user', 'module'）
- * @returns 格式为 `e2e_{prefix}_{timestamp}` 的唯一标识符
+ * @returns 格式为 `e2e-{prefix}-{timestamp}` 的唯一标识符
  */
 export function generateE2EId(prefix: string): string {
-  return `${E2E_PREFIX}${prefix}_${Date.now()}`;
+  return `${E2E_PREFIX}${prefix}-${Date.now()}`;
 }
 
 /**
  * 检查标识符是否为 E2E 测试数据
+ * 同时匹配 `e2e-` 和 `e2e_` 两种前缀，确保清理所有历史数据
  *
  * @param identifier 标识符
  * @returns 是否为 E2E 测试数据
  */
 export function isE2EData(identifier: string): boolean {
-  return identifier.startsWith(E2E_PREFIX);
+  return identifier.startsWith('e2e-') || identifier.startsWith('e2e_');
 }
