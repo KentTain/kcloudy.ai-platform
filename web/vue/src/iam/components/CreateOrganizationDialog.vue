@@ -172,9 +172,9 @@ const onSubmit = handleSubmit(async (values) => {
 
 <template>
   <Dialog :open="open" @update:open="$emit('update:open', $event)">
-    <DialogContent class="sm:max-w-[480px]">
+    <DialogContent class="sm:max-w-[480px]" data-testid="org-form-dialog">
       <DialogHeader>
-        <DialogTitle>{{ dialogTitle }}</DialogTitle>
+        <DialogTitle data-testid="org-form-title">{{ dialogTitle }}</DialogTitle>
         <DialogDescription>
           <template v-if="mode === 'edit'">
             修改组织信息
@@ -197,6 +197,7 @@ const onSubmit = handleSubmit(async (values) => {
                 :searchable="true"
                 placeholder="请选择上级组织（留空为一级组织）"
                 :clearable="true"
+                data-testid="org-form-parent"
               />
             </FormControl>
             <FormMessage />
@@ -208,7 +209,7 @@ const onSubmit = handleSubmit(async (values) => {
           <FormItem>
             <FormLabel>组织名称 *</FormLabel>
             <FormControl>
-              <Input v-bind="componentField" placeholder="请输入组织名称" />
+              <Input v-bind="componentField" placeholder="请输入组织名称" data-testid="org-form-name" />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -219,7 +220,7 @@ const onSubmit = handleSubmit(async (values) => {
           <FormItem>
             <FormLabel>组织编码</FormLabel>
             <FormControl>
-              <Input v-bind="componentField" placeholder="请输入编码（可选）" />
+              <Input v-bind="componentField" placeholder="请输入编码（可选）" data-testid="org-form-code" />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -230,7 +231,7 @@ const onSubmit = handleSubmit(async (values) => {
           <FormItem>
             <FormLabel>排序号</FormLabel>
             <FormControl>
-              <Input v-bind="componentField" type="number" placeholder="0" />
+              <Input v-bind="componentField" type="number" placeholder="0" data-testid="org-form-sort" />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -241,17 +242,17 @@ const onSubmit = handleSubmit(async (values) => {
           <FormItem>
             <FormLabel>描述</FormLabel>
             <FormControl>
-              <Textarea v-bind="componentField" placeholder="请输入描述（可选）" class="h-20" />
+              <Textarea v-bind="componentField" placeholder="请输入描述（可选）" class="h-20" data-testid="org-form-description" />
             </FormControl>
             <FormMessage />
           </FormItem>
         </FormField>
 
         <DialogFooter>
-          <Button variant="outline" type="button" @click="$emit('update:open', false)">
+          <Button variant="outline" type="button" @click="$emit('update:open', false)" data-testid="org-form-cancel">
             取消
           </Button>
-          <Button type="submit" :disabled="saving">
+          <Button type="submit" :disabled="saving" data-testid="org-form-submit">
             {{ saving ? "保存中..." : "确定" }}
           </Button>
         </DialogFooter>

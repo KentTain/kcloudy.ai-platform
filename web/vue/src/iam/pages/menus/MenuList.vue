@@ -80,6 +80,7 @@ const MenuTreeNodeComponent = defineComponent({
           h(
             "button",
             {
+              "data-testid": "menu-tree-node",
               class: [
                 "flex items-center w-full px-3 py-2 text-sm hover:bg-accent transition-colors text-left",
                 { "bg-accent": isSelected },
@@ -279,7 +280,7 @@ onMounted(() => {
     <!-- Body -->
     <div class="flex gap-4 h-[calc(100vh-200px)]">
       <!-- 左侧：菜单树 -->
-      <div class="w-[300px] shrink-0 flex flex-col border rounded-lg overflow-hidden bg-card">
+      <div data-testid="menu-tree-container" class="w-[300px] shrink-0 flex flex-col border rounded-lg overflow-hidden bg-card">
         <div class="p-3 border-b bg-muted/30">
           <div class="relative">
             <Search class="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -287,20 +288,21 @@ onMounted(() => {
               v-model="searchKeyword"
               placeholder="搜索菜单..."
               class="pl-8"
+              data-testid="menu-tree-search"
             />
           </div>
         </div>
 
         <ScrollArea class="flex-1">
-          <div v-if="loading" class="p-3 space-y-2">
+          <div v-if="loading" data-testid="menu-tree-loading" class="p-3 space-y-2">
             <Skeleton v-for="i in 8" :key="i" class="h-6 w-full" />
           </div>
 
-          <div v-else-if="filteredTree.length === 0" class="p-4 text-center text-muted-foreground text-sm">
+          <div v-else-if="filteredTree.length === 0" data-testid="menu-tree-empty" class="p-4 text-center text-muted-foreground text-sm">
             {{ searchKeyword ? "未找到匹配的菜单" : "暂无菜单数据" }}
           </div>
 
-          <div v-else class="py-1">
+          <div v-else data-testid="menu-tree-items" class="py-1">
             <MenuTreeNodeComponent
               :menus="filteredTree"
               :selected-id="selectedId"
@@ -312,10 +314,10 @@ onMounted(() => {
       </div>
 
       <!-- 右侧：详情 + Tabs -->
-      <div class="flex-1 flex flex-col border rounded-lg overflow-hidden bg-card">
+      <div data-testid="menu-detail-panel" class="flex-1 flex flex-col border rounded-lg overflow-hidden bg-card">
         <template v-if="selectedMenu">
           <!-- 头部信息 -->
-          <div class="p-4 border-b bg-muted/20">
+          <div data-testid="menu-detail-header" class="p-4 border-b bg-muted/20">
             <div class="flex items-center justify-between">
               <div>
                 <h2 class="text-lg font-semibold">{{ selectedMenu.name }}</h2>
@@ -332,12 +334,12 @@ onMounted(() => {
           <!-- Tabs -->
           <Tabs v-model="activeTab" class="flex-1 flex flex-col">
             <div class="px-4 pt-2 border-b">
-              <TabsList>
-                <TabsTrigger value="info">
+              <TabsList data-testid="menu-info-tabs">
+                <TabsTrigger value="info" data-testid="menu-tab-info">
                   <Info class="h-4 w-4 mr-1" />
                   菜单信息
                 </TabsTrigger>
-                <TabsTrigger value="permissions">
+                <TabsTrigger value="permissions" data-testid="menu-tab-permissions">
                   <Shield class="h-4 w-4 mr-1" />
                   权限列表
                 </TabsTrigger>
@@ -346,12 +348,12 @@ onMounted(() => {
 
             <ScrollArea class="flex-1">
               <!-- 菜单信息 Tab -->
-              <TabsContent value="info" class="p-4 m-0">
+              <TabsContent value="info" data-testid="menu-info-content" class="p-4 m-0">
                 <DescriptionList :items="infoItems" :columns="2" bordered />
               </TabsContent>
 
               <!-- 权限列表 Tab -->
-              <TabsContent value="permissions" class="p-4 m-0">
+              <TabsContent value="permissions" data-testid="menu-permissions-content" class="p-4 m-0">
                 <div v-if="permissionsLoading" class="py-4">
                   <Skeleton v-for="i in 5" :key="i" class="h-10 w-full mb-2" />
                 </div>
@@ -366,7 +368,7 @@ onMounted(() => {
           </Tabs>
         </template>
 
-        <div v-else class="flex-1 flex items-center justify-center text-muted-foreground">
+        <div v-else data-testid="menu-detail-empty" class="flex-1 flex items-center justify-center text-muted-foreground">
           <div class="text-center">
             <FolderOpen class="h-12 w-12 mx-auto mb-2 opacity-50" />
             <p>请选择左侧菜单查看详情</p>
