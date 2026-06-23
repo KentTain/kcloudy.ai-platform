@@ -93,6 +93,9 @@ const OrganizationTreeNode = defineComponent({
                 { "bg-accent": isSelected },
               ],
               style: { paddingLeft: `${indent}px` },
+              "data-testid": "org-tree-node",
+              "data-org-id": org.id,
+              "data-org-name": org.name,
               onClick: () => emit("select", org),
             },
             [
@@ -627,19 +630,19 @@ onMounted(() => {
     <!-- Header 操作按钮 -->
     <template #actions>
       <div class="flex items-center gap-2">
-        <Button :disabled="!hasSelection" @click="handleAddSibling">
+        <Button :disabled="!hasSelection" @click="handleAddSibling" data-testid="add-sibling-btn">
           <Plus class="mr-1 h-4 w-4" />
           新增同级
         </Button>
-        <Button :disabled="!hasSelection" @click="handleAddChild">
+        <Button :disabled="!hasSelection" @click="handleAddChild" data-testid="add-child-btn">
           <Plus class="mr-1 h-4 w-4" />
           新增子组织
         </Button>
-        <Button variant="outline" :disabled="!hasSelection" @click="handleEdit">
+        <Button variant="outline" :disabled="!hasSelection" @click="handleEdit" data-testid="edit-org-btn">
           <Pencil class="mr-1 h-4 w-4" />
           编辑
         </Button>
-        <Button variant="danger" :disabled="!hasSelection" @click="handleDelete">
+        <Button variant="danger" :disabled="!hasSelection" @click="handleDelete" data-testid="delete-org-btn">
           <Trash2 class="mr-1 h-4 w-4" />
           删除
         </Button>
@@ -647,9 +650,9 @@ onMounted(() => {
     </template>
 
     <!-- Body -->
-    <div class="flex gap-4 h-[calc(100vh-200px)]">
+    <div class="flex gap-4 h-[calc(100vh-200px)]" data-testid="org-page-body">
       <!-- 左侧：组织树 -->
-      <div class="w-[300px] shrink-0 flex flex-col border rounded-lg overflow-hidden bg-card">
+      <div class="w-[300px] shrink-0 flex flex-col border rounded-lg overflow-hidden bg-card" data-testid="org-tree-panel">
         <div class="p-3 border-b bg-muted/30">
           <div class="relative">
             <Search class="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -657,20 +660,21 @@ onMounted(() => {
               v-model="searchKeyword"
               placeholder="搜索组织..."
               class="pl-8"
+              data-testid="org-search"
             />
           </div>
         </div>
 
         <ScrollArea class="flex-1">
-          <div v-if="loading" class="p-3 space-y-2">
+          <div v-if="loading" class="p-3 space-y-2" data-testid="org-tree-loading">
             <Skeleton v-for="i in 8" :key="i" class="h-6 w-full" />
           </div>
 
-          <div v-else-if="filteredTree.length === 0" class="p-4 text-center text-muted-foreground text-sm">
+          <div v-else-if="filteredTree.length === 0" class="p-4 text-center text-muted-foreground text-sm" data-testid="org-tree-empty">
             {{ searchKeyword ? "未找到匹配的组织" : "暂无组织数据" }}
           </div>
 
-          <div v-else class="py-1">
+          <div v-else class="py-1" data-testid="org-tree">
             <OrganizationTreeNode
               :organizations="filteredTree"
               :selected-id="selectedId"
@@ -681,7 +685,7 @@ onMounted(() => {
         </ScrollArea>
 
         <div class="p-2 border-t">
-          <Button variant="outline" class="w-full" @click="handleAddRoot">
+          <Button variant="outline" class="w-full" @click="handleAddRoot" data-testid="add-root-btn">
             <Plus class="mr-1 h-4 w-4" />
             新增一级组织
           </Button>
@@ -689,13 +693,13 @@ onMounted(() => {
       </div>
 
       <!-- 右侧：详情 + Tabs -->
-      <div class="flex-1 flex flex-col border rounded-lg overflow-hidden bg-card">
+      <div class="flex-1 flex flex-col border rounded-lg overflow-hidden bg-card" data-testid="org-detail-panel">
         <template v-if="selectedOrganization">
           <!-- 头部信息 -->
-          <div class="p-4 border-b bg-muted/20">
+          <div class="p-4 border-b bg-muted/20" data-testid="org-detail-header">
             <div class="flex items-center justify-between">
               <div>
-                <h2 class="text-lg font-semibold">{{ selectedOrganization.name }}</h2>
+                <h2 class="text-lg font-semibold" data-testid="org-detail-name">{{ selectedOrganization.name }}</h2>
                 <p class="text-sm text-muted-foreground mt-1">
                   {{ selectedOrganization.path || "根级组织" }}
                 </p>
@@ -717,15 +721,15 @@ onMounted(() => {
           <Tabs v-model="activeTab" class="flex-1 flex flex-col">
             <div class="px-4 pt-2 border-b">
               <TabsList>
-                <TabsTrigger value="info">
+                <TabsTrigger value="info" data-testid="tab-info">
                   <Info class="h-4 w-4 mr-1" />
                   组织信息
                 </TabsTrigger>
-                <TabsTrigger value="children">
+                <TabsTrigger value="children" data-testid="tab-children">
                   <FolderTree class="h-4 w-4 mr-1" />
                   下级组织
                 </TabsTrigger>
-                <TabsTrigger value="members">
+                <TabsTrigger value="members" data-testid="tab-members">
                   <Users class="h-4 w-4 mr-1" />
                   直属成员
                 </TabsTrigger>
@@ -735,15 +739,15 @@ onMounted(() => {
             <ScrollArea class="flex-1">
               <!-- 组织信息 Tab -->
               <TabsContent value="info" class="p-4 m-0">
-                <DescriptionList :items="infoItems" :columns="2" bordered />
+                <DescriptionList :items="infoItems" :columns="2" bordered data-testid="org-info" />
               </TabsContent>
 
               <!-- 下级组织 Tab -->
               <TabsContent value="children" class="p-4 m-0">
-                <div v-if="childOrganizations.length === 0" class="py-8 text-center text-muted-foreground">
+                <div v-if="childOrganizations.length === 0" class="py-8 text-center text-muted-foreground" data-testid="no-child-orgs">
                   当前组织暂无下级组织
                 </div>
-                <DataTable v-else :data-table="childOrgTable" :fixed-layout="true" />
+                <DataTable v-else :data-table="childOrgTable" :fixed-layout="true" data-testid="child-org-table" />
               </TabsContent>
 
               <!-- 直属成员 Tab -->
@@ -752,27 +756,27 @@ onMounted(() => {
                   <p class="text-sm text-muted-foreground">
                     当前组织的直属成员，不包含下级组织的成员
                   </p>
-                  <Button size="sm" @click="handleAddMembers">
+                  <Button size="sm" @click="handleAddMembers" data-testid="add-member-btn">
                     <UserPlus class="mr-1 h-4 w-4" />
                     添加成员
                   </Button>
                 </div>
 
-                <div v-if="membersLoading" class="py-4">
+                <div v-if="membersLoading" class="py-4" data-testid="members-loading">
                   <Skeleton v-for="i in 5" :key="i" class="h-10 w-full mb-2" />
                 </div>
 
-                <div v-else-if="members.length === 0" class="py-8 text-center text-muted-foreground">
+                <div v-else-if="members.length === 0" class="py-8 text-center text-muted-foreground" data-testid="no-members">
                   当前组织暂无直属成员
                 </div>
 
-                <DataTable v-else :data-table="memberTable" :fixed-layout="true" />
+                <DataTable v-else :data-table="memberTable" :fixed-layout="true" data-testid="member-table" />
               </TabsContent>
             </ScrollArea>
           </Tabs>
         </template>
 
-        <div v-else class="flex-1 flex items-center justify-center text-muted-foreground">
+        <div v-else class="flex-1 flex items-center justify-center text-muted-foreground" data-testid="no-selection">
           <div class="text-center">
             <Building2 class="h-12 w-12 mx-auto mb-2 opacity-50" />
             <p>请选择左侧组织查看详情</p>

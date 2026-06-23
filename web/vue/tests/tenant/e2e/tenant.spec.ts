@@ -1,12 +1,17 @@
 /**
  * Tenant 模块 E2E 测试
- * 测试完整的页面导航流程和统计数据显示
+ *
+ * 测试租户管理、资源配置、模块管理等功能。
+ * 使用 API 辅助登录加速测试，绕过 UI 登录流程。
+ *
+ * 注意：登录页面的 UI 测试在 login.spec.ts 中单独维护。
  */
-import { test, expect, adminLogin, waitForPageReady } from './fixtures';
+import { test, expect, adminLoginViaAPI, waitForPageReady } from './fixtures';
 
 test.describe('租户管理模块', () => {
-  test.beforeEach(async ({ page }) => {
-    await adminLogin(page);
+  test.beforeEach(async ({ page, request }) => {
+    // 使用 API 辅助登录，快速完成认证
+    await adminLoginViaAPI(page, request);
   });
 
   test.describe('路由导航', () => {
@@ -153,8 +158,12 @@ test.describe('租户管理模块', () => {
 });
 
 test.describe('页面导航流程', () => {
+  test.beforeEach(async ({ page, request }) => {
+    // 使用 API 辅助登录
+    await adminLoginViaAPI(page, request);
+  });
+
   test('从首页导航到租户管理', async ({ page }) => {
-    await adminLogin(page);
     await page.goto('/admin');
     await waitForPageReady(page);
 
@@ -170,7 +179,6 @@ test.describe('页面导航流程', () => {
   });
 
   test('完整的租户创建流程导航', async ({ page }) => {
-    await adminLogin(page);
     await page.goto('/admin/tenants');
     await waitForPageReady(page);
 

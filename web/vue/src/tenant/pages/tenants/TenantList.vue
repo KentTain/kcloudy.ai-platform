@@ -237,17 +237,17 @@ const handleDeactivate = async (row: Tenant) => {
     <!-- 页面标题区 -->
     <div class="flex flex-wrap items-start justify-between gap-3">
       <div>
-        <h2 class="text-xl font-semibold">租户管理</h2>
+        <h2 class="text-xl font-semibold" data-testid="page-title">租户管理</h2>
         <p class="text-muted-foreground mt-1 text-sm">
           管理系统租户，包括租户信息、资源配置和状态管理。
         </p>
       </div>
       <div class="flex items-center gap-2">
-        <Button variant="outline" @click="dataTable.refresh()">
+        <Button variant="outline" @click="dataTable.refresh()" data-testid="refresh-button">
           <RefreshCw class="mr-1 h-4 w-4" />
           刷新
         </Button>
-        <Button v-if="canCreate" @click="handleCreate">
+        <Button v-if="canCreate" @click="handleCreate" data-testid="create-tenant-button">
           <Plus class="mr-1 h-4 w-4" />
           新建租户
         </Button>
@@ -256,31 +256,31 @@ const handleDeactivate = async (row: Tenant) => {
 
     <!-- 统计卡片区 -->
     <div class="grid gap-4 md:grid-cols-3">
-      <div class="border rounded-lg p-4 bg-card">
+      <div class="border rounded-lg p-4 bg-card" data-testid="stats-total">
         <div class="flex items-center justify-between">
           <div>
             <p class="text-sm text-muted-foreground">租户总数</p>
-            <p class="text-2xl font-bold mt-1">{{ stats.total_count }}</p>
+            <p class="text-2xl font-bold mt-1" data-testid="stats-total-value">{{ stats.total_count }}</p>
             <p class="text-xs text-muted-foreground mt-1">系统中的租户总数</p>
           </div>
           <Building2 class="h-8 w-8 opacity-20 text-blue-500" />
         </div>
       </div>
-      <div class="border rounded-lg p-4 bg-card">
+      <div class="border rounded-lg p-4 bg-card" data-testid="stats-inactive">
         <div class="flex items-center justify-between">
           <div>
             <p class="text-sm text-muted-foreground">未激活数</p>
-            <p class="text-2xl font-bold mt-1">{{ stats.inactive_count }}</p>
+            <p class="text-2xl font-bold mt-1" data-testid="stats-inactive-value">{{ stats.inactive_count }}</p>
             <p class="text-xs text-muted-foreground mt-1">状态为停用的租户数量</p>
           </div>
           <UserX class="h-8 w-8 opacity-20 text-red-500" />
         </div>
       </div>
-      <div class="border rounded-lg p-4 bg-card">
+      <div class="border rounded-lg p-4 bg-card" data-testid="stats-expired">
         <div class="flex items-center justify-between">
           <div>
             <p class="text-sm text-muted-foreground">过期数</p>
-            <p class="text-2xl font-bold mt-1">{{ stats.expired_count }}</p>
+            <p class="text-2xl font-bold mt-1" data-testid="stats-expired-value">{{ stats.expired_count }}</p>
             <p class="text-xs text-muted-foreground mt-1">已过期的租户数量</p>
           </div>
           <Clock class="h-8 w-8 opacity-20 text-amber-500" />
@@ -301,10 +301,11 @@ const handleDeactivate = async (row: Tenant) => {
               v-model="searchForm.keyword"
               class="w-56"
               placeholder="租户名称或编码"
+              data-testid="search-keyword"
               @keydown.enter="handleSearch"
             />
             <Select v-model="searchForm.status">
-              <SelectTrigger class="w-[130px]">
+              <SelectTrigger class="w-[130px]" data-testid="search-status">
                 <SelectValue placeholder="租户状态" />
               </SelectTrigger>
               <SelectContent>
@@ -314,11 +315,11 @@ const handleDeactivate = async (row: Tenant) => {
                 </SelectItem>
               </SelectContent>
             </Select>
-            <Button variant="outline" @click="handleSearch">
+            <Button variant="outline" @click="handleSearch" data-testid="search-button">
               <Search class="mr-1 h-4 w-4" />
               搜索
             </Button>
-            <Button variant="outline" @click="handleReset">
+            <Button variant="outline" @click="handleReset" data-testid="reset-button">
               <RotateCcw class="mr-1 h-4 w-4" />
               重置
             </Button>
@@ -327,7 +328,7 @@ const handleDeactivate = async (row: Tenant) => {
       </div>
 
       <div class="min-h-0 flex-1 overflow-hidden px-5 py-4">
-        <DataTable :data-table="dataTable" :fixed-layout="true" />
+        <DataTable :data-table="dataTable" :fixed-layout="true" data-testid="tenant-table" />
       </div>
     </Card>
   </div>

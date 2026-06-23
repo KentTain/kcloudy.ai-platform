@@ -323,32 +323,36 @@ onUnmounted(() => {
   <AppPage title="权限管理" variant="workbench" description="管理系统权限、角色和菜单">
     <div class="flex gap-4 flex-1 min-h-0">
       <!-- 左侧：权限列表 -->
-      <div class="w-[300px] shrink-0 flex flex-col border rounded-lg overflow-hidden bg-card">
+      <div
+        class="w-[300px] shrink-0 flex flex-col border rounded-lg overflow-hidden bg-card"
+        data-testid="permission-list"
+      >
         <div class="p-3 border-b bg-muted/30">
           <span class="text-sm font-medium">权限列表</span>
         </div>
 
         <ScrollArea class="flex-1">
-          <div v-if="loading" class="p-3 space-y-2">
+          <div v-if="loading" class="p-3 space-y-2" data-testid="permission-loading">
             <Skeleton v-for="i in 6" :key="i" class="h-10 w-full" />
           </div>
 
-          <div v-else-if="permissions.length === 0" class="p-4 text-center text-muted-foreground text-sm">
+          <div v-else-if="permissions.length === 0" class="p-4 text-center text-muted-foreground text-sm" data-testid="permission-empty">
             暂无权限数据
           </div>
 
-          <div v-else class="py-1">
+          <div v-else class="py-1" data-testid="permission-items">
             <button
               v-for="perm in permissions"
               :key="perm.id"
               class="flex items-center w-full px-3 py-2.5 text-sm hover:bg-accent transition-colors text-left"
               :class="{ 'bg-accent': selectedPermission?.id === perm.id }"
+              :data-testid="`permission-item-${perm.id}`"
               @click="selectPermission(perm)"
             >
               <Shield class="h-4 w-4 mr-2 shrink-0 text-blue-500" />
               <div class="flex-1 min-w-0">
-                <div class="font-medium truncate">{{ perm.name }}</div>
-                <div class="text-xs text-muted-foreground">{{ perm.code }}</div>
+                <div class="font-medium truncate" data-testid="permission-item-name">{{ perm.name }}</div>
+                <div class="text-xs text-muted-foreground" data-testid="permission-item-code">{{ perm.code }}</div>
               </div>
             </button>
           </div>
@@ -368,30 +372,30 @@ onUnmounted(() => {
 
         <template v-else>
           <!-- 权限详情头部 -->
-          <div class="p-4 border-b bg-muted/30">
+          <div class="p-4 border-b bg-muted/30" data-testid="permission-detail">
             <div class="flex items-start justify-between">
               <div>
-                <h2 class="text-lg font-semibold">{{ selectedPermission.name }}</h2>
+                <h2 class="text-lg font-semibold" data-testid="permission-detail-name">{{ selectedPermission.name }}</h2>
                 <div class="text-sm text-muted-foreground mt-1">
-                  <span class="font-mono">{{ selectedPermission.code }}</span>
+                  <span class="font-mono" data-testid="permission-detail-code">{{ selectedPermission.code }}</span>
                   <span class="mx-2">·</span>
-                  <span>{{ selectedPermission.resource }}</span>
+                  <span data-testid="permission-detail-resource">{{ selectedPermission.resource }}</span>
                   <span class="mx-2">·</span>
-                  <Badge variant="outline" class="text-xs">{{ selectedPermission.action }}</Badge>
+                  <Badge variant="outline" class="text-xs" data-testid="permission-detail-action">{{ selectedPermission.action }}</Badge>
                 </div>
               </div>
             </div>
           </div>
 
           <!-- Tabs 内容 -->
-          <Tabs v-model="activeTab" class="flex-1 flex flex-col">
+          <Tabs v-model="activeTab" class="flex-1 flex flex-col" data-testid="permission-tabs">
             <div class="px-4 pt-2 border-b">
               <TabsList>
-                <TabsTrigger value="roles">
+                <TabsTrigger value="roles" data-testid="permission-tab-roles">
                   <Users class="h-4 w-4 mr-1" />
                   角色列表
                 </TabsTrigger>
-                <TabsTrigger value="menus">
+                <TabsTrigger value="menus" data-testid="permission-tab-menus">
                   <Menu class="h-4 w-4 mr-1" />
                   菜单列表
                 </TabsTrigger>
@@ -400,9 +404,9 @@ onUnmounted(() => {
 
             <ScrollArea class="flex-1">
               <!-- 角色列表 Tab -->
-              <TabsContent value="roles" class="p-4 m-0">
+              <TabsContent value="roles" class="p-4 m-0" data-testid="permission-roles-content">
                 <div class="mb-3 flex items-center justify-between">
-                  <span class="text-sm text-muted-foreground">
+                  <span class="text-sm text-muted-foreground" data-testid="permission-roles-count">
                     共 {{ roleTable.table.getRowCount() }} 个角色
                   </span>
                 </div>
@@ -410,9 +414,9 @@ onUnmounted(() => {
               </TabsContent>
 
               <!-- 菜单列表 Tab -->
-              <TabsContent value="menus" class="p-4 m-0">
+              <TabsContent value="menus" class="p-4 m-0" data-testid="permission-menus-content">
                 <div class="mb-3 flex items-center justify-between">
-                  <span class="text-sm text-muted-foreground">
+                  <span class="text-sm text-muted-foreground" data-testid="permission-menus-count">
                     共 {{ menuTable.table.getRowCount() }} 个菜单
                   </span>
                 </div>

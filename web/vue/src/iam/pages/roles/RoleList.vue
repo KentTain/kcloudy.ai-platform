@@ -641,13 +641,13 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <AppPage title="角色管理" variant="workbench" description="管理系统角色、成员和权限">
+  <AppPage title="角色管理" variant="workbench" description="管理系统角色、成员和权限" data-testid="role-list-page">
     <div class="flex gap-4 flex-1 min-h-0">
       <!-- 左侧：角色列表 -->
       <div class="w-[300px] shrink-0 flex flex-col border rounded-lg overflow-hidden bg-card">
         <div class="p-3 border-b bg-muted/30 flex items-center justify-between">
           <span class="text-sm font-medium">角色列表</span>
-          <Button size="sm" @click="handleCreate">
+          <Button size="sm" data-testid="create-role-btn" @click="handleCreate">
             <Plus class="h-3.5 w-3.5 mr-1" />
             新建
           </Button>
@@ -666,6 +666,7 @@ onUnmounted(() => {
             <button
               v-for="role in roles"
               :key="role.id"
+              :data-testid="'role-item-' + role.id"
               class="flex items-center w-full px-3 py-2.5 text-sm hover:bg-accent transition-colors text-left"
               :class="{ 'bg-accent': selectedRole?.id === role.id }"
               @click="selectRole(role)"
@@ -686,7 +687,7 @@ onUnmounted(() => {
       <!-- 右侧：Tabs -->
       <div class="flex-1 flex flex-col border rounded-lg overflow-hidden bg-card">
         <template v-if="!selectedRole">
-          <div class="flex-1 flex items-center justify-center text-muted-foreground">
+          <div class="flex-1 flex items-center justify-center text-muted-foreground" data-testid="no-role-selected">
             <div class="text-center">
               <Shield class="h-12 w-12 mx-auto mb-3 opacity-30" />
               <p>请从左侧选择一个角色</p>
@@ -696,7 +697,7 @@ onUnmounted(() => {
 
         <template v-else>
           <!-- 角色详情头部 -->
-          <div class="p-4 border-b bg-muted/30">
+          <div class="p-4 border-b bg-muted/30" data-testid="role-detail-header">
             <div class="flex items-start justify-between">
               <div>
                 <h2 class="text-lg font-semibold">{{ selectedRole.name }}</h2>
@@ -707,7 +708,7 @@ onUnmounted(() => {
                 </div>
               </div>
               <div class="flex items-center gap-2">
-                <Button size="sm" variant="outline" @click="handleEdit">
+                <Button size="sm" variant="outline" data-testid="edit-role-btn" @click="handleEdit">
                   <Pencil class="h-3.5 w-3.5 mr-1" />
                   编辑
                 </Button>
@@ -715,6 +716,7 @@ onUnmounted(() => {
                   v-if="!selectedRole.is_system"
                   size="sm"
                   variant="outline"
+                  data-testid="delete-role-btn"
                   class="text-destructive hover:text-destructive"
                   @click="handleDelete"
                 >
@@ -729,11 +731,11 @@ onUnmounted(() => {
           <Tabs v-model="activeTab" class="flex-1 flex flex-col">
             <div class="px-4 pt-2 border-b">
               <TabsList>
-                <TabsTrigger value="members">
+                <TabsTrigger value="members" data-testid="role-members-tab">
                   <Users class="h-4 w-4 mr-1" />
                   角色成员
                 </TabsTrigger>
-                <TabsTrigger value="permissions">
+                <TabsTrigger value="permissions" data-testid="role-permissions-tab">
                   <Shield class="h-4 w-4 mr-1" />
                   权限列表
                 </TabsTrigger>
@@ -745,14 +747,14 @@ onUnmounted(() => {
                 <span class="text-sm text-muted-foreground">
                   共 {{ memberTable.table.getRowCount() }} 个成员
                 </span>
-                <Button size="sm" @click="addMemberDialogOpen = true">
+                <Button size="sm" data-testid="add-member-btn" @click="addMemberDialogOpen = true">
                   <UserPlus class="h-3.5 w-3.5 mr-1" />
                   添加成员
                 </Button>
               </div>
 
               <!-- 成员表格 -->
-              <DataTable :data-table="memberTable" :fixed-layout="true" />
+              <DataTable :data-table="memberTable" :fixed-layout="true" data-testid="member-table" />
             </TabsContent>
 
             <!-- 权限列表 Tab -->
@@ -761,7 +763,7 @@ onUnmounted(() => {
                 <span class="text-sm text-muted-foreground">
                   共 {{ rolePermissions.length }} 个权限
                 </span>
-                <Button size="sm" @click="handleOpenAssignPerm">
+                <Button size="sm" data-testid="assign-permissions-btn" @click="handleOpenAssignPerm">
                   <Settings class="h-3.5 w-3.5 mr-1" />
                   分配权限
                 </Button>
@@ -844,7 +846,7 @@ onUnmounted(() => {
     />
 
     <!-- 分配权限弹窗 -->
-    <Dialog v-model:open="assignPermDialogOpen">
+    <Dialog v-model:open="assignPermDialogOpen" data-testid="assign-perm-dialog">
       <DialogContent class="sm:max-w-[700px]">
         <DialogHeader>
           <DialogTitle>分配权限</DialogTitle>
@@ -924,7 +926,7 @@ onUnmounted(() => {
           <Button variant="outline" @click="assignPermDialogOpen = false">
             取消
           </Button>
-          <Button @click="handleAssignPermSubmit">
+          <Button @click="handleAssignPermSubmit" data-testid="assign-perm-submit-btn">
             确定
           </Button>
         </DialogFooter>
@@ -932,7 +934,7 @@ onUnmounted(() => {
     </Dialog>
 
     <!-- 创建/编辑角色弹窗 -->
-    <Dialog v-model:open="formDialogOpen">
+    <Dialog v-model:open="formDialogOpen" data-testid="role-form-dialog">
       <DialogContent class="sm:max-w-[400px]">
         <DialogHeader>
           <DialogTitle>
@@ -952,6 +954,7 @@ onUnmounted(() => {
               v-model="formValues.code"
               placeholder="请输入角色编码"
               :disabled="formDialogMode === 'edit'"
+              data-testid="role-form-code-input"
             />
             <p class="text-xs text-muted-foreground">
               角色编码创建后不可修改
@@ -965,6 +968,7 @@ onUnmounted(() => {
             <Input
               v-model="formValues.name"
               placeholder="请输入角色名称"
+              data-testid="role-form-name-input"
             />
           </div>
 
@@ -973,15 +977,16 @@ onUnmounted(() => {
             <Input
               v-model="formValues.description"
               placeholder="请输入描述（可选）"
+              data-testid="role-form-description-input"
             />
           </div>
         </div>
 
         <DialogFooter>
-          <Button variant="outline" @click="formDialogOpen = false">
+          <Button variant="outline" data-testid="role-form-cancel-btn" @click="formDialogOpen = false">
             取消
           </Button>
-          <Button :disabled="formSubmitting" @click="handleFormSubmit">
+          <Button :disabled="formSubmitting" data-testid="role-form-submit-btn" @click="handleFormSubmit">
             {{ formSubmitting ? "保存中..." : "确定" }}
           </Button>
         </DialogFooter>

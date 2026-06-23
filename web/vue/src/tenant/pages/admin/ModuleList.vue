@@ -197,7 +197,7 @@ const handleDelete = async (row: Module) => {
 </script>
 
 <template>
-  <div class="flex h-full min-h-0 flex-col gap-4 p-4">
+  <div class="flex h-full min-h-0 flex-col gap-4 p-4" data-testid="module-list-page">
     <!-- 页面标题区 -->
     <div class="flex flex-wrap items-start justify-between gap-3">
       <div>
@@ -207,11 +207,11 @@ const handleDelete = async (row: Module) => {
         </p>
       </div>
       <div class="flex items-center gap-2">
-        <Button variant="outline" @click="dataTable.refresh()">
+        <Button variant="outline" data-testid="refresh-btn" @click="dataTable.refresh()">
           <RefreshCw class="mr-1 h-4 w-4" />
           刷新
         </Button>
-        <Button @click="handleCreate">
+        <Button data-testid="create-module-btn" @click="handleCreate">
           <Plus class="mr-1 h-4 w-4" />
           新增模块
         </Button>
@@ -275,10 +275,11 @@ const handleDelete = async (row: Module) => {
               v-model="searchForm.keyword"
               class="w-56"
               placeholder="搜索模块名称或编码"
+              data-testid="search-keyword-input"
               @keydown.enter="handleSearch"
             />
             <Select v-model="searchForm.is_active">
-              <SelectTrigger class="w-[130px]">
+              <SelectTrigger class="w-[130px]" data-testid="status-select">
                 <SelectValue placeholder="模块状态" />
               </SelectTrigger>
               <SelectContent>
@@ -287,11 +288,11 @@ const handleDelete = async (row: Module) => {
                 <SelectItem value="false">停用</SelectItem>
               </SelectContent>
             </Select>
-            <Button variant="outline" @click="handleSearch">
+            <Button variant="outline" data-testid="search-btn" @click="handleSearch">
               <Search class="mr-1 h-4 w-4" />
               搜索
             </Button>
-            <Button variant="outline" @click="handleReset">
+            <Button variant="outline" data-testid="reset-btn" @click="handleReset">
               <RotateCcw class="mr-1 h-4 w-4" />
               重置
             </Button>
@@ -300,7 +301,7 @@ const handleDelete = async (row: Module) => {
       </div>
 
       <div class="min-h-0 flex-1 overflow-hidden px-5 py-4">
-        <DataTable :data-table="dataTable" :fixed-layout="true" />
+        <DataTable data-testid="module-table" :data-table="dataTable" :fixed-layout="true" />
       </div>
     </Card>
   </div>

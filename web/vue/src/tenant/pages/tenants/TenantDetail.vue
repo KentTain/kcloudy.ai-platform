@@ -388,14 +388,15 @@ onMounted(() => {
   <AppPage title="租户详情" variant="detail">
     <template #actions>
       <div class="flex gap-2">
-        <Button variant="outline" @click="handleBack">返回</Button>
-        <Button @click="handleEdit">
+        <Button variant="outline" @click="handleBack" data-testid="back-button">返回</Button>
+        <Button @click="handleEdit" data-testid="edit-button">
           <Pencil class="mr-1 h-4 w-4" />
           编辑
         </Button>
         <Button
           v-if="tenantStore.currentTenant?.status === 'inactive'"
           variant="outline"
+          data-testid="activate-button"
           @click="handleActivate"
         >
           <ShieldCheck class="mr-1 h-4 w-4" />
@@ -404,6 +405,7 @@ onMounted(() => {
         <Button
           v-if="tenantStore.currentTenant?.status === 'active'"
           variant="outline"
+          data-testid="deactivate-button"
           @click="handleDeactivate"
         >
           <ShieldOff class="mr-1 h-4 w-4" />
@@ -414,9 +416,9 @@ onMounted(() => {
 
     <Tabs v-model="activeTab" class="w-full">
       <TabsList>
-        <TabsTrigger value="info">基本信息</TabsTrigger>
-        <TabsTrigger value="resources">资源绑定</TabsTrigger>
-        <TabsTrigger value="modules">模块分配</TabsTrigger>
+        <TabsTrigger value="info" data-testid="tab-info">基本信息</TabsTrigger>
+        <TabsTrigger value="resources" data-testid="tab-resources">资源绑定</TabsTrigger>
+        <TabsTrigger value="modules" data-testid="tab-modules">模块分配</TabsTrigger>
       </TabsList>
 
       <!-- 基本信息 Tab -->
@@ -426,7 +428,7 @@ onMounted(() => {
             <div class="h-5 w-full bg-muted animate-pulse rounded" />
           </div>
         </div>
-        <DescriptionList v-else :items="descriptionItems" :columns="2" bordered />
+        <DescriptionList v-else :items="descriptionItems" :columns="2" bordered data-testid="tenant-info" />
       </TabsContent>
 
       <!-- 资源绑定 Tab -->

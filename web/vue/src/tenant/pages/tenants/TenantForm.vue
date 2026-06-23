@@ -241,19 +241,19 @@ onMounted(async () => {
     <!-- 页面标题区 -->
     <div class="flex flex-wrap items-start justify-between gap-3">
       <div class="flex items-center gap-3">
-        <Button variant="ghost" size="icon" @click="handleBack">
+        <Button variant="ghost" size="icon" @click="handleBack" data-testid="back-button">
           <ArrowLeft class="h-4 w-4" />
         </Button>
         <div>
-          <h2 class="text-xl font-semibold">{{ isEdit ? '编辑租户' : '新增租户' }}</h2>
+          <h2 class="text-xl font-semibold" data-testid="page-title">{{ isEdit ? '编辑租户' : '新增租户' }}</h2>
           <p class="text-muted-foreground mt-1 text-sm">
             {{ isEdit ? '修改租户基本信息和资源配置' : '创建新的租户' }}
           </p>
         </div>
       </div>
       <div class="flex items-center gap-2">
-        <Button variant="outline" @click="handleBack">取消</Button>
-        <Button :disabled="saving" @click="handleSave">
+        <Button variant="outline" @click="handleBack" data-testid="cancel-button">取消</Button>
+        <Button :disabled="saving" @click="handleSave" data-testid="save-button">
           <Save class="mr-1 h-4 w-4" />
           {{ saving ? '保存中...' : '保存' }}
         </Button>
@@ -273,7 +273,7 @@ onMounted(async () => {
         <!-- 基本信息 -->
         <div class="space-y-4">
           <h3 class="text-sm font-medium text-muted-foreground">基本信息</h3>
-          
+
           <!-- 租户名称 -->
           <div class="space-y-2">
             <Label for="name">租户名称 <span class="text-destructive">*</span></Label>
@@ -281,6 +281,7 @@ onMounted(async () => {
               id="name"
               v-model="form.name"
               placeholder="请输入租户名称"
+              data-testid="input-name"
               :class="{ 'border-destructive': errors.name }"
             />
             <p v-if="errors.name" class="text-destructive text-xs">{{ errors.name }}</p>
@@ -293,6 +294,7 @@ onMounted(async () => {
               id="code"
               v-model="form.code"
               placeholder="例如: my_company"
+              data-testid="input-code"
               :disabled="isEdit"
               :class="{ 'border-destructive': errors.code }"
             />
@@ -306,7 +308,7 @@ onMounted(async () => {
         <!-- 联系信息 -->
         <div class="space-y-4">
           <h3 class="text-sm font-medium text-muted-foreground">联系信息</h3>
-          
+
           <div class="grid gap-4 md:grid-cols-2">
             <!-- 联系人 -->
             <div class="space-y-2">
@@ -315,6 +317,7 @@ onMounted(async () => {
                 id="contact_name"
                 v-model="form.contact_name"
                 placeholder="请输入联系人姓名"
+                data-testid="input-contact-name"
               />
             </div>
 
@@ -325,6 +328,7 @@ onMounted(async () => {
                 id="contact_phone"
                 v-model="form.contact_phone"
                 placeholder="请输入联系电话"
+                data-testid="input-contact-phone"
               />
             </div>
           </div>
@@ -336,6 +340,7 @@ onMounted(async () => {
               id="contact_email"
               v-model="form.contact_email"
               placeholder="请输入联系人邮箱"
+              data-testid="input-contact-email"
               :class="{ 'border-destructive': errors.contact_email }"
             />
             <p v-if="errors.contact_email" class="text-destructive text-xs">{{ errors.contact_email }}</p>

@@ -75,13 +75,13 @@ onMounted(async () => {
 </script>
 
 <template>
-  <AppPage :title="isEdit ? '编辑角色' : '创建角色'" variant="detail">
+  <AppPage :title="isEdit ? '编辑角色' : '创建角色'" variant="detail" data-testid="role-form-page">
     <form @submit="onSubmit" class="max-w-[800px] flex flex-col gap-6">
       <FormField v-slot="{ componentField }" name="code">
         <FormItem>
           <FormLabel>角色编码</FormLabel>
           <FormControl>
-            <Input v-bind="componentField" :disabled="isEdit" />
+            <Input v-bind="componentField" :disabled="isEdit" data-testid="role-form-code-input" />
           </FormControl>
           <FormMessage />
         </FormItem>
@@ -91,7 +91,7 @@ onMounted(async () => {
         <FormItem>
           <FormLabel>角色名称</FormLabel>
           <FormControl>
-            <Input v-bind="componentField" />
+            <Input v-bind="componentField" data-testid="role-form-name-input" />
           </FormControl>
           <FormMessage />
         </FormItem>
@@ -101,7 +101,7 @@ onMounted(async () => {
         <FormItem>
           <FormLabel>描述</FormLabel>
           <FormControl>
-            <Input v-bind="componentField" />
+            <Input v-bind="componentField" data-testid="role-form-description-input" />
           </FormControl>
           <FormMessage />
         </FormItem>
@@ -109,7 +109,7 @@ onMounted(async () => {
 
       <div class="flex flex-col gap-2">
         <FormLabel>权限分配</FormLabel>
-        <div class="rounded-lg border p-3 max-h-[400px] overflow-auto">
+        <div class="rounded-lg border p-3 max-h-[400px] overflow-auto" data-testid="role-form-permission-tree">
           <PermissionTree
             v-model="selectedPermissions"
             :permissions="permissionStore.permissions"
@@ -118,10 +118,10 @@ onMounted(async () => {
       </div>
 
       <div class="flex gap-2">
-        <Button type="submit" :disabled="loading">
+        <Button type="submit" :disabled="loading" data-testid="role-form-submit-btn">
           {{ isEdit ? '保存' : '创建' }}
         </Button>
-        <Button variant="outline" @click="handleCancel">取消</Button>
+        <Button variant="outline" @click="handleCancel" data-testid="role-form-cancel-btn">取消</Button>
       </div>
     </form>
   </AppPage>
