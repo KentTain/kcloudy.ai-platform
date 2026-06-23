@@ -723,19 +723,20 @@ const confirmDelete = async () => {
       <div class="flex items-center gap-2">
         <Input
           v-model="keyword"
+          data-testid="search-input"
           class="w-56"
           placeholder="搜索配置名称"
           @keydown.enter="handleSearch"
         />
-        <Button variant="outline" @click="handleSearch">
+        <Button variant="outline" data-testid="search-button" @click="handleSearch">
           <Search class="mr-1 h-4 w-4" />
           搜索
         </Button>
-        <Button variant="outline" @click="handleRefresh">
+        <Button variant="outline" data-testid="refresh-button" @click="handleRefresh">
           <RefreshCw class="mr-1 h-4 w-4" />
           刷新
         </Button>
-        <Button @click="openCreateDialog">
+        <Button data-testid="create-button" @click="openCreateDialog">
           <Plus class="mr-1 h-4 w-4" />
           新增配置
         </Button>
@@ -785,6 +786,7 @@ const confirmDelete = async () => {
               v-for="item in resourceTypes"
               :key="item.value"
               :value="item.value"
+              :data-testid="`tab-${item.value}`"
             >
               {{ item.label }}
             </TabsTrigger>
@@ -822,16 +824,16 @@ const confirmDelete = async () => {
 
     <!-- 新增/编辑弹窗 -->
     <Dialog :open="dialogOpen" @update:open="dialogOpen = $event">
-      <DialogContent class="sm:max-w-[600px]">
+      <DialogContent class="sm:max-w-[600px]" data-testid="resource-dialog">
         <DialogHeader>
-          <DialogTitle>{{ editingId ? '编辑配置' : '新增配置' }}</DialogTitle>
+          <DialogTitle data-testid="dialog-title">{{ editingId ? '编辑配置' : '新增配置' }}</DialogTitle>
         </DialogHeader>
 
         <div class="grid gap-4 py-4">
           <!-- 基础信息 -->
           <div class="space-y-2">
             <Label>配置名称</Label>
-            <Input v-model="form.name" placeholder="请输入配置名称" />
+            <Input v-model="form.name" data-testid="form-name" placeholder="请输入配置名称" />
           </div>
 
           <!-- 数据库配置 -->
@@ -839,25 +841,25 @@ const confirmDelete = async () => {
             <div class="grid gap-4 md:grid-cols-2">
               <div class="space-y-2">
                 <Label>主机地址</Label>
-                <Input v-model="form.config.host" placeholder="localhost" />
+                <Input v-model="form.config.host" data-testid="form-host" placeholder="localhost" />
               </div>
               <div class="space-y-2">
                 <Label>端口</Label>
-                <Input v-model.number="form.config.port" type="number" placeholder="5432" />
+                <Input v-model.number="form.config.port" data-testid="form-port" type="number" placeholder="5432" />
               </div>
             </div>
             <div class="space-y-2">
               <Label>数据库名</Label>
-              <Input v-model="form.config.database" placeholder="请输入数据库名" />
+              <Input v-model="form.config.database" data-testid="form-database" placeholder="请输入数据库名" />
             </div>
             <div class="grid gap-4 md:grid-cols-2">
               <div class="space-y-2">
                 <Label>用户名</Label>
-                <Input v-model="form.config.username" placeholder="请输入用户名" />
+                <Input v-model="form.config.username" data-testid="form-username" placeholder="请输入用户名" />
               </div>
               <div class="space-y-2">
                 <Label>密码</Label>
-                <Input v-model="form.config.password" type="password" placeholder="请输入密码" />
+                <Input v-model="form.config.password" data-testid="form-password" type="password" placeholder="请输入密码" />
               </div>
             </div>
             <div class="space-y-2">
@@ -1003,8 +1005,8 @@ const confirmDelete = async () => {
         </div>
 
         <DialogFooter>
-          <Button variant="outline" @click="dialogOpen = false">取消</Button>
-          <Button :disabled="formLoading" @click="handleSave">
+          <Button variant="outline" data-testid="cancel-button" @click="dialogOpen = false">取消</Button>
+          <Button data-testid="save-button" :disabled="formLoading" @click="handleSave">
             {{ formLoading ? '保存中...' : '保存' }}
           </Button>
         </DialogFooter>
@@ -1013,17 +1015,18 @@ const confirmDelete = async () => {
 
     <!-- 删除确认弹窗 -->
     <Dialog :open="deleteDialogOpen" @update:open="deleteDialogOpen = $event">
-      <DialogContent class="sm:max-w-[400px]">
+      <DialogContent class="sm:max-w-[400px]" data-testid="delete-dialog">
         <DialogHeader>
-          <DialogTitle>确认删除</DialogTitle>
+          <DialogTitle data-testid="delete-dialog-title">确认删除</DialogTitle>
         </DialogHeader>
         <p class="py-4 text-muted-foreground">
           确定要删除此配置吗？如果配置已被租户引用，删除后相关租户将无法正常使用该资源。
         </p>
         <DialogFooter>
-          <Button variant="outline" @click="deleteDialogOpen = false">取消</Button>
+          <Button variant="outline" data-testid="delete-cancel-button" @click="deleteDialogOpen = false">取消</Button>
           <Button
             variant="destructive"
+            data-testid="delete-confirm-button"
             :disabled="formLoading"
             @click="confirmDelete"
           >

@@ -429,6 +429,119 @@ export async function deleteUserViaAPI(
 }
 
 // ============================================================================
+// 资源配置辅助函数
+// ============================================================================
+
+/**
+ * 资源类型
+ */
+export type ResourceType = 'database' | 'storage' | 'cache' | 'queue' | 'pubsub';
+
+/**
+ * 资源配置创建参数
+ */
+export interface ResourceCreateData {
+  name?: string;
+  [key: string]: any;
+}
+
+/**
+ * 资源配置响应
+ */
+export interface ResourceResponse {
+  id: string;
+  name: string;
+  type?: string;
+}
+
+/**
+ * 资源类型对应的 API 路径片段
+ */
+const RESOURCE_PATH_MAP: Record<ResourceType, string> = {
+  database: 'databases',
+  storage: 'storages',
+  cache: 'caches',
+  queue: 'queues',
+  pubsub: 'pubsubs',
+};
+
+/**
+ * 通过 API 创建资源配置
+ *
+ * @param request Playwright APIRequestContext
+ * @param token 管理员 Token
+ * @param type 资源类型
+ * @param data 配置参数（可选）
+ * @returns 创建的资源配置信息
+ */
+export async function createResourceConfigViaAPI(
+  request: APIRequestContext,
+  token: string,
+  type: ResourceType,
+  data?: ResourceCreateData
+): Promise<ResourceResponse> {
+  const path = RESOURCE_PATH_MAP[type];
+  const payload = {
+    name: `e2e-${type}-${Date.now()}`,
+    ...data,
+  };
+
+  const response = await request.post(`/api/tenant/admin/v1/resources/${path}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    data: payload,
+  });
+
+  if (!response.ok()) {
+    const errorText = await response.text();
+    throw new Error(
+      `创建${type}资源失败 (HTTP ${response.status()}): ${errorText}`
+    );
+  }
+
+  const result: ApiResponse<ResourceResponse> = await response.json();
+  const resource = result?.data;
+
+  if (!resource?.id) {
+    throw new Error(
+      `创建${type}资源失败: 响应中未找到 data.id 字段`
+    );
+  }
+
+  return resource;
+}
+
+/**
+ * 通过 API 删除资源配置
+ *
+ * @param request Playwright APIRequestContext
+ * @param token 管理员 Token
+ * @param type 资源类型
+ * @param id 资源 ID
+ */
+export async function deleteResourceConfigViaAPI(
+  request: APIRequestContext,
+  token: string,
+  type: ResourceType,
+  id: string
+): Promise<void> {
+  const path = RESOURCE_PATH_MAP[type];
+  const response = await request.delete(`/api/tenant/admin/v1/resources/${path}/${id}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok() && response.status() !== 404) {
+    const errorText = await response.text();
+    console.warn(
+      `删除${type}资源失败 (ID: ${id}, HTTP ${response.status()}): ${errorText}`
+    );
+  }
+}
+
+// ============================================================================
 // 批量清理辅助函数
 // ============================================================================
 
@@ -531,6 +644,35 @@ export async function cleanupAllE2EData(
     }
   } catch (error) {
     console.warn('清理模块数据时出错:', error);
+  }
+
+  // 4. 清理资源配置数据
+  const resourceTypes: ResourceType[] = ['database', 'storage', 'cache', 'queue', 'pubsub'];
+  for (const type of resourceTypes) {
+    try {
+      const path = RESOURCE_PATH_MAP[type];
+      const resourcesResponse = await request.get(`/api/tenant/admin/v1/resources/${path}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        params: {
+          keyword: 'e2e',
+        },
+      });
+
+      if (resourcesResponse.ok()) {
+        const resourcesResult = await resourcesResponse.json();
+        const resources = resourcesResult?.data || [];
+
+        for (const resource of resources) {
+          if (resource.name && isE2EData(resource.name)) {
+            await deleteResourceConfigViaAPI(request, token, type, resource.id);
+          }
+        }
+      }
+    } catch (error) {
+      console.warn(`清理${type}资源数据时出错:`, error);
+    }
   }
 }
 
