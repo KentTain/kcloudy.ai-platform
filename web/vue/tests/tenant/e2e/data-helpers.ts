@@ -107,6 +107,47 @@ interface ApiResponse<T> {
 }
 
 // ============================================================================
+// Token 获取辅助函数
+// ============================================================================
+
+/**
+ * 获取管理员 Token
+ *
+ * @param request Playwright APIRequestContext
+ * @param username 用户名，默认 'admin'
+ * @param password 密码，默认 'admin123'
+ * @returns 管理员 Token
+ * @throws 登录失败时抛出异常
+ */
+export async function getAdminToken(
+  request: APIRequestContext,
+  username = 'admin',
+  password = 'admin123'
+): Promise<string> {
+  const loginResponse = await request.post('/api/tenant/admin/v1/auth/login', {
+    data: { username, password }
+  });
+
+  if (!loginResponse.ok()) {
+    const errorText = await loginResponse.text();
+    throw new Error(
+      `管理员登录失败 (HTTP ${loginResponse.status()}): ${errorText}`
+    );
+  }
+
+  const loginData = await loginResponse.json();
+  const token = loginData?.data?.token;
+
+  if (!token) {
+    throw new Error(
+      `管理员登录失败: 响应中未找到 token 字段 (响应: ${JSON.stringify(loginData)})`
+    );
+  }
+
+  return token;
+}
+
+// ============================================================================
 // 常量
 // ============================================================================
 
