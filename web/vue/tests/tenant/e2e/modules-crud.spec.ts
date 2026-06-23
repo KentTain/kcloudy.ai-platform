@@ -13,6 +13,7 @@ import { test, expect, adminLoginViaAPI, waitForPageReady } from './fixtures';
 import {
   createModuleViaAPI,
   deleteModuleViaAPI,
+  getAdminToken,
   cleanupAllE2EData,
   generateE2EId,
   type ModuleResponse,
@@ -28,7 +29,6 @@ import type { APIRequestContext, Page } from '@playwright/test';
  */
 interface TestContext {
   createdModules: ModuleResponse[];
-  adminToken: string;
 }
 
 /**
@@ -36,34 +36,7 @@ interface TestContext {
  */
 const testContext: TestContext = {
   createdModules: [],
-  adminToken: '',
 };
-
-/**
- * 获取管理员 Token
- */
-async function getAdminToken(request: APIRequestContext): Promise<string> {
-  if (testContext.adminToken) {
-    return testContext.adminToken;
-  }
-
-  const response = await request.post('/api/tenant/admin/v1/auth/login', {
-    data: { username: 'admin', password: 'admin123' },
-  });
-
-  if (!response.ok()) {
-    throw new Error(`获取管理员 Token 失败: ${response.status()}`);
-  }
-
-  const data = await response.json();
-  testContext.adminToken = data?.data?.token;
-
-  if (!testContext.adminToken) {
-    throw new Error('响应中未找到 Token');
-  }
-
-  return testContext.adminToken;
-}
 
 /**
  * 通过 API 创建测试模块
@@ -358,12 +331,10 @@ test.describe('模块管理 CRUD', () => {
       // 点击删除按钮
       const deleteBtn = page.locator(`tr:has-text("${module.name}") button:has-text("删除")`);
       await expect(deleteBtn).toBeVisible({ timeout: 10000 });
-      await deleteBtn.click();
 
-      // 确认删除
-      const confirmBtn = page.locator('button:has-text("确认")').last();
-      await expect(confirmBtn).toBeVisible({ timeout: 5000 });
-      await confirmBtn.click();
+      // 确认删除（使用原生 window.confirm 对话框）
+      page.on('dialog', (dialog) => dialog.accept());
+      await deleteBtn.click();
 
       // 等待删除完成
       await waitForPageReady(page);
@@ -394,12 +365,10 @@ test.describe('模块管理 CRUD', () => {
       // 点击删除按钮
       const deleteBtn = page.locator(`tr:has-text("${module.name}") button:has-text("删除")`);
       await expect(deleteBtn).toBeVisible({ timeout: 10000 });
-      await deleteBtn.click();
 
-      // 取消删除
-      const cancelBtn = page.locator('button:has-text("取消")').last();
-      await expect(cancelBtn).toBeVisible({ timeout: 5000 });
-      await cancelBtn.click();
+      // 取消删除（使用原生 window.confirm 对话框）
+      page.on('dialog', (dialog) => dialog.dismiss());
+      await deleteBtn.click();
 
       // 验证模块仍然存在
       await waitForPageReady(page);
