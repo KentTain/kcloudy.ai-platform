@@ -246,12 +246,12 @@ test.describe('资源配置管理 CRUD', () => {
       await openCreateDialog(page);
 
       // 填写表单
-      await page.getByTestId('form-name').fill(configName);
-      await page.getByTestId('form-host').fill('localhost');
-      await page.getByTestId('form-port').fill('5433');
-      await page.getByTestId('form-database').fill('e2e_test');
-      await page.getByTestId('form-username').fill('e2e_user');
-      await page.getByTestId('form-password').fill('e2e_pass');
+      await page.getByTestId('form-name').locator('input').fill(configName);
+      await page.getByTestId('form-host').locator('input').fill('localhost');
+      await page.getByTestId('form-port').locator('input').fill('5433');
+      await page.getByTestId('form-database').locator('input').fill('e2e_test');
+      await page.getByTestId('form-username').locator('input').fill('e2e_user');
+      await page.getByTestId('form-password').locator('input').fill('e2e_pass');
 
       // 保存
       await page.getByTestId('save-button').click();
@@ -292,9 +292,9 @@ test.describe('资源配置管理 CRUD', () => {
         await switchToTab(page, config.type);
         await openCreateDialog(page);
 
-        await page.getByTestId('form-name').fill(config.name);
-        await page.getByTestId('form-host').fill('localhost');
-        await page.getByTestId('form-port').fill('6379');
+        await page.getByTestId('form-name').locator('input').fill(config.name);
+        await page.getByTestId('form-host').locator('input').fill('localhost');
+        await page.getByTestId('form-port').locator('input').fill('6379');
 
         await page.getByTestId('save-button').click();
 
@@ -335,7 +335,7 @@ test.describe('资源配置管理 CRUD', () => {
       await expect(page.getByTestId('dialog-title')).toContainText('编辑配置');
 
       // 验证表单字段有值
-      await expect(page.getByTestId('form-name')).toHaveValue(originalName);
+      await expect(page.getByTestId('form-name').locator('input')).toHaveValue(originalName);
     });
 
     test('编辑数据库配置成功', async ({ page, request }) => {
@@ -349,7 +349,7 @@ test.describe('资源配置管理 CRUD', () => {
       await openEditDialog(page, originalName);
 
       // 清空并修改名称
-      await page.getByTestId('form-name').fill(newName);
+      await page.getByTestId('form-name').locator('input').fill(newName);
 
       // 保存
       await page.getByTestId('save-button').click();
@@ -374,7 +374,7 @@ test.describe('资源配置管理 CRUD', () => {
       await openEditDialog(page, originalName);
 
       // 修改名称
-      await page.getByTestId('form-name').fill(`${originalName}-未保存`);
+      await page.getByTestId('form-name').locator('input').fill(`${originalName}-未保存`);
 
       // 取消
       await page.getByTestId('cancel-button').click();
@@ -484,7 +484,7 @@ test.describe('资源配置管理 CRUD', () => {
       await goToResourcePage(page);
 
       // 输入搜索关键字
-      await page.getByTestId('search-input').fill(configName);
+      await page.getByTestId('search-input').locator('input').fill(configName);
       await page.getByTestId('search-button').click();
 
       // 等待搜索结果
@@ -502,8 +502,8 @@ test.describe('资源配置管理 CRUD', () => {
       await goToResourcePage(page);
 
       // 输入搜索关键字并按回车
-      await page.getByTestId('search-input').fill(configName);
-      await page.getByTestId('search-input').press('Enter');
+      await page.getByTestId('search-input').locator('input').fill(configName);
+      await page.getByTestId('search-input').locator('input').press('Enter');
 
       // 等待搜索结果
       await waitForPageReady(page);
@@ -516,7 +516,7 @@ test.describe('资源配置管理 CRUD', () => {
       await goToResourcePage(page);
 
       // 使用不可能匹配的关键字搜索
-      await page.getByTestId('search-input').fill('e2e-no-match-xyz-999');
+      await page.getByTestId('search-input').locator('input').fill('e2e-no-match-xyz-999');
       await page.getByTestId('search-button').click();
 
       await waitForPageReady(page);

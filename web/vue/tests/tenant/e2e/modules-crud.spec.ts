@@ -172,9 +172,9 @@ test.describe('模块管理 CRUD', () => {
       await waitForPageReady(page);
 
       // 填写表单
-      await page.locator('[data-testid="name-input"]').fill(moduleName);
-      await page.locator('[data-testid="code-input"]').fill(moduleCode);
-      await page.locator('[data-testid="description-input"]').fill('E2E 测试创建的模块');
+      await page.locator('[data-testid="name-input"] input').fill(moduleName);
+      await page.locator('[data-testid="code-input"] input').fill(moduleCode);
+      await page.locator('[data-testid="description-input"] input').fill('E2E 测试创建的模块');
 
       // 提交表单
       await page.locator('[data-testid="save-btn"]').click();
@@ -217,8 +217,8 @@ test.describe('模块管理 CRUD', () => {
       await waitForPageReady(page);
 
       // 填写无效编码
-      await page.locator('[data-testid="name-input"]').fill('测试模块');
-      await page.locator('[data-testid="code-input"]').fill('InvalidCode123');
+      await page.locator('[data-testid="name-input"] input').fill('测试模块');
+      await page.locator('[data-testid="code-input"] input').fill('InvalidCode123');
 
       // 提交表单
       await page.locator('[data-testid="save-btn"]').click();
@@ -239,7 +239,7 @@ test.describe('模块管理 CRUD', () => {
       await waitForPageReady(page);
 
       // 搜索创建的模块
-      await page.locator('[data-testid="search-keyword-input"]').fill(module.code);
+      await page.locator('[data-testid="search-keyword-input"] input').fill(module.code);
       await page.locator('[data-testid="search-btn"]').click();
       await waitForPageReady(page);
 
@@ -262,11 +262,11 @@ test.describe('模块管理 CRUD', () => {
       await waitForPageReady(page);
 
       // 验证表单数据正确加载
-      const nameInput = page.locator('[data-testid="name-input"]');
+      const nameInput = page.locator('[data-testid="name-input"] input');
       await expect(nameInput).toHaveValue(module.name);
 
       // 验证编码不可编辑
-      const codeInput = page.locator('[data-testid="code-input"]');
+      const codeInput = page.locator('[data-testid="code-input"] input');
       await expect(codeInput).toBeDisabled();
     });
 
@@ -279,8 +279,8 @@ test.describe('模块管理 CRUD', () => {
       await waitForPageReady(page);
 
       // 修改模块名称
-      await page.locator('[data-testid="name-input"]').fill(newName);
-      await page.locator('[data-testid="description-input"]').fill('已编辑的描述');
+      await page.locator('[data-testid="name-input"] input').fill(newName);
+      await page.locator('[data-testid="description-input"] input').fill('已编辑的描述');
 
       // 保存
       await page.locator('[data-testid="save-btn"]').click();
@@ -290,7 +290,7 @@ test.describe('模块管理 CRUD', () => {
       await waitForPageReady(page);
 
       // 搜索验证修改后的名称
-      await page.locator('[data-testid="search-keyword-input"]').fill(newName);
+      await page.locator('[data-testid="search-keyword-input"] input').fill(newName);
       await page.locator('[data-testid="search-btn"]').click();
       await waitForPageReady(page);
 
@@ -324,7 +324,7 @@ test.describe('模块管理 CRUD', () => {
       await waitForPageReady(page);
 
       // 搜索创建的模块
-      await page.locator('[data-testid="search-keyword-input"]').fill(module.code);
+      await page.locator('[data-testid="search-keyword-input"] input').fill(module.code);
       await page.locator('[data-testid="search-btn"]').click();
       await waitForPageReady(page);
 
@@ -358,7 +358,7 @@ test.describe('模块管理 CRUD', () => {
       await waitForPageReady(page);
 
       // 搜索创建的模块
-      await page.locator('[data-testid="search-keyword-input"]').fill(module.code);
+      await page.locator('[data-testid="search-keyword-input"] input').fill(module.code);
       await page.locator('[data-testid="search-btn"]').click();
       await waitForPageReady(page);
 
@@ -387,7 +387,7 @@ test.describe('模块管理 CRUD', () => {
       await waitForPageReady(page);
 
       // 搜索创建的模块
-      await page.locator('[data-testid="search-keyword-input"]').fill(module.code);
+      await page.locator('[data-testid="search-keyword-input"] input').fill(module.code);
       await page.locator('[data-testid="search-btn"]').click();
       await waitForPageReady(page);
 
@@ -518,8 +518,8 @@ test.describe('模块管理 CRUD', () => {
       await page.goto('/admin/modules');
       await waitForPageReady(page);
 
-      // 输入搜索关键词
-      await page.locator('[data-testid="search-keyword-input"]').fill(module.code);
+      // 输入搜索关键词（Input 组件的 data-testid 在外层 div，需要找到内部的 input）
+      await page.locator('[data-testid="search-keyword-input"] input').fill(module.code);
       await page.locator('[data-testid="search-btn"]').click();
       await waitForPageReady(page);
 
@@ -565,7 +565,7 @@ test.describe('模块管理 CRUD', () => {
       await waitForPageReady(page);
 
       // 输入搜索关键词
-      await page.locator('[data-testid="search-keyword-input"]').fill(module.code);
+      await page.locator('[data-testid="search-keyword-input"] input').fill(module.code);
       await page.locator('[data-testid="status-select"]').click();
       await page.locator('text=启用').click();
 
@@ -574,7 +574,7 @@ test.describe('模块管理 CRUD', () => {
       await waitForPageReady(page);
 
       // 验证输入框被清空
-      await expect(page.locator('[data-testid="search-keyword-input"]')).toHaveValue('');
+      await expect(page.locator('[data-testid="search-keyword-input"] input')).toHaveValue('');
     });
 
     test('回车键触发搜索', async ({ page, request }) => {
@@ -585,8 +585,8 @@ test.describe('模块管理 CRUD', () => {
       await waitForPageReady(page);
 
       // 输入搜索关键词并按回车
-      await page.locator('[data-testid="search-keyword-input"]').fill(module.code);
-      await page.locator('[data-testid="search-keyword-input"]').press('Enter');
+      await page.locator('[data-testid="search-keyword-input"] input').fill(module.code);
+      await page.locator('[data-testid="search-keyword-input"] input').press('Enter');
       await waitForPageReady(page);
 
       // 验证搜索结果

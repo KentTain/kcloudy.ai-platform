@@ -126,8 +126,8 @@ test.describe('租户管理 CRUD', () => {
       await page.waitForLoadState('networkidle');
 
       // 输入无效的租户编码（以数字开头）
-      await page.getByTestId('input-name').fill('测试租户');
-      await page.getByTestId('input-code').fill('123invalid');
+      await page.getByTestId('input-name').locator('input').fill('测试租户');
+      await page.getByTestId('input-code').locator('input').fill('123invalid');
       await page.getByTestId('save-button').click();
 
       // 验证错误提示
@@ -142,11 +142,11 @@ test.describe('租户管理 CRUD', () => {
 
       // 填写表单
       const timestamp = Date.now();
-      await page.getByTestId('input-name').fill('E2E创建测试租户');
-      await page.getByTestId('input-code').fill(`e2e-create-${timestamp}`);
-      await page.getByTestId('input-contact-name').fill('测试联系人');
-      await page.getByTestId('input-contact-email').fill('test@example.com');
-      await page.getByTestId('input-contact-phone').fill('13800138000');
+      await page.getByTestId('input-name').locator('input').fill('E2E创建测试租户');
+      await page.getByTestId('input-code').locator('input').fill(`e2e-create-${timestamp}`);
+      await page.getByTestId('input-contact-name').locator('input').fill('测试联系人');
+      await page.getByTestId('input-contact-email').locator('input').fill('test@example.com');
+      await page.getByTestId('input-contact-phone').locator('input').fill('13800138000');
 
       // 提交表单
       await page.getByTestId('save-button').click();
@@ -198,8 +198,8 @@ test.describe('租户管理 CRUD', () => {
       await page.waitForLoadState('networkidle');
 
       // 验证表单字段有值
-      await expect(page.getByTestId('input-name')).toHaveValue('E2E编辑测试租户');
-      await expect(page.getByTestId('input-code')).toBeDisabled(); // 编码不可编辑
+      await expect(page.getByTestId('input-name').locator('input')).toHaveValue('E2E编辑测试租户');
+      await expect(page.getByTestId('input-code').locator('input')).toBeDisabled(); // 编码不可编辑
     });
 
     test('编辑租户成功', async ({ page }) => {
@@ -207,8 +207,8 @@ test.describe('租户管理 CRUD', () => {
       await page.waitForLoadState('networkidle');
 
       // 修改租户名称
-      await page.getByTestId('input-name').fill('E2E编辑测试租户-已修改');
-      await page.getByTestId('input-contact-name').fill('新联系人');
+      await page.getByTestId('input-name').locator('input').fill('E2E编辑测试租户-已修改');
+      await page.getByTestId('input-contact-name').locator('input').fill('新联系人');
 
       // 保存
       await page.getByTestId('save-button').click();
