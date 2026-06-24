@@ -195,7 +195,7 @@ pnpm test:e2e tests/iam/e2e/
 PLAYWRIGHT_BROWSERS_PATH=/ms-playwright pnpm test:e2e tests/iam/e2e/
 
 # 内存不足导致崩溃时使用单线程
-pnpm test:e2e tests/iam/e2e/ --workers=1
+E2E_WORKERS=1 pnpm test:e2e tests/iam/e2e/
 
 # 带界面运行 E2E 测试
 pnpm test:e2e:ui tests/ai/e2e/
