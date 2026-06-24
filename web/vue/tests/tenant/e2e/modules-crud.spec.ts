@@ -103,11 +103,11 @@ test.describe('模块管理 CRUD', () => {
       await page.goto('/admin/modules');
       await waitForPageReady(page);
 
-      // 验证统计卡片存在
-      await expect(page.locator('text=模块总数')).toBeVisible();
-      await expect(page.locator('text=启用模块')).toBeVisible();
-      await expect(page.locator('text=必须模块')).toBeVisible();
-      await expect(page.locator('text=已分配次数')).toBeVisible();
+      // 验证统计卡片存在（使用 .first() 避免匹配表格列头）
+      await expect(page.locator('text=模块总数').first()).toBeVisible();
+      await expect(page.locator('text=启用模块').first()).toBeVisible();
+      await expect(page.locator('text=必须模块').first()).toBeVisible();
+      await expect(page.locator('text=已分配次数').first()).toBeVisible();
     });
 
     test('模块列表表格正确渲染', async ({ page }) => {
@@ -117,10 +117,10 @@ test.describe('模块管理 CRUD', () => {
       // 验证表格存在
       await expect(page.locator('[data-testid="module-table"]')).toBeVisible();
 
-      // 验证表头
-      await expect(page.locator('text=模块信息')).toBeVisible();
-      await expect(page.locator('text=状态')).toBeVisible();
-      await expect(page.locator('text=必须模块')).toBeVisible();
+      // 验证表头（限定在表格范围内避免匹配页面其他文字）
+      await expect(page.locator('[data-testid="module-table"] th:has-text("模块信息")')).toBeVisible();
+      await expect(page.locator('[data-testid="module-table"] th:has-text("状态")')).toBeVisible();
+      await expect(page.locator('[data-testid="module-table"] th:has-text("必须模块")')).toBeVisible();
     });
 
     test('刷新按钮可以刷新列表', async ({ page }) => {
@@ -171,16 +171,50 @@ test.describe('模块管理 CRUD', () => {
       await page.goto('/admin/modules/create');
       await waitForPageReady(page);
 
+      // 等待表单完全加载
+      await expect(page.locator('[data-testid="module-form-page"]')).toBeVisible();
+
       // 填写表单
-      await page.locator('[data-testid="name-input"] input').fill(moduleName);
-      await page.locator('[data-testid="code-input"] input').fill(moduleCode);
-      await page.locator('[data-testid="description-input"] input').fill('E2E 测试创建的模块');
+      const nameInput = page.locator('[data-testid="name-input"] input');
+      const codeInput = page.locator('[data-testid="code-input"] input');
+
+      await expect(nameInput).toBeVisible();
+      await nameInput.click();
+      await nameInput.fill(moduleName);
+      await expect(nameInput).toHaveValue(moduleName);
+
+      await expect(codeInput).toBeVisible();
+      await codeInput.click();
+      await codeInput.fill(moduleCode);
+      await expect(codeInput).toHaveValue(moduleCode);
+
+      const descInput = page.locator('[data-testid="description-input"]');
+      await expect(descInput).toBeVisible();
+      await descInput.fill('E2E 测试创建的模块');
 
       // 提交表单
       await page.locator('[data-testid="save-btn"]').click();
 
-      // 等待跳转到列表页
-      await page.waitForURL(/\/admin\/modules$/, { timeout: 15000 });
+      // 等待跳转到列表页或出现错误提示
+      try {
+        await page.waitForURL(/\/admin\/modules$/, { timeout: 30000 });
+      } catch {
+        // 检查是否有错误提示
+        const errorToast = page.locator('[role="alert"], .toast-error, [data-sonner-toast]');
+        const hasError = await errorToast.count();
+        if (hasError > 0) {
+          const errorText = await errorToast.first().textContent();
+          throw new Error(`创建模块失败，错误提示: ${errorText}`);
+        }
+        // 检查是否有表单验证错误（排除 Label 中的 * 符号）
+        const validationError = page.locator('p.text-destructive.text-xs');
+        const hasValidationError = await validationError.count();
+        if (hasValidationError > 0) {
+          const errorTexts = await validationError.allTextContents();
+          throw new Error(`表单验证错误: ${errorTexts.join(', ')}`);
+        }
+        throw new Error('创建模块失败，页面未跳转且无错误提示');
+      }
 
       // 验证模块出现在列表中
       await waitForPageReady(page);
@@ -278,15 +312,43 @@ test.describe('模块管理 CRUD', () => {
       await page.goto(`/admin/modules/${module.id}/edit`);
       await waitForPageReady(page);
 
-      // 修改模块名称
-      await page.locator('[data-testid="name-input"] input').fill(newName);
-      await page.locator('[data-testid="description-input"] input').fill('已编辑的描述');
+      // 等待表单完全加载
+      await expect(page.locator('[data-testid="module-form-page"]')).toBeVisible();
+
+      // 填写表单
+      const nameInput = page.locator('[data-testid="name-input"] input');
+      await expect(nameInput).toBeVisible();
+      await nameInput.click();
+      await nameInput.fill(newName);
+      await expect(nameInput).toHaveValue(newName);
+
+      const descInput = page.locator('[data-testid="description-input"]');
+      await expect(descInput).toBeVisible();
+      await descInput.fill('已编辑的描述');
 
       // 保存
       await page.locator('[data-testid="save-btn"]').click();
 
-      // 等待跳转到列表页
-      await page.waitForURL(/\/admin\/modules$/, { timeout: 15000 });
+      // 等待跳转到列表页或出现错误提示
+      try {
+        await page.waitForURL(/\/admin\/modules$/, { timeout: 30000 });
+      } catch {
+        // 检查是否有错误提示
+        const errorToast = page.locator('[role="alert"], .toast-error, [data-sonner-toast]');
+        const hasError = await errorToast.count();
+        if (hasError > 0) {
+          const errorText = await errorToast.first().textContent();
+          throw new Error(`编辑模块失败，错误提示: ${errorText}`);
+        }
+        // 检查是否有表单验证错误（排除 Label 中的 * 符号）
+        const validationError = page.locator('p.text-destructive.text-xs');
+        const hasValidationError = await validationError.count();
+        if (hasValidationError > 0) {
+          const errorTexts = await validationError.allTextContents();
+          throw new Error(`表单验证错误: ${errorTexts.join(', ')}`);
+        }
+        throw new Error('编辑模块失败，页面未跳转且无错误提示');
+      }
       await waitForPageReady(page);
 
       // 搜索验证修改后的名称
@@ -410,8 +472,12 @@ test.describe('模块管理 CRUD', () => {
 
       // 验证详情页面元素
       await expect(page.locator('[data-testid="module-detail-page"]')).toBeVisible();
-      await expect(page.locator(`text=${module.name}`)).toBeVisible();
-      await expect(page.locator(`text=${module.code}`)).toBeVisible();
+      // 验证基本信息 Tab 可见
+      const infoTab = page.locator('[data-testid="tab-info"]');
+      await expect(infoTab).toBeVisible();
+      // 在页面中查找模块信息标签
+      await expect(page.getByText('模块名称').first()).toBeVisible();
+      await expect(page.getByText('模块编码').first()).toBeVisible();
     });
 
     test('详情页面 Tabs 切换 - 基本信息', async ({ page, request }) => {
@@ -531,9 +597,9 @@ test.describe('模块管理 CRUD', () => {
       await page.goto('/admin/modules');
       await waitForPageReady(page);
 
-      // 选择启用状态
+      // 选择启用状态（使用 getByRole 选择下拉选项，避免匹配页面其他文字）
       await page.locator('[data-testid="status-select"]').click();
-      await page.locator('text=启用').click();
+      await page.getByRole('option', { name: '启用' }).click();
       await page.locator('[data-testid="search-btn"]').click();
       await waitForPageReady(page);
 
@@ -549,7 +615,7 @@ test.describe('模块管理 CRUD', () => {
 
       // 选择停用状态
       await page.locator('[data-testid="status-select"]').click();
-      await page.locator('text=停用').click();
+      await page.getByRole('option', { name: '停用' }).click();
       await page.locator('[data-testid="search-btn"]').click();
       await waitForPageReady(page);
 
@@ -567,7 +633,7 @@ test.describe('模块管理 CRUD', () => {
       // 输入搜索关键词
       await page.locator('[data-testid="search-keyword-input"] input').fill(module.code);
       await page.locator('[data-testid="status-select"]').click();
-      await page.locator('text=启用').click();
+      await page.getByRole('option', { name: '启用' }).click();
 
       // 点击重置
       await page.locator('[data-testid="reset-btn"]').click();

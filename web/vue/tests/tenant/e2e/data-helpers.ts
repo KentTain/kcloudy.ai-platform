@@ -681,13 +681,16 @@ export async function cleanupAllE2EData(
 // ============================================================================
 
 /**
- * 生成带 E2E 前缀的唯一标识符
+ * 生成符合编码规则的 E2E 测试唯一标识符
+ *
+ * 编码规则：以小写字母开头，只能包含小写字母、数字和下划线
+ * 格式：`e2e_{prefix}_{timestamp}`
  *
  * @param prefix 标识符前缀（如 'tenant', 'user', 'module'）
- * @returns 格式为 `e2e-{prefix}-{timestamp}` 的唯一标识符
+ * @returns 格式为 `e2e_{prefix}_{timestamp}` 的唯一标识符
  */
 export function generateE2EId(prefix: string): string {
-  return `${E2E_PREFIX}${prefix}-${Date.now()}`;
+  return `e2e_${prefix}_${Date.now()}`;
 }
 
 /**

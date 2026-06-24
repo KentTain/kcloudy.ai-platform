@@ -101,7 +101,7 @@ const onSubmit = handleSubmit(async (values) => {
         </form>
 
         <div class="admin-login-page__footer">
-          <p>默认管理员: admin / admin123</p>
+          <p>默认管理员: tenant_admin / admin123</p>
         </div>
       </div>
     </div>

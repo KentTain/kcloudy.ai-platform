@@ -8,10 +8,10 @@
 import { test, expect, waitForPageReady } from './fixtures';
 
 // ============================================================================
-// Token 存储常量（与前端源码保持一致）
+// 测试配置
 // ============================================================================
-const ADMIN_TOKEN_KEY = 'admin_token';
-const ADMIN_INFO_KEY = 'admin_info';
+const TENANT_ADMIN_USERNAME = 'tenant_admin';
+const TENANT_ADMIN_PASSWORD = 'admin123';
 
 // ============================================================================
 // 测试场景
@@ -50,7 +50,7 @@ test.describe('管理员登录页面 - UI 测试', () => {
 
   test('表单验证 - 空密码', async ({ page }) => {
     // 只填写用户名
-    await page.locator('input[placeholder*="用户名"]').fill('admin');
+    await page.locator('input[placeholder*="用户名"]').fill(TENANT_ADMIN_USERNAME);
 
     // 点击登录
     await page.locator('button[type="submit"]').click();
@@ -67,7 +67,7 @@ test.describe('管理员登录页面 - UI 测试', () => {
     // 点击登录
     await page.locator('button[type="submit"]').click();
 
-    // 等待错误提示
+    // 等待错误提示（错误消息通过 v-if 条件渲染，需要等待）
     await expect(page.locator('.admin-login-page__error')).toBeVisible({ timeout: 10000 });
 
     // 验证错误消息内容
@@ -80,9 +80,9 @@ test.describe('管理员登录页面 - UI 测试', () => {
   });
 
   test('登录成功 - 完整流程', async ({ page }) => {
-    // 填写正确凭据
-    await page.locator('input[placeholder*="用户名"]').fill('admin');
-    await page.locator('input[type="password"]').fill('admin123');
+    // 填写正确凭据（使用 tenant_admin 用户名）
+    await page.locator('input[placeholder*="用户名"]').fill(TENANT_ADMIN_USERNAME);
+    await page.locator('input[type="password"]').fill(TENANT_ADMIN_PASSWORD);
 
     // 点击登录
     await page.locator('button[type="submit"]').click();
@@ -95,15 +95,13 @@ test.describe('管理员登录页面 - UI 测试', () => {
 
     // 验证 localStorage 包含 token
     const token = await page.evaluate(
-      (ADMIN_TOKEN_KEY) => localStorage.getItem(ADMIN_TOKEN_KEY),
-      ADMIN_TOKEN_KEY
+      () => localStorage.getItem('admin_token')
     );
     expect(token).toBeTruthy();
 
     // 验证 localStorage 包含管理员信息
     const adminInfo = await page.evaluate(
-      (ADMIN_INFO_KEY) => localStorage.getItem(ADMIN_INFO_KEY),
-      ADMIN_INFO_KEY
+      () => localStorage.getItem('admin_info')
     );
     expect(adminInfo).toBeTruthy();
 
@@ -115,8 +113,8 @@ test.describe('管理员登录页面 - UI 测试', () => {
 
   test('登录按钮加载状态', async ({ page }) => {
     // 填写凭据
-    await page.locator('input[placeholder*="用户名"]').fill('admin');
-    await page.locator('input[type="password"]').fill('admin123');
+    await page.locator('input[placeholder*="用户名"]').fill(TENANT_ADMIN_USERNAME);
+    await page.locator('input[type="password"]').fill(TENANT_ADMIN_PASSWORD);
 
     // 点击登录
     const submitButton = page.locator('button[type="submit"]');
@@ -134,18 +132,18 @@ test.describe('管理员登录页面 - UI 测试', () => {
 
   test('记住上次登录账号', async ({ page, context }) => {
     // 第一次登录
-    await page.locator('input[placeholder*="用户名"]').fill('testadmin');
-    await page.locator('input[type="password"]').fill('admin123');
+    await page.locator('input[placeholder*="用户名"]').fill(TENANT_ADMIN_USERNAME);
+    await page.locator('input[type="password"]').fill(TENANT_ADMIN_PASSWORD);
     await page.locator('button[type="submit"]').click();
 
-    // 等待登录完成或失败
-    await page.waitForTimeout(1000);
+    // 等待登录成功
+    await page.waitForURL(/^(?!.*\/login).*$/, { timeout: 15000 });
 
     // 验证 localStorage 保存了账号
     const lastAccount = await page.evaluate(() => {
       return localStorage.getItem('last_admin_account');
     });
-    expect(lastAccount).toBe('testadmin');
+    expect(lastAccount).toBe(TENANT_ADMIN_USERNAME);
   });
 });
 
@@ -155,8 +153,8 @@ test.describe('登录状态持久化', () => {
     await page.goto('/admin/login');
     await page.waitForLoadState('networkidle');
 
-    await page.locator('input[placeholder*="用户名"]').fill('admin');
-    await page.locator('input[type="password"]').fill('admin123');
+    await page.locator('input[placeholder*="用户名"]').fill(TENANT_ADMIN_USERNAME);
+    await page.locator('input[type="password"]').fill(TENANT_ADMIN_PASSWORD);
     await page.locator('button[type="submit"]').click();
 
     // 等待登录成功
@@ -175,17 +173,17 @@ test.describe('登录状态持久化', () => {
     await page.goto('/admin/login');
     await page.waitForLoadState('networkidle');
 
-    await page.locator('input[placeholder*="用户名"]').fill('admin');
-    await page.locator('input[type="password"]').fill('admin123');
+    await page.locator('input[placeholder*="用户名"]').fill(TENANT_ADMIN_USERNAME);
+    await page.locator('input[type="password"]').fill(TENANT_ADMIN_PASSWORD);
     await page.locator('button[type="submit"]').click();
 
     // 等待登录成功
     await page.waitForURL(/^(?!.*\/login).*$/, { timeout: 15000 });
 
     // 清除 Token
-    await page.evaluate((ADMIN_TOKEN_KEY) => {
-      localStorage.removeItem(ADMIN_TOKEN_KEY);
-    }, ADMIN_TOKEN_KEY);
+    await page.evaluate(() => {
+      localStorage.removeItem('admin_token');
+    });
 
     // 访问需要认证的页面
     await page.goto('/admin/tenants');
@@ -212,8 +210,8 @@ test.describe('登录后重定向', () => {
     await page.waitForURL(/\/admin\/login/, { timeout: 5000 });
 
     // 登录
-    await page.locator('input[placeholder*="用户名"]').fill('admin');
-    await page.locator('input[type="password"]').fill('admin123');
+    await page.locator('input[placeholder*="用户名"]').fill(TENANT_ADMIN_USERNAME);
+    await page.locator('input[type="password"]').fill(TENANT_ADMIN_PASSWORD);
     await page.locator('button[type="submit"]').click();
 
     // 验证跳转回目标页面

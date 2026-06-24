@@ -56,12 +56,18 @@ export const createApiClient = (config?: AxiosRequestConfig): AxiosInstance => {
         if (isAdminRequest) {
           localStorage.removeItem("admin_token");
           localStorage.removeItem("admin_info");
-          window.location.href = "/admin/login";
+          // 避免在登录页面时重定向，让登录页面可以处理错误
+          if (!window.location.pathname.includes("/admin/login")) {
+            window.location.href = "/admin/login";
+          }
         } else {
           localStorage.removeItem("token");
           localStorage.removeItem("refresh_token");
           localStorage.removeItem("tenant_id");
-          window.location.href = "/login";
+          // 避免在登录页面时重定向，让登录页面可以处理错误
+          if (!window.location.pathname.includes("/login")) {
+            window.location.href = "/login";
+          }
         }
       }
 

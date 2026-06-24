@@ -846,8 +846,8 @@ onUnmounted(() => {
     />
 
     <!-- 分配权限弹窗 -->
-    <Dialog v-model:open="assignPermDialogOpen" data-testid="assign-perm-dialog">
-      <DialogContent class="sm:max-w-[700px]">
+    <Dialog v-model:open="assignPermDialogOpen">
+      <DialogContent class="sm:max-w-[700px]" data-testid="assign-perm-dialog">
         <DialogHeader>
           <DialogTitle>分配权限</DialogTitle>
           <DialogDescription>
@@ -934,8 +934,8 @@ onUnmounted(() => {
     </Dialog>
 
     <!-- 创建/编辑角色弹窗 -->
-    <Dialog v-model:open="formDialogOpen" data-testid="role-form-dialog">
-      <DialogContent class="sm:max-w-[400px]">
+    <Dialog v-model:open="formDialogOpen">
+      <DialogContent class="sm:max-w-[400px]" data-testid="role-form-dialog">
         <DialogHeader>
           <DialogTitle>
             {{ formDialogMode === "create" ? "新建角色" : "编辑角色" }}

@@ -181,8 +181,8 @@ test.describe("IAM 用户管理页面", () => {
     await waitForPageReady(page);
     await waitForSkeletonGone(page);
 
-    // 验证组织筛选面板存在
-    const orgFilterPanel = page.locator("text=组织筛选");
+    // 验证组织筛选面板存在（精确匹配侧边栏标题，避免匹配页面描述）
+    const orgFilterPanel = page.getByText("组织筛选", { exact: true });
     await expect(orgFilterPanel).toBeVisible();
   });
 
