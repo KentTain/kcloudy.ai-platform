@@ -6,6 +6,9 @@ from loguru import logger
 from tenant.tasks.services.cleanup_failed_installations_task import (
     cleanup_failed_installations_task,
 )
+from tenant.tasks.services.cleanup_pending_installations_task import (
+    cleanup_pending_installations_task,
+)
 
 _logger = logger.bind(name=__name__)
 
@@ -16,6 +19,11 @@ local_tasks = [
     (
         cleanup_failed_installations_task,
         "tenant_cleanup_failed_installations",
+        {"hours": 1},
+    ),
+    (
+        cleanup_pending_installations_task,
+        "tenant_cleanup_pending_installations",
         {"hours": 1},
     ),
 ]

@@ -81,9 +81,9 @@
 
 ## 11. 事件处理与定时任务
 
-- [ ] 11.1 更新 `PluginInstallationFailedHandler`：删除或更新 `plugin_installations` 记录
-- [ ] 11.2 创建 `CleanupPendingInstallationsTask`：清理超过 24 小时的 PENDING 状态记录
-- [ ] 11.3 配置定时任务调度
+- [x] 11.1 更新 `PluginInstallationFailedHandler`：删除或更新 `plugin_installations` 记录
+- [x] 11.2 创建 `CleanupPendingInstallationsTask`：清理超过 24 小时的 PENDING 状态记录
+- [x] 11.3 配置定时任务调度
 
 ## 12. 测试
 
