@@ -2,17 +2,21 @@ from ai.components.plugin.engine.core.plugin_manager import (
     PluginManagerFactory,
     TenantPluginManager,
 )
+from framework.database.dependencies import get_task_session
+from framework.tenant.context import TenantContext
 
 
 class BasePluginClient:
     async def _get_plugin_manager(self, tenant_id: str) -> TenantPluginManager:
-        plugin_manager: TenantPluginManager = await PluginManagerFactory.get_manager(
-            tenant_id
-        )
-        # 确保插件管理器已初始化
-        if not plugin_manager._initialized:
-            await plugin_manager.initialize()
-        return plugin_manager
+        TenantContext.set_tenant_id(tenant_id)
+        async with get_task_session() as session:
+            plugin_manager: TenantPluginManager = await PluginManagerFactory.get_manager(
+                tenant_id, session
+            )
+            # 确保插件管理器已初始化
+            if not plugin_manager._initialized:
+                await plugin_manager.initialize(session)
+            return plugin_manager
 
     def _extract_result_data(self, result: dict) -> dict:
         """

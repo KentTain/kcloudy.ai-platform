@@ -14,6 +14,8 @@ from typing import Any
 from loguru import logger
 
 from ai.components.plugin.engine.core.plugin_manager import PluginManagerFactory
+from framework.database.dependencies import get_task_session
+from framework.tenant.context import TenantContext
 
 
 class TaskStatus(Enum):
@@ -145,9 +147,12 @@ class InstallTaskManager:
     async def get_plugin_manager(self):
         """获取插件管理器"""
         if self._plugin_manager is None:
-            # 延迟导入避免循环引用
-
-            self._plugin_manager = await PluginManagerFactory.get_manager("")
+            # 设置租户上下文并获取 session
+            TenantContext.set_tenant_id(self.current_tenant_id)
+            async with get_task_session() as session:
+                self._plugin_manager = await PluginManagerFactory.get_manager(
+                    self.current_tenant_id, session
+                )
         return self._plugin_manager
 
     async def create_install_task(
