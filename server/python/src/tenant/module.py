@@ -50,6 +50,9 @@ class TenantModule:
         from tenant.controllers.admin.tenant_controller import (
             router as admin_tenant_router,
         )
+        from tenant.controllers.admin.plugin_controller import (
+            router as admin_plugin_router,
+        )
         from tenant.controllers.admin.tenant_module_controller import (
             router as admin_tenant_module_router,
         )
@@ -64,6 +67,7 @@ class TenantModule:
             (admin_tenant_router, "/tenant/admin/v1", ["Admin - Tenant"]),
             (admin_resource_router, "/tenant/admin/v1", ["Admin - Resource Config"]),
             (admin_module_router, "/tenant/admin/v1", ["Admin - Module"]),
+            (admin_plugin_router, "/tenant/admin/v1", ["Admin - Plugin"]),
             (admin_tenant_module_router, "/tenant/admin/v1", ["Admin - Tenant Module"]),
             (console_tenant_router, "/tenant/console/v1/tenants", ["Console - Tenant"]),
             (inner_tenant_router, "/tenant/inner/v1", ["Inner - Tenant"]),
