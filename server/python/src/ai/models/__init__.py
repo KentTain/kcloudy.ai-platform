@@ -31,6 +31,8 @@ from .plugin import (
     SourceType,
     TaskStatus,
 )
+from .plugin_config import PluginConfig
+from .plugin_runtime_state import PluginRuntimeState
 
 __all__ = [
     # Base
@@ -48,10 +50,12 @@ __all__ = [
     "ModelType",
     # 插件相关
     "Plugin",
+    "PluginConfig",
     "PluginDeclaration",
     "PluginInstallation",
     "PluginInstallTask",
     "PluginCredential",
+    "PluginRuntimeState",
     # 模型提供商相关
     "ModelProvider",
     "ModelConfig",
