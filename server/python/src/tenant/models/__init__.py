@@ -29,6 +29,8 @@ from .tenant_admin import TenantAdmin
 from .tenant_business_config import TenantBusinessConfig
 from .tenant_config import TenantConfig
 from .tenant_module import TenantModule
+from .plugin_definition import TenantPluginDefinition
+from .plugin_installation import TenantPluginInstallation
 
 __all__ = [
     "Base",
@@ -54,4 +56,7 @@ __all__ = [
     "ModulePermission",
     "ModuleRole",
     "ModuleRolePermission",
+    # 插件管理
+    "TenantPluginDefinition",
+    "TenantPluginInstallation",
 ]

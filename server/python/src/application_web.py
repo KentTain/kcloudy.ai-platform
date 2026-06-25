@@ -97,6 +97,21 @@ async def lifespan(app: FastAPI):
             _logger.exception(f"TenantRoleCreator 注册失败: {e}")
             phase.details["TenantRoleCreator"] = "不可用"
 
+        # 注册 PluginInstallationProvider（由 Tenant 模块实现）
+        try:
+            from framework.tenant.plugin_protocols import (
+                register_plugin_installation_provider,
+            )
+            from tenant.services.plugin_provider import (
+                plugin_installation_provider_impl,
+            )
+
+            register_plugin_installation_provider(plugin_installation_provider_impl)
+            phase.details["PluginInstallationProvider"] = "已注册"
+        except ImportError as e:
+            _logger.exception(f"PluginInstallationProvider 注册失败: {e}")
+            phase.details["PluginInstallationProvider"] = "不可用"
+
     with timer.phase("数据库迁移验证", order=2.5) as phase:
         # 验证并自动运行数据库迁移
         src_path = Path(__file__).parent

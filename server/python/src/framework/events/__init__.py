@@ -23,6 +23,26 @@ from framework.events.domain_events import (
     ModuleRoleUpdated,
     ModuleUnassigned,
 )
+from framework.events.domain_events import (
+    ModuleAssigned,
+    ModuleMenuCreated,
+    ModuleMenuDeleted,
+    ModuleMenuPermissionCreated,
+    ModuleMenuPermissionDeleted,
+    ModuleMenuUpdated,
+    ModulePermissionCreated,
+    ModulePermissionDeleted,
+    ModulePermissionUpdated,
+    ModuleRoleCreated,
+    ModuleRoleDeleted,
+    ModuleRolePermissionChanged,
+    ModuleRolePermissionCreated,
+    ModuleRolePermissionDeleted,
+    ModuleRoleUpdated,
+    ModuleUnassigned,
+    PluginInstallationFailed,
+    PluginUninstallFailed,
+)
 from framework.events.publisher import EventPublisher, event_publisher
 
 __all__ = [
@@ -49,6 +69,9 @@ __all__ = [
     # 模块菜单权限事件
     "ModuleMenuPermissionCreated",
     "ModuleMenuPermissionDeleted",
+    # 插件事件
+    "PluginInstallationFailed",
+    "PluginUninstallFailed",
     # 发布器
     "EventPublisher",
     "event_publisher",
