@@ -87,14 +87,14 @@
 
 ## 12. 测试
 
-- [ ] 12.1 编写 `PluginPackageService` 单元测试（manifest 解析、校验和计算）
-- [ ] 12.2 编写 `PluginDefinitionService` 单元测试（注册、查询、标记、删除）
-- [ ] 12.3 编写 Tenant 插件定义管理 API 集成测试
-- [ ] 12.4 编写 `InstallTaskService` 单元测试（任务创建、状态更新）
-- [ ] 12.5 编写安装任务消费者集成测试
-- [ ] 12.6 编写 AI 插件安装/卸载 API 集成测试
-- [ ] 12.7 编写 AI 运行时管理 API 集成测试
-- [ ] 12.8 编写权限校验测试
+- [x] 12.1 编写 `PluginPackageService` 单元测试（manifest 解析、校验和计算）
+- [x] 12.2 编写 `PluginDefinitionService` 单元测试（注册、查询、标记、删除）
+- [x] 12.3 编写 Tenant 插件定义管理 API 集成测试
+- [x] 12.4 编写 `InstallTaskService` 单元测试（任务创建、状态更新）
+- [x] 12.5 编写安装任务消费者集成测试
+- [x] 12.6 编写 AI 插件安装/卸载 API 集成测试
+- [x] 12.7 编写 AI 运行时管理 API 集成测试
+- [x] 12.8 编写权限校验测试
 
 ## 13. 文档与配置
 
