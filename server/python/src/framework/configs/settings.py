@@ -287,6 +287,19 @@ class PluginSettings(BaseSettings):
     )
     expose_plugin_endpoints: bool = Field(default=True, description="是否暴露插件端点")
 
+    # 存储配置
+    storage_bucket: str = Field(default="plugins", description="插件包存储桶名称")
+
+    # 任务配置
+    install_task_timeout_seconds: int = Field(
+        default=1800, description="安装任务超时时间（秒），默认 30 分钟"
+    )
+
+    # 缓存配置
+    runtime_state_cache_ttl: int = Field(
+        default=60, description="运行时状态缓存 TTL（秒）"
+    )
+
     # Python 环境
     python_version: str = Field(default="3.12", description="插件 Python 版本")
     uv_path: str | None = Field(default=None, description="uv 可执行文件路径")

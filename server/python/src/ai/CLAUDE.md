@@ -37,6 +37,8 @@ AI 模块 API 路由遵循 `/{模块}/{类型}/v1/{功能}` 格式：
 
 ### 完整路由表
 
+#### 模型管理
+
 | 方法 | 路径 | 说明 |
 |------|------|------|
 | GET | `/ai/admin/v1/models` | 获取模型列表 |
@@ -47,6 +49,23 @@ AI 模块 API 路由遵循 `/{模块}/{类型}/v1/{功能}` 格式：
 | POST | `/ai/console/v1/chat-messages` | 发送聊天消息 |
 | GET | `/ai/console/v1/chat-messages` | 获取聊天历史 |
 | GET | `/ai/inner/v1/models/{id}` | 内部接口：获取模型配置 |
+
+#### 插件安装与使用（2026-06-25 新增）
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| GET | `/ai/console/v1/plugins/available` | 获取可用插件列表 |
+| POST | `/ai/console/v1/plugins/installations` | 安装插件 |
+| GET | `/ai/console/v1/plugins/install-tasks` | 获取安装任务列表 |
+| GET | `/ai/console/v1/plugins/install-tasks/{task_id}` | 获取安装任务详情 |
+| DELETE | `/ai/console/v1/plugins/installations/{plugin_id}` | 卸载插件 |
+| POST | `/ai/console/v1/plugins/installations/{plugin_id}/start` | 启动插件 |
+| POST | `/ai/console/v1/plugins/installations/{plugin_id}/stop` | 停止插件 |
+| GET | `/ai/console/v1/plugins/installations/{plugin_id}/config` | 获取插件配置 |
+| PATCH | `/ai/console/v1/plugins/installations/{plugin_id}/config` | 更新插件配置 |
+| GET | `/ai/console/v1/plugins/installations/{plugin_id}/runtime-state` | 获取插件运行时状态 |
+| GET | `/ai/console/v1/plugins/runtime-states` | 批量获取运行时状态 |
+| GET | `/ai/console/v1/plugins/statistics` | 获取插件统计数据 |
 
 ## 核心组件
 

@@ -98,6 +98,6 @@
 
 ## 13. 文档与配置
 
-- [ ] 13.1 更新 `tenant/CLAUDE.md` 文档（新增 API 端点说明）
-- [ ] 13.2 更新 `ai/CLAUDE.md` 文档（新增 API 端点说明）
-- [ ] 13.3 添加配置项：MinIO bucket 名称、任务超时时间、缓存 TTL
+- [x] 13.1 更新 `tenant/CLAUDE.md` 文档（新增 API 端点说明）
+- [x] 13.2 更新 `ai/CLAUDE.md` 文档（新增 API 端点说明）
+- [x] 13.3 添加配置项：MinIO bucket 名称、任务超时时间、缓存 TTL

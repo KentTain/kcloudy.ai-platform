@@ -16,12 +16,10 @@ from framework.storage import get_storage_provider
 class PluginStorageService:
     """插件存储服务"""
 
-    # 插件存储桶名称
-    BUCKET_NAME = "plugins"
-
     def __init__(self):
         """初始化存储服务"""
         self._storage = get_storage_provider(settings.oss)
+        self._bucket_name = settings.plugin.storage_bucket
         self._initialized = False
 
     async def _ensure_bucket(self) -> None:
@@ -30,10 +28,10 @@ class PluginStorageService:
             return
 
         try:
-            exists = await self._storage.bucket_exists(self.BUCKET_NAME)
+            exists = await self._storage.bucket_exists(self._bucket_name)
             if not exists:
-                await self._storage.create_bucket(self.BUCKET_NAME)
-                logger.info(f"创建插件存储桶: {self.BUCKET_NAME}")
+                await self._storage.create_bucket(self._bucket_name)
+                logger.info(f"创建插件存储桶: {self._bucket_name}")
             self._initialized = True
         except Exception as e:
             logger.error(f"初始化插件存储桶失败: {e}")
@@ -67,12 +65,12 @@ class PluginStorageService:
 
         try:
             await self._storage.upload(
-                bucket=self.BUCKET_NAME,
+                bucket=self._bucket_name,
                 name=object_key,
                 data=package_data,
                 content_type="application/zip",
             )
-            logger.info(f"上传插件包成功: {self.BUCKET_NAME}/{object_key}")
+            logger.info(f"上传插件包成功: {self._bucket_name}/{object_key}")
             return object_key
         except Exception as e:
             logger.error(f"上传插件包失败: {plugin_id}/{version} - {e}")
@@ -92,9 +90,9 @@ class PluginStorageService:
         object_key = f"{plugin_id}/{version}.zip"
 
         try:
-            result = await self._storage.delete(self.BUCKET_NAME, object_key)
+            result = await self._storage.delete(self._bucket_name, object_key)
             if result:
-                logger.info(f"删除插件包成功: {self.BUCKET_NAME}/{object_key}")
+                logger.info(f"删除插件包成功: {self._bucket_name}/{object_key}")
             return result
         except Exception as e:
             logger.error(f"删除插件包失败: {plugin_id}/{version} - {e}")
@@ -113,14 +111,14 @@ class PluginStorageService:
         try:
             # 列出该插件的所有版本
             objects = await self._storage.list_objects(
-                bucket=self.BUCKET_NAME,
+                bucket=self._bucket_name,
                 prefix=f"{plugin_id}/",
                 recursive=True,
             )
 
             deleted_count = 0
             for object_key in objects:
-                if await self._storage.delete(self.BUCKET_NAME, object_key):
+                if await self._storage.delete(self._bucket_name, object_key):
                     deleted_count += 1
 
             logger.info(f"删除插件所有版本: {plugin_id}, 共 {deleted_count} 个文件")
@@ -148,7 +146,7 @@ class PluginStorageService:
         """
         object_key = f"{plugin_id}/{version}.zip"
         return await self._storage.get_presigned_url(
-            bucket=self.BUCKET_NAME,
+            bucket=self._bucket_name,
             name=object_key,
             expires=expires,
         )
@@ -165,7 +163,7 @@ class PluginStorageService:
             bool: 是否存在
         """
         object_key = f"{plugin_id}/{version}.zip"
-        return await self._storage.exists(self.BUCKET_NAME, object_key)
+        return await self._storage.exists(self._bucket_name, object_key)
 
     async def download_package(self, plugin_id: str, version: str) -> bytes:
         """
@@ -179,7 +177,7 @@ class PluginStorageService:
             bytes: 插件包二进制数据
         """
         object_key = f"{plugin_id}/{version}.zip"
-        return await self._storage.download(self.BUCKET_NAME, object_key)
+        return await self._storage.download(self._bucket_name, object_key)
 
 
 # 单例实例

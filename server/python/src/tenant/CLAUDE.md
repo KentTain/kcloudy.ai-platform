@@ -57,11 +57,17 @@ Tenant 模块 API 路由遵循 `/{模块}/{类型}/v1/{功能}` 格式：
 | GET | `/tenant/console/v1/tenants/current` | 获取当前租户信息 |
 | GET | `/tenant/inner/v1/tenants/{id}` | 内部接口：获取租户信息 |
 
-#### 插件资源管理（2026-06-25 新增）
+#### 插件定义管理（2026-06-25 新增）
 
 | 方法 | 路径 | 说明 |
 |------|------|------|
-| GET | `/tenant/admin/v1/plugins` | 获取插件定义列表 |
+| POST | `/tenant/admin/v1/plugin-definitions/scan` | 扫描服务器目录注册插件 |
+| POST | `/tenant/admin/v1/plugin-definitions/upload` | 上传插件包注册 |
+| GET | `/tenant/admin/v1/plugin-definitions` | 获取插件定义列表 |
+| GET | `/tenant/admin/v1/plugin-definitions/{plugin_id}` | 获取插件定义详情 |
+| PATCH | `/tenant/admin/v1/plugin-definitions/{plugin_id}` | 更新插件定义（标记推荐/禁用） |
+| DELETE | `/tenant/admin/v1/plugin-definitions/{plugin_id}` | 删除插件定义 |
+| GET | `/tenant/admin/v1/plugin-definitions/statistics` | 获取插件定义统计数据 |
 
 **注意**：插件安装记录的 CRUD 通过 `PluginInstallationProvider` 协议提供给 AI 模块，不直接暴露 HTTP API。
 
