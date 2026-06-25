@@ -6,21 +6,30 @@ Tenant 模块与 AI 模块之间的契约。
 """
 
 from dataclasses import dataclass, field
+from datetime import datetime
 from typing import Protocol
 
 
 @dataclass
 class PluginInstallationDTO:
-    """安装记录 DTO"""
+    """安装记录 DTO
+
+    用于 Tenant 模块与 AI 模块之间传递插件安装信息。
+    """
 
     tenant_id: str
     plugin_id: str
     plugin_unique_identifier: str
+    declaration: dict  # 完整声明内容
     status: str = "PENDING"  # PENDING / ACTIVE / INACTIVE / FAILED
     auto_start: bool = False
     freeze_threshold_hours: int = 24
     plugin_type: str | None = None
     runtime_type: str | None = None
+    installed_at: datetime | None = None  # 安装完成时间
+    install_config: dict | None = None  # 安装配置
+    source: str | None = None  # 来源
+    meta: dict | None = None  # 元数据
 
 
 @dataclass
@@ -29,10 +38,10 @@ class PluginDefinitionDTO:
 
     plugin_id: str
     plugin_unique_identifier: str
+    declaration: dict  # 完整声明内容
     install_type: str
     refers: int = 0
     manifest_type: str | None = None
-    remote_declaration: dict | None = None
 
 
 @dataclass
