@@ -39,6 +39,13 @@ def _register_modules() -> None:
     except ImportError:
         pass
 
+    try:
+        from iam.migrations.seeds import plugin_seed
+
+        SEED_MODULES["plugin"] = plugin_seed.run
+    except ImportError:
+        pass
+
 
 # 模块加载时注册
 _register_modules()

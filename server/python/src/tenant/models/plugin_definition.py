@@ -10,7 +10,8 @@
 - 引用计数机制（refers 字段）
 """
 
-from sqlalchemy import Integer, String
+from sqlalchemy import Boolean, Integer, String
+import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -69,4 +70,18 @@ class TenantPluginDefinition(BaseModel, AuditMixin, ActiveRecordMixin):
         String(32),
         nullable=True,
         comment="清单类型",
+    )
+    is_recommended: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=False,
+        server_default=sa.text("false"),
+        comment="是否推荐",
+    )
+    is_enabled: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=True,
+        server_default=sa.text("true"),
+        comment="是否启用",
     )

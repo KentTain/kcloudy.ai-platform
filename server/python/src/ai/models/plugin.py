@@ -60,9 +60,11 @@ class SourceType(str, Enum):
 class TaskStatus(str, Enum):
     """任务状态枚举"""
 
+    PENDING = "pending"
     RUNNING = "running"
-    SUCCESS = "success"
+    COMPLETED = "completed"
     FAILED = "failed"
+    TIMEOUT = "timeout"
 
 
 class PluginStatus(str, Enum):
@@ -149,25 +151,63 @@ class PluginInstallTask(
     ActiveRecordMixin,
     TenantMixin,
 ):
-    """插件安装任务模型"""
+    """插件安装任务模型
+
+    用于异步安装任务追踪，支持 Redis Stream 任务队列。
+
+    状态流转：
+    pending → running → completed / failed / timeout
+    """
 
     __tablename__ = "plugin_install_tasks"
 
+    plugin_id: Mapped[str] = mapped_column(
+        String(128),
+        nullable=False,
+        index=True,
+        comment="插件ID",
+    )
+    plugin_unique_identifier: Mapped[str] = mapped_column(
+        String(256),
+        nullable=False,
+        comment="插件唯一标识符",
+    )
     status: Mapped[str] = mapped_column(
         String(16),
         nullable=False,
-        comment="状态，running, success, failed",
+        default="pending",
+        comment="状态: pending, running, completed, failed, timeout",
     )
-    total_plugins: Mapped[int] = mapped_column(
-        Integer, nullable=False, comment="总插件数"
+    progress: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        default=0,
+        comment="进度百分比 (0-100)",
     )
-    completed_plugins: Mapped[int] = mapped_column(
-        Integer, nullable=False, comment="已完成插件数"
+    current_step: Mapped[str | None] = mapped_column(
+        String(64),
+        nullable=True,
+        comment="当前步骤描述",
     )
-    plugins: Mapped[dict | None] = mapped_column(
+    steps: Mapped[dict | None] = mapped_column(
         JSON,
         nullable=True,
-        comment="插件状态列表，json格式，包含插件ID、状态、错误信息等",
+        comment="步骤列表与状态",
+    )
+    error_message: Mapped[str | None] = mapped_column(
+        Text,
+        nullable=True,
+        comment="错误信息",
+    )
+    started_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+        comment="开始时间",
+    )
+    completed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+        comment="完成时间",
     )
 
 
