@@ -2,7 +2,12 @@
 插件定义模型
 
 对应 tenant schema 下的 plugin_definitions 表，
-作为全局插件注册表，合并原 ai.plugins + ai.plugin_declarations。
+作为全局插件注册表，实现"有什么"（资源定义）的职责。
+
+架构变更（2026-06-25）：
+- 替代原 ai.plugins + ai.plugin_declarations 表
+- 引用计数机制（refers 字段）
+- 支持远程声明（remote_declaration 字段）
 """
 
 from sqlalchemy import Integer, JSON, String

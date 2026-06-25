@@ -20,10 +20,7 @@ from .model_provider import ModelProvider, ProviderType
 from .plugin import (
     CredentialScope,
     InstallType,
-    Plugin,
     PluginCredential,
-    PluginDeclaration,
-    PluginInstallation,
     PluginInstallTask,
     PluginStatus,
     PluginType,
@@ -49,10 +46,7 @@ __all__ = [
     "ProviderType",
     "ModelType",
     # 插件相关
-    "Plugin",
     "PluginConfig",
-    "PluginDeclaration",
-    "PluginInstallation",
     "PluginInstallTask",
     "PluginCredential",
     "PluginRuntimeState",

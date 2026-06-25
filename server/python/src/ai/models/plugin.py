@@ -1,7 +1,12 @@
 """
 插件相关数据库模型
 
-包含插件、插件安装、插件凭证等模型。
+包含插件安装任务、插件凭证等模型。
+
+架构变更（2026-06-25）：
+- Plugin、PluginDeclaration、PluginInstallation 模型已迁移至 Tenant 模块
+- 保留 PluginInstallTask（插件安装任务）
+- 保留 PluginCredential（插件凭证）
 """
 
 from datetime import datetime
@@ -138,198 +143,6 @@ class PluginConfigJSON(TypeDecorator):
 # ======================= 模型定义 =======================
 
 
-class Plugin(BaseModel, AuditMixin, ActiveRecordMixin):
-    """插件模型，全局，不分租户"""
-
-    __tablename__ = "plugins"
-
-    plugin_id: Mapped[str] = mapped_column(
-        String(128),
-        nullable=False,
-        index=True,
-        comment="插件ID，manifest中的author+name，例如alon/tongyi",
-    )
-    plugin_unique_identifier: Mapped[str] = mapped_column(
-        String(256),
-        nullable=False,
-        unique=True,
-        comment="插件唯一标识符，格式：{plugin_id}:{version}@{校验和}",
-    )
-    # 引用计数
-    refers: Mapped[int] = mapped_column(
-        Integer, default=0, nullable=False, comment="引用计数，计算不同租户的引用计数"
-    )
-    # 安装类型
-    install_type: Mapped[str] = mapped_column(
-        String(16),
-        nullable=False,
-        index=True,
-        comment="安装类型，local, remote",
-    )
-    # 清单类型
-    manifest_type: Mapped[str | None] = mapped_column(
-        String(32), nullable=True, comment="清单类型"
-    )
-    remote_declaration: Mapped[dict | None] = mapped_column(
-        JSON,
-        nullable=True,
-        comment="远程声明，当插件为远程类型时启用",
-    )
-
-
-class PluginDeclaration(BaseModel, AuditMixin, ActiveRecordMixin):
-    """插件声明模型，全局，不分租户"""
-
-    __tablename__ = "plugin_declarations"
-
-    plugin_id: Mapped[str] = mapped_column(
-        String(128),
-        nullable=False,
-        index=True,
-        comment="插件ID，manifest中的author+name，例如alon/tongyi",
-    )
-    plugin_unique_identifier: Mapped[str] = mapped_column(
-        String(256),
-        nullable=False,
-        unique=True,
-        comment="插件唯一标识符，格式：{plugin_id}:{version}@{校验和}",
-    )
-    declaration: Mapped[dict] = mapped_column(
-        JSON,
-        nullable=False,
-        comment="声明内容，插件完整声明内容，包括插件的manifest信息+里面的工具、模型等信息",
-    )
-
-
-class PluginInstallation(
-    BaseModel,
-    AuditMixin,
-    ActiveRecordMixin,
-    TenantMixin,
-):
-    """插件安装记录，按租户隔离"""
-
-    __tablename__ = "plugin_installations"
-
-    plugin_id: Mapped[str] = mapped_column(
-        String(128),
-        nullable=False,
-        index=True,
-        comment="插件ID，manifest中的author+name，例如alon/tongyi",
-    )
-    plugin_unique_identifier: Mapped[str] = mapped_column(
-        String(256),
-        nullable=False,
-        index=True,
-        comment="插件唯一标识符，格式：{plugin_id}:{version}@{校验和}",
-    )
-    runtime_type: Mapped[str] = mapped_column(
-        String(16),
-        nullable=False,
-        comment="运行时类型，local, remote, container",
-    )
-    plugin_type: Mapped[str] = mapped_column(
-        String(16),
-        nullable=False,
-        comment="插件类型，tool, model, agent, etc.",
-    )
-
-    # === 运行状态管理字段 ===
-    status: Mapped[str] = mapped_column(
-        String(16),
-        nullable=False,
-        default=PluginStatus.ACTIVE.value,
-        comment="插件运行状态",
-    )
-
-    # === 生命周期时间戳 ===
-    installed_at: Mapped[datetime | None] = mapped_column(
-        DateTime, nullable=True, comment="安装完成时间"
-    )
-    last_started_at: Mapped[datetime | None] = mapped_column(
-        DateTime, nullable=True, comment="最后启动时间"
-    )
-    last_stopped_at: Mapped[datetime | None] = mapped_column(
-        DateTime, nullable=True, comment="最后停止时间"
-    )
-    last_accessed_at: Mapped[datetime | None] = mapped_column(
-        DateTime,
-        nullable=True,
-        comment="最后访问时间（用于冻结判断）",
-    )
-    frozen_at: Mapped[datetime | None] = mapped_column(
-        DateTime, nullable=True, comment="冻结时间"
-    )
-
-    # === 运行时信息 ===
-    process_id: Mapped[int | None] = mapped_column(
-        Integer, nullable=True, comment="进程ID（运行时）"
-    )
-    port: Mapped[int | None] = mapped_column(
-        Integer, nullable=True, comment="运行端口（运行时）"
-    )
-    work_directory: Mapped[str | None] = mapped_column(
-        String(512), nullable=True, comment="工作目录路径"
-    )
-
-    # === 性能和健康状态 ===
-    call_count: Mapped[int] = mapped_column(
-        Integer, nullable=False, default=0, comment="调用次数统计"
-    )
-    error_count: Mapped[int] = mapped_column(
-        Integer, nullable=False, default=0, comment="错误次数统计"
-    )
-    last_error: Mapped[str | None] = mapped_column(
-        Text, nullable=True, comment="最后错误信息"
-    )
-    health_check_at: Mapped[datetime | None] = mapped_column(
-        DateTime, nullable=True, comment="最后健康检查时间"
-    )
-
-    # === 安装配置信息 ===
-    install_config: Mapped[dict | None] = mapped_column(
-        JSON,
-        nullable=True,
-        comment="安装时的配置信息（依赖版本、环境信息等）",
-    )
-    runtime_config: Mapped[dict | None] = mapped_column(
-        JSON, nullable=True, comment="运行时配置信息"
-    )
-
-    # === 自动管理配置 ===
-    auto_start: Mapped[bool] = mapped_column(
-        Boolean, nullable=False, default=False, comment="服务重启时是否自动启动"
-    )
-    freeze_threshold_hours: Mapped[int] = mapped_column(
-        Integer,
-        nullable=False,
-        default=24,
-        comment="冻结阈值（小时），超过此时间未访问则自动冻结",
-    )
-
-    endpoints_setups: Mapped[int] = mapped_column(
-        Integer, nullable=False, default=0, comment="端点设置数"
-    )
-    endpoints_active: Mapped[int] = mapped_column(
-        Integer, nullable=False, default=0, comment="活跃端点数"
-    )
-    source: Mapped[str | None] = mapped_column(
-        String(16),
-        nullable=True,
-        comment="来源，package, marketplace",
-    )
-    meta: Mapped[dict | None] = mapped_column(
-        JSON,
-        nullable=True,
-        comment="元数据, json格式，marketplace会记录插件的meta信息",
-    )
-    plugin_config: Mapped[dict | None] = mapped_column(
-        PluginConfigJSON,
-        nullable=True,
-        comment="插件配置, json格式，marketplace会记录插件的配置信息",
-    )
-
-
 class PluginInstallTask(
     BaseModel,
     AuditMixin,
@@ -391,16 +204,27 @@ class PluginCredential(
         String(16),
         nullable=False,
         default=CredentialScope.GLOBAL.value,
-        comment="凭证作用域：global(全局)/personal(个人)",
+        comment="作用域，global全局、personal个人",
     )
 
-    # 基本信息
-    name: Mapped[str] = mapped_column(String(128), nullable=False, comment="凭证名称")
-    provider_name: Mapped[str | None] = mapped_column(
-        String(128), nullable=True, comment="工具提供者名"
+    # 凭证名称（租户级唯一）
+    name: Mapped[str] = mapped_column(
+        String(64),
+        nullable=False,
+        comment="凭证名称，租户级唯一",
     )
 
-    # 凭证内容（密文字段加密在服务层处理，这里按JSON存储）
+    # 凭证内容（加密存储）
     credentials: Mapped[dict] = mapped_column(
-        JSON, nullable=False, comment="凭证JSON（密文字段加密）"
+        JSON,
+        nullable=False,
+        comment="凭证内容，JSON格式",
+    )
+
+    # 是否禁用
+    is_disabled: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=False,
+        comment="是否禁用",
     )

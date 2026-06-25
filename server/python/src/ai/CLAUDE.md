@@ -156,13 +156,40 @@ result = await client.search(
 - **Tool**: 工具插件
 - **Agent**: Agent 策略插件
 
+### 架构变更（2026-06-25）
+
+插件资源管理职责从 AI 模块迁移至 Tenant 模块，实现"有什么"（资源定义）与"用什么"（运行时配置）的职责分离。
+
 ### 数据库表
+
+#### Tenant Schema
 
 | 表名 | 说明 | 租户隔离 |
 |------|------|----------|
-| ai.plugins | 插件全局注册表 | 否 |
-| ai.plugin_installations | 插件安装实例 | 是 |
+| tenant.plugin_definitions | 全局插件注册表（替代原 ai.plugins + ai.plugin_declarations） | 否 |
+| tenant.plugin_installations | 租户级安装记录（仅管理面字段） | 是 |
+
+#### AI Schema
+
+| 表名 | 说明 | 租户隔离 |
+|------|------|----------|
+| ai.plugin_configs | 插件配置（从 plugin_installations 剥离） | 是 |
+| ai.plugin_runtime_states | 运行时状态（从 plugin_installations 剥离） | 是 |
 | ai.plugin_credentials | 插件凭证 | 是 |
+
+### Provider 协议
+
+AI 模块通过 `PluginInstallationProvider` 访问 Tenant 侧的安装记录，不直接访问 Tenant Schema。
+
+```python
+from framework.tenant.plugin_protocols import get_plugin_installation_provider
+
+# 获取 Provider 实例
+provider = get_plugin_installation_provider()
+
+# 查询插件安装记录
+installation = await provider.get_installation(tenant_id, plugin_id)
+```
 
 ## 开发规则
 

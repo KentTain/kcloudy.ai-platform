@@ -15,7 +15,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from ai.models.plugin import (
     CredentialScope,
     PluginCredential,
-    PluginInstallation,
     PluginStatus,
     PluginType,
 )
@@ -33,7 +32,10 @@ from ai.schemas.plugin import (
 from ai.services.credential_service import credential_service
 from framework.common.ctx import get_tenant_id, get_user_id
 from framework.common.exceptions import BadRequestError
-from framework.tenant.plugin_protocols import get_plugin_installation_provider
+from framework.tenant.plugin_protocols import (
+    PluginInstallationDTO,
+    get_plugin_installation_provider,
+)
 
 _logger = logger.bind(name=__name__)
 
@@ -208,30 +210,34 @@ class PluginManagementService:
         credential_id: str,
     ) -> PluginCredentialVo:
         """获取凭证详情"""
+        tenant_id = get_tenant_id()
         record = await PluginCredential.one_by_id(session, credential_id)
         if not record:
             raise ValueError("凭证不存在")
 
-        # 读取安装记录与 schema
-        result = await session.execute(
-            select(PluginInstallation).where(
-                and_(
-                    PluginInstallation.plugin_id == record.plugin_id,
-                ),
-            ),
-        )
-        installation = result.scalar_one_or_none()
+        # 读取安装记录（通过 Provider）与 schema
+        provider = get_plugin_installation_provider()
+        installation_dto = await provider.get_installation(tenant_id, record.plugin_id)
 
         # 提取凭证架构
         credentials_schema = []
-        if installation and installation.plugin_config:
-            credentials_schema = credential_service.extract_credentials_schema(
-                installation.plugin_config
+        if installation_dto:
+            # 获取 AI 侧配置
+            ai_config_result = await session.execute(
+                select(AIPluginConfig).where(
+                    AIPluginConfig.tenant_id == tenant_id,
+                    AIPluginConfig.plugin_id == record.plugin_id,
+                )
             )
+            ai_config = ai_config_result.scalar_one_or_none()
+            if ai_config and ai_config.plugin_config:
+                credentials_schema = credential_service.extract_credentials_schema(
+                    ai_config.plugin_config
+                )
 
         # 解密并脱敏
         decrypted = record.credentials or {}
-        if installation and credentials_schema:
+        if credentials_schema:
             decrypted = credential_service.decrypt_credentials(
                 record.credentials or {},
                 credentials_schema,
@@ -350,22 +356,26 @@ class PluginManagementService:
         if not record:
             raise ValueError("凭证不存在")
 
-        # 查询安装记录
-        result = await session.execute(
-            select(PluginInstallation).where(
-                and_(
-                    PluginInstallation.tenant_id == tenant_id,
-                    PluginInstallation.plugin_id == plugin_id,
-                ),
-            ),
-        )
-        installation = result.scalar_one_or_none()
-        if installation is None:
+        # 查询安装记录（通过 Provider）
+        provider = get_plugin_installation_provider()
+        installation_dto = await provider.get_installation(tenant_id, plugin_id)
+        if installation_dto is None:
             raise ValueError(f"插件不存在: {plugin_id}")
 
-        credentials_schema = credential_service.extract_credentials_schema(
-            installation.plugin_config
+        # 获取 AI 侧配置用于凭证架构
+        ai_config_result = await session.execute(
+            select(AIPluginConfig).where(
+                AIPluginConfig.tenant_id == tenant_id,
+                AIPluginConfig.plugin_id == plugin_id,
+            )
         )
+        ai_config = ai_config_result.scalar_one_or_none()
+
+        credentials_schema = []
+        if ai_config and ai_config.plugin_config:
+            credentials_schema = credential_service.extract_credentials_schema(
+                ai_config.plugin_config
+            )
 
         update_data: dict[str, Any] = {}
         if obj_in.name is not None:
@@ -759,74 +769,27 @@ class PluginManagementService:
             last_error=runtime_state.last_error if runtime_state else None,
         )
 
-    async def _convert_installation_to_vo(
-        self, installation: PluginInstallation
-    ) -> PluginInfoVo:
-        """将数据库模型转换为VO对象"""
-        if installation.plugin_config is None:
-            raise ValueError(f"插件配置不存在: {installation.plugin_id}")
-
-        plugin_config = installation.plugin_config.get("configuration", {})
-
-        # 从 plugin_config 中获取信息
-        return PluginInfoVo(
-            plugin_id=installation.plugin_id,
-            plugin_name=plugin_config.get("label", {}).get("zh_Hans")
-            or installation.plugin_id.split("/")[-1],
-            version=plugin_config.get("version", ""),
-            author=plugin_config.get("author", "unknown"),
-            description=plugin_config.get("description", {}).get("zh_Hans", ""),
-            icon=plugin_config.get("icon"),
-            status=installation.status.value
-            if hasattr(installation.status, "value")
-            else str(installation.status),
-            plugin_type=installation.plugin_type.value
-            if hasattr(installation.plugin_type, "value")
-            else str(installation.plugin_type),
-            runtime_type=installation.runtime_type.value
-            if hasattr(installation.runtime_type, "value")
-            else str(installation.runtime_type),
-            auto_start=installation.auto_start,
-            installed_at=installation.installed_at.isoformat()
-            if installation.installed_at
-            else None,
-            last_started_at=installation.last_started_at.isoformat()
-            if installation.last_started_at
-            else None,
-            last_stopped_at=installation.last_stopped_at.isoformat()
-            if installation.last_stopped_at
-            else None,
-            last_accessed_at=installation.last_accessed_at.isoformat()
-            if installation.last_accessed_at
-            else None,
-            process_id=installation.process_id,
-            port=installation.port,
-            call_count=installation.call_count,
-            error_count=installation.error_count,
-            last_error=installation.last_error,
-        )
-
     async def _update_last_accessed_time(
         self,
         session: AsyncSession,
         plugin_id: str,
     ):
-        """更新插件最后访问时间"""
+        """更新插件最后访问时间（更新 AI 侧运行时状态）"""
         tenant_id = get_tenant_id()
 
         result = await session.execute(
-            select(PluginInstallation).where(
+            select(PluginRuntimeState).where(
                 and_(
-                    PluginInstallation.tenant_id == tenant_id,
-                    PluginInstallation.plugin_id == plugin_id,
+                    PluginRuntimeState.tenant_id == tenant_id,
+                    PluginRuntimeState.plugin_id == plugin_id,
                 ),
             ),
         )
-        installation = result.scalar_one_or_none()
+        runtime_state = result.scalar_one_or_none()
 
-        if installation:
-            installation.last_accessed_at = datetime.now()
-            installation.call_count += 1
+        if runtime_state:
+            runtime_state.last_accessed_at = datetime.now()
+            runtime_state.call_count = (runtime_state.call_count or 0) + 1
             await session.flush()
 
     # ==================== 插件资源文件 ====================
