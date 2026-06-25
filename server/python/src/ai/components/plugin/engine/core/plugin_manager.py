@@ -56,6 +56,8 @@ from ai.models.plugin_config import PluginConfig as AIPluginConfig
 from ai.models.plugin_runtime_state import PluginRuntimeState
 from ai_plugin.server.core.entities.plugin.setup import PluginAsset
 from framework.configs.settings import settings
+from framework.events.domain_events import PluginInstallationFailed
+from framework.events.publisher import get_event_publisher
 from framework.storage import get_storage_provider
 from framework.tenant.plugin_protocols import (
     PluginInstallationDTO,
@@ -1356,6 +1358,20 @@ class TenantPluginManager:
                 )
             except Exception:
                 self.logger.exception(f"更新安装状态失败: {plugin_id}")
+
+            # 发布插件安装失败事件，通知 Tenant 侧
+            try:
+                publisher = get_event_publisher()
+                event = PluginInstallationFailed(
+                    tenant_id=self.tenant_id,
+                    plugin_id=plugin_id,
+                    error_message=str(e),
+                )
+                await publisher.publish(event)
+                self.logger.info(f"已发布插件安装失败事件: {plugin_id}")
+            except Exception:
+                self.logger.exception(f"发布插件安装失败事件失败: {plugin_id}")
+
             raise
 
     def convert_to_plugin_type(self, plugin_config: PluginConfig) -> DBPluginType:
