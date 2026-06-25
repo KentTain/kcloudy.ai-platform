@@ -9,7 +9,7 @@ from datetime import datetime
 from typing import Any
 
 from loguru import logger
-from sqlalchemy import and_, desc, select
+from sqlalchemy import and_, delete, desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ai.models.plugin import (
@@ -19,6 +19,8 @@ from ai.models.plugin import (
     PluginStatus,
     PluginType,
 )
+from ai.models.plugin_config import PluginConfig as AIPluginConfig
+from ai.models.plugin_runtime_state import PluginRuntimeState
 from ai.schemas.plugin import (
     CreatePluginCredential,
     PluginCredentialVo,
@@ -31,6 +33,7 @@ from ai.schemas.plugin import (
 from ai.services.credential_service import credential_service
 from framework.common.ctx import get_tenant_id, get_user_id
 from framework.common.exceptions import BadRequestError
+from framework.tenant.plugin_protocols import get_plugin_installation_provider
 
 _logger = logger.bind(name=__name__)
 
@@ -62,39 +65,57 @@ class PluginManagementService:
             f"plugin_id={plugin_id}, plugin_type={plugin_type}, limit={limit}, offset={offset}"
         )
 
-        # 构建查询条件
-        conditions = [PluginInstallation.tenant_id == tenant_id]
+        # 1. 从 Provider 获取租户的插件安装记录
+        provider = get_plugin_installation_provider()
+        installations = await provider.get_tenant_installations(tenant_id)
 
-        if status:
-            conditions.append(PluginInstallation.status == PluginStatus(status))
+        # 2. 获取 AI 侧配置
+        plugin_ids = [inst.plugin_id for inst in installations]
+        if not plugin_ids:
+            return PluginPaginatedListResponseVo(plugins=[], total=0)
 
-        if plugin_id:
-            conditions.append(PluginInstallation.plugin_id.ilike(f"%{plugin_id}%"))
-
-        if plugin_type:
-            conditions.append(PluginInstallation.plugin_type == PluginType(plugin_type))
-
-        # 查询插件列表
-        query = (
-            select(PluginInstallation)
-            .where(and_(*conditions))
-            .order_by(desc(PluginInstallation.created_at))
+        result = await session.execute(
+            select(AIPluginConfig).where(
+                AIPluginConfig.tenant_id == tenant_id,
+                AIPluginConfig.plugin_id.in_(plugin_ids),
+            )
         )
+        ai_configs = {cfg.plugin_id: cfg for cfg in result.scalars().all()}
 
-        # 计算总数
-        total_query = select(PluginInstallation).where(and_(*conditions))
-        total_result = await session.execute(total_query)
-        total = len(total_result.scalars().all())
+        # 3. 获取 AI 侧运行时状态
+        runtime_result = await session.execute(
+            select(PluginRuntimeState).where(
+                PluginRuntimeState.tenant_id == tenant_id,
+                PluginRuntimeState.plugin_id.in_(plugin_ids),
+            )
+        )
+        runtime_states = {st.plugin_id: st for st in runtime_result.scalars().all()}
 
-        # 分页查询
-        paged_query = query.limit(limit).offset(offset)
-        result = await session.execute(paged_query)
-        installations = result.scalars().all()
+        # 4. 组装数据并过滤
+        combined_data = []
+        for inst in installations:
+            # 过滤条件
+            if status and inst.status != status:
+                continue
+            if plugin_id and plugin_id.lower() not in inst.plugin_id.lower():
+                continue
+            if plugin_type and inst.plugin_type != plugin_type:
+                continue
 
-        # 转换为VO对象
+            ai_config = ai_configs.get(inst.plugin_id)
+            runtime_state = runtime_states.get(inst.plugin_id)
+            combined_data.append((inst, ai_config, runtime_state))
+
+        # 5. 排序和分页
+        total = len(combined_data)
+        paged_data = combined_data[offset : offset + limit]
+
+        # 6. 转换为 VO
         plugin_vos = []
-        for installation in installations:
-            plugin_vo = await self._convert_installation_to_vo(installation)
+        for inst, ai_config, runtime_state in paged_data:
+            plugin_vo = await self._convert_combined_data_to_vo(
+                inst, ai_config, runtime_state
+            )
             plugin_vos.append(plugin_vo)
 
         return PluginPaginatedListResponseVo(plugins=plugin_vos, total=total)
@@ -109,20 +130,34 @@ class PluginManagementService:
         if not tenant_id:
             raise ValueError("租户ID不能为空")
 
-        result = await session.execute(
-            select(PluginInstallation).where(
-                and_(
-                    PluginInstallation.tenant_id == tenant_id,
-                    PluginInstallation.plugin_id == plugin_id,
-                ),
-            ),
-        )
-        installation = result.scalar_one_or_none()
+        # 1. 从 Provider 获取安装记录
+        provider = get_plugin_installation_provider()
+        installation_dto = await provider.get_installation(tenant_id, plugin_id)
 
-        if not installation:
+        if not installation_dto:
             raise ValueError(f"插件不存在: {plugin_id}")
 
-        return await self._convert_installation_to_vo(installation)
+        # 2. 查询 AI 侧配置
+        result = await session.execute(
+            select(AIPluginConfig).where(
+                AIPluginConfig.tenant_id == tenant_id,
+                AIPluginConfig.plugin_id == plugin_id,
+            )
+        )
+        ai_config = result.scalar_one_or_none()
+
+        # 3. 查询 AI 侧运行时状态
+        runtime_result = await session.execute(
+            select(PluginRuntimeState).where(
+                PluginRuntimeState.tenant_id == tenant_id,
+                PluginRuntimeState.plugin_id == plugin_id,
+            )
+        )
+        runtime_state = runtime_result.scalar_one_or_none()
+
+        return await self._convert_combined_data_to_vo(
+            installation_dto, ai_config, runtime_state
+        )
 
     # ======================= 凭证管理 =======================
 
@@ -132,19 +167,18 @@ class PluginManagementService:
         plugin_id: str,
     ) -> list[dict[str, Any]]:
         """查询插件的凭证架构"""
+        # 查询 AI 侧配置
         result = await session.execute(
-            select(PluginInstallation).where(
-                and_(
-                    PluginInstallation.plugin_id == plugin_id,
-                ),
-            ),
+            select(AIPluginConfig).where(
+                AIPluginConfig.plugin_id == plugin_id,
+            )
         )
-        installation = result.scalar_one_or_none()
+        ai_config = result.scalar_one_or_none()
 
-        if not installation or not installation.plugin_config:
+        if not ai_config or not ai_config.plugin_config:
             return []
 
-        return credential_service.extract_credentials_schema(installation.plugin_config)
+        return credential_service.extract_credentials_schema(ai_config.plugin_config)
 
     async def list_credentials(
         self,
@@ -227,15 +261,19 @@ class PluginManagementService:
 
         user_id = get_user_id() or ""
 
-        # 获取插件安装记录
-        stmt = select(PluginInstallation).where(
-            and_(
-                PluginInstallation.plugin_id == plugin_id,
-            ),
-        )
-        plugin_installation = (await session.execute(stmt)).scalar_one_or_none()
-        if plugin_installation is None:
+        # 使用 Provider 验证插件存在
+        provider = get_plugin_installation_provider()
+        installation_dto = await provider.get_installation(tenant_id, plugin_id)
+        if installation_dto is None:
             raise ValueError(f"插件不存在: {plugin_id}")
+
+        # 获取 AI 侧配置用于凭证架构
+        ai_config_result = await session.execute(
+            select(AIPluginConfig).where(
+                AIPluginConfig.plugin_id == plugin_id,
+            )
+        )
+        ai_config = ai_config_result.scalar_one_or_none()
 
         # 检查凭证名称是否已存在
         existing_credential_stmt = select(PluginCredential).where(
@@ -251,9 +289,13 @@ class PluginManagementService:
             raise BadRequestError(f"凭证名称 '{name}' 已存在，请使用其他名称")
 
         # 凭证架构
-        credentials_schema = credential_service.extract_credentials_schema(
-            plugin_installation.plugin_config
-        )
+        credentials_schema = []
+        plugin_config_dict = None
+        if ai_config and ai_config.plugin_config:
+            plugin_config_dict = ai_config.plugin_config
+            credentials_schema = credential_service.extract_credentials_schema(
+                plugin_config_dict
+            )
 
         # 1) 格式校验
         credential_service.validate_credentials_format(credentials, credentials_schema)
@@ -266,11 +308,8 @@ class PluginManagementService:
         # 默认 provider_name 取第一个 tools_configuration
         provider_name = None
         try:
-            if (
-                plugin_installation.plugin_config
-                and plugin_installation.plugin_config.get("tools_configuration")
-            ):
-                tools_config = plugin_installation.plugin_config["tools_configuration"]
+            if plugin_config_dict and plugin_config_dict.get("tools_configuration"):
+                tools_config = plugin_config_dict["tools_configuration"]
                 if tools_config and len(tools_config) > 0:
                     first_tool = tools_config[0]
                     identity = first_tool.get("identity", {})
@@ -282,7 +321,7 @@ class PluginManagementService:
 
         data = {
             "plugin_id": plugin_id,
-            "plugin_type": plugin_installation.plugin_type,
+            "plugin_type": installation_dto.plugin_type,
             "scope": CredentialScope.GLOBAL,
             "name": name,
             "provider_name": provider_name,
@@ -559,6 +598,7 @@ class PluginManagementService:
             )
 
             plugin_manager = await PluginManagerFactory.get_manager(tenant_id, session)
+            provider = get_plugin_installation_provider()
 
             # 1. 停止插件
             try:
@@ -566,30 +606,34 @@ class PluginManagementService:
             except Exception:
                 _logger.warning(f"卸载前停止插件失败: {plugin_id}")
 
-            # 2. 删除数据库记录
-            result = await session.execute(
-                select(PluginInstallation).where(
-                    and_(
-                        PluginInstallation.tenant_id == tenant_id,
-                        PluginInstallation.plugin_id == plugin_id,
-                    ),
-                ),
+            # 2. 删除 AI 侧配置
+            await session.execute(
+                delete(AIPluginConfig).where(
+                    AIPluginConfig.tenant_id == tenant_id,
+                    AIPluginConfig.plugin_id == plugin_id,
+                )
             )
 
-            installation = result.scalar_one_or_none()
-
-            if not installation:
-                return PluginOperationResponseVo(
-                    plugin_id=plugin_id,
-                    message=f"插件不存在: {plugin_id}",
-                    status="not_found",
-                    success=False,
+            # 3. 删除 AI 侧运行时状态
+            await session.execute(
+                delete(PluginRuntimeState).where(
+                    PluginRuntimeState.tenant_id == tenant_id,
+                    PluginRuntimeState.plugin_id == plugin_id,
                 )
+            )
 
-            await session.delete(installation)
+            # 4. 删除 Tenant 侧安装记录
+            try:
+                await provider.delete_installation(tenant_id, plugin_id)
+            except ValueError:
+                # 记录不存在，忽略
+                pass
+            except Exception as e:
+                _logger.warning(f"删除 Tenant 侧安装记录失败: {plugin_id}, {e}")
+
             await session.flush()
 
-            # 3. 删除本地运行目录
+            # 5. 删除本地运行目录
             try:
                 import shutil
 
@@ -600,7 +644,7 @@ class PluginManagementService:
             except Exception as e:
                 _logger.warning(f"删除本地插件目录失败: {plugin_id}, {e}")
 
-            # 4. 清理内存注册
+            # 6. 清理内存注册
             try:
                 if plugin_id in plugin_manager.running_plugins:
                     del plugin_manager.running_plugins[plugin_id]
@@ -659,6 +703,61 @@ class PluginManagementService:
             raise e
 
     # ==================== 辅助方法 ====================
+
+    async def _convert_combined_data_to_vo(
+        self,
+        installation_dto: Any,
+        ai_config: AIPluginConfig | None,
+        runtime_state: PluginRuntimeState | None,
+    ) -> PluginInfoVo:
+        """将组合数据转换为 VO 对象
+
+        Args:
+            installation_dto: PluginInstallationDTO 实例
+            ai_config: AIPluginConfig 实例（可选）
+            runtime_state: PluginRuntimeState 实例（可选）
+
+        Returns:
+            PluginInfoVo
+        """
+        from framework.tenant.plugin_protocols import PluginInstallationDTO
+
+        # 提取插件配置信息
+        plugin_config_dict = {}
+        if ai_config and ai_config.plugin_config:
+            plugin_config_dict = ai_config.plugin_config.get("configuration", {})
+
+        # 确定状态：优先使用运行时状态，否则使用安装状态
+        status = runtime_state.status if runtime_state else installation_dto.status
+
+        return PluginInfoVo(
+            plugin_id=installation_dto.plugin_id,
+            plugin_name=plugin_config_dict.get("label", {}).get("zh_Hans")
+            or installation_dto.plugin_id.split("/")[-1],
+            version=plugin_config_dict.get("version", ""),
+            author=plugin_config_dict.get("author", "unknown"),
+            description=plugin_config_dict.get("description", {}).get("zh_Hans", ""),
+            icon=plugin_config_dict.get("icon"),
+            status=status,
+            plugin_type=installation_dto.plugin_type or "",
+            runtime_type=installation_dto.runtime_type or "",
+            auto_start=installation_dto.auto_start,
+            installed_at=None,  # 新架构中不再追踪安装时间
+            last_started_at=runtime_state.last_started_at.isoformat()
+            if runtime_state and runtime_state.last_started_at
+            else None,
+            last_stopped_at=runtime_state.last_stopped_at.isoformat()
+            if runtime_state and runtime_state.last_stopped_at
+            else None,
+            last_accessed_at=runtime_state.last_accessed_at.isoformat()
+            if runtime_state and runtime_state.last_accessed_at
+            else None,
+            process_id=runtime_state.process_id if runtime_state else None,
+            port=runtime_state.port if runtime_state else None,
+            call_count=runtime_state.call_count if runtime_state else 0,
+            error_count=runtime_state.error_count if runtime_state else 0,
+            last_error=runtime_state.last_error if runtime_state else None,
+        )
 
     async def _convert_installation_to_vo(
         self, installation: PluginInstallation
