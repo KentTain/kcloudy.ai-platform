@@ -24,6 +24,7 @@ from ai.services import plugin_management_service
 from framework.common.exceptions import BadRequestError
 from framework.database.dependencies import get_db_session
 from framework.common.response import ApiResponse
+from iam.dependencies import require_permission
 
 _logger = logger.bind(name=__name__)
 
@@ -46,6 +47,7 @@ router = APIRouter(tags=["控制台-插件安装管理"])
 )
 async def uninstall_plugin(
     plugin_id: str = Path(..., description="插件ID"),
+    _perm: None = Depends(require_permission("ai:plugin:delete")),
     session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """
@@ -81,6 +83,7 @@ async def uninstall_plugin(
 )
 async def start_plugin(
     plugin_id: str = Path(..., description="插件ID"),
+    _perm: None = Depends(require_permission("ai:plugin:write")),
     session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """
@@ -113,6 +116,7 @@ async def start_plugin(
 )
 async def stop_plugin(
     plugin_id: str = Path(..., description="插件ID"),
+    _perm: None = Depends(require_permission("ai:plugin:write")),
     session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """
@@ -145,6 +149,7 @@ async def stop_plugin(
 )
 async def get_plugin_config(
     plugin_id: str = Path(..., description="插件ID"),
+    _perm: None = Depends(require_permission("ai:plugin:read")),
     session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """
@@ -177,6 +182,7 @@ async def get_plugin_config(
 )
 async def update_plugin_config(
     plugin_id: str = Path(..., description="插件ID"),
+    _perm: None = Depends(require_permission("ai:plugin:write")),
     request: UpdatePluginConfigRequest = Body(..., description="配置更新请求"),
     session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
@@ -210,6 +216,7 @@ async def update_plugin_config(
 )
 async def get_runtime_state(
     plugin_id: str = Path(..., description="插件ID"),
+    _perm: None = Depends(require_permission("ai:plugin:read")),
     session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """
@@ -244,6 +251,7 @@ async def get_runtime_state(
     },
 )
 async def get_statistics(
+    _perm: None = Depends(require_permission("ai:plugin:read")),
     session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """

@@ -31,6 +31,7 @@ from ai.services.install_task_service import install_task_service
 from framework.common.exceptions import BadRequestError
 from framework.database.dependencies import get_db_session
 from framework.common.response import ApiResponse
+from iam.dependencies import require_permission
 
 _logger = logger.bind(name=__name__)
 
@@ -90,6 +91,7 @@ async def get_plugin_list(
     },
 )
 async def get_available_plugins(
+    _perm: None = Depends(require_permission("ai:plugin:read")),
     keyword: str | None = Query(None, description="关键词搜索"),
     type: str | None = Query(None, description="插件类型筛选"),
     is_recommended: bool | None = Query(None, description="是否推荐"),
@@ -131,6 +133,7 @@ async def get_available_plugins(
     },
 )
 async def create_installation(
+    _perm: None = Depends(require_permission("ai:plugin:write")),
     request: InstallPluginRequest = Body(..., description="安装请求"),
     session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
@@ -161,6 +164,7 @@ async def create_installation(
     },
 )
 async def get_install_tasks(
+    _perm: None = Depends(require_permission("ai:plugin:read")),
     status: str | None = Query(None, description="状态筛选"),
     plugin_id: str | None = Query(None, description="插件ID筛选"),
     page: int = Query(1, ge=1, description="页码"),
@@ -201,6 +205,7 @@ async def get_install_tasks(
 )
 async def get_install_task_detail(
     task_id: str = Path(..., description="任务ID"),
+    _perm: None = Depends(require_permission("ai:plugin:read")),
     session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """

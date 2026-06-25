@@ -75,9 +75,9 @@
 
 ## 10. 权限控制集成
 
-- [ ] 10.1 创建权限校验装饰器或中间件函数
-- [ ] 10.2 在 Tenant 插件定义管理 API 中添加权限校验（`tenant:plugin:read`、`tenant:plugin:write`）
-- [ ] 10.3 在 AI 插件安装使用 API 中添加权限校验（`ai:plugin:read`、`ai:plugin:write`、`ai:plugin:delete`）
+- [x] 10.1 创建权限校验装饰器或中间件函数
+- [x] 10.2 在 Tenant 插件定义管理 API 中添加权限校验（`tenant:plugin:read`、`tenant:plugin:write`）
+- [x] 10.3 在 AI 插件安装使用 API 中添加权限校验（`ai:plugin:read`、`ai:plugin:write`、`ai:plugin:delete`）
 
 ## 11. 事件处理与定时任务
 

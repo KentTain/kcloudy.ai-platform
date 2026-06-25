@@ -18,6 +18,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from framework.common.response import ApiResponse
 from framework.database.dependencies import get_db_session
+from iam.dependencies import require_permission
 from tenant.schemas.plugin import (
     PluginDefinitionDetailResponse,
     PluginDefinitionPaginatedResponse,
@@ -39,6 +40,7 @@ router = APIRouter()
 @router.post("/plugin-definitions/scan")
 async def scan_directory_for_plugins(
     request: ScanDirectoryRequest,
+    _perm: None = Depends(require_permission("tenant:plugin:write")),
     session: AsyncSession = Depends(get_db_session),
 ) -> ApiResponse:
     """
@@ -159,6 +161,7 @@ async def scan_directory_for_plugins(
 
 @router.post("/plugin-definitions/upload")
 async def upload_plugin_package(
+    _perm: None = Depends(require_permission("tenant:plugin:write")),
     session: AsyncSession = Depends(get_db_session),
     file: UploadFile = File(..., description="插件包文件（.zip）"),
     overwrite: bool = Form(default=False, description="是否覆盖已存在的插件定义"),
@@ -220,6 +223,7 @@ async def upload_plugin_package(
 
 @router.get("/plugin-definitions")
 async def list_plugin_definitions(
+    _perm: None = Depends(require_permission("tenant:plugin:read")),
     session: AsyncSession = Depends(get_db_session),
     page: int = 1,
     page_size: int = 20,
@@ -249,6 +253,7 @@ async def list_plugin_definitions(
 
 @router.get("/plugin-definitions/statistics")
 async def get_plugin_statistics(
+    _perm: None = Depends(require_permission("tenant:plugin:read")),
     session: AsyncSession = Depends(get_db_session),
 ) -> ApiResponse:
     """
@@ -266,6 +271,7 @@ async def get_plugin_statistics(
 @router.get("/plugin-definitions/{plugin_id}")
 async def get_plugin_definition_detail(
     plugin_id: str,
+    _perm: None = Depends(require_permission("tenant:plugin:read")),
     session: AsyncSession = Depends(get_db_session),
 ) -> ApiResponse:
     """
@@ -283,6 +289,7 @@ async def get_plugin_definition_detail(
 async def update_plugin_definition(
     plugin_id: str,
     request: UpdatePluginDefinitionRequest,
+    _perm: None = Depends(require_permission("tenant:plugin:write")),
     session: AsyncSession = Depends(get_db_session),
 ) -> ApiResponse:
     """
@@ -301,6 +308,7 @@ async def update_plugin_definition(
 @router.delete("/plugin-definitions/{plugin_id}")
 async def delete_plugin_definition(
     plugin_id: str,
+    _perm: None = Depends(require_permission("tenant:plugin:write")),
     session: AsyncSession = Depends(get_db_session),
 ) -> ApiResponse:
     """
