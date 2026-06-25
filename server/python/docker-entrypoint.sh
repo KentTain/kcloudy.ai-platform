@@ -6,7 +6,7 @@ set -e
 
 ROLE="${APP_ROLE:-web}"
 HOST="${HOST:-0.0.0.0}"
-PORT="${PORT:-8000}"
+PORT="${PORT:-8080}"
 
 echo "Starting backend service..."
 echo "  Role: ${ROLE}"

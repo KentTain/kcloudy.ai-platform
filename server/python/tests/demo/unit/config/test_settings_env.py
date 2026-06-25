@@ -16,6 +16,7 @@ class TestSettingsEnvOverride:
         with patch.dict(os.environ, {"SERVER_HOST": "192.168.1.1"}):
             # Reload settings
             from framework.configs.settings import ServerSettings
+
             settings = ServerSettings()
 
             # Note: Pydantic-settings reads from env with prefix
@@ -25,6 +26,7 @@ class TestSettingsEnvOverride:
     def test_env_var_with_prefix(self):
         """Test environment variables with prefix"""
         with patch.dict(os.environ, {"APP_DEBUG": "true"}):
+
             class TestSettings(BaseSettings):
                 debug: bool = Field(default=False)
 
@@ -37,6 +39,7 @@ class TestSettingsEnvOverride:
     def test_secret_from_env(self):
         """Test loading secret from environment variable"""
         with patch.dict(os.environ, {"API_KEY": "secret123"}):
+
             class TestSettings(BaseSettings):
                 api_key: SecretStr = Field(default="")
 
@@ -90,7 +93,7 @@ class TestSettingsEnvOverride:
 
             class TestSettings(BaseSettings):
                 host: str = "localhost"
-                port: int = 8000
+                port: int = 8080
                 debug: bool = False
 
             settings = TestSettings()
@@ -131,8 +134,7 @@ class TestEnvPriority:
         from demo.core.common.path import CONFIG_FOLDER
 
         parser = YamlParser(
-            config_dir=CONFIG_FOLDER,
-            base_config_file="application.yml"
+            config_dir=CONFIG_FOLDER, base_config_file="application.yml"
         )
 
         # YAML config provides the base

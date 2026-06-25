@@ -89,9 +89,9 @@ pnpm check:fix
 export default defineConfig({
   server: {
     proxy: {
-      '/tenant': 'http://localhost:8000',
-      '/iam': 'http://localhost:8000',
-      '/ai': 'http://localhost:8000',
+      '/tenant': 'http://localhost:8080',
+      '/iam': 'http://localhost:8080',
+      '/ai': 'http://localhost:8080',
     }
   }
 })

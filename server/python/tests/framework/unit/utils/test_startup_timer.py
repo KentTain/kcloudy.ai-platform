@@ -98,7 +98,7 @@ class TestStartupTimer:
         try:
             timer.print_summary(
                 modules=["demo", "iam"],
-                address="http://127.0.0.1:8000",
+                address="http://127.0.0.1:8080",
                 docs_path="/docs",
             )
         finally:
@@ -115,8 +115,8 @@ class TestStartupTimer:
         assert "已加载模块" in output
         assert "2 个" in output
         assert "[demo, iam]" in output
-        assert "http://127.0.0.1:8000" in output
-        assert "http://127.0.0.1:8000/docs" in output
+        assert "http://127.0.0.1:8080" in output
+        assert "http://127.0.0.1:8080/docs" in output
 
     def test_print_summary_orders_phases_by_order(self):
         """测试摘要按 order 输出阶段"""

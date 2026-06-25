@@ -95,7 +95,7 @@ fn default_host() -> String {
 }
 
 fn default_port() -> u16 {
-    8000
+    8080
 }
 
 fn default_timeout() -> u64 {

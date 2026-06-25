@@ -11,7 +11,7 @@ mod config {
     fn test_default_server_config() {
         let config = ServerConfig::default();
         assert_eq!(config.host, "0.0.0.0");
-        assert_eq!(config.port, 8000);
+        assert_eq!(config.port, 8080);
         assert!(!config.debug);
     }
 
@@ -39,7 +39,7 @@ server:
 }
 
 mod error {
-    use demo::common::error::{Error, ApiResponse};
+    use demo::common::error::{ApiResponse, Error};
 
     #[test]
     fn test_error_display() {

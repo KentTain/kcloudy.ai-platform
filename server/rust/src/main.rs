@@ -1,9 +1,9 @@
 //! Demo Web 服务器入口
 
 use clap::Parser;
-use demo::AppConfig;
 use demo::common::error::Result;
 use demo::controllers::create_app;
+use demo::AppConfig;
 use std::net::SocketAddr;
 use tracing::info;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
@@ -17,7 +17,7 @@ struct Args {
     host: String,
 
     /// 服务器监听端口
-    #[arg(short, long, default_value_t = 8000)]
+    #[arg(short, long, default_value_t = 8080)]
     port: u16,
 
     /// 启用调试模式
@@ -59,11 +59,7 @@ async fn main() -> Result<()> {
 
 /// 初始化 tracing 日志系统
 fn init_tracing(debug: bool) {
-    let filter = if debug {
-        "debug"
-    } else {
-        "info"
-    };
+    let filter = if debug { "debug" } else { "info" };
 
     tracing_subscriber::registry()
         .with(

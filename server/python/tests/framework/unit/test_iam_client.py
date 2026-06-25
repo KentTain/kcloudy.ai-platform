@@ -107,7 +107,7 @@ class TestIamClientGetUserTenantsMicroservice:
     @pytest.mark.asyncio
     async def test_microservice_mode_returns_user_tenants(self):
         """微服务模式调用 inner 接口返回用户租户列表"""
-        client = IamClient(inner_url="http://iam-service:8000")
+        client = IamClient(inner_url="http://iam-service:8080")
 
         # Mock HTTP 响应
         mock_http_client = AsyncMock()
@@ -137,7 +137,7 @@ class TestIamClientGetUserTenantsMicroservice:
     @pytest.mark.asyncio
     async def test_microservice_mode_returns_empty_list(self):
         """微服务模式返回空列表"""
-        client = IamClient(inner_url="http://iam-service:8000")
+        client = IamClient(inner_url="http://iam-service:8080")
 
         mock_http_client = AsyncMock()
         mock_http_client.get = AsyncMock(return_value={"user_id": "user-1", "tenants": []})
@@ -156,7 +156,7 @@ class TestIamClientGetTenantUserIdsMicroservice:
     @pytest.mark.asyncio
     async def test_microservice_mode_returns_user_ids(self):
         """微服务模式调用 inner 接口返回用户 ID 列表"""
-        client = IamClient(inner_url="http://iam-service:8000")
+        client = IamClient(inner_url="http://iam-service:8080")
 
         mock_http_client = AsyncMock()
         mock_http_client.get = AsyncMock(
@@ -174,7 +174,7 @@ class TestIamClientGetTenantUserIdsMicroservice:
     @pytest.mark.asyncio
     async def test_microservice_mode_returns_empty_list(self):
         """微服务模式返回空列表"""
-        client = IamClient(inner_url="http://iam-service:8000")
+        client = IamClient(inner_url="http://iam-service:8080")
 
         mock_http_client = AsyncMock()
         mock_http_client.get = AsyncMock(return_value={"tenant_id": "tenant-1", "user_ids": []})

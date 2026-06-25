@@ -20,7 +20,7 @@ services:
     container_name: ai-platform-backend-platform-api
     restart: unless-stopped
     ports:
-      - "${BACKEND_PORT:-8000}:8000"
+      - "${BACKEND_PORT:-8080}:8080"
     environment:
       - PYTHON_SERVICE_ENV=${PYTHON_SERVICE_ENV:-local}
       - SQLALCHEMY_URL=postgresql+asyncpg://${POSTGRES_USER:-admin}:${POSTGRES_PASSWORD:-XdA9caoq}@postgres:5432/${POSTGRES_DB:-alon_demo}
@@ -42,7 +42,7 @@ services:
           "CMD",
           "python",
           "-c",
-          "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=5)",
+          "import urllib.request; urllib.request.urlopen('http://localhost:8080/health', timeout=5)",
         ]
       interval: 30s
       timeout: 10s
@@ -127,7 +127,7 @@ services:
     container_name: ai-platform-backend-demo-api
     restart: unless-stopped
     ports:
-      - "${BACKEND_DEMO_PORT:-8010}:8000"
+      - "${BACKEND_DEMO_PORT:-8010}:8080"
     environment:
       - PYTHON_SERVICE_ENV=${PYTHON_SERVICE_ENV:-local}
       - SQLALCHEMY_URL=postgresql+asyncpg://${POSTGRES_USER:-admin}:${POSTGRES_PASSWORD:-XdA9caoq}@postgres:5432/${POSTGRES_DB:-alon_demo}
@@ -151,7 +151,7 @@ services:
           "CMD",
           "python",
           "-c",
-          "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=5)",
+          "import urllib.request; urllib.request.urlopen('http://localhost:8080/health', timeout=5)",
         ]
       interval: 30s
       timeout: 10s
@@ -225,7 +225,7 @@ services:
     container_name: ai-platform-backend-iam-api
     restart: unless-stopped
     ports:
-      - "${BACKEND_IAM_PORT:-8020}:8000"
+      - "${BACKEND_IAM_PORT:-8020}:8080"
     environment:
       - PYTHON_SERVICE_ENV=${PYTHON_SERVICE_ENV:-local}
       - SQLALCHEMY_URL=postgresql+asyncpg://${POSTGRES_USER:-admin}:${POSTGRES_PASSWORD:-XdA9caoq}@postgres:5432/${POSTGRES_DB:-alon_demo}
@@ -249,7 +249,7 @@ services:
           "CMD",
           "python",
           "-c",
-          "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=5)",
+          "import urllib.request; urllib.request.urlopen('http://localhost:8080/health', timeout=5)",
         ]
       interval: 30s
       timeout: 10s
@@ -267,7 +267,7 @@ services:
     container_name: ai-platform-backend-tenant-api
     restart: unless-stopped
     ports:
-      - "${BACKEND_TENANT_PORT:-8030}:8000"
+      - "${BACKEND_TENANT_PORT:-8030}:8080"
     environment:
       - PYTHON_SERVICE_ENV=${PYTHON_SERVICE_ENV:-local}
       - SQLALCHEMY_URL=postgresql+asyncpg://${POSTGRES_USER:-admin}:${POSTGRES_PASSWORD:-XdA9caoq}@postgres:5432/${POSTGRES_DB:-alon_demo}
@@ -291,7 +291,7 @@ services:
           "CMD",
           "python",
           "-c",
-          "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=5)",
+          "import urllib.request; urllib.request.urlopen('http://localhost:8080/health', timeout=5)",
         ]
       interval: 30s
       timeout: 10s
