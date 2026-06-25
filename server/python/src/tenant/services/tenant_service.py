@@ -396,7 +396,7 @@ class TenantService:
         if settings is not None:
             tenant.settings = settings
 
-        await session.refresh(tenant)
+        await session.flush()  # 触发脏检查但不提交，等待事务提交
 
         # 使缓存失效
         await TenantCache.invalidate(tenant_id)
@@ -437,7 +437,7 @@ class TenantService:
             return None
 
         tenant.status = TenantStatus.ACTIVE
-        await session.refresh(tenant)
+        await session.flush()  # 触发脏检查但不提交，等待事务提交
 
         # 使缓存失效
         await TenantCache.invalidate(tenant_id)
@@ -456,7 +456,7 @@ class TenantService:
             return None
 
         tenant.status = TenantStatus.INACTIVE
-        await session.refresh(tenant)
+        await session.flush()  # 触发脏检查但不提交，等待事务提交
 
         # 使缓存失效
         await TenantCache.invalidate(tenant_id)
@@ -776,7 +776,7 @@ class TenantService:
         tenant.queue_config_id = queue_config_id
         tenant.pubsub_config_id = pubsub_config_id
 
-        await session.refresh(tenant)
+        await session.flush()  # 触发脏检查但不提交，等待事务提交
 
         # 使缓存失效
         await TenantCache.invalidate(tenant_id)
