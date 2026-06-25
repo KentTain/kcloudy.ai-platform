@@ -7,13 +7,13 @@
 
 ## 2. Tenant 模块 - 插件定义注册
 
-- [ ] 2.1 创建 `PluginPackageService`：插件包解析服务（manifest 解析、校验和计算、格式验证）
-- [ ] 2.2 创建 `PluginStorageService`：MinIO 上传服务（bucket: plugins, key: {plugin_id}/{version}.zip）
-- [ ] 2.3 创建 `PluginDefinitionService`：插件定义注册业务逻辑
-- [ ] 2.4 创建 `ScanDirectoryRequest`、`ScanDirectoryResponse` Schema
-- [ ] 2.5 实现 `POST /tenant/admin/v1/plugin-definitions/scan` API（扫描服务器目录注册）
-- [ ] 2.6 创建 `UploadPluginRequest`、`UploadPluginResponse` Schema
-- [ ] 2.7 实现 `POST /tenant/admin/v1/plugin-definitions/upload` API（上传插件包注册）
+- [x] 2.1 创建 `PluginPackageService`：插件包解析服务（manifest 解析、校验和计算、格式验证）
+- [x] 2.2 创建 `PluginStorageService`：MinIO 上传服务（bucket: plugins, key: {plugin_id}/{version}.zip）
+- [x] 2.3 创建 `PluginDefinitionService`：插件定义注册业务逻辑（注：已有 PluginDefinitionService，已扩展注册方法）
+- [x] 2.4 创建 `ScanDirectoryRequest`、`ScanDirectoryResponse` Schema
+- [x] 2.5 实现 `POST /tenant/admin/v1/plugin-definitions/scan` API（扫描服务器目录注册）
+- [x] 2.6 创建 `UploadPluginRequest`、`UploadPluginResponse` Schema
+- [x] 2.7 实现 `POST /tenant/admin/v1/plugin-definitions/upload` API（上传插件包注册）
 
 ## 3. Tenant 模块 - 插件定义管理
 

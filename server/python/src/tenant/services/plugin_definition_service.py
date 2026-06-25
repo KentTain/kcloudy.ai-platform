@@ -1,7 +1,7 @@
 """
 插件定义服务
 
-提供插件定义的管理功能：查询、更新、删除。
+提供插件定义的管理功能：注册、查询、更新、删除。
 """
 
 from typing import Any
@@ -19,12 +19,131 @@ from tenant.schemas.plugin import (
     PluginDefinitionResponse,
     UpdatePluginDefinitionRequest,
 )
+from tenant.services.plugin_package_service import PluginPackageInfo
+from tenant.services.plugin_storage_service import plugin_storage_service
 
 _logger = logger.bind(name=__name__)
 
 
 class PluginDefinitionService:
     """插件定义服务"""
+
+    @staticmethod
+    async def register_definition(
+        session: AsyncSession,
+        package_info: PluginPackageInfo,
+        package_data: bytes,
+        overwrite: bool = False,
+    ) -> PluginDefinitionResponse:
+        """
+        注册插件定义
+
+        流程：
+        1. 检查插件定义是否已存在
+        2. 上传插件包到 MinIO
+        3. 创建插件定义记录
+
+        Args:
+            session: 数据库会话
+            package_info: 插件包解析结果
+            package_data: 插件包二进制数据
+            overwrite: 是否覆盖已存在的定义
+
+        Returns:
+            PluginDefinitionResponse: 注册结果
+
+        Raises:
+            ConflictError: 插件定义已存在且 overwrite=False
+        """
+        # 构建插件唯一标识符
+        plugin_unique_identifier = (
+            f"{package_info.plugin_id}:{package_info.version}@{package_info.package_hash}"
+        )
+
+        # 检查是否已存在
+        existing_stmt = select(TenantPluginDefinition).where(
+            TenantPluginDefinition.plugin_id == package_info.plugin_id
+        )
+        existing_result = await session.execute(existing_stmt)
+        existing_definition = existing_result.scalar_one_or_none()
+
+        if existing_definition:
+            if not overwrite:
+                raise ConflictError(message=f"插件定义已存在: {package_info.plugin_id}")
+            # 覆盖模式：更新现有记录
+            return await PluginDefinitionService._update_existing_definition(
+                session, existing_definition, package_info, package_data
+            )
+
+        # 上传插件包到 MinIO
+        await plugin_storage_service.upload_plugin_package(
+            plugin_id=package_info.plugin_id,
+            version=package_info.version,
+            package_data=package_data,
+        )
+
+        # 创建插件定义记录
+        definition = TenantPluginDefinition(
+            plugin_id=package_info.plugin_id,
+            plugin_unique_identifier=plugin_unique_identifier,
+            declaration=package_info.declaration,
+            refers=0,
+            install_type="local",
+            manifest_type=package_info.manifest_type,
+            is_recommended=False,
+            is_enabled=True,
+        )
+        session.add(definition)
+        await session.flush()
+        await session.refresh(definition)
+
+        _logger.info(f"注册插件定义成功: {package_info.plugin_id}:{package_info.version}")
+
+        return PluginDefinitionService._to_response(definition)
+
+    @staticmethod
+    async def _update_existing_definition(
+        session: AsyncSession,
+        existing: TenantPluginDefinition,
+        package_info: PluginPackageInfo,
+        package_data: bytes,
+    ) -> PluginDefinitionResponse:
+        """
+        更新已存在的插件定义
+
+        Args:
+            session: 数据库会话
+            existing: 现有插件定义
+            package_info: 新的插件包解析结果
+            package_data: 插件包二进制数据
+
+        Returns:
+            PluginDefinitionResponse: 更新后的响应
+        """
+        # 上传新版本的插件包
+        await plugin_storage_service.upload_plugin_package(
+            plugin_id=package_info.plugin_id,
+            version=package_info.version,
+            package_data=package_data,
+        )
+
+        # 更新插件定义
+        plugin_unique_identifier = (
+            f"{package_info.plugin_id}:{package_info.version}@{package_info.package_hash}"
+        )
+
+        existing.plugin_unique_identifier = plugin_unique_identifier
+        existing.declaration = package_info.declaration
+        existing.manifest_type = package_info.manifest_type
+
+        await session.flush()
+        await session.refresh(existing)
+
+        _logger.info(
+            f"更新插件定义成功: {package_info.plugin_id}:{package_info.version}"
+        )
+
+        return PluginDefinitionService._to_response(existing)
 
     @staticmethod
     async def list_definitions(
@@ -189,6 +308,8 @@ class PluginDefinitionService:
         """
         删除插件定义
 
+        同时删除 MinIO 上的插件包文件。
+
         Args:
             session: 数据库会话
             plugin_id: 插件ID
@@ -212,6 +333,10 @@ class PluginDefinitionService:
             raise ConflictError(
                 message=f"无法删除，有 {definition.refers} 个租户正在使用此插件"
             )
+
+        # 删除 MinIO 上的插件包
+        deleted_count = await plugin_storage_service.delete_all_versions(plugin_id)
+        _logger.info(f"删除 MinIO 插件包: {plugin_id}, 共 {deleted_count} 个文件")
 
         # 删除定义
         delete_stmt = delete(TenantPluginDefinition).where(

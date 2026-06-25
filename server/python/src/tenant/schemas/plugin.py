@@ -31,6 +31,48 @@ class UpdatePluginDefinitionRequest(BaseModel):
     is_enabled: bool | None = Field(default=None, description="是否启用")
 
 
+class ScanDirectoryRequest(BaseModel):
+    """扫描服务器目录请求"""
+
+    directory: str = Field(..., description="服务器目录路径")
+    recursive: bool = Field(default=True, description="是否递归扫描子目录")
+
+
+class UploadPluginRequest(BaseModel):
+    """上传插件包请求（用于 API 文档）"""
+
+    overwrite: bool = Field(default=False, description="是否覆盖已存在的插件定义")
+
+
+class ScannedPluginResult(BaseModel):
+    """单个插件扫描结果"""
+
+    plugin_id: str = Field(..., description="插件ID")
+    version: str = Field(..., description="版本号")
+    status: str = Field(..., description="状态：success/skipped/failed")
+    message: str | None = Field(None, description="状态说明或错误信息")
+
+
+class ScanDirectoryResponse(BaseModel):
+    """扫描目录响应"""
+
+    total_count: int = Field(default=0, description="扫描的插件包总数")
+    success_count: int = Field(default=0, description="成功注册数")
+    skipped_count: int = Field(default=0, description="跳过数（已存在）")
+    failed_count: int = Field(default=0, description="失败数")
+    results: list[ScannedPluginResult] = Field(default_factory=list, description="扫描结果列表")
+
+
+class UploadPluginResponse(BaseModel):
+    """上传插件包响应"""
+
+    plugin_id: str = Field(..., description="插件ID")
+    version: str = Field(..., description="版本号")
+    plugin_unique_identifier: str = Field(..., description="插件唯一标识符")
+    status: str = Field(..., description="状态：created/updated")
+    message: str = Field(..., description="状态说明")
+
+
 # ============== 响应 Schema ==============
 
 
