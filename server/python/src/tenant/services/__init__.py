@@ -18,6 +18,7 @@ from .module_service import ModuleService, module_service
 from .pubsub_config_service import PubSubConfigService, pubsub_config_service
 from .queue_config_service import QueueConfigService, queue_config_service
 from .storage_config_service import StorageConfigService, storage_config_service
+from .plugin_definition_service import PluginDefinitionService, plugin_definition_service
 from .tenant_module_service import TenantModuleService, tenant_module_service
 from .tenant_provider_impl import TenantProviderImpl, tenant_provider_impl
 from .tenant_service import TenantService, tenant_service
@@ -52,4 +53,7 @@ __all__ = [
     # 租户模块分配服务
     "TenantModuleService",
     "tenant_module_service",
+    # 插件定义服务
+    "PluginDefinitionService",
+    "plugin_definition_service",
 ]

@@ -1,9 +1,9 @@
 ## 1. 数据模型与迁移
 
-- [ ] 1.1 新增 `tenant.plugin_definitions` 表字段：`is_recommended`（BOOLEAN, 默认 false）、`is_enabled`（BOOLEAN, 默认 true）
-- [ ] 1.2 创建 `ai.plugin_install_tasks` 表（任务 ID、租户 ID、插件 ID、状态、进度、步骤、错误信息、时间戳）
-- [ ] 1.3 创建数据库迁移脚本（Alembic migration）
-- [ ] 1.4 在 `iam` 模块种子数据中添加权限定义：`tenant:plugin:read`、`tenant:plugin:write`、`ai:plugin:read`、`ai:plugin:write`、`ai:plugin:delete`
+- [x] 1.1 新增 `tenant.plugin_definitions` 表字段：`is_recommended`（BOOLEAN, 默认 false）、`is_enabled`（BOOLEAN, 默认 true）
+- [x] 1.2 创建 `ai.plugin_install_tasks` 表（任务 ID、租户 ID、插件 ID、状态、进度、步骤、错误信息、时间戳）
+- [x] 1.3 创建数据库迁移脚本（Alembic migration）
+- [x] 1.4 在 `iam` 模块种子数据中添加权限定义：`tenant:plugin:read`、`tenant:plugin:write`、`ai:plugin:read`、`ai:plugin:write`、`ai:plugin:delete`
 
 ## 2. Tenant 模块 - 插件定义注册
 
@@ -17,19 +17,19 @@
 
 ## 3. Tenant 模块 - 插件定义管理
 
-- [ ] 3.1 创建 `PluginDefinitionQuery`、`PluginDefinitionResponse`、`PluginDefinitionDetailResponse` Schema
-- [ ] 3.2 创建 `PluginDefinitionService.list_definitions()` 方法（分页查询、关键词搜索、类型筛选）
-- [ ] 3.3 实现 `GET /tenant/admin/v1/plugin-definitions` API（列表查询）
-- [ ] 3.4 实现 `GET /tenant/admin/v1/plugin-definitions/{plugin_id}` API（详情查看）
-- [ ] 3.5 创建 `UpdatePluginDefinitionRequest` Schema
-- [ ] 3.6 实现 `PATCH /tenant/admin/v1/plugin-definitions/{plugin_id}` API（标记推荐/禁用）
-- [ ] 3.7 实现 `DELETE /tenant/admin/v1/plugin-definitions/{plugin_id}` API（删除定义，检查 refers > 0）
+- [x] 3.1 创建 `PluginDefinitionQuery`、`PluginDefinitionResponse`、`PluginDefinitionDetailResponse` Schema
+- [x] 3.2 创建 `PluginDefinitionService.list_definitions()` 方法（分页查询、关键词搜索、类型筛选）
+- [x] 3.3 实现 `GET /tenant/admin/v1/plugin-definitions` API（列表查询）
+- [x] 3.4 实现 `GET /tenant/admin/v1/plugin-definitions/{plugin_id}` API（详情查看）
+- [x] 3.5 创建 `UpdatePluginDefinitionRequest` Schema
+- [x] 3.6 实现 `PATCH /tenant/admin/v1/plugin-definitions/{plugin_id}` API（标记推荐/禁用）
+- [x] 3.7 实现 `DELETE /tenant/admin/v1/plugin-definitions/{plugin_id}` API（删除定义，检查 refers > 0）
 
 ## 4. Tenant 模块 - 统计仪表板
 
-- [ ] 4.1 创建 `PluginStatisticsResponse` Schema（定义统计、安装统计）
-- [ ] 4.2 创建 `PluginStatisticsService.get_statistics()` 方法
-- [ ] 4.3 实现 `GET /tenant/admin/v1/plugin-definitions/statistics` API
+- [x] 4.1 创建 `PluginStatisticsResponse` Schema（定义统计、安装统计）
+- [x] 4.2 创建 `PluginStatisticsService.get_statistics()` 方法
+- [x] 4.3 实现 `GET /tenant/admin/v1/plugin-definitions/statistics` API
 
 ## 5. AI 模块 - 可用插件列表
 
