@@ -128,6 +128,9 @@ export const useTenantStore = defineStore("tenant", () => {
       if (index !== -1) {
         tenants.value[index] = response.data;
       }
+      if (currentTenant.value?.id === id) {
+        currentTenant.value = response.data;
+      }
       notifySuccess("激活租户成功");
       return response.data;
     } catch (error: unknown) {
@@ -146,6 +149,9 @@ export const useTenantStore = defineStore("tenant", () => {
       const index = tenants.value.findIndex((t) => t.id === id);
       if (index !== -1) {
         tenants.value[index] = response.data;
+      }
+      if (currentTenant.value?.id === id) {
+        currentTenant.value = response.data;
       }
       notifySuccess("停用租户成功");
       return response.data;
