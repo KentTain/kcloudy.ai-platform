@@ -23,6 +23,7 @@ Tenant 模块（管理面）     AI 模块（使用面）
 ```
 
 **核心思想**：
+
 - Tenant 管资源定义（解决"有什么"的问题）
 - AI 管资源使用（解决"用什么"的问题）
 - 两个受保护的模块不受影响：`server/python/src/ai_plugin/`（SDK 协议层）、`server/python/src/ai/components/plugin/`（业务逻辑层，仅替换数据访问方式）
@@ -620,6 +621,7 @@ async def _save_plugin_installation_to_database(self, session, plugin_config, ..
 **写操作涉及两个 Schema**：安装/卸载插件时，需要同时写 `tenant.plugin_installations`（通过 Provider）和 `ai.plugin_runtime_states`（直接 ORM）。如果这两个操作不在同一个数据库事务中，可能出现数据不一致。
 
 **解决方案**：
+
 - `Provider.create_installation()` 接受一个可选的 `session` 参数，用于将 Tenant 侧的写入纳入 AI 侧的事务
 - 或者，使用两阶段提交 / 补偿事务机制
 
