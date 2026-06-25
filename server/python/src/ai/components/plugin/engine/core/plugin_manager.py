@@ -52,9 +52,15 @@ from ai.components.plugin.engine.models.plugin import PluginInfo
 from ai.components.plugin.engine.models.request import InstallRequest
 from ai.components.plugin.engine.utils.logger import get_logger
 from ai.models.plugin import PluginInstallation
+from ai.models.plugin_config import PluginConfig as AIPluginConfig
+from ai.models.plugin_runtime_state import PluginRuntimeState
 from ai_plugin.server.core.entities.plugin.setup import PluginAsset
 from framework.configs.settings import settings
 from framework.storage import get_storage_provider
+from framework.tenant.plugin_protocols import (
+    PluginInstallationDTO,
+    get_plugin_installation_provider,
+)
 
 logger = get_logger(__name__)
 
@@ -197,65 +203,66 @@ class TenantPluginManager:
         )
 
     async def _load_plugins_metadata_from_database(self, session: AsyncSession):
-        """从数据库加载已安装的插件元数据（不启动插件，直接从数据库读取配置）"""
+        """从数据库加载已安装的插件元数据"""
         self.logger.info(f"从数据库加载租户插件元数据: {self.tenant_id}")
 
-        # 查询当前租户的所有已安装插件
-        result = await session.execute(
-            select(PluginInstallation).where(
-                and_(
-                    PluginInstallation.tenant_id == self.tenant_id,
-                    PluginInstallation.status != PluginStatus.INACTIVE,
-                ),
-            ),
-        )
-        installations = result.scalars().all()
+        provider = get_plugin_installation_provider()
+        installations = await provider.get_tenant_installations(self.tenant_id)
 
         loaded_count = 0
-        for installation in installations:
+        for installation_dto in installations:
             try:
-                # 直接从数据库加载插件配置信息
-                plugin_info = await self._load_plugin_info_from_installation(
-                    installation
+                # 查询 AI 侧配置和运行时状态
+                config_result = await session.execute(
+                    select(AIPluginConfig).where(
+                        AIPluginConfig.tenant_id == self.tenant_id,
+                        AIPluginConfig.plugin_id == installation_dto.plugin_id,
+                    )
                 )
-                if plugin_info:
-                    # 注册到内存
-                    plugin_id = installation.plugin_id
-                    self.plugins[plugin_id] = plugin_info
+                ai_config = config_result.scalar_one_or_none()
 
-                    loaded_count += 1
-                    self.logger.debug(f"加载插件元数据: {plugin_id}")
+                state_result = await session.execute(
+                    select(PluginRuntimeState).where(
+                        PluginRuntimeState.tenant_id == self.tenant_id,
+                        PluginRuntimeState.plugin_id == installation_dto.plugin_id,
+                    )
+                )
+                runtime_state = state_result.scalar_one_or_none()
 
+                # 组装 PluginInfo
+                plugin_info = PluginInfo(
+                    id=installation_dto.plugin_id,
+                    status=installation_dto.status,
+                    installed_at=None,  # DTO 中没有 installed_at
+                )
+                if ai_config and ai_config.plugin_config:
+                    plugin_info.config = ai_config.plugin_config
+
+                self.plugins[installation_dto.plugin_id] = plugin_info
+                loaded_count += 1
             except Exception as e:
-                self.logger.exception(
-                    f"加载插件元数据失败 {installation.plugin_id}"
-                )
-                # 标记为错误状态
-                installation.last_error = str(e)
-                await session.flush()
+                self.logger.exception(f"加载插件元数据失败 {installation_dto.plugin_id}")
 
         self.logger.info(f"从数据库加载插件元数据完成: {loaded_count} 个插件")
 
     async def _load_plugin_info_from_installation(
-        self, installation: PluginInstallation
+        self, config: dict | None, status: str | None = None
     ) -> PluginInfo | None:
-        """从数据库安装记录加载插件信息（不依赖本地文件）"""
+        """从配置字典加载插件信息（不依赖本地文件）"""
         try:
-            if not installation.plugin_config:
-                self.logger.warning(f"插件元数据为空: {installation.plugin_id}")
+            if not config:
+                self.logger.warning(f"插件配置为空")
                 return None
 
             plugin_info = PluginInfo(
-                config=installation.plugin_config,
-                status=installation.status,
-                installed_at=installation.installed_at,
-                started_at=installation.last_started_at,
+                status=status,
             )
+            plugin_info.config = config
 
             return plugin_info
 
         except Exception:
-            self.logger.exception(f"从数据库加载插件信息失败 {installation.plugin_id}")
+            self.logger.exception(f"从数据库加载插件信息失败")
             return None
 
     async def _load_plugin_config(
@@ -398,44 +405,16 @@ class TenantPluginManager:
 
     async def _check_duplicate_installation(
         self, session: AsyncSession, plugin_config: PluginConfig
-    ) -> PluginInstallation | None:
+    ) -> None:
         """检查是否已经安装了相同或不同版本的插件"""
         plugin_id = (
             f"{plugin_config.configuration.author}/{plugin_config.configuration.name}"
         )
 
-        # 查询是否已安装相同插件ID的插件
-        result = await session.execute(
-            select(PluginInstallation).where(
-                and_(
-                    PluginInstallation.tenant_id == self.tenant_id,
-                    PluginInstallation.plugin_id == plugin_id,
-                ),
-            ),
-        )
-        existing_installation = result.scalar_one_or_none()
-
-        if existing_installation:
-            # 解析现有版本
-            existing_plugin_config = existing_installation.plugin_config
-
-            if existing_plugin_config is None:
-                raise ValueError(f"插件配置不存在: {plugin_id}")
-
-            existing_version = existing_plugin_config.configuration.version
-
-            if existing_version == plugin_config.configuration.version:
-                # 相同版本，完全重复
-                raise ValueError(
-                    f"插件 {plugin_id} 版本 {plugin_config.configuration.version} 已安装"
-                )
-            else:
-                # 不同版本，需要先卸载
-                raise ValueError(
-                    f"插件 {plugin_id} 的版本 {existing_version} 已安装，"
-                    f"请先卸载现有版本再安装版本 {plugin_config.configuration.version}",
-                )
-
+        provider = get_plugin_installation_provider()
+        existing = await provider.get_installation(self.tenant_id, plugin_id)
+        if existing:
+            raise ValueError(f"插件 {plugin_id} 已安装")
         return None
 
     async def _ensure_plugin_ready(
@@ -486,50 +465,53 @@ class TenantPluginManager:
         plugin_dir = self.workspace_dir / plugin_id
 
         async with lock:
-            # 检查数据库中的插件状态
-            result = await session.execute(
-                select(PluginInstallation).where(
-                    and_(
-                        PluginInstallation.tenant_id == self.tenant_id,
-                        PluginInstallation.plugin_id == plugin_id,
-                        PluginInstallation.status != PluginStatus.INACTIVE,
-                    ),
-                ),
-            )
-            installation = result.scalar_one_or_none()
+            # 检查数据库中的插件状态 (通过 Provider)
+            provider = get_plugin_installation_provider()
+            installation_dto = await provider.get_installation(self.tenant_id, plugin_id)
 
-            if not installation:
+            if not installation_dto:
                 # 检查插件是否已经在运行
                 if plugin_id in self.running_plugins:
                     # 如果插件在运行，但是数据库中不存在，则说明插件被卸载了，需要停止该插件
                     self.logger.warning(
                         f"插件已在运行: {plugin_id}, 但是数据库中不存在，需要停止该插件"
                     )
-                    await self.stop_plugin(plugin_id)
+                    await self.stop_plugin(plugin_id, session)
                     # 删除插件目录
                     if plugin_dir.exists():
                         shutil.rmtree(plugin_dir)
 
                 raise ValueError(f"插件不存在: {plugin_id}")
 
+            # 查询 AI 侧配置
+            config_result = await session.execute(
+                select(AIPluginConfig).where(
+                    AIPluginConfig.tenant_id == self.tenant_id,
+                    AIPluginConfig.plugin_id == plugin_id,
+                )
+            )
+            ai_config = config_result.scalar_one_or_none()
+
             # 从数据库加载插件配置
             plugin_info = await self._load_plugin_info_from_installation(
-                installation
+                ai_config.plugin_config if ai_config else None,
+                installation_dto.status,
             )
             if not plugin_info:
                 raise ValueError(f"无法加载插件配置: {plugin_id}")
 
+            config_dict = ai_config.plugin_config if ai_config else {}
+
             if plugin_id in self.plugins:
                 # 如果插件已经在内存中，则检查版本是否一致，有可能插件升级了，需要停止旧版本
                 old_plugin_info = self.plugins[plugin_id]
-                if (
-                    old_plugin_info.config.configuration.version
-                    != plugin_info.config.configuration.version
-                ):
+                old_version = old_plugin_info.config.get("configuration", {}).get("version") if hasattr(old_plugin_info, "config") and old_plugin_info.config else None
+                new_version = config_dict.get("configuration", {}).get("version")
+                if old_version and new_version and old_version != new_version:
                     self.logger.warning(
-                        f"插件版本不一致: {plugin_id}，旧版本: {old_plugin_info.config.configuration.version}，新版本: {plugin_info.config.configuration.version}",
+                        f"插件版本不一致: {plugin_id}，旧版本: {old_version}，新版本: {new_version}",
                     )
-                    await self.stop_plugin(plugin_id)
+                    await self.stop_plugin(plugin_id, session)
                     # 删除插件目录
                     if plugin_dir.exists():
                         shutil.rmtree(plugin_dir)
@@ -544,11 +526,14 @@ class TenantPluginManager:
             if not manifest_path.exists():
                 self.logger.info(f"本地插件文件不存在，从OSS下载: {plugin_id}")
 
-                if installation.plugin_config is None:
+                if not config_dict:
                     raise ValueError(f"插件配置不存在: {plugin_id}")
 
                 # 获取版本信息
-                plugin_version = installation.plugin_config.configuration.version
+                plugin_version = config_dict.get("configuration", {}).get("version")
+
+                if not plugin_version:
+                    raise ValueError(f"插件版本信息不存在: {plugin_id}")
 
                 # 从OSS下载插件包
                 plugin_package = await self._download_plugin_from_oss(
@@ -569,7 +554,33 @@ class TenantPluginManager:
                 return True
 
             # 启动插件
-            return await self._start_plugin_internal(plugin_id)
+            result = await self._start_plugin_internal(plugin_id)
+
+            # 5.6: 启动成功后更新 PluginRuntimeState
+            if result:
+                try:
+                    state_result = await session.execute(
+                        select(PluginRuntimeState).where(
+                            PluginRuntimeState.tenant_id == self.tenant_id,
+                            PluginRuntimeState.plugin_id == plugin_id,
+                        )
+                    )
+                    runtime_state_record = state_result.scalar_one_or_none()
+                    if runtime_state_record:
+                        runtime_state_record.status = "active"
+                        if plugin_id in self.running_plugins:
+                            runtime_inst = self.running_plugins[plugin_id]
+                            if runtime_inst.process_id:
+                                runtime_state_record.process_id = runtime_inst.process_id
+                            if runtime_inst.port:
+                                runtime_state_record.port = runtime_inst.port
+                        runtime_state_record.last_started_at = datetime.now()
+                        await session.flush()
+                        self.logger.debug(f"已更新插件运行时状态: {plugin_id}")
+                except Exception:
+                    self.logger.exception(f"更新插件运行时状态失败: {plugin_id}")
+
+            return result
 
     async def _start_plugin_internal(self, plugin_id: str) -> bool:
         """内部插件启动方法"""
@@ -786,22 +797,43 @@ class TenantPluginManager:
 
     async def _delete_plugin_installation(self, session: AsyncSession, plugin_id: str) -> int:
         """删除插件安装记录"""
-        result = await session.execute(
-            select(PluginInstallation).where(
-                and_(
-                    PluginInstallation.tenant_id == self.tenant_id,
-                    PluginInstallation.plugin_id == plugin_id,
-                ),
-            ),
-        )
-        installations = result.scalars().all()
-
+        provider = get_plugin_installation_provider()
         deleted_count = 0
-        for installation in installations:
-            await session.delete(installation)
-            deleted_count += 1
 
-        await session.flush()
+        # 删除 AI 侧配置和运行时状态
+        try:
+            config_result = await session.execute(
+                select(AIPluginConfig).where(
+                    AIPluginConfig.tenant_id == self.tenant_id,
+                    AIPluginConfig.plugin_id == plugin_id,
+                )
+            )
+            ai_config = config_result.scalar_one_or_none()
+            if ai_config:
+                await session.delete(ai_config)
+                deleted_count += 1
+
+            state_result = await session.execute(
+                select(PluginRuntimeState).where(
+                    PluginRuntimeState.tenant_id == self.tenant_id,
+                    PluginRuntimeState.plugin_id == plugin_id,
+                )
+            )
+            runtime_state = state_result.scalar_one_or_none()
+            if runtime_state:
+                await session.delete(runtime_state)
+
+            await session.flush()
+        except Exception:
+            self.logger.exception(f"删除 AI 侧插件记录失败: {plugin_id}")
+
+        # 删除 Tenant 侧安装记录
+        try:
+            await provider.delete_installation(self.tenant_id, plugin_id)
+            deleted_count += 1
+        except ValueError:
+            self.logger.warning(f"安装记录不存在: {plugin_id}")
+
         return deleted_count
 
     async def start_plugin(self, plugin_id: str) -> bool:
@@ -854,7 +886,7 @@ class TenantPluginManager:
             self.logger.exception(f"更新插件运行状态失败: {plugin_id}")
             # 不抛出异常，因为这不是关键功能
 
-    async def stop_plugin(self, plugin_id: str) -> bool:
+    async def stop_plugin(self, plugin_id: str, session: AsyncSession | None = None) -> bool:
         """停止插件"""
         if plugin_id not in self.running_plugins:
             self.logger.warning(f"插件未运行: {plugin_id}")
@@ -874,6 +906,24 @@ class TenantPluginManager:
             if plugin_id in self._plugin_ready_cache:
                 del self._plugin_ready_cache[plugin_id]
                 self.logger.debug(f"已清除插件准备状态缓存: {plugin_id}")
+
+            # 5.7: 停止后更新 PluginRuntimeState
+            if session:
+                try:
+                    state_result = await session.execute(
+                        select(PluginRuntimeState).where(
+                            PluginRuntimeState.tenant_id == self.tenant_id,
+                            PluginRuntimeState.plugin_id == plugin_id,
+                        )
+                    )
+                    runtime_state_record = state_result.scalar_one_or_none()
+                    if runtime_state_record:
+                        runtime_state_record.status = "inactive"
+                        runtime_state_record.last_stopped_at = datetime.now()
+                        await session.flush()
+                        self.logger.debug(f"已更新插件运行时状态: {plugin_id}")
+                except Exception:
+                    self.logger.exception(f"更新插件运行时状态失败: {plugin_id}")
 
             self.logger.info(f"插件停止成功: {plugin_id}")
             return True
@@ -932,7 +982,7 @@ class TenantPluginManager:
             # 插件错误，可能是插件进程已退出
             self.logger.error(f"插件错误: {e}")
             # 停止插件
-            await self.stop_plugin(plugin_id)
+            await self.stop_plugin(plugin_id, session)
             raise e
         except Exception as e:
             raise e
@@ -1192,61 +1242,64 @@ class TenantPluginManager:
         auto_start: bool,
         config_override: dict[str, Any],
     ):
-        """保存插件安装信息到数据库（包含完整配置信息）"""
-        # 先以传入的覆盖参数为基础，再覆盖我们明确指定的字段，确保以我们指定为准
-        installation_kwargs = dict(config_override or {})
-        installation_kwargs.update(
-            {
-                "tenant_id": self.tenant_id,
-                "plugin_id": plugin_id,
-                "plugin_unique_identifier": f"{plugin_id}@{plugin_config.configuration.version}",
-                "runtime_type": RuntimeType.LOCAL,
-                "plugin_type": self.convert_to_plugin_type(plugin_config),
-                "status": PluginStatus.ACTIVE,
-                "auto_start": auto_start,
-                "installed_at": datetime.now(),
-                "install_config": install_info,
-                "source": SourceType.PACKAGE,
-                "plugin_config": plugin_config,
-            },
+        """保存插件安装信息到数据库"""
+        provider = get_plugin_installation_provider()
+
+        plugin_unique_identifier = f"{plugin_id}@{plugin_config.configuration.version}"
+        installation_dto = PluginInstallationDTO(
+            tenant_id=self.tenant_id,
+            plugin_id=plugin_id,
+            plugin_unique_identifier=plugin_unique_identifier,
+            status="PENDING",
+            auto_start=auto_start,
+            plugin_type=self.convert_to_plugin_type(plugin_config).value,
+            runtime_type="local",
         )
 
-        # 过滤掉模型未定义的字段，避免实例化报错
         try:
-            from sqlalchemy.inspection import inspect as sqlalchemy_inspect
+            # 1. 创建 Tenant 侧记录
+            await provider.create_installation(self.tenant_id, installation_dto)
 
-            mapper = sqlalchemy_inspect(PluginInstallation)
-            valid_keys = {prop.key for prop in mapper.attrs}
-            invalid_keys = set(installation_kwargs.keys()) - valid_keys
-            if invalid_keys:
-                self.logger.warning(f"忽略未识别的安装字段: {invalid_keys}")
-            filtered_kwargs = {
-                k: v for k, v in installation_kwargs.items() if k in valid_keys
-            }
-        except Exception:
-            # 回退策略：若无法检查映射，直接使用我们明确指定的字段构造
-            self.logger.warning("无法检查PluginInstallation映射，回退到最小字段集")
-            filtered_kwargs = {
-                "tenant_id": installation_kwargs.get("tenant_id"),
-                "plugin_id": installation_kwargs.get("plugin_id"),
-                "plugin_unique_identifier": installation_kwargs.get(
-                    "plugin_unique_identifier"
-                ),
-                "runtime_type": installation_kwargs.get("runtime_type"),
-                "plugin_type": installation_kwargs.get("plugin_type"),
-                "status": installation_kwargs.get("status"),
-                "auto_start": installation_kwargs.get("auto_start"),
-                "installed_at": installation_kwargs.get("installed_at"),
-                "install_config": installation_kwargs.get("install_config"),
-                "source": installation_kwargs.get("source"),
-                "plugin_config": installation_kwargs.get("plugin_config"),
-                "runtime_config": installation_kwargs.get("runtime_config"),
-            }
+            # 2. 创建 AI 侧 PluginConfig
+            ai_config = AIPluginConfig(
+                tenant_id=self.tenant_id,
+                plugin_id=plugin_id,
+                plugin_unique_identifier=plugin_unique_identifier,
+                plugin_config=plugin_config.model_dump(mode="json") if hasattr(plugin_config, "model_dump") else plugin_config.__dict__,
+                runtime_config={},
+            )
+            session.add(ai_config)
 
-        installation = PluginInstallation(**filtered_kwargs)
+            # 3. 创建 AI 侧 PluginRuntimeState
+            runtime_state = PluginRuntimeState(
+                tenant_id=self.tenant_id,
+                plugin_id=plugin_id,
+                status="active",
+            )
+            session.add(runtime_state)
 
-        session.add(installation)
-        await session.flush()
+            await session.flush()
+
+            # 4. 更新状态为 ACTIVE
+            await provider.update_installation(
+                self.tenant_id,
+                plugin_id,
+                {"status": "ACTIVE"},
+            )
+
+            self.logger.info(f"插件安装数据保存成功: {plugin_id}")
+
+        except Exception as e:
+            # 标记安装失败
+            try:
+                await provider.update_installation(
+                    self.tenant_id,
+                    plugin_id,
+                    {"status": "FAILED", "error": str(e)},
+                )
+            except Exception:
+                self.logger.exception(f"更新安装状态失败: {plugin_id}")
+            raise
 
     def convert_to_plugin_type(self, plugin_config: PluginConfig) -> DBPluginType:
         """将插件配置转换为数据库插件类型"""
