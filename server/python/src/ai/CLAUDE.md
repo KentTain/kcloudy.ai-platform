@@ -191,6 +191,32 @@ provider = get_plugin_installation_provider()
 installation = await provider.get_installation(tenant_id, plugin_id)
 ```
 
+### 事件驱动机制（2026-06-25 新增）
+
+插件安装失败时，AI 模块发布 `PluginInstallationFailed` 事件，Tenant 模块监听并处理。
+
+**事件发布位置**：`ai/components/plugin/engine/core/plugin_manager.py`
+
+```python
+from framework.events.domain_events import PluginInstallationFailed
+from framework.events.publisher import get_event_publisher
+
+# 发布安装失败事件
+publisher = get_event_publisher()
+event = PluginInstallationFailed(
+    tenant_id=tenant_id,
+    plugin_id=plugin_id,
+    error_message=str(e),
+)
+await publisher.publish(event)
+```
+
+**事件流**：
+1. AI 模块安装插件失败
+2. 发布 `PluginInstallationFailed` 事件到 Redis Stream
+3. Tenant 模块监听器接收事件
+4. 更新安装记录状态为 FAILED
+
 ## 开发规则
 
 - Controller 只处理路由、参数校验、鉴权依赖和响应封装

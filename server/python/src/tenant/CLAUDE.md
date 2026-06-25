@@ -31,6 +31,7 @@ Tenant ──X──▶ IAM / Demo / AI
 | models/ | 租户数据库模型（Tenant、TenantConfig、TenantAdmin、**PluginDefinition、PluginInstallation**） |
 | schemas/ | 请求、响应 Pydantic 模型 |
 | migrations/ | 租户数据库迁移与 seed 数据 |
+| listeners/ | 事件监听器（处理插件安装/卸载失败事件） |
 
 ## 接口分层
 
@@ -136,6 +137,55 @@ register_plugin_installation_provider(plugin_installation_provider_impl)
 - AI 模块依赖抽象接口（Protocol），不直接访问 Tenant Schema
 - Tenant 模块实现接口，提供具体数据访问
 - 便于测试和模块解耦
+
+## 事件监听器（2026-06-25 新增）
+
+Tenant 模块提供事件监听器，处理插件安装/卸载失败事件。
+
+### 文件位置
+
+```
+tenant/listeners/
+├── __init__.py
+├── handlers/
+│   ├── __init__.py
+│   └── plugin_handler.py
+└── setup.py
+```
+
+### 启动监听器
+
+在应用启动时调用：
+
+```python
+from tenant.listeners.setup import setup_listeners
+
+await setup_listeners(settings)
+```
+
+### 停止监听器
+
+在应用关闭时调用：
+
+```python
+from tenant.listeners.setup import cleanup_listeners
+
+await cleanup_listeners()
+```
+
+### 事件处理器
+
+| 事件 | 处理器 | 说明 |
+|------|--------|------|
+| PluginInstallationFailed | PluginInstallationFailedHandler | 更新安装记录状态为 FAILED |
+| PluginUninstallFailed | PluginUninstallFailedHandler | 记录失败日志 |
+
+### 工作原理
+
+1. 监听器使用 Redis Stream 消费者组模式
+2. 接收 AI 模块发布的事件消息
+3. 解析消息并调用对应的处理器
+4. 处理成功后确认消息（ACK）
 
 ## 测试
 
