@@ -41,7 +41,9 @@ class AIModule:
         格式: [(router, prefix, tags), ...]
         """
         from ai.controllers.admin.plugin import router as admin_plugin_router
+        from ai.controllers.console.installations import router as installations_router
         from ai.controllers.console.plugin import router as console_plugin_router
+        from ai.controllers.console.runtime_states import router as runtime_states_router
         from ai.controllers.inner.plugin import router as inner_plugin_router
         from ai.controllers.v1.chat.llm import router as chat_llm_router
         from ai.controllers.v1.conversation import router as conversation_router
@@ -52,6 +54,10 @@ class AIModule:
             (admin_plugin_router, "/ai/admin/v1/plugins", ["Admin - Plugin"]),
             # Console API - 插件列表和凭证管理
             (console_plugin_router, "/ai/console/v1/plugins", ["Console - Plugin"]),
+            # Console API - 插件安装管理（卸载、运行时管理、统计）
+            (installations_router, "/ai/console/v1/plugins/installations", ["Console - Plugin Installations"]),
+            # Console API - 批量运行时状态
+            (runtime_states_router, "/ai/console/v1/plugins/runtime-states", ["Console - Runtime States"]),
             # Inner API - 内部接口
             (inner_plugin_router, "/ai/inner/v1", ["Inner - Plugin"]),
             # Console API - LLM 对话接口

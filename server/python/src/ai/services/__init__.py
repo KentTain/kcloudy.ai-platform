@@ -7,6 +7,7 @@ AI 模块服务层
 from ai.services.chat_service import ChatService, chat_service
 from ai.services.conversation_service import ConversationService, conversation_service
 from ai.services.credential_service import CredentialService, credential_service
+from ai.services.install_task_service import InstallTaskService, install_task_service
 from ai.services.plugin import PluginManagementService, plugin_management_service
 
 __all__ = [
@@ -22,4 +23,7 @@ __all__ = [
     # 插件管理服务
     "PluginManagementService",
     "plugin_management_service",
+    # 安装任务服务
+    "InstallTaskService",
+    "install_task_service",
 ]

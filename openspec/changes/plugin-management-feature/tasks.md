@@ -33,45 +33,45 @@
 
 ## 5. AI 模块 - 可用插件列表
 
-- [ ] 5.1 创建 `AvailablePluginQuery`、`AvailablePluginResponse` Schema
-- [ ] 5.2 扩展 `PluginManagementService.get_available_plugins()` 方法（从 Tenant Provider 获取定义，标记安装状态）
-- [ ] 5.3 实现 `GET /ai/console/v1/plugins/available` API
+- [x] 5.1 创建 `AvailablePluginQuery`、`AvailablePluginResponse` Schema
+- [x] 5.2 扩展 `PluginManagementService.get_available_plugins()` 方法（从 Tenant Provider 获取定义，标记安装状态）
+- [x] 5.3 实现 `GET /ai/console/v1/plugins/available` API
 
 ## 6. AI 模块 - 安装任务队列
 
-- [ ] 6.1 创建 `PluginInstallTask` 模型（对应 `ai.plugin_install_tasks` 表）
-- [ ] 6.2 创建 `InstallPluginRequest`、`InstallPluginResponse` Schema
-- [ ] 6.3 创建 `InstallTaskService`：任务创建、状态更新、进度追踪
-- [ ] 6.4 创建 Redis Stream 任务队列消费者（`InstallTaskConsumer`）
-- [ ] 6.5 实现安装任务执行逻辑（下载插件包、初始化配置、更新状态）
-- [ ] 6.6 实现 `POST /ai/console/v1/plugins/installations` API（创建安装任务）
-- [ ] 6.7 创建 `InstallTaskQuery`、`InstallTaskResponse`、`InstallTaskDetailResponse` Schema
-- [ ] 6.8 实现 `GET /ai/console/v1/plugins/install-tasks` API（任务列表）
-- [ ] 6.9 实现 `GET /ai/console/v1/plugins/install-tasks/{task_id}` API（任务详情）
-- [ ] 6.10 配置任务超时机制（30 分钟）和超时处理
+- [x] 6.1 创建 `PluginInstallTask` 模型（对应 `ai.plugin_install_tasks` 表）
+- [x] 6.2 创建 `InstallPluginRequest`、`InstallPluginResponse` Schema
+- [x] 6.3 创建 `InstallTaskService`：任务创建、状态更新、进度追踪
+- [x] 6.4 创建 Redis Stream 任务队列消费者（`InstallTaskConsumer`）
+- [x] 6.5 实现安装任务执行逻辑（下载插件包、初始化配置、更新状态）
+- [x] 6.6 实现 `POST /ai/console/v1/plugins/installations` API（创建安装任务）
+- [x] 6.7 创建 `InstallTaskQuery`、`InstallTaskResponse`、`InstallTaskDetailResponse` Schema
+- [x] 6.8 实现 `GET /ai/console/v1/plugins/install-tasks` API（任务列表）
+- [x] 6.9 实现 `GET /ai/console/v1/plugins/install-tasks/{task_id}` API（任务详情）
+- [x] 6.10 配置任务超时机制（30 分钟）和超时处理
 
 ## 7. AI 模块 - 卸载插件
 
-- [ ] 7.1 扩展 `PluginManagementService.uninstall_plugin()` 方法（停止进程、清理数据、递减引用计数）
-- [ ] 7.2 实现 `DELETE /ai/console/v1/plugins/installations/{plugin_id}` API
+- [x] 7.1 扩展 `PluginManagementService.uninstall_plugin()` 方法（停止进程、清理数据、递减引用计数）
+- [x] 7.2 实现 `DELETE /ai/console/v1/plugins/installations/{plugin_id}` API
 
 ## 8. AI 模块 - 运行时管理
 
-- [ ] 8.1 创建 `StartPluginResponse`、`StopPluginResponse` Schema
-- [ ] 8.2 实现 `POST /ai/console/v1/plugins/installations/{plugin_id}/start` API
-- [ ] 8.3 实现 `POST /ai/console/v1/plugins/installations/{plugin_id}/stop` API
-- [ ] 8.4 创建 `PluginConfigResponse`、`UpdatePluginConfigRequest` Schema
-- [ ] 8.5 实现 `GET /ai/console/v1/plugins/installations/{plugin_id}/config` API
-- [ ] 8.6 实现 `PATCH /ai/console/v1/plugins/installations/{plugin_id}/config` API
-- [ ] 8.7 创建 `RuntimeStateResponse`、`RuntimeStateListResponse` Schema
-- [ ] 8.8 实现 `GET /ai/console/v1/plugins/installations/{plugin_id}/runtime-state` API
-- [ ] 8.9 实现 `GET /ai/console/v1/plugins/runtime-states` API（批量状态）
+- [x] 8.1 创建 `StartPluginResponse`、`StopPluginResponse` Schema
+- [x] 8.2 实现 `POST /ai/console/v1/plugins/installations/{plugin_id}/start` API
+- [x] 8.3 实现 `POST /ai/console/v1/plugins/installations/{plugin_id}/stop` API
+- [x] 8.4 创建 `PluginConfigResponse`、`UpdatePluginConfigRequest` Schema
+- [x] 8.5 实现 `GET /ai/console/v1/plugins/installations/{plugin_id}/config` API
+- [x] 8.6 实现 `PATCH /ai/console/v1/plugins/installations/{plugin_id}/config` API
+- [x] 8.7 创建 `RuntimeStateResponse`、`RuntimeStateListResponse` Schema
+- [x] 8.8 实现 `GET /ai/console/v1/plugins/installations/{plugin_id}/runtime-state` API
+- [x] 8.9 实现 `GET /ai/console/v1/plugins/runtime-states` API（批量状态）
 
 ## 9. AI 模块 - 统计仪表板
 
-- [ ] 9.1 创建 `PluginUsageStatisticsResponse` Schema（状态统计、使用统计、运行时统计）
-- [ ] 9.2 创建 `PluginUsageStatisticsService.get_statistics()` 方法
-- [ ] 9.3 实现 `GET /ai/console/v1/plugins/statistics` API
+- [x] 9.1 创建 `PluginUsageStatisticsResponse` Schema（状态统计、使用统计、运行时统计）
+- [x] 9.2 创建 `PluginUsageStatisticsService.get_statistics()` 方法
+- [x] 9.3 实现 `GET /ai/console/v1/plugins/statistics` API
 
 ## 10. 权限控制集成
 
