@@ -114,8 +114,18 @@ test.describe('Tenant 模块冒烟测试', () => {
   // ===========================================================================
 
   test('遍历所有可见菜单路径', async ({ page, request }) => {
-    // 获取菜单数据
-    const meResponse = await request.get('/api/tenant/admin/v1/admin/me');
+    // 先登录获取 Token
+    const loginResponse = await request.post('/api/tenant/admin/v1/auth/login', {
+      data: { username: 'tenant_admin', password: 'admin123' }
+    });
+    expect(loginResponse.ok()).toBeTruthy();
+    const loginData = await loginResponse.json();
+    const token = loginData?.data?.token;
+
+    // 获取菜单数据（需要认证）
+    const meResponse = await request.get('/api/tenant/admin/v1/admin/me', {
+      headers: { Authorization: `Bearer ${token}` }
+    });
     expect(meResponse.ok()).toBeTruthy();
 
     const meData = await meResponse.json();
@@ -213,8 +223,8 @@ test.describe('Tenant 模块冒烟测试', () => {
     await page.goto('/admin/tenants');
     await waitForSkeletonGone(page);
 
-    // 获取所有统计数值
-    const statValues = await page.locator('[class*="stat"], [class*="card"] [class*="text-2xl"]').allTextContents();
+    // 获取所有统计数值（使用 data-testid 定位）
+    const statValues = await page.locator('[data-testid$="-value"]').allTextContents();
 
     // 验证每个数值都是有效数字格式
     for (const value of statValues) {

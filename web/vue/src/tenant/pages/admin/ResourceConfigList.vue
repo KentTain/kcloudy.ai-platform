@@ -607,9 +607,21 @@ const handleSave = async () => {
   formLoading.value = true
   try {
     // 构建扁平化的提交数据
-    const payload = {
+    const payload: Record<string, any> = {
       name: form.value.name,
       ...form.value.config,
+    }
+
+    // 根据资源类型添加 type 字段
+    const typeValues: Record<ResourceType, string | undefined> = {
+      database: 'postgresql',
+      storage: 'minio',
+      cache: undefined,
+      queue: 'rabbitmq',
+      pubsub: 'kafka',
+    }
+    if (typeValues[currentType.value]) {
+      payload.type = typeValues[currentType.value]
     }
 
     if (editingId.value) {

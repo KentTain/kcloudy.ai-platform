@@ -466,6 +466,18 @@ const RESOURCE_PATH_MAP: Record<ResourceType, string> = {
 };
 
 /**
+ * 资源类型对应的 type 字段值
+ * 注意：cache 类型不需要 type 字段，设为 undefined
+ */
+const RESOURCE_TYPE_VALUES: Record<ResourceType, string | undefined> = {
+  database: 'postgresql',
+  storage: 'minio',
+  cache: undefined,
+  queue: 'rabbitmq',
+  pubsub: 'kafka',
+};
+
+/**
  * 通过 API 创建资源配置
  *
  * @param request Playwright APIRequestContext
@@ -483,6 +495,7 @@ export async function createResourceConfigViaAPI(
   const path = RESOURCE_PATH_MAP[type];
   const payload = {
     name: `e2e-${type}-${Date.now()}`,
+    type: RESOURCE_TYPE_VALUES[type],
     ...data,
   };
 
