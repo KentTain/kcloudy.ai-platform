@@ -112,8 +112,10 @@ class TenantModule:
         }
 
     def get_task_setup(self) -> tuple | None:
-        """Tenant 模块无定时任务"""
-        return None
+        """Tenant 模块定时任务"""
+        from tenant.tasks.setup import cleanup_scheduler, setup_scheduler
+
+        return (setup_scheduler, cleanup_scheduler)
 
     def get_listener_setup(self) -> tuple | None:
         """Tenant 模块无消息监听器"""
