@@ -154,8 +154,10 @@ class PluginInstallationProviderImpl(PluginInstallationProvider):
             await installation.delete(session)
 
     async def _ensure_plugin_definition(
-        self, session, data: PluginInstallationDTO
-    ) -> None:
+        self,
+        session,
+        data: PluginInstallationDTO,
+    ) -> TenantPluginDefinition:
         """
         确保插件定义存在
 
@@ -165,7 +167,13 @@ class PluginInstallationProviderImpl(PluginInstallationProvider):
 
         Args:
             session: 数据库会话
-            data: 安装记录 DTO
+            data: 安装记录 DTO（包含 declaration）
+
+        Returns:
+            TenantPluginDefinition
+
+        Raises:
+            ValueError: 插件定义不存在且未提供 declaration
         """
         definition = await TenantPluginDefinition.one_by_field(
             session, "plugin_unique_identifier", data.plugin_unique_identifier
@@ -180,10 +188,16 @@ class PluginInstallationProviderImpl(PluginInstallationProvider):
                 f"当前引用: {definition.refers}"
             )
         else:
-            # 创建新的插件定义
+            # 使用 DTO 中的 declaration 创建新定义
+            if not data.declaration:
+                raise ValueError(
+                    f"插件定义不存在且未提供 declaration: {data.plugin_unique_identifier}"
+                )
+
             definition = TenantPluginDefinition(
                 plugin_id=data.plugin_id,
                 plugin_unique_identifier=data.plugin_unique_identifier,
+                declaration=data.declaration,  # 从 DTO 获取 declaration
                 install_type=data.plugin_type or "local",
                 refers=1,
             )
@@ -193,6 +207,8 @@ class PluginInstallationProviderImpl(PluginInstallationProvider):
                 f"创建插件定义: {data.plugin_unique_identifier}, "
                 f"install_type={data.plugin_type or 'local'}"
             )
+
+        return definition
 
     def _to_dto(
         self, installation: TenantPluginInstallation
@@ -205,11 +221,17 @@ class PluginInstallationProviderImpl(PluginInstallationProvider):
 
         Returns:
             PluginInstallationDTO
+
+        注意:
+            declaration 字段存储在 plugin_definitions 表中，
+            不在 plugin_installations 表中。
+            如果需要返回 declaration，需要单独查询。
         """
         return PluginInstallationDTO(
             tenant_id=installation.tenant_id,
             plugin_id=installation.plugin_id,
             plugin_unique_identifier=installation.plugin_unique_identifier,
+            declaration={},  # 注意：installation 对象不包含 declaration，需要单独查询
             status=installation.status,
             auto_start=installation.auto_start,
             freeze_threshold_hours=installation.freeze_threshold_hours,
