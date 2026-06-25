@@ -110,3 +110,7 @@ class EventStream:
     # 模块菜单权限事件流
     MODULE_MENU_PERMISSION_CREATED = "module_menu_permission_created_events"
     MODULE_MENU_PERMISSION_DELETED = "module_menu_permission_deleted_events"
+
+    # 插件安装事件流
+    PLUGIN_INSTALLATION_FAILED = "plugin_installation_failed_events"
+    PLUGIN_UNINSTALL_FAILED = "plugin_uninstall_failed_events"

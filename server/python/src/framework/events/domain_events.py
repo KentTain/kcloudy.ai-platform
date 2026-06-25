@@ -356,3 +356,50 @@ class ModuleMenuPermissionDeleted(DomainEvent):
     @classmethod
     def get_stream_name(cls) -> str:
         return EventStream.MODULE_MENU_PERMISSION_DELETED
+
+
+# =============================================================================
+# 插件事件
+# =============================================================================
+
+
+@dataclass
+class PluginInstallationFailed(DomainEvent):
+    """
+    插件安装失败事件
+
+    触发时机：AI 侧配置创建失败，但 Tenant 侧安装记录已存在
+    携带数据：tenant_id, plugin_id, error_message
+
+    消费者：
+    - Tenant 模块：将安装记录状态更新为 FAILED
+    """
+
+    tenant_id: str = ""
+    plugin_id: str = ""
+    error_message: str = ""
+
+    @classmethod
+    def get_stream_name(cls) -> str:
+        return EventStream.PLUGIN_INSTALLATION_FAILED
+
+
+@dataclass
+class PluginUninstallFailed(DomainEvent):
+    """
+    插件卸载失败事件
+
+    触发时机：AI 侧数据删除失败，但 Tenant 侧记录已删除
+    携带数据：tenant_id, plugin_id, error_message
+
+    消费者：
+    - Tenant 模块：记录失败日志
+    """
+
+    tenant_id: str = ""
+    plugin_id: str = ""
+    error_message: str = ""
+
+    @classmethod
+    def get_stream_name(cls) -> str:
+        return EventStream.PLUGIN_UNINSTALL_FAILED
