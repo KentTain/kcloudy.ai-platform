@@ -170,7 +170,14 @@ class TenantPluginManager:
         self.runtime_factory = RuntimeFactory()  # 插件运行时工厂
 
         # 插件运行目录
-        self.tenant_plugin_dir = get_settings().plugin.plugin_base_dir / "tenants" / tenant_id
+        plugin_base_dir = get_settings().plugin.plugin_base_dir
+        # 确保转换为 Path 对象（配置中可能是字符串）
+        if plugin_base_dir:
+            base_path = Path(plugin_base_dir)
+        else:
+            # 使用默认路径
+            base_path = Path(tempfile.gettempdir()) / "plugins"
+        self.tenant_plugin_dir = base_path / "tenants" / tenant_id
         self.workspace_dir = self.tenant_plugin_dir / "runtime"  # 插件运行时工作目录
         self.workspace_dir.mkdir(parents=True, exist_ok=True)
 

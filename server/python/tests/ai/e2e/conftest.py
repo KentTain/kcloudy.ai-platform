@@ -69,7 +69,7 @@ def pytest_collection_modifyitems(config, items):
     if not e2e_selected:
         skip_e2e = pytest.mark.skip(reason="E2E tests are skipped by default. Use -m e2e to run.")
         for item in items:
-            if "e2e" in item.keywords:
+            if item.get_closest_marker("e2e") is not None:
                 item.add_marker(skip_e2e)
 
 
@@ -473,6 +473,275 @@ def e2e_test_context(test_tenant_id):
 
 
 # =============================================================================
+# 插件测试夹具
+# =============================================================================
+
+@pytest_asyncio.fixture
+async def plugin_provider():
+    """
+    注册 PluginInstallationProvider。
+
+    插件管理器依赖此 provider 访问 Tenant 侧的安装记录。
+    在测试中需要手动注册，因为测试不经过应用启动流程。
+
+    同时初始化数据库引擎池并运行必要的迁移，
+    因为 provider 实现使用 get_task_session() 获取数据库会话。
+    """
+    # 初始化配置（如果尚未初始化）
+    from framework.configs.settings import get_settings
+
+    try:
+        settings = get_settings()
+    except RuntimeError:
+        config_dir = Path(__file__).resolve().parent.parent.parent.parent.parent / "config"
+        from framework.configs import init_settings
+
+        settings = init_settings(config_dir)
+
+    # 初始化数据库引擎池
+    from framework.database.core.engine_pool import init_default_engine
+
+    init_default_engine(
+        database_url=settings.sqlalchemy.url,
+        echo=settings.sqlalchemy.echo,
+    )
+
+    # 运行必要的数据库迁移
+    from alembic import command
+    from alembic.config import Config
+
+    src_path = Path(__file__).resolve().parent.parent.parent.parent.parent / "src"
+
+    for module_name in ("tenant", "ai"):
+        module_dir = src_path / module_name / "migrations"
+        if module_dir.exists() and (module_dir / "versions").exists():
+            try:
+                alembic_cfg = Config()
+                alembic_cfg.set_main_option("script_location", str(module_dir))
+                alembic_cfg.set_main_option(
+                    "version_locations", str(module_dir / "versions")
+                )
+                alembic_cfg.set_main_option(
+                    "sqlalchemy.url", str(settings.sqlalchemy.url)
+                )
+                command.upgrade(alembic_cfg, "head")
+            except Exception as e:
+                # 如果迁移已运行过（已存在），忽略错误
+                import logging
+                logging.getLogger(__name__).warning(
+                    f"模块 {module_name} 迁移执行异常: {e}"
+                )
+
+    # 注册 PluginInstallationProvider
+    from framework.tenant.plugin_protocols import (
+        get_plugin_installation_provider,
+        register_plugin_installation_provider,
+    )
+
+    try:
+        # 检查是否已注册
+        get_plugin_installation_provider()
+    except RuntimeError:
+        from tenant.services.plugin_provider import (
+            plugin_installation_provider_impl,
+        )
+
+        register_plugin_installation_provider(plugin_installation_provider_impl)
+
+    yield get_plugin_installation_provider()
+
+    # 清理：关闭引擎池
+    from framework.database.core.engine_pool import get_engine_pool
+
+    pool = get_engine_pool()
+    await pool.close()
+
+
+@pytest_asyncio.fixture
+async def plugin_runtime_setup(
+    test_tenant_id: str,
+    plugin_package_path: callable,
+    tmp_path: Path,
+):
+    """
+    设置插件运行时测试环境。
+
+    创建插件的完整工作目录：
+    1. 解压插件包到工作目录
+    2. 创建 Python 虚拟环境（使用系统 python，不用 uv）
+    3. 解析插件配置并创建 PluginInfo
+    4. 创建 LocalPluginRuntime 实例
+    5. 执行 prepare（跳过 uv 使用系统 venv + 修复 env 变量类型）
+
+    返回:
+        tuple: (manager, local_runtime, cleanup_func)
+    """
+    import json
+    import shutil
+    import subprocess
+    import sys
+    import zipfile
+    from pathlib import Path
+
+    from ai.components.plugin.engine.core.helper import PluginConfigProcessor
+    from ai.components.plugin.engine.core.plugin_manager import PluginManagerFactory
+    from ai.components.plugin.engine.core.runtime.local_runtime import (
+        LocalPluginRuntime,
+    )
+    from ai.components.plugin.engine.models.plugin import PluginInfo
+
+    plugin_id = "langgenius/tongyi"
+    workspace_dir = tmp_path / "plugins" / "tenants" / test_tenant_id / "runtime" / plugin_id
+
+    # 清理并创建工作目录
+    if workspace_dir.exists():
+        shutil.rmtree(workspace_dir)
+    workspace_dir.mkdir(parents=True, exist_ok=True)
+
+    # 提取插件包
+    package_path: Path = plugin_package_path("tongyi")
+    with zipfile.ZipFile(package_path, "r") as zf:
+        zf.extractall(workspace_dir)
+
+    # 创建 config 目录
+    (workspace_dir / "config").mkdir(parents=True, exist_ok=True)
+
+    # 创建虚拟环境
+    venv_path = workspace_dir / ".venv"
+    subprocess.run(
+        [sys.executable, "-m", "venv", str(venv_path)],
+        check=True,
+        capture_output=True,
+    )
+    python_interpreter = str(venv_path / "bin" / "python")
+
+    # 解析插件配置
+    processor = PluginConfigProcessor(plugin_dir=workspace_dir)
+    processor.parse_plugin_config()
+    plugin_config = processor.get_plugin_config()
+
+    # 创建 PluginInfo 并注入 config
+    from datetime import datetime
+
+    plugin_info = PluginInfo(installed_at=datetime.now())
+    object.__setattr__(plugin_info, "config", plugin_config)
+
+    # 获取 manager 实例
+    from sqlalchemy.ext.asyncio import AsyncSession
+    from framework.database.dependencies import get_db_session
+
+    # 创建 LocalPluginRuntime
+    runtime = LocalPluginRuntime(
+        plugin_info=plugin_info, workspace_dir=workspace_dir
+    )
+    runtime.virtual_env_path = venv_path
+    runtime.python_interpreter_path = python_interpreter
+
+    # 设置 uv 路径（使用 shutil.which）
+    uv_path = shutil.which("uv")
+    if uv_path:
+        runtime.uv_path = uv_path
+    else:
+        # 使用 pip 而非 uv
+        runtime.uv_path = None
+
+    # 手动准备：创建 .prepared marker 并设置状态
+    marker_file = workspace_dir / ".prepared"
+    marker_file.write_text(
+        f"prepared_at: {datetime.now().isoformat()}\n"
+        f"plugin_name: {plugin_info.name}\n"
+        f"plugin_version: {plugin_info.version}\n"
+    )
+
+    # 生成 runtime manifest
+    manifest = {
+        "plugin_info": {
+            "name": plugin_info.name or plugin_config.configuration.name,
+            "version": plugin_info.version or plugin_config.configuration.version,
+            "author": plugin_config.configuration.author,
+        },
+        "preparation_info": {
+            "prepared_at": datetime.now().isoformat(),
+            "workspace_dir": str(workspace_dir),
+            "virtual_env_path": str(venv_path),
+            "python_interpreter": python_interpreter,
+        },
+        "environment_info": {},
+        "runtime_config": {
+            "entrypoint": "main",
+            "language": "python",
+            "memory_limit": None,
+        },
+    }
+    with open(workspace_dir / "config" / "runtime_manifest.json", "w") as f:
+        json.dump(manifest, f)
+
+    # 设置 runtime 状态
+    runtime._is_prepared = True
+    runtime._state = "prepared"
+    runtime._is_running = False
+    runtime.prepared_at = datetime.now()
+    runtime.environment_info = {
+        "uv_path": uv_path,
+        "python_interpreter": python_interpreter,
+    }
+
+    # 清除 uv_check 的状态，让 start 使用已有的 uv_path
+    # 因为 prepare() 被跳过，所以在 start() 内部的 re-check 不会触发
+
+    # Mock _start_plugin_process 为长时间运行的测试进程
+    # 这样不依赖插件的外部依赖包（如 dify_plugin）
+    async def _mock_start_plugin_process(self):
+        """创建简单的长时间运行的测试 Python 进程"""
+        import asyncio
+        # 创建测试用 worker 脚本
+        worker_script = self.workspace_dir / "test_worker.py"
+        worker_script.write_text(
+            "import signal, time\n"
+            "signal.signal(signal.SIGTERM, lambda *_: exit(0))\n"
+            "print('WORKER_READY')\n"
+            "import sys; sys.stdout.flush()\n"
+            "while True:\n"
+            "    time.sleep(1)\n"
+        )
+
+        cmd = [self.python_interpreter_path, str(worker_script)]
+        self._plugin_logger.info(f"测试启动命令: {' '.join(cmd)}")
+
+        self.process = await asyncio.create_subprocess_exec(
+            *cmd,
+            stdin=asyncio.subprocess.PIPE,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+            cwd=self.workspace_dir,
+        )
+        self.process_id = self.process.pid
+        self._plugin_logger.info(f"测试进程启动成功: PID {self.process_id}")
+
+        # 启动输出处理
+        self._output_task = asyncio.create_task(self._handle_process_output())
+
+    # 应用 mock
+    import types
+    runtime._start_plugin_process = types.MethodType(
+        _mock_start_plugin_process, runtime
+    )
+
+    async def cleanup():
+        if runtime.is_running:
+            try:
+                await runtime.stop()
+            except Exception:
+                pass
+        if workspace_dir.exists():
+            shutil.rmtree(workspace_dir, ignore_errors=True)
+
+    yield runtime, cleanup
+
+    await cleanup()
+
+
+# =============================================================================
 # API Key 夹具
 # =============================================================================
 
@@ -512,3 +781,23 @@ def gpustack_api_key():
     if not api_key:
         pytest.skip("未配置 E2E_GPUSTACK_API_KEY 环境变量，跳过 GPUStack 测试")
     return api_key
+
+
+# =============================================================================
+# Provider 注册夹具
+# =============================================================================
+
+@pytest.fixture
+def registered_provider():
+    """
+    注册 PluginInstallationProvider。
+
+    用于需要完整插件安装流程的 E2E 测试。
+    """
+    from framework.tenant.plugin_protocols import (
+        register_plugin_installation_provider,
+    )
+    from tenant.services.plugin_provider import plugin_installation_provider_impl
+
+    register_plugin_installation_provider(plugin_installation_provider_impl)
+    return plugin_installation_provider_impl
