@@ -115,10 +115,12 @@ async def db_engine(integration_settings, postgres_available):
         pytest.skip("PostgreSQL 服务不可用")
 
     # 创建独立的引擎实例，不使用全局引擎
+    from sqlalchemy.pool import NullPool
+
     engine = create_async_engine(
         integration_settings.sqlalchemy.url,
         echo=integration_settings.sqlalchemy.echo,
-        pool_pre_ping=True,
+        poolclass=NullPool,
     )
 
     yield engine
@@ -168,6 +170,29 @@ TEST_TENANT_CODE = "TEST_TENANT"
 def test_tenant_id():
     """获取测试租户 ID（session 级别，返回固定值）"""
     return TEST_TENANT_ID
+
+
+@pytest_asyncio.fixture(scope="function", autouse=True)
+async def ensure_test_tenant(db_engine):
+    """确保测试租户存在于数据库中（每个测试自动创建）"""
+    from sqlalchemy import text
+    from sqlalchemy.ext.asyncio import AsyncSession
+
+    # 使用独立的会话创建测试租户，避免干扰测试的 session 事务状态
+    async with AsyncSession(bind=db_engine) as tmp_session:
+        stmt = text("""
+            INSERT INTO tenant.tenants (id, name, code, status, created_at, updated_at, settings)
+            VALUES (:id, :name, :code, :status, NOW(), NOW(), '{}')
+            ON CONFLICT (code) DO NOTHING
+        """)
+        await tmp_session.execute(stmt, {
+            "id": TEST_TENANT_ID,
+            "name": "测试租户",
+            "code": TEST_TENANT_CODE,
+            "status": "active",
+        })
+        await tmp_session.commit()
+    yield
 
 
 @pytest.fixture
