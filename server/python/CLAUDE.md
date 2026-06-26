@@ -95,6 +95,57 @@ uv run pytest tests/demo/ -v
 
 应用启动时支持自动执行数据库迁移和种子数据初始化，通过配置控制行为。
 
+### RBAC 模块定义与同步
+
+#### Tenant 模块：RBAC 数据来源
+
+模块通过 `get_module_definition()` 声明菜单、权限、角色等 RBAC 元数据：
+
+```python
+# src/{module}/module.py
+from framework.module.definition import ModuleDefinition, MenuDef, PermissionDef, RoleDef
+
+def get_module_definition() -> ModuleDefinition:
+    return ModuleDefinition(
+        code="iam",
+        name="身份认证与权限",
+        menus=[
+            MenuDef(code="users", name="用户管理", path="/iam/users", icon="users"),
+        ],
+        permissions=[
+            PermissionDef(code="iam:user:read", name="查看用户", resource="user", action="read"),
+        ],
+        default_roles=[
+            RoleDef(code="admin", name="管理员", permissions=["iam:user:read", "iam:user:write"]),
+        ],
+    )
+```
+
+应用启动时，`framework.module.sync_service` 将定义同步到 `tenant` schema 的模块定义表：
+- `tenant.module_menus` — 模块菜单定义
+- `tenant.module_permissions` — 模块权限定义
+- `tenant.module_roles` — 模块角色定义
+- `tenant.module_role_permissions` — 角色权限关联
+
+#### IAM 模块：同步到租户实例层
+
+租户分配模块时，`iam.services.module_sync_service.sync_module_assigned()` 将模块定义同步到租户实例层：
+
+| 模块定义层 (tenant schema) | 租户实例层 (iam schema) | 关联字段 |
+|---------------------------|------------------------|---------|
+| `module_menus` | `iam.menus` | `ref_id` |
+| `module_permissions` | `iam.permissions` | `ref_id` |
+| `module_roles` | `iam.roles` | `ref_id` |
+| `module_role_permissions` | `iam.role_permissions` | — |
+
+同步流程：
+1. 从 `tenant.module_*` 表读取模块定义
+2. 创建租户实例记录，设置 `tenant_id` 和 `ref_id`
+3. 通过 `ref_id` 实现幂等同步（避免重复创建）
+4. 同步角色权限关联和菜单权限关联
+
+**注意**：`tenant` 模块的菜单不同步到 `iam.menus`，由 tenant 模块自行管理。
+
 ### 配置说明
 
 | 环境 | 配置文件 | `auto_migrate` | 行为 |
