@@ -23,9 +23,9 @@ class TestNewPluginTablesExist:
     """验证新插件相关表是否存在"""
 
     @pytest_asyncio.fixture
-    async def session(self, tenant_async_engine):
+    async def session(self, ai_async_engine):
         from sqlalchemy.ext.asyncio import AsyncSession
-        session = AsyncSession(bind=tenant_async_engine)
+        session = AsyncSession(bind=ai_async_engine)
         try:
             yield session
         finally:
@@ -79,10 +79,10 @@ class TestPluginInstallationCRUD:
     """插件安装记录 CRUD 集成测试"""
 
     @pytest_asyncio.fixture
-    async def session(self, tenant_async_engine):
+    async def session(self, ai_async_engine):
         """使用事务隔离的测试会话"""
         from sqlalchemy.ext.asyncio import AsyncSession
-        session = AsyncSession(bind=tenant_async_engine)
+        session = AsyncSession(bind=ai_async_engine)
         try:
             yield session
         finally:
