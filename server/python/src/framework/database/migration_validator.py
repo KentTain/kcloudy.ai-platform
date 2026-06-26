@@ -303,17 +303,10 @@ class StartupMigrationValidator:
                 settings = get_settings()
 
                 module_dir = self.src_path / module_name / "migrations"
-                config_file = module_dir / "alembic.ini"
 
-                # 创建配置
-                if config_file.exists():
-                    config = Config(str(config_file))
-                else:
-                    global_config_file = (
-                        Path(__file__).parent.parent.parent / "alembic.ini"
-                    )
-                    config = Config(str(global_config_file))
-
+                # 始终创建空白 Config，避免继承全局 alembic.ini 的 version_locations
+                # 全局 alembic.ini 的 version_locations 包含多模块目录，会导致版本重叠冲突
+                config = Config()
                 config.set_main_option("script_location", str(module_dir))
                 config.set_main_option(
                     "version_locations", str(module_dir / "versions")

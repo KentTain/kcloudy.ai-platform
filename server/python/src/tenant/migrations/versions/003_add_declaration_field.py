@@ -26,19 +26,32 @@ MODULE_SCHEMA = "tenant"
 def upgrade() -> None:
     """升级：添加 declaration 字段，删除 remote_declaration 字段"""
 
-    # 1. 添加 declaration 字段
+    # 1. 添加 declaration 字段（先允许 NULL）
     op.add_column(
         "plugin_definitions",
         sa.Column(
             "declaration",
             postgresql.JSONB(astext_type=sa.Text()),
-            nullable=False,
+            nullable=True,
             comment="完整声明内容（manifest + 工具/模型声明）",
         ),
         schema=MODULE_SCHEMA,
     )
 
-    # 2. 删除 remote_declaration 字段
+    # 2. 为现有记录设置默认值（空对象）
+    op.execute(
+        f"UPDATE {MODULE_SCHEMA}.plugin_definitions SET declaration = '{{}}'::jsonb WHERE declaration IS NULL"
+    )
+
+    # 3. 改为 NOT NULL
+    op.alter_column(
+        "plugin_definitions",
+        "declaration",
+        nullable=False,
+        schema=MODULE_SCHEMA,
+    )
+
+    # 4. 删除 remote_declaration 字段
     op.drop_column("plugin_definitions", "remote_declaration", schema=MODULE_SCHEMA)
 
 

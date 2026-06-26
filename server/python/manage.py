@@ -110,21 +110,15 @@ def get_module_alembic_config(module, database_url: str | None = None):
     """获取模块的 Alembic 配置"""
     from alembic.config import Config
 
-    from demo.configs import settings
+    from framework.configs import get_settings
+
+    settings = get_settings()
 
     module_dir = src_path / module.name / "migrations"
-    config_file = module_dir / "alembic.ini"
 
-    # 如果模块有独立的 alembic.ini，使用它
-    # 否则使用全局配置并设置模块路径
-    if config_file.exists():
-        config = Config(str(config_file))
-    else:
-        # 使用全局 alembic.ini
-        global_config_file = Path(__file__).parent / "alembic.ini"
-        config = Config(str(global_config_file))
-
-    # 设置模块特定的配置
+    # 始终创建空白 Config，避免继承全局 alembic.ini 的 version_locations
+    # 全局 alembic.ini 的 version_locations 包含多模块目录，会导致版本重叠冲突
+    config = Config()
     config.set_main_option("script_location", str(module_dir))
     config.set_main_option("version_locations", str(module_dir / "versions"))
 
@@ -139,8 +133,9 @@ def get_module_alembic_config(module, database_url: str | None = None):
 
 def get_database_url():
     """获取数据库连接 URL"""
-    from demo.configs import settings
+    from framework.configs import get_settings
 
+    settings = get_settings()
     return str(settings.sqlalchemy.url)
 
 
@@ -164,7 +159,12 @@ def runserver(host, port, reload, module):
     """启动 Web 服务器"""
     import uvicorn
 
-    from demo.configs import settings
+    # 导入 demo.configs 触发配置初始化，之后才能调用 get_settings()
+    from demo.configs import settings as _  # noqa: F401
+
+    from framework.configs import get_settings
+
+    settings = get_settings()
 
     write_title("正在启动 Web 服务器...")
     write_empty_line()
@@ -238,6 +238,9 @@ def runlistener(module):
 @click.pass_context
 def db(ctx, database_url):
     """数据库管理命令"""
+    # 导入 demo.configs 触发配置初始化
+    from demo.configs import settings as _  # noqa: F401
+
     ctx.ensure_object(dict)
     ctx.obj["database_url"] = database_url
     if database_url:
@@ -496,6 +499,9 @@ def rebuild(ctx, module, all_modules, yes, dry_run):
 def seed(dry_run, module):
     """初始化默认数据"""
 
+    # 导入 demo.configs 触发配置初始化
+    from demo.configs import settings as _  # noqa: F401
+
     # 加载模块
     modules = resolve_target_modules(module)
 
@@ -504,8 +510,10 @@ def seed(dry_run, module):
 
     # 检查数据库连接
     try:
-        from demo.configs import settings
+        from framework.configs import get_settings
         from framework.database.core.engine import setup_engine
+
+        settings = get_settings()
 
         sqlalchemy_config = settings.sqlalchemy
         setup_engine(
