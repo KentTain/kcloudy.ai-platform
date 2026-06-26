@@ -18,7 +18,7 @@ E2E 测试特性：
 
 import os
 import sys
-import time
+import uuid
 from pathlib import Path
 from typing import Callable
 
@@ -150,9 +150,10 @@ def test_tenant_id():
     """
     生成唯一测试租户 ID。
 
-    格式: e2e-test-{timestamp}
+    格式: e2e-test-{uuid8}
 
     用于创建隔离的测试环境，确保不同测试之间不会相互干扰。
+    使用 UUID 避免同一秒内运行多个测试产生相同的 tenant_id。
 
     Returns:
         str: 唯一的测试租户 ID
@@ -160,10 +161,9 @@ def test_tenant_id():
     Example:
         >>> test_tenant_id = test_tenant_id()
         >>> print(test_tenant_id)
-        'e2e-test-1719400000'
+        'e2e-test-a1b2c3d4'
     """
-    timestamp = int(time.time())
-    return f"e2e-test-{timestamp}"
+    return "e2e-test-" + uuid.uuid4().hex[:8]
 
 
 @pytest_asyncio.fixture
@@ -207,11 +207,11 @@ async def cleanup_test_resources(e2e_settings, test_tenant_id, redis_available):
                 await RedisUtil.init(e2e_settings.redis)
 
             # 查找并删除测试租户相关的 Key
-            # Key 模式: tenant:{tenant_id}:* 或 test:{tenant_id}:*
+            # Key 模式: tenant:{tenant_id}:* 或 test:{tenant_id}:* 或 e2e-test-*
             patterns = [
                 f"tenant:{test_tenant_id}:*",
                 f"test:{test_tenant_id}:*",
-                f"e2e-test-{test_tenant_id}:*",
+                f"{test_tenant_id}:*",
             ]
 
             for pattern in patterns:
