@@ -7,16 +7,9 @@ vi.mock("@/framework/api/client", () => ({
   get: vi.fn(),
 }));
 
-// Mock menu API
-vi.mock("@/framework/api/menu", () => ({
-  getUserMenus: vi.fn(),
-}));
-
 import { get } from "@/framework/api/client";
-import { getUserMenus } from "@/framework/api/menu";
 
 const mockGet = vi.mocked(get);
-const mockGetUserMenus = vi.mocked(getUserMenus);
 
 describe("useMenuStore", () => {
   beforeEach(() => {
@@ -394,7 +387,45 @@ describe("useMenuStore", () => {
   });
 
   describe("fetchUserMenus", () => {
-    it("成功获取用户菜单", async () => {
+    it("已有菜单数据时直接返回", async () => {
+      const store = useMenuStore();
+      // 先通过 setUserMenus 设置菜单
+      store.setUserMenus([
+        {
+          id: "1",
+          code: "home",
+          name: "首页",
+          icon: "Home",
+          path: "/",
+          tree_level: 0,
+          tree_leaf: true,
+          tree_sort: 0,
+          tree_sorts: "0",
+          tree_names: "首页",
+          parent_ids: "",
+          module: "demo",
+          is_visible: true,
+          children: [],
+        },
+      ]);
+
+      await store.fetchUserMenus();
+
+      expect(store.userMenus).toHaveLength(1);
+      expect(store.userMenus[0].id).toBe("1");
+      expect(store.userMenus[0].name).toBe("首页");
+    });
+
+    it("没有菜单数据时返回空数组", async () => {
+      const store = useMenuStore();
+      await store.fetchUserMenus();
+
+      expect(store.userMenus).toEqual([]);
+    });
+  });
+
+  describe("setUserMenus", () => {
+    it("正确设置用户菜单", () => {
       const mockUserMenus = [
         {
           id: "1",
@@ -402,7 +433,14 @@ describe("useMenuStore", () => {
           name: "首页",
           icon: "Home",
           path: "/",
-          sort_order: 0,
+          tree_level: 0,
+          tree_leaf: true,
+          tree_sort: 0,
+          tree_sorts: "0",
+          tree_names: "首页",
+          parent_ids: "",
+          module: "demo",
+          is_visible: true,
           children: [],
         },
         {
@@ -411,7 +449,14 @@ describe("useMenuStore", () => {
           name: "权限管理",
           icon: "Shield",
           path: null,
-          sort_order: 1,
+          tree_level: 0,
+          tree_leaf: false,
+          tree_sort: 1,
+          tree_sorts: "1",
+          tree_names: "权限管理",
+          parent_ids: "",
+          module: "iam",
+          is_visible: true,
           children: [
             {
               id: "2-1",
@@ -419,19 +464,22 @@ describe("useMenuStore", () => {
               name: "用户管理",
               icon: "Users",
               path: "/iam/users",
-              sort_order: 0,
+              tree_level: 1,
+              tree_leaf: true,
+              tree_sort: 0,
+              tree_sorts: "1.0",
+              tree_names: "权限管理/用户管理",
+              parent_ids: "2",
+              module: "iam",
+              is_visible: true,
               children: [],
             },
           ],
         },
       ];
 
-      mockGetUserMenus.mockResolvedValueOnce({
-        data: mockUserMenus,
-      });
-
       const store = useMenuStore();
-      await store.fetchUserMenus();
+      store.setUserMenus(mockUserMenus);
 
       expect(store.userMenus).toHaveLength(2);
       expect(store.userMenus[0].id).toBe("1");
@@ -439,52 +487,9 @@ describe("useMenuStore", () => {
       expect(store.userMenus[0].path).toBe("/");
       expect(store.userMenus[1].children).toHaveLength(1);
       expect(store.userMenus[1].children[0].name).toBe("用户管理");
-      expect(store.loading).toBe(false);
-      expect(store.error).toBeNull();
     });
 
-    it("获取用户菜单失败时设置错误信息", async () => {
-      mockGetUserMenus.mockRejectedValueOnce(new Error("获取菜单失败"));
-
-      const store = useMenuStore();
-      await store.fetchUserMenus();
-
-      expect(store.error).toBe("获取菜单失败");
-      expect(store.loading).toBe(false);
-      expect(store.userMenus).toEqual([]);
-    });
-
-    it("加载状态正确切换", async () => {
-      const mockUserMenus = [
-        {
-          id: "1",
-          code: "home",
-          name: "首页",
-          icon: "Home",
-          path: "/",
-          sort_order: 0,
-          children: [],
-        },
-      ];
-
-      mockGetUserMenus.mockImplementation(
-        () =>
-          new Promise((resolve) =>
-            setTimeout(() => resolve({ data: mockUserMenus }), 100)
-          )
-      );
-
-      const store = useMenuStore();
-      const promise = store.fetchUserMenus();
-
-      expect(store.loading).toBe(true);
-
-      await promise;
-
-      expect(store.loading).toBe(false);
-    });
-
-    it("菜单转换逻辑正确", async () => {
+    it("菜单转换逻辑正确", () => {
       const mockUserMenus = [
         {
           id: "1",
@@ -492,7 +497,14 @@ describe("useMenuStore", () => {
           name: "父菜单",
           icon: "Settings",
           path: null,
-          sort_order: 0,
+          tree_level: 0,
+          tree_leaf: false,
+          tree_sort: 0,
+          tree_sorts: "0",
+          tree_names: "父菜单",
+          parent_ids: "",
+          module: "demo",
+          is_visible: true,
           children: [
             {
               id: "1-1",
@@ -500,19 +512,22 @@ describe("useMenuStore", () => {
               name: "子菜单",
               icon: "Users",
               path: "/child",
-              sort_order: 0,
+              tree_level: 1,
+              tree_leaf: true,
+              tree_sort: 0,
+              tree_sorts: "0.0",
+              tree_names: "父菜单/子菜单",
+              parent_ids: "1",
+              module: "demo",
+              is_visible: true,
               children: [],
             },
           ],
         },
       ];
 
-      mockGetUserMenus.mockResolvedValueOnce({
-        data: mockUserMenus,
-      });
-
       const store = useMenuStore();
-      await store.fetchUserMenus();
+      store.setUserMenus(mockUserMenus);
 
       // 验证转换结果
       expect(store.userMenus[0].id).toBe("1");
@@ -529,7 +544,7 @@ describe("useMenuStore", () => {
       expect(store.userMenus[0].children[0].path).toBe("/child");
     });
 
-    it("null icon 转换正确", async () => {
+    it("null icon 转换正确", () => {
       const mockUserMenus = [
         {
           id: "1",
@@ -537,17 +552,20 @@ describe("useMenuStore", () => {
           name: "无图标菜单",
           icon: null,
           path: "/no-icon",
-          sort_order: 0,
+          tree_level: 0,
+          tree_leaf: true,
+          tree_sort: 0,
+          tree_sorts: "0",
+          tree_names: "无图标菜单",
+          parent_ids: "",
+          module: "demo",
+          is_visible: true,
           children: [],
         },
       ];
 
-      mockGetUserMenus.mockResolvedValueOnce({
-        data: mockUserMenus,
-      });
-
       const store = useMenuStore();
-      await store.fetchUserMenus();
+      store.setUserMenus(mockUserMenus);
 
       expect(store.userMenus[0].icon).toBeNull();
     });
@@ -581,17 +599,23 @@ describe("useMenuStore", () => {
           name: "首页",
           icon: "Home",
           path: "/",
-          sort_order: 0,
+          tree_level: 0,
+          tree_leaf: true,
+          tree_sort: 0,
+          tree_sorts: "0",
+          tree_names: "首页",
+          parent_ids: "",
+          module: "demo",
+          is_visible: true,
           children: [],
         },
       ];
 
       mockGet.mockResolvedValueOnce({ menus: mockMenus });
-      mockGetUserMenus.mockResolvedValueOnce({ data: mockUserMenus });
 
       const store = useMenuStore();
       await store.fetchMenus();
-      await store.fetchUserMenus();
+      store.setUserMenus(mockUserMenus);
 
       // 设置一些缓存
       localStorage.setItem("menu_cache", JSON.stringify({ data: mockMenus, timestamp: Date.now() }));

@@ -22,16 +22,14 @@ describe("Role Store", () => {
   describe("fetchRoles", () => {
     it("fetches role list and sets roles", async () => {
       const mockResponse = {
-        code: 0,
+        code: 200,
         msg: "success",
-        data: {
-          items: [
-            { id: "1", code: "admin", name: "管理员", is_system: false, created_at: "2024-01-01" },
-          ],
-          total: 1,
-          page: 1,
-          page_size: 20,
-        },
+        data: [
+          { id: "1", code: "admin", name: "管理员", is_system: false, created_at: "2024-01-01" },
+        ],
+        total: 1,
+        page: 1,
+        page_size: 20,
       };
       vi.mocked(roleApi.getRoles).mockResolvedValue(mockResponse);
 
@@ -39,7 +37,7 @@ describe("Role Store", () => {
       await store.fetchRoles({ page: 1 });
 
       expect(roleApi.getRoles).toHaveBeenCalledWith({ page: 1 });
-      expect(store.roles).toEqual(mockResponse.data.items);
+      expect(store.roles).toEqual(mockResponse.data);
       expect(store.total).toBe(1);
     });
   });
@@ -47,7 +45,7 @@ describe("Role Store", () => {
   describe("fetchRole", () => {
     it("fetches single role and sets currentRole", async () => {
       const mockResponse = {
-        code: 0,
+        code: 200,
         msg: "success",
         data: { id: "1", code: "admin", name: "管理员", is_system: false, created_at: "2024-01-01" },
       };
@@ -64,7 +62,7 @@ describe("Role Store", () => {
   describe("addRole", () => {
     it("creates role and returns new role", async () => {
       const mockResponse = {
-        code: 0,
+        code: 200,
         msg: "success",
         data: { id: "1", code: "editor", name: "编辑", is_system: false, created_at: "2024-01-01" },
       };
@@ -81,7 +79,7 @@ describe("Role Store", () => {
   describe("editRole", () => {
     it("updates role", async () => {
       const mockResponse = {
-        code: 0,
+        code: 200,
         msg: "success",
         data: { id: "1", code: "editor", name: "高级编辑", is_system: false, created_at: "2024-01-01" },
       };
@@ -108,7 +106,7 @@ describe("Role Store", () => {
   describe("fetchRolePermissions", () => {
     it("fetches role permissions", async () => {
       const mockResponse = {
-        code: 0,
+        code: 200,
         msg: "success",
         data: [
           { id: "perm-1", code: "user:read", name: "查看用户", resource: "user", action: "read", created_at: "2024-01-01" },

@@ -114,6 +114,8 @@ describe("Admin Auth Store", () => {
   describe("login", () => {
     it("登录成功后调用 getCurrentAdmin 获取完整信息", async () => {
       const loginResponse = {
+        code: 200,
+        msg: "success",
         data: {
           token: "test-token",
           username: "admin",
@@ -122,7 +124,11 @@ describe("Admin Auth Store", () => {
           permissions: ["tenant:tenant:read"],
         },
       };
-      const adminInfoResponse = { data: mockAdminInfo };
+      const adminInfoResponse = {
+        code: 200,
+        msg: "success",
+        data: mockAdminInfo,
+      };
 
       vi.mocked(adminApi.adminLogin).mockResolvedValue(loginResponse as any);
       vi.mocked(adminApi.getCurrentAdmin).mockResolvedValue(
@@ -154,6 +160,8 @@ describe("Admin Auth Store", () => {
 
     it("登录成功后将状态保存到 localStorage", async () => {
       const loginResponse = {
+        code: 200,
+        msg: "success",
         data: {
           token: "test-token",
           username: "admin",
@@ -162,7 +170,11 @@ describe("Admin Auth Store", () => {
           permissions: ["tenant:tenant:read"],
         },
       };
-      const adminInfoResponse = { data: mockAdminInfo };
+      const adminInfoResponse = {
+        code: 200,
+        msg: "success",
+        data: mockAdminInfo,
+      };
 
       vi.mocked(adminApi.adminLogin).mockResolvedValue(loginResponse as any);
       vi.mocked(adminApi.getCurrentAdmin).mockResolvedValue(

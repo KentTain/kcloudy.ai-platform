@@ -1,13 +1,34 @@
 /**
  * ToolCallItem 组件单元测试
  */
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { mount } from "@vue/test-utils";
 import ToolCallItem from "@/ai/components/ToolCallItem.vue";
 import type { ToolCallPart, ToolResultPart } from "@/ai/types";
 
+// 使用 vi.mock 替换子组件模块（兼容 <script setup> 的本地导入）
+vi.mock("@/components/ai-elements/tool", () => ({
+  Tool: {
+    template: '<div class="tool-stub"><slot /></div>',
+  },
+  ToolHeader: {
+    template: '<div class="tool-header-stub" />',
+    props: ["type", "state", "toolName", "title"],
+  },
+  ToolContent: {
+    template: '<div class="tool-content-stub"><slot /></div>',
+  },
+  ToolInput: {
+    template: '<div class="tool-input-stub" />',
+    props: ["input"],
+  },
+  ToolOutput: {
+    template: '<div class="tool-output-stub" />',
+    props: ["output", "errorText"],
+  },
+}));
+
 describe("ToolCallItem", () => {
-  // 模拟 Collapsible 组件
   it("渲染工具调用（进行中状态）", () => {
     const toolCall: ToolCallPart = {
       type: "tool-call",
@@ -18,28 +39,6 @@ describe("ToolCallItem", () => {
 
     const wrapper = mount(ToolCallItem, {
       props: { part: toolCall },
-      global: {
-        stubs: {
-          Tool: {
-            template: '<div class="tool-stub"><slot /></div>',
-          },
-          ToolHeader: {
-            template: '<div class="tool-header-stub" />',
-            props: ["type", "state", "toolName", "title"],
-          },
-          ToolContent: {
-            template: '<div class="tool-content-stub"><slot /></div>',
-          },
-          ToolInput: {
-            template: '<div class="tool-input-stub" />',
-            props: ["input"],
-          },
-          ToolOutput: {
-            template: '<div class="tool-output-stub" />',
-            props: ["output", "errorText"],
-          },
-        },
-      },
     });
 
     expect(wrapper.find(".tool-stub").exists()).toBe(true);
@@ -56,28 +55,6 @@ describe("ToolCallItem", () => {
 
     const wrapper = mount(ToolCallItem, {
       props: { part: toolResult },
-      global: {
-        stubs: {
-          Tool: {
-            template: '<div class="tool-stub"><slot /></div>',
-          },
-          ToolHeader: {
-            template: '<div class="tool-header-stub" />',
-            props: ["type", "state", "toolName", "title"],
-          },
-          ToolContent: {
-            template: '<div class="tool-content-stub"><slot /></div>',
-          },
-          ToolInput: {
-            template: '<div class="tool-input-stub" />',
-            props: ["input"],
-          },
-          ToolOutput: {
-            template: '<div class="tool-output-stub" />',
-            props: ["output", "errorText"],
-          },
-        },
-      },
     });
 
     expect(wrapper.find(".tool-stub").exists()).toBe(true);
@@ -94,28 +71,6 @@ describe("ToolCallItem", () => {
 
     const wrapper = mount(ToolCallItem, {
       props: { part: toolResult },
-      global: {
-        stubs: {
-          Tool: {
-            template: '<div class="tool-stub"><slot /></div>',
-          },
-          ToolHeader: {
-            template: '<div class="tool-header-stub" />',
-            props: ["type", "state", "toolName", "title"],
-          },
-          ToolContent: {
-            template: '<div class="tool-content-stub"><slot /></div>',
-          },
-          ToolInput: {
-            template: '<div class="tool-input-stub" />',
-            props: ["input"],
-          },
-          ToolOutput: {
-            template: '<div class="tool-output-stub" />',
-            props: ["output", "errorText"],
-          },
-        },
-      },
     });
 
     expect(wrapper.find(".tool-stub").exists()).toBe(true);
@@ -133,33 +88,12 @@ describe("ToolCallItem", () => {
 
     const wrapper = mount(ToolCallItem, {
       props: { part: mergedPart },
-      global: {
-        stubs: {
-          Tool: {
-            template: '<div class="tool-stub"><slot /></div>',
-          },
-          ToolHeader: {
-            template: '<div class="tool-header-stub" />',
-            props: ["type", "state", "toolName", "title"],
-          },
-          ToolContent: {
-            template: '<div class="tool-content-stub"><slot /></div>',
-          },
-          ToolInput: {
-            template: '<div class="tool-input-stub" />',
-            props: ["input"],
-          },
-          ToolOutput: {
-            template: '<div class="tool-output-stub" />',
-            props: ["output", "errorText"],
-          },
-        },
-      },
     });
 
     expect(wrapper.find(".tool-stub").exists()).toBe(true);
     expect(wrapper.find(".tool-header-stub").exists()).toBe(true);
     // 合并后的数据应该同时显示输入和输出
+    // 输入仅在 args 有内容时渲染
     expect(wrapper.find(".tool-input-stub").exists()).toBe(true);
     expect(wrapper.find(".tool-output-stub").exists()).toBe(true);
   });
@@ -175,15 +109,6 @@ describe("ToolCallItem", () => {
 
     const wrapper = mount(ToolCallItem, {
       props: { part: toolCall },
-      global: {
-        stubs: {
-          Tool: { template: "<div><slot /></div>" },
-          ToolHeader: { template: "<div />", props: ["state"] },
-          ToolContent: { template: "<div><slot /></div>" },
-          ToolInput: { template: "<div />", props: ["input"] },
-          ToolOutput: { template: "<div />", props: ["output", "errorText"] },
-        },
-      },
     });
 
     // 验证组件渲染成功

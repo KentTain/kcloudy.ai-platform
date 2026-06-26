@@ -228,6 +228,7 @@ describe("AppNavMain", () => {
           icon: "Shield",
           path: null,
           sortOrder: 0,
+          isVisible: true,
           children: [
             {
               id: "1-1",
@@ -236,6 +237,7 @@ describe("AppNavMain", () => {
               icon: "Users",
               path: "/iam/users",
               sortOrder: 0,
+              isVisible: true,
               children: [],
             },
             {
@@ -245,6 +247,7 @@ describe("AppNavMain", () => {
               icon: "Badge",
               path: "/iam/roles",
               sortOrder: 1,
+              isVisible: true,
               children: [],
             },
           ],
@@ -275,6 +278,7 @@ describe("AppNavMain", () => {
           icon: "Settings",
           path: null,
           sortOrder: 0,
+          isVisible: true,
           children: [
             {
               id: "1-1",
@@ -283,6 +287,7 @@ describe("AppNavMain", () => {
               icon: null,
               path: "/system/menus",
               sortOrder: 0,
+              isVisible: true,
               children: [],
             },
           ],
@@ -558,6 +563,7 @@ describe("AppNavMain", () => {
           icon: "Shield",
           path: null,
           sortOrder: 0,
+          isVisible: true,
           children: [
             {
               id: "1-1",
@@ -566,6 +572,7 @@ describe("AppNavMain", () => {
               icon: "Users",
               path: "/iam/users",
               sortOrder: 0,
+              isVisible: true,
               children: [],
             },
           ],

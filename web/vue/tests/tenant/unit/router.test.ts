@@ -2,7 +2,7 @@
  * Tenant 模块路由测试
  */
 import { describe, expect, it } from "vitest";
-import { adminRoutes, tenantRoutes } from "@/tenant/router";
+import { adminRoutes } from "@/tenant/router";
 
 describe("adminRoutes", () => {
   describe("路由结构", () => {
@@ -119,52 +119,6 @@ describe("adminRoutes", () => {
       expect(editRoute).toBeDefined();
       expect(editRoute?.name).toBe("AdminModuleEdit");
       expect(editRoute?.meta?.permissions).toEqual(["tenant:module:write"]);
-    });
-  });
-});
-
-describe("tenantRoutes", () => {
-  describe("用户端路由结构", () => {
-    it("使用嵌套结构定义用户端租户路由", () => {
-      const tenantManageRoute = tenantRoutes.find(
-        (route) => route.path === "tenants"
-      );
-      expect(tenantManageRoute).toBeDefined();
-      expect(tenantManageRoute?.name).toBe("TenantManagement");
-    });
-
-    it("包含创建租户路由 tenants/create", () => {
-      const createRoute = tenantRoutes.find(
-        (route) => route.path === "tenants/create"
-      );
-      expect(createRoute).toBeDefined();
-      expect(createRoute?.name).toBe("TenantCreate");
-    });
-
-    it("包含租户详情路由 tenants/:id", () => {
-      const detailRoute = tenantRoutes.find(
-        (route) => route.path === "tenants/:id"
-      );
-      expect(detailRoute).toBeDefined();
-      expect(detailRoute?.name).toBe("TenantDetail");
-    });
-
-    it("包含编辑租户路由 tenants/:id/edit", () => {
-      const editRoute = tenantRoutes.find(
-        (route) => route.path === "tenants/:id/edit"
-      );
-      expect(editRoute).toBeDefined();
-      expect(editRoute?.name).toBe("TenantEdit");
-    });
-  });
-
-  describe("路由权限", () => {
-    it("用户端路由需要 admin 角色", () => {
-      tenantRoutes.forEach((route) => {
-        if (route.meta?.roles) {
-          expect(route.meta.roles).toContain("admin");
-        }
-      });
     });
   });
 });

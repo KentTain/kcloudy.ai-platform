@@ -496,9 +496,9 @@ describe('测试数据管理辅助函数', () => {
     describe('generateE2EId', () => {
       it('生成带前缀的唯一标识符', () => {
         const id = generateE2EId('tenant');
-        // 新格式：e2e-tenant-{timestamp}
-        expect(id.startsWith(`${E2E_PREFIX}tenant-`)).toBe(true);
-        expect(id.length).toBeGreaterThan(`${E2E_PREFIX}tenant-`.length);
+        // 格式：e2e_tenant_{timestamp}
+        expect(id.startsWith(`e2e_tenant_`)).toBe(true);
+        expect(id.length).toBeGreaterThan(`e2e_tenant_`.length);
       });
 
       it('不同调用生成不同标识符', async () => {

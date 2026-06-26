@@ -41,29 +41,42 @@ describe("P1 Components", () => {
 
     it("preserves number value when selecting option", async () => {
       const numberOptions = [{ label: "零", value: 0 }, { label: "一", value: 1 }];
+      const onUpdateModelValue = vi.fn();
+      const onChange = vi.fn();
+
       const wrapper = mount(Select, {
-        props: { options: numberOptions },
+        props: {
+          options: numberOptions,
+          "onUpdate:modelValue": onUpdateModelValue,
+          onChange,
+        },
       });
 
-      await wrapper.vm.$emit("update:modelValue", 1);
       const select = wrapper.findComponent({ name: "SelectRoot" });
       await select.vm.$emit("update:modelValue", "1");
 
-      expect(wrapper.emitted("update:modelValue")![0]).toEqual([1]);
-      expect(wrapper.emitted("change")![0]).toEqual([1]);
+      expect(onUpdateModelValue).toHaveBeenCalledWith(1);
+      expect(onChange).toHaveBeenCalledWith(1);
     });
 
     it("preserves zero value when selecting option", async () => {
       const numberOptions = [{ label: "零", value: 0 }, { label: "一", value: 1 }];
+      const onUpdateModelValue = vi.fn();
+      const onChange = vi.fn();
+
       const wrapper = mount(Select, {
-        props: { options: numberOptions },
+        props: {
+          options: numberOptions,
+          "onUpdate:modelValue": onUpdateModelValue,
+          onChange,
+        },
       });
 
       const select = wrapper.findComponent({ name: "SelectRoot" });
       await select.vm.$emit("update:modelValue", "0");
 
-      expect(wrapper.emitted("update:modelValue")![0]).toEqual([0]);
-      expect(wrapper.emitted("change")![0]).toEqual([0]);
+      expect(onUpdateModelValue).toHaveBeenCalledWith(0);
+      expect(onChange).toHaveBeenCalledWith(0);
     });
 
     it("does not open when disabled", async () => {
@@ -132,14 +145,15 @@ describe("P1 Components", () => {
     });
 
     it("emits sort event", async () => {
+      const onSort = vi.fn();
       const wrapper = mount(Table, {
-        props: { columns, data },
+        props: { columns, data, onSort },
       });
 
       const sortableHeader = wrapper.findAll("th")[2].find("div");
       await sortableHeader.trigger("click");
 
-      expect(wrapper.emitted("sort")).toBeTruthy();
+      expect(onSort).toHaveBeenCalledWith({ key: "action", order: "asc" });
     });
 
     it("renders stripe rows", () => {
@@ -191,11 +205,14 @@ describe("P1 Components", () => {
     });
 
     it("emits submit event", async () => {
-      const wrapper = mount(AppForm);
+      const onSubmit = vi.fn();
+      const wrapper = mount(AppForm, {
+        props: { onSubmit },
+      });
 
       await wrapper.trigger("submit");
 
-      expect(wrapper.emitted("submit")).toBeTruthy();
+      expect(onSubmit).toHaveBeenCalled();
     });
   });
 

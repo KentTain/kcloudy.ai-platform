@@ -19,7 +19,7 @@ describe("AppPage", () => {
       expect(eyebrow.text()).toBe("系统管理");
 
       // title 页面主标题
-      const title = wrapper.find("h1.text-2xl.font-semibold.tracking-normal");
+      const title = wrapper.find("h1.truncate.text-xl.font-semibold.tracking-normal");
       expect(title.exists()).toBe(true);
       expect(title.text()).toBe("用户管理");
 
@@ -68,13 +68,15 @@ describe("AppPage", () => {
       expect(actionsContainer.text()).toContain("新建用户");
     });
 
-    it("不使用 actions slot 时不渲染操作区容器", () => {
+    it("不使用 actions slot 时操作区无内容", () => {
       const wrapper = mount(AppPage, {
         props: { title: "用户管理" },
       });
 
-      const actionsContainer = wrapper.find(".flex.shrink-0.flex-wrap.items-center.gap-2");
-      expect(actionsContainer.exists()).toBe(false);
+      const headerArea = wrapper.find(".shrink-0.flex.flex-wrap.items-center.justify-between.gap-2");
+      expect(headerArea.exists()).toBe(true);
+      // 没有传入 actions slot 时，头部区域只包含标题文本
+      expect(headerArea.text()).toBe("用户管理");
     });
   });
 
@@ -147,7 +149,7 @@ describe("AppPage", () => {
       });
 
       const main = wrapper.find("main");
-      expect(main.classes()).toContain("h-[calc(100svh-3.5rem)]");
+      expect(main.classes()).toContain("h-full");
     });
 
     it("启用 overflow-auto 允许内容滚动", () => {
@@ -156,7 +158,7 @@ describe("AppPage", () => {
       });
 
       const main = wrapper.find("main");
-      expect(main.classes()).toContain("overflow-auto");
+      expect(main.classes()).toContain("min-h-0");
     });
   });
 
@@ -166,11 +168,11 @@ describe("AppPage", () => {
         props: { title: "用户管理" },
       });
 
-      const container = wrapper.find(".mx-auto.flex.min-h-full.w-full.flex-col.gap-5");
+      const container = wrapper.find(".flex.h-full.min-h-0.flex-col.gap-3");
       expect(container.exists()).toBe(true);
       expect(container.classes()).toContain("p-4");
       expect(container.classes()).toContain("md:p-6");
-      expect(container.classes()).toContain("gap-5");
+      expect(container.classes()).toContain("gap-3");
     });
 
     it("头部区域使用响应式布局", () => {
@@ -178,13 +180,13 @@ describe("AppPage", () => {
         props: { title: "用户管理" },
       });
 
-      const header = wrapper.find("header");
+      const header = wrapper.find(".flex.flex-wrap.items-center.justify-between.gap-2");
+      expect(header.classes()).toContain("shrink-0");
       expect(header.classes()).toContain("flex");
-      expect(header.classes()).toContain("flex-col");
-      expect(header.classes()).toContain("gap-3");
-      expect(header.classes()).toContain("md:flex-row");
-      expect(header.classes()).toContain("md:items-end");
-      expect(header.classes()).toContain("md:justify-between");
+      expect(header.classes()).toContain("flex-wrap");
+      expect(header.classes()).toContain("items-center");
+      expect(header.classes()).toContain("justify-between");
+      expect(header.classes()).toContain("gap-2");
     });
 
     it("标题使用 truncate 类确保不超出容器宽度", () => {

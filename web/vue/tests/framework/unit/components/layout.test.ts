@@ -28,6 +28,7 @@ const mockMenuStore = {
       icon: "Home",
       path: "/",
       sortOrder: 0,
+      isVisible: true,
       children: [],
     },
     {
@@ -37,6 +38,7 @@ const mockMenuStore = {
       icon: "Settings",
       path: null,
       sortOrder: 1,
+      isVisible: true,
       children: [
         {
           id: "2-1",
@@ -45,6 +47,7 @@ const mockMenuStore = {
           icon: "Activity",
           path: "/system/health",
           sortOrder: 0,
+          isVisible: true,
           children: [],
         },
         {
@@ -54,6 +57,7 @@ const mockMenuStore = {
           icon: "Database",
           path: "/system/knowledge",
           sortOrder: 1,
+          isVisible: true,
           children: [],
         },
       ],

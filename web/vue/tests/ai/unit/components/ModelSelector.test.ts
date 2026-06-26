@@ -42,6 +42,57 @@ vi.mock("@/ai/api/model", () => ({
   ),
 }));
 
+// Mock @/components/ui/select so SelectItem clicks communicate with Select
+// via a shared emit reference (since stubs can't be found with findComponent)
+vi.mock("@/components/ui/select", () => {
+  let selectEmit: ((event: string, ...args: any[]) => void) | null = null;
+
+  return {
+    Select: {
+      name: "Select",
+      template: '<div class="select-stub"><slot /></div>',
+      props: ["modelValue"],
+      emits: ["update:modelValue"],
+      setup(_props: any, { emit }: any) {
+        selectEmit = emit;
+      },
+    },
+    SelectTrigger: {
+      name: "SelectTrigger",
+      template: '<div class="select-trigger-stub"><slot /></div>',
+    },
+    SelectValue: {
+      name: "SelectValue",
+      template: '<div class="select-value-stub"><slot /></div>',
+    },
+    SelectContent: {
+      name: "SelectContent",
+      template: '<div class="select-content-stub"><slot /></div>',
+    },
+    SelectGroup: {
+      name: "SelectGroup",
+      template: '<div class="select-group-stub"><slot /></div>',
+    },
+    SelectLabel: {
+      name: "SelectLabel",
+      template: '<div class="select-label-stub"><slot /></div>',
+    },
+    SelectItem: {
+      name: "SelectItem",
+      template:
+        '<div class="select-item-stub" @click.stop="onClick"><slot /></div>',
+      props: ["value"],
+      methods: {
+        onClick() {
+          if (selectEmit) {
+            selectEmit("update:modelValue", this.value);
+          }
+        },
+      },
+    },
+  };
+});
+
 // 获取 mock 引用
 const mockGetModels = vi.mocked(getModels);
 
@@ -77,29 +128,6 @@ describe("ModelSelector", () => {
       const wrapper = mount(ModelSelector, {
         global: {
           stubs: {
-            Select: {
-              template: '<div class="select-stub"><slot /></div>',
-              props: ["modelValue"],
-            },
-            SelectTrigger: {
-              template: '<div class="select-trigger-stub"><slot /></div>',
-            },
-            SelectValue: {
-              template: '<div class="select-value-stub"><slot /></div>',
-            },
-            SelectContent: {
-              template: '<div class="select-content-stub"><slot /></div>',
-            },
-            SelectGroup: {
-              template: '<div class="select-group-stub"><slot /></div>',
-            },
-            SelectLabel: {
-              template: '<div class="select-label-stub"><slot /></div>',
-            },
-            SelectItem: {
-              template: '<div class="select-item-stub"><slot /></div>',
-              props: ["value"],
-            },
             Skeleton: {
               template: '<div class="skeleton-stub" />',
             },
@@ -122,13 +150,6 @@ describe("ModelSelector", () => {
             Skeleton: {
               template: '<div class="skeleton-stub" />',
             },
-            Select: { template: '<div class="select-stub" />' },
-            SelectTrigger: { template: "<div />" },
-            SelectValue: { template: "<div />" },
-            SelectContent: { template: "<div />" },
-            SelectGroup: { template: "<div />" },
-            SelectLabel: { template: "<div />" },
-            SelectItem: { template: "<div />" },
           },
         },
       });
@@ -144,16 +165,6 @@ describe("ModelSelector", () => {
       const wrapper = mount(ModelSelector, {
         global: {
           stubs: {
-            Select: {
-              template: '<div class="select-stub"><slot /></div>',
-              props: ["modelValue"],
-            },
-            SelectTrigger: { template: "<div><slot /></div>" },
-            SelectValue: { template: "<div><slot /></div>" },
-            SelectContent: { template: "<div><slot /></div>" },
-            SelectGroup: { template: "<div><slot /></div>" },
-            SelectLabel: { template: "<div><slot /></div>" },
-            SelectItem: { template: "<div><slot /></div>", props: ["value"] },
             Skeleton: { template: "<div />" },
           },
         },
@@ -172,13 +183,6 @@ describe("ModelSelector", () => {
       const wrapper = mount(ModelSelector, {
         global: {
           stubs: {
-            Select: { template: "<div><slot /></div>" },
-            SelectTrigger: { template: "<div><slot /></div>" },
-            SelectValue: { template: "<div><slot /></div>" },
-            SelectContent: { template: "<div><slot /></div>" },
-            SelectGroup: { template: "<div><slot /></div>" },
-            SelectLabel: { template: "<div><slot /></div>" },
-            SelectItem: { template: "<div><slot /></div>", props: ["value"] },
             Skeleton: { template: "<div />" },
           },
         },
@@ -194,20 +198,6 @@ describe("ModelSelector", () => {
       const wrapper = mount(ModelSelector, {
         global: {
           stubs: {
-            Select: {
-              template: '<div class="select-stub"><slot /></div>',
-              props: ["modelValue"],
-              model: {
-                prop: "modelValue",
-                event: "update:modelValue",
-              },
-            },
-            SelectTrigger: { template: "<div><slot /></div>" },
-            SelectValue: { template: "<div><slot /></div>" },
-            SelectContent: { template: "<div><slot /></div>" },
-            SelectGroup: { template: "<div><slot /></div>" },
-            SelectLabel: { template: "<div><slot /></div>" },
-            SelectItem: { template: "<div><slot /></div>", props: ["value"] },
             Skeleton: { template: "<div />" },
           },
         },
@@ -216,14 +206,15 @@ describe("ModelSelector", () => {
       await new Promise((resolve) => setTimeout(resolve, 100));
       await nextTick();
 
-      // 通过组件内部触发 computed setter
-      // 直接修改组件实例来模拟 Select 组件的 v-model 更新
-      const vm = wrapper.vm as unknown as {
-        selectedModelId: string;
-      };
-
-      // 设置 selectedModelId 会触发 setter
-      vm.selectedModelId = "anthropic/claude-3-opus";
+      // 点击 Anthropic/claude-3-opus 对应的 SelectItem
+      // 通过文本查找以避免依赖渲染顺序
+      const allItems = wrapper.findAll(".select-item-stub");
+      expect(allItems.length).toBe(3);
+      const claudeItem = allItems.find((i) =>
+        i.text().includes("claude-3-opus"),
+      );
+      expect(claudeItem).toBeDefined();
+      await claudeItem!.trigger("click");
       await nextTick();
 
       // 验证 setModel 被正确调用
@@ -238,16 +229,6 @@ describe("ModelSelector", () => {
       const wrapper = mount(ModelSelector, {
         global: {
           stubs: {
-            Select: {
-              template: "<div><slot /></div>",
-              props: ["modelValue"],
-            },
-            SelectTrigger: { template: "<div><slot /></div>" },
-            SelectValue: { template: "<div><slot /></div>" },
-            SelectContent: { template: "<div><slot /></div>" },
-            SelectGroup: { template: "<div><slot /></div>" },
-            SelectLabel: { template: "<div><slot /></div>" },
-            SelectItem: { template: "<div><slot /></div>", props: ["value"] },
             Skeleton: { template: "<div />" },
           },
         },
@@ -256,12 +237,11 @@ describe("ModelSelector", () => {
       await new Promise((resolve) => setTimeout(resolve, 100));
       await nextTick();
 
-      const vm = wrapper.vm as unknown as {
-        selectedModelId: string;
-      };
-
-      // 测试不同提供商的模型
-      vm.selectedModelId = "openai/gpt-4o";
+      // 点击 openai/gpt-4o 对应的 SelectItem 触发 v-model 更新
+      const allItems = wrapper.findAll(".select-item-stub");
+      // 第 2 个 item 对应 openai/gpt-4o
+      expect(allItems.length).toBeGreaterThan(1);
+      await allItems[1].trigger("click");
       await nextTick();
 
       // 验证参数包含 provider 和 name 两个字段

@@ -50,7 +50,7 @@ describe("Auth Store", () => {
       } as any);
 
       const mockResponse = {
-        code: 0,
+        code: 200,
         msg: "success",
         data: {
           access_token: "test-token",
@@ -62,7 +62,7 @@ describe("Auth Store", () => {
       vi.mocked(authApi.login).mockResolvedValue(mockResponse);
 
       vi.mocked(authApi.getCurrentUser).mockResolvedValue({
-        code: 0,
+        code: 200,
         msg: "success",
         data: {
           id: "1",
@@ -104,7 +104,7 @@ describe("Auth Store", () => {
         error: null,
       } as any);
 
-      vi.mocked(authApi.logout).mockResolvedValue({ code: 0, msg: "success", data: undefined });
+      vi.mocked(authApi.logout).mockResolvedValue({ code: 200, msg: "success", data: undefined });
 
       const store = useAuthStore();
       await store.logout();
@@ -125,7 +125,7 @@ describe("Auth Store", () => {
       } as any);
 
       const mockResponse = {
-        code: 0,
+        code: 200,
         msg: "success",
         data: {
           access_token: "new-token",

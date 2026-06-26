@@ -23,16 +23,14 @@ describe("User Store", () => {
   describe("fetchUsers", () => {
     it("fetches user list and sets users", async () => {
       const mockResponse = {
-        code: 0,
+        code: 200,
         msg: "success",
-        data: {
-          items: [
-            { id: "1", username: "admin", status: "active", created_at: "2024-01-01" },
-          ],
-          total: 1,
-          page: 1,
-          page_size: 20,
-        },
+        data: [
+          { id: "1", username: "admin", status: "active", created_at: "2024-01-01" },
+        ],
+        total: 1,
+        page: 1,
+        page_size: 20,
       };
       vi.mocked(userApi.getUsers).mockResolvedValue(mockResponse);
 
@@ -40,7 +38,7 @@ describe("User Store", () => {
       await store.fetchUsers({ page: 1 });
 
       expect(userApi.getUsers).toHaveBeenCalledWith({ page: 1 });
-      expect(store.users).toEqual(mockResponse.data.items);
+      expect(store.users).toEqual(mockResponse.data);
       expect(store.total).toBe(1);
     });
   });
@@ -48,7 +46,7 @@ describe("User Store", () => {
   describe("fetchUser", () => {
     it("fetches single user and sets currentUser", async () => {
       const mockResponse = {
-        code: 0,
+        code: 200,
         msg: "success",
         data: { id: "1", username: "admin", status: "active", created_at: "2024-01-01" },
       };
@@ -65,7 +63,7 @@ describe("User Store", () => {
   describe("addUser", () => {
     it("creates user and returns new user", async () => {
       const mockResponse = {
-        code: 0,
+        code: 200,
         msg: "success",
         data: { id: "1", username: "newuser", status: "active", created_at: "2024-01-01" },
       };
@@ -82,7 +80,7 @@ describe("User Store", () => {
   describe("editUser", () => {
     it("updates user", async () => {
       const mockResponse = {
-        code: 0,
+        code: 200,
         msg: "success",
         data: { id: "1", username: "admin", nickname: "Admin", status: "active", created_at: "2024-01-01" },
       };
