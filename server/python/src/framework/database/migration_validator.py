@@ -124,12 +124,39 @@ class StartupMigrationValidator:
                 current_version = await self._get_current_version(
                     session, module_schema
                 )
+
+                # 检查是否有待应用的迁移（比较当前版本与 head）
+                pending_migrations = await self._get_pending_migrations(
+                    module_name, current_version
+                )
+
                 results["modules"][module_name] = {
                     "status": "up_to_date",
                     "schema": module_schema,
                     "version": current_version,
+                    "pending_migrations": pending_migrations,
                 }
-                write_info(f"[{module_name}] 迁移版本: {current_version}")
+
+                if pending_migrations:
+                    write_info(
+                        f"[{module_name}] 当前版本: {current_version}, "
+                        f"待应用迁移: {', '.join(pending_migrations)}"
+                    )
+                    if self.auto_migrate:
+                        write_info(f"[{module_name}] 自动执行待应用的迁移...")
+                        migrated = await self._run_module_migration(module_name)
+                        if migrated:
+                            results["modules"][module_name]["status"] = "auto_migrated"
+                            results["auto_migrated"].append(module_name)
+                            write_success(f"[{module_name}] 自动迁移完成")
+                        else:
+                            results["modules"][module_name]["status"] = "migration_failed"
+                            results["all_migrated"] = False
+                            results["need_migration"].append(module_name)
+                    else:
+                        write_info(f"[{module_name}] 迁移就绪，等待手动执行")
+                else:
+                    write_info(f"[{module_name}] 迁移版本: {current_version}（已是最新）")
 
             except Exception as e:
                 _logger.exception(f"[{module_name}] 迁移验证失败: {e}")
@@ -200,6 +227,59 @@ class StartupMigrationValidator:
         except Exception:
             return None
 
+    async def _get_pending_migrations(
+        self, module_name: str, current_version: str | None
+    ) -> list[str]:
+        """
+        获取待应用的迁移版本列表
+
+        扫描迁移文件目录，构建版本链，找到当前版本之后的所有版本。
+
+        Args:
+            module_name: 模块名称
+            current_version: 数据库中当前的迁移版本
+
+        Returns:
+            待应用的版本号列表（按执行顺序：先执行在前）
+        """
+        from alembic.config import Config
+        from alembic.script import ScriptDirectory
+
+        from framework.configs import get_settings
+
+        settings = get_settings()
+        module_dir = self.src_path / module_name / "migrations"
+
+        # 始终创建空白 Config，避免继承全局 alembic.ini 的 version_locations
+        config = Config()
+        config.set_main_option("script_location", str(module_dir))
+        config.set_main_option("version_locations", str(module_dir / "versions"))
+        config.set_main_option("sqlalchemy.url", str(settings.sqlalchemy.url))
+
+        try:
+            script_dir = ScriptDirectory.from_config(config)
+
+            if not current_version:
+                # 没有当前版本，所有迁移都待应用（按执行顺序：base → head）
+                return [
+                    sc.revision
+                    for sc in reversed(
+                        list(script_dir.iterate_revisions("head", "base"))
+                    )
+                ]
+
+            # iterate_revisions("head", current) 返回 head → current，
+            # 排除 current 本身后逆序即为执行顺序
+            pending = []
+            for script in script_dir.iterate_revisions("head", current_version):
+                pending.append(script.revision)
+            # 去掉 current_version 本身（它是起点不是待执行），并逆序为执行顺序
+            pending = pending[:-1] if pending and pending[-1] == current_version else pending
+            pending.reverse()
+            return pending
+        except Exception:
+            return []
+
     async def _run_module_migration(self, module_name: str) -> bool:
         """
         运行模块的数据库迁移
@@ -218,7 +298,9 @@ class StartupMigrationValidator:
                 from alembic import command
                 from alembic.config import Config
 
-                from demo.configs import settings
+                from framework.configs import get_settings
+
+                settings = get_settings()
 
                 module_dir = self.src_path / module_name / "migrations"
                 config_file = module_dir / "alembic.ini"

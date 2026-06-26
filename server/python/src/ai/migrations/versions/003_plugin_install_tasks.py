@@ -1,7 +1,7 @@
 """新增插件安装任务表
 
 Revision ID: 003_plugin_install_tasks
-Revises: 002_plugin_config_tables
+Revises: 002_ai_plugin_configs
 Create Date: 2026-06-25
 
 新增 ai.plugin_install_tasks 表，用于异步安装任务追踪。
@@ -15,7 +15,7 @@ from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
 revision: str = "003_plugin_install_tasks"
-down_revision: str | None = "002_plugin_config_tables"
+down_revision: str | None = "002_ai_plugin_configs"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
