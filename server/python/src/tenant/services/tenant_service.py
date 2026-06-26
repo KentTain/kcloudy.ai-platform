@@ -407,7 +407,12 @@ class TenantService:
     @staticmethod
     async def delete(session: AsyncSession, tenant_id: str) -> bool:
         """
-        删除租户（软删除）
+        删除租户（硬删除）
+
+        级联删除租户的所有关联数据：
+        1. iam 模块数据：菜单、权限、角色、用户等
+        2. tenant 模块数据：租户配置、模块分配等
+        3. 租户记录本身
 
         Args:
             session: 数据库会话
@@ -416,13 +421,154 @@ class TenantService:
         Returns:
             bool: 是否删除成功
         """
+        from sqlalchemy import text
+
+        # 1. 删除 iam 模块的关联数据
+        # 1.1 删除菜单权限关联
+        await session.execute(
+            text(
+                """
+                DELETE FROM iam.menu_permissions
+                WHERE menu_id IN (
+                    SELECT id FROM iam.menus WHERE tenant_id = :tenant_id
+                )
+                """
+            ),
+            {"tenant_id": tenant_id},
+        )
+
+        # 1.2 删除角色权限关联
+        await session.execute(
+            text(
+                """
+                DELETE FROM iam.role_permissions
+                WHERE tenant_id = :tenant_id
+                """
+            ),
+            {"tenant_id": tenant_id},
+        )
+
+        # 1.3 删除用户角色关联
+        await session.execute(
+            text(
+                """
+                DELETE FROM iam.user_roles
+                WHERE tenant_id = :tenant_id
+                """
+            ),
+            {"tenant_id": tenant_id},
+        )
+
+        # 1.4 删除用户组织关联
+        await session.execute(
+            text(
+                """
+                DELETE FROM iam.user_organizations
+                WHERE tenant_id = :tenant_id
+                """
+            ),
+            {"tenant_id": tenant_id},
+        )
+
+        # 1.5 删除 OAuth 连接
+        await session.execute(
+            text(
+                """
+                DELETE FROM iam.oauth_connections
+                WHERE user_id IN (
+                    SELECT id FROM iam.users WHERE tenant_id = :tenant_id
+                )
+                """
+            ),
+            {"tenant_id": tenant_id},
+        )
+
+        # 1.6 删除用户
+        await session.execute(
+            text(
+                """
+                DELETE FROM iam.users
+                WHERE tenant_id = :tenant_id
+                """
+            ),
+            {"tenant_id": tenant_id},
+        )
+
+        # 1.7 删除组织
+        await session.execute(
+            text(
+                """
+                DELETE FROM iam.organizations
+                WHERE tenant_id = :tenant_id
+                """
+            ),
+            {"tenant_id": tenant_id},
+        )
+
+        # 1.8 删除菜单
+        await session.execute(
+            text(
+                """
+                DELETE FROM iam.menus
+                WHERE tenant_id = :tenant_id
+                """
+            ),
+            {"tenant_id": tenant_id},
+        )
+
+        # 1.9 删除权限
+        await session.execute(
+            text(
+                """
+                DELETE FROM iam.permissions
+                WHERE tenant_id = :tenant_id
+                """
+            ),
+            {"tenant_id": tenant_id},
+        )
+
+        # 1.10 删除角色
+        await session.execute(
+            text(
+                """
+                DELETE FROM iam.roles
+                WHERE tenant_id = :tenant_id
+                """
+            ),
+            {"tenant_id": tenant_id},
+        )
+
+        # 2. 删除 tenant 模块的关联数据
+        # 2.1 删除租户模块分配
+        await session.execute(
+            text(
+                """
+                DELETE FROM tenant.tenant_modules
+                WHERE tenant_id = :tenant_id
+                """
+            ),
+            {"tenant_id": tenant_id},
+        )
+
+        # 2.2 删除租户配置
+        await session.execute(
+            text(
+                """
+                DELETE FROM tenant.tenant_configs
+                WHERE tenant_id = :tenant_id
+                """
+            ),
+            {"tenant_id": tenant_id},
+        )
+
+        # 3. 删除租户记录
         stmt = sql_delete(Tenant).where(Tenant.id == tenant_id)
         result = await session.execute(stmt)
 
         if result.rowcount > 0:
             # 使缓存失效
             await TenantCache.invalidate(tenant_id)
-            _logger.info(f"删除租户: {tenant_id}")
+            _logger.info(f"删除租户及关联数据: {tenant_id}")
             return True
         return False
 
