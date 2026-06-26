@@ -1,4 +1,4 @@
-# Python 后端指南
+﻿# Python 后端指南
 
 本文件为 Claude Code 在 `server/python/` Python 后端项目中工作时提供指导。
 
@@ -97,9 +97,9 @@ uv run pytest tests/demo/ -v
 
 ### RBAC 模块定义与同步
 
-#### Tenant 模块：RBAC 数据来源
+#### 各模块：定义 RBAC 元数据
 
-模块通过 `get_module_definition()` 声明菜单、权限、角色等 RBAC 元数据：
+每个业务模块（iam、tenant、ai、demo 等）通过 `get_module_definition()` 声明菜单、权限、角色：
 
 ```python
 # src/{module}/module.py
@@ -121,15 +121,21 @@ def get_module_definition() -> ModuleDefinition:
     )
 ```
 
-应用启动时，`framework.module.sync_service` 将定义同步到 `tenant` schema 的模块定义表：
-- `tenant.module_menus` — 模块菜单定义
-- `tenant.module_permissions` — 模块权限定义
-- `tenant.module_roles` — 模块角色定义
-- `tenant.module_role_permissions` — 角色权限关联
+#### 框架：同步到模块定义层
 
-#### IAM 模块：同步到租户实例层
+应用启动时，`framework.module.sync_service.sync_module()` 将各模块的定义同步到 `tenant` schema：
 
-租户分配模块时，`iam.services.module_sync_service.sync_module_assigned()` 将模块定义同步到租户实例层：
+| 表名 | 说明 |
+|------|------|
+| `tenant.module_menus` | 模块菜单定义 |
+| `tenant.module_permissions` | 模块权限定义 |
+| `tenant.module_roles` | 模块角色定义 |
+| `tenant.module_role_permissions` | 角色权限关联 |
+| `tenant.module_menu_permissions` | 菜单权限关联 |
+
+#### IAM：同步到租户实例层
+
+租户分配模块时，`iam.services.module_sync_service.sync_module_assigned()` 将模块定义复制到租户实例层：
 
 | 模块定义层 (tenant schema) | 租户实例层 (iam schema) | 关联字段 |
 |---------------------------|------------------------|---------|
@@ -139,10 +145,10 @@ def get_module_definition() -> ModuleDefinition:
 | `module_role_permissions` | `iam.role_permissions` | — |
 
 同步流程：
-1. 从 `tenant.module_*` 表读取模块定义
+1. 从 `tenant.module_*` 读取模块定义
 2. 创建租户实例记录，设置 `tenant_id` 和 `ref_id`
-3. 通过 `ref_id` 实现幂等同步（避免重复创建）
-4. 同步角色权限关联和菜单权限关联
+3. 通过 `ref_id` 实现幂等同步
+4. 同步角色权限和菜单权限关联
 
 **注意**：`tenant` 模块的菜单不同步到 `iam.menus`，由 tenant 模块自行管理。
 
