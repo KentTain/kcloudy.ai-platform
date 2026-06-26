@@ -19,6 +19,24 @@ export default defineConfig(({ mode }) => {
       host: "0.0.0.0",
       port: 5173,
       proxy: {
+        // 业务模块 API 代理
+        "/tenant": {
+          target: apiTarget,
+          changeOrigin: true,
+        },
+        "/iam": {
+          target: apiTarget,
+          changeOrigin: true,
+        },
+        "/ai": {
+          target: apiTarget,
+          changeOrigin: true,
+        },
+        "/demo": {
+          target: apiTarget,
+          changeOrigin: true,
+        },
+        // 其他代理规则
         "/api": {
           target: apiTarget,
           changeOrigin: true,

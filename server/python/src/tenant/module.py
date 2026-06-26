@@ -40,18 +40,17 @@ class TenantModule:
 
         格式: [(router, prefix, tags), ...]
         """
-        from tenant.controllers.admin.resource_controller import (
-            router as admin_resource_router,
-        )
-
         from tenant.controllers.admin.module_controller import (
             router as admin_module_router,
         )
-        from tenant.controllers.admin.tenant_controller import (
-            router as admin_tenant_router,
-        )
         from tenant.controllers.admin.plugin_controller import (
             router as admin_plugin_router,
+        )
+        from tenant.controllers.admin.resource_controller import (
+            router as admin_resource_router,
+        )
+        from tenant.controllers.admin.tenant_controller import (
+            router as admin_tenant_router,
         )
         from tenant.controllers.admin.tenant_module_controller import (
             router as admin_tenant_module_router,
@@ -242,6 +241,43 @@ class TenantModule:
                     is_visible=False,
                     permission_codes=["tenant:resource:write"],
                 ),
+                # plugin-definitions 插件定义
+                MenuDef(
+                    code="tenant.plugin-definitions",
+                    name="插件定义",
+                    path="/admin/plugin-definitions",
+                    icon="Puzzle",
+                    sort_order=4,
+                    permission_codes=["tenant:plugin:read"],
+                ),
+                # plugin-definitions 隐藏二级菜单
+                MenuDef(
+                    code="tenant.plugin-definitions.create",
+                    name="新增插件定义",
+                    path="/admin/plugin-definitions/create",
+                    parent_code="tenant.plugin-definitions",
+                    sort_order=1,
+                    is_visible=False,
+                    permission_codes=["tenant:plugin:write"],
+                ),
+                MenuDef(
+                    code="tenant.plugin-definitions.detail",
+                    name="查看插件定义详情",
+                    path="/admin/plugin-definitions/{id}",
+                    parent_code="tenant.plugin-definitions",
+                    sort_order=2,
+                    is_visible=False,
+                    permission_codes=["tenant:plugin:read"],
+                ),
+                MenuDef(
+                    code="tenant.plugin-definitions.edit",
+                    name="编辑插件定义",
+                    path="/admin/plugin-definitions/{id}/edit",
+                    parent_code="tenant.plugin-definitions",
+                    sort_order=3,
+                    is_visible=False,
+                    permission_codes=["tenant:plugin:write"],
+                ),
             ],
             default_roles=[
                 RoleDef(
@@ -261,16 +297,80 @@ class TenantModule:
             ],
             permissions=[
                 # 模块权限
-                PermissionDef(code="tenant:module:read", name="查看模块", resource="module", action="read"),
-                PermissionDef(code="tenant:module:write", name="编辑模块", resource="module", action="write"),
-                PermissionDef(code="tenant:module:delete", name="删除模块", resource="module", action="delete"),
+                PermissionDef(
+                    code="tenant:module:read",
+                    name="查看模块",
+                    resource="module",
+                    action="read",
+                ),
+                PermissionDef(
+                    code="tenant:module:write",
+                    name="编辑模块",
+                    resource="module",
+                    action="write",
+                ),
+                PermissionDef(
+                    code="tenant:module:delete",
+                    name="删除模块",
+                    resource="module",
+                    action="delete",
+                ),
                 # 租户权限
-                PermissionDef(code="tenant:tenant:read", name="查看租户", resource="tenant", action="read"),
-                PermissionDef(code="tenant:tenant:write", name="编辑租户", resource="tenant", action="write"),
-                PermissionDef(code="tenant:tenant:delete", name="删除租户", resource="tenant", action="delete"),
+                PermissionDef(
+                    code="tenant:tenant:read",
+                    name="查看租户",
+                    resource="tenant",
+                    action="read",
+                ),
+                PermissionDef(
+                    code="tenant:tenant:write",
+                    name="编辑租户",
+                    resource="tenant",
+                    action="write",
+                ),
+                PermissionDef(
+                    code="tenant:tenant:delete",
+                    name="删除租户",
+                    resource="tenant",
+                    action="delete",
+                ),
                 # 资源配置权限
-                PermissionDef(code="tenant:resource:read", name="查看资源配置", resource="resource", action="read"),
-                PermissionDef(code="tenant:resource:write", name="编辑资源配置", resource="resource", action="write"),
-                PermissionDef(code="tenant:resource:delete", name="删除资源配置", resource="resource", action="delete"),
+                PermissionDef(
+                    code="tenant:resource:read",
+                    name="查看资源配置",
+                    resource="resource",
+                    action="read",
+                ),
+                PermissionDef(
+                    code="tenant:resource:write",
+                    name="编辑资源配置",
+                    resource="resource",
+                    action="write",
+                ),
+                PermissionDef(
+                    code="tenant:resource:delete",
+                    name="删除资源配置",
+                    resource="resource",
+                    action="delete",
+                ),
+                # 插件定义管理
+                PermissionDef(
+                    code="tenant:plugin:read",
+                    name="查看插件定义",
+                    resource="plugin",
+                    action="read",
+                ),
+                PermissionDef(
+                    code="tenant:plugin:write",
+                    name="编辑插件定义",
+                    resource="plugin",
+                    action="write",
+                ),
+                PermissionDef(
+                    code="tenant:plugin:delete",
+                    name="删除插件定义",
+                    resource="plugin",
+                    action="delete",
+                ),
             ],
         )
