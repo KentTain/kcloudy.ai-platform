@@ -12,7 +12,7 @@ import {
   Star,
   Users,
   Upload,
-  FolderScan,
+  FolderSearch,
 } from "@lucide/vue";
 import type { ColumnDef } from "@tanstack/vue-table";
 import { h, ref } from "vue";
@@ -250,7 +250,7 @@ const handleDelete = async (row: PluginDefinition) => {
           刷新
         </Button>
         <Button variant="outline" data-testid="scan-btn">
-          <FolderScan class="mr-1 h-4 w-4" />
+          <FolderSearch class="mr-1 h-4 w-4" />
           扫描目录
         </Button>
         <Button variant="outline" data-testid="upload-btn">
@@ -358,3 +358,4 @@ const handleDelete = async (row: PluginDefinition) => {
     </Card>
   </div>
 </template>
+
