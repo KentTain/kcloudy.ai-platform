@@ -1,4 +1,4 @@
-﻿import { rawDel, rawGet, rawPost, rawPatch } from '@/framework/api/client';
+﻿import { rawDel, rawGet, rawPost, rawPut } from '@/framework/api/client';
 import type { ApiResponse, PaginatedResponse } from '@/framework/api/types';
 
 // ==================== 类型定义 ====================
@@ -90,7 +90,7 @@ export const getPluginDefinition = (id: string) =>
   rawGet<ApiResponse<PluginDefinitionDetail>>('/tenant/admin/v1/plugin-definitions/');
 
 export const updatePluginDefinition = (id: string, data: UpdatePluginDefinitionRequest) =>
-  rawPatch<ApiResponse<PluginDefinition>>('/tenant/admin/v1/plugin-definitions/', data);
+  rawPut<ApiResponse<PluginDefinition>>('/tenant/admin/v1/plugin-definitions/', data);
 
 export const deletePluginDefinition = (id: string) =>
   rawDel<ApiResponse<void>>('/tenant/admin/v1/plugin-definitions/');
@@ -111,3 +111,4 @@ export const uploadPluginPackage = (file: File, overwrite?: boolean) => {
 
 export const getPluginStatistics = () =>
   rawGet<ApiResponse<PluginStatistics>>('/tenant/admin/v1/plugin-definitions/statistics');
+
