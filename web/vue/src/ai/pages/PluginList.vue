@@ -1,9 +1,8 @@
 ﻿<script setup lang="ts">
 import { ref, h, onMounted } from "vue";
 import { useRouter } from "vue-router";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import type { ColumnDef } from "@tanstack/vue-table";
+import { Badge, Button, Input, DataTable, useDataTable } from "@/components";
 import {
   Select,
   SelectContent,
@@ -11,8 +10,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useDataTable } from "@/framework/composables/useDataTable";
-import type { ColumnDef } from "@/framework/composables/useDataTable";
 import { notifySuccess, notifyError, confirmAction } from "@/framework/utils/feedback";
 import {
   getPluginList,
@@ -293,10 +290,7 @@ const handleUninstall = async (plugin: PluginInfo) => {
 
     <!-- 数据表格 -->
     <div class="flex-1 overflow-auto rounded-md border">
-      <dataTable.DataTable />
+      <DataTable :data-table="dataTable" />
     </div>
-
-    <!-- 分页 -->
-    <dataTable.Pagination />
   </div>
 </template>

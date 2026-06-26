@@ -55,6 +55,7 @@ framework ──X──▶ demo / iam / tenant
 | `module.py` | 模块声明，实现 `ModuleDescriptor` 协议 |
 | `app.py` | 独立应用工厂，支持单模块部署 |
 | `models/__init__.py` | 使用 `create_module_base(schema)` 创建模块 Base |
+| `models/__init__.py` | 使用 `create_base_model(Base)` 创建数据模型基类 BaseModel |
 | `migrations/env.py` | 配置 `version_table_schema` |
 
 ## 核心命令
@@ -85,6 +86,8 @@ uv run pytest tests/demo/ -v
 - Python 版本：3.12+
 - ORM 字段：使用 SQLAlchemy 2.0 `Mapped[...]` / `mapped_column(...)`
 - 模块模型：使用 `create_module_base(schema)` 创建模块级 Base
+- 数据模型基类：使用 `create_base_model(Base)` 创建数据模型基类 BaseModel
+- mixins类：按需使用 framework 框架 `server\python\src\framework\database\mixins` 下 mixins类 `ActiveRecordMixin、TenantMixin、TreeNodeMixin、AuditMixin、PropertyMixin`
 - 异步测试：使用 `pytest.mark.asyncio`
 - API 路由：遵循 `/{模块}/{类型}/v1/{功能}` 格式
 
