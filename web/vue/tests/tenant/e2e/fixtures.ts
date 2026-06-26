@@ -4,6 +4,10 @@
  * 提供两种登录方式：
  * 1. API 辅助登录：快速测试其他功能，绕过 UI
  * 2. UI 登录：测试登录页面的 UI 交互
+ *
+ * 性能优化：
+ * - 使用 addInitScript 替代 page.goto + page.evaluate，避免重复加载 SPA
+ * - 使用缓存机制避免跨测试重复登录 API 调用
  */
 import { test, expect, type Page, type APIRequestContext } from '@playwright/test';
 
@@ -38,27 +42,24 @@ export {
 };
 
 // ============================================================================
-// API 辅助登录函数
+// Token 缓存（同一测试文件内复用，减少 API 调用）
 // ============================================================================
 
+let cachedToken: string | null = null;
+let cachedAdminInfo: any = null;
+
 /**
- * 管理员 API 辅助登录
- *
- * 通过 API 调用完成管理员认证，绕过 UI 登录流程，将 Token 直接注入浏览器存储。
- *
- * @param page Playwright Page 对象
- * @param request Playwright APIRequestContext 对象
- * @param username 用户名，默认 'tenant_admin'
- * @param password 密码，默认 'admin123'
- * @throws 登录失败时抛出包含 HTTP 状态码和错误消息的异常
+ * 获取管理员 Token（带缓存）
  */
-export async function adminLoginViaAPI(
-  page: Page,
+async function obtainAdminToken(
   request: APIRequestContext,
   username = 'tenant_admin',
   password = 'admin123'
-) {
-  // 1. 调用登录 API
+): Promise<{ token: string; adminInfo: any }> {
+  if (cachedToken && cachedAdminInfo) {
+    return { token: cachedToken, adminInfo: cachedAdminInfo };
+  }
+
   const loginResponse = await request.post('/api/tenant/admin/v1/auth/login', {
     data: { username, password }
   });
@@ -79,11 +80,8 @@ export async function adminLoginViaAPI(
     );
   }
 
-  // 2. 获取完整管理员信息
   const meResponse = await request.get('/api/tenant/admin/v1/admin/me', {
-    headers: {
-      Authorization: `Bearer ${token}`
-    }
+    headers: { Authorization: `Bearer ${token}` }
   });
 
   if (!meResponse.ok()) {
@@ -102,11 +100,47 @@ export async function adminLoginViaAPI(
     );
   }
 
-  // 3. 先加载页面，确保 localStorage 可访问
-  await page.goto('/admin/login');
+  cachedToken = token;
+  cachedAdminInfo = adminInfo;
+  return { token, adminInfo };
+}
 
-  // 4. 将 Token 和管理员信息注入浏览器 localStorage
-  await page.evaluate(
+/**
+ * 清除缓存的 Token（测试文件间重置）
+ */
+export function clearAdminTokenCache() {
+  cachedToken = null;
+  cachedAdminInfo = null;
+}
+
+// ============================================================================
+// API 辅助登录函数
+// ============================================================================
+
+/**
+ * 管理员 API 辅助登录
+ *
+ * 通过 API 调用完成管理员认证，绕过 UI 登录流程，将 Token 直接注入浏览器存储。
+ * 使用 addInitScript 在页面加载前注入 localStorage。
+ *
+ * @param page Playwright Page 对象
+ * @param request Playwright APIRequestContext 对象
+ * @param username 用户名，默认 'tenant_admin'
+ * @param password 密码，默认 'admin123'
+ * @throws 登录失败时抛出包含 HTTP 状态码和错误消息的异常
+ */
+export async function adminLoginViaAPI(
+  page: Page,
+  request: APIRequestContext,
+  username = 'tenant_admin',
+  password = 'admin123'
+) {
+  // 1. 获取 Token 和管理员信息（带缓存）
+  const { token, adminInfo } = await obtainAdminToken(request, username, password);
+
+  // 2. 使用 addInitScript 在页面加载前注入 localStorage
+  //    注意：addInitScript 需要在 page.goto() 之前调用，脚本会在每次导航时执行
+  await page.addInitScript(
     ({ token, adminInfo, ADMIN_TOKEN_KEY, ADMIN_INFO_KEY, ADMIN_ROLE_KEY, ADMIN_PERMISSIONS_KEY, ADMIN_MENUS_KEY }) => {
       localStorage.setItem(ADMIN_TOKEN_KEY, token);
       localStorage.setItem(ADMIN_INFO_KEY, JSON.stringify(adminInfo));
@@ -173,22 +207,11 @@ export async function userLoginViaAPI(
     );
   }
 
-  // 2. 获取用户完整信息（遵循规范要求）
-  const meResponse = await request.get('/api/iam/console/v1/users/me', {
-    headers: {
-      Authorization: `Bearer ${access_token}`,
-      ...(tenant_id && { 'X-Tenant-Id': tenant_id })
-    }
-  });
-
+  // 2. 使用 addInitScript 在页面加载前注入 localStorage
   // 计算过期时间
   const expires_at = Date.now() + expires_in * 1000;
 
-  // 3. 先加载页面，确保 localStorage 可访问
-  await page.goto('/login');
-
-  // 4. 将 Token 和相关信息注入浏览器 localStorage
-  await page.evaluate(
+  await page.addInitScript(
     ({ access_token, refresh_token, tenant_id, expires_at, TOKEN_KEY, TENANT_ID_KEY, REFRESH_TOKEN_KEY, TOKEN_EXPIRES_AT_KEY }) => {
       localStorage.setItem(TOKEN_KEY, access_token);
       if (refresh_token) {
@@ -254,6 +277,8 @@ export async function waitForPageReady(page: Page) {
   await page.waitForLoadState('networkidle');
   // 等待骨架屏消失
   await page.waitForSelector('.skeleton, [data-loading="true"]', { state: 'hidden', timeout: 10000 }).catch(() => {});
+  // 额外等待 300ms 确保渲染稳定
+  await page.waitForTimeout(300);
 }
 
 export { test, expect };

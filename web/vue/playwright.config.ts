@@ -21,7 +21,8 @@ export default defineConfig({
   outputDir: './tests/test-results',
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 0,
+  retries: process.env.CI ? 2 : 1,
+  // 本地也允许 1 次重试，容忍内存不足导致的偶发崩溃
   // 内存不足时设置 E2E_WORKERS=1 避免崩溃
   workers: process.env.E2E_WORKERS
     ? parseInt(process.env.E2E_WORKERS, 10)
@@ -34,7 +35,8 @@ export default defineConfig({
     baseURL: process.env.E2E_BASE_URL || 'http://localhost:5173',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
-    video: 'retain-on-failure',
+    video: 'off',
+    // 禁用录制以节省内存
     // 性能优化配置
     headless: true,
     ignoreHTTPSErrors: true,
@@ -57,6 +59,13 @@ export default defineConfig({
             '--disable-extensions',
             '--disable-web-security',
             '--disable-features=IsolateOrigins,site-per-process',
+            '--disable-component-update',
+            '--no-first-run',
+            '--disable-sync',
+            '--disable-background-networking',
+            '--js-flags=--max-old-space-size=512',
+            '--memory-pressure-off',
+            '--max_old_space_size=512',
           ],
         },
       },
