@@ -55,7 +55,7 @@ from ai.components.plugin.engine.utils.logger import get_logger
 from ai.models.plugin_config import PluginConfig as AIPluginConfig
 from ai.models.plugin_runtime_state import PluginRuntimeState
 from ai_plugin.server.core.entities.plugin.setup import PluginAsset
-from framework.configs.settings import settings
+from framework.configs import get_settings
 from framework.events.domain_events import PluginInstallationFailed
 from framework.events.publisher import get_event_publisher
 from framework.storage import get_storage_provider
@@ -170,12 +170,12 @@ class TenantPluginManager:
         self.runtime_factory = RuntimeFactory()  # 插件运行时工厂
 
         # 插件运行目录
-        self.tenant_plugin_dir = settings.plugin.plugin_base_dir / "tenants" / tenant_id
+        self.tenant_plugin_dir = get_settings().plugin.plugin_base_dir / "tenants" / tenant_id
         self.workspace_dir = self.tenant_plugin_dir / "runtime"  # 插件运行时工作目录
         self.workspace_dir.mkdir(parents=True, exist_ok=True)
 
         # OSS配置
-        self.oss_bucket_name = settings.oss.bucket  # OSS bucket名称
+        self.oss_bucket_name = get_settings().oss.bucket  # OSS bucket名称
         self.oss_base_path = f"plugins/{tenant_id}"
 
         self.logger.info(f"租户插件管理器初始化完成: {tenant_id}")
@@ -293,7 +293,7 @@ class TenantPluginManager:
             oss_path = f"{self.oss_base_path}/{plugin_id}/{version}/plugin.zip"
 
             # 获取存储提供者
-            storage = get_storage_provider(settings.oss)
+            storage = get_storage_provider(get_settings().oss)
 
             # 上传到OSS
             await storage.upload(
@@ -316,7 +316,7 @@ class TenantPluginManager:
             oss_path = f"{self.oss_base_path}/{plugin_id}/{version}/plugin.zip"
 
             # 获取存储提供者
-            storage = get_storage_provider(settings.oss)
+            storage = get_storage_provider(get_settings().oss)
 
             # 从OSS下载
             plugin_data = await storage.download(
@@ -355,7 +355,7 @@ class TenantPluginManager:
                 oss_path = f"{self.oss_base_path}/{plugin_id}/{version}/assets/{asset.filename}"
 
                 # 获取存储提供者
-                storage = get_storage_provider(settings.oss)
+                storage = get_storage_provider(get_settings().oss)
 
                 # 上传到OSS
                 await storage.upload(
@@ -390,7 +390,7 @@ class TenantPluginManager:
             oss_path = f"{self.oss_base_path}/{plugin_id}/{version}/assets/{asset_path}"
 
             # 获取存储提供者
-            storage = get_storage_provider(settings.oss)
+            storage = get_storage_provider(get_settings().oss)
 
             # 从OSS下载
             content = await storage.download(
@@ -792,7 +792,7 @@ class TenantPluginManager:
             # 4. 删除OSS中的插件包
             if oss_path:
                 try:
-                    storage = get_storage_provider(settings.oss)
+                    storage = get_storage_provider(get_settings().oss)
                     success = await storage.delete(
                         bucket=self.oss_bucket_name,
                         name=oss_path,
@@ -1584,7 +1584,7 @@ class PluginManagerFactory:
             import platform
             import subprocess
 
-            name = settings.plugin.plugin_base_dir.name
+            name = get_settings().plugin.plugin_base_dir.name
             logger.info(f"plugin_base_dir: {name}")
 
             # 根据操作系统选择不同的进程清理命令

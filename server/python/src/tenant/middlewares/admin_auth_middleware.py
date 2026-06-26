@@ -349,6 +349,7 @@ class AdminAuthMiddleware(BaseHTTPMiddleware):
         "/tenant/admin/v1/modules": "tenant:module",
         "/tenant/admin/v1/resources": "tenant:resource",
         "/tenant/admin/v1/resource-configs": "tenant:resource",
+        "/tenant/admin/v1/plugin-definitions": "tenant:plugin",
     }
 
     def __init__(self, app: "ASGIApp"):
