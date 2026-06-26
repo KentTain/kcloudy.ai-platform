@@ -14,6 +14,7 @@ from ai.services import plugin_management_service
 from framework.common.exceptions import BadRequestError
 from framework.database.dependencies import get_db_session
 from framework.common.response import ApiResponse
+from iam.dependencies import require_permission
 
 _logger = logger.bind(name=__name__)
 
@@ -32,6 +33,7 @@ router = APIRouter(tags=["控制台-运行时状态"])
     },
 )
 async def get_runtime_states(
+    _perm: None = Depends(require_permission("ai:plugin:read")),
     session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """

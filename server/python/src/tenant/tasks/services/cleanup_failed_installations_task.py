@@ -30,6 +30,7 @@ async def cleanup_failed_installations_task() -> None:
             if records:
                 for record in records:
                     await record.delete(session)
+                await session.commit()
                 _logger.info(f"已清理 {len(records)} 条 FAILED 安装记录")
     except Exception:
         _logger.exception("清理 FAILED 安装记录异常")

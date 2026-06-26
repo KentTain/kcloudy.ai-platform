@@ -34,6 +34,7 @@ async def cleanup_pending_installations_task() -> None:
             if records:
                 for record in records:
                     await record.delete(session)
+                await session.commit()
                 _logger.info(f"已清理 {len(records)} 条 PENDING 安装记录")
             else:
                 _logger.debug("无 PENDING 安装记录需要清理")
