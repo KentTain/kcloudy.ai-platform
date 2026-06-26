@@ -64,19 +64,11 @@ class TestModuleAssignmentIntegration:
         empty_existing = MagicMock()
         empty_existing.scalars.return_value.all.return_value = []
 
-        # 提供充足的 side_effect 条目（sync_module_assigned 含 8+ 次 execute 调用）
-        mock_session.execute.side_effect = [
-            menu_result,        # 1: ModuleMenu 查询
-            perm_result,        # 2: ModulePermission 查询
-            role_result,        # 3: ModuleRole 查询
-            mrp_result,         # 4: ModuleRolePermission 查询
-            empty_existing,     # 5: 已存在 Menu 检查
-            empty_existing,     # 6: 已存在 Permission 检查
-            empty_existing,     # 7: 已存在 Role 检查
-            empty_existing,     # 8: 已存在 RolePermission 检查
-            empty_existing,     # 9: 额外备用
-            empty_existing,     # 10: 额外备用
-        ]
+        # 提供充足的 side_effect 条目（sync_module_assigned 含大量 execute 调用）
+        mock_session.execute.side_effect = (
+            [menu_result, perm_result, role_result, mrp_result]
+            + [empty_existing] * 50  # 幂等检查、树操作、全局角色同步等
+        )
 
         await ModuleSyncService.sync_module_assigned(
             mock_session, "tenant-1", "module-1", "demo"
@@ -163,7 +155,7 @@ class TestModuleAssignmentIntegration:
             menu_result,
             tm_result,
             parent_result,
-        ]
+        ] + [MagicMock()] * 20  # Menu.create_node 内部树操作
 
         await ModuleSyncService.sync_module_menu_created(
             mock_session, "menu-2", "module-1"
