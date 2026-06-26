@@ -1,5 +1,5 @@
 ﻿import { rawDel, rawGet, rawPost, rawPut } from '@/framework/api/client';
-import type { ApiResponse, PaginatedResponse } from '@/framework/api/types';
+import type { ApiResponse } from '@/framework/api/types';
 
 // ==================== 类型定义 ====================
 
@@ -84,7 +84,7 @@ export interface PluginStatistics {
 // ==================== API 函数 ====================
 
 export const getPluginDefinitions = (params?: PluginDefinitionQuery) =>
-  rawGet<PaginatedResponse<PluginDefinition>>('/tenant/admin/v1/plugin-definitions', { params });
+  rawGet<ApiResponse<PluginDefinition[]>>('/tenant/admin/v1/plugin-definitions', { params });
 
 export const getPluginDefinition = (id: string) =>
   rawGet<ApiResponse<PluginDefinitionDetail>>('/tenant/admin/v1/plugin-definitions/');
