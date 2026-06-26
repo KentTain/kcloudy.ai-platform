@@ -77,6 +77,18 @@ export const adminRoutes: RouteRecordRaw[] = [
         component: () => import("@/tenant/pages/admin/ModuleForm.vue"),
         meta: { title: "编辑模块", hidden: true, requiresAdminAuth: true, permissions: ["tenant:module:write"] },
       },
+      {
+        path: "plugin-definitions",
+        name: "AdminPluginDefinitions",
+        component: () => import("@/tenant/pages/admin/PluginDefinitionList.vue"),
+        meta: { title: "????", requiresAdminAuth: true, permissions: ["tenant:plugin:read"] },
+      },
+      {
+        path: "plugin-definitions/:id",
+        name: "AdminPluginDefinitionDetail",
+        component: () => import("@/tenant/pages/admin/PluginDefinitionList.vue"),
+        meta: { title: "??????", hidden: true, requiresAdminAuth: true, permissions: ["tenant:plugin:read"] },
+      },
     ],
   },
 ];
