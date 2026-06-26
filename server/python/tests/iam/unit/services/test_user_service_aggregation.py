@@ -65,6 +65,10 @@ class TestGetUserDetail:
             "iam.services.user_service.UserService._get_user_tenants_with_detail",
             new_callable=AsyncMock,
             return_value=mock_tenants,
+        ), patch(
+            "iam.services.user_menu_service.user_menu_service.get_user_menus",
+            new_callable=AsyncMock,
+            return_value=[],
         ):
             from iam.services.user_service import user_service
 
@@ -129,6 +133,10 @@ class TestGetUserDetail:
             "iam.services.user_service.UserService._get_user_tenants_with_detail",
             new_callable=AsyncMock,
             return_value=[],  # 无租户
+        ), patch(
+            "iam.services.user_menu_service.user_menu_service.get_user_menus",
+            new_callable=AsyncMock,
+            return_value=[],
         ):
             from iam.services.user_service import user_service
 
