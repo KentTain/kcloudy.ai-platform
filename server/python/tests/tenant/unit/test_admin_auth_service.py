@@ -34,14 +34,14 @@ class TestAdminAuthServiceLoginRolePermission:
         admin_mock.role = "tenantAdmin"
 
         scalar_result = MagicMock()
-        scalar_result.scalar_one_or_none = AsyncMock(return_value=admin_mock)
+        scalar_result.scalar_one_or_none = MagicMock(return_value=admin_mock)
         session.execute = AsyncMock(return_value=scalar_result)
 
         with patch(
             "tenant.middlewares.admin_auth_middleware.verify_password",
             return_value=True,
         ), patch(
-            "tenant.middlewares.admin_auth_middleware.ModuleService.get_by_code",
+            "tenant.services.module_service.ModuleService.get_by_code",
             AsyncMock(return_value=None),
         ):
             token, admin, permissions = await AdminAuthService.login(session, "test_admin", "password")
@@ -64,7 +64,7 @@ class TestAdminAuthServiceLoginRolePermission:
 
         # Mock 查询序列
         scalar_result = MagicMock()
-        scalar_result.scalar_one_or_none = AsyncMock(return_value=admin_mock)
+        scalar_result.scalar_one_or_none = MagicMock(return_value=admin_mock)
         session.execute = AsyncMock(return_value=scalar_result)
 
         # Mock ModuleService.get_by_code 返回 tenant 模块
@@ -74,7 +74,7 @@ class TestAdminAuthServiceLoginRolePermission:
             "tenant.middlewares.admin_auth_middleware.verify_password",
             return_value=True,
         ), patch(
-            "tenant.middlewares.admin_auth_middleware.ModuleService.get_by_code",
+            "tenant.services.module_service.ModuleService.get_by_code",
             AsyncMock(return_value=module_mock),
         ), patch.object(
             AdminAuthService, "_get_role_permissions", AsyncMock(return_value=["tenant:module:read", "tenant:module:write", "tenant:module:delete"])
@@ -98,7 +98,7 @@ class TestAdminAuthServiceLoginRolePermission:
         admin_mock.role = "ordinaryAdmin"
 
         scalar_result = MagicMock()
-        scalar_result.scalar_one_or_none = AsyncMock(return_value=admin_mock)
+        scalar_result.scalar_one_or_none = MagicMock(return_value=admin_mock)
         session.execute = AsyncMock(return_value=scalar_result)
 
         module_mock = MagicMock()
@@ -107,7 +107,7 @@ class TestAdminAuthServiceLoginRolePermission:
             "tenant.middlewares.admin_auth_middleware.verify_password",
             return_value=True,
         ), patch(
-            "tenant.middlewares.admin_auth_middleware.ModuleService.get_by_code",
+            "tenant.services.module_service.ModuleService.get_by_code",
             AsyncMock(return_value=module_mock),
         ), patch.object(
             AdminAuthService, "_get_role_permissions", AsyncMock(return_value=[])
@@ -130,7 +130,7 @@ class TestAdminAuthServiceGetAdminInfo:
         session = AsyncMock(spec=AsyncSession)
 
         scalar_result = MagicMock()
-        scalar_result.scalar_one_or_none = AsyncMock(return_value=None)
+        scalar_result.scalar_one_or_none = MagicMock(return_value=None)
         session.execute = AsyncMock(return_value=scalar_result)
 
         result = await AdminAuthService.get_admin_info(session, "nonexistent-id")
@@ -147,7 +147,7 @@ class TestAdminAuthServiceGetAdminInfo:
         admin_mock.role = "tenantAdmin"
 
         scalar_result = MagicMock()
-        scalar_result.scalar_one_or_none = AsyncMock(return_value=admin_mock)
+        scalar_result.scalar_one_or_none = MagicMock(return_value=admin_mock)
         # This handles multiple execute calls (first for admin, rest for permissions/menus)
         session.execute = AsyncMock(return_value=scalar_result)
 
@@ -176,7 +176,7 @@ class TestAdminAuthServiceGetAdminInfo:
         admin_mock.role = "ordinaryAdmin"
 
         scalar_result = MagicMock()
-        scalar_result.scalar_one_or_none = AsyncMock(return_value=admin_mock)
+        scalar_result.scalar_one_or_none = MagicMock(return_value=admin_mock)
         session.execute = AsyncMock(return_value=scalar_result)
 
         with patch.object(
@@ -202,7 +202,7 @@ class TestAdminAuthServiceGetRolePermissions:
         role_mock = MagicMock()
         role_mock.id = "role-001"
         role_scalar = MagicMock()
-        role_scalar.scalar_one_or_none = AsyncMock(return_value=role_mock)
+        role_scalar.scalar_one_or_none = MagicMock(return_value=role_mock)
 
         # Mock module_role_permissions 查询
         rp_mock_1 = MagicMock()
@@ -233,7 +233,7 @@ class TestAdminAuthServiceGetRolePermissions:
         session = AsyncMock(spec=AsyncSession)
 
         role_scalar = MagicMock()
-        role_scalar.scalar_one_or_none = AsyncMock(return_value=None)
+        role_scalar.scalar_one_or_none = MagicMock(return_value=None)
         session.execute = AsyncMock(return_value=role_scalar)
 
         module_mock = MagicMock()
@@ -263,6 +263,9 @@ class TestAdminAuthServiceGetAdminMenus:
     @pytest.mark.asyncio
     async def test_get_admin_menus_filters_by_permissions(self):
         """_get_admin_menus 根据权限过滤菜单"""
+        import sqlalchemy
+        from sqlalchemy import Table
+
         session = AsyncMock(spec=AsyncSession)
 
         menu_1 = MagicMock()
@@ -277,6 +280,7 @@ class TestAdminAuthServiceGetAdminMenus:
         menu_1.tree_sort = 1
         menu_1.tree_level = 1
         menu_1.tree_leaf = True
+        menu_1.parent_ids = "root,"
         menu_1.created_at = None
         menu_1.updated_at = None
 
@@ -292,6 +296,7 @@ class TestAdminAuthServiceGetAdminMenus:
         menu_2.tree_sort = 2
         menu_2.tree_level = 1
         menu_2.tree_leaf = True
+        menu_2.parent_ids = "root,"
         menu_2.created_at = None
         menu_2.updated_at = None
 
@@ -305,23 +310,25 @@ class TestAdminAuthServiceGetAdminMenus:
 
         # Mock ModuleMenuService.list_menus return
         with patch(
-            "tenant.middlewares.admin_auth_middleware.ModuleMenuService.list_menus",
+            "tenant.services.module_menu_service.ModuleMenuService.list_menus",
             AsyncMock(return_value=[menu_1, menu_2]),
-        ), patch(
-            "tenant.middlewares.admin_auth_middleware.ModuleMenuPermission",
-        ) as MockMMP:
-            # Menu 1 has permission that matches, Menu 2 doesn't
+        ):
+            # 第一个 execute 调用（ModulePermission 查询）：返回 perm_id → code 映射
+            perm_scalar = MagicMock()
+            perm_scalar.all = MagicMock(return_value=[("perm-001", "tenant:module:read")])
+
+            # 第二个 execute 调用（ModuleMenuPermission 查询）：返回菜单权限关联
             mmp_mock_1 = MagicMock()
             mmp_mock_1.module_permission_id = "perm-001"
 
             mmp_scalar = MagicMock()
             mmp_scalar.scalars = MagicMock(return_value=MagicMock(all=MagicMock(return_value=[mmp_mock_1])))
-            session.execute = AsyncMock(return_value=mmp_scalar)
 
-            # permissions that match: menu 1 has perm-001 which is in our perms
-            # We need to check ModuleMenuPermission for each menu
+            session.execute = AsyncMock(side_effect=[perm_scalar, mmp_scalar])
+
+            # permissions that match: menu 1 has perm-001 which matches our perms
             menus = await AdminAuthService._get_admin_menus(
-                session, module_mock, ["perm-001"]
+                session, module_mock, ["tenant:module:read"]
             )
 
             # menu_1 should be included (its permission matches), menu_2 should not
@@ -356,7 +363,7 @@ class TestAdminAuthServiceGetAdminMenus:
         module_mock.updated_at = None
 
         with patch(
-            "tenant.middlewares.admin_auth_middleware.ModuleMenuService.list_menus",
+            "tenant.services.module_menu_service.ModuleMenuService.list_menus",
             AsyncMock(return_value=[menu]),
         ):
             menus = await AdminAuthService._get_admin_menus(session, module_mock)

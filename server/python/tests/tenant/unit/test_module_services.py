@@ -92,8 +92,8 @@ class TestModuleService:
             is_active=True,
         )
 
-        # 验证 add 被调用了 3 次：模块 + 2 个默认角色
-        assert session.add.call_count == 3
+        # 验证 add 被调用了 1 次（模块本身）
+        assert session.add.call_count == 1
         session.flush.assert_called_once()
 
     @pytest.mark.asyncio
@@ -286,6 +286,7 @@ class TestModuleMenuService:
         mock_menu.id = "menu-1"
         mock_menu.name = "旧名称"
         mock_menu.module_id = "module-1"
+        mock_menu.parent_id = None
 
         mock_publisher = AsyncMock()
 

@@ -91,13 +91,10 @@ class TestAdminLoginEndpoint:
 
         with patch(
             "tenant.controllers.admin.tenant_controller.AdminAuthService.login",
-            AsyncMock(return_value=("test-token", admin_mock)),
+            AsyncMock(return_value=("test-token", admin_mock, ["tenant:module:read", "tenant:module:write"])),
         ), patch(
             "tenant.controllers.admin.tenant_controller.AdminAuthService._get_role_permissions",
             AsyncMock(return_value=["tenant:module:read", "tenant:module:write"]),
-        ), patch(
-            "tenant.middlewares.admin_auth_middleware.ModuleService.get_by_code",
-            AsyncMock(return_value=MagicMock(id="module-001")),
         ):
             response = await admin_login(login_data, session)
 
@@ -199,12 +196,23 @@ class TestGetAdminMenus:
         menu_mock.created_at = datetime.now()
         menu_mock.updated_at = datetime.now()
 
+        # Mock session.execute for the permission query inside controller
+        perm_scalar = MagicMock()
+        perm_scalar.all = MagicMock(return_value=[("perm-001", "tenant:module:read")])
+        session.execute = AsyncMock(return_value=perm_scalar)
+
         with patch(
+            "tenant.controllers.admin.tenant_controller.ModuleService.list_active_modules",
+            AsyncMock(return_value=[module_mock]),
+        ), patch(
             "tenant.controllers.admin.tenant_controller.ModuleService.get_by_code",
             AsyncMock(return_value=module_mock),
         ), patch(
             "tenant.controllers.admin.tenant_controller.ModuleMenuService.list_menus",
             AsyncMock(return_value=[menu_mock]),
+        ), patch(
+            "tenant.controllers.admin.tenant_controller.ModuleMenuService.build_tree",
+            return_value=[{"id": "menu-001", "module_id": "module-tenant", "parent_id": None, "code": "tenant.modules", "name": "模块管理", "path": "/admin/modules", "icon": "Puzzle", "tree_sort": 1, "tree_level": 1, "tree_leaf": True, "is_visible": True, "created_at": datetime.now(), "updated_at": datetime.now(), "children": []}],
         ):
             admin = {
                 "admin_id": "admin-001",
@@ -224,8 +232,8 @@ class TestGetAdminMenus:
         session = AsyncMock()
 
         with patch(
-            "tenant.controllers.admin.tenant_controller.ModuleService.get_by_code",
-            AsyncMock(return_value=None),
+            "tenant.controllers.admin.tenant_controller.ModuleService.list_active_modules",
+            AsyncMock(return_value=[]),
         ):
             admin = {"admin_id": "admin-001", "username": "admin", "permissions": []}
             response = await get_admin_menus(admin, session)

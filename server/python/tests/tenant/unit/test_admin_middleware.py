@@ -4,10 +4,29 @@
 测试 Task 6.1: AdminAuthMiddleware API 级权限校验
 """
 
+from datetime import datetime, timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from fastapi import Request
+
+
+def _setup_admin_token(permissions: list[str]) -> str:
+    """在 _admin_tokens 中添加有效 token"""
+    from tenant.middlewares.admin_auth_middleware import (
+        _admin_tokens,
+        generate_token,
+    )
+
+    token = generate_token()
+    _admin_tokens[token] = {
+        "admin_id": "admin-001",
+        "username": "admin",
+        "role": "tenantAdmin",
+        "permissions": permissions,
+        "expires_at": datetime.now() + timedelta(hours=24),
+    }
+    return token
 
 
 class TestAdminAuthMiddlewarePermissionCheck:
@@ -66,17 +85,13 @@ class TestAdminAuthMiddlewarePermissionCheck:
         """GET 请求始终允许，不检查权限"""
         from tenant.middlewares.admin_auth_middleware import AdminAuthMiddleware
 
+        token = _setup_admin_token(permissions=[])
         middleware = AdminAuthMiddleware(app=MagicMock())
 
         request = MagicMock(spec=Request)
         request.url.path = "/tenant/admin/v1/tenants"
         request.method = "GET"
-        request.state.admin = {
-            "admin_id": "admin-001",
-            "username": "admin",
-            "role": "tenantAdmin",
-            "permissions": [],
-        }
+        request.headers.get.return_value = f"Bearer {token}"
 
         call_next = AsyncMock()
         response = await middleware.dispatch(request, call_next)
@@ -117,17 +132,13 @@ class TestAdminAuthMiddlewarePermissionCheck:
         """permissions 包含 delete 权限时允许非 GET 请求"""
         from tenant.middlewares.admin_auth_middleware import AdminAuthMiddleware
 
+        token = _setup_admin_token(permissions=["tenant:tenant:delete"])
         middleware = AdminAuthMiddleware(app=MagicMock())
 
         request = MagicMock(spec=Request)
         request.url.path = "/tenant/admin/v1/tenants/123"
         request.method = "DELETE"
-        request.state.admin = {
-            "admin_id": "admin-001",
-            "username": "admin",
-            "role": "tenantAdmin",
-            "permissions": ["tenant:tenant:delete"],
-        }
+        request.headers.get.return_value = f"Bearer {token}"
 
         call_next = AsyncMock()
         response = await middleware.dispatch(request, call_next)
@@ -138,17 +149,13 @@ class TestAdminAuthMiddlewarePermissionCheck:
         """*:*:* 通配权限允许所有操作"""
         from tenant.middlewares.admin_auth_middleware import AdminAuthMiddleware
 
+        token = _setup_admin_token(permissions=["*:*:*"])
         middleware = AdminAuthMiddleware(app=MagicMock())
 
         request = MagicMock(spec=Request)
         request.url.path = "/tenant/admin/v1/tenants"
         request.method = "POST"
-        request.state.admin = {
-            "admin_id": "admin-001",
-            "username": "admin",
-            "role": "sysAdmin",
-            "permissions": ["*:*:*"],
-        }
+        request.headers.get.return_value = f"Bearer {token}"
 
         call_next = AsyncMock()
         response = await middleware.dispatch(request, call_next)
@@ -184,7 +191,7 @@ class TestAdminSeedRole:
         from tenant.migrations.seeds.admin_seed import run
 
         with patch(
-            "tenant.migrations.seeds.admin_seed.get_session",
+            "framework.database.core.engine.get_session",
         ) as mock_get_session, patch(
             "tenant.migrations.seeds.admin_seed.select",
         ), patch(
@@ -194,7 +201,7 @@ class TestAdminSeedRole:
             mock_get_session.return_value.__aenter__.return_value = mock_session
 
             scalar_result = MagicMock()
-            scalar_result.scalar_one_or_none = AsyncMock(return_value=None)
+            scalar_result.scalar_one_or_none = MagicMock(return_value=None)
             mock_session.execute = AsyncMock(return_value=scalar_result)
 
             result = await run(dry_run=True)

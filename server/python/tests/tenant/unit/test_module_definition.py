@@ -36,7 +36,8 @@ class TestTenantModuleDefinition:
         assert "tenant.modules" in top_codes
         assert "tenant.tenants" in top_codes
         assert "tenant.resources" in top_codes
-        assert len(top_level) == 3
+        assert "tenant.plugin-definitions" in top_codes
+        assert len(top_level) == 4
 
     def test_top_level_menus_visibility(self):
         """验证一级菜单可见"""

@@ -33,10 +33,10 @@ class TestTenantAdminRoleField:
         column = TenantAdmin.__table__.c.role
         assert column.nullable is False
 
-    def test_role_default_is_tenant_admin(self):
-        """role 字段 Python 默认值为 tenantAdmin"""
+    def test_role_default_is_ordinary_admin(self):
+        """role 字段 Python 默认值为 ordinaryAdmin"""
         column = TenantAdmin.__table__.c.role
-        assert column.default.arg == "tenantAdmin"
+        assert column.default.arg == "ordinaryAdmin"
 
     def test_role_comment_is_role_code(self):
         """role 字段 comment 为 角色编码"""
