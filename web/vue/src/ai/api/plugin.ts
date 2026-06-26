@@ -4,8 +4,8 @@
  * 提供插件列表查询、安装、启动、停止等操作接口
  */
 
-import { httpGet, httpPost, httpPut, httpDelete, httpPostMultipart } from "@/framework/api/client";
-import type { ApiResponse, PaginatedResponse } from "@/framework/api/types";
+import { rawGet, rawPost, rawPut, rawDel, rawApiClient } from "@/framework/api/client";
+import type { ApiResponse } from "@/framework/api/types";
 
 // ==================== 类型定义 ====================
 
@@ -91,7 +91,7 @@ export async function getPluginList(params?: {
   limit?: number;
   offset?: number;
 }): Promise<ApiResponse<PluginPaginatedListResponse>> {
-  return httpGet(CONSOLE_BASE, params);
+  return rawGet(CONSOLE_BASE, params);
 }
 
 /**
@@ -104,7 +104,7 @@ export async function getAvailablePlugins(params?: {
   page?: number;
   page_size?: number;
 }): Promise<ApiResponse<unknown>> {
-  return httpGet(`${CONSOLE_BASE}/available`, params);
+  return rawGet(`${CONSOLE_BASE}/available`, params);
 }
 
 /**
@@ -115,7 +115,7 @@ export async function createPluginInstallation(data: {
   auto_start?: boolean;
   install_config?: Record<string, unknown>;
 }): Promise<ApiResponse<{ task_id: string }>> {
-  return httpPost(`${CONSOLE_BASE}/installations`, data);
+  return rawPost(`${CONSOLE_BASE}/installations`, data);
 }
 
 /**
@@ -127,21 +127,21 @@ export async function getInstallTasks(params?: {
   page?: number;
   page_size?: number;
 }): Promise<ApiResponse<unknown>> {
-  return httpGet(`${CONSOLE_BASE}/install-tasks`, params);
+  return rawGet(`${CONSOLE_BASE}/install-tasks`, params);
 }
 
 /**
  * 获取安装任务详情
  */
 export async function getInstallTaskDetail(taskId: string): Promise<ApiResponse<unknown>> {
-  return httpGet(`${CONSOLE_BASE}/install-tasks/${taskId}`);
+  return rawGet(`${CONSOLE_BASE}/install-tasks/${taskId}`);
 }
 
 /**
  * 获取插件详情
  */
 export async function getPluginInfo(pluginId: string): Promise<ApiResponse<PluginInfo>> {
-  return httpGet(`${CONSOLE_BASE}/${encodeURIComponent(pluginId)}`);
+  return rawGet(`${CONSOLE_BASE}/${encodeURIComponent(pluginId)}`);
 }
 
 /**
@@ -150,8 +150,8 @@ export async function getPluginInfo(pluginId: string): Promise<ApiResponse<Plugi
 export async function getPluginCredentials(
   pluginId: string,
   params?: { page?: number; page_size?: number; name?: string }
-): Promise<ApiResponse<PaginatedResponse<PluginCredential>>> {
-  return httpGet(`${CONSOLE_BASE}/${encodeURIComponent(pluginId)}/credentials`, params);
+): Promise<ApiResponse<PluginCredential[]>> {
+  return rawGet(`${CONSOLE_BASE}/${encodeURIComponent(pluginId)}/credentials`, params);
 }
 
 /**
@@ -161,7 +161,7 @@ export async function getCredentialDetail(
   pluginId: string,
   credentialId: string
 ): Promise<ApiResponse<PluginCredential>> {
-  return httpGet(`${CONSOLE_BASE}/${encodeURIComponent(pluginId)}/credentials/${credentialId}`);
+  return rawGet(`${CONSOLE_BASE}/${encodeURIComponent(pluginId)}/credentials/${credentialId}`);
 }
 
 /**
@@ -170,7 +170,7 @@ export async function getCredentialDetail(
 export async function getPluginCredentialsSchema(
   pluginId: string
 ): Promise<ApiResponse<PluginCredentialsSchema[]>> {
-  return httpGet(`${CONSOLE_BASE}/${encodeURIComponent(pluginId)}/credentials-schema`);
+  return rawGet(`${CONSOLE_BASE}/${encodeURIComponent(pluginId)}/credentials-schema`);
 }
 
 /**
@@ -180,7 +180,7 @@ export async function createPluginCredential(
   pluginId: string,
   data: { name: string; config: Record<string, unknown> }
 ): Promise<ApiResponse<PluginCredential>> {
-  return httpPost(`${CONSOLE_BASE}/${encodeURIComponent(pluginId)}/credentials`, data);
+  return rawPost(`${CONSOLE_BASE}/${encodeURIComponent(pluginId)}/credentials`, data);
 }
 
 /**
@@ -191,7 +191,7 @@ export async function updatePluginCredential(
   credentialId: string,
   data: { name?: string; config?: Record<string, unknown> }
 ): Promise<ApiResponse<PluginCredential>> {
-  return httpPut(`${CONSOLE_BASE}/${encodeURIComponent(pluginId)}/credentials/${credentialId}`, data);
+  return rawPut(`${CONSOLE_BASE}/${encodeURIComponent(pluginId)}/credentials/${credentialId}`, data);
 }
 
 /**
@@ -201,7 +201,7 @@ export async function deletePluginCredential(
   pluginId: string,
   credentialId: string
 ): Promise<ApiResponse<boolean>> {
-  return httpDelete(`${CONSOLE_BASE}/${encodeURIComponent(pluginId)}/credentials/${credentialId}`);
+  return rawDel(`${CONSOLE_BASE}/${encodeURIComponent(pluginId)}/credentials/${credentialId}`);
 }
 
 // ==================== Admin API (管理端) ====================
@@ -218,7 +218,7 @@ export async function adminGetPluginList(params?: {
   limit?: number;
   offset?: number;
 }): Promise<ApiResponse<PluginPaginatedListResponse>> {
-  return httpGet(ADMIN_BASE, params);
+  return rawGet(ADMIN_BASE, params);
 }
 
 /**
@@ -237,35 +237,35 @@ export async function uploadPlugin(data: {
   if (data.install_config) {
     formData.append("install_config", JSON.stringify(data.install_config));
   }
-  return httpPostMultipart(`${ADMIN_BASE}/upload`, formData);
+  return rawApiClient.post(`${ADMIN_BASE}/upload`, formData, { headers: { "Content-Type": "multipart/form-data" } });
 }
 
 /**
  * 启动插件
  */
 export async function startPlugin(pluginId: string): Promise<ApiResponse<PluginOperationResponse>> {
-  return httpPost(`${ADMIN_BASE}/${encodeURIComponent(pluginId)}/start`);
+  return rawPost(`${ADMIN_BASE}/${encodeURIComponent(pluginId)}/start`);
 }
 
 /**
  * 停止插件
  */
 export async function stopPlugin(pluginId: string): Promise<ApiResponse<PluginOperationResponse>> {
-  return httpPost(`${ADMIN_BASE}/${encodeURIComponent(pluginId)}/stop`);
+  return rawPost(`${ADMIN_BASE}/${encodeURIComponent(pluginId)}/stop`);
 }
 
 /**
  * 卸载插件
  */
 export async function uninstallPlugin(pluginId: string): Promise<ApiResponse<PluginOperationResponse>> {
-  return httpDelete(`${ADMIN_BASE}/${encodeURIComponent(pluginId)}`);
+  return rawDel(`${ADMIN_BASE}/${encodeURIComponent(pluginId)}`);
 }
 
 /**
  * 管理端获取插件详情
  */
 export async function adminGetPluginInfo(pluginId: string): Promise<ApiResponse<PluginInfo>> {
-  return httpGet(`${ADMIN_BASE}/${encodeURIComponent(pluginId)}`);
+  return rawGet(`${ADMIN_BASE}/${encodeURIComponent(pluginId)}`);
 }
 
 /**
@@ -285,5 +285,5 @@ export async function upgradePlugin(data: {
   if (data.install_config) {
     formData.append("install_config", JSON.stringify(data.install_config));
   }
-  return httpPostMultipart(`${ADMIN_BASE}/${encodeURIComponent(data.plugin_id)}/upgrade`, formData);
+  return rawApiClient.post(`${ADMIN_BASE}/${encodeURIComponent(data.plugin_id)}/upgrade`, formData, { headers: { "Content-Type": "multipart/form-data" } });
 }

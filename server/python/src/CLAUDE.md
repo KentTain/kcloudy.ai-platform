@@ -58,6 +58,7 @@ src/{module}/
 - 新模块放在 `src/{module}/`，不要放在 `src/core/`、`src/common/` 等跨模块目录
 - 必须在 `module.py` 实现 `ModuleDescriptor` 协议
 - 必须使用 `create_module_base(schema)` 创建模块级 Base
+- 必须使用 `create_base_model(Base)` 创建数据模型基类 BaseModel
 - Controller 不直接写复杂业务逻辑
 - Service 是主要业务逻辑入口
 - Model 字段使用 SQLAlchemy 2.0 声明式类型：`Mapped[...] = mapped_column(...)`
