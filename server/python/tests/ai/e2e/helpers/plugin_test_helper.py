@@ -230,14 +230,20 @@ class PluginTestHelper:
             "status": "active",
         }
 
-        # 获取进程信息
-        if hasattr(runtime, "process") and runtime.process:
-            runtime_info["pid"] = runtime.process.pid
+        # 获取进程信息（使用 process_id）
+        if runtime.process_id:
+            runtime_info["pid"] = runtime.process_id
 
         # 获取端口信息
+        if runtime.port:
+            runtime_info["port"] = runtime.port
+
+        # 从 plugin_info 补充信息
         if plugin_info:
-            runtime_info["port"] = plugin_info.port
-            runtime_info["pid"] = plugin_info.pid
+            if "port" not in runtime_info and plugin_info.port:
+                runtime_info["port"] = plugin_info.port
+            if "pid" not in runtime_info and plugin_info.pid:
+                runtime_info["pid"] = plugin_info.pid
 
         # 检查进程存在
         if check_process and "pid" in runtime_info:
