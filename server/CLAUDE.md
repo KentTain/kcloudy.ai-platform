@@ -21,7 +21,7 @@
 server/{技术栈}/
 ├── src/
 │   ├── framework/                 # 基础设施层（跨模块共享）
-│   │   ├── database/              # 基础设施：数据库-database
+│   │   ├── database/              # 基础设施：database-数据库
 │   │   │   ├── core/              # - 核心（engine, session, base）
 │   │   │   ├── mixins/            # - 模型混入（tree, tenant, audit...）
 │   │   │   ├── types/             # - 自定义类型（datetime, enum, uuid...）

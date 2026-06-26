@@ -9,7 +9,7 @@ from pathlib import Path
 
 from loguru import logger
 
-from framework.configs import settings
+from framework.configs import get_settings
 from framework.storage import get_storage_provider
 
 
@@ -18,6 +18,7 @@ class PluginStorageService:
 
     def __init__(self):
         """初始化存储服务"""
+        settings = get_settings()
         self._storage = get_storage_provider(settings.oss)
         self._bucket_name = settings.plugin.storage_bucket
         self._initialized = False

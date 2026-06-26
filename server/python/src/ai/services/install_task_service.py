@@ -24,7 +24,7 @@ from ai.schemas.plugin import (
 )
 from framework.common.ctx import get_tenant_id, get_user_id
 from framework.common.exceptions import BadRequestError, NotFoundError
-from framework.configs import settings
+from framework.configs import get_settings
 from framework.queue.task_queue import enqueue_task
 from tenant.models.plugin_definition import TenantPluginDefinition
 from tenant.models.plugin_installation import TenantPluginInstallation
@@ -357,7 +357,8 @@ class InstallTaskService:
             int: 超时任务数量
         """
         now = datetime.now()
-        timeout_threshold = settings().plugin.install_task_timeout_seconds
+        settings = get_settings()
+        timeout_threshold = settings.plugin.install_task_timeout_seconds
 
         # 查询超时的 running 任务
         stmt = select(PluginInstallTask).where(

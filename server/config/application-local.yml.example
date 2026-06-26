@@ -178,6 +178,37 @@ file-upload:
   # 图片文件（多模态使用）上传大小限制(字节)，默认10MB
   max-image-size: 10485760 # 10 * 1024 * 1024
 
+# 加密配置
+encryption:
+  # 是否启用数据加密
+  enabled: true
+  # 主密钥（用于敏感配置加密，如资源配置密码）
+  # 生成方式: python -c "import secrets; print(secrets.token_hex(32))"
+  # 生产环境必须通过环境变量 TENANT_ENCRYPTION_MASTER_KEY 设置
+  master-key: "your-64-character-hex-string-here-example-do-not-use-in-production"
+  instance:
+    - name: "db-in"
+      algorithm: aes # aes, rsa
+      key: "l=iqcspKg#o-*%(BxrtY$OLTc5_YKpRo"
+    - name: "web-in"
+      algorithm: rsa
+      pri-key: "-----BEGIN RSA PRIVATE KEY-----\nMIIEpAIBAAKCAQEAqM8w5ZOTo2xnSMgG+yJV0nqAVtcEx7eTWU/lBOH+TzYWA1Lb\nlyirrXoK1iqL3PYl4aWEQ9AQkNFO8JM8/eA7jaAYeHpATY7cMIvjV7wWutUpwdFj\ntK4zT2mFYV1fvYsvLlveUHKUZ998+98LKTurAy95VNNl07Bqfa9JBOdaXdvQCiG7\n8ng3W2NbtsXiY2kM6wMcE0AZ3R/fzQAzt+qvkaUn/bWAKd9SYAbk64IHlWiTWV1W\npHiiqWcgTvOx2X1E4VzuiZkPtpwXb7hZmrF4kTkuvunvCiZzO8i6YKbXgPZuC0Jn\nDWKVpmemLXjo801krSlxFEx0mfz5vxcFIMyUUwIDAQABAoIBAAiGnmOZ9oT0fqrw\nX1njvA3rXfwE1Br6LJkALgL3Hw8FHkuArdKOnU0fsthqQbIhRHyHDY0XPx7xU1lX\nNmdkId3fTh0Xn5PLOVfCWPMfbs504a0GVFDV04WZQMFQI/vAwdtHjIznnJM6eGeI\nNloYx2Rby3b7TlNIv7glWDzFKo0+7dv9zYqJaOpTgg1rLDAJPQctLC3uh1NTN0bD\ntVPkwqPbvKiRb1F3FhcUZsVDRTeOxnOEs+P022vu83epzkzGgSIpN9yXGSuiNyyh\n+4+Rw08n/+IASgVTIX4gVt573DH9M6uWnecLbVT7uDMlnGCJvo47RDGQfiXqkjh5\n6jlaK8ECgYEAy3If0Ft5lOvPMPU9K1u4eu/Smp3Le5Vr3TzIO+DnNEmXO1fFnTBr\nhUE+vRbrww9MF2RwKnyk9JNUosDlEpMgxxX6DbwvGAa0GTKs27JdUXu0zpgZ9r+I\nq+SGM7g5WVgC4u1nH+D0etk+ylhRuDXU7l6mLqaYP2K93qNbYMiMn6MCgYEA1GqO\nkCViSufjpQnUsdT/h+UN6BUwJri8Acqc0G00KlWjJz/W1jiIGV2zIVwV/6BA1X7Q\ncnw50ZokeuC2w+PEIsofIBUczKDzEVp/8/cTbWTEpK0QUPRec0A5odGEVVXbIUCj\nUn3YV7b1aZwW/EqIJ7rN8DpL0bkf2XEbfbsPw5ECgYEAmtEuBJCX5QvNj6QP+H7D\n1EnMKn0J6/G5M5KdjXOIffHCdBZG+2dtaupLo/ldUALEFMkJ0ksn/DZhobjImWn8\n94Nx1iHudIolY0d843LIMMnCvbRhjbQTfTtaJOF8QtEG4UlnwIqfgRzw+2paRaQx\ndXPxYm7ETPgHJPWLBAuZd6ECgYEAk98mJbTQq2KouACS/8VOqhTLzI/LeHlL8FdT\nOUl8cigxryYi8fhizn3LMOMBMXYnDDj+9WQDgCW1VZFPyiiqJqncZyIrbUxySddd\nkcGj1Zi7yAPugtzLT6IbPMo1PI7LQGfWCpwu2kk0qPOPkMx14mqJ6L08gOBGCsJR\nqAJsI/ECgYBIHpz94h44P2gKI3IkSS0PxGyC/3QDU/3Uqxe/Vj5UBWadgCMNOf+b\n5fuZGMviWw9KEGZcraggRRqbl+kPxDCWyTdbtAqvdXSINPtVLf7Aq+XWOR9ofsK/\nZVWfgEMJaxC6/ktg/2PohR2aeeqvMc/ZbSkuFnJM7abLgaa20X03+A==\n-----END RSA PRIVATE KEY-----"
+      pub-key: "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAqM8w5ZOTo2xnSMgG+yJV\n0nqAVtcEx7eTWU/lBOH+TzYWA1LblyirrXoK1iqL3PYl4aWEQ9AQkNFO8JM8/eA7\njaAYeHpATY7cMIvjV7wWutUpwdFjtK4zT2mFYV1fvYsvLlveUHKUZ998+98LKTur\nAy95VNNl07Bqfa9JBOdaXdvQCiG78ng3W2NbtsXiY2kM6wMcE0AZ3R/fzQAzt+qv\nkaUn/bWAKd9SYAbk64IHlWiTWV1WpHiiqWcgTvOx2X1E4VzuiZkPtpwXb7hZmrF4\nkTkuvunvCiZzO8i6YKbXgPZuC0JnDWKVpmemLXjo801krSlxFEx0mfz5vxcFIMyU\nUwIDAQAB\n-----END PUBLIC KEY-----"
+  # 落库加密
+  db-in:
+    # 是否启用
+    enabled: true
+    use: "db-in"
+  # 前端输入加密
+  web-in:
+    # 是否启用
+    enabled: true
+    use: "web-in"
+  # 前端输出解密
+  web-out:
+    # 临时密钥有效期（秒）
+    temp-key-ttl: 300
+
 # 数据库配置
 sqlalchemy:
   # 数据库连接URL
@@ -287,6 +318,75 @@ redis:
       retry-on-timeout: true
       health-check-interval: 30
 
+# 对象存储配置
+oss:
+  default-type: minio
+  https: false # 是否开启HTTPS访问
+  bucket: "alon"
+  minio:
+    endpoint: "<minio-endpoint>" # 外部端点（访问使用）
+    internal-endpoint: "<minio-endpoint>" # 内部端点（上传使用）
+    access-key: "<minio-access-key>"
+    secret-key: "<minio-secret-key>"
+    secure: false # 是否开启HTTPS访问
+  aliyun:
+    endpoint: "<aliyun-endpoint>" # 外部端点（访问使用）
+    internal-endpoint: "<aliyun-endpoint>" # 内部端点（上传使用）
+    access-key-id: "<aliyun-access-key-id>"
+    access-key-secret: "<aliyun-access-key-secret>"
+  tencent:
+    endpoint: "<tencent-endpoint>" # 外部端点（访问使用）
+    internal-endpoint: "<tencent-endpoint>" # 内部端点（上传使用）
+    secret-id: "<tencent-secret-id>"
+    secret-key: "<tencent-secret-key>"
+    region: "<tencent-region>" # 区域，已创建桶归属的区域，例如：ap-guangzhou
+    token: "<tencent-token>" # 临时密钥，如果使用永久ak/sk不需要填入
+    scheme: "<tencent-scheme>" # "https" or "http"
+
+# 消息队列配置
+messaging:
+  # 连接配置
+  connections:
+    redis:
+    kafka:
+    rabbitmq:
+    rocketmq:
+  # 发布订阅配置
+  pubsub:
+    use: redis
+  # 队列配置
+  queue:
+    use: redis
+
+# 监听器配置
+listener:
+  # 队列消费者配置
+  queue-consumers:
+    # 向量化任务处理器
+    - handler: "alon.listeners.services.queue.dataset.segment_vector.SegmentVectorTaskHandler"
+      concurrency: 5
+      enabled: true
+    # FAQ向量化任务处理器
+    - handler: "alon.listeners.services.queue.dataset.faq_vector.FaqVectorTaskHandler"
+      concurrency: 5
+      enabled: true
+    # 分段索引任务处理器
+    - handler: "alon.listeners.services.queue.dataset.segment_index.SegmentIndexTaskHandler"
+      concurrency: 5
+      enabled: true
+    # 文档摘要生成任务处理器
+    - handler: "alon.listeners.services.queue.dataset.document_summary.DocumentSummaryTaskHandler"
+      concurrency: 5
+      enabled: true
+    # 图谱化任务处理器
+    - handler: "alon.listeners.services.queue.dataset.document_graph.DocumentGraphTaskHandler"
+      concurrency: 1
+      enabled: true
+
+# 锁配置
+lock:
+  provider: redis
+
 # 服务发现配置
 discovery:
   # 是否启用服务发现
@@ -352,31 +452,6 @@ config-center:
     password: "" # 如果启用了鉴权才需要配置
     timeout: 3 # 请求超时时间（秒）
 
-# 对象存储配置
-oss:
-  default-type: minio
-  https: false # 是否开启HTTPS访问
-  bucket: "alon"
-  minio:
-    endpoint: "<minio-endpoint>" # 外部端点（访问使用）
-    internal-endpoint: "<minio-endpoint>" # 内部端点（上传使用）
-    access-key: "<minio-access-key>"
-    secret-key: "<minio-secret-key>"
-    secure: false # 是否开启HTTPS访问
-  aliyun:
-    endpoint: "<aliyun-endpoint>" # 外部端点（访问使用）
-    internal-endpoint: "<aliyun-endpoint>" # 内部端点（上传使用）
-    access-key-id: "<aliyun-access-key-id>"
-    access-key-secret: "<aliyun-access-key-secret>"
-  tencent:
-    endpoint: "<tencent-endpoint>" # 外部端点（访问使用）
-    internal-endpoint: "<tencent-endpoint>" # 内部端点（上传使用）
-    secret-id: "<tencent-secret-id>"
-    secret-key: "<tencent-secret-key>"
-    region: "<tencent-region>" # 区域，已创建桶归属的区域，例如：ap-guangzhou
-    token: "<tencent-token>" # 临时密钥，如果使用永久ak/sk不需要填入
-    scheme: "<tencent-scheme>" # "https" or "http"
-
 # 工作流配置
 workflow:
   graph:
@@ -421,46 +496,6 @@ workflow:
   max-concurrent-tasks: 100
   # 任务清理超时时间（秒）
   task-cleanup-timeout: 3600
-
-# 消息队列配置
-messaging:
-  # 连接配置
-  connections:
-    redis:
-    kafka:
-    rabbitmq:
-    rocketmq:
-  # 发布订阅配置
-  pubsub:
-    use: redis
-  # 队列配置
-  queue:
-    use: redis
-
-# 监听器配置
-listener:
-  # 队列消费者配置
-  queue-consumers:
-    # 向量化任务处理器
-    - handler: "alon.listeners.services.queue.dataset.segment_vector.SegmentVectorTaskHandler"
-      concurrency: 5
-      enabled: true
-    # FAQ向量化任务处理器
-    - handler: "alon.listeners.services.queue.dataset.faq_vector.FaqVectorTaskHandler"
-      concurrency: 5
-      enabled: true
-    # 分段索引任务处理器
-    - handler: "alon.listeners.services.queue.dataset.segment_index.SegmentIndexTaskHandler"
-      concurrency: 5
-      enabled: true
-    # 文档摘要生成任务处理器
-    - handler: "alon.listeners.services.queue.dataset.document_summary.DocumentSummaryTaskHandler"
-      concurrency: 5
-      enabled: true
-    # 图谱化任务处理器
-    - handler: "alon.listeners.services.queue.dataset.document_graph.DocumentGraphTaskHandler"
-      concurrency: 1
-      enabled: true
 
 # 提示词调试配置
 prompt-completion:
@@ -570,37 +605,6 @@ jwt:
   secret-key: "3488a63e1765035d386f05409663f55c83bfae3b3c61a932744b20ad14244dcf"
   algorithm: "HS256"
   access-token-expire-minutes: 10080 # 60 * 24 * 7，7 day
-
-# 加密配置
-encryption:
-  # 是否启用数据加密
-  enabled: true
-  # 主密钥（用于敏感配置加密，如资源配置密码）
-  # 生成方式: python -c "import secrets; print(secrets.token_hex(32))"
-  # 生产环境必须通过环境变量 TENANT_ENCRYPTION_MASTER_KEY 设置
-  master-key: "your-64-character-hex-string-here-example-do-not-use-in-production"
-  instance:
-    - name: "db-in"
-      algorithm: aes # aes, rsa
-      key: "l=iqcspKg#o-*%(BxrtY$OLTc5_YKpRo"
-    - name: "web-in"
-      algorithm: rsa
-      pri-key: "-----BEGIN RSA PRIVATE KEY-----\nMIIEpAIBAAKCAQEAqM8w5ZOTo2xnSMgG+yJV0nqAVtcEx7eTWU/lBOH+TzYWA1Lb\nlyirrXoK1iqL3PYl4aWEQ9AQkNFO8JM8/eA7jaAYeHpATY7cMIvjV7wWutUpwdFj\ntK4zT2mFYV1fvYsvLlveUHKUZ998+98LKTurAy95VNNl07Bqfa9JBOdaXdvQCiG7\n8ng3W2NbtsXiY2kM6wMcE0AZ3R/fzQAzt+qvkaUn/bWAKd9SYAbk64IHlWiTWV1W\npHiiqWcgTvOx2X1E4VzuiZkPtpwXb7hZmrF4kTkuvunvCiZzO8i6YKbXgPZuC0Jn\nDWKVpmemLXjo801krSlxFEx0mfz5vxcFIMyUUwIDAQABAoIBAAiGnmOZ9oT0fqrw\nX1njvA3rXfwE1Br6LJkALgL3Hw8FHkuArdKOnU0fsthqQbIhRHyHDY0XPx7xU1lX\nNmdkId3fTh0Xn5PLOVfCWPMfbs504a0GVFDV04WZQMFQI/vAwdtHjIznnJM6eGeI\nNloYx2Rby3b7TlNIv7glWDzFKo0+7dv9zYqJaOpTgg1rLDAJPQctLC3uh1NTN0bD\ntVPkwqPbvKiRb1F3FhcUZsVDRTeOxnOEs+P022vu83epzkzGgSIpN9yXGSuiNyyh\n+4+Rw08n/+IASgVTIX4gVt573DH9M6uWnecLbVT7uDMlnGCJvo47RDGQfiXqkjh5\n6jlaK8ECgYEAy3If0Ft5lOvPMPU9K1u4eu/Smp3Le5Vr3TzIO+DnNEmXO1fFnTBr\nhUE+vRbrww9MF2RwKnyk9JNUosDlEpMgxxX6DbwvGAa0GTKs27JdUXu0zpgZ9r+I\nq+SGM7g5WVgC4u1nH+D0etk+ylhRuDXU7l6mLqaYP2K93qNbYMiMn6MCgYEA1GqO\nkCViSufjpQnUsdT/h+UN6BUwJri8Acqc0G00KlWjJz/W1jiIGV2zIVwV/6BA1X7Q\ncnw50ZokeuC2w+PEIsofIBUczKDzEVp/8/cTbWTEpK0QUPRec0A5odGEVVXbIUCj\nUn3YV7b1aZwW/EqIJ7rN8DpL0bkf2XEbfbsPw5ECgYEAmtEuBJCX5QvNj6QP+H7D\n1EnMKn0J6/G5M5KdjXOIffHCdBZG+2dtaupLo/ldUALEFMkJ0ksn/DZhobjImWn8\n94Nx1iHudIolY0d843LIMMnCvbRhjbQTfTtaJOF8QtEG4UlnwIqfgRzw+2paRaQx\ndXPxYm7ETPgHJPWLBAuZd6ECgYEAk98mJbTQq2KouACS/8VOqhTLzI/LeHlL8FdT\nOUl8cigxryYi8fhizn3LMOMBMXYnDDj+9WQDgCW1VZFPyiiqJqncZyIrbUxySddd\nkcGj1Zi7yAPugtzLT6IbPMo1PI7LQGfWCpwu2kk0qPOPkMx14mqJ6L08gOBGCsJR\nqAJsI/ECgYBIHpz94h44P2gKI3IkSS0PxGyC/3QDU/3Uqxe/Vj5UBWadgCMNOf+b\n5fuZGMviWw9KEGZcraggRRqbl+kPxDCWyTdbtAqvdXSINPtVLf7Aq+XWOR9ofsK/\nZVWfgEMJaxC6/ktg/2PohR2aeeqvMc/ZbSkuFnJM7abLgaa20X03+A==\n-----END RSA PRIVATE KEY-----"
-      pub-key: "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAqM8w5ZOTo2xnSMgG+yJV\n0nqAVtcEx7eTWU/lBOH+TzYWA1LblyirrXoK1iqL3PYl4aWEQ9AQkNFO8JM8/eA7\njaAYeHpATY7cMIvjV7wWutUpwdFjtK4zT2mFYV1fvYsvLlveUHKUZ998+98LKTur\nAy95VNNl07Bqfa9JBOdaXdvQCiG78ng3W2NbtsXiY2kM6wMcE0AZ3R/fzQAzt+qv\nkaUn/bWAKd9SYAbk64IHlWiTWV1WpHiiqWcgTvOx2X1E4VzuiZkPtpwXb7hZmrF4\nkTkuvunvCiZzO8i6YKbXgPZuC0JnDWKVpmemLXjo801krSlxFEx0mfz5vxcFIMyU\nUwIDAQAB\n-----END PUBLIC KEY-----"
-  # 落库加密
-  db-in:
-    # 是否启用
-    enabled: true
-    use: "db-in"
-  # 前端输入加密
-  web-in:
-    # 是否启用
-    enabled: true
-    use: "web-in"
-  # 前端输出解密
-  web-out:
-    # 临时密钥有效期（秒）
-    temp-key-ttl: 300
 
 # 代码沙箱环境地址
 code-sandbox:

@@ -60,9 +60,9 @@ framework ──X──▶ demo / iam / tenant
 ## 核心命令
 
 ```bash
-# 启动 Web 服务
-uv run python manage.py runserver
-uv run python manage.py runserver --module iam,demo
+# 重建模块 Schema（危险操作）
+uv run python manage.py db rebuild --module iam
+uv run python manage.py db rebuild --all
 
 # 数据库迁移
 uv run python manage.py db migrate --module iam
@@ -70,6 +70,10 @@ uv run python manage.py db migrate --all
 
 # 数据初始化
 uv run python manage.py seed
+
+# 启动后端 API 服务
+uv run python manage.py runserver
+uv run python manage.py runserver --module iam,demo
 
 # 运行测试
 uv run pytest

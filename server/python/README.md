@@ -101,9 +101,10 @@ server/python/
 
 | 模块 | Schema | 说明 |
 | --- | --- | --- |
-| demo | `demo` | 业务演示模块：知识库管理示例 |
-| iam | `iam` | 身份认证模块：租户、用户、权限管理 |
 | framework | - | 基础设施模块：配置、缓存、存储、队列等 |
+| tenant | `tenant` | 租户模块：资源配置、模块（角色、菜单、权限）、租户、插件等 |
+| iam | `iam` | 身份认证模块：组织、角色、用户、菜单、权限管理 |
+| demo | `demo` | 业务演示模块：知识库管理示例 |
 
 ### 模块结构
 
@@ -358,8 +359,8 @@ uv run python manage.py runserver
 # 创建新迁移文件
 uv run python manage.py db makemigrations --module iam -m "add new feature"
 
-# 开发环境：启动时自动执行
-# 生产环境：手动运行 migrate 命令
+# 开发环境：auto_migrate: true 启动时自动执行
+# 生产环境：auto_migrate: false 手动运行 migrate 命令
 ```
 
 **新增种子示例：**
@@ -553,5 +554,3 @@ op.create_foreign_key(
     ondelete="CASCADE"
 )
 ```
-
-参考：`src/iam/migrations/versions/001_iam_tables.py`
