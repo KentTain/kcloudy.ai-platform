@@ -371,14 +371,22 @@ class AdminAuthMiddleware(BaseHTTPMiddleware):
             # 提取 Token
             auth_header = request.headers.get("Authorization")
             if not auth_header or not auth_header.startswith("Bearer "):
+                _logger.warning(f"[AdminAuth] 未提供认证令牌: path={request.url.path}")
                 return self._error_response(401, "未提供认证令牌")
 
             token = auth_header.replace("Bearer ", "")
 
+            # 调试日志
+            _logger.info(f"[AdminAuth] 验证 Token: path={request.url.path}, token={token[:20]}...")
+            _logger.info(f"[AdminAuth] 当前存储的 Token 数量: {len(_admin_tokens)}")
+
             # 验证 Token
             token_data = AdminAuthService.verify_token(token)
             if not token_data:
+                _logger.warning(f"[AdminAuth] Token 验证失败: token={token[:20]}..., stored_tokens={list(_admin_tokens.keys())[:3]}")
                 return self._error_response(401, "无效或过期的令牌")
+
+            _logger.info(f"[AdminAuth] Token 验证成功: admin={token_data.get('username')}")
 
             # 注入管理员信息到请求状态
             request.state.admin = token_data
@@ -458,3 +466,54 @@ async def get_current_admin(request: Request) -> dict:
     if not admin:
         raise HTTPException(status_code=401, detail="未认证")
     return admin
+
+
+def require_admin_permission(permission_code: str):
+    """
+    管理员权限检查依赖工厂
+
+    创建一个检查指定权限的 FastAPI 依赖。
+
+    Args:
+        permission_code: 需要的权限编码
+
+    Returns:
+        依赖函数
+
+    Usage:
+        @router.get("/tenants")
+        async def list_tenants(
+            _: None = Depends(require_admin_permission("tenant:tenant:read")),
+            session: AsyncSession = Depends(get_db_session),
+        ):
+            ...
+    """
+
+    async def check_permission(request: Request) -> None:
+        """检查管理员权限"""
+        admin = getattr(request.state, "admin", None)
+        if not admin:
+            raise HTTPException(status_code=401, detail="未认证")
+
+        permissions = admin.get("permissions", [])
+
+        # 通配权限
+        if "*:*:*" in permissions:
+            return
+
+        # 精确匹配
+        if permission_code in permissions:
+            return
+
+        # 模块通配：tenant:*:*
+        parts = permission_code.split(":")
+        if len(parts) == 3:
+            module, resource, action = parts
+            if f"{module}:*:*" in permissions:
+                return
+            if f"{module}:{resource}:*" in permissions:
+                return
+
+        raise HTTPException(status_code=403, detail="权限不足")
+
+    return check_permission
