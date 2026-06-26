@@ -1,4 +1,4 @@
-import type { RouteRecordRaw } from "vue-router";
+﻿import type { RouteRecordRaw } from "vue-router";
 
 /**
  * AI 模块路由配置
@@ -15,6 +15,12 @@ export const aiRoutes: RouteRecordRaw[] = [
     name: "ConversationList",
     component: () => import("@/ai/pages/ConversationListPage.vue"),
     meta: { title: "会话列表", icon: "list", requiresAuth: true },
+  },
+  {
+    path: "ai/plugins",
+    name: "AIPluginList",
+    component: () => import("@/ai/pages/PluginList.vue"),
+    meta: { title: "插件管理", icon: "package", requiresAuth: true },
   },
 ];
 
