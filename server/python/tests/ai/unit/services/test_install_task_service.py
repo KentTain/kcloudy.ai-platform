@@ -615,6 +615,8 @@ class TestCheckTimeoutTasks:
     @pytest.mark.asyncio
     async def test_check_timeout_tasks_with_timeout(self, session):
         """测试检测到超时任务"""
+        from framework.configs import get_settings
+
         # 创建一个 35 分钟前开始的任务（超过默认 30 分钟超时）
         timeout_task = self._create_running_task("task-timeout", 35)
 
@@ -622,12 +624,8 @@ class TestCheckTimeoutTasks:
         result_mock.scalars.return_value.all.return_value = [timeout_task]
         session.execute.return_value = result_mock
 
-        with patch(
-            "ai.services.install_task_service.settings"
-        ) as mock_settings:
-            mock_settings.return_value.plugin.install_task_timeout_seconds = 1800  # 30 分钟
-
-            timeout_count = await InstallTaskService.check_timeout_tasks(session)
+        # 直接使用真实的 get_settings，它会从配置文件读取
+        timeout_count = await InstallTaskService.check_timeout_tasks(session)
 
         assert timeout_count == 1
         assert timeout_task.status == "timeout"
@@ -644,12 +642,7 @@ class TestCheckTimeoutTasks:
         result_mock.scalars.return_value.all.return_value = [running_task]
         session.execute.return_value = result_mock
 
-        with patch(
-            "ai.services.install_task_service.settings"
-        ) as mock_settings:
-            mock_settings.return_value.plugin.install_task_timeout_seconds = 1800
-
-            timeout_count = await InstallTaskService.check_timeout_tasks(session)
+        timeout_count = await InstallTaskService.check_timeout_tasks(session)
 
         assert timeout_count == 0
         assert running_task.status == "running"
@@ -661,12 +654,7 @@ class TestCheckTimeoutTasks:
         result_mock.scalars.return_value.all.return_value = []
         session.execute.return_value = result_mock
 
-        with patch(
-            "ai.services.install_task_service.settings"
-        ) as mock_settings:
-            mock_settings.return_value.plugin.install_task_timeout_seconds = 1800
-
-            timeout_count = await InstallTaskService.check_timeout_tasks(session)
+        timeout_count = await InstallTaskService.check_timeout_tasks(session)
 
         assert timeout_count == 0
 
