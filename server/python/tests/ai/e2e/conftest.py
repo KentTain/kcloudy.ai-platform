@@ -18,7 +18,9 @@ E2E 测试特性：
 
 import os
 import sys
+import time
 import uuid
+from datetime import datetime
 from pathlib import Path
 from typing import Callable
 
@@ -34,9 +36,9 @@ os.environ["TZ"] = "Asia/Shanghai"
 # Windows 事件循环策略修复
 # =============================================================================
 if sys.platform == "win32":
-    if hasattr(__import__('asyncio'), 'WindowsSelectorEventLoopPolicy'):
-        __import__('asyncio').set_event_loop_policy(
-            __import__('asyncio').WindowsSelectorEventLoopPolicy()
+    if hasattr(__import__("asyncio"), "WindowsSelectorEventLoopPolicy"):
+        __import__("asyncio").set_event_loop_policy(
+            __import__("asyncio").WindowsSelectorEventLoopPolicy()
         )
 
 
@@ -53,7 +55,7 @@ def pytest_configure(config):
     """
     config.addinivalue_line(
         "markers",
-        "e2e: mark test as end-to-end test (deselected by default, run with -m e2e)"
+        "e2e: mark test as end-to-end test (deselected by default, run with -m e2e)",
     )
 
 
@@ -67,7 +69,9 @@ def pytest_collection_modifyitems(config, items):
     e2e_selected = config.getoption("-m", default="") == "e2e"
 
     if not e2e_selected:
-        skip_e2e = pytest.mark.skip(reason="E2E tests are skipped by default. Use -m e2e to run.")
+        skip_e2e = pytest.mark.skip(
+            reason="E2E tests are skipped by default. Use -m e2e to run."
+        )
         for item in items:
             if item.get_closest_marker("e2e") is not None:
                 item.add_marker(skip_e2e)
@@ -76,6 +80,7 @@ def pytest_collection_modifyitems(config, items):
 # =============================================================================
 # 配置加载
 # =============================================================================
+
 
 @pytest.fixture(scope="session")
 def e2e_settings():
@@ -94,13 +99,15 @@ def e2e_settings():
 # 服务可用性检测
 # =============================================================================
 
+
 def _check_postgres_available(settings):
     """同步检测 PostgreSQL 服务是否可用"""
     import socket
+
     try:
         url = settings.sqlalchemy.url
         # postgresql+asyncpg://admin:password@host:port/database
-        parts = url.split('@')[1].split('/')[0].split(':')
+        parts = url.split("@")[1].split("/")[0].split(":")
         host = parts[0]
         port = int(parts[1]) if len(parts) > 1 else 5432
 
@@ -116,13 +123,13 @@ def _check_postgres_available(settings):
 def _check_redis_available(settings):
     """同步检测 Redis 服务是否可用"""
     import socket
+
     try:
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.settimeout(2)
-        result = sock.connect_ex((
-            settings.redis.single.host,
-            settings.redis.single.port
-        ))
+        result = sock.connect_ex(
+            (settings.redis.single.host, settings.redis.single.port)
+        )
         sock.close()
         return result == 0
     except Exception:
@@ -144,6 +151,7 @@ def redis_available(e2e_settings):
 # =============================================================================
 # 测试租户夹具
 # =============================================================================
+
 
 @pytest.fixture
 def test_tenant_id():
@@ -277,6 +285,7 @@ async def cleanup_test_resources(e2e_settings, test_tenant_id, redis_available):
 
     if errors:
         import logging
+
         logger = logging.getLogger(__name__)
         for error in errors:
             logger.warning(f"测试资源清理警告: {error}")
@@ -285,6 +294,7 @@ async def cleanup_test_resources(e2e_settings, test_tenant_id, redis_available):
 # =============================================================================
 # 数据库会话夹具
 # =============================================================================
+
 
 @pytest_asyncio.fixture
 async def e2e_engine(e2e_settings, postgres_available):
@@ -347,6 +357,7 @@ async def e2e_session(e2e_engine):
         # 安全关闭会话，处理事件循环已关闭的情况
         try:
             import asyncio
+
             loop = asyncio.get_running_loop()
             if not loop.is_closed():
                 await session.rollback()
@@ -360,7 +371,9 @@ async def e2e_session(e2e_engine):
 # =============================================================================
 
 # 插件包基础路径（相对于 server/python 目录）
-_PLUGINS_BASE_DIR = Path(__file__).resolve().parent.parent.parent.parent.parent / "plugins"
+_PLUGINS_BASE_DIR = (
+    Path(__file__).resolve().parent.parent.parent.parent.parent / "plugins"
+)
 
 # 插件 ID 到文件名的映射
 _PLUGIN_ID_TO_FILENAME = {
@@ -403,6 +416,7 @@ def plugin_package_path() -> Callable[[str | None], Path]:
         >>> print(tongyi_path)
         '/workspace/.../server/plugins/langgenius-tongyi_0.2.0.zip'
     """
+
     def _get_plugin_path(plugin_id: str | None = None) -> Path:
         if plugin_id is None:
             # 返回插件目录路径
@@ -429,6 +443,7 @@ def plugin_package_path() -> Callable[[str | None], Path]:
 # =============================================================================
 # 辅助夹具
 # =============================================================================
+
 
 @pytest_asyncio.fixture
 async def init_redis(e2e_settings, redis_available):
@@ -476,6 +491,7 @@ def e2e_test_context(test_tenant_id):
 # 插件测试夹具
 # =============================================================================
 
+
 @pytest_asyncio.fixture
 async def plugin_provider():
     """
@@ -493,7 +509,9 @@ async def plugin_provider():
     try:
         settings = get_settings()
     except RuntimeError:
-        config_dir = Path(__file__).resolve().parent.parent.parent.parent.parent / "config"
+        config_dir = (
+            Path(__file__).resolve().parent.parent.parent.parent.parent / "config"
+        )
         from framework.configs import init_settings
 
         settings = init_settings(config_dir)
@@ -528,6 +546,7 @@ async def plugin_provider():
             except Exception as e:
                 # 如果迁移已运行过（已存在），忽略错误
                 import logging
+
                 logging.getLogger(__name__).warning(
                     f"模块 {module_name} 迁移执行异常: {e}"
                 )
@@ -591,7 +610,9 @@ async def plugin_runtime_setup(
     from ai.components.plugin.engine.models.plugin import PluginInfo
 
     plugin_id = "langgenius/tongyi"
-    workspace_dir = tmp_path / "plugins" / "tenants" / test_tenant_id / "runtime" / plugin_id
+    workspace_dir = (
+        tmp_path / "plugins" / "tenants" / test_tenant_id / "runtime" / plugin_id
+    )
 
     # 清理并创建工作目录
     if workspace_dir.exists():
@@ -621,19 +642,16 @@ async def plugin_runtime_setup(
     plugin_config = processor.get_plugin_config()
 
     # 创建 PluginInfo 并注入 config
-    from datetime import datetime
-
     plugin_info = PluginInfo(installed_at=datetime.now())
     object.__setattr__(plugin_info, "config", plugin_config)
 
     # 获取 manager 实例
     from sqlalchemy.ext.asyncio import AsyncSession
+
     from framework.database.dependencies import get_db_session
 
     # 创建 LocalPluginRuntime
-    runtime = LocalPluginRuntime(
-        plugin_info=plugin_info, workspace_dir=workspace_dir
-    )
+    runtime = LocalPluginRuntime(plugin_info=plugin_info, workspace_dir=workspace_dir)
     runtime.virtual_env_path = venv_path
     runtime.python_interpreter_path = python_interpreter
 
@@ -694,6 +712,7 @@ async def plugin_runtime_setup(
     async def _mock_start_plugin_process(self):
         """创建简单的长时间运行的测试 Python 进程"""
         import asyncio
+
         # 创建测试用 worker 脚本
         worker_script = self.workspace_dir / "test_worker.py"
         worker_script.write_text(
@@ -723,6 +742,7 @@ async def plugin_runtime_setup(
 
     # 应用 mock
     import types
+
     runtime._start_plugin_process = types.MethodType(
         _mock_start_plugin_process, runtime
     )
@@ -744,6 +764,7 @@ async def plugin_runtime_setup(
 # =============================================================================
 # API Key 夹具
 # =============================================================================
+
 
 @pytest.fixture
 def tongyi_api_key():
@@ -786,6 +807,7 @@ def gpustack_api_key():
 # =============================================================================
 # Provider 注册夹具
 # =============================================================================
+
 
 @pytest.fixture
 def registered_provider():
