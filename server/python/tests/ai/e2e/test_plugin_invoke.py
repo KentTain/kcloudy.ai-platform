@@ -104,7 +104,7 @@ class TestPluginInvokeTongyi:
                 "user_id": f"{test_tenant_id}-user",
                 "provider": "tongyi",
                 "model_type": "llm",
-                "model": "qwen-turbo",
+                "model": "qwen-plus",
                 "credentials": {
                     "dashscope_api_key": tongyi_api_key,
                 },
@@ -133,16 +133,26 @@ class TestPluginInvokeTongyi:
             # 4. 验证响应
             assert len(chunks) > 0, "应收到至少一个响应块"
 
-            # 验证响应内容
+            # 验证响应内容（chunk 结构：{"type": "stream", "data": {"delta": {...}}})
             has_content = False
             for chunk in chunks:
-                if chunk and "delta" in chunk:
-                    delta = chunk.get("delta", {})
-                    message = delta.get("message", {})
-                    content = message.get("content", "")
+                if not isinstance(chunk, dict):
+                    continue
+                data = chunk.get("data") or chunk
+                if isinstance(data, dict):
+                    delta = data.get("delta", {}) or data
+                    message = delta.get("message", {}) if isinstance(delta, dict) else {}
+                    content = ""
+                    if isinstance(message, dict):
+                        content = message.get("content", "")
+                    elif isinstance(message, str):
+                        content = message
                     if content:
                         has_content = True
                         break
+                elif isinstance(data, str):
+                    has_content = True
+                    break
 
             assert has_content, "响应应包含内容"
 
@@ -197,7 +207,7 @@ class TestPluginInvokeTongyi:
                 "user_id": f"{test_tenant_id}-user",
                 "provider": "tongyi",
                 "model_type": "llm",
-                "model": "qwen-turbo",
+                "model": "qwen-plus",
                 "credentials": {
                     "dashscope_api_key": tongyi_api_key,
                 },
@@ -231,16 +241,21 @@ class TestPluginInvokeTongyi:
             finish_reason = None
 
             for chunk in chunks:
-                if chunk and "delta" in chunk:
-                    delta = chunk.get("delta", {})
-                    message = delta.get("message", {})
-                    content = message.get("content", "")
-                    if content:
-                        accumulated_content += content
-
-                    # 检查完成原因
-                    if delta.get("finish_reason"):
-                        finish_reason = delta.get("finish_reason")
+                if not isinstance(chunk, dict):
+                    continue
+                data = chunk.get("data") or chunk
+                if isinstance(data, dict):
+                    delta = data.get("delta", {}) or data
+                    if isinstance(delta, dict):
+                        message = delta.get("message", {})
+                        if isinstance(message, dict):
+                            content = message.get("content", "")
+                            if content:
+                                accumulated_content += content
+                        if delta.get("finish_reason"):
+                            finish_reason = delta.get("finish_reason")
+                    elif isinstance(delta, str):
+                        accumulated_content += delta
 
             # 验证累积内容不为空
             assert len(accumulated_content) > 0, "流式响应应累积内容"
@@ -286,7 +301,7 @@ class TestPluginInvokeGpustack:
         endpoint_url = gpustack_endpoint
 
         # 检查模型名称环境变量（可选，有默认值）
-        model_name = os.environ.get("E2E_GPUSTACK_MODEL", "llama3")
+        model_name = os.environ.get("E2E_GPUSTACK_MODEL", "qwen3.5-9b")
 
         plugin_id = "langgenius/gpustack"
         helper = PluginTestHelper(tenant_id=test_tenant_id)
@@ -355,10 +370,17 @@ class TestPluginInvokeGpustack:
             # 验证响应内容
             has_content = False
             for chunk in chunks:
-                if chunk and "delta" in chunk:
-                    delta = chunk.get("delta", {})
-                    message = delta.get("message", {})
-                    content = message.get("content", "")
+                if not isinstance(chunk, dict):
+                    continue
+                data = chunk.get("data") or chunk
+                if isinstance(data, dict):
+                    delta = data.get("delta", {}) or data
+                    message = delta.get("message", {}) if isinstance(delta, dict) else {}
+                    content = ""
+                    if isinstance(message, dict):
+                        content = message.get("content", "")
+                    elif isinstance(message, str):
+                        content = message
                     if content:
                         has_content = True
                         break
@@ -425,7 +447,7 @@ class TestPluginInvokeError:
                 "user_id": f"{test_tenant_id}-user",
                 "provider": "tongyi",
                 "model_type": "llm",
-                "model": "qwen-turbo",
+                "model": "qwen-plus",
                 "credentials": {
                     "dashscope_api_key": "invalid-api-key-for-testing-12345",
                 },
