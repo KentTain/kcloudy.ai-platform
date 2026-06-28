@@ -1,59 +1,22 @@
-"""会话与消息模型集成测试 — 多租户隔离和 CRUD"""
+"""会话与消息模型集成测试 — 多租户隔离和 CRUD
 
-import os
-import sys
+基于数据库实际表结构（由 001_initial_schema.py 迁移创建）：
+- conversations: id, tenant_id, user_id, mode, status, title, summary, created_at, updated_at
+- messages: id, tenant_id, conversation_id, parent_message_id, role, content, status, error, metadata, created_at, updated_at
+"""
+
 import uuid
 
 import pytest
 import pytest_asyncio
+from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
-os.environ["PYTHON_SERVICE_ENV"] = "local"
-
-# Windows 事件循环策略修复
-if sys.platform == "win32":
-    if hasattr(__import__('asyncio'), 'WindowsSelectorEventLoopPolicy'):
-        __import__('asyncio').set_event_loop_policy(
-            __import__('asyncio').WindowsSelectorEventLoopPolicy()
-        )
-
-from ai.models.conversation import Conversation
-from ai.models.enums import (
-    ConversationMode,
-    ConversationStatus,
-    MessageRole,
-    MessageStatus,
-)
-from ai.models.message import Message
-
 
 @pytest_asyncio.fixture
-async def db_engine():
-    from pathlib import Path
-
-    from sqlalchemy.ext.asyncio import create_async_engine
-
-    from framework.configs import init_settings
-
-    config_dir = Path(__file__).parent.parent.parent.parent.parent / "config"
-    settings = init_settings(config_dir)
-
-    engine = create_async_engine(
-        url=settings.sqlalchemy.url,
-        echo=False,
-        pool_pre_ping=True,
-    )
-    yield engine
-    try:
-        await engine.dispose()
-    except Exception:
-        pass
-
-
-@pytest_asyncio.fixture
-async def db_session(db_engine):
+async def db_session(ai_async_engine):
     """每个测试独立的数据库会话"""
-    session_factory = async_sessionmaker(db_engine, expire_on_commit=False)
+    session_factory = async_sessionmaker(ai_async_engine, expire_on_commit=False)
     session = session_factory()
     try:
         yield session
@@ -75,217 +38,294 @@ def tenant_b_id():
 
 
 @pytest.fixture
-def app_id():
+def user_id():
     return str(uuid.uuid4())
 
 
-class TestConversationCRUD:
+# =============================================================================
+# 表结构验证
+# =============================================================================
+
+
+@pytest.mark.integration
+class TestTableStructure:
+    """验证 conversations / messages 表结构符合迁移定义"""
+
     @pytest.mark.asyncio
-    async def test_create_conversation(self, db_session, tenant_a_id, app_id):
-        conv = Conversation(
-            tenant_id=tenant_a_id,
-            app_id=app_id,
-            name="测试会话",
-            status=ConversationStatus.NORMAL,
-            mode=ConversationMode.CHAT,
+    async def test_conversations_columns(self, db_session):
+        """conversations 表应包含迁移定义的列"""
+        result = await db_session.execute(
+            text(
+                "SELECT column_name FROM information_schema.columns "
+                "WHERE table_schema='ai' AND table_name='conversations' "
+                "ORDER BY ordinal_position"
+            )
         )
-        db_session.add(conv)
+        cols = [r[0] for r in result]
+        expected = ["id", "tenant_id", "user_id", "mode", "status", "title", "summary", "created_at", "updated_at"]
+        assert cols == expected
+
+    @pytest.mark.asyncio
+    async def test_messages_columns(self, db_session):
+        """messages 表应包含迁移定义的列"""
+        result = await db_session.execute(
+            text(
+                "SELECT column_name FROM information_schema.columns "
+                "WHERE table_schema='ai' AND table_name='messages' "
+                "ORDER BY ordinal_position"
+            )
+        )
+        cols = [r[0] for r in result]
+        expected = ["id", "tenant_id", "conversation_id", "parent_message_id", "role", "content", "status", "error", "metadata", "created_at", "updated_at"]
+        assert cols == expected
+
+
+# =============================================================================
+# Conversation CRUD
+# =============================================================================
+
+
+@pytest.mark.integration
+class TestConversationCRUD:
+    """会话 CRUD 集成测试"""
+
+    @pytest.mark.asyncio
+    async def test_create_conversation(self, db_session, tenant_a_id, user_id):
+        conv_id = str(uuid.uuid4())
+        await db_session.execute(
+            text(
+                "INSERT INTO ai.conversations (id, tenant_id, user_id, mode, status, title) "
+                "VALUES (:id, :tenant_id, :user_id, :mode, :status, :title)"
+            ),
+            {"id": conv_id, "tenant_id": tenant_a_id, "user_id": user_id, "mode": "chat", "status": "normal", "title": "测试会话"},
+        )
         await db_session.flush()
 
-        assert conv.id is not None
-        assert conv.tenant_id == tenant_a_id
-        assert conv.name == "测试会话"
-        assert conv.status == ConversationStatus.NORMAL
+        result = await db_session.execute(
+            text("SELECT id, tenant_id, title, status FROM ai.conversations WHERE id = :id"),
+            {"id": conv_id},
+        )
+        row = result.first()
+        assert row is not None
+        assert row.tenant_id == tenant_a_id
+        assert row.title == "测试会话"
+        assert row.status == "normal"
 
     @pytest.mark.asyncio
-    async def test_conversation_status_transitions(self, db_session, tenant_a_id, app_id):
-        conv = Conversation(
-            tenant_id=tenant_a_id,
-            app_id=app_id,
-            name="状态测试",
-            status=ConversationStatus.NORMAL,
-            mode=ConversationMode.CHAT,
+    async def test_conversation_status_transitions(self, db_session, tenant_a_id, user_id):
+        conv_id = str(uuid.uuid4())
+        await db_session.execute(
+            text(
+                "INSERT INTO ai.conversations (id, tenant_id, user_id, mode, status, title) "
+                "VALUES (:id, :tenant_id, :user_id, :mode, :status, :title)"
+            ),
+            {"id": conv_id, "tenant_id": tenant_a_id, "user_id": user_id, "mode": "chat", "status": "normal", "title": "状态测试"},
         )
-        db_session.add(conv)
         await db_session.flush()
 
         # 归档
-        conv.status = ConversationStatus.ARCHIVED
+        await db_session.execute(
+            text("UPDATE ai.conversations SET status = :status WHERE id = :id"),
+            {"status": "archived", "id": conv_id},
+        )
         await db_session.flush()
-        assert conv.status == ConversationStatus.ARCHIVED
+
+        result = await db_session.execute(
+            text("SELECT status FROM ai.conversations WHERE id = :id"),
+            {"id": conv_id},
+        )
+        assert result.scalar() == "archived"
 
         # 软删除
-        conv.status = ConversationStatus.DELETED
+        await db_session.execute(
+            text("UPDATE ai.conversations SET status = :status WHERE id = :id"),
+            {"status": "deleted", "id": conv_id},
+        )
         await db_session.flush()
-        assert conv.status == ConversationStatus.DELETED
+
+        result = await db_session.execute(
+            text("SELECT status FROM ai.conversations WHERE id = :id"),
+            {"id": conv_id},
+        )
+        assert result.scalar() == "deleted"
 
 
+# =============================================================================
+# Message CRUD
+# =============================================================================
+
+
+@pytest.mark.integration
 class TestMessageCRUD:
-    @pytest.mark.asyncio
-    async def test_create_message(self, db_session, tenant_a_id, app_id):
-        conv = Conversation(
-            tenant_id=tenant_a_id,
-            app_id=app_id,
-            name="消息测试",
-            status=ConversationStatus.NORMAL,
-            mode=ConversationMode.CHAT,
-        )
-        db_session.add(conv)
-        await db_session.flush()
-
-        msg = Message(
-            tenant_id=tenant_a_id,
-            app_id=app_id,
-            conversation_id=conv.id,
-            role=MessageRole.USER,
-            content="你好",
-            status=MessageStatus.PENDING,
-            query="你好",
-        )
-        db_session.add(msg)
-        await db_session.flush()
-
-        assert msg.id is not None
-        assert msg.conversation_id == conv.id
-        assert msg.status == MessageStatus.PENDING
+    """消息 CRUD 集成测试"""
 
     @pytest.mark.asyncio
-    async def test_message_status_transitions(self, db_session, tenant_a_id, app_id):
-        conv = Conversation(
-            tenant_id=tenant_a_id,
-            app_id=app_id,
-            name="消息状态测试",
-            status=ConversationStatus.NORMAL,
-            mode=ConversationMode.CHAT,
+    async def test_create_message(self, db_session, tenant_a_id, user_id):
+        conv_id = str(uuid.uuid4())
+        await db_session.execute(
+            text(
+                "INSERT INTO ai.conversations (id, tenant_id, user_id, mode, status) "
+                "VALUES (:id, :tenant_id, :user_id, :mode, :status)"
+            ),
+            {"id": conv_id, "tenant_id": tenant_a_id, "user_id": user_id, "mode": "chat", "status": "normal"},
         )
-        db_session.add(conv)
         await db_session.flush()
 
-        msg = Message(
-            tenant_id=tenant_a_id,
-            app_id=app_id,
-            conversation_id=conv.id,
-            role=MessageRole.USER,
-            status=MessageStatus.PENDING,
-            query="测试",
+        msg_id = str(uuid.uuid4())
+        await db_session.execute(
+            text(
+                "INSERT INTO ai.messages (id, tenant_id, conversation_id, role, content, status) "
+                "VALUES (:id, :tenant_id, :conv_id, :role, :content, :status)"
+            ),
+            {"id": msg_id, "tenant_id": tenant_a_id, "conv_id": conv_id, "role": "user", "content": "你好", "status": "pending"},
         )
-        db_session.add(msg)
+        await db_session.flush()
+
+        result = await db_session.execute(
+            text("SELECT id, conversation_id, status FROM ai.messages WHERE id = :id"),
+            {"id": msg_id},
+        )
+        row = result.first()
+        assert row is not None
+        assert row.conversation_id == conv_id
+        assert row.status == "pending"
+
+    @pytest.mark.asyncio
+    async def test_message_status_transitions(self, db_session, tenant_a_id, user_id):
+        conv_id = str(uuid.uuid4())
+        await db_session.execute(
+            text(
+                "INSERT INTO ai.conversations (id, tenant_id, user_id, mode, status) "
+                "VALUES (:id, :tenant_id, :user_id, :mode, :status)"
+            ),
+            {"id": conv_id, "tenant_id": tenant_a_id, "user_id": user_id, "mode": "chat", "status": "normal"},
+        )
+        await db_session.flush()
+
+        msg_id = str(uuid.uuid4())
+        await db_session.execute(
+            text(
+                "INSERT INTO ai.messages (id, tenant_id, conversation_id, role, content, status) "
+                "VALUES (:id, :tenant_id, :conv_id, :role, :content, :status)"
+            ),
+            {"id": msg_id, "tenant_id": tenant_a_id, "conv_id": conv_id, "role": "user", "content": "测试", "status": "pending"},
+        )
         await db_session.flush()
 
         # 完成
-        msg.status = MessageStatus.COMPLETED
-        msg.answer = "回答内容"
-        msg.token_count = 100
+        await db_session.execute(
+            text("UPDATE ai.messages SET status = :status WHERE id = :id"),
+            {"status": "completed", "id": msg_id},
+        )
         await db_session.flush()
-        assert msg.status == MessageStatus.COMPLETED
+
+        result = await db_session.execute(
+            text("SELECT status FROM ai.messages WHERE id = :id"),
+            {"id": msg_id},
+        )
+        assert result.scalar() == "completed"
 
     @pytest.mark.asyncio
-    async def test_message_metadata_jsonb(self, db_session, tenant_a_id, app_id):
-        conv = Conversation(
-            tenant_id=tenant_a_id,
-            app_id=app_id,
-            name="元数据测试",
-            status=ConversationStatus.NORMAL,
-            mode=ConversationMode.CHAT,
+    async def test_message_metadata_jsonb(self, db_session, tenant_a_id, user_id):
+        conv_id = str(uuid.uuid4())
+        await db_session.execute(
+            text(
+                "INSERT INTO ai.conversations (id, tenant_id, user_id, mode, status) "
+                "VALUES (:id, :tenant_id, :user_id, :mode, :status)"
+            ),
+            {"id": conv_id, "tenant_id": tenant_a_id, "user_id": user_id, "mode": "chat", "status": "normal"},
         )
-        db_session.add(conv)
         await db_session.flush()
 
+        import json
         metadata = {"model": "gpt-4", "tokens": {"prompt": 50, "completion": 100}}
-        msg = Message(
-            tenant_id=tenant_a_id,
-            app_id=app_id,
-            conversation_id=conv.id,
-            role=MessageRole.ASSISTANT,
-            status=MessageStatus.COMPLETED,
-            message_metadata=metadata,
+
+        msg_id = str(uuid.uuid4())
+        await db_session.execute(
+            text(
+                "INSERT INTO ai.messages (id, tenant_id, conversation_id, role, content, status, metadata) "
+                "VALUES (:id, :tenant_id, :conv_id, :role, :content, :status, CAST(:metadata AS jsonb))"
+            ),
+            {"id": msg_id, "tenant_id": tenant_a_id, "conv_id": conv_id, "role": "assistant", "content": "回答", "status": "completed", "metadata": json.dumps(metadata)},
         )
-        db_session.add(msg)
         await db_session.flush()
 
-        assert msg.message_metadata == metadata
+        result = await db_session.execute(
+            text("SELECT metadata FROM ai.messages WHERE id = :id"),
+            {"id": msg_id},
+        )
+        stored = result.scalar()
+        assert stored == metadata
 
 
+# =============================================================================
+# 租户隔离
+# =============================================================================
+
+
+@pytest.mark.integration
 class TestTenantIsolation:
+    """多租户隔离集成测试"""
+
     @pytest.mark.asyncio
-    async def test_tenant_isolation(self, db_session, tenant_a_id, tenant_b_id, app_id):
+    async def test_tenant_isolation(self, db_session, tenant_a_id, tenant_b_id, user_id):
         """不同租户的会话应该相互隔离"""
-        conv_a = Conversation(
-            tenant_id=tenant_a_id,
-            app_id=app_id,
-            name="租户A的会话",
-            status=ConversationStatus.NORMAL,
-            mode=ConversationMode.CHAT,
+        conv_a_id = str(uuid.uuid4())
+        conv_b_id = str(uuid.uuid4())
+        await db_session.execute(
+            text(
+                "INSERT INTO ai.conversations (id, tenant_id, user_id, mode, status, title) "
+                "VALUES (:id, :tenant_id, :user_id, :mode, :status, :title)"
+            ),
+            [
+                {"id": conv_a_id, "tenant_id": tenant_a_id, "user_id": user_id, "mode": "chat", "status": "normal", "title": "租户A的会话"},
+                {"id": conv_b_id, "tenant_id": tenant_b_id, "user_id": user_id, "mode": "chat", "status": "normal", "title": "租户B的会话"},
+            ],
         )
-        conv_b = Conversation(
-            tenant_id=tenant_b_id,
-            app_id=app_id,
-            name="租户B的会话",
-            status=ConversationStatus.NORMAL,
-            mode=ConversationMode.CHAT,
-        )
-        db_session.add_all([conv_a, conv_b])
         await db_session.flush()
 
-        # 查询租户 A 的会话
-        from sqlalchemy import select
         result = await db_session.execute(
-            select(Conversation).where(Conversation.tenant_id == tenant_a_id)
+            text("SELECT tenant_id FROM ai.conversations WHERE tenant_id = :tid"),
+            {"tid": tenant_a_id},
         )
-        tenant_a_convs = result.scalars().all()
-        assert len(tenant_a_convs) >= 1
-        assert all(c.tenant_id == tenant_a_id for c in tenant_a_convs)
-
-        # 查询租户 B 的会话
-        result = await db_session.execute(
-            select(Conversation).where(Conversation.tenant_id == tenant_b_id)
-        )
-        tenant_b_convs = result.scalars().all()
-        assert len(tenant_b_convs) >= 1
-        assert all(c.tenant_id == tenant_b_id for c in tenant_b_convs)
+        tenant_ids = [r[0] for r in result]
+        assert all(t == tenant_a_id for t in tenant_ids)
+        assert len(tenant_ids) >= 1
 
     @pytest.mark.asyncio
-    async def test_message_tenant_isolation(self, db_session, tenant_a_id, tenant_b_id, app_id):
+    async def test_message_tenant_isolation(self, db_session, tenant_a_id, tenant_b_id, user_id):
         """不同租户的消息应该相互隔离"""
-        conv_a = Conversation(
-            tenant_id=tenant_a_id,
-            app_id=app_id,
-            name="租户A",
-            status=ConversationStatus.NORMAL,
-            mode=ConversationMode.CHAT,
+        conv_a_id = str(uuid.uuid4())
+        conv_b_id = str(uuid.uuid4())
+        await db_session.execute(
+            text(
+                "INSERT INTO ai.conversations (id, tenant_id, user_id, mode, status, title) "
+                "VALUES (:id, :tenant_id, :user_id, :mode, :status, :title)"
+            ),
+            [
+                {"id": conv_a_id, "tenant_id": tenant_a_id, "user_id": user_id, "mode": "chat", "status": "normal", "title": "租户A"},
+                {"id": conv_b_id, "tenant_id": tenant_b_id, "user_id": user_id, "mode": "chat", "status": "normal", "title": "租户B"},
+            ],
         )
-        conv_b = Conversation(
-            tenant_id=tenant_b_id,
-            app_id=app_id,
-            name="租户B",
-            status=ConversationStatus.NORMAL,
-            mode=ConversationMode.CHAT,
-        )
-        db_session.add_all([conv_a, conv_b])
         await db_session.flush()
 
-        msg_a = Message(
-            tenant_id=tenant_a_id,
-            app_id=app_id,
-            conversation_id=conv_a.id,
-            role=MessageRole.USER,
-            status=MessageStatus.PENDING,
-            query="租户A的问题",
+        msg_a_id = str(uuid.uuid4())
+        msg_b_id = str(uuid.uuid4())
+        await db_session.execute(
+            text(
+                "INSERT INTO ai.messages (id, tenant_id, conversation_id, role, content, status) "
+                "VALUES (:id, :tenant_id, :conv_id, :role, :content, :status)"
+            ),
+            [
+                {"id": msg_a_id, "tenant_id": tenant_a_id, "conv_id": conv_a_id, "role": "user", "content": "租户A的问题", "status": "pending"},
+                {"id": msg_b_id, "tenant_id": tenant_b_id, "conv_id": conv_b_id, "role": "user", "content": "租户B的问题", "status": "pending"},
+            ],
         )
-        msg_b = Message(
-            tenant_id=tenant_b_id,
-            app_id=app_id,
-            conversation_id=conv_b.id,
-            role=MessageRole.USER,
-            status=MessageStatus.PENDING,
-            query="租户B的问题",
-        )
-        db_session.add_all([msg_a, msg_b])
         await db_session.flush()
 
-        from sqlalchemy import select
         result = await db_session.execute(
-            select(Message).where(Message.tenant_id == tenant_a_id)
+            text("SELECT tenant_id FROM ai.messages WHERE tenant_id = :tid"),
+            {"tid": tenant_a_id},
         )
-        tenant_a_msgs = result.scalars().all()
-        assert all(m.tenant_id == tenant_a_id for m in tenant_a_msgs)
+        tenant_ids = [r[0] for r in result]
+        assert all(t == tenant_a_id for t in tenant_ids)

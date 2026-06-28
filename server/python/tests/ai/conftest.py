@@ -35,13 +35,10 @@ if not os.environ.get("UV_PATH"):
 
 # =============================================================================
 # Windows 事件循环策略修复
-# 注意：ProactorEventLoop 支持子进程，SelectorEventLoop 不支持
-# E2E 测试需要子进程（如 uv 命令），默认使用 Proactor
+# 注意：不在此处全局设置事件循环策略，由各子目录 conftest.py 按需设置
+# - integration 测试：使用 SelectorEventLoop（asyncpg 兼容性更好）
+# - e2e 测试：使用 ProactorEventLoop（支持子进程如 uv 命令）
 # =============================================================================
-if sys.platform == "win32":
-    asyncio_mod = __import__("asyncio")
-    if hasattr(asyncio_mod, "WindowsProactorEventLoopPolicy"):
-        asyncio_mod.set_event_loop_policy(asyncio_mod.WindowsProactorEventLoopPolicy())
 
 
 # =============================================================================

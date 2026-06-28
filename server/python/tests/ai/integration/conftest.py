@@ -2,14 +2,28 @@
 AI 模块集成测试配置
 
 提供集成测试特有的 fixtures：
+- Windows 事件循环策略（SelectorEventLoop，asyncpg 兼容）
 - 数据库引擎和会话
 
 共享 fixtures（settings、tenant_id、API Key 等）来自上层 ai/conftest.py
 """
 
+import sys
+
 import pytest
 import pytest_asyncio
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+
+
+# =============================================================================
+# Windows 事件循环策略
+# integration 测试使用 SelectorEventLoop（asyncpg 兼容性更好）
+# =============================================================================
+if sys.platform == "win32":
+    if hasattr(__import__("asyncio"), "WindowsSelectorEventLoopPolicy"):
+        __import__("asyncio").set_event_loop_policy(
+            __import__("asyncio").WindowsSelectorEventLoopPolicy()
+        )
 
 
 # =============================================================================
