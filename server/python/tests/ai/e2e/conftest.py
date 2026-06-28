@@ -109,6 +109,23 @@ def redis_available(ai_settings):
     return _check_redis_available(ai_settings)
 
 
+@pytest.fixture(scope="session")
+def minio_available(ai_settings):
+    """检测 MinIO 服务是否可用"""
+    import socket
+    try:
+        endpoint = ai_settings.oss.minio.endpoint
+        host = endpoint.split(":")[0]
+        port = int(endpoint.split(":")[1]) if ":" in endpoint else 9000
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(2)
+        result = sock.connect_ex((host, port))
+        sock.close()
+        return result == 0
+    except Exception:
+        return False
+
+
 # =============================================================================
 # E2E 测试租户（覆盖上层的 test_tenant_id，使用 e2e- 前缀）
 # =============================================================================
@@ -179,7 +196,22 @@ async def cleanup_test_resources(ai_settings, test_tenant_id, redis_available):
         from framework.storage.impl.minio import MinioStorage
 
         storage = MinioStorage(ai_settings.oss.minio)
-        bucket = ai_settings.oss.minio.bucket or "default"
+        bucket = ai_settings.oss.minio.bucket or ai_settings.oss.bucket
+
+        # 检查桶是否存在
+        import socket
+        try:
+            endpoint = ai_settings.oss.minio.endpoint
+            host = endpoint.split(":")[0]
+            port = int(endpoint.split(":")[1]) if ":" in endpoint else 9000
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.settimeout(1)
+            if sock.connect_ex((host, port)) != 0:
+                sock.close()
+                raise ConnectionError("MinIO 不可用")
+            sock.close()
+        except Exception:
+            raise ConnectionError("MinIO 不可用")
 
         prefixes = [
             f"{test_tenant_id}/",
@@ -198,6 +230,8 @@ async def cleanup_test_resources(ai_settings, test_tenant_id, redis_available):
                 if "NoSuchBucket" not in str(e):
                     errors.append(f"OSS 列出对象失败 (prefix={prefix}): {e}")
 
+    except ConnectionError:
+        pass  # MinIO 不可用，跳过清理
     except Exception as e:
         if "Connection" not in str(e) and "connect" not in str(e).lower():
             errors.append(f"OSS 连接失败: {e}")
