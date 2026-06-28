@@ -234,7 +234,6 @@ if tenant_info.storage:
 - 数据库模型继承 framework 提供的基类和 Mixin
 - Redis、存储、队列等外部资源访问应通过 framework 封装入口
 - 敏感租户配置使用 AES-256-GCM 加密工具处理
-- **TreeNodeMixin 的 `parent_id` 禁止添加外键约束**：顶级节点的 `parent_id` 为虚拟值 `"root"`（`DEFAULT_TREE_ROOT_ID`），数据库中不存在该记录，添加 `ForeignKey` 会导致插入失败。子模型覆盖 `parent_id` 时只声明类型和索引，不加 `ForeignKey`。迁移文件同理，不添加 `ForeignKeyConstraint`
 
 ## 测试
 
