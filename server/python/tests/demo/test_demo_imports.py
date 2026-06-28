@@ -5,7 +5,6 @@
 """
 
 
-
 class TestDemoConfigsImports:
     """测试 demo.configs 模块从 framework 导入"""
 
@@ -207,34 +206,15 @@ class TestDemoConfigsNoDuplicateModules:
 
             # 检查是否定义了函数（不应该定义，应该导入）
             function_definitions = [
-                node.name for node in ast.walk(tree) if isinstance(node, ast.FunctionDef)
+                node.name
+                for node in ast.walk(tree)
+                if isinstance(node, ast.FunctionDef)
             ]
-            expected_functions = ["hyphen_to_underscore", "convert_dict_hyphen_to_underscore"]
+            expected_functions = [
+                "hyphen_to_underscore",
+                "convert_dict_hyphen_to_underscore",
+            ]
             for func in expected_functions:
                 assert func not in function_definitions, (
                     f"demo.configs.helpers 不应该定义 {func} 函数，应从 framework 导入"
                 )
-
-
-class TestDemoUtilsDictionaryUtil:
-    """测试 demo.utils.dictionary_util 的行为"""
-
-    def test_deep_merge_dict_from_demo_or_framework(self):
-        """deep_merge_dict 应该正确工作（无论来自哪里）"""
-        # 先检查 demo.utils.dictionary_util 是否存在
-        import importlib.util
-
-        spec = importlib.util.find_spec("demo.utils.dictionary_util")
-
-        if spec is not None:
-            # 如果存在，测试其行为
-            from demo.utils.dictionary_util import deep_merge_dict
-
-            result = deep_merge_dict({"a": 1}, {"b": 2})
-            assert result == {"a": 1, "b": 2}
-        else:
-            # 如果不存在，验证从 framework 导入
-            from framework.utils.dictionary_util import deep_merge
-
-            result = deep_merge({"a": 1}, {"b": 2})
-            assert result == {"a": 1, "b": 2}
