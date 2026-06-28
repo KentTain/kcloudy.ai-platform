@@ -20,6 +20,7 @@
 from __future__ import annotations
 
 import os
+import platform
 import time
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -37,7 +38,17 @@ from tests.ai.e2e.helpers.plugin_test_helper import PluginTestHelper
 if TYPE_CHECKING:
     from sqlalchemy.ext.asyncio import AsyncSession
 
+# Windows 上 gevent.os.tp_read 无法读取 asyncio 子进程 stdin 管道，
+# 导致插件进程收不到请求而超时。Linux 上正常。
+IS_WINDOWS = platform.system() == "Windows"
 
+
+@pytest.mark.skipif(
+    IS_WINDOWS,
+    reason="Windows 上 gevent.os.tp_read 无法读取 asyncio 子进程 stdin 管道，"
+    "导致插件调用超时。Linux 上正常。"
+    "详见：gevent + ProactorEventLoop 管道兼容性",
+)
 class TestPluginInvokeTongyi:
     """tongyi 插件模型调用测试"""
 
@@ -242,6 +253,12 @@ class TestPluginInvokeTongyi:
             await helper.cleanup_plugin(e2e_session, plugin_id, force=True)
 
 
+@pytest.mark.skipif(
+    IS_WINDOWS,
+    reason="Windows 上 gevent.os.tp_read 无法读取 asyncio 子进程 stdin 管道，"
+    "导致插件调用超时。Linux 上正常。"
+    "详见：gevent + ProactorEventLoop 管道兼容性",
+)
 class TestPluginInvokeGpustack:
     """gpustack 插件模型调用测试"""
 
@@ -353,6 +370,12 @@ class TestPluginInvokeGpustack:
             await helper.cleanup_plugin(e2e_session, plugin_id, force=True)
 
 
+@pytest.mark.skipif(
+    IS_WINDOWS,
+    reason="Windows 上 gevent.os.tp_read 无法读取 asyncio 子进程 stdin 管道，"
+    "导致插件调用超时。Linux 上正常。"
+    "详见：gevent + ProactorEventLoop 管道兼容性",
+)
 class TestPluginInvokeError:
     """模型调用错误处理测试"""
 
