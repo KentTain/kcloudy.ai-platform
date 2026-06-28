@@ -37,6 +37,7 @@ class TestPluginFullLifecycle:
         plugin_package_path: callable,
         tongyi_api_key: str,
         cleanup_test_resources: dict,
+        plugin_provider,
     ) -> None:
         """
         测试 tongyi 插件完整生命周期
@@ -222,6 +223,7 @@ class TestPluginFullLifecycle:
         gpustack_endpoint: str,
         gpustack_api_key: str,
         cleanup_test_resources: dict,
+        plugin_provider,
     ) -> None:
         """
         测试 gpustack 插件完整生命周期
@@ -427,6 +429,7 @@ class TestPluginFullLifecycle:
         test_tenant_id: str,
         plugin_package_path: callable,
         cleanup_test_resources: dict,
+        plugin_provider,
     ) -> None:
         """
         测试插件生命周期中的资源清理

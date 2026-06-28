@@ -13,8 +13,8 @@
 
 注意：
     此测试需要真实 API Key，会产生费用。
-    tongyi 测试需要配置环境变量 E2E_TONGYI_API_KEY
-    gpustack 测试需要配置环境变量 E2E_GPUSTACK_API_KEY 和 E2E_GPUSTACK_ENDPOINT
+    tongyi 测试需要配置环境变量 E2E_TONGYI_API_KEY（未配置则跳过）
+    gpustack 测试优先使用环境变量 E2E_GPUSTACK_API_KEY 和 E2E_GPUSTACK_ENDPOINT，未配置则使用默认测试配置
 """
 
 from __future__ import annotations
@@ -49,6 +49,7 @@ class TestPluginInvokeTongyi:
         test_tenant_id: str,
         plugin_package_path: callable,
         tongyi_api_key: str,
+        plugin_provider,
     ) -> None:
         """
         测试调用 tongyi 模型并验证响应
@@ -145,6 +146,7 @@ class TestPluginInvokeTongyi:
         test_tenant_id: str,
         plugin_package_path: callable,
         tongyi_api_key: str,
+        plugin_provider,
     ) -> None:
         """
         测试流式调用 tongyi 模型并验证增量响应
@@ -249,6 +251,8 @@ class TestPluginInvokeGpustack:
         test_tenant_id: str,
         plugin_package_path: callable,
         gpustack_api_key: str,
+        gpustack_endpoint: str,
+        plugin_provider,
     ) -> None:
         """
         测试调用 gpustack 模型并验证响应
@@ -259,10 +263,8 @@ class TestPluginInvokeGpustack:
         - 系统成功调用 gpustack API
         - 返回有效的模型响应
         """
-        # 检查 endpoint 环境变量
-        endpoint_url = os.environ.get("E2E_GPUSTACK_ENDPOINT")
-        if not endpoint_url:
-            pytest.skip("未配置 E2E_GPUSTACK_ENDPOINT 环境变量，跳过 GPUStack 测试")
+        # 使用 fixture 提供的 endpoint（优先环境变量，否则使用默认测试配置）
+        endpoint_url = gpustack_endpoint
 
         # 检查模型名称环境变量（可选，有默认值）
         model_name = os.environ.get("E2E_GPUSTACK_MODEL", "llama3")
@@ -358,6 +360,7 @@ class TestPluginInvokeError:
         e2e_session: AsyncSession,
         test_tenant_id: str,
         plugin_package_path: callable,
+        plugin_provider,
     ) -> None:
         """
         测试使用无效 API Key 调用模型

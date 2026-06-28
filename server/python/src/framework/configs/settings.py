@@ -79,6 +79,7 @@ class MinioSettings(BaseSettings):
     access_key: str = Field(default="", description="访问密钥")
     secret_key: str = Field(default="", description="秘密密钥")
     secure: bool = Field(default=False, description="是否使用 HTTPS")
+    bucket: str = Field(default="ai-platform", description="存储桶名称")
 
 
 class AliyunOssSettings(BaseSettings):

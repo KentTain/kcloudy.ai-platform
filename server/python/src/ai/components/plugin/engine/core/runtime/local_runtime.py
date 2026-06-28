@@ -26,7 +26,7 @@ from ai.components.plugin.engine.core.communication.protocol import (
 from ai.components.plugin.engine.models.plugin import PluginInfo
 from ai.components.plugin.engine.utils.helpers import find_available_port
 from ai_plugin.server.core.server.__base.writer_entities import Event
-from framework.configs.settings import Settings
+from framework.configs.settings import get_settings
 
 from .base import PluginRuntime, PluginRuntimeState
 
@@ -472,16 +472,49 @@ class LocalPluginRuntime(PluginRuntime):
         self._plugin_logger.info(f"检查UV工具可用性: {self.plugin_name}")
 
         # 尝试多种方式找到UV
-        uv_candidates = [
-            Settings().plugin.uv_path if Settings().plugin.uv_path else None,
-            os.environ.get("UV_PATH"),
-            shutil.which("uv"),
+        uv_candidates = []
+
+        # 1. 尝试从配置获取
+        try:
+            settings = get_settings()
+            if settings.plugin.uv_path:
+                uv_candidates.append(settings.plugin.uv_path)
+                self._plugin_logger.debug(f"从配置获取 uv_path: {settings.plugin.uv_path}")
+        except RuntimeError:
+            # 配置未初始化，跳过
+            self._plugin_logger.debug("配置未初始化")
+
+        # 2. 尝试从环境变量获取
+        uv_path_env = os.environ.get("UV_PATH")
+        if uv_path_env:
+            uv_candidates.append(uv_path_env)
+            self._plugin_logger.debug(f"从环境变量获取 UV_PATH: {uv_path_env}")
+
+        # 3. 使用 shutil.which 查找
+        which_result = shutil.which("uv")
+        if which_result:
+            uv_candidates.append(which_result)
+            self._plugin_logger.debug(f"从 shutil.which 获取: {which_result}")
+
+        # 4. 添加常见路径作为备选
+        home = Path.home()
+        common_uv_paths = [
+            home / ".local" / "bin" / "uv.exe",  # Windows
+            home / ".local" / "bin" / "uv",  # Linux/Mac
+            Path("C:/Users") / os.environ.get("USERNAME", "") / ".local" / "bin" / "uv.exe",  # Windows 备选
         ]
+        for common_path in common_uv_paths:
+            if common_path.exists():
+                uv_candidates.append(str(common_path))
+                self._plugin_logger.debug(f"从常见路径获取: {common_path}")
+
+        self._plugin_logger.info(f"UV 候选路径: {uv_candidates}")
 
         for candidate in uv_candidates:
             if candidate and Path(candidate).exists():
                 # 验证UV版本
                 try:
+                    self._plugin_logger.debug(f"正在验证 UV: {candidate}")
                     process = await asyncio.create_subprocess_exec(
                         candidate,
                         "--version",
@@ -499,7 +532,17 @@ class LocalPluginRuntime(PluginRuntime):
                             f"找到UV: {candidate}, 版本: {uv_version}"
                         )
                         return
-                except Exception:
+                    else:
+                        stderr_text = stderr.decode().strip() if stderr else ""
+                        self._plugin_logger.warning(
+                            f"UV 版本检查失败: {candidate}, returncode={process.returncode}, stderr={stderr_text}"
+                        )
+                except BaseException as e:
+                    import traceback
+                    self._plugin_logger.warning(
+                        f"检查 UV 候选路径失败: {candidate}, 异常类型={type(e).__name__}, 错误={e}"
+                    )
+                    self._plugin_logger.debug(f"异常堆栈:\n{traceback.format_exc()}")
                     continue
 
         raise RuntimeError("未找到uv，请先安装uv")
@@ -578,7 +621,7 @@ class LocalPluginRuntime(PluginRuntime):
 
         # 如果启用了严格模式且发现高风险模式，则拒绝
         high_risk_issues = [r for r in scan_results if r["severity"] == "high"]
-        if Settings().plugin.strict_security_mode and high_risk_issues:
+        if get_settings().plugin.strict_security_mode and high_risk_issues:
             raise RuntimeError(f"插件包含高风险代码，拒绝安装: {high_risk_issues}")
 
         if scan_results:
@@ -676,7 +719,7 @@ class LocalPluginRuntime(PluginRuntime):
         """使用UV创建虚拟环境"""
         # self._plugin_logger.info(f"使用UV创建虚拟环境: {venv_path}")
 
-        plugin_settings = Settings().plugin
+        plugin_settings = get_settings().plugin
 
         # 使用UV创建虚拟环境 - 修正命令格式
         cmd = [
@@ -881,7 +924,7 @@ class LocalPluginRuntime(PluginRuntime):
         # 设置环境变量，确保与命令行环境一致
         env = os.environ.copy()
 
-        plugin_settings = Settings().plugin
+        plugin_settings = get_settings().plugin
 
         # 添加代理设置
         if plugin_settings.http_proxy:
@@ -899,15 +942,15 @@ class LocalPluginRuntime(PluginRuntime):
         env["PYTHONIOENCODING"] = "utf-8"  # 设置编码
 
         # 设置UV相关环境变量以解决网络超时问题
-        env["UV_HTTP_TIMEOUT"] = plugin_settings.uv_http_timeout  # 设置HTTP超时为5分钟
-        env["UV_CONCURRENT_DOWNLOADS"] = (
+        env["UV_HTTP_TIMEOUT"] = str(plugin_settings.uv_http_timeout)  # 设置HTTP超时
+        env["UV_CONCURRENT_DOWNLOADS"] = str(
             plugin_settings.uv_concurrent_downloads
         )  # 减少并发下载数量
-        env["UV_RETRY_ATTEMPTS"] = plugin_settings.uv_retry_attempts  # 设置重试次数
+        env["UV_RETRY_ATTEMPTS"] = str(plugin_settings.uv_retry_attempts)  # 设置重试次数
 
         # 设置UV的索引URL环境变量
-        env["UV_INDEX_URL"] = plugin_settings.pip_index_url
-        env["UV_PYTHON_INSTALL_MIRROR"] = plugin_settings.uv_python_install_mirror
+        env["UV_INDEX_URL"] = str(plugin_settings.pip_index_url)
+        env["UV_PYTHON_INSTALL_MIRROR"] = str(plugin_settings.uv_python_install_mirror)
 
         # 设置虚拟环境
         env["VIRTUAL_ENV"] = str(self.virtual_env_path)
@@ -925,7 +968,7 @@ class LocalPluginRuntime(PluginRuntime):
     ) -> bool:
         """安装单个依赖包，支持重试"""
 
-        plugin_settings = Settings().plugin
+        plugin_settings = get_settings().plugin
 
         if not self.virtual_env_path:
             raise RuntimeError("virtual_env_path未设置")
@@ -1026,7 +1069,7 @@ class LocalPluginRuntime(PluginRuntime):
     async def _precompile_python_files(self) -> None:
         """7.  预编译Python文件"""
 
-        if not Settings().plugin.enable_precompile:
+        if not get_settings().plugin.enable_precompile:
             self._plugin_logger.info("预编译已禁用，跳过")
             self.environment_info["precompile"] = {"status": "disabled"}
             return
@@ -1144,7 +1187,7 @@ class LocalPluginRuntime(PluginRuntime):
             "memory_limit": memory_requirement,
             "permissions": permissions,
             "security_profile": {
-                "strict_mode": Settings().plugin.strict_security_mode,
+                "strict_mode": get_settings().plugin.strict_security_mode,
             },
             "configured_at": datetime.now().isoformat(),
         }

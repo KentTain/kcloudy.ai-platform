@@ -8,6 +8,8 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
+from ai.components.plugin.engine.models.schemas import PluginConfig
+
 # TODO: 任务 5 迁移 core/helper 后解除注释
 # from ai.components.plugin.engine.core.helper import PluginConfig
 # TODO: 任务 8 迁移 models/plugin 后解除注释
@@ -43,6 +45,9 @@ class PluginInfo(BaseModel):
     id: str | None = Field(default=None, description="插件ID")
     name: str | None = Field(default=None, description="插件名称")
     version: str | None = Field(default=None, description="插件版本")
+
+    # 插件配置
+    config: PluginConfig | None = Field(default=None, description="插件配置")
 
     # 运行时信息
     pid: int | None = Field(default=None, description="进程ID")

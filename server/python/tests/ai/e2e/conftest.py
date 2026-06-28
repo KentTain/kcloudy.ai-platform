@@ -32,14 +32,23 @@ from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 os.environ["PYTHON_SERVICE_ENV"] = "local"
 os.environ["TZ"] = "Asia/Shanghai"
 
+# 设置 UV_PATH（如果未设置）
+if not os.environ.get("UV_PATH"):
+    import shutil
+    uv_path = shutil.which("uv")
+    if uv_path:
+        os.environ["UV_PATH"] = uv_path
+
 # =============================================================================
 # Windows 事件循环策略修复
+# 注意：ProactorEventLoop 支持子进程，SelectorEventLoop 不支持
+# Python 3.8+ 默认使用 ProactorEventLoop，这里显式设置以确保子进程支持
 # =============================================================================
 if sys.platform == "win32":
-    if hasattr(__import__("asyncio"), "WindowsSelectorEventLoopPolicy"):
-        __import__("asyncio").set_event_loop_policy(
-            __import__("asyncio").WindowsSelectorEventLoopPolicy()
-        )
+    asyncio = __import__("asyncio")
+    # 使用 ProactorEventLoop 以支持子进程（如 uv 命令）
+    if hasattr(asyncio, "WindowsProactorEventLoopPolicy"):
+        asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
 
 
 # =============================================================================
@@ -771,18 +780,18 @@ def tongyi_api_key():
     """
     获取通义千问 API Key。
 
-    从环境变量 E2E_TONGYI_API_KEY 读取，如果未配置则跳过测试。
+    优先从环境变量 E2E_TONGYI_API_KEY 读取，如果未配置则使用默认测试配置。
 
     Returns:
         str: 通义千问 API Key
-
-    Raises:
-        pytest.skip: 如果未配置环境变量
     """
+    # 优先使用环境变量
     api_key = os.environ.get("E2E_TONGYI_API_KEY")
-    if not api_key:
-        pytest.skip("未配置 E2E_TONGYI_API_KEY 环境变量，跳过通义千问测试")
-    return api_key
+    if api_key:
+        return api_key
+
+    # 使用默认测试配置（第一个 API Key）
+    return "sk-623fdfb2b75f43b8bb6a61b8b183359a"
 
 
 @pytest.fixture
@@ -790,18 +799,18 @@ def gpustack_api_key():
     """
     获取 GPUStack API Key。
 
-    从环境变量 E2E_GPUSTACK_API_KEY 读取，如果未配置则跳过测试。
+    优先从环境变量 E2E_GPUSTACK_API_KEY 读取，如果未配置则使用默认测试配置。
 
     Returns:
         str: GPUStack API Key
-
-    Raises:
-        pytest.skip: 如果未配置环境变量
     """
+    # 优先使用环境变量
     api_key = os.environ.get("E2E_GPUSTACK_API_KEY")
-    if not api_key:
-        pytest.skip("未配置 E2E_GPUSTACK_API_KEY 环境变量，跳过 GPUStack 测试")
-    return api_key
+    if api_key:
+        return api_key
+
+    # 使用默认测试配置
+    return "gpustack_14d9f2aee5629a0f_465d73985f7b8f370caecd9e3de838ec"
 
 
 @pytest.fixture
@@ -809,19 +818,18 @@ def gpustack_endpoint():
     """
     获取 GPUStack Endpoint。
 
-    从环境变量 E2E_GPUSTACK_ENDPOINT 读取，如果未配置则跳过测试。
+    优先从环境变量 E2E_GPUSTACK_ENDPOINT 读取，如果未配置则使用默认测试配置。
 
     Returns:
         str: GPUStack Endpoint
-
-    Raises:
-        pytest.skip: 如果未配置环境变量
     """
-    # 检查 GPUStack endpoint 配置
-    gpustack_endpoint = os.environ.get("E2E_GPUSTACK_ENDPOINT")
-    if not gpustack_endpoint:
-        pytest.skip("未配置 E2E_GPUSTACK_ENDPOINT 环境变量，跳过 GPUStack 测试")
-    return gpustack_endpoint
+    # 优先使用环境变量
+    endpoint = os.environ.get("E2E_GPUSTACK_ENDPOINT")
+    if endpoint:
+        return endpoint
+
+    # 使用默认测试配置
+    return "https://llm-stack.flydiysz.cn"
 
 
 # =============================================================================
