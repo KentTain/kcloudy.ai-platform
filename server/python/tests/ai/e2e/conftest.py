@@ -790,8 +790,8 @@ def tongyi_api_key():
     if api_key:
         return api_key
 
-    # 使用默认测试配置（第一个 API Key）
-    return "sk-623fdfb2b75f43b8bb6a61b8b183359a"
+    # 使用默认测试配置（第二个 API Key）
+    return "sk-26bdc18cd0524493a2664c8d3f8d3fd9"
 
 
 @pytest.fixture

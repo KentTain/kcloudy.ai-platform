@@ -265,10 +265,22 @@ class TenantPluginManager:
                 self.logger.warning(f"插件配置为空")
                 return None
 
+            # 如果 config 是字典，转换为 PluginConfig 对象
+            from ai.components.plugin.engine.models.schemas import PluginConfig
+
+            if isinstance(config, dict):
+                try:
+                    plugin_config = PluginConfig.model_validate(config)
+                except Exception as e:
+                    self.logger.warning(f"转换插件配置失败: {e}")
+                    plugin_config = None
+            else:
+                plugin_config = config
+
             plugin_info = PluginInfo(
                 status=status,
+                config=plugin_config,
             )
-            plugin_info.config = config
 
             return plugin_info
 
