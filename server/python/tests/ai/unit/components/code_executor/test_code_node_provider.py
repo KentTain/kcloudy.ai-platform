@@ -82,7 +82,7 @@ class TestCodeNodeProviderImplementation:
 
         # Pydantic BaseModel 会阻止实例化不完整的实现
         with pytest.raises(TypeError) as exc_info:
-            IncompleteProvider()
+            IncompleteProvider()  # type: ignore[abstract]
 
         assert "abstract methods" in str(exc_info.value)
 

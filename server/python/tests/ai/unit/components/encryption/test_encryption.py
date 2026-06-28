@@ -270,7 +270,7 @@ class TestBaseEncryption:
     def test_base_encryption_is_abstract(self):
         """测试 BaseEncryption 是抽象类"""
         with pytest.raises(TypeError):
-            BaseEncryption()
+            BaseEncryption()  # type: ignore[abstract]
 
     def test_base_encryption_methods(self):
         """测试 BaseEncryption 方法定义"""

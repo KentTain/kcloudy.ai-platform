@@ -111,7 +111,9 @@ class TestAlonChatModelStreamingIntegration:
                 [HumanMessage(content="hi")], version="v2"
             ):
                 if event["event"] == "on_chat_model_stream":
-                    chunks.append(event["data"]["chunk"])
+                    chunk = event["data"].get("chunk")
+                    if chunk is not None:
+                        chunks.append(chunk)
 
         non_empty_chunks = [c for c in chunks if c.content]
         assert len(non_empty_chunks) == 3

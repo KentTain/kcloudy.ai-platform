@@ -7,14 +7,15 @@
   "autoImportCompletions": true,
   "useLibraryCodeForTypes": true,
   "extraPaths": ["src"],
-  "include": ["src"],
-  "exclude": [
-    "tests",
+  "include": ["src", "tests"],
+  "ignore": [
     "src/ai_plugin",
     "src/ai/components/model",
     "src/ai/components/plugin",
     "src/ai/components/graphrag",
-    "src/ai/components/datasource",
+    "src/ai/components/datasource"
+  ],
+  "exclude": [
     "**/dist",
     "**/.venv",
     "**/.git",

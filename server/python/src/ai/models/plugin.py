@@ -13,7 +13,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Any
 
-from sqlalchemy import JSON, Boolean, DateTime, Integer, String, Text
+from sqlalchemy import JSON, Boolean, DateTime, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.types import TypeDecorator
 
@@ -224,6 +224,9 @@ class PluginCredential(
     """
 
     __tablename__ = "plugin_credentials"
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "name", name="uq_plugin_credentials_tenant_name"),
+    )
 
     # 关联信息
     plugin_id: Mapped[str] = mapped_column(

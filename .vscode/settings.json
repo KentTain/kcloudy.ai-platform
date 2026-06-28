@@ -189,14 +189,15 @@
   "cursorpyright.analysis.autoImportCompletions": true,
   "cursorpyright.analysis.useLibraryCodeForTypes": true,
   "cursorpyright.analysis.extraPaths": ["server/python/src"],
-  "cursorpyright.analysis.include": ["server/python/src"],
+  "cursorpyright.analysis.include": ["server/python/src", "server/python/tests"],
+  "cursorpyright.analysis.ignore": [
+    "server/python/src/ai_plugin",
+    "server/python/src/ai/components/model",
+    "server/python/src/ai/components/plugin",
+    "server/python/src/ai/components/graphrag",
+    "server/python/src/ai/components/datasource"
+  ],
   "cursorpyright.analysis.exclude": [
-    "tests",
-    "**/ai_plugin",
-    "**/ai/components/model",
-    "**/ai/components/plugin",
-    "**/ai/components/graphrag",
-    "**/ai/components/datasource",
     "**/dist",
     "**/.venv",
     "**/.git",

@@ -43,6 +43,17 @@ target_metadata = Base.metadata
 MODULE_SCHEMA = "tenant"
 
 
+def _include_name(name, type_, parent_names):
+    """Schema 过滤：仅检查 tenant schema 中的对象
+
+    Alembic autogenerate 默认检查所有 schema 的对象。
+    此过滤器将范围限定为 tenant schema，避免与其他模块的 schema 产生冲突。
+    """
+    if type_ == "schema":
+        return name == MODULE_SCHEMA
+    return True
+
+
 def run_migrations_offline() -> None:
     """离线模式运行迁移"""
     url = config.get_main_option("sqlalchemy.url")
@@ -53,6 +64,11 @@ def run_migrations_offline() -> None:
         dialect_opts={"paramstyle": "named"},
         # 版本表在 tenant schema
         version_table_schema=MODULE_SCHEMA,
+        # 禁用类型比较：框架自定义类型（StringUUID、EnumType）在数据库中存储为 VARCHAR，
+        # 启用类型比较会导致 Alembic 生成冗余的 ALTER COLUMN 迁移
+        compare_type=False,
+        include_schemas=True,
+        include_name=_include_name,
     )
 
     with context.begin_transaction():
@@ -65,6 +81,10 @@ def do_run_migrations(connection: Connection) -> None:
         target_metadata=target_metadata,
         # 版本表在 tenant schema
         version_table_schema=MODULE_SCHEMA,
+        # 禁用类型比较
+        compare_type=False,
+        include_schemas=True,
+        include_name=_include_name,
     )
 
     with context.begin_transaction():
