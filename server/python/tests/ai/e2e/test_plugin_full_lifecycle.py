@@ -16,11 +16,11 @@ import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ai.components.model.services.llm_service import LLMService
-from ai_plugin.sdk.interfaces.model.large_language_model import LLMResult
 from ai_plugin.sdk.entities.model.message import (
     SystemPromptMessage,
     UserPromptMessage,
 )
+from ai_plugin.sdk.interfaces.model.large_language_model import LLMResult
 from framework.tenant.plugin_protocols import get_plugin_installation_provider
 from tests.ai.e2e.helpers.plugin_test_helper import PluginTestHelper
 
@@ -82,10 +82,11 @@ class TestPluginFullLifecycle:
         manager = await helper.get_manager(e2e_session)
 
         # 更新插件配置，添加 API Key
-        from ai.models.plugin_config import PluginConfig as AIPluginConfig
-
         # 查找现有配置
         from sqlalchemy import select
+
+        from ai.models.plugin_config import PluginConfig as AIPluginConfig
+
         config_result = await e2e_session.execute(
             select(AIPluginConfig).where(
                 AIPluginConfig.tenant_id == test_tenant_id,
@@ -161,7 +162,9 @@ class TestPluginFullLifecycle:
 
             # 验证结果
             assert result is not None, "模型调用结果不应为空"
-            assert isinstance(result, LLMResult), f"结果类型应为 LLMResult，实际为 {type(result)}"
+            assert isinstance(result, LLMResult), (
+                f"结果类型应为 LLMResult，实际为 {type(result)}"
+            )
             assert result.message is not None, "模型消息不应为空"
             assert result.message.content, "模型消息内容不应为空"
 
@@ -216,6 +219,7 @@ class TestPluginFullLifecycle:
         e2e_session: AsyncSession,
         test_tenant_id: str,
         plugin_package_path: callable,
+        gpustack_endpoint: str,
         gpustack_api_key: str,
         cleanup_test_resources: dict,
     ) -> None:
@@ -233,11 +237,6 @@ class TestPluginFullLifecycle:
         - 验证最终资源完全清理
         """
         import os
-
-        # 检查 GPUStack endpoint 配置
-        gpustack_endpoint = os.environ.get("E2E_GPUSTACK_ENDPOINT")
-        if not gpustack_endpoint:
-            pytest.skip("未配置 E2E_GPUSTACK_ENDPOINT 环境变量，跳过 GPUStack 测试")
 
         # 初始化辅助工具
         helper = PluginTestHelper(test_tenant_id)
@@ -270,8 +269,9 @@ class TestPluginFullLifecycle:
         manager = await helper.get_manager(e2e_session)
 
         # 更新插件配置
-        from ai.models.plugin_config import PluginConfig as AIPluginConfig
         from sqlalchemy import select
+
+        from ai.models.plugin_config import PluginConfig as AIPluginConfig
 
         config_result = await e2e_session.execute(
             select(AIPluginConfig).where(
@@ -369,7 +369,9 @@ class TestPluginFullLifecycle:
 
             # 验证结果
             assert result is not None, "模型调用结果不应为空"
-            assert isinstance(result, LLMResult), f"结果类型应为 LLMResult，实际为 {type(result)}"
+            assert isinstance(result, LLMResult), (
+                f"结果类型应为 LLMResult，实际为 {type(result)}"
+            )
             assert result.message is not None, "模型消息不应为空"
             assert result.message.content, "模型消息内容不应为空"
 
@@ -458,7 +460,9 @@ class TestPluginFullLifecycle:
         success = await manager.start_plugin(plugin_id, e2e_session)
         assert success is True
 
-        await helper.wait_for_plugin_status(e2e_session, plugin_id, "ACTIVE", timeout=60.0)
+        await helper.wait_for_plugin_status(
+            e2e_session, plugin_id, "ACTIVE", timeout=60.0
+        )
 
         # 验证插件正在运行
         runtime_info = await helper.assert_plugin_running(e2e_session, plugin_id)
@@ -490,8 +494,9 @@ class TestPluginFullLifecycle:
         assert installation is None, "数据库安装记录应已删除"
 
         # 验证 AI 侧配置已删除
-        from ai.models.plugin_config import PluginConfig as AIPluginConfig
         from sqlalchemy import select
+
+        from ai.models.plugin_config import PluginConfig as AIPluginConfig
 
         config_result = await e2e_session.execute(
             select(AIPluginConfig).where(

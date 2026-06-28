@@ -804,6 +804,26 @@ def gpustack_api_key():
     return api_key
 
 
+@pytest.fixture
+def gpustack_endpoint():
+    """
+    获取 GPUStack Endpoint。
+
+    从环境变量 E2E_GPUSTACK_ENDPOINT 读取，如果未配置则跳过测试。
+
+    Returns:
+        str: GPUStack Endpoint
+
+    Raises:
+        pytest.skip: 如果未配置环境变量
+    """
+    # 检查 GPUStack endpoint 配置
+    gpustack_endpoint = os.environ.get("E2E_GPUSTACK_ENDPOINT")
+    if not gpustack_endpoint:
+        pytest.skip("未配置 E2E_GPUSTACK_ENDPOINT 环境变量，跳过 GPUStack 测试")
+    return gpustack_endpoint
+
+
 # =============================================================================
 # Provider 注册夹具
 # =============================================================================
