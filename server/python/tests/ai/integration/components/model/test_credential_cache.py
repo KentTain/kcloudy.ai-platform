@@ -245,12 +245,12 @@ class TestCredentialCacheWithRealRedis:
     """凭证缓存真实 Redis 测试（需要 Redis 服务）"""
 
     @pytest_asyncio.fixture(loop_scope="function")
-    async def redis_available(self, integration_settings):
+    async def redis_available(self, ai_settings):
         """检测 Redis 服务是否可用"""
         from framework.cache.redis_util import RedisUtil
 
         try:
-            await RedisUtil.init(integration_settings.redis)
+            await RedisUtil.init(ai_settings.redis)
             result = await RedisUtil.health_check()
             await RedisUtil.close()
             return result
@@ -258,14 +258,14 @@ class TestCredentialCacheWithRealRedis:
             return False
 
     @pytest_asyncio.fixture(loop_scope="function")
-    async def redis_client(self, integration_settings, redis_available):
+    async def redis_client(self, ai_settings, redis_available):
         """Redis 客户端 fixture"""
         if not redis_available:
             pytest.skip("Redis 服务不可用")
 
         from framework.cache.redis_util import RedisUtil
 
-        await RedisUtil.init(integration_settings.redis)
+        await RedisUtil.init(ai_settings.redis)
         yield RedisUtil
         await RedisUtil.close()
 

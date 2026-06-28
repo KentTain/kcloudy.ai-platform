@@ -1,56 +1,27 @@
 """
 AI 模块集成测试配置
 
-提供 ai 集成测试所需的 fixtures。
-"""
+提供集成测试特有的 fixtures：
+- 数据库引擎和会话
 
-import os
-import sys
-import uuid
-from pathlib import Path
+共享 fixtures（settings、tenant_id、API Key 等）来自上层 ai/conftest.py
+"""
 
 import pytest
 import pytest_asyncio
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 
-# 设置测试环境
-os.environ["PYTHON_SERVICE_ENV"] = "local"
-os.environ["TZ"] = "Asia/Shanghai"
 
 # =============================================================================
-# Windows 事件循环策略修复
-# =============================================================================
-if sys.platform == "win32":
-    if hasattr(__import__('asyncio'), 'WindowsSelectorEventLoopPolicy'):
-        __import__('asyncio').set_event_loop_policy(
-            __import__('asyncio').WindowsSelectorEventLoopPolicy()
-        )
-
-
-# =============================================================================
-# 配置加载
+# 数据库连接
 # =============================================================================
 
-@pytest.fixture(scope="session")
-def integration_settings():
-    """加载集成测试配置"""
-    from framework.configs import init_settings
-
-    config_dir = Path(__file__).resolve().parent.parent.parent.parent.parent / "config"
-    settings = init_settings(config_dir)
-
-    return settings
-
-
-# =============================================================================
-# 数据库连接（function 级别）
-# =============================================================================
 
 @pytest_asyncio.fixture
-async def ai_async_engine(integration_settings):
+async def ai_async_engine(ai_settings):
     """AI 模块异步数据库引擎（function 级别）"""
     engine = create_async_engine(
-        url=integration_settings.sqlalchemy.url,
+        url=ai_settings.sqlalchemy.url,
         echo=False,
         pool_pre_ping=True,
     )
@@ -63,23 +34,15 @@ async def ai_async_engine(integration_settings):
         pass
 
 
-# =============================================================================
-# 测试数据 Fixtures
-# =============================================================================
-
-@pytest.fixture
-def test_tenant_id():
-    """测试租户 ID"""
-    return "test-tenant-" + uuid.uuid4().hex[:8]
-
-
-@pytest.fixture
-def test_user_id():
-    """测试用户 ID"""
-    return "test-user-" + uuid.uuid4().hex[:8]
-
-
-@pytest.fixture
-def test_plugin_id():
-    """测试插件 ID"""
-    return "test-author/test-plugin"
+@pytest_asyncio.fixture
+async def ai_async_session(ai_async_engine):
+    """AI 模块异步数据库会话（function 级别）"""
+    session = AsyncSession(bind=ai_async_engine, expire_on_commit=False)
+    try:
+        yield session
+    finally:
+        try:
+            await session.rollback()
+            await session.close()
+        except Exception:
+            pass

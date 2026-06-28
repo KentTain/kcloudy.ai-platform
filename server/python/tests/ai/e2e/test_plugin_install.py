@@ -33,7 +33,7 @@ from tests.ai.e2e.helpers.plugin_test_helper import PluginTestHelper
 
 
 @pytest_asyncio.fixture
-async def init_engine_pool(e2e_settings):
+async def init_engine_pool(ai_settings):
     """
     初始化全局数据库引擎池。
 
@@ -43,7 +43,7 @@ async def init_engine_pool(e2e_settings):
     """
     from framework.configs.settings import get_settings
 
-    settings = e2e_settings
+    settings = ai_settings
 
     # 初始化全局引擎管理器
     sqlalchemy_config = settings.sqlalchemy

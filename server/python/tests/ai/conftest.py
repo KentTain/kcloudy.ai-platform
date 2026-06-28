@@ -1,25 +1,153 @@
-﻿# AI 模块测试公共 fixtures
+"""
+AI 模块测试公共配置
+
+提供所有测试类型（unit/integration/e2e）共享的 fixtures：
+- 环境变量设置
+- Windows 事件循环策略修复
+- 配置加载
+- 测试数据生成（tenant_id、user_id）
+- API Key 配置
+- mock 数据 fixtures
+"""
+
+import os
+import sys
+import uuid
+from pathlib import Path
 
 from unittest.mock import AsyncMock
 
 import pytest
 
+# =============================================================================
+# 环境变量设置
+# =============================================================================
+os.environ.setdefault("PYTHON_SERVICE_ENV", "local")
+os.environ.setdefault("TZ", "Asia/Shanghai")
+
+# 设置 UV_PATH（如果未设置）
+if not os.environ.get("UV_PATH"):
+    import shutil
+
+    uv_path = shutil.which("uv")
+    if uv_path:
+        os.environ["UV_PATH"] = uv_path
+
+# =============================================================================
+# Windows 事件循环策略修复
+# 注意：ProactorEventLoop 支持子进程，SelectorEventLoop 不支持
+# E2E 测试需要子进程（如 uv 命令），默认使用 Proactor
+# =============================================================================
+if sys.platform == "win32":
+    asyncio_mod = __import__("asyncio")
+    if hasattr(asyncio_mod, "WindowsProactorEventLoopPolicy"):
+        asyncio_mod.set_event_loop_policy(asyncio_mod.WindowsProactorEventLoopPolicy())
+
+
+# =============================================================================
+# 配置加载
+# =============================================================================
+
+# 配置目录（相对于 server/python/tests/ai/）
+_CONFIG_DIR = Path(__file__).resolve().parent.parent.parent.parent / "config"
+
+
+def _load_settings():
+    """加载测试配置"""
+    from framework.configs import init_settings
+
+    return init_settings(_CONFIG_DIR)
+
+
+@pytest.fixture(scope="session")
+def ai_settings():
+    """加载 AI 测试配置（session 级别）"""
+    return _load_settings()
+
+
+# =============================================================================
+# 测试数据 Fixtures
+# =============================================================================
+
+
+@pytest.fixture
+def test_tenant_id():
+    """生成唯一测试租户 ID"""
+    return "test-tenant-" + uuid.uuid4().hex[:8]
+
+
+@pytest.fixture
+def test_user_id():
+    """生成唯一测试用户 ID"""
+    return "test-user-" + uuid.uuid4().hex[:8]
+
+
+# =============================================================================
+# API Key Fixtures
+# =============================================================================
+
+
+@pytest.fixture
+def tongyi_api_key():
+    """
+    获取通义千问 API Key。
+
+    优先从环境变量 E2E_TONGYI_API_KEY 读取，如果未配置则使用默认测试配置。
+    """
+    return os.environ.get(
+        "E2E_TONGYI_API_KEY", "sk-623fdfb2b75f43b8bb6a61b8b183359a"
+    )
+
+
+@pytest.fixture
+def gpustack_api_key():
+    """
+    获取 GPUStack API Key。
+
+    优先从环境变量 E2E_GPUSTACK_API_KEY 读取，如果未配置则使用默认测试配置。
+    """
+    return os.environ.get(
+        "E2E_GPUSTACK_API_KEY",
+        "gpustack_14d9f2aee5629a0f_465d73985f7b8f370caecd9e3de838ec",
+    )
+
+
+@pytest.fixture
+def gpustack_endpoint():
+    """
+    获取 GPUStack Endpoint。
+
+    优先从环境变量 E2E_GPUSTACK_ENDPOINT 读取，如果未配置则使用默认测试配置。
+    """
+    return os.environ.get(
+        "E2E_GPUSTACK_ENDPOINT", "https://llm-stack.flydiysz.cn"
+    )
+
+
+# GPUStack 可用模型列表（从实际测试获取）
+GPUSTACK_AVAILABLE_MODELS = [
+    "qwen3.5-9b",              # 聊天模型
+    "bge-large-zh-v1.5",       # Embedding 模型
+    "bge-reranker-large",      # Reranker 模型
+    "qwen3-embedding-0.6b",    # Embedding 模型
+    "qwen3-reranker-0.6b",     # Reranker 模型
+]
+
+
+# =============================================================================
+# Mock Fixtures（单元测试使用）
+# =============================================================================
+
 
 @pytest.fixture
 def session():
-    """异步数据库会话 mock fixture
-
-    为单元测试提供 mock 的 AsyncSession 对象。
-    """
+    """异步数据库会话 mock fixture"""
     return AsyncMock()
 
 
 @pytest.fixture
 def credential_schema():
-    """标准凭证架构 fixture
-    
-    提供一个标准的凭证架构定义，包含敏感字段和非敏感字段。
-    """
+    """标准凭证架构 fixture"""
     return [
         {
             "name": "api_key",
@@ -53,10 +181,7 @@ def credential_schema():
 
 @pytest.fixture
 def sample_plugin_config():
-    """示例插件配置 fixture
-    
-    提供一个完整的插件配置示例，包含工具配置和凭证架构。
-    """
+    """示例插件配置 fixture"""
     return {
         "version": "1.0.0",
         "type": "plugin",

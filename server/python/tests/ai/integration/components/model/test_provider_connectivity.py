@@ -1,39 +1,9 @@
 # Provider API 连通性集成测试
 
-import os
+# API Key fixtures 来自上层 ai/conftest.py
 
 import httpx
 import pytest
-
-
-# =============================================================================
-# Fixtures
-# =============================================================================
-
-
-@pytest.fixture
-def tongyi_api_key():
-    """获取通义千问 API Key"""
-    return os.environ.get(
-        "E2E_TONGYI_API_KEY", "sk-623fdfb2b75f43b8bb6a61b8b183359a"
-    )
-
-
-@pytest.fixture
-def gpustack_api_key():
-    """获取 GPUStack API Key"""
-    return os.environ.get(
-        "E2E_GPUSTACK_API_KEY",
-        "gpustack_14d9f2aee5629a0f_465d73985f7b8f370caecd9e3de838ec",
-    )
-
-
-@pytest.fixture
-def gpustack_endpoint():
-    """获取 GPUStack Endpoint"""
-    return os.environ.get(
-        "E2E_GPUSTACK_ENDPOINT", "https://llm-stack.flydiysz.cn"
-    )
 
 
 # =============================================================================
