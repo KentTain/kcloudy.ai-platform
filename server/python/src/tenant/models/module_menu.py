@@ -2,7 +2,7 @@
 模块菜单定义模型
 """
 
-from sqlalchemy import Boolean, ForeignKey, Index, Integer, String
+from sqlalchemy import Boolean, ForeignKey, Index, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from framework.database.mixins import TreeNodeMixin
@@ -21,12 +21,11 @@ class ModuleMenu(BaseModel, TreeNodeMixin):
         nullable=False,
         comment="模块ID",
     )
-    # 覆盖 TreeNodeMixin 的 parent_id，保持外键约束
-    # 注意：不添加外键约束，因为顶级节点的 parent_id 为虚拟根节点 "root"（不存在于数据库）
+    # 覆盖 TreeNodeMixin 的 parent_id
+    # 不添加外键约束，因为顶级节点的 parent_id 为虚拟根节点 "root"（不存在于数据库）
     # 树结构的父子关系通过 parent_ids 字段维护，应用层保证一致性
     parent_id: Mapped[str | None] = mapped_column(
         String(36),
-        ForeignKey("module_menus.id", ondelete="SET NULL"),
         nullable=True,
         index=True,
         comment="父菜单ID",

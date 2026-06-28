@@ -253,7 +253,6 @@ def upgrade() -> None:
         sa.Column("tree_names", sa.String(512), nullable=False, comment="名称路径"),
         sa.Column("parent_ids", sa.String(1024), nullable=False, comment="父ID路径"),
         sa.ForeignKeyConstraint(["module_id"], ["tenant.modules.id"], ondelete="CASCADE"),
-        sa.ForeignKeyConstraint(["parent_id"], ["tenant.module_menus.id"], ondelete="SET NULL"),
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint("code"),
         schema=MODULE_SCHEMA,

@@ -88,6 +88,7 @@ uv run pytest tests/demo/ -v
 - 模块模型：使用 `create_module_base(schema)` 创建模块级 Base
 - 数据模型基类：使用 `create_base_model(Base)` 创建数据模型基类 BaseModel
 - mixins类：按需使用 framework 框架 `server\python\src\framework\database\mixins` 下 mixins类 `ActiveRecordMixin、TenantMixin、TreeNodeMixin、AuditMixin、PropertyMixin`
+- TreeNodeMixin类：TreeNodeMixin 类的 `parent_id` 禁止添加外键约束，顶级节点的 `parent_id` 为虚拟值 `"root"`（`DEFAULT_TREE_ROOT_ID`），数据库中不存在该记录，添加 `ForeignKey` 会导致插入失败。子模型覆盖 `parent_id` 时只声明类型和索引，不加 `ForeignKey`。迁移文件同理，不添加 `ForeignKeyConstraint`
 - 异步测试：使用 `pytest.mark.asyncio`
 - API 路由：遵循 `/{模块}/{类型}/v1/{功能}` 格式
 
@@ -145,6 +146,7 @@ def get_module_definition() -> ModuleDefinition:
 | `module_role_permissions` | `iam.role_permissions` | — |
 
 同步流程：
+
 1. 从 `tenant.module_*` 读取模块定义
 2. 创建租户实例记录，设置 `tenant_id` 和 `ref_id`
 3. 通过 `ref_id` 实现幂等同步
