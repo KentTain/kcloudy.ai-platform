@@ -518,11 +518,18 @@ class TenantPluginManager:
             if plugin_id in self.plugins:
                 # 如果插件已经在内存中，则检查版本是否一致，有可能插件升级了，需要停止旧版本
                 old_plugin_info = self.plugins[plugin_id]
-                old_version = (
-                    old_plugin_info.config.get("configuration", {}).get("version")
-                    if hasattr(old_plugin_info, "config") and old_plugin_info.config
-                    else None
-                )
+                old_version = None
+                if hasattr(old_plugin_info, "config") and old_plugin_info.config:
+                    # config 可能是 PluginConfig 对象或 dict
+                    if hasattr(old_plugin_info.config, "model_dump"):
+                        old_version = (
+                            old_plugin_info.config.model_dump(mode="json")
+                            .get("configuration", {})
+                            .get("version")
+                        )
+                    elif isinstance(old_plugin_info.config, dict):
+                        old_version = old_plugin_info.config.get("configuration", {}).get("version")
+
                 new_version = config_dict.get("configuration", {}).get("version")
                 if old_version and new_version and old_version != new_version:
                     self.logger.warning(
@@ -1307,13 +1314,44 @@ class TenantPluginManager:
         config_override: dict[str, Any],
     ):
         """保存插件安装信息到数据库"""
+        import json
+
+        from ai_plugin.sdk.entities import I18nObject
+
         provider = get_plugin_installation_provider()
 
         plugin_unique_identifier = f"{plugin_id}@{plugin_config.configuration.version}"
+
+        # I18nObject 序列化辅助函数
+        def serialize_i18n(obj):
+            """递归序列化 I18nObject 和 Pydantic 模型"""
+            from pydantic import BaseModel
+
+            if isinstance(obj, I18nObject):
+                return {"en_US": obj.en_US, "zh_Hans": obj.zh_Hans}
+            elif isinstance(obj, BaseModel):
+                # 处理 Pydantic 模型
+                return serialize_i18n(obj.model_dump(mode="json"))
+            elif isinstance(obj, dict):
+                return {k: serialize_i18n(v) for k, v in obj.items()}
+            elif isinstance(obj, list):
+                return [serialize_i18n(item) for item in obj]
+            return obj
+
+        # 构建声明内容（序列化 I18nObject）
+        declaration = {
+            "author": plugin_config.configuration.author,
+            "name": plugin_config.configuration.name,
+            "version": plugin_config.configuration.version,
+            "description": serialize_i18n(plugin_config.configuration.description),
+            "type": self.convert_to_plugin_type(plugin_config).value,
+        }
+
         installation_dto = PluginInstallationDTO(
             tenant_id=self.tenant_id,
             plugin_id=plugin_id,
             plugin_unique_identifier=plugin_unique_identifier,
+            declaration=declaration,
             status="PENDING",
             auto_start=auto_start,
             plugin_type=self.convert_to_plugin_type(plugin_config).value,
@@ -1325,13 +1363,14 @@ class TenantPluginManager:
             await provider.create_installation(self.tenant_id, installation_dto)
 
             # 2. 创建 AI 侧 PluginConfig
+            # 使用前面定义的 serialize_i18n 函数序列化配置
+            config_dict = serialize_i18n(plugin_config.model_dump(mode="json"))
+
             ai_config = AIPluginConfig(
                 tenant_id=self.tenant_id,
                 plugin_id=plugin_id,
                 plugin_unique_identifier=plugin_unique_identifier,
-                plugin_config=plugin_config.model_dump(mode="json")
-                if hasattr(plugin_config, "model_dump")
-                else plugin_config.__dict__,
+                plugin_config=config_dict,
                 runtime_config={},
             )
             session.add(ai_config)
