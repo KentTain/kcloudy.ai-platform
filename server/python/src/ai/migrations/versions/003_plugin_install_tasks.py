@@ -24,12 +24,17 @@ MODULE_SCHEMA = "ai"
 
 
 def upgrade() -> None:
-    """升级：创建插件安装任务表"""
+    """升级：重建插件安装任务表（替换 001 中的旧版结构）"""
 
     # 确保 ai schema 存在
     op.execute(f"CREATE SCHEMA IF NOT EXISTS {MODULE_SCHEMA}")
 
-    # 创建安装任务表
+    # 先删除 001 迁移中创建的旧版 plugin_install_tasks 表
+    # 旧表只有 id/tenant_id/status/total_plugins/completed_plugins/plugins 列
+    # 新表增加了 plugin_id/plugin_unique_identifier/progress/current_step/steps/error_message 等列
+    op.drop_table("plugin_install_tasks", schema=MODULE_SCHEMA)
+
+    # 创建新版安装任务表
     op.create_table(
         "plugin_install_tasks",
         sa.Column("id", sa.String(64), primary_key=True, comment="任务ID"),

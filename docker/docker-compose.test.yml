@@ -1,0 +1,50 @@
+# Docker Compose - E2E Plugin Tests
+# 在 Linux 容器中运行插件 E2E 测试，验证 Windows 上 gevent stdin 兼容性问题
+#
+# 用法：
+#   docker compose -f docker-compose.test.yml run --rm e2e-test
+#
+# 交互式调试：
+#   docker compose -f docker-compose.test.yml run --rm --entrypoint bash e2e-test
+
+services:
+  e2e-test:
+    image: registry.cn-zhangjiakou.aliyuncs.com/kcloudy-images/uv:python3.12-bookworm-dev
+    container_name: kcloudy-e2e-test
+    working_dir: /app
+    volumes:
+      # 挂载 Python 源码（含 tests/）
+      - ../server/python:/app
+      # 挂载插件包（conftest.py 通过软链接访问）
+      - ../server/plugins:/plugins
+      # 挂载 YAML 配置文件到独立路径（避免被 /app 挂载覆盖）
+      - ../server/config:/config
+      # 挂载测试运行脚本
+      - ./scripts/run-e2e-test.sh:/scripts/run-e2e-test.sh:ro
+    environment:
+      # Python 运行环境
+      - PYTHON_SERVICE_ENV=local
+      - PYTHONPATH=/app/src
+      - PYTHONUNBUFFERED=1
+      - TZ=Asia/Shanghai
+      # 配置目录（覆盖默认的 /app/config，指向独立挂载点）
+      - APP_CONFIG_DIR=/config
+      # 数据库（使用 Docker 内部服务名）
+      - SQLALCHEMY_URL=postgresql+asyncpg://admin:XdA9caoq@postgres:5432/alon_demo
+      # Redis
+      - REDIS_SINGLE_HOST=redis
+      - REDIS_SINGLE_PORT=6379
+      - REDIS_SINGLE_PASSWORD=XdA9caoq
+      - REDIS_SINGLE_DB=0
+      # MinIO（仅覆盖 endpoint 为 Docker 服务名，凭证使用 YAML 配置中的 admin/XdA9caoq）
+      - OSS_MINIO_ENDPOINT=minio:9000
+      # 插件工具路径（覆盖 application-local.yml 中的 Windows 路径）
+      - UV_PATH=/root/.local/bin/uv
+    networks:
+      - kcloudy-network
+    entrypoint: ["/bin/bash", "/scripts/run-e2e-test.sh"]
+
+networks:
+  kcloudy-network:
+    name: kcloudy-network
+    external: true

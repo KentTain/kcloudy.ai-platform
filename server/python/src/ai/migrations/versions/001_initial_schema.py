@@ -149,20 +149,26 @@ def upgrade() -> None:
     # 这里我们创建指向 iam.users 的外键（如果 iam schema 已存在）
 
     # messages 表的 user_id 外键（指向 iam.users）
-    # 注意：这个外键需要确保 iam schema 已创建
-    try:
-        op.create_foreign_key(
-            "fk_messages_user_id",
-            "messages",
-            "users",
-            ["tenant_id", "user_id"],
-            ["tenant_id", "id"],
-            source_schema=MODULE_SCHEMA,
-            referent_schema="iam",
-        )
-    except Exception:
-        # 如果 iam schema 不存在，跳过外键创建
-        pass
+    # 使用 PL/pgSQL 块处理，避免 DDL 失败导致 PostgreSQL 事务中止
+    # 如果 iam schema 不存在或 iam.users 表不存在，外键创建会被跳过
+    op.execute(f"""
+    DO $$
+    BEGIN
+        IF EXISTS (
+            SELECT 1 FROM information_schema.schemata WHERE schema_name = 'iam'
+        ) AND EXISTS (
+            SELECT 1 FROM information_schema.tables
+            WHERE table_schema = 'iam' AND table_name = 'users'
+        ) THEN
+            ALTER TABLE {MODULE_SCHEMA}.messages
+                ADD CONSTRAINT fk_messages_user_id
+                FOREIGN KEY (tenant_id, user_id)
+                REFERENCES iam.users(tenant_id, id);
+        END IF;
+    EXCEPTION WHEN OTHERS THEN
+        NULL;
+    END $$;
+    """)
 
 
 def downgrade() -> None:
