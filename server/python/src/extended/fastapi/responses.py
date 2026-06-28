@@ -1,10 +1,16 @@
 """提供第三方扩展相关功能。"""
 
 from datetime import datetime
-from typing import Any, override
+from typing import Any
 
 import orjson
 from fastapi.responses import ORJSONResponse as RawORJSONResponse
+
+# 兼容 Python 3.11 及以下版本
+try:
+    from typing import override
+except ImportError:
+    from typing_extensions import override
 
 
 class ORJSONResponse(RawORJSONResponse):

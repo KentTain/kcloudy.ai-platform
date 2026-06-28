@@ -1595,15 +1595,31 @@ class LocalPluginRuntime(PluginRuntime):
                     # {'version': '0.0.5', 'type': 'plugin', 'author': 'langgenius', 'name': 'github', 'description': {'zh_Hans':
                     self._plugin_metadata_received = True
                     self._plugin_logger.debug("插件元数据已接收")
+                else:
+                    # 普通字典响应可能是需要分发的数据
+                    session_id = responseMessage.get("session_id")
+                    if session_id and session_id in self._streaming_requests:
+                        self._plugin_logger.debug(f"分发普通字典响应到 session: {session_id}")
+                        queue = self._streaming_requests[session_id]
+                        await queue.put(responseMessage)
                 return
 
             event = responseMessage.event
+            self._plugin_logger.debug(f"收到事件响应: event={event}, session_id={responseMessage.session_id}")
+
             if event == Event.SESSION:
                 # self._plugin_logger.debug(f"收到插件会话: {str(response_line)[:500]}...")
                 # 获取session_id
                 session_id = responseMessage.session_id
                 if not session_id:
                     self._plugin_logger.warning("响应缺少session_id")
+                    return
+
+                # 查找对应的等待者
+                if session_id not in self._streaming_requests:
+                    self._plugin_logger.warning(
+                        f"未找到等待者，session_id: {session_id}"
+                    )
                     return
 
                 queue = self._streaming_requests[session_id]
@@ -1613,6 +1629,9 @@ class LocalPluginRuntime(PluginRuntime):
                 if not isinstance(result, dict):
                     self._plugin_logger.warning(f"收到插件响应，非字典类型: {result}")
                     return
+
+                # 记录响应内容
+                self._plugin_logger.debug(f"收到 SESSION 响应: type={result.get('type')}, keys={list(result.keys())}")
 
                 is_end_message = result.get("type", None) == "end"
                 is_error_message = result.get("type", None) == "error"

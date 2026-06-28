@@ -88,7 +88,8 @@ class TestPluginInvokeTongyi:
 
             # 构造模型调用请求
             invoke_request = {
-                "action": "invoke-llm",
+                "type": "model",
+                "action": "invoke_llm",
                 "user_id": f"{test_tenant_id}-user",
                 "provider": "tongyi",
                 "model_type": "llm",
@@ -106,7 +107,7 @@ class TestPluginInvokeTongyi:
                     "temperature": 0.7,
                     "max_tokens": 100,
                 },
-                "stream": False,
+                "stream": True,
                 "tools": None,
                 "stop": None,
             }
@@ -180,7 +181,8 @@ class TestPluginInvokeTongyi:
             manager = await helper.get_manager(e2e_session)
 
             invoke_request = {
-                "action": "invoke-llm",
+                "type": "model",
+                "action": "invoke_llm",
                 "user_id": f"{test_tenant_id}-user",
                 "provider": "tongyi",
                 "model_type": "llm",
@@ -296,7 +298,8 @@ class TestPluginInvokeGpustack:
             manager = await helper.get_manager(e2e_session)
 
             invoke_request = {
-                "action": "invoke-llm",
+                "type": "model",
+                "action": "invoke_llm",
                 "user_id": f"{test_tenant_id}-user",
                 "provider": "gpustack",
                 "model_type": "llm",
@@ -317,7 +320,7 @@ class TestPluginInvokeGpustack:
                     "temperature": 0.7,
                     "max_tokens": 100,
                 },
-                "stream": False,
+                "stream": True,
                 "tools": None,
                 "stop": None,
             }
@@ -394,7 +397,8 @@ class TestPluginInvokeError:
             manager = await helper.get_manager(e2e_session)
 
             invoke_request = {
-                "action": "invoke-llm",
+                "type": "model",
+                "action": "invoke_llm",
                 "user_id": f"{test_tenant_id}-user",
                 "provider": "tongyi",
                 "model_type": "llm",
@@ -412,7 +416,7 @@ class TestPluginInvokeError:
                     "temperature": 0.7,
                     "max_tokens": 10,
                 },
-                "stream": False,
+                "stream": True,
                 "tools": None,
                 "stop": None,
             }

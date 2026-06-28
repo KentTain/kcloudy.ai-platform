@@ -35,6 +35,7 @@ os.environ["TZ"] = "Asia/Shanghai"
 # 设置 UV_PATH（如果未设置）
 if not os.environ.get("UV_PATH"):
     import shutil
+
     uv_path = shutil.which("uv")
     if uv_path:
         os.environ["UV_PATH"] = uv_path
@@ -790,8 +791,8 @@ def tongyi_api_key():
     if api_key:
         return api_key
 
-    # 使用默认测试配置（第二个 API Key）
-    return "sk-26bdc18cd0524493a2664c8d3f8d3fd9"
+    # 使用默认测试配置
+    return "sk-623fdfb2b75f43b8bb6a61b8b183359a"
 
 
 @pytest.fixture
@@ -830,6 +831,16 @@ def gpustack_endpoint():
 
     # 使用默认测试配置
     return "https://llm-stack.flydiysz.cn"
+
+
+# GPUStack 可用模型列表（从实际测试获取）
+GPUSTACK_AVAILABLE_MODELS = [
+    "qwen3.5-9b",              # 聊天模型
+    "bge-large-zh-v1.5",       # Embedding 模型
+    "bge-reranker-large",      # Reranker 模型
+    "qwen3-embedding-0.6b",    # Embedding 模型
+    "qwen3-reranker-0.6b",     # Reranker 模型
+]
 
 
 # =============================================================================
