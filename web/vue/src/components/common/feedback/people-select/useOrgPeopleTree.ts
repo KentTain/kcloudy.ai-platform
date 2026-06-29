@@ -341,6 +341,9 @@ export function useOrgPeopleTree(
       if (defaultExpandLevel > 0) {
         expandToLevel(defaultExpandLevel)
       }
+
+      // 更新半选状态（处理初始选中值）
+      updateIndeterminateStates()
     } catch (error) {
       console.error('Failed to load org user tree:', error)
     } finally {

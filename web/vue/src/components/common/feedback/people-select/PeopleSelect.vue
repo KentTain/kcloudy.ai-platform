@@ -345,11 +345,12 @@ onMounted(() => {
     <!-- 完整选择弹窗 -->
     <PeopleSelectDialog
       v-model:open="dialogOpen"
-      v-model="modelValue"
+      :model-value="modelValue"
       :multiple="multiple"
       :disabled-ids="disabledIds"
       :title="dialogTitle"
       :confirm-text="confirmText"
+      @update:model-value="$emit('update:modelValue', $event)"
       @confirm="handleDialogConfirm"
     />
   </div>
