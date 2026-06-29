@@ -172,11 +172,21 @@ class TenantService:
             SimpleTenant: 包含完整资源配置的租户信息
         """
         # 顺序加载所有资源配置，避免 SQLAlchemy Session 并发问题
-        db_config = await TenantService._load_database_config(session, tenant.db_config_id)
-        storage_config = await TenantService._load_storage_config(session, tenant.storage_config_id)
-        cache_config = await TenantService._load_cache_config(session, tenant.cache_config_id)
-        queue_config = await TenantService._load_queue_config(session, tenant.queue_config_id)
-        pubsub_config = await TenantService._load_pubsub_config(session, tenant.pubsub_config_id)
+        db_config = await TenantService._load_database_config(
+            session, tenant.db_config_id
+        )
+        storage_config = await TenantService._load_storage_config(
+            session, tenant.storage_config_id
+        )
+        cache_config = await TenantService._load_cache_config(
+            session, tenant.cache_config_id
+        )
+        queue_config = await TenantService._load_queue_config(
+            session, tenant.queue_config_id
+        )
+        pubsub_config = await TenantService._load_pubsub_config(
+            session, tenant.pubsub_config_id
+        )
 
         return SimpleTenant.from_model(
             tenant,
@@ -304,7 +314,9 @@ class TenantService:
             default_pubsub = await pubsub_config_service.get_default_config(session)
             if default_pubsub:
                 pubsub_config_id = default_pubsub.id
-                _logger.info(f"租户 {code} 自动关联默认发布订阅配置: {pubsub_config_id}")
+                _logger.info(
+                    f"租户 {code} 自动关联默认发布订阅配置: {pubsub_config_id}"
+                )
 
         tenant = Tenant(
             name=name,
@@ -327,10 +339,8 @@ class TenantService:
         await session.flush()  # 获取 tenant.id，但不提交
 
         # 自动分配活跃模块（通过 Protocol，避免 Tenant → IAM 依赖）
-        from framework.tenant.tenant_protocols import (
-            get_module_auto_assigner,
-            get_tenant_role_creator,
-        )
+        from framework.tenant.sync_protocols import get_module_auto_assigner
+        from framework.tenant.tenant_protocols import get_tenant_role_creator
 
         assigner = get_module_auto_assigner()
         if assigner:
@@ -611,9 +621,7 @@ class TenantService:
         return tenant
 
     @staticmethod
-    async def validate_tenant(
-        session: AsyncSession, tenant_id: str
-    ) -> TenantRecord:
+    async def validate_tenant(session: AsyncSession, tenant_id: str) -> TenantRecord:
         """
         验证租户状态
 
@@ -777,7 +785,9 @@ class TenantService:
 
         # 1. 收集所有 config_ids
         db_config_ids = {t.db_config_id for t in tenants if t.db_config_id}
-        storage_config_ids = {t.storage_config_id for t in tenants if t.storage_config_id}
+        storage_config_ids = {
+            t.storage_config_id for t in tenants if t.storage_config_id
+        }
         cache_config_ids = {t.cache_config_id for t in tenants if t.cache_config_id}
         queue_config_ids = {t.queue_config_id for t in tenants if t.queue_config_id}
         pubsub_config_ids = {t.pubsub_config_id for t in tenants if t.pubsub_config_id}
