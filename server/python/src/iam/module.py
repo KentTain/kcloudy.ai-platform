@@ -40,6 +40,9 @@ class IAMModule:
         格式: [(router, prefix, tags), ...]
         """
         # Admin 层
+        from iam.controllers.admin.audit_log_controller import (
+            router as admin_audit_log_router,
+        )
         from iam.controllers.admin.menu_controller import router as admin_menu_router
         from iam.controllers.admin.organization_controller import (
             router as admin_organization_router,
@@ -92,6 +95,7 @@ class IAMModule:
             (admin_permission_router, "/iam/admin/v1", ["Admin - Permission"]),
             (admin_organization_router, "/iam/admin/v1", ["Admin - Organization"]),
             (admin_menu_router, "/iam/admin/v1", ["Admin - Menu"]),
+            (admin_audit_log_router, "/iam/admin/v1", ["Admin - AuditLog"]),
             (
                 admin_system_setting_router,
                 "/iam/admin/v1/system-settings",
@@ -362,6 +366,14 @@ class IAMModule:
                     is_visible=False,
                     permission_codes=["iam:permission:write"],
                 ),
+                MenuDef(
+                    code="iam.audit_logs",
+                    name="审计日志",
+                    path="/iam/audit-logs",
+                    icon="FileText",
+                    sort_order=6,
+                    permission_codes=["iam:audit_log:read"],
+                ),
             ],
             permissions=[
                 # 用户权限
@@ -458,6 +470,13 @@ class IAMModule:
                     name="删除权限",
                     resource="permission",
                     action="delete",
+                ),
+                # 审计日志权限
+                PermissionDef(
+                    code="iam:audit_log:read",
+                    name="查看审计日志",
+                    resource="audit_log",
+                    action="read",
                 ),
             ],
         )

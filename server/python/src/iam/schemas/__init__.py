@@ -89,6 +89,12 @@ from iam.schemas.token import (
     TokenRefreshRequest,
     TokenRefreshResponse,
 )
+from iam.schemas.audit_log import (
+    AuditLogOptionsResponse,
+    AuditLogPaginatedQuery,
+    AuditLogResponse,
+    AuditOptionSchema,
+)
 from iam.schemas.user import (
     PasswordChangeRequest,
     PasswordResetCodeRequest,
@@ -191,4 +197,9 @@ __all__ = [
     "ConsoleSystemSettingPaginatedQuery",
     "ConsoleSystemSettingPaginatedListResponse",
     "ConsoleSystemSettingAttributeResponse",
+    # 审计日志
+    "AuditLogPaginatedQuery",
+    "AuditLogResponse",
+    "AuditLogOptionsResponse",
+    "AuditOptionSchema",
 ]

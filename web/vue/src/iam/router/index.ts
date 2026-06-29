@@ -82,6 +82,14 @@ export const iamRoutes: RouteRecordRaw[] = [
         meta: { title: "菜单管理", icon: "menu", requiresAuth: true },
       },
 
+      // 审计日志
+      {
+        path: "audit-logs",
+        name: "AuditLogManagement",
+        component: () => import("@/iam/pages/audit-logs/AuditLogList.vue"),
+        meta: { title: "审计日志", icon: "audit", requiresAuth: true },
+      },
+
       // 个人中心
       {
         path: "profile",

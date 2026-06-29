@@ -7,3 +7,4 @@ export * from "./role";
 export * from "./permission";
 export * from "./organization";
 export * from "./menu";
+export * from "./auditLog";

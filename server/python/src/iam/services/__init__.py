@@ -2,6 +2,7 @@
 IAM 服务模块
 """
 
+from iam.services.audit_log_service import AuditLogService, audit_log_service
 from iam.services.auth_service import AuthService, auth_service
 from iam.services.organization_service import OrganizationService, organization_service
 from iam.services.menu_service import MenuService, menu_service
@@ -54,4 +55,7 @@ __all__ = [
     # OAuth
     "OAuthService",
     "oauth_service",
+    # 审计日志
+    "AuditLogService",
+    "audit_log_service",
 ]

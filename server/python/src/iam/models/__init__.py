@@ -14,6 +14,7 @@ Base = create_module_base("iam")
 BaseModel = create_base_model(Base)
 
 # 导入模型（必须在 Base 和 BaseModel 定义之后）
+from .audit_log import AuditLog
 from .organization import Organization, UserOrganization
 from .enums import (
     OrganizationStatus,
@@ -59,4 +60,6 @@ __all__ = [
     # 系统设置
     "SystemSetting",
     "SystemSettingAttribute",
+    # 审计日志
+    "AuditLog",
 ]

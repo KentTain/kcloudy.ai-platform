@@ -302,3 +302,50 @@ export interface OrganizationDetail {
   total_member_count: number;
   children_count: number;
 }
+
+// ============================================
+// 审计日志类型
+// ============================================
+
+/** 审计日志 */
+export interface AuditLog {
+  id: string;
+  tenant_id: string;
+  business_domain: string;
+  business_domain_id?: string;
+  operator_by: string;
+  operator_name: string;
+  operated_at: string;
+  operation_type: string;
+  resource_type: string;
+  resource_id?: string;
+  resource_name: string;
+  before_data?: Record<string, unknown>;
+  after_data?: Record<string, unknown>;
+  details?: Record<string, unknown>;
+  created_at: string;
+}
+
+/** 审计选项 */
+export interface AuditOption {
+  value: string;
+  label: string;
+}
+
+/** 审计日志选项响应 */
+export interface AuditLogOptions {
+  business_domains: AuditOption[];
+  actions: AuditOption[];
+  resource_types: AuditOption[];
+}
+
+/** 审计日志分页查询参数 */
+export interface AuditLogPaginatedQuery extends BasePaginatedQuery {
+  business_domain?: string;
+  operation_type?: string;
+  resource_type?: string;
+  operator_by?: string;
+  time_range?: "24h" | "7d" | "30d" | "all";
+  start_time?: string;
+  end_time?: string;
+}
