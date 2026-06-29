@@ -8,7 +8,7 @@
 import type { HTMLAttributes } from 'vue'
 import { computed } from 'vue'
 import { Building2, ChevronRight, Loader2 } from '@lucide/vue'
-import { Checkbox } from '@/components/ui/checkbox'
+import { Checkbox } from '@/components'
 import { cn } from '@/lib/utils'
 import type { FlatOrgNode } from './useOrgPeopleTree'
 

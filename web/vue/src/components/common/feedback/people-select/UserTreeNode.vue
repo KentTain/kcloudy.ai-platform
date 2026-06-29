@@ -6,7 +6,7 @@
  */
 import type { HTMLAttributes } from 'vue'
 import { computed } from 'vue'
-import { Checkbox } from '@/components/ui/checkbox'
+import { Checkbox } from '@/components'
 import { cn } from '@/lib/utils'
 import type { FlatOrgNode } from './useOrgPeopleTree'
 import type { UserItem } from './types'
@@ -67,7 +67,8 @@ function handleCheckChange() {
 <template>
   <div
     :class="cn(
-      'flex items-center gap-2 py-1.5 px-2 rounded-md hover:bg-muted/50 cursor-pointer',
+      'flex items-center gap-2 py-1.5 px-2 rounded-md hover:bg-muted/50',
+      disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer',
       props.class
     )"
     :style="indentStyle"
