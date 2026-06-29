@@ -19,6 +19,8 @@ interface Props {
   checkable?: boolean
   /** 是否禁用 */
   disabled?: boolean
+  /** 加载状态 */
+  loading?: boolean
   /** 自定义样式 */
   class?: HTMLAttributes['class']
 }
@@ -26,6 +28,7 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   checkable: true,
   disabled: false,
+  loading: false,
   class: undefined,
 })
 
@@ -44,10 +47,7 @@ const indentStyle = {
 }
 
 // 是否正在加载
-const isLoading = computed(() => {
-  // 这里需要从父组件传入 loading 状态，暂时返回 false
-  return false
-})
+const isLoading = computed(() => props.loading ?? false)
 
 // 是否有子节点
 const hasChildren = computed(() => {

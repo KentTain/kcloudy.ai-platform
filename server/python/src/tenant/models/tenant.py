@@ -27,7 +27,10 @@ class Tenant(BaseModel, ActiveRecordMixin):
         String(50), unique=True, nullable=False, comment="租户编码"
     )
     status: Mapped[str] = mapped_column(
-        String(20), nullable=False, default=TenantStatus.ACTIVE, comment="状态"
+        EnumType(enum_class=TenantStatus, length=20),
+        nullable=False,
+        default=TenantStatus.ACTIVE,
+        comment="状态",
     )
 
     # 联系人信息

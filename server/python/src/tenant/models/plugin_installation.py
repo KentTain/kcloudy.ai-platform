@@ -35,10 +35,10 @@ class TenantPluginInstallation(BaseModel, AuditMixin, ActiveRecordMixin, TenantM
         comment="插件唯一标识符",
     )
     status: Mapped[str] = mapped_column(
-        String(16),
+        EnumType(enum_class=PluginInstallationStatus, length=16),
         nullable=False,
-        default="PENDING",
-        comment="状态: PENDING, ACTIVE, INACTIVE, FAILED",
+        default=PluginInstallationStatus.PENDING,
+        comment="状态",
     )
     auto_start: Mapped[bool] = mapped_column(
         Boolean,
@@ -53,7 +53,7 @@ class TenantPluginInstallation(BaseModel, AuditMixin, ActiveRecordMixin, TenantM
         comment="冻结阈值小时数",
     )
     plugin_type: Mapped[str | None] = mapped_column(
-        String(16),
+        EnumType(enum_class=PluginInstallType, length=16),
         nullable=True,
         comment="插件类型",
     )

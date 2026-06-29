@@ -36,7 +36,12 @@ const avatarUrl = computed(() => {
   if (props.avatar) {
     return props.avatar
   }
-  // 如果没有头像，返回 null，显示默认图标
+  if (props.id) {
+    return `/iam/console/v1/users/${props.id}/avatar`
+  }
+  if (props.username) {
+    return `/iam/console/v1/users/avatar?username=${props.username}`
+  }
   return null
 })
 
