@@ -20,12 +20,15 @@ from framework.common.response import ApiResponse
 from framework.database.dependencies import get_db_session
 from tenant.middlewares.admin_auth_middleware import require_admin_permission
 from tenant.schemas.plugin import (
+    ParsedPluginInfo,
     PluginDefinitionDetailResponse,
     PluginDefinitionPaginatedResponse,
     PluginDefinitionQuery,
     PluginStatisticsResponse,
+    ScanDirectoryConfirmRequest,
     ScanDirectoryRequest,
     ScanDirectoryResponse,
+    ScannedPluginPreview,
     ScannedPluginResult,
     UpdatePluginDefinitionRequest,
     UploadPluginResponse,
@@ -37,9 +40,63 @@ from tenant.services.plugin_statistics_service import plugin_statistics_service
 router = APIRouter()
 
 
+@router.post("/plugin-definitions/scan/preview")
+async def preview_scan_directory(
+    request: ScanDirectoryRequest,
+    _perm: None = Depends(require_admin_permission("tenant:plugin:read")),
+    session: AsyncSession = Depends(get_db_session),
+) -> ApiResponse:
+    """
+    预览扫描服务器目录中的插件
+
+    场景：平台管理员预览目录中的插件列表
+    WHEN 管理员请求 POST /tenant/admin/v1/plugin-definitions/scan/preview
+    THEN 返回目录中所有插件的预览信息，包含是否已存在标记
+    """
+    try:
+        results = await plugin_definition_service.preview_scan_directory(
+            session=session,
+            directory=request.directory,
+            recursive=request.recursive,
+        )
+        return ApiResponse.success(data=results)
+    except ValueError as e:
+        return ApiResponse.fail(message=str(e))
+
+
+@router.post("/plugin-definitions/parse")
+async def parse_plugin_package_preview(
+    _perm: None = Depends(require_admin_permission("tenant:plugin:read")),
+    session: AsyncSession = Depends(get_db_session),
+    file: UploadFile = File(..., description="插件包文件（.zip）"),
+) -> ApiResponse:
+    """
+    解析插件包预览
+
+    场景：平台管理员上传插件包预览解析结果
+    WHEN 管理员请求 POST /tenant/admin/v1/plugin-definitions/parse
+    THEN 返回插件包解析结果，包含是否已存在标记
+    """
+    # 验证文件格式
+    if not file.filename or not file.filename.endswith(".zip"):
+        return ApiResponse.fail(message="请上传 .zip 格式的插件包")
+
+    # 读取文件内容
+    package_data = await file.read()
+
+    try:
+        result = await plugin_definition_service.preview_parse_package(
+            session=session,
+            package_data=package_data,
+        )
+        return ApiResponse.success(data=result)
+    except ValueError as e:
+        return ApiResponse.fail(message=f"插件包解析失败: {str(e)}")
+
+
 @router.post("/plugin-definitions/scan")
 async def scan_directory_for_plugins(
-    request: ScanDirectoryRequest,
+    request: ScanDirectoryConfirmRequest,
     _perm: None = Depends(require_admin_permission("tenant:plugin:write")),
     session: AsyncSession = Depends(get_db_session),
 ) -> ApiResponse:
@@ -91,6 +148,11 @@ async def scan_directory_for_plugins(
         try:
             # 解析插件包
             package_info = plugin_package_service.parse_package_from_path(zip_file)
+
+            # 过滤：如果指定了 plugin_ids 且当前插件不在列表中，则跳过
+            if request.plugin_ids and package_info.plugin_id not in request.plugin_ids:
+                continue
+
             package_data = zip_file.read_bytes()
 
             # 注册插件定义
