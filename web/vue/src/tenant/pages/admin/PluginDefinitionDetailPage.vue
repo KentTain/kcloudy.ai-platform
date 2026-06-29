@@ -131,13 +131,9 @@ onMounted(() => {
         </CardHeader>
         <CardContent>
           <DescriptionList :items="descriptionItems" :columns="2" bordered data-testid="plugin-info">
-            <template #label-{label}>
-              <span class="font-medium text-muted-foreground">{{ label }}</span>
-            </template>
-
-            <!-- 是否推荐 -->
-            <template #value-是否推荐>
-              <div class="flex items-center gap-2">
+            <template #item="{ item }">
+              <!-- 是否推荐 -->
+              <div v-if="item.label === '是否推荐'" class="flex items-center gap-2">
                 <Badge :variant="plugin.is_recommended ? 'default' : 'secondary'">
                   {{ plugin.is_recommended ? '是' : '否' }}
                 </Badge>
@@ -150,11 +146,8 @@ onMounted(() => {
                   <Pencil class="h-3.5 w-3.5" />
                 </Button>
               </div>
-            </template>
-
-            <!-- 启用状态 -->
-            <template #value-启用状态>
-              <div class="flex items-center gap-2">
+              <!-- 启用状态 -->
+              <div v-else-if="item.label === '启用状态'" class="flex items-center gap-2">
                 <Badge :variant="plugin.is_enabled ? 'default' : 'secondary'">
                   {{ plugin.is_enabled ? '启用' : '禁用' }}
                 </Badge>
@@ -167,6 +160,13 @@ onMounted(() => {
                   <Pencil class="h-3.5 w-3.5" />
                 </Button>
               </div>
+              <!-- 其他字段默认显示 -->
+              <template v-else>
+                <span v-if="item.type === 'badge'">
+                  <Badge :variant="item.badgeVariant || 'default'">{{ item.value || '--' }}</Badge>
+                </span>
+                <span v-else>{{ item.value || '--' }}</span>
+              </template>
             </template>
           </DescriptionList>
         </CardContent>

@@ -3,7 +3,6 @@ import {
   Eye,
   Package,
   Pencil,
-  Plus,
   RefreshCw,
   RotateCcw,
   Search,
