@@ -288,6 +288,14 @@ class PluginSettings(BaseSettings):
     )
     expose_plugin_endpoints: bool = Field(default=True, description="是否暴露插件端点")
 
+    # 启动时自动扫描插件目录
+    scan_on_startup: bool = Field(
+        default=False, description="启动时是否自动扫描插件目录"
+    )
+    scan_directory: str = Field(
+        default="", description="启动时扫描的插件目录路径，为空则不扫描"
+    )
+
     # 存储配置
     storage_bucket: str = Field(default="plugins", description="插件包存储桶名称")
 

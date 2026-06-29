@@ -152,6 +152,10 @@ async def lifespan(app: FastAPI):
             # 自动执行各模块 seed 初始化（异常不阻止应用启动）
             await _run_seed_initialization()
 
+        with timer.phase("插件目录扫描", order=4.5) as phase:
+            # 启动时扫描插件目录并注册到数据库
+            await _run_plugin_scan_at_startup(phase)
+
         with timer.phase("数据完整性验证", order=5) as phase:
             # 验证关键数据是否存在
             src_path = Path(__file__).parent
@@ -238,6 +242,64 @@ async def _run_seed_initialization():
                     f"跳过该模块，错误消息: {e}"
                 )
                 write_error(f"Seed 初始化失败 [{module.name}/{seed_name}]，跳过该模块")
+
+
+async def _run_plugin_scan_at_startup(phase) -> None:
+    """
+    启动时扫描插件目录并注册到数据库
+
+    根据配置决定是否扫描以及扫描的目录路径。
+    扫描失败不阻止应用启动，仅记录错误。
+
+    Args:
+        phase: 启动计时器阶段对象，用于记录扫描详情
+    """
+    plugin_config = settings.plugin
+
+    # 检查是否启用启动时扫描
+    if not plugin_config.scan_on_startup:
+        phase.details["扫描状态"] = "已禁用"
+        return
+
+    # 检查是否配置了扫描目录
+    scan_directory = plugin_config.scan_directory
+    if not scan_directory:
+        phase.details["扫描状态"] = "未配置目录"
+        write_warning("插件启动扫描已启用但未配置目录 (plugin.scan_directory)")
+        return
+
+    try:
+        from tenant.services.plugin_startup_scan_service import scan_plugins_at_startup
+
+        async with get_task_session() as session:
+            result = await scan_plugins_at_startup(session, scan_directory)
+            await session.commit()
+
+        # 记录扫描结果
+        if result.total_count == 0:
+            phase.details["扫描状态"] = "目录为空"
+            write_info(f"插件目录为空，未找到 .zip 文件: {scan_directory}")
+        else:
+            phase.details["扫描状态"] = (
+                f"共 {result.total_count} 个, "
+                f"成功 {result.success_count} 个, "
+                f"跳过 {result.skipped_count} 个, "
+                f"失败 {result.failed_count} 个"
+            )
+            if result.success_count > 0 or result.skipped_count > 0:
+                write_success(
+                    f"插件目录扫描完成: 共 {result.total_count} 个, "
+                    f"成功 {result.success_count} 个, "
+                    f"跳过 {result.skipped_count} 个, "
+                    f"失败 {result.failed_count} 个"
+                )
+            if result.failed_count > 0:
+                write_warning(f"部分插件扫描失败: {result.errors}")
+
+    except Exception as e:
+        _logger.exception(f"插件目录扫描失败: {e}")
+        phase.details["扫描状态"] = f"失败: {e}"
+        write_error(f"插件目录扫描失败，部分插件可能不可用: {e}")
 
 
 def create_app(module_names: list[str] | None = None) -> FastAPI:
