@@ -54,6 +54,34 @@ export interface ScanDirectoryResponse {
   results: ScannedPluginResult[];
 }
 
+// ==================== 预览功能类型 ====================
+
+export interface ScannedPluginPreview {
+  plugin_id: string;
+  version: string;
+  name: string;
+  description: string;
+  exists: boolean;
+  status: 'ready' | 'invalid';
+  error_message?: string;
+}
+
+export interface ParsedPluginInfo {
+  plugin_id: string;
+  version: string;
+  name: string;
+  description: string;
+  manifest_type: string;
+  declaration: Record<string, any>;
+  exists: boolean;
+}
+
+export interface ScanDirectoryConfirmRequest {
+  directory: string;
+  recursive?: boolean;
+  plugin_ids: string[];
+}
+
 export interface UploadPluginResponse {
   plugin_id: string;
   version: string;
@@ -95,8 +123,21 @@ export const updatePluginDefinition = (id: string, data: UpdatePluginDefinitionR
 export const deletePluginDefinition = (id: string) =>
   rawDel<ApiResponse<void>>('/tenant/admin/v1/plugin-definitions/');
 
-export const scanDirectoryForPlugins = (data: ScanDirectoryRequest) =>
+export const scanDirectoryForPlugins = (data: ScanDirectoryConfirmRequest) =>
   rawPost<ApiResponse<ScanDirectoryResponse>>('/tenant/admin/v1/plugin-definitions/scan', data);
+
+// ==================== 预览功能 API ====================
+
+export const scanDirectoryPreview = (data: ScanDirectoryRequest) =>
+  rawPost<ApiResponse<ScannedPluginPreview[]>>('/tenant/admin/v1/plugin-definitions/scan/preview', data);
+
+export const parsePluginPackage = (file: File) => {
+  const formData = new FormData();
+  formData.append('file', file);
+  return rawPost<ApiResponse<ParsedPluginInfo>>('/tenant/admin/v1/plugin-definitions/parse', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+};
 
 export const uploadPluginPackage = (file: File, overwrite?: boolean) => {
   const formData = new FormData();
