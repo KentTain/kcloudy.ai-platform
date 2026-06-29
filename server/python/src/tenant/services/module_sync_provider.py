@@ -15,7 +15,7 @@ from framework.module.definition import (
     PermissionDef,
     RoleDef,
 )
-from framework.module.sync_protocol import ModuleDefinitionSyncProvider
+from framework.tenant.sync_protocols import ModuleDefinitionSyncProvider
 from tenant.models import (
     Module,
     ModuleMenu,

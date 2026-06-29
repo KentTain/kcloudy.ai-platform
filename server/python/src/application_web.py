@@ -114,7 +114,7 @@ async def lifespan(app: FastAPI):
 
         # 注册 ModuleDefinitionSyncProvider（由 Tenant 模块实现）
         try:
-            from framework.module.sync_protocol import (
+            from framework.tenant.sync_protocols import (
                 register_module_definition_sync_provider,
             )
             from tenant.services.module_sync_provider import (

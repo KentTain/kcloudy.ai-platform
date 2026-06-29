@@ -47,6 +47,11 @@ from framework.tenant.protocols import (
     register_tenant_provider,
 )
 from framework.tenant.resolver import TenantResolver
+from framework.tenant.sync_protocols import (
+    ModuleDefinitionSyncProvider,
+    get_module_definition_sync_provider,
+    register_module_definition_sync_provider,
+)
 
 __all__ = [
     # Cache
@@ -91,4 +96,8 @@ __all__ = [
     "register_tenant_provider",
     # Resolver
     "TenantResolver",
+    # Sync Protocols
+    "ModuleDefinitionSyncProvider",
+    "register_module_definition_sync_provider",
+    "get_module_definition_sync_provider",
 ]

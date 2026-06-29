@@ -17,7 +17,7 @@ from framework.module.definition import (
     RoleDef,
 )
 from framework.module.registry import get_registry
-from framework.module.sync_protocol import get_module_definition_sync_provider
+from framework.tenant.sync_protocols import get_module_definition_sync_provider
 from framework.utils.log_util import write_error, write_info, write_warning
 
 _logger = logger.bind(name=__name__)
