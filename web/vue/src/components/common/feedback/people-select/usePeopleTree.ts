@@ -5,7 +5,7 @@
  * 基于项目现有 Tree 组件的 checkbox/cascade/loadData 能力封装。
  */
 
-import { ref, computed, reactive, type Ref } from "vue"
+import { ref, computed, reactive } from "vue"
 import type { OrgTreeNode, PeopleItem, PeopleSelectOptions } from "./types"
 
 export function usePeopleTree(options: PeopleSelectOptions) {

@@ -1,11 +1,11 @@
 <script setup lang="ts">
 /**
- * PeopleSelectDialog — 人员选择器弹窗
+ * PeopleSelectDialog - 人员选择器弹窗
  *
  * 弹窗封装：Dialog + PeopleSelectView + 确认/取消按钮
  */
 
-import { ref, watch, computed } from "vue"
+import { ref, watch } from 'vue'
 import {
   Dialog,
   DialogContent,
@@ -13,29 +13,28 @@ import {
   DialogTitle,
   DialogFooter,
   Button,
-} from "@/components"
-import PeopleSelectView from "./PeopleSelectView.vue"
-import type { OrgTreeNode, PeopleItem } from "./types"
+} from '@/components'
+import { cn } from '@/lib/utils'
+import type { UserItem } from './types'
+import PeopleSelectView from './PeopleSelectView.vue'
 
 interface Props {
   /** 是否显示弹窗 */
   open: boolean
   /** 是否多选模式 */
   multiple?: boolean
-  /** 禁用的人员 ID 列表 */
+  /** 禁用的用户 ID 列表 */
   disabledIds?: string[]
-  /** 已选中的人员 ID 列表 */
+  /** 已选中的用户 ID 列表（v-model） */
   modelValue?: string[]
   /** 弹窗标题 */
   title?: string
   /** 确认按钮文本 */
   confirmText?: string
-  /** 加载组织子节点 API */
-  loadOrgNodes: (parentId?: string) => Promise<OrgTreeNode[]>
-  /** 搜索人员 API */
-  searchPeople: (keyword: string) => Promise<PeopleItem[]>
-  /** 加载组织下人员 API */
-  loadOrgPeople: (orgId: string) => Promise<PeopleItem[]>
+  /** 默认展开层级 */
+  defaultExpandLevel?: number
+  /** 弹窗大小 */
+  size?: 'md' | 'lg' | 'xl'
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -43,78 +42,102 @@ const props = withDefaults(defineProps<Props>(), {
   multiple: true,
   disabledIds: () => [],
   modelValue: () => [],
-  title: "选择人员",
-  confirmText: "确定",
+  title: '选择人员',
+  confirmText: '确定',
+  defaultExpandLevel: 1,
+  size: 'lg',
 })
 
 const emit = defineEmits<{
-  "update:open": [value: boolean]
-  "update:modelValue": [value: string[]]
-  confirm: [userIds: string[], users: PeopleItem[]]
-  cancel: []
+  'update:open': [value: boolean]
+  'update:modelValue': [value: string[]]
+  'confirm': [userIds: string[], users: UserItem[]]
+  'cancel': []
 }>()
 
 // 内部选中的数据
-const selectedIds = ref<string[]>([...props.modelValue])
-const selectedUsers = ref<PeopleItem[]>([])
+const internalSelectedIds = ref<string[]>([...props.modelValue])
+const internalSelectedUsers = ref<UserItem[]>([])
 
-// 重置选择（每次打开时重置为传入的 modelValue）
+// 弹窗打开时重置选择
 watch(
   () => props.open,
   (newVal) => {
     if (newVal) {
-      selectedIds.value = [...props.modelValue]
+      internalSelectedIds.value = [...props.modelValue]
+    }
+  }
+)
+
+// 同步外部 modelValue 变化
+watch(
+  () => props.modelValue,
+  (newVal) => {
+    if (props.open) {
+      internalSelectedIds.value = [...newVal]
     }
   }
 )
 
 // 处理选择变化
-function handleSelect(people: PeopleItem[]) {
-  selectedUsers.value = people
-  selectedIds.value = people.map((p) => p.user_id)
+function handleSelect(users: UserItem[]) {
+  internalSelectedUsers.value = users
+}
+
+function handleUpdateModelValue(ids: string[]) {
+  internalSelectedIds.value = ids
 }
 
 // 确认
 function handleConfirm() {
-  emit("update:modelValue", selectedIds.value)
-  emit("confirm", selectedIds.value, selectedUsers.value)
-  emit("update:open", false)
+  emit('update:modelValue', internalSelectedIds.value)
+  emit('confirm', internalSelectedIds.value, internalSelectedUsers.value)
+  emit('update:open', false)
 }
 
 // 取消
 function handleCancel() {
-  emit("cancel")
-  emit("update:open", false)
+  emit('cancel')
+  emit('update:open', false)
+}
+
+// 弹窗大小映射
+const sizeClasses: Record<string, string> = {
+  md: 'sm:max-w-[600px]',
+  lg: 'sm:max-w-[800px]',
+  xl: 'sm:max-w-[1000px]',
 }
 </script>
 
 <template>
   <Dialog :open="open" @update:open="$emit('update:open', $event)">
-    <DialogContent class="sm:max-w-[720px] p-0">
-      <DialogHeader class="px-4 pt-4 pb-2">
+    <DialogContent
+      :class="cn(sizeClasses[size], 'p-0 gap-0')"
+      :show-close-button="true"
+    >
+      <DialogHeader class="px-5 pt-5 pb-3">
         <DialogTitle>{{ title }}</DialogTitle>
       </DialogHeader>
 
-      <div class="px-4 pb-2">
+      <div class="px-5 pb-3">
         <PeopleSelectView
-          v-model="selectedIds"
+          v-model="internalSelectedIds"
           :multiple="multiple"
           :disabled-ids="disabledIds"
-          :load-org-nodes="loadOrgNodes"
-          :search-people="searchPeople"
-          :load-org-people="loadOrgPeople"
+          :default-expand-level="defaultExpandLevel"
           @select="handleSelect"
+          @update:model-value="handleUpdateModelValue"
         />
       </div>
 
-      <DialogFooter class="mx-0 mb-0 px-4 py-3 border-t rounded-b-xl bg-muted/50">
+      <DialogFooter class="px-5 py-4 border-t bg-muted/30">
         <Button variant="outline" @click="handleCancel">
           取消
         </Button>
         <Button @click="handleConfirm">
           {{ confirmText }}
-          <template v-if="selectedIds.length > 0">
-            ({{ selectedIds.length }})
+          <template v-if="internalSelectedIds.length > 0">
+            ({{ internalSelectedIds.length }})
           </template>
         </Button>
       </DialogFooter>
