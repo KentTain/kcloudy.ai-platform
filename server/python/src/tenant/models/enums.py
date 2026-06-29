@@ -18,13 +18,13 @@ class TenantAdminRole(str, EnumBase):
     """租户管理员角色枚举"""
 
     ORDINARY_ADMIN = "ordinaryAdmin"
-    SUPER_ADMIN = "superAdmin"
+    TENANT_ADMIN = "tenantAdmin"
 
     @property
     def label(self) -> str:
         labels = {
             TenantAdminRole.ORDINARY_ADMIN: "普通管理员",
-            TenantAdminRole.SUPER_ADMIN: "超级管理员",
+            TenantAdminRole.TENANT_ADMIN: "租户管理员",
         }
         return labels.get(self, self.name)
 

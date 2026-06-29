@@ -14,6 +14,9 @@ from sqlalchemy import select
 
 from framework.utils.log_util import write_info, write_success, write_warning
 from tenant.models import TenantAdmin
+from tenant.models.enums import TenantAdminRole
+
+
 
 
 async def run(*, dry_run: bool = False) -> int:
@@ -52,7 +55,7 @@ async def run(*, dry_run: bool = False) -> int:
             id=admin_id,
             username="tenant_admin",
             password=password_hash,
-            role="tenantAdmin",
+            role=TenantAdminRole.TENANT_ADMIN,
             is_default=True,
             is_active=True,
         )
