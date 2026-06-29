@@ -115,7 +115,7 @@ export const getPluginDefinitions = (params?: PluginDefinitionQuery) =>
   rawGet<ApiResponse<PluginDefinition[]>>('/tenant/admin/v1/plugin-definitions', { params });
 
 export const getPluginDefinition = (id: string) =>
-  rawGet<ApiResponse<PluginDefinitionDetail>>('/tenant/admin/v1/plugin-definitions/');
+  rawGet<ApiResponse<PluginDefinitionDetail>>(`/tenant/admin/v1/plugin-definitions/${id}`);
 
 export const updatePluginDefinition = (id: string, data: UpdatePluginDefinitionRequest) =>
   rawPut<ApiResponse<PluginDefinition>>('/tenant/admin/v1/plugin-definitions/', data);
