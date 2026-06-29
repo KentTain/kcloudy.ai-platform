@@ -204,26 +204,21 @@ class PluginManagementService:
                 TenantPluginDefinition.plugin_id.ilike(f"%{keyword}%")
             )
 
-        # 4. 查询总数
-        count_stmt = select(func.count(TenantPluginDefinition.id)).where(*conditions)
-        total_result = await session.execute(count_stmt)
-        total = total_result.scalar() or 0
+        if is_recommended is not None:
+            conditions.append(TenantPluginDefinition.is_recommended == is_recommended)
 
-        # 5. 查询列表
-        offset = (page - 1) * page_size
+        # 4. 查询列表（type 筛选需要从 declaration 提取，无法在数据库层面筛选）
         stmt = (
             select(TenantPluginDefinition)
             .where(*conditions)
             .order_by(TenantPluginDefinition.refers.desc())
-            .offset(offset)
-            .limit(page_size)
         )
 
         result = await session.execute(stmt)
         definitions = list(result.scalars().all())
 
-        # 6. 转换为 VO
-        items = []
+        # 5. 转换为 VO 并应用 type 筛选
+        all_items = []
         for definition in definitions:
             # 从 declaration 中提取插件信息
             declaration = definition.declaration or {}
@@ -236,14 +231,10 @@ class PluginManagementService:
             if type and plugin_type != type:
                 continue
 
-            # 应用推荐筛选
-            if is_recommended is not None and definition.is_recommended != is_recommended:
-                continue
-
             is_installed = definition.plugin_id in installed_plugin_ids
             installation_status = installation_status_map.get(definition.plugin_id)
 
-            items.append(AvailablePluginVo(
+            all_items.append(AvailablePluginVo(
                 plugin_id=definition.plugin_id,
                 plugin_unique_identifier=definition.plugin_unique_identifier,
                 name=configuration.get("label", {}).get("zh_Hans")
@@ -263,6 +254,11 @@ class PluginManagementService:
                 created_at=definition.created_at,
                 updated_at=definition.updated_at,
             ))
+
+        # 6. 计算筛选后的 total 并分页
+        total = len(all_items)
+        offset = (page - 1) * page_size
+        items = all_items[offset : offset + page_size]
 
         return AvailablePluginListResponse(
             items=items,
