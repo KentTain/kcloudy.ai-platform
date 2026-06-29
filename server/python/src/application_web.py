@@ -173,6 +173,10 @@ async def lifespan(app: FastAPI):
             # 启动时扫描插件目录并注册到数据库
             await _run_plugin_scan_at_startup(phase)
 
+        with timer.phase("监听器初始化", order=4.6) as phase:
+            # 启动各模块的事件监听器
+            await _setup_listeners(phase)
+
         with timer.phase("数据完整性验证", order=5) as phase:
             # 验证关键数据是否存在
             src_path = Path(__file__).parent
@@ -202,6 +206,9 @@ async def lifespan(app: FastAPI):
     )
 
     yield
+
+    # 清理监听器
+    await _cleanup_listeners()
 
     write_info("AI Platform 应用关闭")
 
@@ -317,6 +324,52 @@ async def _run_plugin_scan_at_startup(phase) -> None:
         _logger.exception(f"插件目录扫描失败: {e}")
         phase.details["扫描状态"] = f"失败: {e}"
         write_error(f"插件目录扫描失败，部分插件可能不可用: {e}")
+
+
+async def _setup_listeners(phase) -> None:
+    """
+    启动各模块的事件监听器
+
+    遍历所有模块，调用其 get_listener_setup() 方法获取监听器设置函数并执行。
+
+    Args:
+        phase: 启动计时器阶段对象，用于记录初始化详情
+    """
+    registry = get_registry()
+    listener_count = 0
+
+    for module in registry.get_all_modules():
+        listener_setup = module.get_listener_setup()
+        if listener_setup:
+            try:
+                setup_func, _ = listener_setup
+                await setup_func(settings)
+                listener_count += 1
+                _logger.info(f"模块 {module.name} 监听器已启动")
+            except Exception as e:
+                _logger.exception(f"模块 {module.name} 监听器启动失败: {e}")
+                write_error(f"模块 {module.name} 监听器启动失败")
+
+    if listener_count > 0:
+        phase.details["监听器数量"] = listener_count
+        write_success(f"事件监听器启动完成: {listener_count} 个")
+    else:
+        phase.details["监听器数量"] = 0
+
+
+async def _cleanup_listeners() -> None:
+    """清理所有模块的事件监听器"""
+    registry = get_registry()
+
+    for module in registry.get_all_modules():
+        listener_setup = module.get_listener_setup()
+        if listener_setup:
+            try:
+                _, cleanup_func = listener_setup
+                await cleanup_func()
+                _logger.info(f"模块 {module.name} 监听器已清理")
+            except Exception as e:
+                _logger.exception(f"模块 {module.name} 监听器清理失败: {e}")
 
 
 def create_app(module_names: list[str] | None = None) -> FastAPI:

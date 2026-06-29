@@ -11,6 +11,7 @@ from typing import Any
 from loguru import logger
 from sqlalchemy import and_, delete, desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm.attributes import flag_modified
 
 from ai.models.plugin import (
     CredentialScope,
@@ -1178,8 +1179,12 @@ class PluginManagementService:
             # 更新运行时配置
             if request.runtime_config is not None:
                 current_runtime = ai_config.runtime_config or {}
-                current_runtime.update(request.runtime_config)
-                ai_config.runtime_config = current_runtime
+                # 创建新字典，确保 SQLAlchemy 检测到变更
+                new_runtime = {**current_runtime, **request.runtime_config}
+                ai_config.runtime_config = new_runtime
+                # 强制标记 JSON 字段已修改
+                flag_modified(ai_config, "runtime_config")
+                _logger.info(f"更新配置: plugin_id={plugin_id}, old={current_runtime}, new={new_runtime}")
 
         await session.flush()
         await session.refresh(ai_config)
