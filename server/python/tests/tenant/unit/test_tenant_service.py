@@ -56,10 +56,13 @@ class TestGetById:
             status=TenantStatus.ACTIVE,
         )
 
-        with patch("tenant.services.tenant_service.TenantCache.get") as mock_cache_get, \
-             patch("tenant.services.tenant_service.TenantCache.set") as mock_cache_set, \
-             patch("tenant.services.tenant_service.TenantService.build_simple_tenant") as mock_build:
-
+        with (
+            patch("tenant.services.tenant_service.TenantCache.get") as mock_cache_get,
+            patch("tenant.services.tenant_service.TenantCache.set") as mock_cache_set,
+            patch(
+                "tenant.services.tenant_service.TenantService.build_simple_tenant"
+            ) as mock_build,
+        ):
             mock_cache_get.return_value = None
 
             # 配置 session mock
@@ -78,14 +81,15 @@ class TestGetById:
     async def test_returns_none_when_not_found(self, session):
         """租户不存在时返回 None"""
         with patch("tenant.services.tenant_service.TenantCache.get") as mock_cache_get:
-
             mock_cache_get.return_value = None
 
             mock_result = MagicMock()
             mock_result.scalar_one_or_none.return_value = None
             session.execute.return_value = mock_result
 
-            result = await TenantService.get_by_id(session, "nonexistent", use_cache=True)
+            result = await TenantService.get_by_id(
+                session, "nonexistent", use_cache=True
+            )
 
         assert result is None
 
@@ -102,9 +106,12 @@ class TestGetById:
             status=TenantStatus.ACTIVE,
         )
 
-        with patch("tenant.services.tenant_service.TenantCache.get") as mock_cache_get, \
-             patch("tenant.services.tenant_service.TenantService.build_simple_tenant") as mock_build:
-
+        with (
+            patch("tenant.services.tenant_service.TenantCache.get") as mock_cache_get,
+            patch(
+                "tenant.services.tenant_service.TenantService.build_simple_tenant"
+            ) as mock_build,
+        ):
             mock_result = MagicMock()
             mock_result.scalar_one_or_none.return_value = mock_tenant
             session.execute.return_value = mock_result
@@ -158,15 +165,29 @@ class TestCreate:
         mock_tenant.code = "T001"
         mock_tenant.name = "测试租户"
 
-        with patch("tenant.services.tenant_service.generate_tenant_key") as mock_gen_key, \
-             patch("tenant.services.tenant_service.encrypt") as mock_encrypt, \
-             patch("tenant.services.tenant_service.database_config_service") as mock_db_service, \
-             patch("tenant.services.tenant_service.storage_config_service") as mock_storage_service, \
-             patch("tenant.services.tenant_service.cache_config_service") as mock_cache_service, \
-             patch("tenant.services.tenant_service.queue_config_service") as mock_queue_service, \
-             patch("tenant.services.tenant_service.pubsub_config_service") as mock_pubsub_service, \
-             patch("framework.tenant.protocols.get_module_auto_assigner", return_value=None):
-
+        with (
+            patch("tenant.services.tenant_service.generate_tenant_key") as mock_gen_key,
+            patch("tenant.services.tenant_service.encrypt") as mock_encrypt,
+            patch(
+                "tenant.services.tenant_service.database_config_service"
+            ) as mock_db_service,
+            patch(
+                "tenant.services.tenant_service.storage_config_service"
+            ) as mock_storage_service,
+            patch(
+                "tenant.services.tenant_service.cache_config_service"
+            ) as mock_cache_service,
+            patch(
+                "tenant.services.tenant_service.queue_config_service"
+            ) as mock_queue_service,
+            patch(
+                "tenant.services.tenant_service.pubsub_config_service"
+            ) as mock_pubsub_service,
+            patch(
+                "framework.tenant.sync_protocols.get_module_auto_assigner",
+                return_value=None,
+            ),
+        ):
             mock_gen_key.return_value = "raw-tenant-key"
             mock_encrypt.return_value = "encrypted-key"
 
@@ -182,6 +203,7 @@ class TestCreate:
 
             def set_tenant_side_effect(tenant):
                 tenant.id = "tenant-1"
+
             session.add.side_effect = set_tenant_side_effect
 
             result = await TenantService.create(
@@ -197,10 +219,14 @@ class TestCreate:
     @pytest.mark.asyncio
     async def test_creates_tenant_with_all_fields(self, session):
         """使用所有字段创建租户"""
-        with patch("tenant.services.tenant_service.generate_tenant_key") as mock_gen_key, \
-             patch("tenant.services.tenant_service.encrypt") as mock_encrypt, \
-             patch("framework.tenant.protocols.get_module_auto_assigner", return_value=None):
-
+        with (
+            patch("tenant.services.tenant_service.generate_tenant_key") as mock_gen_key,
+            patch("tenant.services.tenant_service.encrypt") as mock_encrypt,
+            patch(
+                "framework.tenant.sync_protocols.get_module_auto_assigner",
+                return_value=None,
+            ),
+        ):
             mock_gen_key.return_value = "raw-tenant-key"
             mock_encrypt.return_value = "encrypted-key"
 
@@ -237,8 +263,9 @@ class TestUpdate:
         mock_tenant = MagicMock(spec=Tenant)
         mock_tenant.id = "tenant-1"
 
-        with patch("tenant.services.tenant_service.TenantCache.invalidate") as mock_invalidate:
-
+        with patch(
+            "tenant.services.tenant_service.TenantCache.invalidate"
+        ) as mock_invalidate:
             mock_result = MagicMock()
             mock_result.scalar_one_or_none.return_value = mock_tenant
             session.execute.return_value = mock_result
@@ -279,8 +306,9 @@ class TestDelete:
     @pytest.mark.asyncio
     async def test_deletes_tenant_successfully(self, session):
         """成功删除租户"""
-        with patch("tenant.services.tenant_service.TenantCache.invalidate") as mock_invalidate:
-
+        with patch(
+            "tenant.services.tenant_service.TenantCache.invalidate"
+        ) as mock_invalidate:
             mock_result = MagicMock()
             mock_result.rowcount = 1
             session.execute.return_value = mock_result
@@ -314,8 +342,9 @@ class TestActivate:
         mock_tant.id = "tenant-1"
         mock_tant.status = TenantStatus.INACTIVE
 
-        with patch("tenant.services.tenant_service.TenantCache.invalidate") as mock_invalidate:
-
+        with patch(
+            "tenant.services.tenant_service.TenantCache.invalidate"
+        ) as mock_invalidate:
             mock_result = MagicMock()
             mock_result.scalar_one_or_none.return_value = mock_tant
             session.execute.return_value = mock_result
@@ -350,8 +379,9 @@ class TestDeactivate:
         mock_tenant.id = "tenant-1"
         mock_tenant.status = TenantStatus.ACTIVE
 
-        with patch("tenant.services.tenant_service.TenantCache.invalidate") as mock_invalidate:
-
+        with patch(
+            "tenant.services.tenant_service.TenantCache.invalidate"
+        ) as mock_invalidate:
             mock_result = MagicMock()
             mock_result.scalar_one_or_none.return_value = mock_tenant
             session.execute.return_value = mock_result
@@ -485,7 +515,9 @@ class TestGetTenantsBatch:
         mock_result.scalars.return_value.all.return_value = [mock_tenant1, mock_tenant2]
         session.execute.return_value = mock_result
 
-        result = await TenantService.get_tenants_batch(session, ["tenant-1", "tenant-2"])
+        result = await TenantService.get_tenants_batch(
+            session, ["tenant-1", "tenant-2"]
+        )
 
         assert len(result) == 2
         assert result[0].id == "tenant-1"
@@ -508,7 +540,9 @@ class TestGetTenantsBatch:
         mock_result.scalars.return_value.all.return_value = [mock_tenant1]
         session.execute.return_value = mock_result
 
-        result = await TenantService.get_tenants_batch(session, ["tenant-1", "nonexistent"])
+        result = await TenantService.get_tenants_batch(
+            session, ["tenant-1", "nonexistent"]
+        )
 
         assert len(result) == 1
         assert result[0].id == "tenant-1"

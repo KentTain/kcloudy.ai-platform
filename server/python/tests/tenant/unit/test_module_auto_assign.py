@@ -147,7 +147,7 @@ class TestTenantServiceCreate:
                 return_value="encrypted_key",
             ),
             patch(
-                "framework.tenant.protocols.get_module_auto_assigner"
+                "framework.tenant.sync_protocols.get_module_auto_assigner"
             ) as mock_get_assigner,
         ):
             mock_assigner = AsyncMock()
@@ -189,7 +189,7 @@ class TestTenantServiceCreate:
                 return_value="encrypted_key",
             ),
             patch(
-                "framework.tenant.protocols.get_module_auto_assigner",
+                "framework.tenant.sync_protocols.get_module_auto_assigner",
                 return_value=None,
             ),
         ):

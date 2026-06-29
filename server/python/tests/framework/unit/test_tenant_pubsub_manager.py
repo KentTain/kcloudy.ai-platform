@@ -12,7 +12,7 @@ from framework.pubsub.tenant_pubsub_manager import (
     init_pubsub_manager,
 )
 from framework.tenant.enums import PubSubType
-from framework.tenant.protocols import TenantPubSubConfig
+from framework.tenant.tenant_protocols import TenantPubSubConfig
 
 
 class TestTenantPubSubManager:
@@ -46,7 +46,10 @@ class TestTenantPubSubManager:
         mock_cache = MagicMock()
         manager = TenantPubSubManager(mock_cache)
 
-        with patch("framework.pubsub.tenant_pubsub_manager.get_tenant_id", return_value="tenant-001"):
+        with patch(
+            "framework.pubsub.tenant_pubsub_manager.get_tenant_id",
+            return_value="tenant-001",
+        ):
             name = manager._build_channel_name("events", "tenant-001", None)
 
         assert name == "tenant-001:channel:events"
@@ -67,7 +70,9 @@ class TestTenantPubSubManager:
         mock_cache = MagicMock()
         manager = TenantPubSubManager(mock_cache)
 
-        name = manager._build_channel_name("events", "tenant-001", None, skip_tenant=True)
+        name = manager._build_channel_name(
+            "events", "tenant-001", None, skip_tenant=True
+        )
 
         assert name == "events"
 
@@ -78,7 +83,10 @@ class TestTenantPubSubManager:
         mock_cache.publish = AsyncMock(return_value=3)
         manager = TenantPubSubManager(mock_cache)
 
-        with patch("framework.pubsub.tenant_pubsub_manager.get_tenant_id", return_value="tenant-001"):
+        with patch(
+            "framework.pubsub.tenant_pubsub_manager.get_tenant_id",
+            return_value="tenant-001",
+        ):
             result = await manager.publish("events", "hello", tenant_id="tenant-001")
 
         assert result == 3
@@ -115,7 +123,10 @@ class TestTenantPubSubManager:
         mock_cache.get_client = AsyncMock(return_value=mock_client)
         manager = TenantPubSubManager(mock_cache)
 
-        with patch("framework.pubsub.tenant_pubsub_manager.get_tenant_id", return_value="tenant-001"):
+        with patch(
+            "framework.pubsub.tenant_pubsub_manager.get_tenant_id",
+            return_value="tenant-001",
+        ):
             result = await manager.subscribe("events", tenant_id="tenant-001")
 
         assert result is mock_pubsub
@@ -166,6 +177,7 @@ class TestPubSubManagerGlobal:
 
     def test_get_uninitialized_raises(self):
         import framework.pubsub.tenant_pubsub_manager as mod
+
         mod._pubsub_manager = None
 
         with pytest.raises(RuntimeError, match="未初始化"):

@@ -14,7 +14,7 @@ import pytest
 import pytest_asyncio
 
 from framework.cache.tenant_cache_manager import TenantCacheManager, init_cache_manager
-from framework.tenant.protocols import TenantCacheConfig
+from framework.tenant.tenant_protocols import TenantCacheConfig
 
 pytestmark = pytest.mark.integration
 
@@ -43,6 +43,7 @@ async def cache_manager(redis_client, redis_available):
 def unique_tenant_id():
     """生成唯一租户 ID"""
     import uuid
+
     return f"tenant-{uuid.uuid4().hex[:8]}"
 
 
@@ -50,7 +51,9 @@ class TestTenantCachePhysicalIsolation:
     """物理隔离场景测试"""
 
     @pytest.mark.asyncio
-    async def test_connect_independent_redis_instance(self, cache_manager, unique_tenant_id):
+    async def test_connect_independent_redis_instance(
+        self, cache_manager, unique_tenant_id
+    ):
         """
         场景: 连接独立 Redis 实例
 
@@ -157,7 +160,9 @@ class TestTenantCachePhysicalIsolation:
             pytest.skip("目标 Redis 端口不可用")
 
     @pytest.mark.asyncio
-    async def test_physical_isolation_key_no_prefix(self, cache_manager, unique_tenant_id):
+    async def test_physical_isolation_key_no_prefix(
+        self, cache_manager, unique_tenant_id
+    ):
         """
         场景: 物理隔离 Key 不添加前缀
 
@@ -195,7 +200,9 @@ class TestTenantCachePhysicalIsolation:
             pytest.skip(f"Redis 实例不可用: {e}")
 
     @pytest.mark.asyncio
-    async def test_logical_isolation_key_with_prefix(self, cache_manager, unique_tenant_id):
+    async def test_logical_isolation_key_with_prefix(
+        self, cache_manager, unique_tenant_id
+    ):
         """
         场景: 逻辑隔离 Key 添加前缀
 
@@ -226,7 +233,9 @@ class TestTenantCacheKeyBuilding:
     """Key 构建规则测试"""
 
     @pytest.mark.asyncio
-    async def test_key_building_with_physical_isolation(self, cache_manager, unique_tenant_id):
+    async def test_key_building_with_physical_isolation(
+        self, cache_manager, unique_tenant_id
+    ):
         """物理隔离场景下 Key 构建规则"""
         config = TenantCacheConfig(host="redis-isolated.com", port=6379)
 
@@ -239,7 +248,9 @@ class TestTenantCacheKeyBuilding:
         assert key2 == "cache:session:abc"
 
     @pytest.mark.asyncio
-    async def test_key_building_with_db_isolation(self, cache_manager, unique_tenant_id):
+    async def test_key_building_with_db_isolation(
+        self, cache_manager, unique_tenant_id
+    ):
         """独立 DB 场景下 Key 构建规则"""
         config = TenantCacheConfig(db=5)
 
@@ -248,7 +259,9 @@ class TestTenantCacheKeyBuilding:
         assert key == "mykey"
 
     @pytest.mark.asyncio
-    async def test_key_building_with_registered_db(self, cache_manager, unique_tenant_id):
+    async def test_key_building_with_registered_db(
+        self, cache_manager, unique_tenant_id
+    ):
         """注册 DB 场景下 Key 构建规则"""
         cache_manager.register_tenant_db(unique_tenant_id, 3)
 
@@ -290,7 +303,9 @@ class TestTenantCacheInstanceManagement:
         config3 = TenantCacheConfig(host="redis-b.com", port=6379)  # 不同实例
 
         # 模拟客户端创建（使用本地 Redis）
-        config_local = TenantCacheConfig(host="localhost", port=6379, password="XdA9caoq", db=12)
+        config_local = TenantCacheConfig(
+            host="localhost", port=6379, password="XdA9caoq", db=12
+        )
 
         client1 = await cache_manager.get_client(unique_tenant_id, config_local)
         client2 = await cache_manager.get_client(unique_tenant_id, config_local)
@@ -303,7 +318,10 @@ class TestTenantCacheInstanceManagement:
         """释放空闲实例客户端"""
         # 创建实例客户端
         from datetime import datetime, timedelta
-        config = TenantCacheConfig(host="localhost", port=6379, password="XdA9caoq", db=13)
+
+        config = TenantCacheConfig(
+            host="localhost", port=6379, password="XdA9caoq", db=13
+        )
         await cache_manager.get_client(unique_tenant_id, config)
 
         # 验证实例存在
@@ -311,7 +329,9 @@ class TestTenantCacheInstanceManagement:
 
         # 将访问时间设置为过去，确保 release_idle_instances 能释放
         for key in cache_manager._instance_access_times:
-            cache_manager._instance_access_times[key] = datetime.now() - timedelta(seconds=10)
+            cache_manager._instance_access_times[key] = datetime.now() - timedelta(
+                seconds=10
+            )
 
         # 释放空闲实例（超时=0，立即释放所有）
         released = await cache_manager.release_idle_instances(timeout=0)
@@ -348,4 +368,5 @@ class TestTenantCacheGlobalManager:
         manager = init_cache_manager(redis_client)
 
         from framework.cache.tenant_cache_manager import get_cache_manager
+
         assert get_cache_manager() is manager

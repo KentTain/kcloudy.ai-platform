@@ -11,7 +11,7 @@ from framework.cache.tenant_cache_manager import (
     get_cache_manager,
     init_cache_manager,
 )
-from framework.tenant.protocols import TenantCacheConfig
+from framework.tenant.tenant_protocols import TenantCacheConfig
 
 
 class TestTenantCacheManager:
@@ -99,7 +99,10 @@ class TestTenantCacheManager:
         mock_client = MagicMock()
         manager = TenantCacheManager(mock_client)
 
-        with patch("framework.cache.tenant_cache_manager.get_tenant_id", return_value="tenant-001"):
+        with patch(
+            "framework.cache.tenant_cache_manager.get_tenant_id",
+            return_value="tenant-001",
+        ):
             key = manager._build_key("user:123", "tenant-001", None)
 
         assert key == "tenant-001:user:123"
@@ -177,6 +180,7 @@ class TestTenantCacheManagerPhysicalIsolation:
 
         # 模拟实例客户端（设置一个过去的时间）
         from datetime import datetime, timedelta
+
         manager._instance_clients["redis-a.com:6379"] = AsyncMock()
         manager._instance_access_times["redis-a.com:6379"] = (
             datetime.now() - timedelta(seconds=10)  # 10秒前

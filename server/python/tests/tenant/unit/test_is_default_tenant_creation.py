@@ -15,20 +15,41 @@ class TestTenantCreateAutoDefault:
     """租户创建时自动关联默认配置测试"""
 
     @pytest.mark.asyncio
-    async def test_auto_assigns_default_database_config_when_not_specified(self, session):
+    async def test_auto_assigns_default_database_config_when_not_specified(
+        self, session
+    ):
         """未指定数据库配置时自动关联默认数据库配置"""
         mock_default_db = MagicMock()
         mock_default_db.id = "default-db-id"
 
-        with patch("tenant.services.tenant_service.database_config_service") as mock_db_service, \
-             patch("tenant.services.tenant_service.storage_config_service") as mock_storage_service, \
-             patch("tenant.services.tenant_service.cache_config_service") as mock_cache_service, \
-             patch("tenant.services.tenant_service.queue_config_service") as mock_queue_service, \
-             patch("tenant.services.tenant_service.pubsub_config_service") as mock_pubsub_service, \
-             patch("tenant.services.tenant_service.generate_tenant_key", return_value="test-key"), \
-             patch("tenant.services.tenant_service.encrypt", return_value="encrypted-key"), \
-             patch("framework.tenant.protocols.get_module_auto_assigner", return_value=None):
-
+        with (
+            patch(
+                "tenant.services.tenant_service.database_config_service"
+            ) as mock_db_service,
+            patch(
+                "tenant.services.tenant_service.storage_config_service"
+            ) as mock_storage_service,
+            patch(
+                "tenant.services.tenant_service.cache_config_service"
+            ) as mock_cache_service,
+            patch(
+                "tenant.services.tenant_service.queue_config_service"
+            ) as mock_queue_service,
+            patch(
+                "tenant.services.tenant_service.pubsub_config_service"
+            ) as mock_pubsub_service,
+            patch(
+                "tenant.services.tenant_service.generate_tenant_key",
+                return_value="test-key",
+            ),
+            patch(
+                "tenant.services.tenant_service.encrypt", return_value="encrypted-key"
+            ),
+            patch(
+                "framework.tenant.sync_protocols.get_module_auto_assigner",
+                return_value=None,
+            ),
+        ):
             session.commit = AsyncMock()
             session.refresh = AsyncMock()
             session.flush = AsyncMock()
@@ -62,24 +83,51 @@ class TestTenantCreateAutoDefault:
         mock_default_pubsub = MagicMock()
         mock_default_pubsub.id = "default-pubsub-id"
 
-        with patch("tenant.services.tenant_service.database_config_service") as mock_db_service, \
-             patch("tenant.services.tenant_service.storage_config_service") as mock_storage_service, \
-             patch("tenant.services.tenant_service.cache_config_service") as mock_cache_service, \
-             patch("tenant.services.tenant_service.queue_config_service") as mock_queue_service, \
-             patch("tenant.services.tenant_service.pubsub_config_service") as mock_pubsub_service, \
-             patch("tenant.services.tenant_service.generate_tenant_key", return_value="test-key"), \
-             patch("tenant.services.tenant_service.encrypt", return_value="encrypted-key"), \
-             patch("framework.tenant.protocols.get_module_auto_assigner", return_value=None):
-
+        with (
+            patch(
+                "tenant.services.tenant_service.database_config_service"
+            ) as mock_db_service,
+            patch(
+                "tenant.services.tenant_service.storage_config_service"
+            ) as mock_storage_service,
+            patch(
+                "tenant.services.tenant_service.cache_config_service"
+            ) as mock_cache_service,
+            patch(
+                "tenant.services.tenant_service.queue_config_service"
+            ) as mock_queue_service,
+            patch(
+                "tenant.services.tenant_service.pubsub_config_service"
+            ) as mock_pubsub_service,
+            patch(
+                "tenant.services.tenant_service.generate_tenant_key",
+                return_value="test-key",
+            ),
+            patch(
+                "tenant.services.tenant_service.encrypt", return_value="encrypted-key"
+            ),
+            patch(
+                "framework.tenant.sync_protocols.get_module_auto_assigner",
+                return_value=None,
+            ),
+        ):
             session.commit = AsyncMock()
             session.refresh = AsyncMock()
             session.flush = AsyncMock()
 
             mock_db_service.get_default_config = AsyncMock(return_value=mock_default_db)
-            mock_storage_service.get_default_config = AsyncMock(return_value=mock_default_storage)
-            mock_cache_service.get_default_config = AsyncMock(return_value=mock_default_cache)
-            mock_queue_service.get_default_config = AsyncMock(return_value=mock_default_queue)
-            mock_pubsub_service.get_default_config = AsyncMock(return_value=mock_default_pubsub)
+            mock_storage_service.get_default_config = AsyncMock(
+                return_value=mock_default_storage
+            )
+            mock_cache_service.get_default_config = AsyncMock(
+                return_value=mock_default_cache
+            )
+            mock_queue_service.get_default_config = AsyncMock(
+                return_value=mock_default_queue
+            )
+            mock_pubsub_service.get_default_config = AsyncMock(
+                return_value=mock_default_pubsub
+            )
 
             await TenantService.create(
                 session,
@@ -97,20 +145,41 @@ class TestTenantCreateAutoDefault:
     @pytest.mark.asyncio
     async def test_no_auto_assign_when_config_specified(self, session):
         """指定配置 ID 时不自动关联默认配置"""
-        with patch("tenant.services.tenant_service.database_config_service") as mock_db_service, \
-             patch("tenant.services.tenant_service.storage_config_service") as mock_storage_service, \
-             patch("tenant.services.tenant_service.cache_config_service") as mock_cache_service, \
-             patch("tenant.services.tenant_service.queue_config_service") as mock_queue_service, \
-             patch("tenant.services.tenant_service.pubsub_config_service") as mock_pubsub_service, \
-             patch("tenant.services.tenant_service.generate_tenant_key", return_value="test-key"), \
-             patch("tenant.services.tenant_service.encrypt", return_value="encrypted-key"), \
-             patch("framework.tenant.protocols.get_module_auto_assigner", return_value=None):
-
+        with (
+            patch(
+                "tenant.services.tenant_service.database_config_service"
+            ) as mock_db_service,
+            patch(
+                "tenant.services.tenant_service.storage_config_service"
+            ) as mock_storage_service,
+            patch(
+                "tenant.services.tenant_service.cache_config_service"
+            ) as mock_cache_service,
+            patch(
+                "tenant.services.tenant_service.queue_config_service"
+            ) as mock_queue_service,
+            patch(
+                "tenant.services.tenant_service.pubsub_config_service"
+            ) as mock_pubsub_service,
+            patch(
+                "tenant.services.tenant_service.generate_tenant_key",
+                return_value="test-key",
+            ),
+            patch(
+                "tenant.services.tenant_service.encrypt", return_value="encrypted-key"
+            ),
+            patch(
+                "framework.tenant.sync_protocols.get_module_auto_assigner",
+                return_value=None,
+            ),
+        ):
             session.commit = AsyncMock()
             session.refresh = AsyncMock()
             session.flush = AsyncMock()
 
-            mock_db_service.get_default_config = AsyncMock(return_value=MagicMock(id="default-db"))
+            mock_db_service.get_default_config = AsyncMock(
+                return_value=MagicMock(id="default-db")
+            )
             mock_storage_service.get_default_config = AsyncMock(return_value=None)
             mock_cache_service.get_default_config = AsyncMock(return_value=None)
             mock_queue_service.get_default_config = AsyncMock(return_value=None)
@@ -129,15 +198,34 @@ class TestTenantCreateAutoDefault:
     @pytest.mark.asyncio
     async def test_no_auto_assign_when_all_configs_specified(self, session):
         """指定所有配置 ID 时不查询任何默认配置"""
-        with patch("tenant.services.tenant_service.database_config_service") as mock_db_service, \
-             patch("tenant.services.tenant_service.storage_config_service") as mock_storage_service, \
-             patch("tenant.services.tenant_service.cache_config_service") as mock_cache_service, \
-             patch("tenant.services.tenant_service.queue_config_service") as mock_queue_service, \
-             patch("tenant.services.tenant_service.pubsub_config_service") as mock_pubsub_service, \
-             patch("tenant.services.tenant_service.generate_tenant_key", return_value="test-key"), \
-             patch("tenant.services.tenant_service.encrypt", return_value="encrypted-key"), \
-             patch("framework.tenant.protocols.get_module_auto_assigner", return_value=None):
-
+        with (
+            patch(
+                "tenant.services.tenant_service.database_config_service"
+            ) as mock_db_service,
+            patch(
+                "tenant.services.tenant_service.storage_config_service"
+            ) as mock_storage_service,
+            patch(
+                "tenant.services.tenant_service.cache_config_service"
+            ) as mock_cache_service,
+            patch(
+                "tenant.services.tenant_service.queue_config_service"
+            ) as mock_queue_service,
+            patch(
+                "tenant.services.tenant_service.pubsub_config_service"
+            ) as mock_pubsub_service,
+            patch(
+                "tenant.services.tenant_service.generate_tenant_key",
+                return_value="test-key",
+            ),
+            patch(
+                "tenant.services.tenant_service.encrypt", return_value="encrypted-key"
+            ),
+            patch(
+                "framework.tenant.sync_protocols.get_module_auto_assigner",
+                return_value=None,
+            ),
+        ):
             session.commit = AsyncMock()
             session.refresh = AsyncMock()
             session.flush = AsyncMock()
@@ -165,15 +253,34 @@ class TestTenantCreateAutoDefault:
         mock_default_db = MagicMock()
         mock_default_db.id = "default-db-id"
 
-        with patch("tenant.services.tenant_service.database_config_service") as mock_db_service, \
-             patch("tenant.services.tenant_service.storage_config_service") as mock_storage_service, \
-             patch("tenant.services.tenant_service.cache_config_service") as mock_cache_service, \
-             patch("tenant.services.tenant_service.queue_config_service") as mock_queue_service, \
-             patch("tenant.services.tenant_service.pubsub_config_service") as mock_pubsub_service, \
-             patch("tenant.services.tenant_service.generate_tenant_key", return_value="test-key"), \
-             patch("tenant.services.tenant_service.encrypt", return_value="encrypted-key"), \
-             patch("framework.tenant.protocols.get_module_auto_assigner", return_value=None):
-
+        with (
+            patch(
+                "tenant.services.tenant_service.database_config_service"
+            ) as mock_db_service,
+            patch(
+                "tenant.services.tenant_service.storage_config_service"
+            ) as mock_storage_service,
+            patch(
+                "tenant.services.tenant_service.cache_config_service"
+            ) as mock_cache_service,
+            patch(
+                "tenant.services.tenant_service.queue_config_service"
+            ) as mock_queue_service,
+            patch(
+                "tenant.services.tenant_service.pubsub_config_service"
+            ) as mock_pubsub_service,
+            patch(
+                "tenant.services.tenant_service.generate_tenant_key",
+                return_value="test-key",
+            ),
+            patch(
+                "tenant.services.tenant_service.encrypt", return_value="encrypted-key"
+            ),
+            patch(
+                "framework.tenant.sync_protocols.get_module_auto_assigner",
+                return_value=None,
+            ),
+        ):
             session.commit = AsyncMock()
             session.refresh = AsyncMock()
             session.flush = AsyncMock()
@@ -197,15 +304,34 @@ class TestTenantCreateAutoDefault:
     @pytest.mark.asyncio
     async def test_tenant_created_without_default_when_none_exists(self, session):
         """没有默认配置时租户创建不关联配置"""
-        with patch("tenant.services.tenant_service.database_config_service") as mock_db_service, \
-             patch("tenant.services.tenant_service.storage_config_service") as mock_storage_service, \
-             patch("tenant.services.tenant_service.cache_config_service") as mock_cache_service, \
-             patch("tenant.services.tenant_service.queue_config_service") as mock_queue_service, \
-             patch("tenant.services.tenant_service.pubsub_config_service") as mock_pubsub_service, \
-             patch("tenant.services.tenant_service.generate_tenant_key", return_value="test-key"), \
-             patch("tenant.services.tenant_service.encrypt", return_value="encrypted-key"), \
-             patch("framework.tenant.protocols.get_module_auto_assigner", return_value=None):
-
+        with (
+            patch(
+                "tenant.services.tenant_service.database_config_service"
+            ) as mock_db_service,
+            patch(
+                "tenant.services.tenant_service.storage_config_service"
+            ) as mock_storage_service,
+            patch(
+                "tenant.services.tenant_service.cache_config_service"
+            ) as mock_cache_service,
+            patch(
+                "tenant.services.tenant_service.queue_config_service"
+            ) as mock_queue_service,
+            patch(
+                "tenant.services.tenant_service.pubsub_config_service"
+            ) as mock_pubsub_service,
+            patch(
+                "tenant.services.tenant_service.generate_tenant_key",
+                return_value="test-key",
+            ),
+            patch(
+                "tenant.services.tenant_service.encrypt", return_value="encrypted-key"
+            ),
+            patch(
+                "framework.tenant.sync_protocols.get_module_auto_assigner",
+                return_value=None,
+            ),
+        ):
             session.commit = AsyncMock()
             session.refresh = AsyncMock()
             session.flush = AsyncMock()

@@ -12,7 +12,7 @@ from framework.storage.tenant_storage_manager import (
     init_storage_manager,
 )
 from framework.tenant.enums import StorageType
-from framework.tenant.protocols import TenantStorageConfig
+from framework.tenant.tenant_protocols import TenantStorageConfig
 
 
 class TestTenantStorageManager:
@@ -89,7 +89,10 @@ class TestTenantStorageManager:
         mock_storage = MagicMock()
         manager = TenantStorageManager(mock_storage, "default-bucket")
 
-        with patch("framework.storage.tenant_storage_manager.get_tenant_id", return_value="tenant-001"):
+        with patch(
+            "framework.storage.tenant_storage_manager.get_tenant_id",
+            return_value="tenant-001",
+        ):
             path = manager._build_path("avatars/user.jpg", "tenant-001", None)
 
         assert path == "tenant-001/avatars/user.jpg"
@@ -118,7 +121,10 @@ class TestTenantStorageManagerPhysicalIsolation:
         manager = TenantStorageManager(mock_storage, "default-bucket")
 
         assert manager._is_physical_isolation(None) is False
-        assert manager._is_physical_isolation(TenantStorageConfig(bucket="bucket")) is False
+        assert (
+            manager._is_physical_isolation(TenantStorageConfig(bucket="bucket"))
+            is False
+        )
         assert manager._is_physical_isolation(TenantStorageConfig(endpoint="")) is False
 
     def test_get_storage_default(self):
@@ -152,6 +158,7 @@ class TestTenantStorageManagerPhysicalIsolation:
 
         # 设置一个过去的时间（10秒前）
         from datetime import datetime, timedelta
+
         manager._instance_storages["https://minio-a.example.com"] = MagicMock()
         manager._instance_access_times["https://minio-a.example.com"] = (
             datetime.now() - timedelta(seconds=10)

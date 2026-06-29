@@ -17,7 +17,7 @@ import pytest_asyncio
 from framework.cache.tenant_cache_manager import TenantCacheManager
 from framework.queue.tenant_queue_manager import TenantQueueManager, init_queue_manager
 from framework.tenant.enums import QueueType
-from framework.tenant.protocols import TenantQueueConfig
+from framework.tenant.tenant_protocols import TenantQueueConfig
 
 pytestmark = pytest.mark.integration
 
@@ -99,7 +99,9 @@ class TestTenantQueuePhysicalIsolation:
         assert queue_manager._is_physical_isolation(config) is True
 
         # 构建队列名
-        queue_name = queue_manager._build_queue_name("notifications", unique_tenant_id, config)
+        queue_name = queue_manager._build_queue_name(
+            "notifications", unique_tenant_id, config
+        )
 
         # 物理隔离场景，队列名不添加租户前缀
         assert queue_name == "queue:notifications"
@@ -114,7 +116,9 @@ class TestTenantQueuePhysicalIsolation:
         THEN 队列名添加 {tenant_id}:queue: 前缀
         """
         # 构建队列名（无物理隔离配置）
-        queue_name = queue_manager._build_queue_name("notifications", unique_tenant_id, None)
+        queue_name = queue_manager._build_queue_name(
+            "notifications", unique_tenant_id, None
+        )
 
         # 逻辑隔离场景，队列名添加租户前缀
         expected_prefix = f"{unique_tenant_id}:queue:"
@@ -177,7 +181,9 @@ class TestTenantQueueOperations:
         )
 
         # 构建队列名
-        actual_queue = queue_manager._build_queue_name(queue_name, unique_tenant_id, config)
+        actual_queue = queue_manager._build_queue_name(
+            queue_name, unique_tenant_id, config
+        )
 
         # 验证队列名格式
         assert actual_queue == f"queue:{queue_name}"
@@ -211,7 +217,9 @@ class TestTenantQueueOperations:
         group_name = f"test_group_{uuid.uuid4().hex[:8]}"
 
         try:
-            await redis_client.xgroup_create(actual_queue, group_name, id="0", mkstream=True)
+            await redis_client.xgroup_create(
+                actual_queue, group_name, id="0", mkstream=True
+            )
         except Exception:
             # 组可能已存在
             pass
@@ -267,7 +275,9 @@ class TestTenantQueueOperations:
         group_name = f"test_group_physical_{uuid.uuid4().hex[:8]}"
 
         try:
-            await redis_client.xgroup_create(actual_queue, group_name, id="0", mkstream=True)
+            await redis_client.xgroup_create(
+                actual_queue, group_name, id="0", mkstream=True
+            )
         except Exception:
             pass
 
@@ -316,7 +326,9 @@ class TestTenantQueueOperations:
         group_name = f"test_group_ack_{uuid.uuid4().hex[:8]}"
 
         try:
-            await redis_client.xgroup_create(actual_queue, group_name, id="0", mkstream=True)
+            await redis_client.xgroup_create(
+                actual_queue, group_name, id="0", mkstream=True
+            )
         except Exception:
             pass
 
@@ -378,7 +390,9 @@ class TestTenantQueueOperations:
         group_name = f"test_group_ack_phy_{uuid.uuid4().hex[:8]}"
 
         try:
-            await redis_client.xgroup_create(actual_queue, group_name, id="0", mkstream=True)
+            await redis_client.xgroup_create(
+                actual_queue, group_name, id="0", mkstream=True
+            )
         except Exception:
             pass
 
@@ -422,7 +436,9 @@ class TestTenantQueueNameBuilding:
     """队列名构建规则测试"""
 
     @pytest.mark.asyncio
-    async def test_queue_name_with_physical_isolation(self, queue_manager, unique_tenant_id):
+    async def test_queue_name_with_physical_isolation(
+        self, queue_manager, unique_tenant_id
+    ):
         """物理隔离场景下队列名构建"""
         config = TenantQueueConfig(host="queue.isolated.com", port=6379)
 
@@ -432,7 +448,9 @@ class TestTenantQueueNameBuilding:
     @pytest.mark.asyncio
     async def test_queue_name_with_skip_tenant(self, queue_manager, unique_tenant_id):
         """skip_tenant 场景下队列名构建"""
-        name = queue_manager._build_queue_name("orders", unique_tenant_id, None, skip_tenant=True)
+        name = queue_manager._build_queue_name(
+            "orders", unique_tenant_id, None, skip_tenant=True
+        )
         assert name == "queue:orders"
 
     @pytest.mark.asyncio
@@ -450,4 +468,5 @@ class TestTenantQueueGlobalManager:
         manager = init_queue_manager(cache_manager)
 
         from framework.queue.tenant_queue_manager import get_queue_manager
+
         assert get_queue_manager() is manager

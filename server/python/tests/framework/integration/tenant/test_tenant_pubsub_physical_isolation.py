@@ -21,7 +21,7 @@ from framework.pubsub.tenant_pubsub_manager import (
     init_pubsub_manager,
 )
 from framework.tenant.enums import PubSubType
-from framework.tenant.protocols import TenantPubSubConfig
+from framework.tenant.tenant_protocols import TenantPubSubConfig
 
 pytestmark = pytest.mark.integration
 
@@ -87,7 +87,9 @@ class TestTenantPubSubPhysicalIsolation:
         assert pubsub_manager._is_physical_isolation(config) is True
 
         # 构建频道名
-        channel_name = pubsub_manager._build_channel_name("events", unique_tenant_id, config)
+        channel_name = pubsub_manager._build_channel_name(
+            "events", unique_tenant_id, config
+        )
 
         # 物理隔离场景，频道名不添加租户前缀
         assert channel_name == "events"
@@ -102,7 +104,9 @@ class TestTenantPubSubPhysicalIsolation:
         THEN 频道名添加 {tenant_id}:channel: 前缀
         """
         # 构建频道名（无物理隔离配置）
-        channel_name = pubsub_manager._build_channel_name("events", unique_tenant_id, None)
+        channel_name = pubsub_manager._build_channel_name(
+            "events", unique_tenant_id, None
+        )
 
         # 逻辑隔离场景，频道名添加租户前缀
         expected_prefix = f"{unique_tenant_id}:channel:"
@@ -209,7 +213,10 @@ class TestTenantPubSubOperations:
 
         # 验证接收到消息
         if received and received.get("type") == "message":
-            assert received.get("data") == message.encode() or received.get("data") == message
+            assert (
+                received.get("data") == message.encode()
+                or received.get("data") == message
+            )
 
         # 取消订阅
         await pubsub_manager.unsubscribe(pubsub, unique_channel)
@@ -290,7 +297,9 @@ class TestTenantPubSubChannelBuilding:
     """频道名构建规则测试"""
 
     @pytest.mark.asyncio
-    async def test_channel_name_with_physical_isolation(self, pubsub_manager, unique_tenant_id):
+    async def test_channel_name_with_physical_isolation(
+        self, pubsub_manager, unique_tenant_id
+    ):
         """物理隔离场景下频道名构建"""
         config = TenantPubSubConfig(host="pubsub.isolated.com", port=6379)
 
@@ -298,9 +307,13 @@ class TestTenantPubSubChannelBuilding:
         assert name == "alerts"
 
     @pytest.mark.asyncio
-    async def test_channel_name_with_skip_tenant(self, pubsub_manager, unique_tenant_id):
+    async def test_channel_name_with_skip_tenant(
+        self, pubsub_manager, unique_tenant_id
+    ):
         """skip_tenant 场景下频道名构建"""
-        name = pubsub_manager._build_channel_name("alerts", unique_tenant_id, None, skip_tenant=True)
+        name = pubsub_manager._build_channel_name(
+            "alerts", unique_tenant_id, None, skip_tenant=True
+        )
         assert name == "alerts"
 
     @pytest.mark.asyncio
@@ -369,9 +382,7 @@ class TestTenantPubSubMessageFlow:
         await pubsub_manager.unsubscribe(pubsub, unique_channel)
 
     @pytest.mark.asyncio
-    async def test_different_tenant_isolation(
-        self, pubsub_manager, unique_channel
-    ):
+    async def test_different_tenant_isolation(self, pubsub_manager, unique_channel):
         """
         场景: 不同租户的频道隔离
 
@@ -399,4 +410,5 @@ class TestTenantPubSubGlobalManager:
         manager = init_pubsub_manager(cache_manager)
 
         from framework.pubsub.tenant_pubsub_manager import get_pubsub_manager
+
         assert get_pubsub_manager() is manager

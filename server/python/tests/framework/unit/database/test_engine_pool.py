@@ -2,13 +2,12 @@
 DatabaseEnginePool 单元测试
 """
 
-
 from framework.database.core.engine_pool import (
     DatabaseEnginePool,
     get_engine_pool,
 )
 from framework.tenant.enums import DatabaseType
-from framework.tenant.protocols import TenantDatabaseConfig
+from framework.tenant.tenant_protocols import TenantDatabaseConfig
 
 
 class TestDatabaseEnginePool:

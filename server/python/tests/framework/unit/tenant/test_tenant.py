@@ -13,7 +13,7 @@ from framework.tenant.context import (
 )
 from framework.tenant.enums import DatabaseType, QueueType, StorageType
 from framework.tenant.middleware import TenantMiddleware
-from framework.tenant.protocols import (
+from framework.tenant.tenant_protocols import (
     TenantDatabaseConfig,
     TenantQueueConfig,
     TenantStorageConfig,
@@ -221,7 +221,8 @@ class TestTenantProviderRegistration:
 
     def setup_method(self):
         """每个测试前重置 provider"""
-        import framework.tenant.protocols as proto
+        import framework.tenant.tenant_protocols as proto
+
         proto._tenant_provider = None
 
     def test_register_and_get(self):
@@ -232,9 +233,14 @@ class TestTenantProviderRegistration:
         """
 
         class MockProvider:
-            async def get_tenant(self, tenant_id): return None
-            async def validate_access(self, user_id, tenant_id): return False
-            async def get_user_tenants(self, user_id): return []
+            async def get_tenant(self, tenant_id):
+                return None
+
+            async def validate_access(self, user_id, tenant_id):
+                return False
+
+            async def get_user_tenants(self, user_id):
+                return []
 
         provider = MockProvider()
         register_tenant_provider(provider)

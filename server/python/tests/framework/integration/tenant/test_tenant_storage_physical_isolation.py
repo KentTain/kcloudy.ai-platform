@@ -17,7 +17,7 @@ from framework.storage.tenant_storage_manager import (
     init_storage_manager,
 )
 from framework.tenant.enums import StorageType
-from framework.tenant.protocols import TenantStorageConfig
+from framework.tenant.tenant_protocols import TenantStorageConfig
 
 pytestmark = pytest.mark.integration
 
@@ -61,7 +61,9 @@ class TestTenantStoragePhysicalIsolation:
     """物理隔离场景测试"""
 
     @pytest.mark.asyncio
-    async def test_connect_independent_storage_service(self, storage_manager, unique_tenant_id):
+    async def test_connect_independent_storage_service(
+        self, storage_manager, unique_tenant_id
+    ):
         """
         场景: 连接独立存储服务
 
@@ -85,7 +87,9 @@ class TestTenantStoragePhysicalIsolation:
         assert config.access_key == "tenant-a-key"
 
     @pytest.mark.asyncio
-    async def test_physical_isolation_path_no_prefix(self, storage_manager, unique_tenant_id):
+    async def test_physical_isolation_path_no_prefix(
+        self, storage_manager, unique_tenant_id
+    ):
         """
         场景: 物理隔离路径
 
@@ -111,7 +115,9 @@ class TestTenantStoragePhysicalIsolation:
         assert unique_tenant_id not in actual_path
 
     @pytest.mark.asyncio
-    async def test_logical_isolation_path_with_prefix(self, storage_manager, unique_tenant_id, test_bucket):
+    async def test_logical_isolation_path_with_prefix(
+        self, storage_manager, unique_tenant_id, test_bucket
+    ):
         """
         场景: 逻辑隔离路径
 
@@ -149,7 +155,9 @@ class TestTenantStoragePhysicalIsolation:
         await storage_manager.delete(test_path, tenant_id=unique_tenant_id)
 
     @pytest.mark.asyncio
-    async def test_independent_bucket_no_prefix(self, storage_manager, unique_tenant_id):
+    async def test_independent_bucket_no_prefix(
+        self, storage_manager, unique_tenant_id
+    ):
         """
         场景: 独立存储桶
 
@@ -220,7 +228,9 @@ class TestTenantStorageOperations:
         await storage_manager.delete(test_path, tenant_id=unique_tenant_id)
 
     @pytest.mark.asyncio
-    async def test_upload_with_logical_isolation(self, storage_manager, unique_tenant_id, test_bucket):
+    async def test_upload_with_logical_isolation(
+        self, storage_manager, unique_tenant_id, test_bucket
+    ):
         """逻辑隔离下的上传操作"""
         test_path = f"logical_test_{uuid.uuid4().hex[:8]}.txt"
         test_content = b"Logical isolation test content"
@@ -248,13 +258,12 @@ class TestTenantStorageOperations:
         await storage_manager.delete(test_path, tenant_id=unique_tenant_id)
 
     @pytest.mark.asyncio
-    async def test_list_objects_with_tenant_prefix(self, storage_manager, unique_tenant_id, test_bucket):
+    async def test_list_objects_with_tenant_prefix(
+        self, storage_manager, unique_tenant_id, test_bucket
+    ):
         """列出对象时自动添加租户前缀"""
         # 上传多个文件
-        test_files = [
-            f"list_test_{i}_{uuid.uuid4().hex[:8]}.txt"
-            for i in range(3)
-        ]
+        test_files = [f"list_test_{i}_{uuid.uuid4().hex[:8]}.txt" for i in range(3)]
 
         for file_name in test_files:
             await storage_manager.upload(
@@ -333,9 +342,14 @@ class TestTenantStorageInstanceManagement:
         """释放空闲实例客户端"""
         # 模拟实例客户端
         from datetime import datetime, timedelta
-        storage_manager._instance_storages["https://test.example.com"] = storage_manager._default_storage
+
+        storage_manager._instance_storages["https://test.example.com"] = (
+            storage_manager._default_storage
+        )
         # 将访问时间设置为过去，确保 release_idle_instances 能释放
-        storage_manager._instance_access_times["https://test.example.com"] = datetime.now() - timedelta(seconds=10)
+        storage_manager._instance_access_times["https://test.example.com"] = (
+            datetime.now() - timedelta(seconds=10)
+        )
 
         # 释放空闲实例（超时=0）
         released = await storage_manager.release_idle_instances(timeout=0)
@@ -346,7 +360,9 @@ class TestTenantStorageInstanceManagement:
     @pytest.mark.asyncio
     async def test_close_clears_all_instances(self, storage_manager):
         """关闭时清理所有实例"""
-        storage_manager._instance_storages["https://test.example.com"] = storage_manager._default_storage
+        storage_manager._instance_storages["https://test.example.com"] = (
+            storage_manager._default_storage
+        )
 
         await storage_manager.close()
 
@@ -361,4 +377,5 @@ class TestTenantStorageGlobalManager:
         manager = init_storage_manager(minio_client, minio_test_bucket)
 
         from framework.storage.tenant_storage_manager import get_storage_manager
+
         assert get_storage_manager() is manager

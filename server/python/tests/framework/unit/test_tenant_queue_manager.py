@@ -12,7 +12,7 @@ from framework.queue.tenant_queue_manager import (
     init_queue_manager,
 )
 from framework.tenant.enums import QueueType
-from framework.tenant.protocols import TenantQueueConfig
+from framework.tenant.tenant_protocols import TenantQueueConfig
 
 
 class TestTenantQueueManager:
@@ -46,7 +46,10 @@ class TestTenantQueueManager:
         mock_cache = MagicMock()
         manager = TenantQueueManager(mock_cache)
 
-        with patch("framework.queue.tenant_queue_manager.get_tenant_id", return_value="tenant-001"):
+        with patch(
+            "framework.queue.tenant_queue_manager.get_tenant_id",
+            return_value="tenant-001",
+        ):
             name = manager._build_queue_name("notifications", "tenant-001", None)
 
         assert name == "tenant-001:queue:notifications"
@@ -67,7 +70,9 @@ class TestTenantQueueManager:
         mock_cache = MagicMock()
         manager = TenantQueueManager(mock_cache)
 
-        name = manager._build_queue_name("notifications", "tenant-001", None, skip_tenant=True)
+        name = manager._build_queue_name(
+            "notifications", "tenant-001", None, skip_tenant=True
+        )
 
         assert name == "queue:notifications"
 
@@ -78,8 +83,13 @@ class TestTenantQueueManager:
         mock_cache.xadd = AsyncMock(return_value="msg-001")
         manager = TenantQueueManager(mock_cache)
 
-        with patch("framework.queue.tenant_queue_manager.get_tenant_id", return_value="tenant-001"):
-            result = await manager.xadd("notifications", {"text": "hello"}, tenant_id="tenant-001")
+        with patch(
+            "framework.queue.tenant_queue_manager.get_tenant_id",
+            return_value="tenant-001",
+        ):
+            result = await manager.xadd(
+                "notifications", {"text": "hello"}, tenant_id="tenant-001"
+            )
 
         assert result == "msg-001"
         mock_cache.xadd.assert_awaited_once()
@@ -146,6 +156,7 @@ class TestQueueManagerGlobal:
 
     def test_get_uninitialized_raises(self):
         import framework.queue.tenant_queue_manager as mod
+
         mod._queue_manager = None
 
         with pytest.raises(RuntimeError, match="未初始化"):
