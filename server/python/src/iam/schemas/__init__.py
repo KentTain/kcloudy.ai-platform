@@ -32,6 +32,21 @@ from iam.schemas.organization import (
     OrganizationUserResponse,
     UserOrganizationRequest,
 )
+from iam.schemas.org_user import (
+    OrgSearchQuery,
+    OrgUserTreeResponse,
+    OrgUserTreeVo,
+    OrgUsersQuery,
+    OrganizationBatchBody,
+    OrganizationBatchResponse,
+    OrganizationPaginatedListResponse,
+    OrganizationSimpleVo,
+    UserBatchBody,
+    UserBatchResponse,
+    UserSimplePaginatedListResponse,
+    UserSearchQuery,
+    UserSimpleVo,
+)
 from iam.schemas.login import (
     LoginRequest,
     LoginResponse,
@@ -142,6 +157,20 @@ __all__ = [
     "OrganizationUserBatchRequest",
     "OrganizationDetailResponse",
     "MemberInfo",
+    # 组织人员（人员选择组件）
+    "UserSimpleVo",
+    "OrgUserTreeVo",
+    "OrganizationSimpleVo",
+    "UserSearchQuery",
+    "OrgSearchQuery",
+    "OrgUsersQuery",
+    "UserBatchBody",
+    "OrganizationBatchBody",
+    "UserSimplePaginatedListResponse",
+    "OrganizationPaginatedListResponse",
+    "OrgUserTreeResponse",
+    "UserBatchResponse",
+    "OrganizationBatchResponse",
     # OAuth
     "OAuthAuthorizeResponse",
     "OAuthCallbackRequest",
