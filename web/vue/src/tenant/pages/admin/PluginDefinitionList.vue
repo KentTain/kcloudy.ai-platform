@@ -370,8 +370,8 @@ const handleDelete = async (row: PluginDefinition) => {
     </div>
 
     <!-- 搜索筛选区 + 数据表格区 -->
-    <Card class="flex min-h-0 flex-1 flex-col gap-0 overflow-hidden py-0">
-      <div class="border-b px-5 py-4">
+    <div class="ring-foreground/10 bg-card text-card-foreground rounded-xl text-sm ring-1 shadow-sm flex min-h-0 flex-1 flex-col overflow-hidden">
+      <div class="shrink-0 border-b px-5 py-4">
         <div class="flex flex-wrap items-center justify-between gap-3">
           <div>
             <div class="font-medium">插件列表</div>
@@ -417,10 +417,10 @@ const handleDelete = async (row: PluginDefinition) => {
         </div>
       </div>
 
-      <div class="min-h-0 flex-1 overflow-hidden px-5 py-4">
+      <div class="flex min-h-0 flex-1 flex-col px-5 pt-4">
         <DataTable data-testid="plugin-table" :data-table="dataTable" :fixed-layout="true" />
       </div>
-    </Card>
+    </div>
   </div>
 </template>
 
