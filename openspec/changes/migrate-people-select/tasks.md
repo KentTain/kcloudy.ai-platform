@@ -25,7 +25,7 @@
 - [x] 3.6 实现 `GET /iam/console/v1/users/{user_id}/avatar` 端点
 - [x] 3.7 实现 `GET /iam/console/v1/organizations/search` 端点
 - [x] 3.8 实现 `POST /iam/console/v1/organizations/batch` 端点
-- [x] 3.9 在 `src/iam/controllers/console/__init__.py` 中注册路由
+- [x] 3.9 在 `src/iam/controllers/console/module.py` 中注册路由
 
 ## 4. 前端类型定义
 
