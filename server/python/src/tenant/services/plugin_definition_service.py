@@ -362,6 +362,129 @@ class PluginDefinitionService:
             updated_at=definition.updated_at,
         )
 
+    @staticmethod
+    async def preview_scan_directory(
+        session: AsyncSession,
+        directory: str,
+        recursive: bool = False,
+    ) -> list[dict[str, Any]]:
+        """
+        预览扫描目录中的插件
+
+        Args:
+            session: 数据库会话
+            directory: 服务器目录路径
+            recursive: 是否递归扫描子目录
+
+        Returns:
+            list[dict]: 预览结果列表
+        """
+        from pathlib import Path
+
+        from tenant.services.plugin_package_service import plugin_package_service
+
+        dir_path = Path(directory)
+
+        if not dir_path.exists():
+            raise ValueError(f"目录不存在: {directory}")
+
+        if not dir_path.is_dir():
+            raise ValueError(f"路径不是目录: {directory}")
+
+        # 收集所有 .zip 文件
+        if recursive:
+            zip_files = list(dir_path.rglob("*.zip"))
+        else:
+            zip_files = list(dir_path.glob("*.zip"))
+
+        if not zip_files:
+            return []
+
+        results: list[dict[str, Any]] = []
+
+        # 查询已存在的插件ID
+        existing_stmt = select(TenantPluginDefinition.plugin_id)
+        existing_result = await session.execute(existing_stmt)
+        existing_ids = {row[0] for row in existing_result.fetchall()}
+
+        for zip_file in zip_files:
+            try:
+                # 解析插件包
+                package_info = plugin_package_service.parse_package_from_path(zip_file)
+
+                # 从 declaration 中获取名称和描述
+                manifest = package_info.declaration.get("_manifest", {})
+                name = manifest.get("name", package_info.name)
+                description = manifest.get("description", "")
+
+                results.append({
+                    "plugin_id": package_info.plugin_id,
+                    "version": package_info.version,
+                    "name": name,
+                    "description": description,
+                    "exists": package_info.plugin_id in existing_ids,
+                    "status": "ready",
+                    "error_message": None,
+                })
+            except Exception as e:
+                # 解析失败
+                results.append({
+                    "plugin_id": zip_file.name,
+                    "version": "unknown",
+                    "name": zip_file.stem,
+                    "description": "",
+                    "exists": False,
+                    "status": "invalid",
+                    "error_message": str(e),
+                })
+
+        return results
+
+    @staticmethod
+    async def preview_parse_package(
+        session: AsyncSession,
+        package_data: bytes,
+    ) -> dict[str, Any]:
+        """
+        预览解析插件包
+
+        Args:
+            session: 数据库会话
+            package_data: 插件包二进制数据
+
+        Returns:
+            dict: 解析结果
+
+        Raises:
+            ValueError: 插件包解析失败
+        """
+        from tenant.services.plugin_package_service import plugin_package_service
+
+        # 解析插件包
+        package_info = plugin_package_service.parse_package_from_bytes(package_data)
+
+        # 检查是否已存在
+        existing_stmt = select(TenantPluginDefinition).where(
+            TenantPluginDefinition.plugin_id == package_info.plugin_id
+        )
+        existing_result = await session.execute(existing_stmt)
+        existing = existing_result.scalar_one_or_none()
+
+        # 从 declaration 中获取名称和描述
+        manifest = package_info.declaration.get("_manifest", {})
+        name = manifest.get("name", package_info.name)
+        description = manifest.get("description", "")
+
+        return {
+            "plugin_id": package_info.plugin_id,
+            "version": package_info.version,
+            "name": name,
+            "description": description,
+            "manifest_type": package_info.manifest_type,
+            "declaration": package_info.declaration,
+            "exists": existing is not None,
+        }
+
 
 # 单例实例
 plugin_definition_service = PluginDefinitionService()
