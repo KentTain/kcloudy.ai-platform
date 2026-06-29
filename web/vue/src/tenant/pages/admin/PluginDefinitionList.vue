@@ -24,6 +24,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { confirmAction, notifyError, notifySuccess } from "@/framework/utils/feedback";
 import {
   deletePluginDefinition,
@@ -76,6 +82,13 @@ function formatDate(dateStr?: string): string {
   return new Date(dateStr).toLocaleString();
 }
 
+// 截断字符串
+function truncateText(text: string, maxLength: number = 20): string {
+  if (!text) return "";
+  if (text.length <= maxLength) return text;
+  return text.slice(0, maxLength) + "...";
+}
+
 // 列定义
 const columns: ColumnDef<PluginDefinition>[] = [
   {
@@ -84,9 +97,27 @@ const columns: ColumnDef<PluginDefinition>[] = [
     size: 250,
     cell: ({ row }) => {
       const plugin = row.original;
+      const truncatedId = truncateText(plugin.plugin_unique_identifier, 20);
+      const isTruncated = plugin.plugin_unique_identifier.length > 20;
+
       return h("div", { class: "space-y-1" }, [
         h("div", { class: "font-medium" }, plugin.plugin_id),
-        h("div", { class: "text-muted-foreground text-xs" }, plugin.plugin_unique_identifier),
+        isTruncated
+          ? h(
+              TooltipProvider,
+              {},
+              () => [
+                h(Tooltip, {}, () => [
+                  h(TooltipTrigger, { class: "cursor-default" }, () =>
+                    h("span", { class: "text-muted-foreground text-xs font-mono" }, truncatedId)
+                  ),
+                  h(TooltipContent, { class: "max-w-md" }, () =>
+                    h("div", { class: "text-xs font-mono break-all" }, plugin.plugin_unique_identifier)
+                  ),
+                ]),
+              ]
+            )
+          : h("div", { class: "text-muted-foreground text-xs font-mono" }, truncatedId),
       ]);
     },
   },
