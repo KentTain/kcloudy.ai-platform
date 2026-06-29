@@ -36,4 +36,5 @@ class Role(BaseModel):
         Index("ix_roles_code", "code"),
         Index("ix_roles_ref_id", "ref_id"),
         UniqueConstraint("tenant_id", "code", name="uq_roles_tenant_code"),
+        {"comment": "角色表"},
     )

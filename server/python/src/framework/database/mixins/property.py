@@ -9,6 +9,7 @@ from enum import Enum
 from sqlalchemy import Boolean, Integer, String, Text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
+from framework.database.types.enum import EnumType
 
 
 class AttributeDataType(str, Enum):
@@ -100,7 +101,7 @@ class PropertyAttributeMixin:
     __abstract__ = True
 
     data_type: Mapped[str] = mapped_column(
-        String(20),
+        EnumType(enum_class=AttributeDataType, length=20),
         nullable=False,
         default=AttributeDataType.STRING.value,
         comment="属性数据类型"

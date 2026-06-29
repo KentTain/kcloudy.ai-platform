@@ -8,6 +8,8 @@ from sqlalchemy.orm import Mapped, mapped_column
 from framework.database.mixins.tenant import TenantMixin
 from framework.database.mixins.tree import TreeNodeMixin
 from iam.models import BaseModel
+from iam.models.enums import OrganizationStatus
+from framework.database.types.enum import EnumType
 
 
 class Organization(BaseModel, TreeNodeMixin, TenantMixin):
@@ -38,13 +40,14 @@ class Organization(BaseModel, TreeNodeMixin, TenantMixin):
         String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True, comment="组织负责人ID"
     )
     status: Mapped[str] = mapped_column(
-        String(20), nullable=False, default="active", comment="状态"
+        EnumType(enum_class=OrganizationStatus, length=20), nullable=False, default=OrganizationStatus.ACTIVE, comment="状态"
     )
 
     __table_args__ = (
         Index("ix_organizations_tenant_id", "tenant_id"),
         Index("ix_organizations_parent_id", "parent_id"),
         Index("ix_organizations_leader_id", "leader_id"),
+        {"comment": "组织表"},
     )
 
     @classmethod
@@ -72,4 +75,5 @@ class UserOrganization(BaseModel, TenantMixin):
         Index("ix_user_organizations_tenant_id", "tenant_id"),
         Index("ix_user_organizations_user_id", "user_id"),
         Index("ix_user_organizations_organization_id", "organization_id"),
+        {"comment": "用户组织关联表"},
     )

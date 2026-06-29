@@ -64,4 +64,5 @@ class SystemSetting(BaseModel, TenantMixin, PropertyMixin, ActiveRecordMixin):
     __table_args__ = (
         Index("uq_system_settings_tenant_code", "tenant_id", "code", unique=True),
         Index("ix_system_settings_tenant_id", "tenant_id"),
+        {"comment": "系统设置表"},
     )

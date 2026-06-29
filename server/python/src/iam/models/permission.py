@@ -43,6 +43,7 @@ class Permission(BaseModel):
         Index("ix_permissions_resource", "resource"),
         Index("ix_permissions_ref_id", "ref_id"),
         UniqueConstraint("tenant_id", "code", name="uq_permissions_tenant_code"),
+        {"comment": "权限表"},
     )
 
 
@@ -69,6 +70,7 @@ class UserRole(BaseModel, TenantMixin):
         Index("ix_user_roles_user_id", "user_id"),
         Index("ix_user_roles_role_id", "role_id"),
         UniqueConstraint("tenant_id", "user_id", "role_id", name="uq_user_roles"),
+        {"comment": "用户角色关联表"},
     )
 
 
@@ -97,4 +99,5 @@ class RolePermission(BaseModel, TenantMixin):
         UniqueConstraint(
             "tenant_id", "role_id", "permission_id", name="uq_role_permissions"
         ),
+        {"comment": "角色权限关联表"},
     )

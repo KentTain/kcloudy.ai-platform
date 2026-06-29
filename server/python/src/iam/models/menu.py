@@ -62,6 +62,7 @@ class Menu(BaseModel, TreeNodeMixin):
         Index("ix_menus_code", "code"),
         Index("ix_menus_ref_id", "ref_id"),
         UniqueConstraint("tenant_id", "code", name="uq_menus_tenant_code"),
+        {"comment": "菜单表"},
     )
 
     @classmethod
@@ -94,4 +95,5 @@ class MenuPermission(BaseModel):
         UniqueConstraint(
             "menu_id", "permission_id", name="uq_menu_permissions_menu_permission"
         ),
+        {"comment": "菜单权限关联表"},
     )

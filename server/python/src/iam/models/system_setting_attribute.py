@@ -47,4 +47,5 @@ class SystemSettingAttribute(BaseModel, TenantMixin, PropertyAttributeMixin):
         Index("uq_system_setting_attributes_setting_name", "setting_id", "name", unique=True),
         Index("ix_system_setting_attributes_setting_id", "setting_id"),
         Index("ix_system_setting_attributes_tenant_id", "tenant_id"),
+        {"comment": "系统设置属性表"},
     )

@@ -76,6 +76,21 @@ class TenantStatus(str, Enum):
     INACTIVE = "inactive"
 
 
+class UserTenantRole(str, EnumBase):
+    """用户租户角色枚举"""
+
+    ADMIN = "admin"
+    MEMBER = "member"
+
+    @property
+    def label(self) -> str:
+        labels = {
+            UserTenantRole.ADMIN: "管理员",
+            UserTenantRole.MEMBER: "成员",
+        }
+        return labels.get(self, self.name)
+
+
 class AuditLogBusinessType(EnumBase):
     """审计日志业务类型枚举"""
 

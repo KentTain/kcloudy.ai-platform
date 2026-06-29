@@ -60,6 +60,9 @@ class IAMModule:
         from iam.controllers.console.oauth_controller import (
             router as console_oauth_router,
         )
+        from iam.controllers.console.org_user_controller import (
+            router as console_org_user_router,
+        )
         from iam.controllers.console.system_setting_controller import (
             router as console_system_setting_router,
         )
@@ -97,6 +100,7 @@ class IAMModule:
             # Console 层路由
             (console_auth_router, "/iam/console/v1", ["Console - Auth"]),
             (console_oauth_router, "/iam/console/v1", ["Console - OAuth"]),
+            (console_org_user_router, "/iam/console/v1", ["Console - OrgUser"]),
             (console_user_router, "/iam/console/v1", ["Console - User"]),
             (
                 console_system_setting_router,
