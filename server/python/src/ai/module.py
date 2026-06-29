@@ -52,12 +52,13 @@ class AIModule:
         return [
             # Admin API - 插件管理
             (admin_plugin_router, "/ai/admin/v1/plugins", ["Admin - Plugin"]),
-            # Console API - 插件列表和凭证管理
-            (console_plugin_router, "/ai/console/v1/plugins", ["Console - Plugin"]),
             # Console API - 插件安装管理（卸载、运行时管理、统计）
+            # 注意：必须放在 console_plugin_router 之前，避免通配符路由拦截
             (installations_router, "/ai/console/v1/plugins/installations", ["Console - Plugin Installations"]),
             # Console API - 批量运行时状态
             (runtime_states_router, "/ai/console/v1/plugins/runtime-states", ["Console - Runtime States"]),
+            # Console API - 插件列表和凭证管理
+            (console_plugin_router, "/ai/console/v1/plugins", ["Console - Plugin"]),
             # Inner API - 内部接口
             (inner_plugin_router, "/ai/inner/v1", ["Inner - Plugin"]),
             # Console API - LLM 对话接口

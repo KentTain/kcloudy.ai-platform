@@ -117,8 +117,12 @@ class TenantModule:
         return (setup_scheduler, cleanup_scheduler)
 
     def get_listener_setup(self) -> tuple | None:
-        """Tenant 模块无消息监听器"""
-        return None
+        """Tenant 模块消息监听器
+
+        处理插件安装/卸载失败事件，保障跨 Schema 数据一致性。
+        """
+        from tenant.listeners.setup import cleanup_listeners, setup_listeners
+        return (setup_listeners, cleanup_listeners)
 
     def get_module_definition(self) -> ModuleDefinition:
         """

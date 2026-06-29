@@ -18,7 +18,7 @@ import {
   uninstallPlugin,
   type PluginInfo,
 } from "@/ai/api/plugin";
-import { Play, Square, Trash2, RefreshCw, Search, Package } from "lucide-vue-next";
+import { Play, Square, Trash2, RefreshCw, Search, Package, Settings } from "lucide-vue-next";
 
 const router = useRouter();
 
@@ -125,11 +125,20 @@ const columns: ColumnDef<PluginInfo>[] = [
   {
     id: "actions",
     header: "操作",
-    size: 200,
+    size: 280,
     cell: ({ row }) => {
       const plugin = row.original;
       const isRunning = plugin.status === "running";
       return h("div", { class: "flex items-center gap-1" }, [
+        h(
+          Button,
+          {
+            variant: "ghost",
+            size: "sm",
+            onClick: () => handleConfig(plugin),
+          },
+          () => [h(Settings, { class: "mr-1 h-3.5 w-3.5" }), "配置"]
+        ),
         h(
           Button,
           {
@@ -186,6 +195,11 @@ const handleReset = () => {
 // 刷新列表
 const handleRefresh = () => {
   dataTable.refresh();
+};
+
+// 查看配置
+const handleConfig = (plugin: PluginInfo) => {
+  router.push(`/ai/plugins/${encodeURIComponent(plugin.plugin_id)}/config`);
 };
 
 // 启动/停止插件

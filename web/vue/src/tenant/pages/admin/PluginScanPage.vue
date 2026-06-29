@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { Check, ChevronRight, FolderSearch, Loader2, AlertCircle, CheckCircle, SkipForward } from '@lucide/vue';
+import { Check, ChevronRight, FolderSearch, Loader2, AlertCircle, CheckCircle, SkipForward, X } from '@lucide/vue';
 import { computed, ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { Button, Card, Input, Checkbox } from '@/components';
-import { notifyError } from '@/framework/utils/feedback';
+import { Button, Input, Checkbox } from '@/components';
+import { notifyError, notifySuccess } from '@/framework/utils/feedback';
 import {
   scanDirectoryPreview,
   scanDirectoryForPlugins,
@@ -35,6 +35,23 @@ const selectedPluginIds = ref<Set<string>>(new Set());
 const importResults = ref<ScannedPluginResult[]>([]);
 const isImporting = ref(false);
 
+// 错误提示
+const errorMessage = ref('');
+const showError = ref(false);
+
+const showErrorMessage = (message: string) => {
+  errorMessage.value = message;
+  showError.value = true;
+  // 5秒后自动关闭
+  setTimeout(() => {
+    showError.value = false;
+  }, 5000);
+};
+
+const hideError = () => {
+  showError.value = false;
+};
+
 // 计算属性：可选择的插件（未存在且状态正常）
 const selectablePlugins = computed(() =>
   scannedPlugins.value.filter((p) => !p.exists && p.status === 'ready')
@@ -51,7 +68,7 @@ const importStats = computed(() => {
 // 第一步：扫描目录预览
 const handleScan = async () => {
   if (!scanForm.value.directory.trim()) {
-    notifyError('请输入服务器目录路径');
+    showErrorMessage('请输入服务器目录路径');
     return;
   }
 
@@ -68,15 +85,15 @@ const handleScan = async () => {
     if (response.data) {
       scannedPlugins.value = response.data;
       if (scannedPlugins.value.length === 0) {
-        notifyError('未在指定目录中找到插件');
+        showErrorMessage('未在指定目录中找到插件');
         return;
       }
       currentStep.value = 1;
     }
   } catch (error: any) {
     console.error('扫描目录失败:', error);
-    const errorMessage = error?.response?.data?.msg || error?.message || '扫描失败';
-    notifyError(errorMessage);
+    const message = error?.response?.data?.msg || error?.message || '扫描失败';
+    showErrorMessage(message);
   } finally {
     isScanning.value = false;
   }
@@ -102,7 +119,7 @@ const clearSelection = () => {
 // 第二步：确认导入
 const handleImport = async () => {
   if (selectedPluginIds.value.size === 0) {
-    notifyError('请至少选择一个插件');
+    showErrorMessage('请至少选择一个插件');
     return;
   }
 
@@ -119,11 +136,12 @@ const handleImport = async () => {
     if (response.data) {
       importResults.value = response.data.results;
       currentStep.value = 2;
+      notifySuccess('插件导入完成');
     }
   } catch (error: any) {
     console.error('导入插件失败:', error);
-    const errorMessage = error?.response?.data?.msg || error?.message || '导入失败';
-    notifyError(errorMessage);
+    const message = error?.response?.data?.msg || error?.message || '导入失败';
+    showErrorMessage(message);
   } finally {
     isImporting.value = false;
   }
@@ -185,189 +203,241 @@ const getStatusText = (status: string) => {
 </script>
 
 <template>
-  <div class="flex h-full min-h-0 flex-col gap-4 p-4" data-testid="plugin-scan-page">
-    <!-- 页面标题 -->
-    <div>
-      <h2 class="text-xl font-semibold">扫描目录</h2>
-      <p class="text-muted-foreground mt-1 text-sm">
-        从服务器目录扫描并导入插件定义
-      </p>
-    </div>
-
-    <!-- 步骤指示器 -->
-    <div class="flex items-center justify-center gap-2">
-      <template v-for="(step, index) in steps" :key="index">
-        <div
-          class="flex items-center gap-2 rounded-full px-4 py-2 transition-colors"
-          :class="[
-            currentStep === index
-              ? 'bg-primary text-primary-foreground'
-              : currentStep > index
-                ? 'bg-primary/10 text-primary'
-                : 'bg-muted text-muted-foreground',
-          ]"
-        >
-          <div
-            class="flex h-6 w-6 items-center justify-center rounded-full text-xs font-semibold"
-            :class="[
-              currentStep === index
-                ? 'bg-primary-foreground/20'
-                : currentStep > index
-                  ? 'bg-primary/20'
-                  : 'bg-muted-foreground/20',
-            ]"
-          >
-            <Check v-if="currentStep > index" class="h-4 w-4" />
-            <span v-else>{{ index + 1 }}</span>
-          </div>
-          <div class="text-sm font-medium">{{ step.title }}</div>
-        </div>
-        <ChevronRight
-          v-if="index < steps.length - 1"
-          class="text-muted-foreground h-4 w-4"
-        />
-      </template>
-    </div>
-
-    <!-- 步骤内容 -->
-    <Card class="flex min-h-0 flex-1 flex-col overflow-hidden">
-      <!-- 第一步：输入路径 -->
-      <div
-        v-if="currentStep === 0"
-        class="flex flex-1 flex-col items-center justify-center gap-6 p-8"
-      >
-        <div class="w-full max-w-lg space-y-4">
-          <div class="space-y-2">
-            <label class="text-sm font-medium">服务器目录路径</label>
-            <Input
-              v-model="scanForm.directory"
-              placeholder="/path/to/plugins"
-              data-testid="directory-input"
+  <div class="flex h-full min-h-0 flex-col" data-testid="plugin-scan-page">
+    <!-- 主布局容器 -->
+    <div class="flex min-h-0 flex-1 flex-col overflow-hidden border rounded-lg bg-card">
+      <!-- 步骤栏 (Header) -->
+      <div class="border-b bg-card px-6 py-4">
+        <div class="flex items-center justify-center gap-2">
+          <template v-for="(step, index) in steps" :key="index">
+            <div
+              class="flex items-center gap-2 rounded-full px-4 py-2 transition-colors"
+              :class="[
+                currentStep === index
+                  ? 'bg-primary text-primary-foreground'
+                  : currentStep > index
+                    ? 'bg-primary/10 text-primary'
+                    : 'bg-muted text-muted-foreground',
+              ]"
+            >
+              <div
+                class="flex h-6 w-6 items-center justify-center rounded-full text-xs font-semibold"
+                :class="[
+                  currentStep === index
+                    ? 'bg-primary-foreground/20'
+                    : currentStep > index
+                      ? 'bg-primary/20'
+                      : 'bg-muted-foreground/20',
+                ]"
+              >
+                <Check v-if="currentStep > index" class="h-4 w-4" />
+                <span v-else>{{ index + 1 }}</span>
+              </div>
+              <div class="text-sm font-medium">{{ step.title }}</div>
+            </div>
+            <ChevronRight
+              v-if="index < steps.length - 1"
+              class="text-muted-foreground h-4 w-4"
             />
-            <p class="text-muted-foreground text-xs">
-              输入服务器上存放插件包的目录路径
-            </p>
-          </div>
-
-          <div class="flex items-center gap-2">
-            <Checkbox
-              :checked="scanForm.recursive"
-              @update:checked="scanForm.recursive = $event"
-              data-testid="recursive-checkbox"
-            />
-            <label class="text-sm">递归扫描子目录</label>
-          </div>
-
-          <Button
-            class="w-full"
-            :disabled="isScanning"
-            data-testid="scan-btn"
-            @click="handleScan"
-          >
-            <Loader2 v-if="isScanning" class="mr-2 h-4 w-4 animate-spin" />
-            <FolderSearch v-else class="mr-2 h-4 w-4" />
-            {{ isScanning ? '扫描中...' : '开始扫描' }}
-          </Button>
+          </template>
         </div>
       </div>
 
-      <!-- 第二步：预览选择 -->
-      <div
-        v-if="currentStep === 1"
-        class="flex min-h-0 flex-1 flex-col overflow-hidden"
-      >
-        <div class="border-b px-5 py-4">
-          <div class="flex items-center justify-between">
-            <div>
-              <div class="font-medium">扫描结果</div>
-              <div class="text-muted-foreground mt-1 text-xs">
-                共扫描到 {{ scannedPlugins.length }} 个插件，已选择
-                {{ selectedPluginIds.size }} 个
-              </div>
-            </div>
-            <div class="flex items-center gap-2">
-              <Button variant="outline" size="sm" @click="selectAllSelectable">
-                全选可选
-              </Button>
-              <Button variant="outline" size="sm" @click="clearSelection">
-                清空选择
-              </Button>
-            </div>
-          </div>
-        </div>
-
-        <div class="min-h-0 flex-1 overflow-auto p-5">
-          <div class="space-y-2">
-            <div
-              v-for="plugin in scannedPlugins"
-              :key="plugin.plugin_id"
-              class="flex items-center justify-between rounded-lg border p-4 transition-colors"
-              :class="[
-                plugin.exists
-                  ? 'cursor-not-allowed bg-muted/50 opacity-60'
-                  : plugin.status === 'invalid'
-                    ? 'cursor-not-allowed bg-red-50'
-                    : selectedPluginIds.has(plugin.plugin_id)
-                      ? 'border-primary bg-primary/5'
-                      : 'cursor-pointer hover:bg-muted/50',
-              ]"
-              @click="
-                !plugin.exists &&
-                  plugin.status === 'ready' &&
-                  togglePlugin(plugin.plugin_id)
-              "
-            >
-              <div class="flex items-center gap-3">
-                <Checkbox
-                  :model-value="selectedPluginIds.has(plugin.plugin_id)"
-                  :disabled="plugin.exists || plugin.status === 'invalid'"
-                  @update:model-value="togglePlugin(plugin.plugin_id)"
+      <!-- 表单栏 (Content) - 居中，可滚动 -->
+      <div class="min-h-0 flex-1 overflow-auto">
+        <div class="flex h-full items-start justify-center p-8">
+          <!-- 第一步：输入路径 -->
+          <div v-if="currentStep === 0" class="w-full max-w-lg space-y-6">
+            <div class="space-y-4">
+              <div class="space-y-2">
+                <label class="text-sm font-medium">服务器目录路径</label>
+                <Input
+                  v-model="scanForm.directory"
+                  placeholder="/path/to/plugins"
+                  data-testid="directory-input"
                 />
-                <div>
-                  <div class="flex items-center gap-2">
-                    <span class="font-medium">{{ plugin.plugin_id }}</span>
-                    <span class="text-muted-foreground text-xs">
-                      v{{ plugin.version }}
-                    </span>
-                  </div>
-                  <div class="text-muted-foreground text-xs">
-                    {{ plugin.name }}
-                  </div>
-                </div>
+                <p class="text-muted-foreground text-xs">
+                  输入服务器上存放插件包的目录路径
+                </p>
               </div>
 
               <div class="flex items-center gap-2">
-                <span
-                  v-if="plugin.exists"
-                  class="rounded bg-muted px-2 py-1 text-xs text-muted-foreground"
-                >
-                  已存在
-                </span>
-                <span
-                  v-if="plugin.status === 'invalid'"
-                  class="rounded bg-red-100 px-2 py-1 text-xs text-red-600"
-                >
-                  解析失败
-                </span>
-                <span
-                  v-if="
-                    !plugin.exists &&
+                <Checkbox
+                  :checked="scanForm.recursive"
+                  @update:checked="scanForm.recursive = $event"
+                  data-testid="recursive-checkbox"
+                />
+                <label class="text-sm cursor-pointer">递归扫描子目录</label>
+              </div>
+            </div>
+          </div>
+
+          <!-- 第二步：预览选择 -->
+          <div v-if="currentStep === 1" class="w-full max-w-3xl space-y-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <div class="font-medium">扫描结果</div>
+                <div class="text-muted-foreground mt-1 text-xs">
+                  共扫描到 {{ scannedPlugins.length }} 个插件，已选择 {{ selectedPluginIds.size }} 个
+                </div>
+              </div>
+              <div class="flex items-center gap-2">
+                <Button variant="outline" size="sm" @click="selectAllSelectable">
+                  全选可选
+                </Button>
+                <Button variant="outline" size="sm" @click="clearSelection">
+                  清空选择
+                </Button>
+              </div>
+            </div>
+
+            <div class="space-y-2">
+              <div
+                v-for="plugin in scannedPlugins"
+                :key="plugin.plugin_id"
+                class="flex items-center justify-between rounded-lg border p-4 transition-colors"
+                :class="[
+                  plugin.exists
+                    ? 'cursor-not-allowed bg-muted/50 opacity-60'
+                    : plugin.status === 'invalid'
+                      ? 'cursor-not-allowed bg-red-50'
+                      : selectedPluginIds.has(plugin.plugin_id)
+                        ? 'border-primary bg-primary/5'
+                        : 'cursor-pointer hover:bg-muted/50',
+                ]"
+                @click="
+                  !plugin.exists &&
                     plugin.status === 'ready' &&
-                    selectedPluginIds.has(plugin.plugin_id)
-                  "
-                  class="rounded bg-primary/10 px-2 py-1 text-xs text-primary"
+                    togglePlugin(plugin.plugin_id)
+                "
+              >
+                <div class="flex items-center gap-3">
+                  <Checkbox
+                    :model-value="selectedPluginIds.has(plugin.plugin_id)"
+                    :disabled="plugin.exists || plugin.status === 'invalid'"
+                    @update:model-value="togglePlugin(plugin.plugin_id)"
+                  />
+                  <div>
+                    <div class="flex items-center gap-2">
+                      <span class="font-medium">{{ plugin.plugin_id }}</span>
+                      <span class="text-muted-foreground text-xs">
+                        v{{ plugin.version }}
+                      </span>
+                    </div>
+                    <div class="text-muted-foreground text-xs">
+                      {{ plugin.name }}
+                    </div>
+                  </div>
+                </div>
+
+                <div class="flex items-center gap-2">
+                  <span
+                    v-if="plugin.exists"
+                    class="rounded bg-muted px-2 py-1 text-xs text-muted-foreground"
+                  >
+                    已存在
+                  </span>
+                  <span
+                    v-if="plugin.status === 'invalid'"
+                    class="rounded bg-red-100 px-2 py-1 text-xs text-red-600"
+                  >
+                    解析失败
+                  </span>
+                  <span
+                    v-if="
+                      !plugin.exists &&
+                        plugin.status === 'ready' &&
+                        selectedPluginIds.has(plugin.plugin_id)
+                    "
+                    class="rounded bg-primary/10 px-2 py-1 text-xs text-primary"
+                  >
+                    待导入
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 第三步：导入结果 -->
+          <div v-if="currentStep === 2" class="w-full max-w-3xl space-y-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <div class="font-medium">导入结果</div>
+                <div class="text-muted-foreground mt-1 text-xs">
+                  成功 {{ importStats.success }} 个，跳过 {{ importStats.skipped }} 个，失败 {{ importStats.failed }} 个
+                </div>
+              </div>
+            </div>
+
+            <div class="space-y-2">
+              <div
+                v-for="result in importResults"
+                :key="result.plugin_id"
+                class="flex items-center justify-between rounded-lg border p-4"
+              >
+                <div class="flex items-center gap-3">
+                  <component
+                    :is="getStatusIcon(result.status)"
+                    class="h-5 w-5"
+                    :class="getStatusColor(result.status)"
+                  />
+                  <div>
+                    <div class="flex items-center gap-2">
+                      <span class="font-medium">{{ result.plugin_id }}</span>
+                      <span class="text-muted-foreground text-xs">
+                        v{{ result.version }}
+                      </span>
+                    </div>
+                    <div class="text-muted-foreground text-xs">
+                      {{ result.message || getStatusText(result.status) }}
+                    </div>
+                  </div>
+                </div>
+
+                <span
+                  class="rounded px-2 py-1 text-xs"
+                  :class="[
+                    result.status === 'success'
+                      ? 'bg-green-100 text-green-600'
+                      : result.status === 'skipped'
+                        ? 'bg-amber-100 text-amber-600'
+                        : 'bg-red-100 text-red-600',
+                  ]"
                 >
-                  待导入
+                  {{ getStatusText(result.status) }}
                 </span>
               </div>
             </div>
           </div>
         </div>
+      </div>
 
-        <div class="border-t px-5 py-4">
-          <div class="flex items-center justify-between">
+      <!-- 操作按钮栏 (Footer) - 底部悬浮透明 -->
+      <div class="border-t bg-card/80 backdrop-blur-sm px-6 py-4">
+        <div class="flex items-center justify-center gap-3">
+          <!-- 第一步按钮 -->
+          <template v-if="currentStep === 0">
+            <Button variant="outline" @click="router.push('/admin/plugin-definitions')">
+              取消
+            </Button>
+            <Button
+              :disabled="isScanning"
+              data-testid="scan-btn"
+              @click="handleScan"
+            >
+              <Loader2 v-if="isScanning" class="mr-2 h-4 w-4 animate-spin" />
+              <FolderSearch v-else class="mr-2 h-4 w-4" />
+              {{ isScanning ? '扫描中...' : '开始扫描' }}
+            </Button>
+          </template>
+
+          <!-- 第二步按钮 -->
+          <template v-if="currentStep === 1">
             <Button variant="outline" @click="currentStep = 0">
               上一步
+            </Button>
+            <Button variant="outline" @click="router.push('/admin/plugin-definitions')">
+              取消
             </Button>
             <Button
               :disabled="selectedPluginIds.size === 0 || isImporting"
@@ -378,76 +448,44 @@ const getStatusText = (status: string) => {
               <Check v-else class="mr-2 h-4 w-4" />
               {{ isImporting ? '导入中...' : '确认导入' }}
             </Button>
-          </div>
-        </div>
-      </div>
+          </template>
 
-      <!-- 第三步：导入结果 -->
-      <div
-        v-if="currentStep === 2"
-        class="flex min-h-0 flex-1 flex-col overflow-hidden"
-      >
-        <div class="border-b px-5 py-4">
-          <div class="font-medium">导入结果</div>
-          <div class="text-muted-foreground mt-1 text-xs">
-            成功 {{ importStats.success }} 个，跳过 {{ importStats.skipped }} 个，失败
-            {{ importStats.failed }} 个
-          </div>
-        </div>
-
-        <div class="min-h-0 flex-1 overflow-auto p-5">
-          <div class="space-y-2">
-            <div
-              v-for="result in importResults"
-              :key="result.plugin_id"
-              class="flex items-center justify-between rounded-lg border p-4"
-            >
-              <div class="flex items-center gap-3">
-                <component
-                  :is="getStatusIcon(result.status)"
-                  class="h-5 w-5"
-                  :class="getStatusColor(result.status)"
-                />
-                <div>
-                  <div class="flex items-center gap-2">
-                    <span class="font-medium">{{ result.plugin_id }}</span>
-                    <span class="text-muted-foreground text-xs">
-                      v{{ result.version }}
-                    </span>
-                  </div>
-                  <div class="text-muted-foreground text-xs">
-                    {{ result.message || getStatusText(result.status) }}
-                  </div>
-                </div>
-              </div>
-
-              <span
-                class="rounded px-2 py-1 text-xs"
-                :class="[
-                  result.status === 'success'
-                    ? 'bg-green-100 text-green-600'
-                    : result.status === 'skipped'
-                      ? 'bg-amber-100 text-amber-600'
-                      : 'bg-red-100 text-red-600',
-                ]"
-              >
-                {{ getStatusText(result.status) }}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <div class="border-t px-5 py-4">
-          <div class="flex items-center justify-between">
+          <!-- 第三步按钮 -->
+          <template v-if="currentStep === 2">
             <Button variant="outline" @click="handleBack">
               继续扫描
             </Button>
             <Button data-testid="finish-btn" @click="handleFinish">
               完成
             </Button>
-          </div>
+          </template>
         </div>
       </div>
-    </Card>
+    </div>
+
+    <!-- 错误提示 - 左下角 -->
+    <Transition
+      enter-active-class="transition ease-out duration-300"
+      enter-from-class="translate-y-full opacity-0"
+      enter-to-class="translate-y-0 opacity-100"
+      leave-active-class="transition ease-in duration-200"
+      leave-from-class="translate-y-0 opacity-100"
+      leave-to-class="translate-y-full opacity-0"
+    >
+      <div
+        v-if="showError"
+        class="fixed bottom-4 left-4 z-50 flex items-center gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 shadow-lg"
+        data-testid="error-message"
+      >
+        <AlertCircle class="h-5 w-5 text-red-600 flex-shrink-0" />
+        <span class="text-sm text-red-800">{{ errorMessage }}</span>
+        <button
+          class="ml-2 text-red-600 hover:text-red-800"
+          @click="hideError"
+        >
+          <X class="h-4 w-4" />
+        </button>
+      </div>
+    </Transition>
   </div>
 </template>

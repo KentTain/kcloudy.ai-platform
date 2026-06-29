@@ -4,7 +4,7 @@
  * 提供插件列表查询、安装、启动、停止等操作接口
  */
 
-import { rawDel, rawGet, rawPost, rawPut, rawApiClient } from "@/framework/api/client";
+import { rawDel, rawGet, rawPatch, rawPost, rawPut, rawApiClient } from "@/framework/api/client";
 import type { ApiResponse } from "@/framework/api/types";
 
 // ==================== 类型定义 ====================
@@ -74,6 +74,66 @@ export interface PluginCredential {
 export interface PluginCredentialsSchema {
   credentials_name: string;
   credential_form_schema: Record<string, unknown>;
+}
+
+// ==================== 配置管理类型 ====================
+
+/**
+ * 插件配置响应
+ */
+export interface PluginConfigResponse {
+  plugin_id: string;
+  plugin_config: Record<string, unknown>;  // 插件能力配置（只读）
+  runtime_config: Record<string, unknown>;  // 运行时配置（可写）
+}
+
+/**
+ * 更新插件配置请求
+ */
+export interface UpdatePluginConfigRequest {
+  runtime_config: Record<string, unknown>;
+}
+
+// ==================== 运行时状态类型 ====================
+
+/**
+ * 插件运行时状态响应
+ */
+export interface RuntimeStateResponse {
+  plugin_id: string;
+  status: string;  // active/inactive/frozen
+  process_id: number | null;
+  port: number | null;
+  work_directory: string | null;
+  call_count: number;
+  error_count: number;
+  success_rate: number | null;
+  health_status: string;  // healthy/unhealthy/unknown
+  last_started_at: string | null;
+  last_stopped_at: string | null;
+  last_accessed_at: string | null;
+  last_error: string | null;
+}
+
+/**
+ * 插件统计数据
+ */
+export interface PluginStatistics {
+  status_stats: {
+    active: number;
+    inactive: number;
+    frozen: number;
+    total: number;
+  };
+  usage_stats: {
+    total_calls: number;
+    total_errors: number;
+    avg_success_rate: number;
+  };
+  runtime_stats: {
+    total_memory_mb: number;
+    total_cpu_percent: number;
+  };
 }
 
 // ==================== Console API (用户端) ====================
@@ -201,6 +261,43 @@ export async function deletePluginCredential(
   credentialId: string
 ): Promise<ApiResponse<boolean>> {
   return rawDel(`${CONSOLE_BASE}/${encodeURIComponent(pluginId)}/credentials/${credentialId}`);
+}
+
+// ==================== 配置管理 API ====================
+
+/**
+ * 获取插件配置
+ */
+export async function getPluginConfig(pluginId: string): Promise<ApiResponse<PluginConfigResponse>> {
+  return rawGet(`${CONSOLE_BASE}/installations/${encodeURIComponent(pluginId)}/config`);
+}
+
+/**
+ * 更新插件配置
+ */
+export async function updatePluginConfig(
+  pluginId: string,
+  data: UpdatePluginConfigRequest
+): Promise<ApiResponse<PluginConfigResponse>> {
+  return rawPatch(`${CONSOLE_BASE}/installations/${encodeURIComponent(pluginId)}/config`, data);
+}
+
+// ==================== 运行时状态 API ====================
+
+/**
+ * 获取插件运行时状态
+ */
+export async function getPluginRuntimeState(
+  pluginId: string
+): Promise<ApiResponse<RuntimeStateResponse>> {
+  return rawGet(`${CONSOLE_BASE}/installations/${encodeURIComponent(pluginId)}/runtime-state`);
+}
+
+/**
+ * 获取插件统计数据
+ */
+export async function getPluginStatistics(): Promise<ApiResponse<PluginStatistics>> {
+  return rawGet(`${CONSOLE_BASE}/installations/statistics`);
 }
 
 // ==================== Admin API (管理端) ====================
