@@ -50,19 +50,33 @@ async def setup_listeners(settings: "Settings") -> None:
 
     _handlers = [handler for _, handler in STREAM_HANDLERS]
 
+    # 检查 Redis 是否初始化
+    if not RedisUtil.is_initialized():
+        _logger.error("Redis 未初始化，无法启动事件监听器")
+        return
+
     # 创建消费者组
     for stream_name, _ in STREAM_HANDLERS:
-        try:
-            await RedisUtil.xgroup_create(
-                stream_name,
-                CONSUMER_GROUP,
-                id="0",
-                mkstream=True,
-            )
-            _logger.info(f"创建消费者组: {stream_name} -> {CONSUMER_GROUP}")
-        except Exception as e:
-            # 消费者组可能已存在
-            _logger.debug(f"消费者组已存在或创建失败: {stream_name} -> {e}")
+        success = await RedisUtil.xgroup_create(
+            stream_name,
+            CONSUMER_GROUP,
+            id="0",
+            mkstream=True,
+        )
+        if success:
+            _logger.info(f"创建消费者组成功: {stream_name} -> {CONSUMER_GROUP}")
+        else:
+            # 消费者组可能已存在，检查是否真的存在
+            try:
+                client = await RedisUtil.get_client()
+                groups = await client.xinfo_groups(stream_name)
+                group_names = [g["name"] for g in groups]
+                if CONSUMER_GROUP in group_names:
+                    _logger.info(f"消费者组已存在: {stream_name} -> {CONSUMER_GROUP}")
+                else:
+                    _logger.error(f"创建消费者组失败: {stream_name} -> {CONSUMER_GROUP}")
+            except Exception as e:
+                _logger.error(f"检查消费者组状态失败: {stream_name} -> {e}")
 
     # 启动监听任务
     _running = True

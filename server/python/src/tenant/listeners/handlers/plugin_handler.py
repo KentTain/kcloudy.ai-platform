@@ -58,7 +58,7 @@ class PluginInstallationFailedHandler:
                 )
                 if installation:
                     installation.status = "FAILED"
-                    await session.flush()
+                    await session.commit()
                     _logger.info(
                         f"插件安装记录已标记为 FAILED: "
                         f"tenant_id={tenant_id}, plugin_id={plugin_id}"

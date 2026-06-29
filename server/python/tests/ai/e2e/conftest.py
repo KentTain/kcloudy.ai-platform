@@ -19,7 +19,9 @@ E2E 测试配置
     E2E 测试默认跳过，需显式指定 -m e2e 才运行
 """
 
+import asyncio
 import os
+import sys
 import time
 import uuid
 from datetime import datetime
@@ -29,6 +31,14 @@ from typing import Callable
 import pytest
 import pytest_asyncio
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+
+
+# =============================================================================
+# Windows 事件循环策略修复
+# E2E 测试需要 ProactorEventLoop 支持子进程创建（如 uv 命令）
+# =============================================================================
+if sys.platform == "win32":
+    asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
 
 
 # =============================================================================

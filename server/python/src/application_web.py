@@ -69,6 +69,16 @@ async def lifespan(app: FastAPI):
         )
         phase.details["数据库引擎"] = "已初始化"
 
+        # 初始化 Redis 客户端
+        try:
+            from framework.cache.redis_util import RedisUtil
+
+            await RedisUtil.init(settings.redis)
+            phase.details["Redis"] = "已初始化"
+        except Exception as e:
+            _logger.exception(f"Redis 客户端初始化失败: {e}")
+            phase.details["Redis"] = "初始化失败"
+
         # 注册 TenantProvider
         provider = _get_tenant_provider()
         if provider:
@@ -209,6 +219,14 @@ async def lifespan(app: FastAPI):
 
     # 清理监听器
     await _cleanup_listeners()
+
+    # 关闭 Redis 连接
+    try:
+        from framework.cache.redis_util import RedisUtil
+
+        await RedisUtil.close()
+    except Exception as e:
+        _logger.exception(f"Redis 连接关闭失败: {e}")
 
     write_info("AI Platform 应用关闭")
 
