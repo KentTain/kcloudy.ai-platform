@@ -186,11 +186,9 @@ class PluginPackageService:
         """
         构建完整声明内容
 
-        从 manifest 中提取配置信息，包括：
-        - configuration: 基础配置
-        - tools_configuration: 工具配置
-        - models_configuration: 模型配置
-        - agent_strategies_configuration: 代理策略配置
+        支持两种插件格式：
+        1. 标准格式：manifest 中直接包含 tools/models/configuration 字段
+        2. Dify 格式：manifest.plugins 引用外部配置文件
 
         Args:
             manifest_data: manifest 解析数据
@@ -206,36 +204,127 @@ class PluginPackageService:
             "agent_strategies_configuration": [],
         }
 
-        # 基础配置
+        # 1. 标准格式：直接从 manifest 读取
         if "configuration" in manifest_data:
             declaration["configuration"] = manifest_data["configuration"]
-
-        # 工具配置
         if "tools" in manifest_data:
             declaration["tools_configuration"] = manifest_data["tools"]
-
-        # 模型配置
         if "models" in manifest_data:
             declaration["models_configuration"] = manifest_data["models"]
-
-        # 代理策略配置
         if "agent_strategies" in manifest_data:
-            declaration["agent_strategies_configuration"] = manifest_data[
-                "agent_strategies"
-            ]
+            declaration["agent_strategies_configuration"] = manifest_data["agent_strategies"]
 
-        # 保留原始 manifest 数据
+        # 2. Dify 格式：从外部文件读取
+        plugins_ref = manifest_data.get("plugins", {})
+        if plugins_ref:
+            # 读取 provider 配置
+            provider_configs = PluginPackageService._load_provider_configs(plugins_ref, zf)
+            if provider_configs:
+                # 合并到 tools_configuration
+                for provider_config in provider_configs:
+                    if provider_config:
+                        declaration["tools_configuration"].append(provider_config)
+
+            # 读取模型配置
+            models_configs = PluginPackageService._load_models_configs(zf)
+            if models_configs:
+                declaration["models_configuration"] = models_configs
+
+        # 3. 构建 configuration（从 manifest 顶层字段）
+        if not declaration["configuration"]:
+            declaration["configuration"] = {
+                "label": manifest_data.get("label", {}),
+                "description": manifest_data.get("description", {}),
+                "icon": manifest_data.get("icon"),
+                "author": manifest_data.get("author"),
+                "name": manifest_data.get("name"),
+                "version": manifest_data.get("version"),
+            }
+
+        # 4. 保留原始 manifest 数据
         declaration["_manifest"] = {
             "author": manifest_data.get("author"),
             "name": manifest_data.get("name"),
             "version": manifest_data.get("version"),
             "description": manifest_data.get("description"),
+            "label": manifest_data.get("label"),
             "icon": manifest_data.get("icon"),
             "type": manifest_data.get("type"),
             "tags": manifest_data.get("tags", []),
+            "resource": manifest_data.get("resource"),
+            "meta": manifest_data.get("meta"),
         }
 
         return declaration
+
+    @staticmethod
+    def _load_provider_configs(
+        plugins_ref: dict[str, Any], zf: zipfile.ZipFile
+    ) -> list[dict[str, Any]]:
+        """
+        加载 provider 配置文件
+
+        Args:
+            plugins_ref: manifest.plugins 字段
+            zf: ZIP 文件对象
+
+        Returns:
+            list[dict]: provider 配置列表
+        """
+        configs = []
+
+        # 加载 models provider
+        models_refs = plugins_ref.get("models", [])
+        for ref in models_refs:
+            try:
+                content = zf.read(ref).decode("utf-8")
+                data = yaml.safe_load(content)
+                if data:
+                    configs.append(data)
+            except Exception as e:
+                logger.warning(f"加载 provider 配置失败: {ref}, 错误: {e}")
+
+        # 加载 tools provider
+        tools_refs = plugins_ref.get("tools", [])
+        for ref in tools_refs:
+            try:
+                content = zf.read(ref).decode("utf-8")
+                data = yaml.safe_load(content)
+                if data:
+                    configs.append(data)
+            except Exception as e:
+                logger.warning(f"加载 provider 配置失败: {ref}, 错误: {e}")
+
+        return configs
+
+    @staticmethod
+    def _load_models_configs(zf: zipfile.ZipFile) -> list[dict[str, Any]]:
+        """
+        加载 models 目录下的模型配置
+
+        Args:
+            zf: ZIP 文件对象
+
+        Returns:
+            list[dict]: 模型配置列表
+        """
+        configs = []
+
+        # 遍历 ZIP 文件，找到 models/ 目录下的 yaml 文件
+        for name in zf.namelist():
+            if name.startswith("models/") and name.endswith(".yaml"):
+                # 跳过 _position.yaml 等特殊文件
+                if "/_" in name:
+                    continue
+                try:
+                    content = zf.read(name).decode("utf-8")
+                    data = yaml.safe_load(content)
+                    if data:
+                        configs.append(data)
+                except Exception as e:
+                    logger.warning(f"加载模型配置失败: {name}, 错误: {e}")
+
+        return configs
 
     @staticmethod
     def calculate_checksum(package_data: bytes) -> str:

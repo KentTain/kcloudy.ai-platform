@@ -272,13 +272,27 @@ class PluginManagementService:
         )
 
     def _extract_plugin_type(self, declaration: dict) -> str:
-        """从声明中提取插件类型"""
-        if declaration.get("tools_configuration"):
-            return "tool"
-        if declaration.get("models_configuration"):
+        """
+        从声明中提取插件类型
+
+        判断优先级：models > tools > agent
+
+        注意：Dify 风格插件中，tools_configuration 包含 provider 配置，
+        models_configuration 包含具体模型列表。所以需要先检查 models。
+        """
+        models_config = declaration.get("models_configuration", [])
+        # 如果有模型配置且数量 > 0，则为 model 类型
+        if models_config and len(models_config) > 0:
             return "model"
-        if declaration.get("agent_strategies_configuration"):
+
+        tools_config = declaration.get("tools_configuration", [])
+        if tools_config and len(tools_config) > 0:
+            return "tool"
+
+        agent_config = declaration.get("agent_strategies_configuration", [])
+        if agent_config and len(agent_config) > 0:
             return "agent"
+
         return "unknown"
 
     async def get_plugin_info(
