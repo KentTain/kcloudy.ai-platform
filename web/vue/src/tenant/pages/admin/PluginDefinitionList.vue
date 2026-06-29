@@ -30,6 +30,7 @@ import {
   deletePluginDefinition,
   getPluginDefinitions,
   getPluginStatistics,
+  updatePluginDefinition,
 } from "@/tenant/api/plugin";
 import type { PluginDefinition, PluginStatistics } from "@/tenant/api/plugin";
 
@@ -140,7 +141,7 @@ const columns: ColumnDef<PluginDefinition>[] = [
   {
     id: "actions",
     header: "操作",
-    size: 180,
+    size: 240,
     cell: ({ row }) => {
       const plugin = row.original;
       return h("div", { class: "flex items-center gap-1" }, [
@@ -148,6 +149,11 @@ const columns: ColumnDef<PluginDefinition>[] = [
           Button,
           { variant: "ghost", size: "sm", onClick: () => handleDetail(plugin) },
           () => [h(Eye, { class: "mr-1 h-3.5 w-3.5" }), "详情"]
+        ),
+        h(
+          Button,
+          { variant: "ghost", size: "sm", onClick: () => handleToggleEnabled(plugin) },
+          () => [h(CheckCircle, { class: "mr-1 h-3.5 w-3.5" }), plugin.is_enabled ? "禁用" : "启用"]
         ),
         h(
           Button,
@@ -207,12 +213,39 @@ const handleReset = () => {
 
 // 查看详情
 const handleDetail = (row: PluginDefinition) => {
-  router.push('/admin/plugin-definitions/');
+  router.push(`/admin/plugin-definitions/${row.id}`);
 };
 
-// 编辑（临时提示）
+// 编辑
 const handleEdit = (row: PluginDefinition) => {
-  notifySuccess("编辑功能开发中");
+  router.push(`/admin/plugin-definitions/${row.id}/edit`);
+};
+
+// 切换启用状态
+const handleToggleEnabled = async (row: PluginDefinition) => {
+  const action = row.is_enabled ? "禁用" : "启用";
+  if (!(await confirmAction(`确定要${action}插件 "${row.plugin_id}" 吗？`))) return;
+
+  try {
+    await updatePluginDefinition(row.id, { is_enabled: !row.is_enabled });
+    notifySuccess(`插件已${action}`);
+    dataTable.refresh();
+    loadStats();
+  } catch (error: any) {
+    console.error(`${action}插件失败:`, error);
+    const errorMessage = error?.response?.data?.msg || error?.message || `${action}失败`;
+    notifyError(errorMessage);
+  }
+};
+
+// 扫描目录
+const handleScan = () => {
+  router.push('/admin/plugin-definitions/scan');
+};
+
+// 上传插件
+const handleUpload = () => {
+  router.push('/admin/plugin-definitions/upload');
 };
 
 // 删除
@@ -251,11 +284,11 @@ const handleDelete = async (row: PluginDefinition) => {
           <RefreshCw class="mr-1 h-4 w-4" />
           刷新
         </Button>
-        <Button variant="outline" data-testid="scan-btn">
+        <Button variant="outline" data-testid="scan-btn" @click="handleScan">
           <FolderSearch class="mr-1 h-4 w-4" />
           扫描目录
         </Button>
-        <Button variant="outline" data-testid="upload-btn">
+        <Button variant="outline" data-testid="upload-btn" @click="handleUpload">
           <Upload class="mr-1 h-4 w-4" />
           上传插件
         </Button>

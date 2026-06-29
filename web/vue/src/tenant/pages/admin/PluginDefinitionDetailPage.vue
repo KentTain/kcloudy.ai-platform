@@ -16,10 +16,9 @@ import {
   ChevronDown,
   ChevronUp,
   Check,
-  Loader2,
 } from '@lucide/vue'
 import { notifyError, notifySuccess } from '@/framework/utils/feedback'
-import { getPluginDefinition, updatePluginDefinition } from '@/tenant/api/plugin'
+import { getPluginDefinition } from '@/tenant/api/plugin'
 import type { PluginDefinitionDetail } from '@/tenant/api/plugin'
 
 const route = useRoute()
@@ -30,12 +29,6 @@ const loading = ref(false)
 const plugin = ref<PluginDefinitionDetail | null>(null)
 const declarationExpanded = ref(true)
 const copied = ref(false)
-
-// 编辑状态
-const editingRecommended = ref(false)
-const editingEnabled = ref(false)
-const savingRecommended = ref(false)
-const savingEnabled = ref(false)
 
 const loadPluginDetail = async () => {
   loading.value = true
@@ -57,66 +50,8 @@ const handleBack = () => {
   router.push('/admin/plugin-definitions')
 }
 
-const handleEditRecommended = () => {
-  editingRecommended.value = true
-}
-
-const handleCancelEditRecommended = () => {
-  editingRecommended.value = false
-}
-
-const handleSaveRecommended = async () => {
-  if (!plugin.value) return
-
-  savingRecommended.value = true
-  try {
-    const newRecommended = !plugin.value.is_recommended
-    const res = await updatePluginDefinition(plugin.value.id, {
-      is_recommended: newRecommended,
-    })
-    if (res.code === 200 && res.data) {
-      plugin.value = { ...plugin.value, is_recommended: newRecommended }
-      notifySuccess(newRecommended ? '已设为推荐' : '已取消推荐')
-      editingRecommended.value = false
-    } else {
-      notifyError('更新失败')
-    }
-  } catch (error) {
-    notifyError('更新失败')
-  } finally {
-    savingRecommended.value = false
-  }
-}
-
-const handleEditEnabled = () => {
-  editingEnabled.value = true
-}
-
-const handleCancelEditEnabled = () => {
-  editingEnabled.value = false
-}
-
-const handleSaveEnabled = async () => {
-  if (!plugin.value) return
-
-  savingEnabled.value = true
-  try {
-    const newEnabled = !plugin.value.is_enabled
-    const res = await updatePluginDefinition(plugin.value.id, {
-      is_enabled: newEnabled,
-    })
-    if (res.code === 200 && res.data) {
-      plugin.value = { ...plugin.value, is_enabled: newEnabled }
-      notifySuccess(newEnabled ? '已启用' : '已禁用')
-      editingEnabled.value = false
-    } else {
-      notifyError('更新失败')
-    }
-  } catch (error) {
-    notifyError('更新失败')
-  } finally {
-    savingEnabled.value = false
-  }
+const handleEdit = () => {
+  router.push(`/admin/plugin-definitions/${pluginId.value}/edit`)
 }
 
 const handleCopyDeclaration = async () => {
@@ -200,78 +135,36 @@ onMounted(() => {
               <span class="font-medium text-muted-foreground">{{ label }}</span>
             </template>
 
-            <!-- 是否推荐 编辑 -->
+            <!-- 是否推荐 -->
             <template #value-是否推荐>
               <div class="flex items-center gap-2">
                 <Badge :variant="plugin.is_recommended ? 'default' : 'secondary'">
                   {{ plugin.is_recommended ? '是' : '否' }}
                 </Badge>
-                <div v-if="editingRecommended" class="flex items-center gap-1">
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    :disabled="savingRecommended"
-                    @click="handleSaveRecommended"
-                  >
-                    <Loader2 v-if="savingRecommended" class="mr-1 h-3 w-3 animate-spin" />
-                    <Check v-else class="mr-1 h-3 w-3" />
-                    确认
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    :disabled="savingRecommended"
-                    @click="handleCancelEditRecommended"
-                  >
-                    取消
-                  </Button>
-                </div>
                 <Button
-                  v-else
                   size="sm"
                   variant="ghost"
-                  @click="handleEditRecommended"
+                  @click="handleEdit"
                   data-testid="edit-recommended-button"
                 >
-                  <Pencil class="h-3 w-3" />
+                  <Pencil class="h-3.5 w-3.5" />
                 </Button>
               </div>
             </template>
 
-            <!-- 启用状态 编辑 -->
+            <!-- 启用状态 -->
             <template #value-启用状态>
               <div class="flex items-center gap-2">
                 <Badge :variant="plugin.is_enabled ? 'default' : 'secondary'">
                   {{ plugin.is_enabled ? '启用' : '禁用' }}
                 </Badge>
-                <div v-if="editingEnabled" class="flex items-center gap-1">
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    :disabled="savingEnabled"
-                    @click="handleSaveEnabled"
-                  >
-                    <Loader2 v-if="savingEnabled" class="mr-1 h-3 w-3 animate-spin" />
-                    <Check v-else class="mr-1 h-3 w-3" />
-                    确认
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    :disabled="savingEnabled"
-                    @click="handleCancelEditEnabled"
-                  >
-                    取消
-                  </Button>
-                </div>
                 <Button
-                  v-else
                   size="sm"
                   variant="ghost"
-                  @click="handleEditEnabled"
+                  @click="handleEdit"
                   data-testid="edit-enabled-button"
                 >
-                  <Pencil class="h-3 w-3" />
+                  <Pencil class="h-3.5 w-3.5" />
                 </Button>
               </div>
             </template>

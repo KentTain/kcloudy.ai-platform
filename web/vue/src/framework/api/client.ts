@@ -130,6 +130,9 @@ export const rawPost = <T>(
 export const rawPut = <T>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T> =>
   rawApiClient.put(url, data, config);
 
+export const rawPatch = <T>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T> =>
+  rawApiClient.patch(url, data, config);
+
 export const rawDel = <T>(url: string, config?: AxiosRequestConfig): Promise<T> =>
   rawApiClient.delete(url, config);
 
