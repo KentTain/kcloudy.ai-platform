@@ -248,7 +248,12 @@ async def list_plugin_definitions(
         is_enabled=is_enabled,
     )
     result = await plugin_definition_service.list_definitions(session, query)
-    return ApiResponse.success(data=result.model_dump())
+    return ApiResponse.paginated(
+        data=result.items,
+        total=result.total,
+        page=result.page,
+        page_size=result.page_size,
+    )
 
 
 @router.get("/plugin-definitions/statistics")

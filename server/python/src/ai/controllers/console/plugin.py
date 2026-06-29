@@ -115,7 +115,12 @@ async def get_available_plugins(
             page=page,
             page_size=page_size,
         )
-        return ApiResponse.success(data=result.model_dump())
+        return ApiResponse.paginated(
+            data=result.items,
+            total=result.total,
+            page=result.page,
+            page_size=result.page_size,
+        )
     except Exception as e:
         _logger.exception("获取可用插件列表失败")
         raise BadRequestError(f"获取可用插件列表失败: {str(e)}")
@@ -186,7 +191,12 @@ async def get_install_tasks(
             page=page,
             page_size=page_size,
         )
-        return ApiResponse.success(data=result.model_dump())
+        return ApiResponse.paginated(
+            data=result.items,
+            total=result.total,
+            page=result.page,
+            page_size=result.page_size,
+        )
     except Exception as e:
         _logger.exception("获取安装任务列表失败")
         raise BadRequestError(f"获取安装任务列表失败: {str(e)}")

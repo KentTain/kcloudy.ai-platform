@@ -38,6 +38,7 @@ export interface PluginInfo {
  */
 export interface PluginPaginatedListResponse {
   plugins: PluginInfo[];
+  total: number;
 }
 
 /**

@@ -168,11 +168,12 @@ const dataTable = useDataTable<PluginInfo>({
       status: searchForm.value.status || undefined,
       plugin_type: searchForm.value.plugin_type || undefined,
     });
-    // 后端返回的是 { plugins: PluginInfo[] }，需要转换为分页格式
+    // 后端返回的是 { plugins: PluginInfo[], total: number }
     const plugins = response.data?.plugins || [];
+    const total = response.data?.total ?? plugins.length;
     return {
       data: plugins,
-      total: plugins.length,
+      total,
       page,
       page_size,
     };
