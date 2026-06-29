@@ -95,7 +95,7 @@ async function fetchUsersBatch(ids: string[]): Promise<Map<string, UserItem>> {
   if (ids.length === 0) return result
 
   try {
-    const res = await post<ApiResponse<{ items: UserItem[] }>>('/iam/console/v1/users/batch', { ids })
+    const res = await post<ApiResponse<{ items: UserItem[] }>>('/iam/console/v1/users/batch', { user_ids: ids })
 
     if (isSuccess(res) && res.data) {
       for (const user of res.data.items) {
@@ -119,7 +119,7 @@ async function fetchOrganizationsBatch(ids: string[]): Promise<Map<string, Organ
   if (ids.length === 0) return result
 
   try {
-    const res = await post<ApiResponse<{ items: OrganizationItem[] }>>('/iam/console/v1/organizations/batch', { ids })
+    const res = await post<ApiResponse<{ items: OrganizationItem[] }>>('/iam/console/v1/organizations/batch', { org_ids: ids })
 
     if (isSuccess(res) && res.data) {
       for (const org of res.data.items) {
