@@ -83,7 +83,7 @@ function formatDate(dateStr?: string): string {
 }
 
 // 截断字符串
-function truncateText(text: string, maxLength: number = 20): string {
+function truncateText(text: string, maxLength: number = 30): string {
   if (!text) return "";
   if (text.length <= maxLength) return text;
   return text.slice(0, maxLength) + "...";
@@ -94,11 +94,11 @@ const columns: ColumnDef<PluginDefinition>[] = [
   {
     accessorKey: "plugin_id",
     header: "插件信息",
-    size: 250,
+    size: 280,
     cell: ({ row }) => {
       const plugin = row.original;
-      const truncatedId = truncateText(plugin.plugin_unique_identifier, 20);
-      const isTruncated = plugin.plugin_unique_identifier.length > 20;
+      const truncatedId = truncateText(plugin.plugin_unique_identifier, 30);
+      const isTruncated = plugin.plugin_unique_identifier.length > 30;
 
       return h("div", { class: "space-y-1" }, [
         h("div", { class: "font-medium" }, plugin.plugin_id),
@@ -111,7 +111,7 @@ const columns: ColumnDef<PluginDefinition>[] = [
                   h(TooltipTrigger, { class: "cursor-default" }, () =>
                     h("span", { class: "text-muted-foreground text-xs font-mono" }, truncatedId)
                   ),
-                  h(TooltipContent, { class: "max-w-md" }, () =>
+                  h(TooltipContent, { side: "bottom", class: "max-w-md" }, () =>
                     h("div", { class: "text-xs font-mono break-all" }, plugin.plugin_unique_identifier)
                   ),
                 ]),
