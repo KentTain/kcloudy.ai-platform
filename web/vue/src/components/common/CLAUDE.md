@@ -40,6 +40,8 @@
 | Modal | `feedback/modal/Modal.vue` | 业务弹窗 | `modelValue`, `title`, `size`, `closable`, `maskClosable` |
 | MessageBox | `feedback/message-box/MessageBox.vue` | 消息框（服务式 API） | `title`, `content`, `type`, `showCancel` |
 | SmartTooltip | `feedback/tooltip/SmartTooltip.vue` | 智能溢出提示 | `content`, `contentClass`, `onlyEllipsisOpen` |
+| PeopleSelect | `feedback/people-select/PeopleSelect.vue` | 人员选择组件 | `modelValue`, `multiple`, `disabledIds` |
+| OrganizationSelect | `feedback/org-select/OrganizationSelect.vue` | 组织选择组件 | `modelValue`, `multiple`, `disabledIds` |
 
 ### 导航组件（navigation/）
 

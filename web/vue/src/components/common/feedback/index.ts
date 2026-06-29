@@ -5,3 +5,17 @@ export type { MessageBoxOptions, MessageBoxType, MessageBoxAction, BeforeCloseCa
 export { SmartTooltip } from "./tooltip";
 export { PeopleSelectDialog, PeopleSelectView, usePeopleTree } from "./people-select";
 export type { OrgTreeNode, PeopleItem, PeopleSelectEvent, PeopleSelectOptions } from "./people-select";
+export {
+  OrganizationSelect,
+  OrganizationSelectDialog,
+  OrganizationSelectView,
+  useOrgTree,
+} from "./org-select";
+export type {
+  OrgSelectNode,
+  OrgFlatNode,
+  OrgSelectOptions,
+  OrganizationItem,
+  OrganizationModelValue,
+  OrganizationConfirmEvent,
+} from "./org-select";

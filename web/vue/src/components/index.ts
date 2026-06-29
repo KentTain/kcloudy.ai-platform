@@ -51,6 +51,10 @@ export {
   PeopleSelectDialog,
   PeopleSelectView,
   usePeopleTree,
+  OrganizationSelect,
+  OrganizationSelectDialog,
+  OrganizationSelectView,
+  useOrgTree,
   type MessageBoxOptions,
   type MessageBoxType,
   type MessageBoxAction,
@@ -59,6 +63,12 @@ export {
   type PeopleItem,
   type PeopleSelectEvent,
   type PeopleSelectOptions,
+  type OrgSelectNode,
+  type OrgFlatNode,
+  type OrgSelectOptions,
+  type OrganizationItem,
+  type OrganizationModelValue,
+  type OrganizationConfirmEvent,
 } from "./common/feedback";
 
 // 导航组件
