@@ -55,49 +55,49 @@
 
 ## 7. 前端基础组件（people-select）
 
-- [ ] 7.1 创建 `web/vue/src/components/common/feedback/people-select/PeopleAvatar.vue`
-- [ ] 7.2 创建 `web/vue/src/components/common/feedback/people-select/OrgTreeNode.vue`
-- [ ] 7.3 创建 `web/vue/src/components/common/feedback/people-select/UserTreeNode.vue`
+- [x] 7.1 创建 `web/vue/src/components/common/feedback/people-select/PeopleAvatar.vue`
+- [x] 7.2 创建 `web/vue/src/components/common/feedback/people-select/OrgTreeNode.vue`
+- [x] 7.3 创建 `web/vue/src/components/common/feedback/people-select/UserTreeNode.vue`
 
 ## 8. 前端视图组件（people-select）
 
-- [ ] 8.1 创建 `web/vue/src/components/common/feedback/people-select/PeopleSelectView.vue`
-- [ ] 8.2 创建 `web/vue/src/components/common/feedback/people-select/PeopleSelectDialog.vue`
-- [ ] 8.3 创建 `web/vue/src/components/common/feedback/people-select/PeopleSelect.vue`
-- [ ] 8.4 创建 `web/vue/src/components/common/feedback/people-select/PeopleDisplay.vue`
-- [ ] 8.5 更新 `web/vue/src/components/common/feedback/people-select/index.ts`
+- [x] 8.1 创建 `web/vue/src/components/common/feedback/people-select/PeopleSelectView.vue`
+- [x] 8.2 创建 `web/vue/src/components/common/feedback/people-select/PeopleSelectDialog.vue`
+- [x] 8.3 创建 `web/vue/src/components/common/feedback/people-select/PeopleSelect.vue`
+- [x] 8.4 创建 `web/vue/src/components/common/feedback/people-select/PeopleDisplay.vue`
+- [x] 8.5 更新 `web/vue/src/components/common/feedback/people-select/index.ts`
 
 ## 9. 组织选择器组件（org-select）
 
-- [ ] 9.1 创建 `web/vue/src/components/common/feedback/org-select/types.ts`
-- [ ] 9.2 创建 `web/vue/src/components/common/feedback/org-select/useOrgTree.ts`
-- [ ] 9.3 创建 `web/vue/src/components/common/feedback/org-select/OrgTreeNode.vue`
-- [ ] 9.4 创建 `web/vue/src/components/common/feedback/org-select/OrganizationSelectView.vue`
-- [ ] 9.5 创建 `web/vue/src/components/common/feedback/org-select/OrganizationSelectDialog.vue`
-- [ ] 9.6 创建 `web/vue/src/components/common/feedback/org-select/OrganizationSelect.vue`
-- [ ] 9.7 创建 `web/vue/src/components/common/feedback/org-select/index.ts`
+- [x] 9.1 创建 `web/vue/src/components/common/feedback/org-select/types.ts`
+- [x] 9.2 创建 `web/vue/src/components/common/feedback/org-select/useOrgTree.ts`
+- [x] 9.3 创建 `web/vue/src/components/common/feedback/org-select/OrgTreeNode.vue`
+- [x] 9.4 创建 `web/vue/src/components/common/feedback/org-select/OrganizationSelectView.vue`
+- [x] 9.5 创建 `web/vue/src/components/common/feedback/org-select/OrganizationSelectDialog.vue`
+- [x] 9.6 创建 `web/vue/src/components/common/feedback/org-select/OrganizationSelect.vue`
+- [x] 9.7 创建 `web/vue/src/components/common/feedback/org-select/index.ts`
 
 ## 10. 组件导出与文档
 
-- [ ] 10.1 更新 `web/vue/src/components/common/feedback/index.ts` 导出
-- [ ] 10.2 更新 `web/vue/src/components/index.ts` 统一入口
-- [ ] 10.3 更新 `web/vue/src/components/common/CLAUDE.md` 文档
+- [x] 10.1 更新 `web/vue/src/components/common/feedback/index.ts` 导出
+- [x] 10.2 更新 `web/vue/src/components/index.ts` 统一入口
+- [x] 10.3 更新 `web/vue/src/components/common/CLAUDE.md` 文档
 
 ## 11. 后端测试
 
-- [ ] 11.1 创建 `tests/iam/unit/test_org_user_service.py`
-- [ ] 11.2 测试 `get_org_user_tree()` 方法
-- [ ] 11.3 测试 `search_users()` 方法
-- [ ] 11.4 测试 `get_users_by_ids()` 方法
-- [ ] 11.5 创建 `tests/iam/unit/test_org_user_controller.py`
-- [ ] 11.6 测试各 API 端点
+- [x] 11.1 创建 `tests/iam/unit/test_org_user_service.py`
+- [x] 11.2 测试 `get_org_user_tree()` 方法
+- [x] 11.3 测试 `search_users()` 方法
+- [x] 11.4 测试 `get_users_by_ids()` 方法
+- [x] 11.5 创建 `tests/iam/unit/test_org_user_controller.py`
+- [x] 11.6 测试各 API 端点
 
 ## 12. 前端测试
 
-- [ ] 12.1 创建 `tests/components/unit/people-select/` 目录
-- [ ] 12.2 创建 `useOrgPeopleTree.test.ts`
-- [ ] 12.3 测试三态复选框逻辑
-- [ ] 12.4 测试懒加载逻辑
-- [ ] 12.5 测试选择逻辑
-- [ ] 12.6 创建 `PeopleSelect.test.ts`
-- [ ] 12.7 测试组件渲染和交互
+- [x] 12.1 创建 `tests/components/unit/people-select/` 目录
+- [x] 12.2 创建 `useOrgPeopleTree.test.ts`
+- [x] 12.3 测试三态复选框逻辑
+- [x] 12.4 测试懒加载逻辑
+- [x] 12.5 测试选择逻辑
+- [x] 12.6 创建 `PeopleSelect.test.ts`
+- [x] 12.7 测试组件渲染和交互
