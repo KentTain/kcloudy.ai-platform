@@ -9,6 +9,12 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from iam.models import Organization, User, UserOrganization
+from iam.schemas.org_user import (
+    OrgUserTreeVo,
+    OrganizationPaginatedListResponse,
+    OrganizationSimpleVo,
+    UserSimpleVo,
+)
 
 _logger = logger.bind(name=__name__)
 
@@ -360,6 +366,220 @@ class OrganizationService:
             "children_count": children_count,
             "path": path,
         }
+
+    @staticmethod
+    async def get_org_user_tree(
+        session: AsyncSession, tenant_id: str
+    ) -> list[OrgUserTreeVo]:
+        """
+        获取组织人员树
+
+        Args:
+            session: 数据库会话
+            tenant_id: 租户 ID
+
+        Returns:
+            list[OrgUserTreeVo]: 组织人员树列表
+        """
+        # 查询所有组织
+        stmt = (
+            select(Organization)
+            .where(Organization.tenant_id == tenant_id)
+            .order_by(Organization.tree_sorts)
+        )
+        result = await session.execute(stmt)
+        organizations = list(result.scalars().all())
+
+        if not organizations:
+            return []
+
+        # 收集所有组织 ID
+        org_ids = [org.id for org in organizations]
+
+        # 查询所有用户-组织关联
+        stmt = (
+            select(User, UserOrganization.organization_id, Organization.tree_names)
+            .join(UserOrganization, User.id == UserOrganization.user_id)
+            .join(Organization, UserOrganization.organization_id == Organization.id)
+            .where(UserOrganization.organization_id.in_(org_ids))
+            .order_by(User.username)
+        )
+        result = await session.execute(stmt)
+
+        # 构建组织 ID -> 用户列表的映射
+        org_users_map: dict[str, list[UserSimpleVo]] = {}
+        for row in result:
+            user, org_id, org_tree_names = row
+            if org_id not in org_users_map:
+                org_users_map[org_id] = []
+            org_users_map[org_id].append(
+                UserSimpleVo.from_user(user, org_id=org_id, org_tree_names=org_tree_names)
+            )
+
+        # 查询每个组织的子组织数量
+        stmt = (
+            select(Organization.parent_id, func.count(Organization.id).label("count"))
+            .where(Organization.tenant_id == tenant_id)
+            .group_by(Organization.parent_id)
+        )
+        result = await session.execute(stmt)
+        org_children_count = {row.parent_id: row.count for row in result}
+
+        # 构建 OrgUserTreeVo 列表
+        tree_nodes = []
+        for org in organizations:
+            users = org_users_map.get(org.id, [])
+            has_org_num = org_children_count.get(org.id, 0)
+            tree_nodes.append(
+                OrgUserTreeVo.from_organization(org, users=users, has_org_num=has_org_num)
+            )
+
+        # 使用 TreeNodeMixin.build_tree 构建树形结构
+        def transform(node: OrgUserTreeVo) -> dict:
+            return node.model_dump()
+
+        return Organization.build_tree(tree_nodes, transform_func=transform)
+
+    @staticmethod
+    async def get_org_users(
+        session: AsyncSession,
+        org_id: str,
+        include_children: bool = False,
+    ) -> list[UserSimpleVo]:
+        """
+        获取组织下的人员
+
+        Args:
+            session: 数据库会话
+            org_id: 组织 ID
+            include_children: 是否包含下级组织用户
+
+        Returns:
+            list[UserSimpleVo]: 用户列表
+        """
+        # 确定要查询的组织 ID 列表
+        if include_children:
+            # 获取组织及其所有子组织的 ID
+            org = await session.get(Organization, org_id)
+            if not org:
+                return []
+
+            parent_ids_prefix = org.descendant_parent_ids_prefix()
+            stmt = select(Organization.id).where(
+                Organization.tenant_id == org.tenant_id,
+                Organization.parent_ids.like(f"{parent_ids_prefix}%")
+                | (Organization.id == org_id),
+            )
+            result = await session.execute(stmt)
+            org_ids = [row[0] for row in result.fetchall()]
+        else:
+            org_ids = [org_id]
+
+        # 查询用户和对应的组织路径
+        stmt = (
+            select(User, Organization.id, Organization.tree_names)
+            .join(UserOrganization, User.id == UserOrganization.user_id)
+            .join(Organization, UserOrganization.organization_id == Organization.id)
+            .where(UserOrganization.organization_id.in_(org_ids))
+            .order_by(User.username)
+        )
+        result = await session.execute(stmt)
+
+        users = []
+        for row in result:
+            user, user_org_id, org_tree_names = row
+            users.append(
+                UserSimpleVo.from_user(
+                    user, org_id=user_org_id, org_tree_names=org_tree_names
+                )
+            )
+
+        return users
+
+    @staticmethod
+    async def search_organizations(
+        session: AsyncSession,
+        tenant_id: str,
+        keyword: str | None = None,
+        parent_id: str | None = None,
+        page: int = 1,
+        page_size: int = 20,
+    ) -> OrganizationPaginatedListResponse:
+        """
+        搜索组织
+
+        Args:
+            session: 数据库会话
+            tenant_id: 租户 ID
+            keyword: 搜索关键词
+            parent_id: 父组织 ID
+            page: 页码
+            page_size: 每页数量
+
+        Returns:
+            OrganizationPaginatedListResponse: 组织分页列表响应
+        """
+        # 构建查询条件
+        conditions = [Organization.tenant_id == tenant_id]
+
+        if keyword:
+            conditions.append(
+                Organization.name.ilike(f"%{keyword}%")
+                | (Organization.code.ilike(f"%{keyword}%"))
+            )
+
+        if parent_id:
+            conditions.append(Organization.parent_id == parent_id)
+
+        # 查询总数
+        count_stmt = select(func.count(Organization.id)).where(*conditions)
+        total_result = await session.execute(count_stmt)
+        total = total_result.scalar() or 0
+
+        # 查询列表
+        offset = (page - 1) * page_size
+        stmt = (
+            select(Organization)
+            .where(*conditions)
+            .order_by(Organization.tree_sorts)
+            .offset(offset)
+            .limit(page_size)
+        )
+        result = await session.execute(stmt)
+        organizations = list(result.scalars().all())
+
+        # 构建响应
+        items = [OrganizationSimpleVo.from_organization(org) for org in organizations]
+
+        return OrganizationPaginatedListResponse(
+            total=total,
+            page=page,
+            page_size=page_size,
+            items=items,
+        )
+
+    @staticmethod
+    async def get_organizations_by_ids(
+        session: AsyncSession, org_ids: list[str]
+    ) -> list[OrganizationSimpleVo]:
+        """
+        批量获取组织
+
+        Args:
+            session: 数据库会话
+            org_ids: 组织 ID 列表
+
+        Returns:
+            list[OrganizationSimpleVo]: 组织列表
+        """
+        if not org_ids:
+            return []
+
+        stmt = select(Organization).where(Organization.id.in_(org_ids))
+        result = await session.execute(stmt)
+        organizations = list(result.scalars().all())
+
+        return [OrganizationSimpleVo.from_organization(org) for org in organizations]
 
 
 # 服务单例

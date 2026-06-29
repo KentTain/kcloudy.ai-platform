@@ -19,6 +19,7 @@ from framework.utils.crypto import (
 )
 from framework.utils.session import delete_user_sessions
 from iam.models import User, UserOrganization, UserStatus, UserTenant
+from iam.schemas.org_user import UserSimplePaginatedListResponse, UserSimpleVo
 from iam.schemas.user import UserDetailResponse, UserTenantResponse
 
 _logger = logger.bind(name=__name__)
@@ -903,6 +904,199 @@ class UserService:
                     )
                 )
         return tenants_vo
+
+    @staticmethod
+    async def search_users(
+        session: AsyncSession,
+        tenant_id: str,
+        keyword: str | None = None,
+        org_id: str | None = None,
+        include_children: bool = False,
+        page: int = 1,
+        page_size: int = 20,
+    ) -> UserSimplePaginatedListResponse:
+        """
+        搜索用户
+
+        Args:
+            session: 数据库会话
+            tenant_id: 租户 ID
+            keyword: 搜索关键词
+            org_id: 组织 ID（可选）
+            include_children: 是否包含下级组织用户
+            page: 页码
+            page_size: 每页数量
+
+        Returns:
+            UserSimplePaginatedListResponse: 用户分页列表响应
+        """
+        from iam.models import Organization
+
+        # 构建查询条件
+        conditions = [User.tenant_id == tenant_id]
+
+        if keyword:
+            conditions.append(
+                or_(
+                    User.username.ilike(f"%{keyword}%"),
+                    User.nickname.ilike(f"%{keyword}%"),
+                    User.email.ilike(f"%{keyword}%"),
+                )
+            )
+
+        # 组织筛选
+        user_ids_from_org: list[str] | None = None
+        if org_id:
+            if include_children:
+                # 获取组织及其所有子组织的 ID
+                org = await session.get(Organization, org_id)
+                if org:
+                    parent_ids_prefix = org.descendant_parent_ids_prefix()
+                    org_stmt = select(Organization.id).where(
+                        or_(
+                            Organization.id == org_id,
+                            Organization.parent_ids.like(f"{parent_ids_prefix}%"),
+                        )
+                    )
+                    org_result = await session.execute(org_stmt)
+                    org_ids = [row[0] for row in org_result.all()]
+                else:
+                    org_ids = [org_id]
+            else:
+                org_ids = [org_id]
+
+            # 通过 UserOrganization 关联查询
+            user_id_stmt = (
+                select(UserOrganization.user_id)
+                .where(UserOrganization.organization_id.in_(org_ids))
+                .distinct()
+            )
+            user_id_result = await session.execute(user_id_stmt)
+            user_ids_from_org = [row[0] for row in user_id_result.all()]
+            conditions.append(User.id.in_(user_ids_from_org))
+
+        # 查询总数
+        count_stmt = select(func.count(User.id)).where(*conditions)
+        total_result = await session.execute(count_stmt)
+        total = total_result.scalar() or 0
+
+        # 查询列表
+        offset = (page - 1) * page_size
+        stmt = (
+            select(User)
+            .where(*conditions)
+            .order_by(User.created_at.desc())
+            .offset(offset)
+            .limit(page_size)
+        )
+        result = await session.execute(stmt)
+        users = list(result.scalars().all())
+
+        # 查询用户的组织信息
+        user_ids = [user.id for user in users]
+        org_info_map: dict[str, tuple[str, str]] = {}  # user_id -> (org_id, org_tree_names)
+
+        if user_ids:
+            stmt = (
+                select(
+                    UserOrganization.user_id,
+                    Organization.id,
+                    Organization.tree_names,
+                )
+                .join(Organization, UserOrganization.organization_id == Organization.id)
+                .where(UserOrganization.user_id.in_(user_ids))
+            )
+            result = await session.execute(stmt)
+            for row in result:
+                if row.user_id not in org_info_map:  # 只取第一个组织
+                    org_info_map[row.user_id] = (row.id, row.tree_names or "")
+
+        # 构建响应
+        items = []
+        for user in users:
+            org_id_val, org_tree_names = org_info_map.get(user.id, (None, None))
+            items.append(
+                UserSimpleVo.from_user(
+                    user, org_id=org_id_val, org_tree_names=org_tree_names
+                )
+            )
+
+        return UserSimplePaginatedListResponse(
+            total=total,
+            page=page,
+            page_size=page_size,
+            items=items,
+        )
+
+    @staticmethod
+    async def get_users_by_ids(
+        session: AsyncSession, user_ids: list[str]
+    ) -> list[UserSimpleVo]:
+        """
+        批量获取用户
+
+        Args:
+            session: 数据库会话
+            user_ids: 用户 ID 列表
+
+        Returns:
+            list[UserSimpleVo]: 用户列表
+        """
+        if not user_ids:
+            return []
+
+        stmt = select(User).where(User.id.in_(user_ids))
+        result = await session.execute(stmt)
+        users = list(result.scalars().all())
+
+        # 查询用户的组织信息
+        found_user_ids = [user.id for user in users]
+        org_info_map: dict[str, tuple[str, str]] = {}  # user_id -> (org_id, org_tree_names)
+
+        if found_user_ids:
+            from iam.models import Organization
+
+            stmt = (
+                select(
+                    UserOrganization.user_id,
+                    Organization.id,
+                    Organization.tree_names,
+                )
+                .join(Organization, UserOrganization.organization_id == Organization.id)
+                .where(UserOrganization.user_id.in_(found_user_ids))
+            )
+            result = await session.execute(stmt)
+            for row in result:
+                if row.user_id not in org_info_map:  # 只取第一个组织
+                    org_info_map[row.user_id] = (row.id, row.tree_names or "")
+
+        # 构建响应
+        items = []
+        for user in users:
+            org_id_val, org_tree_names = org_info_map.get(user.id, (None, None))
+            items.append(
+                UserSimpleVo.from_user(
+                    user, org_id=org_id_val, org_tree_names=org_tree_names
+                )
+            )
+
+        return items
+
+    @staticmethod
+    async def get_user_avatar_url(session: AsyncSession, user_id: str) -> str | None:
+        """
+        获取用户头像 URL
+
+        Args:
+            session: 数据库会话
+            user_id: 用户 ID
+
+        Returns:
+            str | None: 头像 URL，不存在则返回 None
+        """
+        stmt = select(User.avatar).where(User.id == user_id)
+        result = await session.execute(stmt)
+        return result.scalar_one_or_none()
 
 
 # 服务单例

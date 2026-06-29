@@ -15,9 +15,21 @@ class Conversation(BaseModel, ActiveRecordMixin, TenantMixin):
     """会话模型"""
 
     __tablename__ = "conversations"
-    __table_args__ = ({ "schema": "ai", "comment": "会话" },)
+    __table_args__ = ({"schema": "ai", "comment": "会话"},)
 
-    app_id: Mapped[str] = mapped_column(StringUUID, nullable=False, index=True, comment="应用id")
+    app_id: Mapped[str] = mapped_column(
+        StringUUID, nullable=False, index=True, comment="应用id"
+    )
     name: Mapped[str] = mapped_column(String(255), nullable=False, comment="会话名称")
-    status: Mapped[ConversationStatus] = mapped_column(EnumType(enum_class=ConversationStatus), nullable=False, default=ConversationStatus.NORMAL, comment="状态")
-    mode: Mapped[ConversationMode] = mapped_column(EnumType(enum_class=ConversationMode), nullable=False, default=ConversationMode.CHAT, comment="会话模式")
+    status: Mapped[ConversationStatus] = mapped_column(
+        EnumType(enum_class=ConversationStatus),
+        nullable=False,
+        default=ConversationStatus.NORMAL,
+        comment="状态",
+    )
+    mode: Mapped[ConversationMode] = mapped_column(
+        EnumType(enum_class=ConversationMode),
+        nullable=False,
+        default=ConversationMode.CHAT,
+        comment="会话模式",
+    )
