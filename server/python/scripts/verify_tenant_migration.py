@@ -33,9 +33,9 @@ async def apply_comments(conn):
 
     # 更新迁移版本
     await conn.execute(
-        "UPDATE tenant.alembic_version SET version_num = '005_tenant_enum_and_comment'"
+        "UPDATE tenant.alembic_version SET version_num = '002_tenant_enum_and_comment'"
     )
-    print("Updated migration version to 005_tenant_enum_and_comment")
+    print("Updated migration version to 002_tenant_enum_and_comment")
 
 
 async def verify():
@@ -83,4 +83,3 @@ async def verify():
 
 if __name__ == "__main__":
     asyncio.run(verify())
-

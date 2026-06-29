@@ -1,7 +1,7 @@
 """补充表级comment并将字段从String改为EnumType
 
-Revision ID: 005_tenant_enum_and_comment
-Revises: 004_plugin_definition_fields
+Revision ID: 002_tenant_enum_and_comment
+Revises: 001_tenant_initial
 Create Date: 2026-06-29
 
 """
@@ -11,8 +11,8 @@ import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision: str = "005_tenant_enum_and_comment"
-down_revision: str | None = "004_plugin_definition_fields"
+revision: str = "002_tenant_enum_and_comment"
+down_revision: str | None = "001_tenant_initial"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

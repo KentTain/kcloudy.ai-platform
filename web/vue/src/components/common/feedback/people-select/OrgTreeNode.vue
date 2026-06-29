@@ -43,11 +43,6 @@ const indentStyle = {
   paddingLeft: `${props.node.tree_level * 20}px`,
 }
 
-// 计算复选框状态
-const checkboxState = computed(() => {
-  return props.node.checkState
-})
-
 // 是否正在加载
 const isLoading = computed(() => {
   // 这里需要从父组件传入 loading 状态，暂时返回 false
