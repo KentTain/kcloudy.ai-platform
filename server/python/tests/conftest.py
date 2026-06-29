@@ -12,6 +12,11 @@ if str(src_path) not in sys.path:
 os.environ["PYTHON_SERVICE_ENV"] = "local"
 os.environ["TZ"] = "Asia/Shanghai"
 
+# 设置配置文件目录（测试使用 server/config/）
+config_dir = Path(__file__).parent.parent.parent / "config"
+if config_dir.exists():
+    os.environ["APP_CONFIG_DIR"] = str(config_dir)
+
 # =============================================================================
 # Windows 事件循环策略修复
 # =============================================================================
