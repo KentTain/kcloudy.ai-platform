@@ -26,6 +26,8 @@ import type {
  * 用于组织选择组件的树形展示。
  */
 export interface OrgSelectNode extends TreeNodeTree {
+  /** 租户 ID */
+  tenant_id: string
   /** 组织名称 */
   name: string
   /** 组织编码 */
@@ -34,6 +36,8 @@ export interface OrgSelectNode extends TreeNodeTree {
   status: string
   /** 是否有子节点（用于判断懒加载） */
   has_children?: boolean
+  /** 子节点列表（覆盖 TreeNodeTree 的 children 类型） */
+  children?: OrgSelectNode[]
 }
 
 /**
