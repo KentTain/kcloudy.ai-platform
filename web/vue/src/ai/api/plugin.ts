@@ -89,8 +89,8 @@ export async function getPluginList(params?: {
   status?: string;
   plugin_id?: string;
   plugin_type?: string;
-  limit?: number;
-  offset?: number;
+  page?: number;
+  page_size?: number;
 }): Promise<ApiResponse<PluginPaginatedListResponse>> {
   return rawGet(CONSOLE_BASE, { params });
 }
@@ -216,8 +216,8 @@ export async function adminGetPluginList(params?: {
   status?: string;
   plugin_id?: string;
   plugin_type?: string;
-  limit?: number;
-  offset?: number;
+  page?: number;
+  page_size?: number;
 }): Promise<ApiResponse<PluginPaginatedListResponse>> {
   return rawGet(ADMIN_BASE, { params });
 }

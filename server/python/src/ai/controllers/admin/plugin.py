@@ -53,8 +53,8 @@ async def get_plugin_list(
     status: str | None = Query(None, description="插件状态过滤"),
     plugin_id: str | None = Query(None, description="插件id模糊查询"),
     plugin_type: str | None = Query(None, description="插件类型过滤"),
-    limit: int = Query(50, ge=1, le=2000, description="每页数量"),
-    offset: int = Query(0, ge=0, description="偏移量"),
+    page: int = Query(1, ge=1, description="页码"),
+    page_size: int = Query(20, ge=1, le=100, description="每页数量"),
     session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """
@@ -70,10 +70,15 @@ async def get_plugin_list(
             status=status,
             plugin_id=plugin_id,
             plugin_type=plugin_type,
-            limit=limit,
-            offset=offset,
+            page=page,
+            page_size=page_size,
         )
-        return ApiResponse.success(data=result.model_dump())
+        return ApiResponse.paginated(
+            data=result.plugins,
+            total=result.total,
+            page=page,
+            page_size=page_size,
+        )
     except Exception as e:
         _logger.exception("获取插件列表失败")
         raise HTTPException(status_code=400, detail=str(e))

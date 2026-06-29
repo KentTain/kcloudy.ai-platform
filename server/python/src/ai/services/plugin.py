@@ -70,8 +70,8 @@ class PluginManagementService:
         status: str | None = None,
         plugin_id: str | None = None,
         plugin_type: str | None = None,
-        limit: int = 50,
-        offset: int = 0,
+        page: int = 1,
+        page_size: int = 20,
     ) -> PluginPaginatedListResponseVo:
         """获取插件列表"""
         tenant_id = get_tenant_id()
@@ -80,7 +80,7 @@ class PluginManagementService:
 
         _logger.info(
             f"获取插件列表: tenant_id={tenant_id}, status={status}, "
-            f"plugin_id={plugin_id}, plugin_type={plugin_type}, limit={limit}, offset={offset}"
+            f"plugin_id={plugin_id}, plugin_type={plugin_type}, page={page}, page_size={page_size}"
         )
 
         # 1. 从 Provider 获取租户的插件安装记录
@@ -126,7 +126,8 @@ class PluginManagementService:
 
         # 5. 排序和分页
         total = len(combined_data)
-        paged_data = combined_data[offset : offset + limit]
+        offset = (page - 1) * page_size
+        paged_data = combined_data[offset : offset + page_size]
 
         # 6. 转换为 VO
         plugin_vos = []

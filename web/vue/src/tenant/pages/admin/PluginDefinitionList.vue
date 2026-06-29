@@ -62,7 +62,9 @@ const stats = ref<PluginStatistics>({
 const loadStats = async () => {
   try {
     const response = await getPluginStatistics();
-    stats.value = response.data;
+    if (response.data) {
+      stats.value = response.data;
+    }
   } catch (error) {
     console.error("加载统计数据失败:", error);
   }
