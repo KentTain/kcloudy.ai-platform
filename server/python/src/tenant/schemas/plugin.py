@@ -7,7 +7,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any
+from typing import Any, Literal
 
 from framework.schemas import BaseModel, BasePaginatedQuery
 from pydantic import Field
@@ -146,3 +146,40 @@ class PluginStatisticsResponse(BaseModel):
     definition_stats: DefinitionStats = Field(..., description="插件定义统计")
     installation_stats: InstallationStats = Field(..., description="插件安装统计")
     cached_at: datetime | None = Field(None, description="缓存时间（如果使用缓存）")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 预览功能 Schema
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+class ScannedPluginPreview(BaseModel):
+    """扫描预览结果"""
+
+    plugin_id: str = Field(..., description="插件ID")
+    version: str = Field(..., description="版本号")
+    name: str = Field(..., description="插件名称")
+    description: str | None = Field(default=None, description="插件描述")
+    exists: bool = Field(default=False, description="是否已存在")
+    status: Literal["ready", "invalid"] = Field(default="ready", description="状态：ready=可导入，invalid=解析失败")
+    error_message: str | None = Field(None, description="错误信息")
+
+
+class ParsedPluginInfo(BaseModel):
+    """解析插件结果"""
+
+    plugin_id: str = Field(..., description="插件ID")
+    version: str = Field(..., description="版本号")
+    name: str = Field(..., description="插件名称")
+    description: str | None = Field(default=None, description="插件描述")
+    manifest_type: str | None = Field(None, description="清单类型")
+    declaration: dict[str, Any] = Field(default_factory=dict, description="完整声明内容")
+    exists: bool = Field(default=False, description="是否已存在")
+
+
+class ScanDirectoryConfirmRequest(BaseModel):
+    """扫描确认请求"""
+
+    directory: str = Field(..., description="服务器目录路径")
+    recursive: bool = Field(default=False, description="是否递归扫描子目录")
+    plugin_ids: list[str] = Field(default_factory=list, description="指定要导入的插件ID列表")
