@@ -25,8 +25,8 @@ const router = useRouter();
 // 搜索筛选
 const searchForm = ref({
   keyword: "",
-  status: "",
-  plugin_type: "",
+  status: "all",
+  plugin_type: "all",
 });
 
 // 格式化日期
@@ -162,21 +162,13 @@ const dataTable = useDataTable<PluginInfo>({
   columns,
   remoteFetchFn: async ({ page, page_size }) => {
     const response = await getPluginList({
-      limit: page_size,
-      offset: (page - 1) * page_size,
-      plugin_id: searchForm.value.keyword || undefined,
-      status: searchForm.value.status || undefined,
-      plugin_type: searchForm.value.plugin_type || undefined,
-    });
-    // 后端返回的是 { plugins: PluginInfo[], total: number }
-    const plugins = response.data?.plugins || [];
-    const total = response.data?.total ?? plugins.length;
-    return {
-      data: plugins,
-      total,
       page,
       page_size,
-    };
+      plugin_id: searchForm.value.keyword || undefined,
+      status: searchForm.value.status === "all" ? undefined : searchForm.value.status,
+      plugin_type: searchForm.value.plugin_type === "all" ? undefined : searchForm.value.plugin_type,
+    });
+    return response;
   },
 });
 
@@ -187,7 +179,7 @@ const handleSearch = () => {
 
 // 重置
 const handleReset = () => {
-  searchForm.value = { keyword: "", status: "", plugin_type: "" };
+  searchForm.value = { keyword: "", status: "all", plugin_type: "all" };
   dataTable.refresh(true);
 };
 
@@ -259,7 +251,7 @@ const handleUninstall = async (plugin: PluginInfo) => {
           <SelectValue placeholder="状态" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="">全部状态</SelectItem>
+          <SelectItem value="all">全部状态</SelectItem>
           <SelectItem value="running">运行中</SelectItem>
           <SelectItem value="stopped">已停止</SelectItem>
           <SelectItem value="error">错误</SelectItem>
@@ -271,7 +263,7 @@ const handleUninstall = async (plugin: PluginInfo) => {
           <SelectValue placeholder="类型" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="">全部类型</SelectItem>
+          <SelectItem value="all">全部类型</SelectItem>
           <SelectItem value="model">模型</SelectItem>
           <SelectItem value="tool">工具</SelectItem>
           <SelectItem value="endpoint">端点</SelectItem>

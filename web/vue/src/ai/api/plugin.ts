@@ -35,11 +35,9 @@ export interface PluginInfo {
 
 /**
  * 插件分页列表响应
+ * 后端使用 ApiResponse.paginated() 返回，data 直接是插件数组
  */
-export interface PluginPaginatedListResponse {
-  plugins: PluginInfo[];
-  total: number;
-}
+export type PluginPaginatedListResponse = PluginInfo[];
 
 /**
  * 插件安装响应
