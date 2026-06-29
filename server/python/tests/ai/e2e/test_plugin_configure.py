@@ -377,7 +377,7 @@ class TestPluginCredentialE2E:
         await e2e_session.delete(credential_record)
         await e2e_session.commit()
 
-        TenantContext.clear_tenant_id()
+        TenantContext.clear()
 
     @pytest.mark.e2e
     @pytest.mark.asyncio
@@ -458,7 +458,7 @@ class TestPluginCredentialE2E:
         await e2e_session.delete(credential_record)
         await e2e_session.commit()
 
-        TenantContext.clear_tenant_id()
+        TenantContext.clear()
 
     @pytest.mark.e2e
     @pytest.mark.asyncio
@@ -525,4 +525,4 @@ class TestPluginCredentialE2E:
         await e2e_session.delete(credential_record)
         await e2e_session.commit()
 
-        TenantContext.clear_tenant_id()
+        TenantContext.clear()

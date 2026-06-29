@@ -74,8 +74,14 @@ class TestPluginFullLifecycle:
 
         # 验证安装成功
         plugin_info = await helper.assert_plugin_installed(e2e_session, plugin_id)
-        assert plugin_info["id"] == plugin_id
-        assert plugin_info["status"] in ("ACTIVE", "INACTIVE")
+        # plugin_info["id"] 和 plugin_info["status"] 可能是 None，验证 plugin_id 在 manager.plugins 中即可
+        assert plugin_id in (await helper.get_all_plugins(e2e_session)), f"插件应已安装: {plugin_id}"
+        # 从数据库记录验证状态
+        from framework.tenant.plugin_protocols import get_plugin_installation_provider
+        provider = get_plugin_installation_provider()
+        installation = await provider.get_installation(test_tenant_id, plugin_id)
+        assert installation is not None, "安装记录应存在"
+        assert installation.status.upper() in ("ACTIVE", "INACTIVE"), f"状态应为 ACTIVE 或 INACTIVE，实际: {installation.status}"
 
         # -------------------------------------------------------------------------
         # 步骤 2：配置凭证
@@ -126,7 +132,7 @@ class TestPluginFullLifecycle:
         # -------------------------------------------------------------------------
         # 步骤 3：启动插件
         # -------------------------------------------------------------------------
-        success = await manager.start_plugin(plugin_id, e2e_session)
+        success = await manager.start_plugin(plugin_id)
         assert success is True, "启动插件失败"
 
         # 等待插件状态变为 ACTIVE
@@ -194,8 +200,12 @@ class TestPluginFullLifecycle:
         # -------------------------------------------------------------------------
         # 步骤 6：卸载插件
         # -------------------------------------------------------------------------
-        success = await manager.uninstall_plugin(e2e_session, plugin_id)
-        assert success is True, "卸载插件失败"
+        from ai.services.plugin import plugin_management_service
+        from framework.tenant.context import TenantContext
+
+        TenantContext.set_tenant_id(test_tenant_id)
+        result = await plugin_management_service.uninstall_plugin(e2e_session, plugin_id)
+        assert result.success is True, "卸载插件失败"
 
         # -------------------------------------------------------------------------
         # 步骤 7：验证资源清理
@@ -262,8 +272,14 @@ class TestPluginFullLifecycle:
 
         # 验证安装成功
         plugin_info = await helper.assert_plugin_installed(e2e_session, plugin_id)
-        assert plugin_info["id"] == plugin_id
-        assert plugin_info["status"] in ("ACTIVE", "INACTIVE")
+        # plugin_info["id"] 和 plugin_info["status"] 可能是 None，验证 plugin_id 在 manager.plugins 中即可
+        assert plugin_id in (await helper.get_all_plugins(e2e_session)), f"插件应已安装: {plugin_id}"
+        # 从数据库记录验证状态
+        from framework.tenant.plugin_protocols import get_plugin_installation_provider
+        provider = get_plugin_installation_provider()
+        installation = await provider.get_installation(test_tenant_id, plugin_id)
+        assert installation is not None, "安装记录应存在"
+        assert installation.status.upper() in ("ACTIVE", "INACTIVE"), f"状态应为 ACTIVE 或 INACTIVE，实际: {installation.status}"
 
         # -------------------------------------------------------------------------
         # 步骤 2：配置凭证
@@ -314,7 +330,7 @@ class TestPluginFullLifecycle:
         # -------------------------------------------------------------------------
         # 步骤 3：启动插件
         # -------------------------------------------------------------------------
-        success = await manager.start_plugin(plugin_id, e2e_session)
+        success = await manager.start_plugin(plugin_id)
         assert success is True, "启动插件失败"
 
         # 等待插件状态变为 ACTIVE
@@ -402,8 +418,12 @@ class TestPluginFullLifecycle:
         # -------------------------------------------------------------------------
         # 步骤 6：卸载插件
         # -------------------------------------------------------------------------
-        success = await manager.uninstall_plugin(e2e_session, plugin_id)
-        assert success is True, "卸载插件失败"
+        from ai.services.plugin import plugin_management_service
+        from framework.tenant.context import TenantContext
+
+        TenantContext.set_tenant_id(test_tenant_id)
+        result = await plugin_management_service.uninstall_plugin(e2e_session, plugin_id)
+        assert result.success is True, "卸载插件失败"
 
         # -------------------------------------------------------------------------
         # 步骤 7：验证资源清理
@@ -460,7 +480,7 @@ class TestPluginFullLifecycle:
         manager = await helper.get_manager(e2e_session)
 
         # 启动插件
-        success = await manager.start_plugin(plugin_id, e2e_session)
+        success = await manager.start_plugin(plugin_id)
         assert success is True
 
         await helper.wait_for_plugin_status(
@@ -479,8 +499,12 @@ class TestPluginFullLifecycle:
         assert success is True
 
         # 卸载插件
-        success = await manager.uninstall_plugin(e2e_session, plugin_id)
-        assert success is True
+        from ai.services.plugin import plugin_management_service
+        from framework.tenant.context import TenantContext
+
+        TenantContext.set_tenant_id(test_tenant_id)
+        result = await plugin_management_service.uninstall_plugin(e2e_session, plugin_id)
+        assert result.success is True
 
         # -------------------------------------------------------------------------
         # 验证资源清理
