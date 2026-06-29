@@ -35,7 +35,7 @@ from framework.tenant.exceptions import (
     TenantResolveError,
 )
 from framework.tenant.middleware import TenantMiddleware
-from framework.tenant.protocols import (
+from framework.tenant.tenant_protocols import (
     TenantCacheConfig,
     TenantDatabaseConfig,
     TenantInfo,
@@ -48,8 +48,11 @@ from framework.tenant.protocols import (
 )
 from framework.tenant.resolver import TenantResolver
 from framework.tenant.sync_protocols import (
+    ModuleAutoAssigner,
     ModuleDefinitionSyncProvider,
+    get_module_auto_assigner,
     get_module_definition_sync_provider,
+    register_module_auto_assigner,
     register_module_definition_sync_provider,
 )
 
@@ -97,7 +100,10 @@ __all__ = [
     # Resolver
     "TenantResolver",
     # Sync Protocols
+    "ModuleAutoAssigner",
     "ModuleDefinitionSyncProvider",
-    "register_module_definition_sync_provider",
+    "get_module_auto_assigner",
+    "register_module_auto_assigner",
     "get_module_definition_sync_provider",
+    "register_module_definition_sync_provider",
 ]

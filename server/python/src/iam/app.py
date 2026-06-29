@@ -15,7 +15,7 @@ from loguru import logger
 from framework.common.time import ChinaTimeZone
 from framework.database.core.engine import setup_engine
 from framework.tenant.middleware import TenantMiddleware
-from framework.tenant.protocols import register_tenant_provider
+from framework.tenant.tenant_protocols import register_tenant_provider
 from tenant.services.tenant_provider_impl import tenant_provider_impl
 
 _logger = logger.bind(name=__name__)

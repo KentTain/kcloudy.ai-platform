@@ -11,7 +11,7 @@ from loguru import logger
 
 from framework.queue.task_message import TaskMessage
 from framework.tenant.context import TenantContext
-from framework.tenant.protocols import get_tenant_provider
+from framework.tenant.tenant_protocols import get_tenant_provider
 
 _logger = logger.bind(name=__name__)
 

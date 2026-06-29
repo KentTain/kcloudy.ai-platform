@@ -37,7 +37,7 @@ async def run(*, dry_run: bool = False) -> int:
     """
     from framework.configs import get_settings
     from framework.database.core.engine import get_session
-    from framework.tenant.protocols import get_module_auto_assigner
+    from framework.tenant.sync_protocols import get_module_auto_assigner
 
     settings = get_settings()
     tenant_config = settings.tenant

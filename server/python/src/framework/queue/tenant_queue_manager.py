@@ -13,7 +13,7 @@ from loguru import logger
 
 from framework.database.mixins.tenant import should_skip_tenant
 from framework.tenant.context import get_tenant_id
-from framework.tenant.protocols import TenantQueueConfig
+from framework.tenant.tenant_protocols import TenantQueueConfig
 
 _logger = logger.bind(name=__name__)
 
@@ -102,7 +102,7 @@ class TenantQueueManager:
         Returns:
             str: 消息 ID
         """
-        from framework.tenant.protocols import TenantCacheConfig
+        from framework.tenant.tenant_protocols import TenantCacheConfig
 
         cache_config = None
         if self._is_physical_isolation(config):
@@ -151,7 +151,7 @@ class TenantQueueManager:
         Returns:
             list: 消息列表
         """
-        from framework.tenant.protocols import TenantCacheConfig
+        from framework.tenant.tenant_protocols import TenantCacheConfig
 
         cache_config = None
         if self._is_physical_isolation(config):
@@ -198,7 +198,7 @@ class TenantQueueManager:
         Returns:
             int: 确认的消息数
         """
-        from framework.tenant.protocols import TenantCacheConfig
+        from framework.tenant.tenant_protocols import TenantCacheConfig
 
         cache_config = None
         if self._is_physical_isolation(config):

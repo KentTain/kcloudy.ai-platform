@@ -8,7 +8,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from framework.tenant.protocols import (
+from framework.tenant.sync_protocols import (
     ModuleAutoAssigner,
     get_module_auto_assigner,
     register_module_auto_assigner,

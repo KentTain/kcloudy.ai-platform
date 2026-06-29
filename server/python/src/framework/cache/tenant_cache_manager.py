@@ -16,7 +16,7 @@ from redis.asyncio import ConnectionPool, Redis
 
 from framework.database.mixins.tenant import should_skip_tenant
 from framework.tenant.context import get_tenant_id
-from framework.tenant.protocols import TenantCacheConfig
+from framework.tenant.tenant_protocols import TenantCacheConfig
 
 _logger = logger.bind(name=__name__)
 

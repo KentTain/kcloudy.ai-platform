@@ -11,7 +11,7 @@ from datetime import datetime
 from typing import Any
 
 from framework.common.ctx import _update_context, get_context
-from framework.tenant.protocols import (
+from framework.tenant.tenant_protocols import (
     TenantCacheConfig,
     TenantDatabaseConfig,
     TenantPubSubConfig,

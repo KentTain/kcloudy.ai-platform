@@ -12,7 +12,7 @@ import click
 from loguru import logger
 
 from framework.module import get_registry, load_modules
-from framework.tenant.protocols import register_tenant_provider
+from framework.tenant.tenant_protocols import register_tenant_provider
 from framework.utils.log_util import write_error, write_info
 from framework.utils.startup_timer import StartupTimer
 

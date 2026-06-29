@@ -1,8 +1,8 @@
 """
-模块定义同步提供者协议
+模块定义同步相关协议
 
-定义 ModuleDefinitionSyncProvider Protocol，抽象 tenant schema 的数据库操作。
-通过依赖倒置避免 framework 直接依赖 tenant 业务模块。
+提供模块定义同步和模块自动分配的抽象接口。
+通过依赖倒置避免 framework 直接依赖业务模块。
 """
 
 from typing import Protocol
@@ -15,6 +15,10 @@ from framework.module.definition import (
     PermissionDef,
     RoleDef,
 )
+
+# =============================================================================
+# ModuleDefinitionSyncProvider Protocol
+# =============================================================================
 
 
 class ModuleDefinitionSyncProvider(Protocol):
@@ -304,3 +308,57 @@ def get_module_definition_sync_provider() -> ModuleDefinitionSyncProvider:
             "Call register_module_definition_sync_provider() at startup."
         )
     return _sync_provider
+
+
+# =============================================================================
+# ModuleAutoAssigner Protocol
+# =============================================================================
+
+
+class ModuleAutoAssigner(Protocol):
+    """
+    模块自动分配器协议
+
+    在租户创建时自动分配活跃模块，由 IAM 模块实现。
+    通过依赖倒置避免 Tenant → IAM 循环依赖。
+    """
+
+    async def auto_assign(self, session: AsyncSession, tenant_id: str) -> None:
+        """
+        为租户自动分配所有活跃模块
+
+        在同一事务中创建 TenantModule 并同步到租户实例层。
+
+        Args:
+            session: 当前数据库会话（与调用者共享）
+            tenant_id: 租户 ID
+        """
+        ...
+
+
+_module_auto_assigner: ModuleAutoAssigner | None = None
+
+
+def register_module_auto_assigner(assigner: ModuleAutoAssigner) -> None:
+    """
+    注册模块自动分配器
+
+    应用启动时调用，注入 IAM 模块的实现。
+
+    Args:
+        assigner: ModuleAutoAssigner 实现实例
+    """
+    global _module_auto_assigner
+    _module_auto_assigner = assigner
+
+
+def get_module_auto_assigner() -> ModuleAutoAssigner | None:
+    """
+    获取模块自动分配器
+
+    返回 None 表示未注册（没有 IAM 模块时降级）。
+
+    Returns:
+        ModuleAutoAssigner 实例或 None
+    """
+    return _module_auto_assigner

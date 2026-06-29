@@ -8,7 +8,7 @@ from loguru import logger
 
 from framework.database.dependencies import get_task_session
 from framework.tenant.context import SimpleTenant
-from framework.tenant.protocols import TenantInfo, TenantProvider
+from framework.tenant.tenant_protocols import TenantInfo, TenantProvider
 from tenant.services.tenant_service import TenantService
 
 _logger = logger.bind(name=__name__)

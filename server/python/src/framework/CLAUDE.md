@@ -76,7 +76,7 @@ framework ──X──▶ demo / iam / ai
 租户缓存配置通过 `TenantCacheConfig` 定义：
 
 ```python
-from framework.tenant.protocols import TenantCacheConfig
+from framework.tenant.tenant_protocols import TenantCacheConfig
 
 # 物理隔离：独立 Redis 实例
 config = TenantCacheConfig(
@@ -118,7 +118,7 @@ await cache.set("user:123", "data", tenant_id="tenant_001")
 租户存储配置通过 `TenantStorageConfig` 定义：
 
 ```python
-from framework.tenant.protocols import TenantStorageConfig
+from framework.tenant.tenant_protocols import TenantStorageConfig
 
 # 物理隔离：独立存储服务
 config = TenantStorageConfig(
@@ -165,7 +165,7 @@ from framework.queue.tenant_queue_manager import get_queue_manager
 queue = get_queue_manager()
 
 # 物理隔离：独立 Redis 实例
-from framework.tenant.protocols import TenantQueueConfig
+from framework.tenant.tenant_protocols import TenantQueueConfig
 queue_config = TenantQueueConfig(host="redis-tenant-a.example.com", port=6379)
 await queue.xadd("orders", {"action": "create"}, config=queue_config)
 
@@ -195,7 +195,7 @@ from framework.pubsub.tenant_pubsub_manager import get_pubsub_manager
 pubsub = get_pubsub_manager()
 
 # 物理隔离：独立 Redis 实例
-from framework.tenant.protocols import TenantPubSubConfig
+from framework.tenant.tenant_protocols import TenantPubSubConfig
 pubsub_config = TenantPubSubConfig(host="redis-tenant-a.example.com", port=6379)
 await pubsub.publish("notifications", "message", config=pubsub_config)
 
@@ -215,7 +215,7 @@ async for message in subscription.listen():
 租户资源配置通常从租户信息中获取：
 
 ```python
-from framework.tenant.protocols import get_tenant_provider
+from framework.tenant.tenant_protocols import get_tenant_provider
 
 provider = get_tenant_provider()
 tenant_info = await provider.get_tenant("tenant_001")

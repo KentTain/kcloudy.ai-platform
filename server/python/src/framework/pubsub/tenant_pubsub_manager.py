@@ -11,7 +11,7 @@ from loguru import logger
 
 from framework.database.mixins.tenant import should_skip_tenant
 from framework.tenant.context import get_tenant_id
-from framework.tenant.protocols import TenantPubSubConfig
+from framework.tenant.tenant_protocols import TenantPubSubConfig
 
 _logger = logger.bind(name=__name__)
 
@@ -100,7 +100,7 @@ class TenantPubSubManager:
         """
         actual_channel = self._build_channel_name(channel, tenant_id, config, skip_tenant)
 
-        from framework.tenant.protocols import TenantCacheConfig
+        from framework.tenant.tenant_protocols import TenantCacheConfig
 
         cache_config = None
         if self._is_physical_isolation(config):
@@ -138,7 +138,7 @@ class TenantPubSubManager:
         """
         actual_channel = self._build_channel_name(channel, tenant_id, config)
 
-        from framework.tenant.protocols import TenantCacheConfig
+        from framework.tenant.tenant_protocols import TenantCacheConfig
 
         cache_config = None
         if self._is_physical_isolation(config):

@@ -20,7 +20,7 @@ from framework.tenant.exceptions import (
     TenantInactiveError,
     TenantNotFoundError,
 )
-from framework.tenant.protocols import (
+from framework.tenant.tenant_protocols import (
     TenantCacheConfig,
     TenantDatabaseConfig,
     TenantPubSubConfig,
@@ -327,7 +327,7 @@ class TenantService:
         await session.flush()  # 获取 tenant.id，但不提交
 
         # 自动分配活跃模块（通过 Protocol，避免 Tenant → IAM 依赖）
-        from framework.tenant.protocols import (
+        from framework.tenant.tenant_protocols import (
             get_module_auto_assigner,
             get_tenant_role_creator,
         )

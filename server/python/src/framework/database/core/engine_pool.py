@@ -20,7 +20,7 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
 )
 
-from framework.tenant.protocols import TenantDatabaseConfig
+from framework.tenant.tenant_protocols import TenantDatabaseConfig
 
 _logger = logger.bind(name=__name__)
 

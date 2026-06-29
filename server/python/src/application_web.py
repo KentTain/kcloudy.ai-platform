@@ -21,8 +21,8 @@ from framework.middlewares.test_user_middleware import TestUserMiddleware
 from framework.module import get_registry, load_modules
 from framework.module.sync_service import ModuleDefinitionSyncService
 from framework.tenant.middleware import TenantMiddleware
-from framework.tenant.protocols import (
-    register_module_auto_assigner,
+from framework.tenant.sync_protocols import register_module_auto_assigner
+from framework.tenant.tenant_protocols import (
     register_tenant_provider,
     register_tenant_role_creator,
 )

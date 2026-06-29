@@ -15,7 +15,7 @@ from loguru import logger
 from framework.common.time import ChinaTimeZone
 from framework.database.core.engine import setup_engine
 from framework.tenant.middleware import TenantMiddleware
-from framework.tenant.protocols import register_tenant_provider
+from framework.tenant.tenant_protocols import register_tenant_provider
 
 # 尝试导入 demo 配置
 try:

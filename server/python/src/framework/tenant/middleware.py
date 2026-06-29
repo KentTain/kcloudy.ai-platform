@@ -21,7 +21,7 @@ from framework.tenant.exceptions import (
     TenantNotFoundError,
     TenantResolveError,
 )
-from framework.tenant.protocols import get_tenant_provider
+from framework.tenant.tenant_protocols import get_tenant_provider
 from framework.tenant.resolver import TenantResolver
 
 if TYPE_CHECKING:

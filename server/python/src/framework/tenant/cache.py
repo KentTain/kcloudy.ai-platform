@@ -181,7 +181,7 @@ class TenantCache:
                     QueueType,
                     StorageType,
                 )
-                from framework.tenant.protocols import (
+                from framework.tenant.tenant_protocols import (
                     TenantCacheConfig,
                     TenantDatabaseConfig,
                     TenantPubSubConfig,

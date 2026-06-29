@@ -7,7 +7,7 @@ Tenant 模块独立应用工厂
 from fastapi import FastAPI
 
 from framework.configs import get_settings
-from framework.tenant.protocols import register_tenant_provider
+from framework.tenant.tenant_protocols import register_tenant_provider
 from tenant.module import TenantModule
 from tenant.services.tenant_provider_impl import TenantProviderImpl
 

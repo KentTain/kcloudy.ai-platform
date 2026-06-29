@@ -426,7 +426,7 @@ app.add_middleware(TenantMiddleware, resolver=resolver)
 **使用示例：**
 
 ```python
-from framework.tenant.protocols import TenantCacheConfig
+from framework.tenant.tenant_protocols import TenantCacheConfig
 
 # 物理隔离：独立 Redis 实例
 cache_config = TenantCacheConfig(
@@ -483,7 +483,7 @@ await cache_manager.set("user:123", "data", config=cache_config)
 **使用示例：**
 
 ```python
-from framework.tenant.protocols import TenantStorageConfig
+from framework.tenant.tenant_protocols import TenantStorageConfig
 
 # 物理隔离：独立 MinIO 服务
 storage_config = TenantStorageConfig(
@@ -545,7 +545,7 @@ content = await storage_manager.download(
 **使用示例：**
 
 ```python
-from framework.tenant.protocols import TenantQueueConfig
+from framework.tenant.tenant_protocols import TenantQueueConfig
 
 # 物理隔离：独立 Redis 队列实例
 queue_config = TenantQueueConfig(
@@ -602,7 +602,7 @@ messages = await queue_manager.xreadgroup(
 **使用示例：**
 
 ```python
-from framework.tenant.protocols import TenantPubSubConfig
+from framework.tenant.tenant_protocols import TenantPubSubConfig
 
 # 物理隔离：独立 Redis PubSub 实例
 pubsub_config = TenantPubSubConfig(
@@ -642,7 +642,7 @@ pubsub = await pubsub_manager.subscribe(
 租户资源配置通过 `TenantInfo` 协议传递，业务模块实现 `TenantProvider` 协议时返回包含资源配置的租户信息：
 
 ```python
-from framework.tenant.protocols import (
+from framework.tenant.tenant_protocols import (
     TenantInfo,
     TenantCacheConfig,
     TenantStorageConfig,
