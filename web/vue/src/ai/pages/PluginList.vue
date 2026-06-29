@@ -13,9 +13,9 @@ import {
 import { notifySuccess, notifyError, confirmAction } from "@/framework/utils/feedback";
 import {
   getPluginList,
-  startPlugin,
-  stopPlugin,
-  uninstallPlugin,
+  startPluginQuery,
+  stopPluginQuery,
+  uninstallPluginQuery,
   type PluginInfo,
 } from "@/ai/api/plugin";
 import { Play, Square, Trash2, RefreshCw, Search, Package, Settings } from "lucide-vue-next";
@@ -206,14 +206,14 @@ const handleConfig = (plugin: PluginInfo) => {
 const handleStartStop = async (plugin: PluginInfo) => {
   const isRunning = plugin.status === "running";
   const action = isRunning ? "停止" : "启动";
-  
+
   if (!(await confirmAction(`确定要${action}插件 "${plugin.plugin_id}" 吗？`))) return;
 
   try {
     const response = isRunning
-      ? await stopPlugin(plugin.plugin_id)
-      : await startPlugin(plugin.plugin_id);
-    
+      ? await stopPluginQuery(plugin.plugin_id)
+      : await startPluginQuery(plugin.plugin_id);
+
     if (response.code === 200) {
       notifySuccess(response.data?.message || `插件已${action}`);
       dataTable.refresh();
@@ -232,7 +232,7 @@ const handleUninstall = async (plugin: PluginInfo) => {
   if (!(await confirmAction(`确定要卸载插件 "${plugin.plugin_id}" 吗？此操作不可恢复。`))) return;
 
   try {
-    const response = await uninstallPlugin(plugin.plugin_id);
+    const response = await uninstallPluginQuery(plugin.plugin_id);
     if (response.code === 200) {
       notifySuccess(response.data?.message || "插件已卸载");
       dataTable.refresh();

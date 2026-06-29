@@ -269,7 +269,7 @@ export async function deletePluginCredential(
  * 获取插件配置
  */
 export async function getPluginConfig(pluginId: string): Promise<ApiResponse<PluginConfigResponse>> {
-  return rawGet(`${CONSOLE_BASE}/installations/${encodeURIComponent(pluginId)}/config`);
+  return rawGet(`${CONSOLE_BASE}/installations/config`, { params: { plugin_id: pluginId } });
 }
 
 /**
@@ -279,7 +279,7 @@ export async function updatePluginConfig(
   pluginId: string,
   data: UpdatePluginConfigRequest
 ): Promise<ApiResponse<PluginConfigResponse>> {
-  return rawPatch(`${CONSOLE_BASE}/installations/${encodeURIComponent(pluginId)}/config`, data);
+  return rawPatch(`${CONSOLE_BASE}/installations/config`, data, { params: { plugin_id: pluginId } });
 }
 
 // ==================== 运行时状态 API ====================
@@ -290,7 +290,7 @@ export async function updatePluginConfig(
 export async function getPluginRuntimeState(
   pluginId: string
 ): Promise<ApiResponse<RuntimeStateResponse>> {
-  return rawGet(`${CONSOLE_BASE}/installations/${encodeURIComponent(pluginId)}/runtime-state`);
+  return rawGet(`${CONSOLE_BASE}/installations/runtime-state`, { params: { plugin_id: pluginId } });
 }
 
 /**
@@ -298,6 +298,29 @@ export async function getPluginRuntimeState(
  */
 export async function getPluginStatistics(): Promise<ApiResponse<PluginStatistics>> {
   return rawGet(`${CONSOLE_BASE}/installations/statistics`);
+}
+
+// ==================== 插件操作 API ====================
+
+/**
+ * 启动插件
+ */
+export async function startPluginQuery(pluginId: string): Promise<ApiResponse<PluginOperationResponse>> {
+  return rawPost(`${CONSOLE_BASE}/installations/start`, null, { params: { plugin_id: pluginId } });
+}
+
+/**
+ * 停止插件
+ */
+export async function stopPluginQuery(pluginId: string): Promise<ApiResponse<PluginOperationResponse>> {
+  return rawPost(`${CONSOLE_BASE}/installations/stop`, null, { params: { plugin_id: pluginId } });
+}
+
+/**
+ * 卸载插件
+ */
+export async function uninstallPluginQuery(pluginId: string): Promise<ApiResponse<PluginOperationResponse>> {
+  return rawDel(`${CONSOLE_BASE}/installations`, { params: { plugin_id: pluginId } });
 }
 
 // ==================== Admin API (管理端) ====================

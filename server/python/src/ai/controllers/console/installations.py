@@ -4,7 +4,7 @@ AI 模块控制台控制器 - 插件安装管理
 提供插件安装、卸载、运行时管理、统计等用户端接口。
 """
 
-from fastapi import APIRouter, Body, Depends, Path
+from fastapi import APIRouter, Body, Depends, Query
 from fastapi.responses import ORJSONResponse
 from loguru import logger
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -35,7 +35,7 @@ router = APIRouter(tags=["控制台-插件安装管理"])
 
 
 @router.delete(
-    "/{plugin_id:path}",
+    "",
     summary="卸载插件",
     response_class=ORJSONResponse,
     responses={
@@ -46,7 +46,7 @@ router = APIRouter(tags=["控制台-插件安装管理"])
     },
 )
 async def uninstall_plugin(
-    plugin_id: str = Path(..., description="插件ID"),
+    plugin_id: str = Query(..., description="插件ID"),
     _perm: None = Depends(require_permission("ai:plugin:delete")),
     session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
@@ -54,7 +54,7 @@ async def uninstall_plugin(
     卸载插件
 
     场景：用户卸载插件
-    WHEN 请求 DELETE /console/v1/plugins/installations/{plugin_id}
+    WHEN 请求 DELETE /console/v1/plugins/installations?plugin_id=xxx
     THEN 停止插件进程、清理配置数据、递减引用计数
     """
     try:
@@ -71,7 +71,7 @@ async def uninstall_plugin(
 
 
 @router.post(
-    "/{plugin_id:path}/start",
+    "/start",
     summary="启动插件",
     response_class=ORJSONResponse,
     responses={
@@ -82,7 +82,7 @@ async def uninstall_plugin(
     },
 )
 async def start_plugin(
-    plugin_id: str = Path(..., description="插件ID"),
+    plugin_id: str = Query(..., description="插件ID"),
     _perm: None = Depends(require_permission("ai:plugin:write")),
     session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
@@ -90,7 +90,7 @@ async def start_plugin(
     启动插件
 
     场景：用户启动状态为 INACTIVE 的插件
-    WHEN 请求 POST /console/v1/plugins/installations/{plugin_id}/start
+    WHEN 请求 POST /console/v1/plugins/installations/start?plugin_id=xxx
     THEN 创建插件进程，更新状态为 ACTIVE，返回进程信息
     """
     try:
@@ -104,7 +104,7 @@ async def start_plugin(
 
 
 @router.post(
-    "/{plugin_id:path}/stop",
+    "/stop",
     summary="停止插件",
     response_class=ORJSONResponse,
     responses={
@@ -115,7 +115,7 @@ async def start_plugin(
     },
 )
 async def stop_plugin(
-    plugin_id: str = Path(..., description="插件ID"),
+    plugin_id: str = Query(..., description="插件ID"),
     _perm: None = Depends(require_permission("ai:plugin:write")),
     session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
@@ -123,7 +123,7 @@ async def stop_plugin(
     停止插件
 
     场景：用户停止状态为 ACTIVE 的插件
-    WHEN 请求 POST /console/v1/plugins/installations/{plugin_id}/stop
+    WHEN 请求 POST /console/v1/plugins/installations/stop?plugin_id=xxx
     THEN 终止插件进程，更新状态为 INACTIVE
     """
     try:
@@ -137,7 +137,7 @@ async def stop_plugin(
 
 
 @router.get(
-    "/{plugin_id:path}/config",
+    "/config",
     summary="获取插件配置",
     response_class=ORJSONResponse,
     responses={
@@ -148,7 +148,7 @@ async def stop_plugin(
     },
 )
 async def get_plugin_config(
-    plugin_id: str = Path(..., description="插件ID"),
+    plugin_id: str = Query(..., description="插件ID"),
     _perm: None = Depends(require_permission("ai:plugin:read")),
     session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
@@ -156,7 +156,7 @@ async def get_plugin_config(
     获取插件配置
 
     场景：用户查看插件配置
-    WHEN 请求 GET /console/v1/plugins/installations/{plugin_id}/config
+    WHEN 请求 GET /console/v1/plugins/installations/config?plugin_id=xxx
     THEN 返回插件能力配置和运行时配置
     """
     try:
@@ -170,7 +170,7 @@ async def get_plugin_config(
 
 
 @router.patch(
-    "/{plugin_id:path}/config",
+    "/config",
     summary="更新插件配置",
     response_class=ORJSONResponse,
     responses={
@@ -181,16 +181,16 @@ async def get_plugin_config(
     },
 )
 async def update_plugin_config(
-    plugin_id: str = Path(..., description="插件ID"),
-    _perm: None = Depends(require_permission("ai:plugin:write")),
+    plugin_id: str = Query(..., description="插件ID"),
     request: UpdatePluginConfigRequest = Body(..., description="配置更新请求"),
+    _perm: None = Depends(require_permission("ai:plugin:write")),
     session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """
     更新插件配置
 
     场景：用户更新插件运行时配置
-    WHEN 请求 PATCH /console/v1/plugins/installations/{plugin_id}/config
+    WHEN 请求 PATCH /console/v1/plugins/installations/config?plugin_id=xxx
     THEN 更新运行时配置并返回更新后的配置
     """
     try:
@@ -204,7 +204,7 @@ async def update_plugin_config(
 
 
 @router.get(
-    "/{plugin_id:path}/runtime-state",
+    "/runtime-state",
     summary="获取插件运行时状态",
     response_class=ORJSONResponse,
     responses={
@@ -215,7 +215,7 @@ async def update_plugin_config(
     },
 )
 async def get_runtime_state(
-    plugin_id: str = Path(..., description="插件ID"),
+    plugin_id: str = Query(..., description="插件ID"),
     _perm: None = Depends(require_permission("ai:plugin:read")),
     session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
@@ -223,7 +223,7 @@ async def get_runtime_state(
     获取插件运行时状态
 
     场景：用户查看单个插件的运行时状态
-    WHEN 请求 GET /console/v1/plugins/installations/{plugin_id}/runtime-state
+    WHEN 请求 GET /console/v1/plugins/installations/runtime-state?plugin_id=xxx
     THEN 返回进程信息、统计信息、健康状态
     """
     try:
