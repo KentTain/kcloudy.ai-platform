@@ -30,8 +30,9 @@ class ModuleRolePermission(BaseModel):
         UniqueConstraint(
             "module_role_id",
             "module_permission_id",
-            name="uq_module_role_permissions_role_perm",
-        ),
+            name="uq_module_role_permissions_role_perm"
+    ),
         Index("ix_module_role_permissions_role_id", "module_role_id"),
         Index("ix_module_role_permissions_permission_id", "module_permission_id"),
+        {"comment": "模块角色-权限关联表"},
     )

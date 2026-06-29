@@ -13,6 +13,8 @@ from framework.database.mixins.active_record import ActiveRecordMixin
 from framework.database.mixins.audit import AuditMixin
 from framework.database.mixins.tenant import TenantMixin
 from tenant.models import BaseModel
+from tenant.models.enums import PluginInstallationStatus, PluginInstallType
+from framework.database.types.enum import EnumType
 
 
 class TenantPluginInstallation(BaseModel, AuditMixin, ActiveRecordMixin, TenantMixin):
@@ -65,4 +67,5 @@ class TenantPluginInstallation(BaseModel, AuditMixin, ActiveRecordMixin, TenantM
         UniqueConstraint(
             "tenant_id", "plugin_id", name="ix_plugin_installations_tenant_plugin"
         ),
+        {"comment": "插件安装记录表"},
     )

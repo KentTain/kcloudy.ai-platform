@@ -35,4 +35,5 @@ class ModulePermission(BaseModel):
 
     __table_args__ = (
         Index("ix_module_permissions_code", "code"),
+        {"comment": "模块权限表"},
     )

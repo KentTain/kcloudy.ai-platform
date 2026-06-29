@@ -29,3 +29,7 @@ class TenantBusinessConfig(BaseModel):
     max_api_calls: Mapped[int] = mapped_column(
         nullable=False, default=10000, comment="最大API调用次数"
     )
+
+    __table_args__ = (
+        {"comment": "租户业务配置表"},
+    )

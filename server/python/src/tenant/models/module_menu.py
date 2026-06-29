@@ -46,6 +46,7 @@ class ModuleMenu(BaseModel, TreeNodeMixin):
 
     __table_args__ = (
         Index("ix_module_menus_code", "code"),
+        {"comment": "模块菜单定义表"},
     )
 
     @classmethod

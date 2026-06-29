@@ -14,6 +14,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from framework.database.mixins.active_record import ActiveRecordMixin
 from tenant.models import BaseModel
 from tenant.models.enums import TenantStatus
+from framework.database.types.enum import EnumType
 
 
 class Tenant(BaseModel, ActiveRecordMixin):
@@ -75,4 +76,5 @@ class Tenant(BaseModel, ActiveRecordMixin):
     __table_args__ = (
         Index("ix_tenants_code", "code"),
         Index("ix_tenants_status", "status"),
+        {"comment": "租户表"},
     )

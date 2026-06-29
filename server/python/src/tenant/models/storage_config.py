@@ -35,4 +35,5 @@ class StorageConfig(BaseModel):
 
     __table_args__ = (
         Index("ix_storage_configs_name", "name"),
+        {"comment": "存储配置表"},
     )

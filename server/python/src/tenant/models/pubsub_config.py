@@ -31,4 +31,5 @@ class PubSubConfig(BaseModel):
 
     __table_args__ = (
         Index("ix_pubsub_configs_name", "name"),
+        {"comment": "发布订阅配置表"},
     )

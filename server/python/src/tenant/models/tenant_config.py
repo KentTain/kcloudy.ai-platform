@@ -35,4 +35,5 @@ class TenantConfig(BaseModel):
     __table_args__ = (
         Index("ix_tenant_configs_tenant_id", "tenant_id"),
         Index("uq_tenant_configs_tenant_key", "tenant_id", "config_key", unique=True),
+        {"comment": "租户配置表"},
     )

@@ -34,4 +34,5 @@ class QueueConfig(BaseModel):
 
     __table_args__ = (
         Index("ix_queue_configs_name", "name"),
+        {"comment": "队列配置表"},
     )

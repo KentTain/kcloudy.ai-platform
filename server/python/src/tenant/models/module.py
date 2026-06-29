@@ -32,3 +32,7 @@ class Module(BaseModel):
     is_need: Mapped[bool] = mapped_column(
         Boolean, nullable=False, default=False, comment="是否必须模块"
     )
+
+    __table_args__ = (
+        {"comment": "模块定义表"},
+    )

@@ -8,6 +8,8 @@ from sqlalchemy import Index, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from tenant.models import BaseModel
+from tenant.models.enums import TenantAdminRole
+from framework.database.types.enum import EnumType
 
 
 class TenantAdmin(BaseModel):
@@ -31,4 +33,7 @@ class TenantAdmin(BaseModel):
         default=True, nullable=False, comment="是否激活"
     )
 
-    __table_args__ = (Index("ix_tenant_admins_username", "username"),)
+    __table_args__ = (
+        Index("ix_tenant_admins_username", "username"),
+        {"comment": "租户管理员表"},
+    )

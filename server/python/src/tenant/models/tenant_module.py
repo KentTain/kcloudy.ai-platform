@@ -41,4 +41,5 @@ class TenantModule(BaseModel):
         UniqueConstraint(
             "tenant_id", "module_id", name="uq_tenant_modules_tenant_module"
         ),
+        {"comment": "租户模块分配表"},
     )

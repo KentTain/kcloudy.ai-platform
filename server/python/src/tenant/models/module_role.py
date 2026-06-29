@@ -38,4 +38,5 @@ class ModuleRole(BaseModel):
             unique=True,
             postgresql_where=expression.text("module_id IS NULL"),
         ),
+        {"comment": "模块角色表"},
     )

@@ -30,8 +30,9 @@ class ModuleMenuPermission(BaseModel):
         UniqueConstraint(
             "module_menu_id",
             "module_permission_id",
-            name="uq_module_menu_permissions_menu_perm",
-        ),
+            name="uq_module_menu_permissions_menu_perm"
+    ),
         Index("ix_module_menu_permissions_menu_id", "module_menu_id"),
         Index("ix_module_menu_permissions_permission_id", "module_permission_id"),
+        {"comment": "模块菜单-权限关联表"},
     )

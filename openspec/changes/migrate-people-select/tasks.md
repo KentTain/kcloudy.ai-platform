@@ -46,12 +46,12 @@
 
 ## 6. 前端 Composable
 
-- [ ] 6.1 创建 `web/vue/src/framework/composables/useTreeExpand.ts`（公共：树展开/折叠）
-- [ ] 6.2 创建 `web/vue/src/framework/composables/useTreeCheck.ts`（公共：三态复选框）
-- [ ] 6.3 创建 `web/vue/src/components/common/feedback/people-select/useOrgPeopleTree.ts`
-- [ ] 6.4 实现扁平化节点计算 `flatVisibleNodes`
-- [ ] 6.5 实现懒加载逻辑 `toggleExpand()`、`loadRoot()`
-- [ ] 6.6 实现选择逻辑 `toggleUserCheck()`、`toggleOrgCheck()`
+- [x] 6.1 创建 `web/vue/src/framework/composables/useTreeExpand.ts`（公共：树展开/折叠）
+- [x] 6.2 创建 `web/vue/src/framework/composables/useTreeCheck.ts`（公共：三态复选框）
+- [x] 6.3 创建 `web/vue/src/components/common/feedback/people-select/useOrgPeopleTree.ts`
+- [x] 6.4 实现扁平化节点计算 `flatVisibleNodes`
+- [x] 6.5 实现懒加载逻辑 `toggleExpand()`、`loadRoot()`
+- [x] 6.6 实现选择逻辑 `toggleUserCheck()`、`toggleOrgCheck()`
 
 ## 7. 前端基础组件（people-select）
 

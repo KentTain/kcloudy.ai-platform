@@ -29,4 +29,5 @@ class CacheConfig(BaseModel):
 
     __table_args__ = (
         Index("ix_cache_configs_name", "name"),
+        {"comment": "缓存配置表"},
     )

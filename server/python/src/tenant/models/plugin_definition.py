@@ -18,6 +18,8 @@ from sqlalchemy.orm import Mapped, mapped_column
 from framework.database.mixins.active_record import ActiveRecordMixin
 from framework.database.mixins.audit import AuditMixin
 from tenant.models import BaseModel
+from tenant.models.enums import PluginInstallType
+from framework.database.types.enum import EnumType
 
 
 class TenantPluginDefinition(BaseModel, AuditMixin, ActiveRecordMixin):
@@ -61,7 +63,7 @@ class TenantPluginDefinition(BaseModel, AuditMixin, ActiveRecordMixin):
         comment="引用计数，计算不同租户的引用计数",
     )
     install_type: Mapped[str] = mapped_column(
-        String(16),
+        EnumType(enum_class=PluginInstallType, length=16),
         nullable=False,
         index=True,
         comment="安装类型，local, remote",
@@ -85,3 +87,5 @@ class TenantPluginDefinition(BaseModel, AuditMixin, ActiveRecordMixin):
         server_default=sa.text("true"),
         comment="是否启用",
     )
+
+    __table_args__ = ({"comment": "插件定义表"},)

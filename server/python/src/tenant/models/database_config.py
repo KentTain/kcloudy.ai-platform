@@ -34,4 +34,5 @@ class DatabaseConfig(BaseModel):
 
     __table_args__ = (
         Index("ix_database_configs_name", "name"),
+        {"comment": "数据库配置表"},
     )
