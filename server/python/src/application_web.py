@@ -112,6 +112,23 @@ async def lifespan(app: FastAPI):
             _logger.exception(f"PluginInstallationProvider 注册失败: {e}")
             phase.details["PluginInstallationProvider"] = "不可用"
 
+        # 注册 ModuleDefinitionSyncProvider（由 Tenant 模块实现）
+        try:
+            from framework.module.sync_protocol import (
+                register_module_definition_sync_provider,
+            )
+            from tenant.services.module_sync_provider import (
+                module_definition_sync_provider_impl,
+            )
+
+            register_module_definition_sync_provider(
+                module_definition_sync_provider_impl
+            )
+            phase.details["ModuleDefinitionSyncProvider"] = "已注册"
+        except ImportError as e:
+            _logger.exception(f"ModuleDefinitionSyncProvider 注册失败: {e}")
+            phase.details["ModuleDefinitionSyncProvider"] = "不可用"
+
     with timer.phase("数据库迁移验证", order=2.5) as phase:
         # 验证并自动运行数据库迁移
         src_path = Path(__file__).parent

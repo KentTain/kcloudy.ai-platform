@@ -20,6 +20,11 @@ from framework.module.loader import (
     resolve_dependencies,
 )
 from framework.module.registry import ModuleRegistry, get_registry
+from framework.module.sync_protocol import (
+    ModuleDefinitionSyncProvider,
+    get_module_definition_sync_provider,
+    register_module_definition_sync_provider,
+)
 from framework.module.sync_service import ModuleDefinitionSyncService
 
 __all__ = [
@@ -40,6 +45,10 @@ __all__ = [
     "filter_modules",
     "load_modules",
     "resolve_dependencies",
+    # Sync Protocol
+    "ModuleDefinitionSyncProvider",
+    "register_module_definition_sync_provider",
+    "get_module_definition_sync_provider",
     # Sync Service
     "ModuleDefinitionSyncService",
 ]

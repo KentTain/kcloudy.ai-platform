@@ -7,8 +7,6 @@
 import fnmatch
 
 from loguru import logger
-from sqlalchemy import delete, select, update
-from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from framework.module.definition import (
@@ -19,15 +17,8 @@ from framework.module.definition import (
     RoleDef,
 )
 from framework.module.registry import get_registry
+from framework.module.sync_protocol import get_module_definition_sync_provider
 from framework.utils.log_util import write_error, write_info, write_warning
-from tenant.models import (
-    Module,
-    ModuleMenu,
-    ModuleMenuPermission,
-    ModulePermission,
-    ModuleRole,
-    ModuleRolePermission,
-)
 
 _logger = logger.bind(name=__name__)
 
@@ -69,6 +60,9 @@ class ModuleDefinitionSyncService:
     负责将模块的元数据定义（菜单、权限、角色）同步到数据库。
     在系统启动时调用，确保数据库中的定义与模块声明一致。
     """
+
+    def __init__(self) -> None:
+        self._provider = get_module_definition_sync_provider()
 
     async def sync_all_modules(self, session: AsyncSession) -> None:
         """
@@ -119,31 +113,7 @@ class ModuleDefinitionSyncService:
             definition: 模块定义实例
         """
         # 1. Upsert Module 记录
-        stmt = (
-            insert(Module)
-            .values(
-                code=definition.code,
-                name=definition.name,
-                description=definition.description,
-                icon=definition.icon,
-                version=definition.version,
-                is_active=True,
-                is_need=False,
-            )
-            .on_conflict_do_update(
-                index_elements=["code"],
-                set_={
-                    "name": definition.name,
-                    "description": definition.description,
-                    "icon": definition.icon,
-                    "version": definition.version,
-                },
-            )
-            .returning(Module.id)
-        )
-
-        result = await session.execute(stmt)
-        module_id = result.scalar_one()
+        module_id = await self._provider.upsert_module(session, definition)
 
         # 2. 同步菜单
         await self._sync_menus(
@@ -211,12 +181,10 @@ class ModuleDefinitionSyncService:
         # 拓扑排序：按层级顺序创建菜单（父节点先于子节点）
         sorted_menus = self._topological_sort_menus(menus, menu_def_map)
 
-        # 查询已存在的菜单
-        stmt = select(ModuleMenu.id, ModuleMenu.code).where(
-            ModuleMenu.module_id == module_id
+        # 获取已存在的菜单 code -> id 映射
+        existing_code_to_id = await self._provider.get_menu_code_to_id_map(
+            session, module_id
         )
-        result = await session.execute(stmt)
-        existing_code_to_id = {row.code: row.id for row in result.all()}
 
         # code -> id 映射（用于建立父子关系）
         code_to_id_map: dict[str, str] = {}
@@ -231,38 +199,15 @@ class ModuleDefinitionSyncService:
                     )
                 parent_id = code_to_id_map[menu_def.parent_code]
 
-            if menu_def.code in existing_code_to_id:
-                # 更新已存在的菜单
-                menu_id = existing_code_to_id[menu_def.code]
-                await ModuleMenu.update_node(
-                    session,
-                    menu_id,
-                    {
-                        "name": menu_def.name,
-                        "path": menu_def.path,
-                        "icon": menu_def.icon,
-                        "tree_sort": menu_def.sort_order,
-                        "is_visible": menu_def.is_visible,
-                        "parent_id": parent_id,
-                    },
-                )
-                code_to_id_map[menu_def.code] = menu_id
-            else:
-                # 创建新菜单
-                menu = await ModuleMenu.create_node(
-                    session,
-                    {
-                        "module_id": module_id,
-                        "parent_id": parent_id,
-                        "code": menu_def.code,
-                        "name": menu_def.name,
-                        "path": menu_def.path,
-                        "icon": menu_def.icon,
-                        "tree_sort": menu_def.sort_order,
-                        "is_visible": menu_def.is_visible,
-                    },
-                )
-                code_to_id_map[menu_def.code] = menu.id
+            existing_menu_id = existing_code_to_id.get(menu_def.code)
+            menu_id = await self._provider.upsert_menu(
+                session,
+                module_id,
+                menu_def,
+                parent_id,
+                existing_menu_id,
+            )
+            code_to_id_map[menu_def.code] = menu_id
 
     def _topological_sort_menus(
         self, menus: list[MenuDef], menu_def_map: dict[str, MenuDef]
@@ -362,28 +307,9 @@ class ModuleDefinitionSyncService:
             return
 
         for perm_def in permissions:
-            stmt = (
-                insert(ModulePermission)
-                .values(
-                    module_id=module_id,
-                    code=perm_def.code,
-                    name=perm_def.name,
-                    resource=perm_def.resource,
-                    action=perm_def.action,
-                    description=perm_def.description,
-                )
-                .on_conflict_do_update(
-                    index_elements=["code"],
-                    set_={
-                        "name": perm_def.name,
-                        "resource": perm_def.resource,
-                        "action": perm_def.action,
-                        "description": perm_def.description,
-                    },
-                )
+            await self._provider.upsert_permission(
+                session, module_id, perm_def
             )
-
-            await session.execute(stmt)
 
     async def _sync_menu_permissions(
         self,
@@ -412,17 +338,12 @@ class ModuleDefinitionSyncService:
             return
 
         # 获取模块所有菜单和权限的 code -> id 映射
-        stmt = select(ModuleMenu.id, ModuleMenu.code).where(
-            ModuleMenu.module_id == module_id
+        menu_code_to_id = await self._provider.get_menu_code_to_id_map(
+            session, module_id
         )
-        result = await session.execute(stmt)
-        menu_code_to_id = {row.code: row.id for row in result.all()}
-
-        stmt = select(ModulePermission.id, ModulePermission.code).where(
-            ModulePermission.module_id == module_id
+        perm_code_to_id = await self._provider.get_permission_code_to_id_map(
+            session, module_id
         )
-        result = await session.execute(stmt)
-        perm_code_to_id = {row.code: row.id for row in result.all()}
 
         for menu_def in menus_with_perms:
             menu_id = menu_code_to_id.get(menu_def.code)
@@ -446,10 +367,7 @@ class ModuleDefinitionSyncService:
                 )
 
             # 删除旧的菜单权限关联
-            stmt = delete(ModuleMenuPermission).where(
-                ModuleMenuPermission.module_menu_id == menu_id
-            )
-            await session.execute(stmt)
+            await self._provider.delete_menu_permissions(session, menu_id)
 
             # 创建新的菜单权限关联
             for perm_code in expanded_codes:
@@ -457,17 +375,9 @@ class ModuleDefinitionSyncService:
                 if not perm_id:
                     continue
 
-                stmt = (
-                    insert(ModuleMenuPermission)
-                    .values(
-                        module_menu_id=menu_id,
-                        module_permission_id=perm_id,
-                    )
-                    .on_conflict_do_nothing(
-                        constraint="uq_module_menu_permissions_menu_perm"
-                    )
+                await self._provider.upsert_menu_permission(
+                    session, menu_id, perm_id
                 )
-                await session.execute(stmt)
 
     async def _sync_roles(
         self,
@@ -494,36 +404,15 @@ class ModuleDefinitionSyncService:
             return
 
         # 获取模块所有权限的 code -> id 映射
-        stmt = select(ModulePermission.id, ModulePermission.code).where(
-            ModulePermission.module_id == module_id
+        perm_code_to_id = await self._provider.get_permission_code_to_id_map(
+            session, module_id
         )
-        result = await session.execute(stmt)
-        perm_code_to_id = {row.code: row.id for row in result.all()}
 
         for role_def in roles:
             # Upsert 角色
-            stmt = (
-                insert(ModuleRole)
-                .values(
-                    module_id=module_id,
-                    code=role_def.code,
-                    name=role_def.name,
-                    description=role_def.description,
-                    is_system=role_def.is_system,
-                )
-                .on_conflict_do_update(
-                    constraint="uq_module_roles_module_code",
-                    set_={
-                        "name": role_def.name,
-                        "description": role_def.description,
-                        "is_system": role_def.is_system,
-                    },
-                )
-                .returning(ModuleRole.id)
+            role_id = await self._provider.upsert_role(
+                session, role_def, module_id
             )
-
-            result = await session.execute(stmt)
-            role_id = result.scalar_one()
 
             # 同步角色权限关联
             if role_def.permission_codes:
@@ -544,25 +433,14 @@ class ModuleDefinitionSyncService:
                     )
 
                 # 删除旧的权限关联
-                stmt = delete(ModuleRolePermission).where(
-                    ModuleRolePermission.module_role_id == role_id
-                )
-                await session.execute(stmt)
+                await self._provider.delete_role_permissions(session, role_id)
 
                 # 创建新的权限关联（使用展开后的具体权限码）
                 for perm_code in expanded_codes:
                     perm_id = perm_code_to_id[perm_code]
-                    stmt = (
-                        insert(ModuleRolePermission)
-                        .values(
-                            module_role_id=role_id,
-                            module_permission_id=perm_id,
-                        )
-                        .on_conflict_do_nothing(
-                            constraint="uq_module_role_permissions_role_perm"
-                        )
+                    await self._provider.upsert_role_permission(
+                        session, role_id, perm_id
                     )
-                    await session.execute(stmt)
 
     async def _cleanup_orphans(
         self,
@@ -586,70 +464,9 @@ class ModuleDefinitionSyncService:
             permissions: 权限定义列表
             roles: 角色定义列表
         """
-        # 清理孤儿菜单
-        if menus:
-            menu_codes = [menu.code for menu in menus]
-            stmt = delete(ModuleMenu).where(
-                ModuleMenu.module_id == module_id,
-                ModuleMenu.code.not_in(menu_codes),
-            )
-            await session.execute(stmt)
-        else:
-            # 如果没有菜单定义，删除该模块的所有菜单
-            stmt = delete(ModuleMenu).where(ModuleMenu.module_id == module_id)
-            await session.execute(stmt)
-
-        # 清理孤儿权限
-        if permissions:
-            perm_codes = [perm.code for perm in permissions]
-            stmt = delete(ModulePermission).where(
-                ModulePermission.module_id == module_id,
-                ModulePermission.code.not_in(perm_codes),
-            )
-            await session.execute(stmt)
-        else:
-            stmt = delete(ModulePermission).where(
-                ModulePermission.module_id == module_id
-            )
-            await session.execute(stmt)
-
-        # 清理孤儿角色
-        if roles:
-            role_codes = [role.code for role in roles]
-            # 先获取要删除的角色ID
-            stmt = select(ModuleRole.id).where(
-                ModuleRole.module_id == module_id,
-                ModuleRole.code.not_in(role_codes),
-            )
-            result = await session.execute(stmt)
-            role_ids_to_delete = [row.id for row in result.all()]
-
-            if role_ids_to_delete:
-                # 删除角色权限关联
-                stmt = delete(ModuleRolePermission).where(
-                    ModuleRolePermission.module_role_id.in_(role_ids_to_delete)
-                )
-                await session.execute(stmt)
-
-                # 删除角色
-                stmt = delete(ModuleRole).where(ModuleRole.id.in_(role_ids_to_delete))
-                await session.execute(stmt)
-        else:
-            # 如果没有角色定义，删除该模块的所有角色
-            stmt = select(ModuleRole.id).where(ModuleRole.module_id == module_id)
-            result = await session.execute(stmt)
-            role_ids = [row.id for row in result.all()]
-
-            if role_ids:
-                # 删除角色权限关联
-                stmt = delete(ModuleRolePermission).where(
-                    ModuleRolePermission.module_role_id.in_(role_ids)
-                )
-                await session.execute(stmt)
-
-                # 删除角色
-                stmt = delete(ModuleRole).where(ModuleRole.module_id == module_id)
-                await session.execute(stmt)
+        await self._provider.cleanup_orphans(
+            session, module_id, menus, permissions, roles
+        )
 
     async def sync_global_roles(self, session: AsyncSession) -> None:
         """
@@ -662,38 +479,13 @@ class ModuleDefinitionSyncService:
             session: 数据库会话
         """
         # 1. 获取所有模块的所有权限的 code -> id 映射
-        stmt = select(ModulePermission.id, ModulePermission.code)
-        result = await session.execute(stmt)
-        all_perm_code_to_id = {row.code: row.id for row in result.all()}
+        all_perm_code_to_id = await self._provider.get_all_permission_code_to_id_map(
+            session
+        )
 
         for role_def in GLOBAL_ROLES:
-            # 2. 通过 code 匹配全局角色（module_id 为 NULL）
-            stmt = select(ModuleRole).where(
-                ModuleRole.module_id.is_(None),
-                ModuleRole.code == role_def.code,
-            )
-            result = await session.execute(stmt)
-            existing_role = result.scalar_one_or_none()
-
-            if existing_role:
-                # 更新已有全局角色
-                existing_role.name = role_def.name
-                existing_role.description = role_def.description
-                existing_role.is_system = role_def.is_system
-                await session.flush()
-                role_id = existing_role.id
-            else:
-                # 创建新的全局角色
-                role = ModuleRole(
-                    module_id=None,
-                    code=role_def.code,
-                    name=role_def.name,
-                    description=role_def.description,
-                    is_system=role_def.is_system,
-                )
-                session.add(role)
-                await session.flush()
-                role_id = role.id
+            # 2. Upsert 全局角色
+            role_id = await self._provider.upsert_global_role(session, role_def)
 
             # 3. 同步角色权限关联
             if role_def.permission_codes:
@@ -703,10 +495,7 @@ class ModuleDefinitionSyncService:
                 )
 
                 # 删除旧的权限关联
-                stmt = delete(ModuleRolePermission).where(
-                    ModuleRolePermission.module_role_id == role_id
-                )
-                await session.execute(stmt)
+                await self._provider.delete_role_permissions(session, role_id)
 
                 # 创建新的权限关联
                 for perm_code in expanded_codes:
@@ -714,36 +503,12 @@ class ModuleDefinitionSyncService:
                     if not perm_id:
                         # 全局角色匹配时，某些权限可能尚未入库，跳过
                         continue
-                    stmt = (
-                        insert(ModuleRolePermission)
-                        .values(
-                            module_role_id=role_id,
-                            module_permission_id=perm_id,
-                        )
-                        .on_conflict_do_nothing(
-                            constraint="uq_module_role_permissions_role_perm"
-                        )
+                    await self._provider.upsert_role_permission(
+                        session, role_id, perm_id
                     )
-                    await session.execute(stmt)
 
         # 4. 清理不再存在的全局角色
         global_role_codes = [role.code for role in GLOBAL_ROLES]
-        stmt = select(ModuleRole.id).where(
-            ModuleRole.module_id.is_(None),
-            ModuleRole.code.not_in(global_role_codes),
-        )
-        result = await session.execute(stmt)
-        orphan_role_ids = [row.id for row in result.all()]
-
-        if orphan_role_ids:
-            # 删除孤儿角色的权限关联
-            stmt = delete(ModuleRolePermission).where(
-                ModuleRolePermission.module_role_id.in_(orphan_role_ids)
-            )
-            await session.execute(stmt)
-
-            # 删除孤儿角色
-            stmt = delete(ModuleRole).where(ModuleRole.id.in_(orphan_role_ids))
-            await session.execute(stmt)
+        await self._provider.delete_orphan_global_roles(session, global_role_codes)
 
         await session.commit()

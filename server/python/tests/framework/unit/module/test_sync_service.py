@@ -27,9 +27,33 @@ class TestModuleDefinitionSyncService:
     """模块定义同步服务测试"""
 
     @pytest.fixture
-    def sync_service(self):
+    def mock_provider(self):
+        """创建模拟 provider"""
+        provider = AsyncMock()
+        provider.upsert_module = AsyncMock(return_value="module-id-1")
+        provider.get_menu_code_to_id_map = AsyncMock(return_value={})
+        provider.get_permission_code_to_id_map = AsyncMock(return_value={})
+        provider.upsert_menu = AsyncMock(return_value="menu-id-1")
+        provider.upsert_permission = AsyncMock()
+        provider.delete_menu_permissions = AsyncMock()
+        provider.upsert_menu_permission = AsyncMock()
+        provider.upsert_role = AsyncMock(return_value="role-id-1")
+        provider.delete_role_permissions = AsyncMock()
+        provider.upsert_role_permission = AsyncMock()
+        provider.cleanup_orphans = AsyncMock()
+        provider.get_all_permission_code_to_id_map = AsyncMock(return_value={})
+        provider.upsert_global_role = AsyncMock(return_value="global-role-id-1")
+        provider.delete_orphan_global_roles = AsyncMock()
+        return provider
+
+    @pytest.fixture
+    def sync_service(self, mock_provider):
         """创建同步服务实例"""
-        return ModuleDefinitionSyncService()
+        with patch(
+            "framework.module.sync_service.get_module_definition_sync_provider",
+            return_value=mock_provider,
+        ):
+            return ModuleDefinitionSyncService()
 
     @pytest.fixture
     def sample_definition(self):
@@ -91,61 +115,29 @@ class TestModuleDefinitionSyncService:
     # =========================================================================
 
     @pytest.mark.asyncio
-    async def test_sync_module_success(self, sync_service, sample_definition):
+    async def test_sync_module_success(
+        self, sync_service, sample_definition, mock_provider
+    ):
         """正常同步流程：模块定义成功同步到数据库"""
         mock_session = AsyncMock()
         mock_session.commit = AsyncMock()
 
-        # 模拟 insert returning 结果
-        module_result = MagicMock()
-        module_result.scalar_one.return_value = "module-id-1"
-
-        menu_result_1 = MagicMock()
-        menu_result_1.scalar_one.return_value = "menu-id-1"
-
-        menu_result_2 = MagicMock()
-        menu_result_2.scalar_one.return_value = "menu-id-2"
-
-        perm_result_1 = MagicMock()
-        perm_result_1.scalar_one.return_value = "perm-id-1"
-
-        perm_result_2 = MagicMock()
-        perm_result_2.scalar_one.return_value = "perm-id-2"
-
-        role_result = MagicMock()
-        role_result.scalar_one.return_value = "role-id-1"
-
-        # 模拟权限查询结果
-        perm_query_result = MagicMock()
-        perm_query_result.all.return_value = [
-            MagicMock(code="demo:user:read", id="perm-id-1"),
-            MagicMock(code="demo:user:write", id="perm-id-2"),
-        ]
-
-        # 模拟孤儿角色查询
-        orphan_role_result = MagicMock()
-        orphan_role_result.all.return_value = []
-
-        mock_session.execute.side_effect = [
-            module_result,  # insert module
-            menu_result_1,  # insert menu 1
-            menu_result_2,  # insert menu 2
-            MagicMock(),  # update menu parent
-            perm_result_1,  # insert perm 1
-            perm_result_2,  # insert perm 2
-            perm_query_result,  # query perms for role
-            role_result,  # insert role
-            MagicMock(),  # delete old role perms
-            MagicMock(),  # insert role perm 1
-            MagicMock(),  # insert role perm 2
-            MagicMock(),  # cleanup orphan menus
-            MagicMock(),  # cleanup orphan perms
-            orphan_role_result,  # query orphan roles
-        ]
+        mock_provider.get_menu_code_to_id_map.return_value = {}
+        mock_provider.get_permission_code_to_id_map.return_value = {
+            "demo:user:read": "perm-id-1",
+            "demo:user:write": "perm-id-2",
+        }
 
         await sync_service.sync_module(mock_session, sample_definition)
 
-        # 验证 commit 被调用
+        # 验证 provider 方法被调用
+        mock_provider.upsert_module.assert_called_once_with(
+            mock_session, sample_definition
+        )
+        assert mock_provider.upsert_menu.call_count == 2
+        assert mock_provider.upsert_permission.call_count == 2
+        assert mock_provider.upsert_role.call_count == 1
+        mock_provider.cleanup_orphans.assert_called_once()
         mock_session.commit.assert_called_once()
 
     @pytest.mark.asyncio
@@ -161,9 +153,11 @@ class TestModuleDefinitionSyncService:
 
         mock_session = AsyncMock()
 
-        with patch('framework.module.sync_service.get_registry', return_value=mock_registry), \
-             patch.object(sync_service, 'sync_module', new_callable=AsyncMock) as mock_sync_module:
-
+        with patch(
+            "framework.module.sync_service.get_registry", return_value=mock_registry
+        ), patch.object(
+            sync_service, "sync_module", new_callable=AsyncMock
+        ) as mock_sync_module:
             await sync_service.sync_all_modules(mock_session)
 
             mock_sync_module.assert_called_once_with(mock_session, sample_definition)
@@ -180,9 +174,11 @@ class TestModuleDefinitionSyncService:
 
         mock_session = AsyncMock()
 
-        with patch('framework.module.sync_service.get_registry', return_value=mock_registry), \
-             patch.object(sync_service, 'sync_module', new_callable=AsyncMock) as mock_sync_module:
-
+        with patch(
+            "framework.module.sync_service.get_registry", return_value=mock_registry
+        ), patch.object(
+            sync_service, "sync_module", new_callable=AsyncMock
+        ) as mock_sync_module:
             await sync_service.sync_all_modules(mock_session)
 
             mock_sync_module.assert_not_called()
@@ -223,8 +219,18 @@ class TestModuleDefinitionSyncService:
         """无循环引用：正常层级结构"""
         menus = [
             MenuDef(code="menu.root", name="Root", path="/root", parent_code=None),
-            MenuDef(code="menu.child", name="Child", path="/child", parent_code="menu.root"),
-            MenuDef(code="menu.grandchild", name="Grandchild", path="/grandchild", parent_code="menu.child"),
+            MenuDef(
+                code="menu.child",
+                name="Child",
+                path="/child",
+                parent_code="menu.root",
+            ),
+            MenuDef(
+                code="menu.grandchild",
+                name="Grandchild",
+                path="/grandchild",
+                parent_code="menu.child",
+            ),
         ]
 
         # 不应抛出异常
@@ -234,7 +240,12 @@ class TestModuleDefinitionSyncService:
     async def test_detect_menu_cycles_external_parent(self, sync_service):
         """父菜单不在当前批次：跳过检测"""
         menus = [
-            MenuDef(code="menu.child", name="Child", path="/child", parent_code="external.parent"),
+            MenuDef(
+                code="menu.child",
+                name="Child",
+                path="/child",
+                parent_code="external.parent",
+            ),
         ]
 
         # 不应抛出异常（父菜单不在当前批次）
@@ -245,35 +256,30 @@ class TestModuleDefinitionSyncService:
     # =========================================================================
 
     @pytest.mark.asyncio
-    async def test_parent_menu_not_exists(self, sync_service):
+    async def test_parent_menu_not_exists(self, sync_service, mock_provider):
         """父菜单不存在：抛出异常"""
         definition = ModuleDefinition(
             code="test",
             name="测试模块",
             menus=[
-                MenuDef(code="test.child", name="Child", path="/child", parent_code="nonexistent.parent"),
+                MenuDef(
+                    code="test.child",
+                    name="Child",
+                    path="/child",
+                    parent_code="nonexistent.parent",
+                ),
             ],
         )
 
         mock_session = AsyncMock()
         mock_session.commit = AsyncMock()
 
-        # 模拟 insert returning 结果
-        module_result = MagicMock()
-        module_result.scalar_one.return_value = "module-id-1"
+        mock_provider.get_menu_code_to_id_map.return_value = {}
 
-        menu_result = MagicMock()
-        menu_result.scalar_one.return_value = "menu-id-1"
-
-        # 需要提供足够的 side_effect 来触发异常
-        mock_session.execute.side_effect = [
-            module_result,  # insert module
-            menu_result,  # insert menu
-        ]
-
-        # 直接测试 _sync_menus 方法
         with pytest.raises(ValueError) as exc_info:
-            await sync_service._sync_menus(mock_session, "module-id-1", "test", definition.menus)
+            await sync_service._sync_menus(
+                mock_session, "module-id-1", "test", definition.menus
+            )
 
         assert "父菜单" in str(exc_info.value) or "不存在" in str(exc_info.value)
 
@@ -282,7 +288,7 @@ class TestModuleDefinitionSyncService:
     # =========================================================================
 
     @pytest.mark.asyncio
-    async def test_role_permission_not_exists(self, sync_service):
+    async def test_role_permission_not_exists(self, sync_service, mock_provider):
         """角色权限引用不存在：抛出异常"""
         definition = ModuleDefinition(
             code="test",
@@ -307,22 +313,14 @@ class TestModuleDefinitionSyncService:
         mock_session = AsyncMock()
 
         # 模拟权限查询结果 - 只有 test:user:read
-        perm_query_result = MagicMock()
-        perm_query_result.all.return_value = [
-            MagicMock(code="test:user:read", id="perm-id-1"),
-        ]
+        mock_provider.get_permission_code_to_id_map.return_value = {
+            "test:user:read": "perm-id-1",
+        }
 
-        role_result = MagicMock()
-        role_result.scalar_one.return_value = "role-id-1"
-
-        mock_session.execute.side_effect = [
-            perm_query_result,  # query perms for role
-            role_result,  # insert role
-        ]
-
-        # 直接测试 _sync_roles 方法
         with pytest.raises(ValueError) as exc_info:
-            await sync_service._sync_roles(mock_session, "module-id-1", "test", definition.default_roles)
+            await sync_service._sync_roles(
+                mock_session, "module-id-1", "test", definition.default_roles
+            )
 
         assert "权限不存在" in str(exc_info.value)
 
@@ -331,20 +329,9 @@ class TestModuleDefinitionSyncService:
     # =========================================================================
 
     @pytest.mark.asyncio
-    async def test_cleanup_orphan_menus(self, sync_service):
+    async def test_cleanup_orphan_menus(self, sync_service, mock_provider):
         """清理孤儿菜单：删除不在定义中的菜单"""
         mock_session = AsyncMock()
-
-        # 模拟删除操作
-        delete_result = MagicMock()
-        orphan_role_result = MagicMock()
-        orphan_role_result.all.return_value = []
-
-        mock_session.execute.side_effect = [
-            delete_result,  # delete orphan menus
-            delete_result,  # delete orphan perms
-            orphan_role_result,  # query orphan roles
-        ]
 
         await sync_service._cleanup_orphans(
             mock_session,
@@ -355,23 +342,18 @@ class TestModuleDefinitionSyncService:
             [],
         )
 
-        # 验证删除语句被调用
-        assert mock_session.execute.called
+        mock_provider.cleanup_orphans.assert_called_once_with(
+            mock_session,
+            "module-id-1",
+            [MenuDef(code="menu.kept", name="保留", path="/kept")],
+            [],
+            [],
+        )
 
     @pytest.mark.asyncio
-    async def test_cleanup_orphan_permissions(self, sync_service):
+    async def test_cleanup_orphan_permissions(self, sync_service, mock_provider):
         """清理孤儿权限：删除不在定义中的权限"""
         mock_session = AsyncMock()
-
-        delete_result = MagicMock()
-        orphan_role_result = MagicMock()
-        orphan_role_result.all.return_value = []
-
-        mock_session.execute.side_effect = [
-            delete_result,  # delete orphan menus (no menus)
-            delete_result,  # delete orphan perms
-            orphan_role_result,  # query orphan roles
-        ]
 
         await sync_service._cleanup_orphans(
             mock_session,
@@ -382,22 +364,12 @@ class TestModuleDefinitionSyncService:
             [],
         )
 
-        assert mock_session.execute.called
+        mock_provider.cleanup_orphans.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_cleanup_orphan_roles(self, sync_service):
+    async def test_cleanup_orphan_roles(self, sync_service, mock_provider):
         """清理孤儿角色：删除不在定义中的角色及其权限关联"""
         mock_session = AsyncMock()
-
-        # 模拟查询孤儿角色 ID
-        orphan_role_result = MagicMock()
-        orphan_role_result.all.return_value = []
-
-        mock_session.execute.side_effect = [
-            MagicMock(),  # delete orphan menus
-            MagicMock(),  # delete orphan perms
-            orphan_role_result,  # query orphan roles
-        ]
 
         await sync_service._cleanup_orphans(
             mock_session,
@@ -408,24 +380,12 @@ class TestModuleDefinitionSyncService:
             [RoleDef(code="role.kept", name="保留")],
         )
 
-        assert mock_session.execute.called
+        mock_provider.cleanup_orphans.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_cleanup_all_when_no_definitions(self, sync_service):
+    async def test_cleanup_all_when_no_definitions(self, sync_service, mock_provider):
         """无定义时清理所有数据"""
         mock_session = AsyncMock()
-
-        orphan_role_result = MagicMock()
-        orphan_role_result.all.return_value = []
-
-        # 设置足够的 side_effect 来处理所有 execute 调用
-        mock_session.execute.side_effect = [
-            MagicMock(),  # delete all menus
-            MagicMock(),  # delete all perms
-            MagicMock(),  # query all roles
-            MagicMock(),  # delete role perms
-            MagicMock(),  # delete roles
-        ]
 
         await sync_service._cleanup_orphans(
             mock_session,
@@ -436,117 +396,81 @@ class TestModuleDefinitionSyncService:
             [],  # 无角色定义
         )
 
-        # 验证删除所有菜单、权限、角色
-        assert mock_session.execute.call_count >= 3
+        mock_provider.cleanup_orphans.assert_called_once_with(
+            mock_session, "module-id-1", [], [], []
+        )
 
     # =========================================================================
     # 幂等性验证测试
     # =========================================================================
 
     @pytest.mark.asyncio
-    async def test_sync_idempotency(self, sync_service, sample_definition):
+    async def test_sync_idempotency(
+        self, sync_service, sample_definition, mock_provider
+    ):
         """幂等性验证：多次同步结果一致"""
-        # 测试幂等性：验证 sync_module 可以被多次调用
-        # 使用简化的 mock 设置
-
         for _ in range(2):
             mock_session = AsyncMock()
             mock_session.commit = AsyncMock()
+            mock_provider.get_menu_code_to_id_map.return_value = {}
+            mock_provider.get_permission_code_to_id_map.return_value = {
+                "demo:user:read": "perm-id-1",
+                "demo:user:write": "perm-id-2",
+            }
 
-            # 设置足够的 mock 返回值
-            module_result = MagicMock()
-            module_result.scalar_one.return_value = "module-id-1"
-
-            menu_result = MagicMock()
-            menu_result.scalar_one.return_value = "menu-id-1"
-
-            perm_result = MagicMock()
-            perm_result.scalar_one.return_value = "perm-id-1"
-
-            perm_query_result = MagicMock()
-            perm_query_result.all.return_value = [
-                MagicMock(code="demo:user:read", id="perm-id-1"),
-                MagicMock(code="demo:user:write", id="perm-id-2"),
-            ]
-
-            role_result = MagicMock()
-            role_result.scalar_one.return_value = "role-id-1"
-
-            orphan_role_result = MagicMock()
-            orphan_role_result.all.return_value = []
-
-            # 设置完整的 side_effect 序列
-            mock_session.execute.side_effect = [
-                module_result,
-                menu_result, menu_result,  # 两个菜单
-                MagicMock(),  # update parent
-                perm_result, perm_result,  # 两个权限
-                perm_query_result,
-                role_result,
-                MagicMock(), MagicMock(), MagicMock(),  # role perms
-                MagicMock(), MagicMock(),  # cleanup
-                orphan_role_result,
-            ]
-
-            # 应该不抛出异常
             try:
                 await sync_service.sync_module(mock_session, sample_definition)
             except Exception:
                 pass  # mock 可能不完整，但不应崩溃
-
-        # 验证幂等性：两次调用不会抛出异常
-        # 这里主要验证代码可以重复执行
 
     # =========================================================================
     # 菜单同步测试
     # =========================================================================
 
     @pytest.mark.asyncio
-    async def test_sync_menus_two_phase(self, sync_service):
+    async def test_sync_menus_two_phase(self, sync_service, mock_provider):
         """菜单两阶段同步：先创建再更新父子关系"""
         menus = [
             MenuDef(code="menu.parent", name="父菜单", path="/parent"),
-            MenuDef(code="menu.child", name="子菜单", path="/child", parent_code="menu.parent"),
+            MenuDef(
+                code="menu.child",
+                name="子菜单",
+                path="/child",
+                parent_code="menu.parent",
+            ),
         ]
 
         mock_session = AsyncMock()
 
-        # 第一阶段：创建菜单
-        parent_result = MagicMock()
-        parent_result.scalar_one.return_value = "parent-id"
-
-        child_result = MagicMock()
-        child_result.scalar_one.return_value = "child-id"
-
-        # 第二阶段：更新父子关系
-        update_result = MagicMock()
-
-        mock_session.execute.side_effect = [
-            parent_result,
-            child_result,
-            update_result,
-        ]
+        mock_provider.get_menu_code_to_id_map.return_value = {}
+        mock_provider.upsert_menu.side_effect = ["parent-id", "child-id"]
 
         await sync_service._sync_menus(mock_session, "module-id", "demo", menus)
 
-        # 验证执行了 3 次 SQL：2 次 insert + 1 次 update
-        assert mock_session.execute.call_count == 3
+        # 验证菜单按顺序创建
+        assert mock_provider.upsert_menu.call_count == 2
+        # 父菜单先创建，子菜单后创建
+        parent_call = mock_provider.upsert_menu.call_args_list[0]
+        child_call = mock_provider.upsert_menu.call_args_list[1]
+        # upsert_menu(session, module_id, menu_def, parent_id, existing_menu_id)
+        assert parent_call.args[2].code == "menu.parent"
+        assert child_call.args[2].code == "menu.child"
 
     @pytest.mark.asyncio
-    async def test_sync_menus_empty_list(self, sync_service):
+    async def test_sync_menus_empty_list(self, sync_service, mock_provider):
         """空菜单列表：不做任何操作"""
         mock_session = AsyncMock()
 
         await sync_service._sync_menus(mock_session, "module-id", "demo", [])
 
-        mock_session.execute.assert_not_called()
+        mock_provider.get_menu_code_to_id_map.assert_not_called()
 
     # =========================================================================
     # 权限同步测试
     # =========================================================================
 
     @pytest.mark.asyncio
-    async def test_sync_permissions_upsert(self, sync_service):
+    async def test_sync_permissions_upsert(self, sync_service, mock_provider):
         """权限 upsert：存在则更新，不存在则创建"""
         permissions = [
             PermissionDef(
@@ -558,27 +482,30 @@ class TestModuleDefinitionSyncService:
         ]
 
         mock_session = AsyncMock()
-        mock_session.execute = AsyncMock()
 
-        await sync_service._sync_permissions(mock_session, "module-id", "test", permissions)
+        await sync_service._sync_permissions(
+            mock_session, "module-id", "test", permissions
+        )
 
-        assert mock_session.execute.called
+        mock_provider.upsert_permission.assert_called_once_with(
+            mock_session, "module-id", permissions[0]
+        )
 
     @pytest.mark.asyncio
-    async def test_sync_permissions_empty_list(self, sync_service):
+    async def test_sync_permissions_empty_list(self, sync_service, mock_provider):
         """空权限列表：不做任何操作"""
         mock_session = AsyncMock()
 
         await sync_service._sync_permissions(mock_session, "module-id", "demo", [])
 
-        mock_session.execute.assert_not_called()
+        mock_provider.upsert_permission.assert_not_called()
 
     # =========================================================================
     # 角色同步测试
     # =========================================================================
 
     @pytest.mark.asyncio
-    async def test_sync_roles_with_permissions(self, sync_service):
+    async def test_sync_roles_with_permissions(self, sync_service, mock_provider):
         """角色同步：包含权限关联"""
         roles = [
             RoleDef(
@@ -590,120 +517,77 @@ class TestModuleDefinitionSyncService:
 
         mock_session = AsyncMock()
 
-        # 模拟权限查询
-        perm_query_result = MagicMock()
-        perm_query_result.all.return_value = [
-            MagicMock(code="user:read", id="perm-id-1"),
-            MagicMock(code="user:write", id="perm-id-2"),
-        ]
-
-        role_result = MagicMock()
-        role_result.scalar_one.return_value = "role-id-1"
-
-        mock_session.execute.side_effect = [
-            perm_query_result,
-            role_result,
-            MagicMock(),  # delete old role perms
-            MagicMock(),  # insert role perm 1
-            MagicMock(),  # insert role perm 2
-        ]
+        mock_provider.get_permission_code_to_id_map.return_value = {
+            "user:read": "perm-id-1",
+            "user:write": "perm-id-2",
+        }
 
         await sync_service._sync_roles(mock_session, "module-id", "test", roles)
 
-        # 验证执行了权限查询、角色 upsert、删除旧关联、创建新关联
-        assert mock_session.execute.call_count == 5
+        # 验证 provider 方法被正确调用
+        mock_provider.get_permission_code_to_id_map.assert_called_once_with(
+            mock_session, "module-id"
+        )
+        mock_provider.upsert_role.assert_called_once_with(
+            mock_session, roles[0], "module-id"
+        )
+        mock_provider.delete_role_permissions.assert_called_once_with(
+            mock_session, "role-id-1"
+        )
+        assert mock_provider.upsert_role_permission.call_count == 2
 
     @pytest.mark.asyncio
-    async def test_sync_roles_empty_list(self, sync_service):
+    async def test_sync_roles_empty_list(self, sync_service, mock_provider):
         """空角色列表：不做任何操作"""
         mock_session = AsyncMock()
 
         await sync_service._sync_roles(mock_session, "module-id", "demo", [])
 
-        mock_session.execute.assert_not_called()
+        mock_provider.get_permission_code_to_id_map.assert_not_called()
 
     @pytest.mark.asyncio
-    async def test_sync_roles_with_wildcard_permissions(self, sync_service):
+    async def test_sync_roles_with_wildcard_permissions(
+        self, sync_service, mock_provider
+    ):
         """角色同步：通配符权限码展开为具体权限"""
         roles = [
+            RoleDef(code="admin", name="管理员", permission_codes=["test:*:*"]),
             RoleDef(
-                code="admin",
-                name="管理员",
-                permission_codes=["test:*:*"],
-            ),
-            RoleDef(
-                code="viewer",
-                name="查看者",
-                permission_codes=["test:*:read"],
+                code="viewer", name="查看者", permission_codes=["test:*:read"]
             ),
         ]
 
         mock_session = AsyncMock()
 
-        # 模拟权限查询
-        perm_query_result = MagicMock()
-        perm_query_result.all.return_value = [
-            MagicMock(code="test:user:read", id="perm-id-1"),
-            MagicMock(code="test:user:write", id="perm-id-2"),
-            MagicMock(code="test:role:read", id="perm-id-3"),
-            MagicMock(code="test:role:write", id="perm-id-4"),
-        ]
+        mock_provider.get_permission_code_to_id_map.return_value = {
+            "test:user:read": "perm-id-1",
+            "test:user:write": "perm-id-2",
+            "test:role:read": "perm-id-3",
+            "test:role:write": "perm-id-4",
+        }
 
-        # 两个角色的返回值
-        admin_result = MagicMock()
-        admin_result.scalar_one.return_value = "role-id-1"
-        viewer_result = MagicMock()
-        viewer_result.scalar_one.return_value = "role-id-2"
-
-        mock_session.execute.side_effect = [
-            perm_query_result,
-            admin_result,
-            MagicMock(),  # delete old admin perms
-            MagicMock(),  # insert admin perm 1
-            MagicMock(),  # insert admin perm 2
-            MagicMock(),  # insert admin perm 3
-            MagicMock(),  # insert admin perm 4
-            viewer_result,
-            MagicMock(),  # delete old viewer perms
-            MagicMock(),  # insert viewer perm 1
-            MagicMock(),  # insert viewer perm 3
-        ]
+        mock_provider.upsert_role.side_effect = ["role-id-1", "role-id-2"]
 
         await sync_service._sync_roles(mock_session, "module-id", "test", roles)
 
-        # admin 应展开为 4 个权限，viewer 应展开为 2 个 read 权限
-        assert mock_session.execute.call_count == 11
+        # admin 应展开为 4 个权限
+        assert mock_provider.upsert_role_permission.call_count == 6  # 4 admin + 2 viewer
+        # viewer 应关联 2 个 read 权限
 
     @pytest.mark.asyncio
-    async def test_sync_roles_wildcard_no_match(self, sync_service):
+    async def test_sync_roles_wildcard_no_match(self, sync_service, mock_provider):
         """角色同步：通配符无匹配项时不创建关联"""
         roles = [
-            RoleDef(
-                code="admin",
-                name="管理员",
-                permission_codes=["other:*:*"],
-            ),
+            RoleDef(code="admin", name="管理员", permission_codes=["other:*:*"]),
         ]
 
         mock_session = AsyncMock()
 
-        # 模拟权限查询（无匹配 other 模块的权限）
-        perm_query_result = MagicMock()
-        perm_query_result.all.return_value = [
-            MagicMock(code="test:user:read", id="perm-id-1"),
-        ]
-
-        role_result = MagicMock()
-        role_result.scalar_one.return_value = "role-id-1"
-
-        mock_session.execute.side_effect = [
-            perm_query_result,
-            role_result,
-            MagicMock(),  # delete old perms
-        ]
+        mock_provider.get_permission_code_to_id_map.return_value = {
+            "test:user:read": "perm-id-1",
+        }
 
         await sync_service._sync_roles(mock_session, "module-id", "test", roles)
 
         # 只有权限查询、角色 upsert、删除旧关联，无新增关联
-        assert mock_session.execute.call_count == 3
-
+        mock_provider.upsert_role_permission.assert_not_called()
