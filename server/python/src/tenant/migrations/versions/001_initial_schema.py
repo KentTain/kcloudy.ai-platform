@@ -53,6 +53,7 @@ def upgrade() -> None:
         schema=MODULE_SCHEMA,
     )
     op.create_index("ix_cache_configs_name", "cache_configs", ["name"], schema=MODULE_SCHEMA)
+    op.execute("COMMENT ON TABLE tenant.cache_configs IS '缓存配置表'")
 
     op.create_table(
         "database_configs",
@@ -71,6 +72,7 @@ def upgrade() -> None:
         schema=MODULE_SCHEMA,
     )
     op.create_index("ix_database_configs_name", "database_configs", ["name"], schema=MODULE_SCHEMA)
+    op.execute("COMMENT ON TABLE tenant.database_configs IS '数据库配置表'")
 
     op.create_table(
         "storage_configs",
@@ -88,6 +90,7 @@ def upgrade() -> None:
         schema=MODULE_SCHEMA,
     )
     op.create_index("ix_storage_configs_name", "storage_configs", ["name"], schema=MODULE_SCHEMA)
+    op.execute("COMMENT ON TABLE tenant.storage_configs IS '存储配置表'")
 
     op.create_table(
         "queue_configs",
@@ -106,6 +109,7 @@ def upgrade() -> None:
         schema=MODULE_SCHEMA,
     )
     op.create_index("ix_queue_configs_name", "queue_configs", ["name"], schema=MODULE_SCHEMA)
+    op.execute("COMMENT ON TABLE tenant.queue_configs IS '队列配置表'")
 
     op.create_table(
         "pubsub_configs",
@@ -123,6 +127,7 @@ def upgrade() -> None:
         schema=MODULE_SCHEMA,
     )
     op.create_index("ix_pubsub_configs_name", "pubsub_configs", ["name"], schema=MODULE_SCHEMA)
+    op.execute("COMMENT ON TABLE tenant.pubsub_configs IS '发布订阅配置表'")
 
     # ==================== 租户管理表 ====================
 
@@ -141,6 +146,7 @@ def upgrade() -> None:
         schema=MODULE_SCHEMA,
     )
     op.create_index("ix_tenant_admins_username", "tenant_admins", ["username"], schema=MODULE_SCHEMA)
+    op.execute("COMMENT ON TABLE tenant.tenant_admins IS '租户管理员表'")
 
     op.create_table(
         "tenants",
@@ -167,6 +173,7 @@ def upgrade() -> None:
     )
     op.create_index("ix_tenants_code", "tenants", ["code"], schema=MODULE_SCHEMA)
     op.create_index("ix_tenants_status", "tenants", ["status"], schema=MODULE_SCHEMA)
+    op.execute("COMMENT ON TABLE tenant.tenants IS '租户表'")
 
     # ==================== 模块定义表 ====================
 
@@ -186,6 +193,7 @@ def upgrade() -> None:
         sa.UniqueConstraint("code"),
         schema=MODULE_SCHEMA,
     )
+    op.execute("COMMENT ON TABLE tenant.modules IS '模块定义表'")
 
     op.create_table(
         "plugin_definitions",
@@ -216,6 +224,7 @@ def upgrade() -> None:
     )
     op.create_index(op.f("ix_tenant_plugin_definitions_install_type"), "plugin_definitions", ["install_type"], schema=MODULE_SCHEMA)
     op.create_index(op.f("ix_tenant_plugin_definitions_plugin_id"), "plugin_definitions", ["plugin_id"], schema=MODULE_SCHEMA)
+    op.execute("COMMENT ON TABLE tenant.plugin_definitions IS '插件定义表'")
 
     op.create_table(
         "plugin_installations",
@@ -239,6 +248,7 @@ def upgrade() -> None:
     op.create_index(op.f("ix_tenant_plugin_installations_plugin_id"), "plugin_installations", ["plugin_id"], schema=MODULE_SCHEMA)
     op.create_index(op.f("ix_tenant_plugin_installations_plugin_unique_identifier"), "plugin_installations", ["plugin_unique_identifier"], schema=MODULE_SCHEMA)
     op.create_index(op.f("ix_tenant_plugin_installations_tenant_id"), "plugin_installations", ["tenant_id"], schema=MODULE_SCHEMA)
+    op.execute("COMMENT ON TABLE tenant.plugin_installations IS '插件安装记录表'")
 
     # ==================== 插件市场相关表 ====================
 
@@ -316,6 +326,7 @@ def upgrade() -> None:
     op.create_index(op.f("ix_tenant_module_menus_parent_id"), "module_menus", ["parent_id"], schema=MODULE_SCHEMA)
     op.create_index(op.f("ix_tenant_module_menus_tree_level"), "module_menus", ["tree_level"], schema=MODULE_SCHEMA)
     op.create_index(op.f("ix_tenant_module_menus_tree_sort"), "module_menus", ["tree_sort"], schema=MODULE_SCHEMA)
+    op.execute("COMMENT ON TABLE tenant.module_menus IS '模块菜单定义表'")
 
     op.create_table(
         "module_permissions",
@@ -334,6 +345,7 @@ def upgrade() -> None:
         schema=MODULE_SCHEMA,
     )
     op.create_index("ix_module_permissions_code", "module_permissions", ["code"], schema=MODULE_SCHEMA)
+    op.execute("COMMENT ON TABLE tenant.module_permissions IS '模块权限表'")
 
     op.create_table(
         "module_roles",
@@ -358,6 +370,7 @@ def upgrade() -> None:
         schema=MODULE_SCHEMA,
         postgresql_where=sa.text("module_id IS NULL"),
     )
+    op.execute("COMMENT ON TABLE tenant.module_roles IS '模块角色定义表'")
 
     op.create_table(
         "tenant_business_configs",
@@ -373,6 +386,7 @@ def upgrade() -> None:
         sa.UniqueConstraint("tenant_id"),
         schema=MODULE_SCHEMA,
     )
+    op.execute("COMMENT ON TABLE tenant.tenant_business_configs IS '租户业务配置表'")
 
     op.create_table(
         "tenant_configs",
@@ -389,6 +403,7 @@ def upgrade() -> None:
     )
     op.create_index("ix_tenant_configs_tenant_id", "tenant_configs", ["tenant_id"], schema=MODULE_SCHEMA)
     op.create_index("uq_tenant_configs_tenant_key", "tenant_configs", ["tenant_id", "config_key"], unique=True, schema=MODULE_SCHEMA)
+    op.execute("COMMENT ON TABLE tenant.tenant_configs IS '租户配置表'")
 
     op.create_table(
         "tenant_modules",
@@ -406,6 +421,7 @@ def upgrade() -> None:
         sa.UniqueConstraint("tenant_id", "module_id", name="uq_tenant_modules_tenant_module"),
         schema=MODULE_SCHEMA,
     )
+    op.execute("COMMENT ON TABLE tenant.tenant_modules IS '租户模块分配表'")
 
     # ==================== 关联表 ====================
 
@@ -424,6 +440,7 @@ def upgrade() -> None:
     )
     op.create_index("ix_module_menu_permissions_menu_id", "module_menu_permissions", ["module_menu_id"], schema=MODULE_SCHEMA)
     op.create_index("ix_module_menu_permissions_permission_id", "module_menu_permissions", ["module_permission_id"], schema=MODULE_SCHEMA)
+    op.execute("COMMENT ON TABLE tenant.module_menu_permissions IS '模块菜单-权限关联表'")
 
     op.create_table(
         "module_role_permissions",
@@ -440,6 +457,7 @@ def upgrade() -> None:
     )
     op.create_index("ix_module_role_permissions_role_id", "module_role_permissions", ["module_role_id"], schema=MODULE_SCHEMA)
     op.create_index("ix_module_role_permissions_permission_id", "module_role_permissions", ["module_permission_id"], schema=MODULE_SCHEMA)
+    op.execute("COMMENT ON TABLE tenant.module_role_permissions IS '模块角色-权限关联表'")
 
 
 def downgrade() -> None:
