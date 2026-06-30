@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import datetime
 from typing import TYPE_CHECKING, Any
 
 from loguru import logger
@@ -10,9 +11,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from tenant.models import TenantPluginMarketplace
 from tenant.services.marketplace.adapters.dify_adapter import DifyAdapter
+from tenant.services.marketplace.adapters.modelscope_adapter import ModelScopeAdapter
 from tenant.services.marketplace.protocol import (
     MarketplaceAdapter,
     MarketplaceTestResult,
+    PluginUpdateInfo,
     RemotePluginInfo,
 )
 
@@ -25,6 +28,7 @@ class MarketplaceGateway:
 
     _adapters: dict[str, type] = {
         "dify": DifyAdapter,
+        "modelscope": ModelScopeAdapter,
     }
 
     def _get_adapter(self, market_type: str) -> MarketplaceAdapter:
@@ -186,6 +190,174 @@ class MarketplaceGateway:
         adapter = self._get_adapter(marketplace.type)
         config = self._build_adapter_config(marketplace)
         return await adapter.get_plugin(config, plugin_id)
+
+    # ==================== 插件同步与更新 ====================
+
+    async def sync_plugins(
+        self,
+        session: AsyncSession,
+        marketplace_id: str,
+        plugins: list[dict[str, str]],
+    ) -> dict[str, Any]:
+        """同步选中插件"""
+        from tenant.services.plugin_package_service import plugin_package_service
+        from tenant.services.plugin_storage_service import plugin_storage_service
+        from tenant.models import TenantPluginDefinition
+
+        marketplace = await self.get_marketplace(session, marketplace_id)
+        if not marketplace:
+            raise ValueError(f"市场不存在: {marketplace_id}")
+        if not marketplace.is_enabled:
+            raise ValueError(f"市场已禁用: {marketplace.name}")
+
+        adapter = self._get_adapter(marketplace.type)
+        config = self._build_adapter_config(marketplace)
+
+        success = []
+        failed = []
+        skipped = []
+
+        for plugin_item in plugins:
+            plugin_id = plugin_item["plugin_id"]
+            plugin_type = plugin_item.get("plugin_type", "tool")
+
+            try:
+                # 1. 获取远程插件信息
+                remote_info = await adapter.get_plugin(config, plugin_id)
+                if not remote_info:
+                    failed.append({"plugin_id": plugin_id, "message": "远程插件不存在"})
+                    continue
+
+                # 2. 检查本地是否已存在
+                existing = await session.execute(
+                    select(TenantPluginDefinition).where(
+                        TenantPluginDefinition.plugin_id == plugin_id
+                    )
+                )
+                existing_def = existing.scalar_one_or_none()
+
+                if existing_def and existing_def.remote_version == remote_info.version:
+                    skipped.append({"plugin_id": plugin_id, "reason": "相同版本已存在"})
+                    continue
+
+                # 3. 下载插件包
+                package_data, checksum = await adapter.download_plugin(config, plugin_id)
+
+                # 4. 解析验证
+                package_info = plugin_package_service.parse_package_from_bytes(package_data)
+
+                # 5. 存储到 MinIO
+                storage_path = await plugin_storage_service.upload_plugin_package(
+                    plugin_id=plugin_id,
+                    version=remote_info.version,
+                    package_data=package_data,
+                )
+
+                # 6. 创建/更新 plugin_definitions 记录
+                if existing_def:
+                    existing_def.declaration = package_info.declaration
+                    existing_def.remote_version = remote_info.version
+                    existing_def.local_version = remote_info.version
+                    existing_def.update_available = False
+                    existing_def.source_type = "remote"
+                    existing_def.marketplace_id = marketplace_id
+                else:
+                    new_def = TenantPluginDefinition(
+                        plugin_id=plugin_id,
+                        plugin_unique_identifier=f"{plugin_id}:{remote_info.version}@{checksum}",
+                        declaration=package_info.declaration,
+                        refers=0,
+                        install_type="remote",
+                        manifest_type=plugin_type,
+                        marketplace_id=marketplace_id,
+                        remote_plugin_id=plugin_id,
+                        remote_version=remote_info.version,
+                        local_version=remote_info.version,
+                        source_type="remote",
+                    )
+                    session.add(new_def)
+
+                success.append({"plugin_id": plugin_id, "version": remote_info.version})
+
+            except Exception as e:
+                logger.error(f"同步插件失败: {plugin_id}, 错误: {e}")
+                failed.append({"plugin_id": plugin_id, "message": str(e)})
+
+        # 更新最后同步时间
+        marketplace.last_sync_at = datetime.utcnow()
+        marketplace.last_sync_status = "success" if not failed else "partial"
+
+        return {"success": success, "failed": failed, "skipped": skipped}
+
+    async def check_updates(
+        self,
+        session: AsyncSession,
+        marketplace_id: str,
+    ) -> Sequence[PluginUpdateInfo]:
+        """检查插件更新"""
+        from tenant.models import TenantPluginDefinition
+
+        marketplace = await self.get_marketplace(session, marketplace_id)
+        if not marketplace:
+            raise ValueError(f"市场不存在: {marketplace_id}")
+
+        adapter = self._get_adapter(marketplace.type)
+        config = self._build_adapter_config(marketplace)
+
+        # 查询该市场来源的插件定义
+        result = await session.execute(
+            select(TenantPluginDefinition).where(
+                TenantPluginDefinition.source_type == "remote",
+                TenantPluginDefinition.marketplace_id == marketplace_id,
+            )
+        )
+        local_plugins = result.scalars().all()
+
+        # 批量检查更新
+        plugins_to_check = [
+            {"plugin_id": p.plugin_id, "current_version": p.local_version}
+            for p in local_plugins
+        ]
+
+        return await adapter.check_updates(config, plugins_to_check)
+
+    async def apply_update(
+        self,
+        session: AsyncSession,
+        marketplace_id: str,
+        plugin_id: str,
+    ) -> dict[str, Any]:
+        """应用插件更新"""
+        from tenant.models import TenantPluginDefinition
+
+        marketplace = await self.get_marketplace(session, marketplace_id)
+        if not marketplace:
+            raise ValueError(f"市场不存在: {marketplace_id}")
+
+        # 获取本地插件定义
+        result = await session.execute(
+            select(TenantPluginDefinition).where(
+                TenantPluginDefinition.plugin_id == plugin_id,
+                TenantPluginDefinition.source_type == "remote",
+            )
+        )
+        local_def = result.scalar_one_or_none()
+        if not local_def:
+            raise ValueError(f"插件不存在: {plugin_id}")
+
+        old_version = local_def.local_version
+
+        # 重新同步该插件
+        sync_result = await self.sync_plugins(
+            session, marketplace_id, [{"plugin_id": plugin_id}]
+        )
+
+        return {
+            "plugin_id": plugin_id,
+            "old_version": old_version,
+            "new_version": local_def.local_version or old_version,
+            "status": "updated" if sync_result["success"] else "failed",
+        }
 
 
 # 单例实例
