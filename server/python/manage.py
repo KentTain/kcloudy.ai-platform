@@ -445,8 +445,8 @@ def rebuild(ctx, module, all_modules, yes, dry_run):
                 await session.commit()
                 write_success(f"[{m.name}] 已创建 schema: {m.schema}")
 
-    def do_run_migrations():
-        """同步运行迁移"""
+    async def do_run_migrations():
+        """运行迁移（在事件循环内同步调用）"""
         from alembic import command
 
         for m in modules:
@@ -470,14 +470,24 @@ def rebuild(ctx, module, all_modules, yes, dry_run):
                 except Exception as e:
                     write_error(f"[{m.name}/{seed_name}] {e}")
 
-    # 执行步骤 1-2: 删除和创建 schema
-    asyncio.run(do_drop_create_schemas())
+    async def execute_rebuild():
+        """执行完整的重建流程（单一事件循环）"""
+        try:
+            # 步骤 1-2: 删除和创建 schema
+            await do_drop_create_schemas()
 
-    # 执行步骤 3: 运行迁移（同步调用，避免嵌套事件循环）
-    do_run_migrations()
+            # 步骤 3: 运行迁移
+            await do_run_migrations()
 
-    # 执行步骤 4: 运行种子数据
-    asyncio.run(do_run_seeds())
+            # 步骤 4: 运行种子数据
+            await do_run_seeds()
+        finally:
+            # 清理数据库引擎，避免事件循环警告
+            from framework.database.core.engine import dispose_engine
+            await dispose_engine()
+
+    # 执行重建流程
+    asyncio.run(execute_rebuild())
 
     write_empty_line()
     if dry_run:
@@ -562,6 +572,11 @@ def seed(dry_run, module):
                     total += count
                 except Exception as e:
                     write_error(f"[{m.name}/{seed_name}] {e}")
+
+        # 清理数据库引擎
+        from framework.database.core.engine import dispose_engine
+        await dispose_engine()
+
         return total
 
     total = asyncio.run(run_seeds())

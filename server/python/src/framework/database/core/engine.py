@@ -177,6 +177,16 @@ def create_session() -> AsyncSession:
     return _engine_manager.create_session()
 
 
+async def dispose_engine() -> None:
+    """
+    关闭并清理数据库引擎
+
+    用于在事件循环结束前正确清理数据库连接池，
+    避免异步资源泄漏和事件循环警告。
+    """
+    await _engine_manager.close()
+
+
 class _SessionProxy:
     """
     会话代理类（多租户感知）
