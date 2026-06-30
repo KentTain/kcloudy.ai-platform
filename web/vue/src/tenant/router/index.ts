@@ -107,6 +107,31 @@ export const adminRoutes: RouteRecordRaw[] = [
         component: () => import("@/tenant/pages/admin/PluginDefinitionEditPage.vue"),
         meta: { title: "编辑插件状态", hidden: true, requiresAdminAuth: true, permissions: ["tenant:plugin:write"] },
       },
+      // ==================== 插件市场管理 ====================
+      {
+        path: "marketplaces",
+        name: "AdminMarketplaceList",
+        component: () => import("@/tenant/pages/admin/MarketplaceListPage.vue"),
+        meta: { title: "插件市场", requiresAdminAuth: true, permissions: ["tenant:marketplace:read"] },
+      },
+      {
+        path: "marketplaces/create",
+        name: "AdminMarketplaceCreate",
+        component: () => import("@/tenant/pages/admin/MarketplaceFormPage.vue"),
+        meta: { title: "添加市场", hidden: true, requiresAdminAuth: true, permissions: ["tenant:marketplace:write"] },
+      },
+      {
+        path: "marketplaces/:id/edit",
+        name: "AdminMarketplaceEdit",
+        component: () => import("@/tenant/pages/admin/MarketplaceFormPage.vue"),
+        meta: { title: "编辑市场", hidden: true, requiresAdminAuth: true, permissions: ["tenant:marketplace:write"] },
+      },
+      {
+        path: "marketplaces/:id/plugins",
+        name: "AdminRemotePluginBrowse",
+        component: () => import("@/tenant/pages/admin/RemotePluginBrowsePage.vue"),
+        meta: { title: "浏览远程插件", hidden: true, requiresAdminAuth: true, permissions: ["tenant:marketplace:read"] },
+      },
     ],
   },
 ];
