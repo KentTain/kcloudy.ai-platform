@@ -20,6 +20,7 @@ from langchain_core.outputs import (
 )
 from langchain_core.runnables import Runnable
 from langchain_core.tools import BaseTool
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from ai.components.model.services.llm_service import LLMService
 from ai_plugin.sdk.entities.model.message import PromptMessageTool
@@ -59,6 +60,7 @@ class AlonChatModel(BaseChatModel):
     tenant_id: str
     user_id: str | None = None
     model_parameters: dict = {}
+    db_session: AsyncSession | None = None
 
     @property
     def _llm_type(self) -> str:
@@ -111,6 +113,7 @@ class AlonChatModel(BaseChatModel):
             tools=tools,
             stop=stop,
             user=self.user_id,
+            db_session=self.db_session,
         )
 
         content = _platform_content_to_lc(result.message.content) or ""
@@ -167,6 +170,7 @@ class AlonChatModel(BaseChatModel):
             tools=tools,
             stop=stop,
             user=self.user_id,
+            db_session=self.db_session,
         ):
             content = _platform_content_to_lc(chunk.delta.message.content) or ""
             if not content:

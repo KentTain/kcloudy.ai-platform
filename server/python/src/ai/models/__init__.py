@@ -15,8 +15,6 @@ BaseModel = create_base_model(Base)
 from .conversation import Conversation
 from .enums import ConversationMode, ConversationStatus, MessageRole, MessageStatus
 from .message import Message
-from .model_config import ModelConfig, ModelType
-from .model_provider import ModelProvider, ProviderType
 from .plugin import (
     CredentialScope,
     InstallType,
@@ -43,16 +41,11 @@ __all__ = [
     "TaskStatus",
     "PluginStatus",
     "CredentialScope",
-    "ProviderType",
-    "ModelType",
     # 插件相关
     "PluginConfig",
     "PluginInstallTask",
     "PluginCredential",
     "PluginRuntimeState",
-    # 模型提供商相关
-    "ModelProvider",
-    "ModelConfig",
     # 会话相关
     "ConversationStatus",
     "ConversationMode",

@@ -13,6 +13,8 @@ from collections import defaultdict
 from json import JSONDecodeError
 
 from loguru import logger
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from ai.components.model.errors import ProviderNotFoundError
 from ai.components.model.internal.entities.provider_entities import (
@@ -26,6 +28,8 @@ from ai.components.model.internal.model_provider_factory import ModelProviderFac
 from ai.components.model.schema.model_entities import (
     DefaultModelEntity,
 )
+from ai.models.plugin import PluginCredential
+from ai.services.credential_service import credential_service
 from ai_plugin.sdk.entities.model import ModelType
 from ai_plugin.sdk.entities.model.provider import (
     CredentialFormSchema,
@@ -83,13 +87,14 @@ class ProviderManager:
             _logger.error(f"清除缓存失败: {e}")
 
     async def get_configurations(
-        self, tenant_id: str, use_cache: bool = True
+        self, tenant_id: str, use_cache: bool = True, db_session: AsyncSession | None = None
     ) -> ProviderConfigurations:
         """
         获取模型供应商配置集合
 
         :param tenant_id: 租户 ID
         :param use_cache: 是否使用缓存，默认 True
+        :param db_session: 数据库会话（可选，用于凭证注入）
         :return: 供应商配置集合
         """
         cache_key = f"{CACHE_KEY_PREFIX}:{tenant_id}"
@@ -208,6 +213,12 @@ class ProviderManager:
             except Exception as e:
                 _logger.warning(f"缓存配置到 Redis 失败 tenant_id={tenant_id}: {e}")
 
+        # 注入插件凭证（如果提供了 session）
+        await self._inject_plugin_credentials(
+            session=db_session,
+            provider_configurations=provider_configurations,
+        )
+
         return provider_configurations
 
     async def _get_provider_model_bundle(
@@ -215,6 +226,7 @@ class ProviderManager:
         tenant_id: str,
         provider: str,
         model_type: ModelType,
+        db_session: AsyncSession | None = None,
     ) -> ProviderModelBundle:
         """
         获取供应商模型束
@@ -222,9 +234,10 @@ class ProviderManager:
         :param tenant_id: 租户 ID
         :param provider: 供应商名称
         :param model_type: 模型类型
+        :param db_session: 数据库会话（可选，用于凭证注入）
         :return: 供应商模型束
         """
-        configurations = await self.get_configurations(tenant_id)
+        configurations = await self.get_configurations(tenant_id, db_session=db_session)
         provider_configuration = configurations.get(provider)
 
         if not provider_configuration:
@@ -291,12 +304,14 @@ class ProviderManager:
         self,
         tenant_id: str,
         model_type: ModelType,
+        db_session: AsyncSession | None = None,
     ) -> tuple[str | None, str | None]:
         """
         获取默认的供应商和模型名称
 
         :param tenant_id: 租户 ID
         :param model_type: 模型类型
+        :param db_session: 数据库会话（可选，用于凭证注入）
         :return: (供应商名称, 模型名称) 元组
         """
         # 首先尝试获取已配置的默认模型
@@ -305,21 +320,23 @@ class ProviderManager:
             return default_model.provider.provider, default_model.model
 
         # 如果没有配置默认模型，则获取第一个可用的模型
-        return await self._get_first_provider_first_model(tenant_id, model_type)
+        return await self._get_first_provider_first_model(tenant_id, model_type, db_session)
 
     async def _get_first_provider_first_model(
         self,
         tenant_id: str,
         model_type: ModelType,
+        db_session: AsyncSession | None = None,
     ) -> tuple[str | None, str | None]:
         """
         获取第一个供应商的第一个模型
 
         :param tenant_id: 租户 ID
         :param model_type: 模型类型
+        :param db_session: 数据库会话（可选，用于凭证注入）
         :return: (供应商名称, 模型名称) 元组
         """
-        configurations = await self.get_configurations(tenant_id)
+        configurations = await self.get_configurations(tenant_id, db_session=db_session)
         models = await configurations.get_models(
             model_type=model_type, only_active=True
         )
@@ -549,3 +566,135 @@ class ProviderManager:
                 )
 
         return model_settings
+
+    async def _inject_plugin_credentials(
+        self,
+        session: AsyncSession | None,
+        provider_configurations: ProviderConfigurations,
+    ) -> None:
+        """
+        从 PluginCredential 表注入凭证到 plugin provider
+
+        :param session: 数据库会话
+        :param provider_configurations: 供应商配置集合
+        """
+        if not session:
+            return
+
+        # 遍历所有 provider，找出 plugin 类型的 provider
+        for provider_name, provider_config in provider_configurations.items():
+            plugin_id = self._extract_plugin_id_from_provider(provider_name)
+            if not plugin_id:
+                continue
+
+            # 从 PluginCredential 表查询默认凭证
+            stmt = select(PluginCredential).where(
+                PluginCredential.tenant_id == provider_configurations.tenant_id,
+                PluginCredential.plugin_id == plugin_id,
+                PluginCredential.is_default == True,
+                PluginCredential.is_disabled == False,
+            )
+            result = await session.execute(stmt)
+            credentials_list = result.scalars().all()
+
+            if not credentials_list:
+                continue
+
+            # 获取默认凭证
+            credential = credentials_list[0]
+
+            # 获取凭证架构
+            credentials_schema = self._extract_credentials_schema_from_provider(
+                provider_config.provider
+            )
+            if not credentials_schema:
+                continue
+
+            # 解密凭证
+            decrypted = credential_service.decrypt_credentials(
+                credential.credentials or {},
+                credentials_schema,
+            )
+
+            # 注入凭证到 custom_configuration.provider.credentials
+            if provider_config.custom_configuration.provider is None:
+                provider_config.custom_configuration.provider = CustomProviderConfiguration(
+                    credentials=decrypted
+                )
+            else:
+                provider_config.custom_configuration.provider.credentials = decrypted
+
+            _logger.debug(
+                f"已注入插件凭证 tenant_id={provider_configurations.tenant_id} "
+                f"plugin_id={plugin_id} provider={provider_name}"
+            )
+
+    def _extract_plugin_id_from_provider(self, provider: str) -> str | None:
+        """
+        从 provider 名称中提取 plugin_id
+
+        :param provider: provider 名称，例如 "plugin/alon/tongyi"
+        :return: plugin_id，例如 "alon/tongyi"，如果不是 plugin provider 则返回 None
+        """
+        if not provider.startswith("plugin/"):
+            return None
+
+        # 去掉 "plugin/" 前缀
+        plugin_id = provider[7:]  # len("plugin/") = 7
+        if not plugin_id:
+            return None
+
+        return plugin_id
+
+    def _extract_credentials_schema_from_provider(
+        self, provider_entity: ProviderEntity
+    ) -> list[dict] | None:
+        """
+        从 provider 实体中提取凭证架构
+
+        将 CredentialFormSchema 转换为 CredentialService 需要的 dict 格式
+
+        :param provider_entity: provider 实体
+        :return: 凭证架构列表 [{"name": "api_key", "type": "secret-input", ...}, ...]
+        """
+        # 尝试从 provider_credential_schema 获取
+        if provider_entity.provider_credential_schema:
+            schemas = provider_entity.provider_credential_schema.credential_form_schemas
+            if schemas:
+                return self._convert_schemas_to_dict(schemas)
+
+        # 尝试从 model_credential_schema 获取
+        if provider_entity.model_credential_schema:
+            schemas = provider_entity.model_credential_schema.credential_form_schemas
+            if schemas:
+                return self._convert_schemas_to_dict(schemas)
+
+        return None
+
+    def _convert_schemas_to_dict(
+        self, schemas: list[CredentialFormSchema]
+    ) -> list[dict]:
+        """
+        将 CredentialFormSchema 列表转换为 dict 列表
+
+        Args:
+            schemas: CredentialFormSchema 对象列表
+
+        Returns:
+            凭证架构字典列表
+        """
+        result = []
+        for schema in schemas:
+            item = {
+                "name": schema.variable,
+                "type": schema.type.value if hasattr(schema.type, "value") else str(schema.type),
+                "required": schema.required,
+            }
+            if schema.options:
+                item["options"] = [
+                    {"value": opt.value, "label": opt.label}
+                    for opt in schema.options
+                ]
+            result.append(item)
+
+        return result
