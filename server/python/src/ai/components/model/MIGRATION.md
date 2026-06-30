@@ -248,3 +248,51 @@ ChatController (Depends(get_db_session))
 - `_inject_plugin_credentials()` - 从 PluginCredential 表注入凭证
 - `_extract_plugin_id_from_provider()` - 从 provider 名称提取 plugin_id
 - `_extract_credentials_schema_from_provider()` - 提取凭证架构用于解密
+
+## ProviderManager 重写（2026-07-01）
+
+### 新增表
+
+| 表名 | 说明 |
+|------|------|
+| plugin_default_models | 默认模型配置，支持标准模型和自定义模型 |
+
+### 删除的方法
+
+以下方法已从 ProviderManager 中删除：
+
+| 方法 | 原因 |
+|------|------|
+| `_get_all_custom_models()` | 模型定义来自插件 manifest |
+| `_get_all_providers()` | 供应商定义来自插件 manifest |
+| `_get_all_provider_model_settings()` | 模型设置来自插件 manifest |
+| `get_default_model()` | 功能转移到 PluginDefaultModelService |
+| `update_default_model_record()` | 功能转移到 PluginDefaultModelService |
+
+以下方法已从 ProviderConfiguration 中删除：
+
+| 方法 | 原因 |
+|------|------|
+| `add_or_update_custom_credentials()` | 凭证通过 plugin_credentials API 管理 |
+| `delete_custom_credentials()` | 凭证通过 plugin_credentials API 管理 |
+
+### 简化的流程
+
+**get_configurations() 简化：**
+
+原流程：
+1. _get_all_providers() → 空字典
+2. ModelProviderFactory.get_providers() → 插件 manifest
+3. _get_all_provider_model_settings() → 空字典
+4. _get_all_custom_models() → 空字典
+5. 构造 ProviderConfiguration
+6. _inject_plugin_credentials()
+
+新流程：
+1. ModelProviderFactory.get_providers() → 插件 manifest
+2. 构造 ProviderConfiguration
+3. _inject_plugin_credentials()
+
+**默认模型查询：**
+
+从 `plugin_default_models` 表查询，不再依赖废弃的方法。
