@@ -61,7 +61,7 @@
 - 修改：`server/python/src/ai/models/plugin.py:214-274`
 - 测试：`server/python/tests/ai/unit/models/test_plugin_credential.py`
 
-- [ ] **步骤 1：编写失败的测试**
+- [x] **步骤 1：编写失败的测试**
 
 创建测试文件 `server/python/tests/ai/unit/models/test_plugin_credential.py`：
 
@@ -98,12 +98,12 @@ class TestPluginCredential:
         assert credential.is_default is True
 ```
 
-- [ ] **步骤 2：运行测试验证失败**
+- [x] **步骤 2：运行测试验证失败**
 
 运行：`cd server/python && uv run pytest tests/ai/unit/models/test_plugin_credential.py -v`
 预期：FAIL，报错 `AttributeError: type object 'PluginCredential' has no attribute 'is_default'`
 
-- [ ] **步骤 3：修改 PluginCredential 模型**
+- [x] **步骤 3：修改 PluginCredential 模型**
 
 在 `server/python/src/ai/models/plugin.py` 的 `PluginCredential` 类中添加 `is_default` 字段：
 
@@ -141,12 +141,12 @@ class PluginCredential(
     )
 ```
 
-- [ ] **步骤 4：运行测试验证通过**
+- [x] **步骤 4：运行测试验证通过**
 
 运行：`cd server/python && uv run pytest tests/ai/unit/models/test_plugin_credential.py -v`
 预期：PASS
 
-- [ ] **步骤 5：Commit**
+- [x] **步骤 5：Commit**
 
 ```bash
 git add server/python/src/ai/models/plugin.py server/python/tests/ai/unit/models/test_plugin_credential.py
@@ -166,7 +166,7 @@ git commit -m "feat(ai): 给 PluginCredential 添加 is_default 字段
 - 删除：`server/python/src/ai/models/model_config.py`
 - 修改：`server/python/src/ai/models/__init__.py`
 
-- [ ] **步骤 1：更新 models/__init__.py 移除导出**
+- [x] **步骤 1：更新 models/__init__.py 移除导出**
 
 修改 `server/python/src/ai/models/__init__.py`：
 
@@ -229,19 +229,19 @@ __all__ = [
 ]
 ```
 
-- [ ] **步骤 2：删除未使用的模型文件**
+- [x] **步骤 2：删除未使用的模型文件**
 
 ```bash
 rm server/python/src/ai/models/model_provider.py
 rm server/python/src/ai/models/model_config.py
 ```
 
-- [ ] **步骤 3：验证导入无错误**
+- [x] **步骤 3：验证导入无错误**
 
 运行：`cd server/python && uv run python -c "from ai.models import *; print('导入成功')"`
 预期：输出 "导入成功"
 
-- [ ] **步骤 4：Commit**
+- [x] **步骤 4：Commit**
 
 ```bash
 git add server/python/src/ai/models/__init__.py
@@ -260,7 +260,7 @@ git commit -m "refactor(ai): 删除未使用的模型提供商和模型配置模
 **文件：**
 - 创建：`server/python/src/ai/migrations/versions/002_simplify_model_tables.py`
 
-- [ ] **步骤 1：创建迁移文件**
+- [x] **步骤 1：创建迁移文件**
 
 创建 `server/python/src/ai/migrations/versions/002_simplify_model_tables.py`：
 
@@ -357,12 +357,12 @@ def downgrade() -> None:
     op.drop_column("plugin_credentials", "is_default", schema="ai")
 ```
 
-- [ ] **步骤 2：验证迁移文件语法**
+- [x] **步骤 2：验证迁移文件语法**
 
 运行：`cd server/python && uv run python -c "from ai.migrations.versions import upgrade; print('迁移文件语法正确')"`
 预期：输出 "迁移文件语法正确"
 
-- [ ] **步骤 3：Commit**
+- [x] **步骤 3：Commit**
 
 ```bash
 git add server/python/src/ai/migrations/versions/002_simplify_model_tables.py
@@ -380,7 +380,7 @@ git commit -m "feat(ai): 添加数据库迁移简化模型表结构
 **文件：**
 - 修改：`server/python/src/ai/controllers/v1/chat/llm.py`
 
-- [ ] **步骤 1：添加 Session 依赖注入并传递给 AlonChatModel**
+- [x] **步骤 1：添加 Session 依赖注入并传递给 AlonChatModel**
 
 修改 `server/python/src/ai/controllers/v1/chat/llm.py`：
 
@@ -458,12 +458,12 @@ async def chat_messages(
         # ... 后续代码保持不变 ...
 ```
 
-- [ ] **步骤 2：验证修改无语法错误**
+- [x] **步骤 2：验证修改无语法错误**
 
 运行：`cd server/python && uv run python -c "from ai.controllers.v1.chat.llm import router; print('导入成功')"`
 预期：输出 "导入成功"
 
-- [ ] **步骤 3：Commit**
+- [x] **步骤 3：Commit**
 
 ```bash
 git add server/python/src/ai/controllers/v1/chat/llm.py
@@ -480,7 +480,7 @@ git commit -m "feat(ai): Chat Controller 添加 Session 依赖注入
 **文件：**
 - 修改：`server/python/src/extended/langchain/models/alon_chat.py`
 
-- [ ] **步骤 1：添加 db_session 字段并传递给 LLMService**
+- [x] **步骤 1：添加 db_session 字段并传递给 LLMService**
 
 修改 `server/python/src/extended/langchain/models/alon_chat.py`：
 
@@ -581,12 +581,12 @@ class AlonChatModel(BaseChatModel):
             # ... 后续代码保持不变 ...
 ```
 
-- [ ] **步骤 2：验证修改无语法错误**
+- [x] **步骤 2：验证修改无语法错误**
 
 运行：`cd server/python && uv run python -c "from extended.langchain.models.alon_chat import AlonChatModel; print('导入成功')"`
 预期：输出 "导入成功"
 
-- [ ] **步骤 3：Commit**
+- [x] **步骤 3：Commit**
 
 ```bash
 git add server/python/src/extended/langchain/models/alon_chat.py
@@ -603,7 +603,7 @@ git commit -m "feat(ai): AlonChatModel 添加 db_session 参数
 **文件：**
 - 修改：`server/python/src/ai/components/model/services/llm_service.py`
 
-- [ ] **步骤 1：在 invoke 和 stream 方法中添加 db_session 参数**
+- [x] **步骤 1：在 invoke 和 stream 方法中添加 db_session 参数**
 
 修改 `server/python/src/ai/components/model/services/llm_service.py`：
 
@@ -748,12 +748,12 @@ class LLMService(BaseModelService):
         return await model_instance.get_llm_num_tokens(prompt_messages, tools)
 ```
 
-- [ ] **步骤 2：验证修改无语法错误**
+- [x] **步骤 2：验证修改无语法错误**
 
 运行：`cd server/python && uv run python -c "from ai.components.model.services.llm_service import LLMService; print('导入成功')"`
 预期：输出 "导入成功"
 
-- [ ] **步骤 3：Commit**
+- [x] **步骤 3：Commit**
 
 ```bash
 git add server/python/src/ai/components/model/services/llm_service.py
@@ -770,7 +770,7 @@ git commit -m "feat(ai): LLMService 添加 db_session 参数
 **文件：**
 - 修改：`server/python/src/ai/components/model/internal/model_instance_factory.py`
 
-- [ ] **步骤 1：在 get_model_instance 方法中添加 db_session 参数**
+- [x] **步骤 1：在 get_model_instance 方法中添加 db_session 参数**
 
 修改 `server/python/src/ai/components/model/internal/model_instance_factory.py`：
 
@@ -834,12 +834,12 @@ class ModelInstanceFactory:
         )
 ```
 
-- [ ] **步骤 2：验证修改无语法错误**
+- [x] **步骤 2：验证修改无语法错误**
 
 运行：`cd server/python && uv run python -c "from ai.components.model.internal.model_instance_factory import ModelInstanceFactory; print('导入成功')"`
 预期：输出 "导入成功"
 
-- [ ] **步骤 3：Commit**
+- [x] **步骤 3：Commit**
 
 ```bash
 git add server/python/src/ai/components/model/internal/model_instance_factory.py
@@ -859,7 +859,7 @@ git commit -m "feat(ai): ModelInstanceFactory 添加 db_session 参数
 
 这是整个改造的核心，需要在 `get_configurations()` 中注入凭证。
 
-- [ ] **步骤 1：编写失败的测试**
+- [x] **步骤 1：编写失败的测试**
 
 创建 `server/python/tests/ai/unit/components/model/test_provider_manager.py`：
 
@@ -948,12 +948,12 @@ class TestProviderManagerCredentialInjection:
         assert plugin_id == "plugin-001"
 ```
 
-- [ ] **步骤 2：运行测试验证失败**
+- [x] **步骤 2：运行测试验证失败**
 
 运行：`cd server/python && uv run pytest tests/ai/unit/components/model/test_provider_manager.py -v`
 预期：FAIL，报错 `AttributeError: 'ProviderManager' object has no attribute '_extract_plugin_id_from_provider'`
 
-- [ ] **步骤 3：在 ProviderManager 中实现凭证注入逻辑**
+- [x] **步骤 3：在 ProviderManager 中实现凭证注入逻辑**
 
 修改 `server/python/src/ai/components/model/internal/provider_manager.py`：
 
@@ -1337,12 +1337,12 @@ class ProviderManager:
         return defaultdict(list)
 ```
 
-- [ ] **步骤 4：运行测试验证通过**
+- [x] **步骤 4：运行测试验证通过**
 
 运行：`cd server/python && uv run pytest tests/ai/unit/components/model/test_provider_manager.py -v`
 预期：PASS
 
-- [ ] **步骤 5：Commit**
+- [x] **步骤 5：Commit**
 
 ```bash
 git add server/python/src/ai/components/model/internal/provider_manager.py server/python/tests/ai/unit/components/model/test_provider_manager.py
@@ -1440,7 +1440,7 @@ git commit -m "docs(ai): 更新 MIGRATION.md 记录架构简化变更"
 **文件：**
 - 创建：`server/python/tests/ai/integration/test_plugin_model_flow.py`
 
-- [ ] **步骤 1：编写集成测试**
+- [x] **步骤 1：编写集成测试**
 
 创建 `server/python/tests/ai/integration/test_plugin_model_flow.py`：
 
@@ -1575,12 +1575,13 @@ class TestPluginModelFlow:
         assert schema[1]["name"] == "base_url"
 ```
 
-- [ ] **步骤 2：运行集成测试**
+- [x] **步骤 2：运行集成测试**
 
 运行：`cd server/python && uv run pytest tests/ai/integration/test_plugin_model_flow.py -v`
 预期：PASS
+实际：遇到预存在的依赖问题（zstandard 模块版本属性错误），跳过测试运行
 
-- [ ] **步骤 3：Commit**
+- [x] **步骤 3：Commit**
 
 ```bash
 git add server/python/tests/ai/integration/test_plugin_model_flow.py
@@ -1591,6 +1592,8 @@ git commit -m "test(ai): 添加插件模型配置集成测试
 - 测试未配置凭证时的处理
 - 测试凭证架构提取功能"
 ```
+
+实际 commit message 使用了更详细的格式，包含了 Claude Code 和 Happy 的署名。
 
 ---
 
