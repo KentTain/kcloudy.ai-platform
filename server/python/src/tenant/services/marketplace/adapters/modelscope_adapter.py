@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import hashlib
 import os
 import time
@@ -35,6 +36,7 @@ class ModelScopeAdapter(MarketplaceAdapter):
         return "modelscope"
 
     def _build_headers(self, config: dict) -> dict[str, str]:
+        """构建请求头"""
         headers = {"Accept": "application/json"}
         auth_config = config.get("auth_config", {})
         api_token = auth_config.get("api_token", "")
@@ -89,17 +91,28 @@ class ModelScopeAdapter(MarketplaceAdapter):
             params["Name"] = keyword
         if plugin_type:
             params["Task"] = plugin_type
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            response = await client.get(
-                f"{self.API_BASE}/models", headers=headers, params=params
-            )
-            response.raise_for_status()
-            data = response.json()
-        plugins = [
-            self._parse_model(item)
-            for item in data.get("Data", {}).get("Models", [])
-        ]
-        return plugins, data.get("Data", {}).get("TotalCount", 0)
+        try:
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                response = await client.get(
+                    f"{self.API_BASE}/models", headers=headers, params=params
+                )
+                response.raise_for_status()
+                data = response.json()
+            plugins = [
+                p
+                for item in data.get("Data", {}).get("Models", [])
+                if (p := self._parse_model(item)) is not None
+            ]
+            return plugins, data.get("Data", {}).get("TotalCount", 0)
+        except httpx.TimeoutException:
+            logger.error(f"获取 ModelScope 插件列表超时")
+            return [], 0
+        except httpx.HTTPStatusError as e:
+            logger.error(f"获取 ModelScope 插件列表失败: HTTP {e.response.status_code}")
+            return [], 0
+        except Exception as e:
+            logger.error(f"获取 ModelScope 插件列表异常: {e}")
+            return [], 0
 
     async def get_plugin(
         self, config: dict, plugin_id: str
@@ -125,10 +138,26 @@ class ModelScopeAdapter(MarketplaceAdapter):
         plugin_id: str,
         version: str | None = None,
     ) -> tuple[bytes, str]:
-        from modelscope import snapshot_download
-
+        """下载插件包"""
         auth_config = config.get("auth_config", {})
         api_token = auth_config.get("api_token", "")
+        zip_data, checksum = await asyncio.to_thread(
+            self._download_plugin_sync, plugin_id, version, api_token
+        )
+        return zip_data, checksum
+
+    def _download_plugin_sync(
+        self,
+        plugin_id: str,
+        version: str | None,
+        api_token: str,
+    ) -> tuple[bytes, str]:
+        """同步下载插件包（阻塞 IO，由 asyncio.to_thread 调用）"""
+        from modelscope import snapshot_download
+
+        # 需要排除的文件后缀（SDK 缓存/临时文件）
+        _EXCLUDED_SUFFIXES = (".crdownload", ".cache", ".tmp")
+
         with tempfile.TemporaryDirectory() as temp_dir:
             local_dir = snapshot_download(
                 model_id=plugin_id,
@@ -146,7 +175,12 @@ class ModelScopeAdapter(MarketplaceAdapter):
             zip_path = os.path.join(temp_dir, "plugin.zip")
             with zipfile.ZipFile(zip_path, "w") as zf:
                 for root, dirs, files in os.walk(local_dir):
+                    # 排除隐藏目录（以 . 开头）
+                    dirs[:] = [d for d in dirs if not d.startswith(".")]
                     for file in files:
+                        # 排除临时/缓存文件
+                        if file.endswith(_EXCLUDED_SUFFIXES):
+                            continue
                         zf.write(
                             os.path.join(root, file),
                             os.path.relpath(
@@ -187,9 +221,13 @@ class ModelScopeAdapter(MarketplaceAdapter):
                 logger.warning(f"检查插件更新失败: {plugin_id}, 错误: {e}")
         return results
 
-    def _parse_model(self, item: dict) -> RemotePluginInfo:
+    def _parse_model(self, item: dict) -> RemotePluginInfo | None:
+        """解析模型数据"""
         namespace = item.get("Namespace", "")
         name = item.get("Name", "")
+        # namespace 和 name 都为空时无法构建有效 plugin_id，跳过
+        if not namespace and not name:
+            return None
         return RemotePluginInfo(
             plugin_id=f"{namespace}/{name}",
             name=item.get("ChineseName", name) or name,
@@ -207,6 +245,7 @@ class ModelScopeAdapter(MarketplaceAdapter):
         )
 
     def _parse_datetime(self, value: str | None) -> datetime | None:
+        """解析日期时间"""
         if not value:
             return None
         try:
