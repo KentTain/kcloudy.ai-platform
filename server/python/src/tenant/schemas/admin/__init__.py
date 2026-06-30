@@ -2,6 +2,16 @@
 Tenant 模块管理后台 Schemas
 """
 
+from .marketplace import (
+    MarketplaceCreate,
+    MarketplaceQuery,
+    MarketplaceResponse,
+    MarketplaceTestResponse,
+    MarketplaceUpdate,
+    RemotePluginResponse,
+    SyncPluginsRequest,
+    SyncResultResponse,
+)
 from .module import (
     ModuleCreate,
     ModuleMenuCreate,
@@ -53,4 +63,13 @@ __all__ = [
     "AssignModuleRequest",
     "TenantModuleResponse",
     "TenantModulePaginatedListResponse",
+    # 插件市场
+    "MarketplaceCreate",
+    "MarketplaceUpdate",
+    "MarketplaceQuery",
+    "MarketplaceResponse",
+    "MarketplaceTestResponse",
+    "RemotePluginResponse",
+    "SyncPluginsRequest",
+    "SyncResultResponse",
 ]
