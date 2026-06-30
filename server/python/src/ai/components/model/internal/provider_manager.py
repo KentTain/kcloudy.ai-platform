@@ -648,19 +648,53 @@ class ProviderManager:
 
     def _extract_credentials_schema_from_provider(
         self, provider_entity: ProviderEntity
-    ) -> list[CredentialFormSchema] | None:
+    ) -> list[dict] | None:
         """
         从 provider 实体中提取凭证架构
 
+        将 CredentialFormSchema 转换为 CredentialService 需要的 dict 格式
+
         :param provider_entity: provider 实体
-        :return: 凭证架构列表，如果没有则返回 None
+        :return: 凭证架构列表 [{"name": "api_key", "type": "secret-input", ...}, ...]
         """
         # 尝试从 provider_credential_schema 获取
         if provider_entity.provider_credential_schema:
-            return provider_entity.provider_credential_schema.credential_form_schemas
+            schemas = provider_entity.provider_credential_schema.credential_form_schemas
+            if schemas:
+                return self._convert_schemas_to_dict(schemas)
 
         # 尝试从 model_credential_schema 获取
         if provider_entity.model_credential_schema:
-            return provider_entity.model_credential_schema.credential_form_schemas
+            schemas = provider_entity.model_credential_schema.credential_form_schemas
+            if schemas:
+                return self._convert_schemas_to_dict(schemas)
 
         return None
+
+    def _convert_schemas_to_dict(
+        self, schemas: list[CredentialFormSchema]
+    ) -> list[dict]:
+        """
+        将 CredentialFormSchema 列表转换为 dict 列表
+
+        Args:
+            schemas: CredentialFormSchema 对象列表
+
+        Returns:
+            凭证架构字典列表
+        """
+        result = []
+        for schema in schemas:
+            item = {
+                "name": schema.variable,
+                "type": schema.type.value if hasattr(schema.type, "value") else str(schema.type),
+                "required": schema.required,
+            }
+            if schema.options:
+                item["options"] = [
+                    {"value": opt.value, "label": opt.label}
+                    for opt in schema.options
+                ]
+            result.append(item)
+
+        return result
