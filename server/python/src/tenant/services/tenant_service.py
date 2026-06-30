@@ -407,6 +407,7 @@ class TenantService:
             tenant.settings = settings
 
         await session.flush()  # 触发脏检查但不提交，等待事务提交
+        await session.refresh(tenant)  # 刷新对象以获取 updated_at 等字段
 
         # 使缓存失效
         await TenantCache.invalidate(tenant_id)
@@ -594,6 +595,7 @@ class TenantService:
 
         tenant.status = TenantStatus.ACTIVE
         await session.flush()  # 触发脏检查但不提交，等待事务提交
+        await session.refresh(tenant)  # 刷新对象以获取 updated_at 等字段
 
         # 使缓存失效
         await TenantCache.invalidate(tenant_id)
@@ -613,6 +615,7 @@ class TenantService:
 
         tenant.status = TenantStatus.INACTIVE
         await session.flush()  # 触发脏检查但不提交，等待事务提交
+        await session.refresh(tenant)  # 刷新对象以获取 updated_at 等字段
 
         # 使缓存失效
         await TenantCache.invalidate(tenant_id)
