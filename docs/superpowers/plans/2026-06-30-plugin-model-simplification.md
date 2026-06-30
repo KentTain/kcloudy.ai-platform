@@ -1,5 +1,7 @@
 # 插件系统与模型配置整合实现计划
 
+> **规格文档：** [2026-06-30-plugin-model-integration-design.md](../specs/2026-06-30-plugin-model-integration-design.md)
+>
 > **面向 AI 代理的工作者：** 必需子技能：使用 superpowers:subagent-driven-development（推荐）或 superpowers:executing-plans 逐任务实现此计划。步骤使用复选框（`- [ ]`）语法来跟踪进度。
 
 **目标：** 简化数据模型，删除未使用的模型表，打通对话接口与插件凭证的关联，让用户只需配置 API Key 即可使用模型。
