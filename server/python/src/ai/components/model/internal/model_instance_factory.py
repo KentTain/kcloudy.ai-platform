@@ -10,6 +10,7 @@ from collections.abc import AsyncGenerator, Sequence
 from typing import cast
 
 from loguru import logger
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from ai.components.model.errors.error import ProviderTokenNotInitError
 from ai.components.model.internal.provider_configuration import ProviderModelBundle
@@ -253,6 +254,7 @@ class ModelInstanceFactory:
         provider: str,
         model_type: ModelType,
         model: str,
+        db_session: AsyncSession | None = None,
     ) -> ModelInstance:
         """
         获取模型实例
@@ -261,12 +263,14 @@ class ModelInstanceFactory:
         :param provider: 供应商名称
         :param model_type: 模型类型
         :param model: 模型名称
+        :param db_session: 数据库会话（可选，用于凭证查询）
         :return: 模型实例
         """
         provider_model_bundle = await self._provider_manager._get_provider_model_bundle(
             tenant_id=tenant_id,
             provider=provider,
             model_type=model_type,
+            db_session=db_session,
         )
 
         return ModelInstance(provider_model_bundle, model)
@@ -275,32 +279,35 @@ class ModelInstanceFactory:
         self,
         tenant_id: str,
         model_type: ModelType,
+        db_session: AsyncSession | None = None,
     ) -> tuple[str | None, str | None]:
         """
         获取默认的供应商和模型名称
 
         :param tenant_id: 租户 ID
         :param model_type: 模型类型
+        :param db_session: 数据库会话（可选，用于凭证查询）
         :return: (供应商名称, 模型名称) 元组
         """
         return await self._provider_manager.get_default_provider_model_name(
-            tenant_id=tenant_id, model_type=model_type
+            tenant_id=tenant_id, model_type=model_type, db_session=db_session
         )
 
     async def get_default_model_instance(
-        self, tenant_id: str, model_type: ModelType
+        self, tenant_id: str, model_type: ModelType, db_session: AsyncSession | None = None
     ) -> ModelInstance:
         """
         获取默认模型实例
 
         :param tenant_id: 租户 ID
         :param model_type: 模型类型
+        :param db_session: 数据库会话（可选，用于凭证查询）
         :return: 默认模型实例
         """
         provider, model = await self.get_default_provider_model_name(
-            tenant_id, model_type
+            tenant_id, model_type, db_session
         )
         if not provider or not model:
             raise ValueError(f"没有为 {model_type.value} 类型配置默认模型")
 
-        return await self.get_model_instance(tenant_id, provider, model_type, model)
+        return await self.get_model_instance(tenant_id, provider, model_type, model, db_session)
