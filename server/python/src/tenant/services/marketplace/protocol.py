@@ -87,7 +87,7 @@ class MarketplaceAdapter(Protocol):
             page_size: 每页条数
 
         Returns:
-            tuple[list[RemotePluginInfo], int]: (插件列表, 总数)
+            tuple[Sequence[RemotePluginInfo], int]: (插件列表, 总数)
         """
         ...
 
@@ -137,6 +137,6 @@ class MarketplaceAdapter(Protocol):
             plugins: 需要检查的插件列表，每项包含 plugin_id, current_version
 
         Returns:
-            list[PluginUpdateInfo]: 更新信息列表
+            Sequence[PluginUpdateInfo]: 更新信息列表
         """
         ...
