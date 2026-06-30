@@ -1,6 +1,6 @@
 # AI 组件依赖与测试补充实现计划
 
-> **面向 AI 代理的工作者：** 必需子技能：使用 superpowers:subagent-driven-development（推荐）或 superpowers:executing-plans 逐任务实现此计划。步骤使用复选框（`- [ ]`）语法来跟踪进度。
+> **面向 AI 代理的工作者：** 必需子技能：使用 superpowers:subagent-driven-development（推荐）或 superpowers:executing-plans 逐任务实现此计划。步骤使用复选框（`- [x]`）语法来跟踪进度。
 
 **目标：** 为新迁移的 4 个 AI 组件补充缺失依赖和测试用例，确保组件可正常导入和运行
 
@@ -30,7 +30,7 @@
 **文件：**
 - 修改：`server/python/pyproject.toml:31-47`
 
-- [ ] **步骤 1：添加 sqlparse 和 regex 依赖**
+- [x] **步骤 1：添加 sqlparse 和 regex 依赖**
 
 在 `server/python/pyproject.toml` 文件的 `dependencies` 数组中，找到 `# 工具库` 部分（第 31-47 行），在 `loguru==0.7.3` 之后添加：
 
@@ -44,7 +44,7 @@
   "regex==2024.11.6",
 ```
 
-- [ ] **步骤 2：同步依赖**
+- [x] **步骤 2：同步依赖**
 
 运行：
 ```bash
@@ -53,7 +53,7 @@ cd server/python && uv sync
 
 预期：输出显示安装了 `sqlparse` 和 `regex` 包
 
-- [ ] **步骤 3：验证依赖安装**
+- [x] **步骤 3：验证依赖安装**
 
 运行：
 ```bash
@@ -62,7 +62,7 @@ cd server/python && .venv/Scripts/python.exe -c "import sqlparse; import regex; 
 
 预期：输出 `依赖安装成功`
 
-- [ ] **步骤 4：Commit**
+- [x] **步骤 4：Commit**
 
 ```bash
 git add server/python/pyproject.toml
@@ -76,21 +76,21 @@ git commit -m "feat(deps): 添加 sqlparse 和 regex 依赖"
 **文件：**
 - 创建：`tests/ai/components/datasource/__init__.py`
 
-- [ ] **步骤 1：创建测试目录**
+- [x] **步骤 1：创建测试目录**
 
 运行：
 ```bash
 mkdir -p tests/ai/components/datasource
 ```
 
-- [ ] **步骤 2：创建 `__init__.py` 文件**
+- [x] **步骤 2：创建 `__init__.py` 文件**
 
 创建文件 `tests/ai/components/datasource/__init__.py`，内容为：
 ```python
 """Datasource 组件测试"""
 ```
 
-- [ ] **步骤 3：Commit**
+- [x] **步骤 3：Commit**
 
 ```bash
 git add tests/ai/components/datasource/__init__.py
@@ -104,7 +104,7 @@ git commit -m "test(datasource): 创建测试目录结构"
 **文件：**
 - 创建：`tests/ai/components/datasource/test_datasource.py`（第 1-50 行）
 
-- [ ] **步骤 1：编写导入测试**
+- [x] **步骤 1：编写导入测试**
 
 创建文件 `tests/ai/components/datasource/test_datasource.py`，添加以下内容：
 
@@ -141,7 +141,7 @@ class TestDatasourceImports:
         assert MySQLConnect.driver == "mysql+aiomysql"
 ```
 
-- [ ] **步骤 2：运行测试验证通过**
+- [x] **步骤 2：运行测试验证通过**
 
 运行：
 ```bash
@@ -150,7 +150,7 @@ cd server/python && .venv/Scripts/python.exe -m pytest tests/ai/components/datas
 
 预期：3 个测试全部通过
 
-- [ ] **步骤 3：Commit**
+- [x] **步骤 3：Commit**
 
 ```bash
 git add tests/ai/components/datasource/test_datasource.py
@@ -164,7 +164,7 @@ git commit -m "test(datasource): 添加导入测试"
 **文件：**
 - 修改：`tests/ai/components/datasource/test_datasource.py`（第 52-100 行）
 
-- [ ] **步骤 1：编写接口定义测试**
+- [x] **步骤 1：编写接口定义测试**
 
 在 `test_datasource.py` 文件末尾添加：
 
@@ -209,7 +209,7 @@ class TestBaseConnect:
             assert method in abstract_methods, f"缺少抽象方法: {method}"
 ```
 
-- [ ] **步骤 2：运行测试验证通过**
+- [x] **步骤 2：运行测试验证通过**
 
 运行：
 ```bash
@@ -218,7 +218,7 @@ cd server/python && .venv/Scripts/python.exe -m pytest tests/ai/components/datas
 
 预期：2 个测试全部通过
 
-- [ ] **步骤 3：Commit**
+- [x] **步骤 3：Commit**
 
 ```bash
 git add tests/ai/components/datasource/test_datasource.py
@@ -232,7 +232,7 @@ git commit -m "test(datasource): 添加 BaseConnect 接口测试"
 **文件：**
 - 修改：`tests/ai/components/datasource/test_datasource.py`（第 102-180 行）
 
-- [ ] **步骤 1：编写 URI 构造测试**
+- [x] **步骤 1：编写 URI 构造测试**
 
 在 `test_datasource.py` 文件末尾添加：
 
@@ -276,7 +276,7 @@ class TestRDBMSDatabaseURI:
         assert MySQLConnect.default_db == expected_dbs
 ```
 
-- [ ] **步骤 2：运行测试验证通过**
+- [x] **步骤 2：运行测试验证通过**
 
 运行：
 ```bash
@@ -285,7 +285,7 @@ cd server/python && .venv/Scripts/python.exe -m pytest tests/ai/components/datas
 
 预期：3 个测试全部通过
 
-- [ ] **步骤 3：Commit**
+- [x] **步骤 3：Commit**
 
 ```bash
 git add tests/ai/components/datasource/test_datasource.py
@@ -299,7 +299,7 @@ git commit -m "test(datasource): 添加 URI 构造测试"
 **文件：**
 - 修改：`tests/ai/components/datasource/test_datasource.py`（第 182-250 行）
 
-- [ ] **步骤 1：编写 SQL 解析测试**
+- [x] **步骤 1：编写 SQL 解析测试**
 
 在 `test_datasource.py` 文件末尾添加：
 
@@ -354,7 +354,7 @@ class TestSQLParsing:
         assert len(chinese_matches) > 0
 ```
 
-- [ ] **步骤 2：运行完整测试套件**
+- [x] **步骤 2：运行完整测试套件**
 
 运行：
 ```bash
@@ -363,7 +363,7 @@ cd server/python && .venv/Scripts/python.exe -m pytest tests/ai/components/datas
 
 预期：11 个测试全部通过
 
-- [ ] **步骤 3：Commit**
+- [x] **步骤 3：Commit**
 
 ```bash
 git add tests/ai/components/datasource/test_datasource.py
@@ -377,7 +377,7 @@ git commit -m "test(datasource): 添加 SQL 解析测试"
 **文件：**
 - 创建：`tests/ai/components/graphrag/test_graphrag.py`（第 1-80 行）
 
-- [ ] **步骤 1：编写 GraphData 模型测试**
+- [x] **步骤 1：编写 GraphData 模型测试**
 
 创建文件 `tests/ai/components/graphrag/test_graphrag.py`，添加以下内容：
 
@@ -442,7 +442,7 @@ class TestGraphData:
         assert isinstance(data.degree, int)
 ```
 
-- [ ] **步骤 2：运行测试验证通过**
+- [x] **步骤 2：运行测试验证通过**
 
 运行：
 ```bash
@@ -451,7 +451,7 @@ cd server/python && .venv/Scripts/python.exe -m pytest tests/ai/components/graph
 
 预期：3 个测试全部通过
 
-- [ ] **步骤 3：Commit**
+- [x] **步骤 3：Commit**
 
 ```bash
 git add tests/ai/components/graphrag/test_graphrag.py
@@ -465,7 +465,7 @@ git commit -m "test(graphrag): 添加 GraphData 模型测试"
 **文件：**
 - 修改：`tests/ai/components/graphrag/test_graphrag.py`（第 82-150 行）
 
-- [ ] **步骤 1：编写 GraphRAGClient 基础测试**
+- [x] **步骤 1：编写 GraphRAGClient 基础测试**
 
 在 `test_graphrag.py` 文件末尾添加：
 
@@ -510,7 +510,7 @@ class TestGraphRAGClient:
         assert issubclass(GraphData, BaseModel)
 ```
 
-- [ ] **步骤 2：运行完整测试套件**
+- [x] **步骤 2：运行完整测试套件**
 
 运行：
 ```bash
@@ -519,7 +519,7 @@ cd server/python && .venv/Scripts/python.exe -m pytest tests/ai/components/graph
 
 预期：7 个测试全部通过（3 个导入测试 + 4 个新增测试）
 
-- [ ] **步骤 3：Commit**
+- [x] **步骤 3：Commit**
 
 ```bash
 git add tests/ai/components/graphrag/test_graphrag.py
@@ -533,7 +533,7 @@ git commit -m "test(graphrag): 添加 GraphRAGClient 基础测试"
 **文件：**
 - 修改：`tests/ai/components/code_executor/test_code_executor.py`（第 264-300 行）
 
-- [ ] **步骤 1：编写导入测试**
+- [x] **步骤 1：编写导入测试**
 
 在 `test_code_executor.py` 文件末尾添加：
 
@@ -585,7 +585,7 @@ class TestCodeExecutorImports:
         assert len(list(CodeLanguage)) >= 3
 ```
 
-- [ ] **步骤 2：运行测试验证通过**
+- [x] **步骤 2：运行测试验证通过**
 
 运行：
 ```bash
@@ -594,7 +594,7 @@ cd server/python && .venv/Scripts/python.exe -m pytest tests/ai/components/code_
 
 预期：2 个测试全部通过
 
-- [ ] **步骤 3：Commit**
+- [x] **步骤 3：Commit**
 
 ```bash
 git add tests/ai/components/code_executor/test_code_executor.py
@@ -608,7 +608,7 @@ git commit -m "test(code_executor): 添加导入测试"
 **文件：**
 - 修改：`tests/ai/components/code_executor/test_code_executor.py`（第 302-360 行）
 
-- [ ] **步骤 1：编写 CodeNodeProvider 基类测试**
+- [x] **步骤 1：编写 CodeNodeProvider 基类测试**
 
 在 `test_code_executor.py` 文件末尾添加：
 
@@ -644,7 +644,7 @@ class TestCodeNodeProvider:
         assert getattr(CodeNodeProvider.get_default_code, '__isabstractmethod__', False)
 ```
 
-- [ ] **步骤 2：运行测试验证通过**
+- [x] **步骤 2：运行测试验证通过**
 
 运行：
 ```bash
@@ -653,7 +653,7 @@ cd server/python && .venv/Scripts/python.exe -m pytest tests/ai/components/code_
 
 预期：2 个测试全部通过
 
-- [ ] **步骤 3：Commit**
+- [x] **步骤 3：Commit**
 
 ```bash
 git add tests/ai/components/code_executor/test_code_executor.py
@@ -667,7 +667,7 @@ git commit -m "test(code_executor): 添加 CodeNodeProvider 基类测试"
 **文件：**
 - 修改：`tests/ai/components/code_executor/test_code_executor.py`（第 362-420 行）
 
-- [ ] **步骤 1：编写 Jinja2CodeProvider 测试**
+- [x] **步骤 1：编写 Jinja2CodeProvider 测试**
 
 在 `test_code_executor.py` 文件末尾添加：
 
@@ -711,7 +711,7 @@ class TestJinja2CodeProvider:
         assert formatted == {"result": result}
 ```
 
-- [ ] **步骤 2：运行完整测试套件**
+- [x] **步骤 2：运行完整测试套件**
 
 运行：
 ```bash
@@ -720,7 +720,7 @@ cd server/python && .venv/Scripts/python.exe -m pytest tests/ai/components/code_
 
 预期：14 个测试全部通过（11 个现有测试 + 3 个新增测试）
 
-- [ ] **步骤 3：Commit**
+- [x] **步骤 3：Commit**
 
 ```bash
 git add tests/ai/components/code_executor/test_code_executor.py
@@ -734,7 +734,7 @@ git commit -m "test(code_executor): 添加 Jinja2CodeProvider 测试"
 **文件：**
 - 无文件修改
 
-- [ ] **步骤 1：运行完整测试套件**
+- [x] **步骤 1：运行完整测试套件**
 
 运行：
 ```bash
@@ -743,7 +743,7 @@ cd server/python && .venv/Scripts/python.exe -m pytest tests/ai/components -v --
 
 预期：所有 AI 组件测试通过，无失败用例
 
-- [ ] **步骤 2：检查测试覆盖率**
+- [x] **步骤 2：检查测试覆盖率**
 
 运行：
 ```bash
@@ -752,7 +752,7 @@ cd server/python && .venv/Scripts/python.exe -m pytest tests/ai/components --cov
 
 预期：显示测试覆盖率报告，新增测试覆盖核心功能
 
-- [ ] **步骤 3：验证依赖安装**
+- [x] **步骤 3：验证依赖安装**
 
 运行：
 ```bash
@@ -767,7 +767,7 @@ print('所有 AI 组件导入成功')
 
 预期：输出 `所有 AI 组件导入成功`
 
-- [ ] **步骤 4：清理临时文件**
+- [x] **步骤 4：清理临时文件**
 
 运行：
 ```bash
@@ -777,7 +777,7 @@ find . -type f -name "*.pyc" -delete 2>/dev/null || true
 
 预期：清理完成
 
-- [ ] **步骤 5：最终 Commit**
+- [x] **步骤 5：最终 Commit**
 
 ```bash
 git add -A
@@ -795,16 +795,16 @@ git commit -m "feat(ai-components): 完成 AI 组件依赖和测试补充
 ## 验证清单
 
 ### 定量指标
-- [ ] 新增测试用例数量：25 个（11 + 7 + 7）
-- [ ] 新增测试文件：1 个（datasource）
-- [ ] 补充测试文件：2 个（graphrag、code_executor）
-- [ ] 新增依赖：2 个（sqlparse、regex）
+- [x] 新增测试用例数量：25 个（11 + 7 + 7）
+- [x] 新增测试文件：1 个（datasource）
+- [x] 补充测试文件：2 个（graphrag、code_executor）
+- [x] 新增依赖：2 个（sqlparse、regex）
 
 ### 定性目标
-- [ ] 所有 AI 组件依赖得到满足
-- [ ] 核心功能有基础测试保障
-- [ ] 现有测试套件稳定性保持
-- [ ] AI 组件可正常导入和运行
+- [x] 所有 AI 组件依赖得到满足
+- [x] 核心功能有基础测试保障
+- [x] 现有测试套件稳定性保持
+- [x] AI 组件可正常导入和运行
 
 ---
 

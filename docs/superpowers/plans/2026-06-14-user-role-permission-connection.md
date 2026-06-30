@@ -1,6 +1,6 @@
 # 用户角色权限前后端连接实现计划
 
-> **面向 AI 代理的工作者：** 必需子技能：使用 superpowers:subagent-driven-development（推荐）或 superpowers:executing-plans 逐任务实现此计划。步骤使用复选框（`- [ ]`）语法来跟踪进度。
+> **面向 AI 代理的工作者：** 必需子技能：使用 superpowers:subagent-driven-development（推荐）或 superpowers:executing-plans 逐任务实现此计划。步骤使用复选框（`- [x]`）语法来跟踪进度。
 
 **目标：** 实现前后端角色权限连接，使前端 `hasRole()` 和 `hasPermission()` 正确工作。
 
@@ -30,7 +30,7 @@
 - 修改：`server/python/src/iam/schemas/user.py:132-150`
 - 测试：`tests/iam/unit/test_user_vo.py`（新建）
 
-- [ ] **步骤 1：编写失败的测试**
+- [x] **步骤 1：编写失败的测试**
 
 ```python
 # tests/iam/unit/test_user_vo.py
@@ -63,12 +63,12 @@ def test_user_vo_has_roles_and_permissions():
     assert user_vo.permissions == ["iam:user:read", "iam:role:read"]
 ```
 
-- [ ] **步骤 2：运行测试验证失败**
+- [x] **步骤 2：运行测试验证失败**
 
 运行：`cd server/python && uv run pytest tests/iam/unit/test_user_vo.py -v`
 预期：FAIL，报错 "UserVo() got an unexpected keyword argument 'roles'"
 
-- [ ] **步骤 3：编写最少实现代码**
+- [x] **步骤 3：编写最少实现代码**
 
 ```python
 # server/python/src/iam/schemas/user.py
@@ -96,12 +96,12 @@ class UserVo(BaseModel):
     permissions: list[str] = Field(default_factory=list, description="用户权限编码列表")
 ```
 
-- [ ] **步骤 4：运行测试验证通过**
+- [x] **步骤 4：运行测试验证通过**
 
 运行：`cd server/python && uv run pytest tests/iam/unit/test_user_vo.py -v`
 预期：PASS
 
-- [ ] **步骤 5：Commit**
+- [x] **步骤 5：Commit**
 
 ```bash
 git add server/python/src/iam/schemas/user.py tests/iam/unit/test_user_vo.py
@@ -116,7 +116,7 @@ git commit -m "feat(iam): UserVo 添加 roles 和 permissions 字段"
 - 修改：`server/python/src/iam/controllers/user_controller.py:86-102`
 - 测试：`tests/iam/unit/test_user_controller.py`（新建或修改现有）
 
-- [ ] **步骤 1：编写失败的测试**
+- [x] **步骤 1：编写失败的测试**
 
 ```python
 # tests/iam/unit/test_user_controller.py（添加到现有文件或新建）
@@ -161,12 +161,12 @@ async def test_get_current_user_returns_roles_and_permissions():
                 assert isinstance(result, ORJSONResponse)
 ```
 
-- [ ] **步骤 2：运行测试验证失败**
+- [x] **步骤 2：运行测试验证失败**
 
 运行：`cd server/python && uv run pytest tests/iam/unit/test_user_controller.py::test_get_current_user_returns_roles_and_permissions -v`
 预期：FAIL 或功能未实现
 
-- [ ] **步骤 3：修改 get_current_user 控制器**
+- [x] **步骤 3：修改 get_current_user 控制器**
 
 ```python
 # server/python/src/iam/controllers/user_controller.py
@@ -204,7 +204,7 @@ async def get_current_user(user_id: str = Depends(get_current_user_id)) -> ORJSO
     )
 ```
 
-- [ ] **步骤 4：添加必要的导入**
+- [x] **步骤 4：添加必要的导入**
 
 ```python
 # server/python/src/iam/controllers/user_controller.py
@@ -213,12 +213,12 @@ async def get_current_user(user_id: str = Depends(get_current_user_id)) -> ORJSO
 from iam.services import permission_check_service
 ```
 
-- [ ] **步骤 5：运行测试验证通过**
+- [x] **步骤 5：运行测试验证通过**
 
 运行：`cd server/python && uv run pytest tests/iam/unit/test_user_controller.py -v`
 预期：PASS
 
-- [ ] **步骤 6：Commit**
+- [x] **步骤 6：Commit**
 
 ```bash
 git add server/python/src/iam/controllers/user_controller.py tests/iam/unit/test_user_controller.py
@@ -232,7 +232,7 @@ git commit -m "feat(iam): /me 接口返回用户角色和权限"
 **文件：**
 - 修改：`web/vue/src/iam/types/index.ts:1-35`
 
-- [ ] **步骤 1：更新 User 接口添加 roles 和 permissions**
+- [x] **步骤 1：更新 User 接口添加 roles 和 permissions**
 
 ```typescript
 // web/vue/src/iam/types/index.ts
@@ -258,12 +258,12 @@ export interface User {
 }
 ```
 
-- [ ] **步骤 2：验证类型检查通过**
+- [x] **步骤 2：验证类型检查通过**
 
 运行：`cd web/vue && pnpm check`
 预期：无类型错误
 
-- [ ] **步骤 3：Commit**
+- [x] **步骤 3：Commit**
 
 ```bash
 git add web/vue/src/iam/types/index.ts
@@ -277,7 +277,7 @@ git commit -m "feat(iam): User 类型添加 roles 和 permissions 字段"
 **文件：**
 - 修改：`web/vue/src/iam/stores/auth.ts:18-26`
 
-- [ ] **步骤 1：修改 convertToUserInfo 函数**
+- [x] **步骤 1：修改 convertToUserInfo 函数**
 
 ```typescript
 // web/vue/src/iam/stores/auth.ts
@@ -297,12 +297,12 @@ const convertToUserInfo = (user: User): UserInfo => ({
 });
 ```
 
-- [ ] **步骤 2：验证类型检查通过**
+- [x] **步骤 2：验证类型检查通过**
 
 运行：`cd web/vue && pnpm check`
 预期：无类型错误
 
-- [ ] **步骤 3：Commit**
+- [x] **步骤 3：Commit**
 
 ```bash
 git add web/vue/src/iam/stores/auth.ts
@@ -316,7 +316,7 @@ git commit -m "fix(iam): convertToUserInfo 正确映射角色和权限"
 **文件：**
 - 修改：`web/vue/src/tenant/router/index.ts:91,97,103,109`
 
-- [ ] **步骤 1：批量替换路由中的角色名**
+- [x] **步骤 1：批量替换路由中的角色名**
 
 ```typescript
 // web/vue/src/tenant/router/index.ts
@@ -350,7 +350,7 @@ export const tenantRoutes: RouteRecordRaw[] = [
 ];
 ```
 
-- [ ] **步骤 2：Commit**
+- [x] **步骤 2：Commit**
 
 ```bash
 git add web/vue/src/tenant/router/index.ts
@@ -364,7 +364,7 @@ git commit -m "refactor(tenant): 路由角色名 tenant_admin 改为 admin"
 **文件：**
 - 修改：`web/vue/src/tenant/pages/tenants/TenantList.vue:105-106`
 
-- [ ] **步骤 1：修改 hasRole 参数**
+- [x] **步骤 1：修改 hasRole 参数**
 
 ```typescript
 // web/vue/src/tenant/pages/tenants/TenantList.vue
@@ -374,7 +374,7 @@ const canCreate = computed(() => frameworkUserStore.hasRole('admin'))
 const canEdit = computed(() => frameworkUserStore.hasRole('admin'))
 ```
 
-- [ ] **步骤 2：Commit**
+- [x] **步骤 2：Commit**
 
 ```bash
 git add web/vue/src/tenant/pages/tenants/TenantList.vue
@@ -388,7 +388,7 @@ git commit -m "refactor(tenant): hasRole 参数从 tenant_admin 改为 admin"
 **文件：**
 - 修改：`web/vue/src/tenant/CLAUDE.md:32-35,53`
 
-- [ ] **步骤 1：更新文档中的角色名**
+- [x] **步骤 1：更新文档中的角色名**
 
 ```markdown
 ## 路由配置
@@ -410,7 +410,7 @@ git commit -m "refactor(tenant): hasRole 参数从 tenant_admin 改为 admin"
 - 权限检查使用 `frameworkUserStore.hasRole('admin')`
 ```
 
-- [ ] **步骤 2：Commit**
+- [x] **步骤 2：Commit**
 
 ```bash
 git add web/vue/src/tenant/CLAUDE.md
@@ -424,7 +424,7 @@ git commit -m "docs(tenant): 更新角色名文档"
 **文件：**
 - 测试：手动测试
 
-- [ ] **步骤 1：Rebuild 后端数据库**
+- [x] **步骤 1：Rebuild 后端数据库**
 
 运行：
 ```bash
@@ -434,7 +434,7 @@ uv run python manage.py db rebuild --module iam,tenant
 
 预期：数据库重建成功，模块定义同步创建 admin/viewer 角色
 
-- [ ] **步骤 2：启动后端服务**
+- [x] **步骤 2：启动后端服务**
 
 运行：
 ```bash
@@ -442,7 +442,7 @@ cd server/python
 uv run python manage.py runserver
 ```
 
-- [ ] **步骤 3：启动前端服务**
+- [x] **步骤 3：启动前端服务**
 
 运行：
 ```bash
@@ -450,14 +450,14 @@ cd web/vue
 pnpm dev
 ```
 
-- [ ] **步骤 4：验证登录流程**
+- [x] **步骤 4：验证登录流程**
 
 1. 使用 admin/admin123 登录
 2. 打开浏览器开发者工具，检查 `/api/v1/me` 响应
 3. 验证响应中包含 `roles: ["admin"]` 和权限列表
 4. 验证前端控制台无错误
 
-- [ ] **步骤 5：验证权限检查**
+- [x] **步骤 5：验证权限检查**
 
 1. 访问租户管理页面
 2. 验证"新建租户"按钮可见

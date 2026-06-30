@@ -1,6 +1,6 @@
 # 插件定义管理功能实现计划
 
-> **面向 AI 代理的工作者：** 必需子技能：使用 superpowers:subagent-driven-development（推荐）或 superpowers:executing-plans 逐任务实现此计划。步骤使用复选框（`- [ ]`）语法来跟踪进度。
+> **面向 AI 代理的工作者：** 必需子技能：使用 superpowers:subagent-driven-development（推荐）或 superpowers:executing-plans 逐任务实现此计划。步骤使用复选框（`- [x]`）语法来跟踪进度。
 
 **目标：** 为插件定义列表页面实现详情查看、状态编辑、启用/禁用切换、扫描目录注册和上传插件注册功能。
 
@@ -39,7 +39,7 @@
 **文件：**
 - 修改：`server/python/src/tenant/schemas/plugin.py`
 
-- [ ] **步骤 1：添加预览相关 Schema 类型**
+- [x] **步骤 1：添加预览相关 Schema 类型**
 
 在 `server/python/src/tenant/schemas/plugin.py` 文件末尾添加：
 
@@ -84,13 +84,13 @@ class ScanDirectoryConfirmRequest(BaseModel):
     plugin_ids: list[str] = Field(default_factory=list, description="指定要导入的插件ID列表")
 ```
 
-- [ ] **步骤 2：运行类型检查验证**
+- [x] **步骤 2：运行类型检查验证**
 
 运行：`cd server/python && uv run python -c "from tenant.schemas.plugin import ScannedPluginPreview, ParsedPluginInfo, ScanDirectoryConfirmRequest; print('Schema 导入成功')"`
 
 预期：输出 "Schema 导入成功"
 
-- [ ] **步骤 3：Commit**
+- [x] **步骤 3：Commit**
 
 ```bash
 git add server/python/src/tenant/schemas/plugin.py
@@ -104,7 +104,7 @@ git commit -m "feat(tenant): 新增插件预览 Schema 类型"
 **文件：**
 - 修改：`server/python/src/tenant/services/plugin_definition_service.py`
 
-- [ ] **步骤 1：添加扫描预览方法**
+- [x] **步骤 1：添加扫描预览方法**
 
 在 `PluginDefinitionService` 类中添加方法：
 
@@ -186,7 +186,7 @@ async def preview_scan_directory(
     return results
 ```
 
-- [ ] **步骤 2：添加解析插件包预览方法**
+- [x] **步骤 2：添加解析插件包预览方法**
 
 在 `PluginDefinitionService` 类中添加方法：
 
@@ -235,13 +235,13 @@ async def preview_parse_package(
     }
 ```
 
-- [ ] **步骤 3：运行类型检查验证**
+- [x] **步骤 3：运行类型检查验证**
 
 运行：`cd server/python && uv run python -c "from tenant.services.plugin_definition_service import plugin_definition_service; print('Service 导入成功')"`
 
 预期：输出 "Service 导入成功"
 
-- [ ] **步骤 4：Commit**
+- [x] **步骤 4：Commit**
 
 ```bash
 git add server/python/src/tenant/services/plugin_definition_service.py
@@ -255,7 +255,7 @@ git commit -m "feat(tenant): 新增插件预览 Service 方法"
 **文件：**
 - 修改：`server/python/src/tenant/controllers/admin/plugin_controller.py`
 
-- [ ] **步骤 1：添加扫描预览 API 端点**
+- [x] **步骤 1：添加扫描预览 API 端点**
 
 在 `plugin_controller.py` 中添加导入和端点：
 
@@ -294,7 +294,7 @@ async def preview_scan_directory(
         return ApiResponse.fail(message=str(e))
 ```
 
-- [ ] **步骤 2：添加解析插件包 API 端点**
+- [x] **步骤 2：添加解析插件包 API 端点**
 
 ```python
 @router.post("/plugin-definitions/parse")
@@ -327,7 +327,7 @@ async def parse_plugin_package_preview(
         return ApiResponse.fail(message=f"插件包解析失败: {str(e)}")
 ```
 
-- [ ] **步骤 3：修改现有扫描 API 支持 plugin_ids 参数**
+- [x] **步骤 3：修改现有扫描 API 支持 plugin_ids 参数**
 
 修改 `scan_directory_for_plugins` 函数：
 
@@ -452,13 +452,13 @@ async def scan_directory_for_plugins(
     )
 ```
 
-- [ ] **步骤 4：启动后端验证 API**
+- [x] **步骤 4：启动后端验证 API**
 
 运行：`cd server/python && uv run python manage.py runserver`
 
 预期：服务启动成功，无报错
 
-- [ ] **步骤 5：Commit**
+- [x] **步骤 5：Commit**
 
 ```bash
 git add server/python/src/tenant/controllers/admin/plugin_controller.py
@@ -472,7 +472,7 @@ git commit -m "feat(tenant): 新增插件预览 API 端点"
 **文件：**
 - 修改：`web/vue/src/tenant/api/plugin.ts`
 
-- [ ] **步骤 1：添加类型定义**
+- [x] **步骤 1：添加类型定义**
 
 在 `web/vue/src/tenant/api/plugin.ts` 中添加：
 
@@ -506,7 +506,7 @@ export interface ScanDirectoryConfirmRequest {
 }
 ```
 
-- [ ] **步骤 2：添加 API 函数**
+- [x] **步骤 2：添加 API 函数**
 
 在 `web/vue/src/tenant/api/plugin.ts` 中添加：
 
@@ -525,7 +525,7 @@ export const parsePluginPackage = (file: File) => {
 };
 ```
 
-- [ ] **步骤 3：修改 scanDirectoryForPlugins 函数参数类型**
+- [x] **步骤 3：修改 scanDirectoryForPlugins 函数参数类型**
 
 将现有的 `scanDirectoryForPlugins` 函数修改为：
 
@@ -534,13 +534,13 @@ export const scanDirectoryForPlugins = (data: ScanDirectoryConfirmRequest) =>
   rawPost<ApiResponse<ScanDirectoryResponse>>('/tenant/admin/v1/plugin-definitions/scan', data);
 ```
 
-- [ ] **步骤 4：运行 TypeScript 检查**
+- [x] **步骤 4：运行 TypeScript 检查**
 
 运行：`cd web/vue && pnpm check`
 
 预期：无 TypeScript 错误
 
-- [ ] **步骤 5：Commit**
+- [x] **步骤 5：Commit**
 
 ```bash
 git add web/vue/src/tenant/api/plugin.ts
@@ -554,7 +554,7 @@ git commit -m "feat(web): 新增插件预览 API 类型和函数"
 **文件：**
 - 修改：`web/vue/src/tenant/router/index.ts`
 
-- [ ] **步骤 1：更新插件定义相关路由**
+- [x] **步骤 1：更新插件定义相关路由**
 
 将现有的 `plugin-definitions` 路由部分替换为：
 
@@ -593,13 +593,13 @@ git commit -m "feat(web): 新增插件预览 API 类型和函数"
 
 **注意**：`/scan` 和 `/upload` 必须放在 `/:id` 之前，避免被动态路由匹配。
 
-- [ ] **步骤 2：运行 TypeScript 检查**
+- [x] **步骤 2：运行 TypeScript 检查**
 
 运行：`cd web/vue && pnpm check`
 
 预期：无 TypeScript 错误
 
-- [ ] **步骤 3：Commit**
+- [x] **步骤 3：Commit**
 
 ```bash
 git add web/vue/src/tenant/router/index.ts
@@ -613,7 +613,7 @@ git commit -m "feat(web): 新增插件定义管理路由配置"
 **文件：**
 - 新增：`web/vue/src/tenant/pages/admin/PluginDefinitionDetailPage.vue`
 
-- [ ] **步骤 1：创建详情页组件**
+- [x] **步骤 1：创建详情页组件**
 
 创建文件 `web/vue/src/tenant/pages/admin/PluginDefinitionDetailPage.vue`：
 
@@ -788,13 +788,13 @@ onMounted(() => {
 </template>
 ```
 
-- [ ] **步骤 2：运行 TypeScript 检查**
+- [x] **步骤 2：运行 TypeScript 检查**
 
 运行：`cd web/vue && pnpm check`
 
 预期：无 TypeScript 错误
 
-- [ ] **步骤 3：Commit**
+- [x] **步骤 3：Commit**
 
 ```bash
 git add web/vue/src/tenant/pages/admin/PluginDefinitionDetailPage.vue
@@ -808,7 +808,7 @@ git commit -m "feat(web): 新增插件定义详情页"
 **文件：**
 - 新增：`web/vue/src/tenant/pages/admin/PluginDefinitionEditPage.vue`
 
-- [ ] **步骤 1：创建编辑页组件**
+- [x] **步骤 1：创建编辑页组件**
 
 创建文件 `web/vue/src/tenant/pages/admin/PluginDefinitionEditPage.vue`：
 
@@ -1001,13 +1001,13 @@ onMounted(() => {
 </template>
 ```
 
-- [ ] **步骤 2：运行 TypeScript 检查**
+- [x] **步骤 2：运行 TypeScript 检查**
 
 运行：`cd web/vue && pnpm check`
 
 预期：无 TypeScript 错误
 
-- [ ] **步骤 3：Commit**
+- [x] **步骤 3：Commit**
 
 ```bash
 git add web/vue/src/tenant/pages/admin/PluginDefinitionEditPage.vue
@@ -1021,7 +1021,7 @@ git commit -m "feat(web): 新增插件定义编辑页"
 **文件：**
 - 新增：`web/vue/src/tenant/pages/admin/PluginScanPage.vue`
 
-- [ ] **步骤 1：创建扫描目录页组件**
+- [x] **步骤 1：创建扫描目录页组件**
 
 创建文件 `web/vue/src/tenant/pages/admin/PluginScanPage.vue`，实现三步骤流程：
 
@@ -1337,13 +1337,13 @@ const handleFinish = () => {
 </template>
 ```
 
-- [ ] **步骤 2：运行 TypeScript 检查**
+- [x] **步骤 2：运行 TypeScript 检查**
 
 运行：`cd web/vue && pnpm check`
 
 预期：无 TypeScript 错误
 
-- [ ] **步骤 3：Commit**
+- [x] **步骤 3：Commit**
 
 ```bash
 git add web/vue/src/tenant/pages/admin/PluginScanPage.vue
@@ -1357,7 +1357,7 @@ git commit -m "feat(web): 新增插件扫描目录页"
 **文件：**
 - 新增：`web/vue/src/tenant/pages/admin/PluginUploadPage.vue`
 
-- [ ] **步骤 1：创建上传插件页组件**
+- [x] **步骤 1：创建上传插件页组件**
 
 创建文件 `web/vue/src/tenant/pages/admin/PluginUploadPage.vue`：
 
@@ -1655,13 +1655,13 @@ const handleFinish = () => {
 </template>
 ```
 
-- [ ] **步骤 2：运行 TypeScript 检查**
+- [x] **步骤 2：运行 TypeScript 检查**
 
 运行：`cd web/vue && pnpm check`
 
 预期：无 TypeScript 错误
 
-- [ ] **步骤 3：Commit**
+- [x] **步骤 3：Commit**
 
 ```bash
 git add web/vue/src/tenant/pages/admin/PluginUploadPage.vue
@@ -1675,7 +1675,7 @@ git commit -m "feat(web): 新增插件上传页面"
 **文件：**
 - 修改：`web/vue/src/tenant/pages/admin/PluginDefinitionList.vue`
 
-- [ ] **步骤 1：修改行操作按钮**
+- [x] **步骤 1：修改行操作按钮**
 
 将现有的 `columns` 定义中的 `actions` 列替换为：
 
@@ -1721,7 +1721,7 @@ git commit -m "feat(web): 新增插件上传页面"
 },
 ```
 
-- [ ] **步骤 2：修改事件处理函数**
+- [x] **步骤 2：修改事件处理函数**
 
 将现有的处理函数修改为：
 
@@ -1756,7 +1756,7 @@ const handleToggleEnabled = async (row: PluginDefinition) => {
 };
 ```
 
-- [ ] **步骤 3：添加缺失的导入**
+- [x] **步骤 3：添加缺失的导入**
 
 确保文件顶部有 `updatePluginDefinition` 导入：
 
@@ -1769,7 +1769,7 @@ import {
 } from "@/tenant/api/plugin";
 ```
 
-- [ ] **步骤 4：修改顶部按钮事件**
+- [x] **步骤 4：修改顶部按钮事件**
 
 修改"扫描目录"和"上传插件"按钮的点击事件：
 
@@ -1784,13 +1784,13 @@ import {
 </Button>
 ```
 
-- [ ] **步骤 5：运行 TypeScript 检查**
+- [x] **步骤 5：运行 TypeScript 检查**
 
 运行：`cd web/vue && pnpm check`
 
 预期：无 TypeScript 错误
 
-- [ ] **步骤 6：Commit**
+- [x] **步骤 6：Commit**
 
 ```bash
 git add web/vue/src/tenant/pages/admin/PluginDefinitionList.vue
@@ -1801,19 +1801,19 @@ git commit -m "feat(web): 完善插件定义列表页行操作"
 
 ## 任务 11：集成测试
 
-- [ ] **步骤 1：启动后端服务**
+- [x] **步骤 1：启动后端服务**
 
 运行：`cd server/python && uv run python manage.py runserver`
 
 预期：服务启动成功
 
-- [ ] **步骤 2：启动前端开发服务器**
+- [x] **步骤 2：启动前端开发服务器**
 
 运行：`cd web/vue && pnpm dev`
 
 预期：前端启动成功
 
-- [ ] **步骤 3：功能测试**
+- [x] **步骤 3：功能测试**
 
 手动测试以下功能：
 
@@ -1844,7 +1844,7 @@ git commit -m "feat(web): 完善插件定义列表页行操作"
    - 预览插件信息，点击"确认注册"
    - 查看注册结果
 
-- [ ] **步骤 4：最终 Commit**
+- [x] **步骤 4：最终 Commit**
 
 ```bash
 git add -A

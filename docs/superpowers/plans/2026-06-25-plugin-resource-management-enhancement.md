@@ -1,6 +1,6 @@
 # 插件资源管理架构完善实现计划
 
-> **面向 AI 代理的工作者：** 必需子技能：使用 superpowers:subagent-driven-development（推荐）或 superpowers:executing-plans 逐任务实现此计划。步骤使用复选框（`- [ ]`）语法来跟踪进度。
+> **面向 AI 代理的工作者：** 必需子技能：使用 superpowers:subagent-driven-development（推荐）或 superpowers:executing-plans 逐任务实现此计划。步骤使用复选框（`- [x]`）语法来跟踪进度。
 
 **目标：** 完善插件资源管理架构，补充 declaration 字段、实现事件驱动机制、提供完整测试覆盖
 
@@ -39,7 +39,7 @@
 **文件：**
 - 修改：`server/python/src/framework/tenant/plugin_protocols.py`
 
-- [ ] **步骤 1：打开 plugin_protocols.py 并查看当前 DTO 定义**
+- [x] **步骤 1：打开 plugin_protocols.py 并查看当前 DTO 定义**
 
 文件位置：`server/python/src/framework/tenant/plugin_protocols.py`
 
@@ -50,7 +50,7 @@
 - `source`
 - `meta`
 
-- [ ] **步骤 2：修改 PluginInstallationDTO 类**
+- [x] **步骤 2：修改 PluginInstallationDTO 类**
 
 在 `PluginInstallationDTO` 类中添加缺失字段：
 
@@ -77,7 +77,7 @@ class PluginInstallationDTO:
     meta: dict | None = None               # 新增：元数据
 ```
 
-- [ ] **步骤 3：确保导入了 datetime 类型**
+- [x] **步骤 3：确保导入了 datetime 类型**
 
 检查文件顶部是否有 datetime 导入：
 
@@ -89,7 +89,7 @@ from typing import Protocol
 
 如果没有，添加 `from datetime import datetime`。
 
-- [ ] **步骤 4：更新 PluginDefinitionDTO 类**
+- [x] **步骤 4：更新 PluginDefinitionDTO 类**
 
 在 `PluginDefinitionDTO` 类中添加 `declaration` 字段：
 
@@ -106,11 +106,11 @@ class PluginDefinitionDTO:
     manifest_type: str | None = None
 ```
 
-- [ ] **步骤 5：保存文件**
+- [x] **步骤 5：保存文件**
 
 保存修改后的 `plugin_protocols.py` 文件。
 
-- [ ] **步骤 6：验证语法正确**
+- [x] **步骤 6：验证语法正确**
 
 运行命令验证 Python 语法：
 
@@ -121,7 +121,7 @@ uv run python -c "from framework.tenant.plugin_protocols import PluginInstallati
 
 预期输出：`✓ DTO 可导入`
 
-- [ ] **步骤 7：Commit**
+- [x] **步骤 7：Commit**
 
 ```bash
 git add src/framework/tenant/plugin_protocols.py
@@ -144,11 +144,11 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 **文件：**
 - 修改：`server/python/src/tenant/models/plugin_definition.py`
 
-- [ ] **步骤 1：打开 plugin_definition.py 文件**
+- [x] **步骤 1：打开 plugin_definition.py 文件**
 
 文件位置：`server/python/src/tenant/models/plugin_definition.py`
 
-- [ ] **步骤 2：添加 JSONB 导入**
+- [x] **步骤 2：添加 JSONB 导入**
 
 确保文件顶部导入了 JSONB：
 
@@ -158,7 +158,7 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 ```
 
-- [ ] **步骤 3：添加 declaration 字段**
+- [x] **步骤 3：添加 declaration 字段**
 
 在 `TenantPluginDefinition` 类中，在 `plugin_unique_identifier` 字段后添加 `declaration` 字段：
 
@@ -217,7 +217,7 @@ class TenantPluginDefinition(BaseModel, AuditMixin, ActiveRecordMixin):
     # 注意：remote_declaration 字段已合并到 declaration
 ```
 
-- [ ] **步骤 4：删除 remote_declaration 字段（如果存在）**
+- [x] **步骤 4：删除 remote_declaration 字段（如果存在）**
 
 如果文件中还有 `remote_declaration` 字段，删除它：
 
@@ -230,11 +230,11 @@ remote_declaration: Mapped[dict | None] = mapped_column(
 )
 ```
 
-- [ ] **步骤 5：保存文件**
+- [x] **步骤 5：保存文件**
 
 保存修改后的 `plugin_definition.py` 文件。
 
-- [ ] **步骤 6：验证语法正确**
+- [x] **步骤 6：验证语法正确**
 
 ```bash
 cd server/python
@@ -243,7 +243,7 @@ uv run python -c "from tenant.models.plugin_definition import TenantPluginDefini
 
 预期输出：`✓ 模型可导入`
 
-- [ ] **步骤 7：Commit**
+- [x] **步骤 7：Commit**
 
 ```bash
 git add src/tenant/models/plugin_definition.py
@@ -264,11 +264,11 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 **文件：**
 - 新增：`server/python/src/tenant/migrations/versions/003_add_declaration_field.py`
 
-- [ ] **步骤 1：创建迁移文件**
+- [x] **步骤 1：创建迁移文件**
 
 创建文件：`server/python/src/tenant/migrations/versions/003_add_declaration_field.py`
 
-- [ ] **步骤 2：编写迁移脚本内容**
+- [x] **步骤 2：编写迁移脚本内容**
 
 ```python
 """补充 declaration 字段并移除 remote_declaration
@@ -334,11 +334,11 @@ def downgrade() -> None:
     op.drop_column("plugin_definitions", "declaration", schema=MODULE_SCHEMA)
 ```
 
-- [ ] **步骤 3：保存文件**
+- [x] **步骤 3：保存文件**
 
 保存迁移脚本。
 
-- [ ] **步骤 4：验证迁移脚本语法**
+- [x] **步骤 4：验证迁移脚本语法**
 
 ```bash
 cd server/python
@@ -350,7 +350,7 @@ print('✓ 迁移脚本可导入')
 
 预期输出：`✓ 迁移脚本可导入`
 
-- [ ] **步骤 5：Commit**
+- [x] **步骤 5：Commit**
 
 ```bash
 git add src/tenant/migrations/versions/003_add_declaration_field.py
@@ -370,11 +370,11 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 **文件：**
 - 修改：`server/python/src/tenant/services/plugin_provider.py`
 
-- [ ] **步骤 1：打开 plugin_provider.py 文件**
+- [x] **步骤 1：打开 plugin_provider.py 文件**
 
 文件位置：`server/python/src/tenant/services/plugin_provider.py`
 
-- [ ] **步骤 2：更新 _ensure_plugin_definition 方法**
+- [x] **步骤 2：更新 _ensure_plugin_definition 方法**
 
 找到 `_ensure_plugin_definition` 方法，修改为使用 DTO 中的 `declaration` 字段：
 
@@ -432,7 +432,7 @@ async def _ensure_plugin_definition(
     return definition
 ```
 
-- [ ] **步骤 3：更新 _to_dto 方法**
+- [x] **步骤 3：更新 _to_dto 方法**
 
 找到 `_to_dto` 方法，添加新字段的转换：
 
@@ -464,11 +464,11 @@ def _to_dto(
 
 **注意：** `declaration` 字段存储在 `plugin_definitions` 表中，不在 `plugin_installations` 表中。如果需要返回 declaration，需要单独查询。
 
-- [ ] **步骤 4：保存文件**
+- [x] **步骤 4：保存文件**
 
 保存修改后的 `plugin_provider.py` 文件。
 
-- [ ] **步骤 5：验证语法正确**
+- [x] **步骤 5：验证语法正确**
 
 ```bash
 cd server/python
@@ -480,7 +480,7 @@ print('✓ Provider 可导入')
 
 预期输出：`✓ Provider 可导入`
 
-- [ ] **步骤 6：Commit**
+- [x] **步骤 6：Commit**
 
 ```bash
 git add src/tenant/services/plugin_provider.py
@@ -501,13 +501,13 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 - 新增：`server/python/src/tenant/listeners/__init__.py`
 - 新增：`server/python/src/tenant/listeners/handlers/__init__.py`
 
-- [ ] **步骤 1：创建 listeners 目录**
+- [x] **步骤 1：创建 listeners 目录**
 
 ```bash
 mkdir -p src/tenant/listeners/handlers
 ```
 
-- [ ] **步骤 2：创建 __init__.py 文件**
+- [x] **步骤 2：创建 __init__.py 文件**
 
 创建文件：`server/python/src/tenant/listeners/__init__.py`
 
@@ -520,7 +520,7 @@ mkdir -p src/tenant/listeners/handlers
 """
 ```
 
-- [ ] **步骤 3：创建 handlers/__init__.py 文件**
+- [x] **步骤 3：创建 handlers/__init__.py 文件**
 
 创建文件：`server/python/src/tenant/listeners/handlers/__init__.py`
 
@@ -530,7 +530,7 @@ mkdir -p src/tenant/listeners/handlers
 """Tenant 模块事件处理器"""
 ```
 
-- [ ] **步骤 4：Commit**
+- [x] **步骤 4：Commit**
 
 ```bash
 git add src/tenant/listeners/
@@ -550,11 +550,11 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 **文件：**
 - 新增：`server/python/src/tenant/listeners/handlers/plugin_handler.py`
 
-- [ ] **步骤 1：创建 plugin_handler.py 文件**
+- [x] **步骤 1：创建 plugin_handler.py 文件**
 
 创建文件：`server/python/src/tenant/listeners/handlers/plugin_handler.py`
 
-- [ ] **步骤 2：编写事件处理器代码**
+- [x] **步骤 2：编写事件处理器代码**
 
 ```python
 """插件事件处理器
@@ -642,11 +642,11 @@ class PluginUninstallFailedHandler(QueueHandler):
         # 卸载失败通常只需记录日志，不需要回滚
 ```
 
-- [ ] **步骤 3：保存文件**
+- [x] **步骤 3：保存文件**
 
 保存 `plugin_handler.py` 文件。
 
-- [ ] **步骤 4：验证语法正确**
+- [x] **步骤 4：验证语法正确**
 
 ```bash
 cd server/python
@@ -661,7 +661,7 @@ print('✓ 事件处理器可导入')
 
 预期输出：`✓ 事件处理器可导入`
 
-- [ ] **步骤 5：Commit**
+- [x] **步骤 5：Commit**
 
 ```bash
 git add src/tenant/listeners/handlers/plugin_handler.py
@@ -681,11 +681,11 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 **文件：**
 - 新增：`server/python/src/tenant/listeners/setup.py`
 
-- [ ] **步骤 1：创建 setup.py 文件**
+- [x] **步骤 1：创建 setup.py 文件**
 
 创建文件：`server/python/src/tenant/listeners/setup.py`
 
-- [ ] **步骤 2：编写监听器生命周期管理代码**
+- [x] **步骤 2：编写监听器生命周期管理代码**
 
 ```python
 """Tenant 模块监听器生命周期管理
@@ -749,11 +749,11 @@ async def shutdown_listeners():
     _consumers.clear()
 ```
 
-- [ ] **步骤 3：保存文件**
+- [x] **步骤 3：保存文件**
 
 保存 `setup.py` 文件。
 
-- [ ] **步骤 4：验证语法正确**
+- [x] **步骤 4：验证语法正确**
 
 ```bash
 cd server/python
@@ -765,7 +765,7 @@ print('✓ 监听器生命周期管理可导入')
 
 预期输出：`✓ 监听器生命周期管理可导入`
 
-- [ ] **步骤 5：Commit**
+- [x] **步骤 5：Commit**
 
 ```bash
 git add src/tenant/listeners/setup.py
@@ -785,15 +785,15 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 **文件：**
 - 修改：`server/python/src/ai/components/plugin/engine/core/plugin_manager.py`
 
-- [ ] **步骤 1：打开 plugin_manager.py 文件**
+- [x] **步骤 1：打开 plugin_manager.py 文件**
 
 文件位置：`server/python/src/ai/components/plugin/engine/core/plugin_manager.py`
 
-- [ ] **步骤 2：找到 _save_plugin_installation_to_database 方法**
+- [x] **步骤 2：找到 _save_plugin_installation_to_database 方法**
 
 搜索方法：`async def _save_plugin_installation_to_database`
 
-- [ ] **步骤 3：添加事件发布相关导入**
+- [x] **步骤 3：添加事件发布相关导入**
 
 在文件顶部添加导入：
 
@@ -802,7 +802,7 @@ from framework.events.domain_events import PluginInstallationFailed
 from framework.events.publisher import get_event_publisher
 ```
 
-- [ ] **步骤 4：修改方法实现**
+- [x] **步骤 4：修改方法实现**
 
 修改 `_save_plugin_installation_to_database` 方法，添加事件发布逻辑：
 
@@ -891,11 +891,11 @@ async def _save_plugin_installation_to_database(
         raise
 ```
 
-- [ ] **步骤 5：保存文件**
+- [x] **步骤 5：保存文件**
 
 保存修改后的 `plugin_manager.py` 文件。
 
-- [ ] **步骤 6：验证语法正确**
+- [x] **步骤 6：验证语法正确**
 
 ```bash
 cd server/python
@@ -907,7 +907,7 @@ print('✓ PluginManager 可导入')
 
 预期输出：`✓ PluginManager 可导入`
 
-- [ ] **步骤 7：Commit**
+- [x] **步骤 7：Commit**
 
 ```bash
 git add src/ai/components/plugin/engine/core/plugin_manager.py
@@ -929,11 +929,11 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 **文件：**
 - 新增：`tests/tenant/unit/test_plugin_provider.py`
 
-- [ ] **步骤 1：创建测试文件**
+- [x] **步骤 1：创建测试文件**
 
 创建文件：`tests/tenant/unit/test_plugin_provider.py`
 
-- [ ] **步骤 2：编写测试代码**
+- [x] **步骤 2：编写测试代码**
 
 ```python
 """PluginInstallationProvider 单元测试
@@ -1077,11 +1077,11 @@ class TestPluginInstallationProvider:
         assert "plugin2" in plugin_ids
 ```
 
-- [ ] **步骤 3：保存文件**
+- [x] **步骤 3：保存文件**
 
 保存测试文件。
 
-- [ ] **步骤 4：运行测试验证失败**
+- [x] **步骤 4：运行测试验证失败**
 
 运行测试，预期失败（因为需要数据库夹具）：
 
@@ -1092,7 +1092,7 @@ uv run pytest tests/tenant/unit/test_plugin_provider.py -v
 
 预期输出：测试失败或跳过（需要配置测试夹具）
 
-- [ ] **步骤 5：Commit**
+- [x] **步骤 5：Commit**
 
 ```bash
 git add tests/tenant/unit/test_plugin_provider.py
@@ -1115,11 +1115,11 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 **文件：**
 - 新增：`tests/ai/unit/components/plugin/test_event_publishing.py`
 
-- [ ] **步骤 1：创建测试文件**
+- [x] **步骤 1：创建测试文件**
 
 创建文件：`tests/ai/unit/components/plugin/test_event_publishing.py`
 
-- [ ] **步骤 2：编写测试代码**
+- [x] **步骤 2：编写测试代码**
 
 ```python
 """事件发布单元测试
@@ -1235,11 +1235,11 @@ class TestEventPublishing:
         assert stream_name == "plugin_installation_failed_events"
 ```
 
-- [ ] **步骤 3：保存文件**
+- [x] **步骤 3：保存文件**
 
 保存测试文件。
 
-- [ ] **步骤 4：运行测试验证失败**
+- [x] **步骤 4：运行测试验证失败**
 
 运行测试：
 
@@ -1250,7 +1250,7 @@ uv run pytest tests/ai/unit/components/plugin/test_event_publishing.py -v
 
 预期输出：部分测试通过，部分需要依赖
 
-- [ ] **步骤 5：Commit**
+- [x] **步骤 5：Commit**
 
 ```bash
 git add tests/ai/unit/components/plugin/test_event_publishing.py
@@ -1274,11 +1274,11 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 **文件：**
 - 新增：`tests/ai/integration/test_plugin_lifecycle.py`
 
-- [ ] **步骤 1：创建测试文件**
+- [x] **步骤 1：创建测试文件**
 
 创建文件：`tests/ai/integration/test_plugin_lifecycle.py`
 
-- [ ] **步骤 2：编写测试代码**
+- [x] **步骤 2：编写测试代码**
 
 ```python
 """插件生命周期集成测试
@@ -1401,11 +1401,11 @@ class TestPluginLifecycle:
             )
 ```
 
-- [ ] **步骤 3：保存文件**
+- [x] **步骤 3：保存文件**
 
 保存测试文件。
 
-- [ ] **步骤 4：创建测试夹具（conftest.py）**
+- [x] **步骤 4：创建测试夹具（conftest.py）**
 
 检查 `tests/ai/integration/conftest.py` 是否存在，如果不存在则创建：
 
@@ -1452,7 +1452,7 @@ def mock_tenant_context():
         yield
 ```
 
-- [ ] **步骤 5：运行测试验证失败**
+- [x] **步骤 5：运行测试验证失败**
 
 运行测试：
 
@@ -1463,7 +1463,7 @@ uv run pytest tests/ai/integration/test_plugin_lifecycle.py -v
 
 预期输出：测试失败或跳过（需要完整的测试环境）
 
-- [ ] **步骤 6：Commit**
+- [x] **步骤 6：Commit**
 
 ```bash
 git add tests/ai/integration/test_plugin_lifecycle.py
@@ -1486,7 +1486,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 **文件：**
 - 无文件修改，仅验证
 
-- [ ] **步骤 1：检查迁移状态**
+- [x] **步骤 1：检查迁移状态**
 
 ```bash
 cd server/python
@@ -1495,7 +1495,7 @@ uv run python manage.py db status --module tenant
 
 预期输出：显示当前迁移版本
 
-- [ ] **步骤 2：运行迁移**
+- [x] **步骤 2：运行迁移**
 
 ```bash
 cd server/python
@@ -1504,7 +1504,7 @@ uv run python manage.py db migrate --module tenant
 
 预期输出：迁移成功执行
 
-- [ ] **步骤 3：验证表结构**
+- [x] **步骤 3：验证表结构**
 
 连接数据库验证 `tenant.plugin_definitions` 表包含 `declaration` 字段：
 
@@ -1518,7 +1518,7 @@ ORDER BY ordinal_position;
 
 预期输出：包含 `declaration` 字段，类型为 `jsonb`，`is_nullable` 为 `NO`
 
-- [ ] **步骤 4：验证 remote_declaration 字段已删除**
+- [x] **步骤 4：验证 remote_declaration 字段已删除**
 
 确认 `remote_declaration` 字段不存在：
 
@@ -1539,7 +1539,7 @@ WHERE table_schema = 'tenant'
 **文件：**
 - 无文件修改，仅验证
 
-- [ ] **步骤 1：运行所有新增测试**
+- [x] **步骤 1：运行所有新增测试**
 
 ```bash
 cd server/python
@@ -1551,14 +1551,14 @@ uv run pytest tests/tenant/unit/test_plugin_provider.py \
 
 预期输出：测试通过，覆盖率报告
 
-- [ ] **步骤 2：检查测试覆盖率**
+- [x] **步骤 2：检查测试覆盖率**
 
 查看覆盖率报告，确认关键模块覆盖率：
 - `tenant/services/plugin_provider.py` > 85%
 - `tenant/listeners/handlers/plugin_handler.py` > 80%
 - `ai/components/plugin/engine/core/plugin_manager.py` > 80%
 
-- [ ] **步骤 3：运行完整测试套件**
+- [x] **步骤 3：运行完整测试套件**
 
 ```bash
 cd server/python
@@ -1575,7 +1575,7 @@ uv run pytest tests/ -v
 - 修改：`server/python/src/tenant/CLAUDE.md`
 - 修改：`server/python/src/ai/CLAUDE.md`
 
-- [ ] **步骤 1：更新 Tenant 模块文档**
+- [x] **步骤 1：更新 Tenant 模块文档**
 
 在 `server/python/src/tenant/CLAUDE.md` 中添加事件监听器说明：
 
@@ -1623,11 +1623,11 @@ await shutdown_listeners()
 | PluginUninstallFailed | PluginUninstallFailedHandler | 记录失败日志 |
 ```
 
-- [ ] **步骤 2：保存文件**
+- [x] **步骤 2：保存文件**
 
 保存修改后的 `tenant/CLAUDE.md` 文件。
 
-- [ ] **步骤 3：更新 AI 模块文档**
+- [x] **步骤 3：更新 AI 模块文档**
 
 在 `server/python/src/ai/CLAUDE.md` 中更新插件系统说明：
 
@@ -1647,11 +1647,11 @@ await shutdown_listeners()
 5. 失败时发布事件 → PluginInstallationFailed
 ```
 
-- [ ] **步骤 4：保存文件**
+- [x] **步骤 4：保存文件**
 
 保存修改后的 `ai/CLAUDE.md` 文件。
 
-- [ ] **步骤 5：Commit**
+- [x] **步骤 5：Commit**
 
 ```bash
 git add src/tenant/CLAUDE.md src/ai/CLAUDE.md
@@ -1671,7 +1671,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 **文件：**
 - 无文件修改，仅验证
 
-- [ ] **步骤 1：运行完整测试套件**
+- [x] **步骤 1：运行完整测试套件**
 
 ```bash
 cd server/python
@@ -1680,7 +1680,7 @@ uv run pytest tests/ -v
 
 预期输出：所有测试通过
 
-- [ ] **步骤 2：验证代码风格**
+- [x] **步骤 2：验证代码风格**
 
 ```bash
 cd server/python
@@ -1689,7 +1689,7 @@ uv run ruff check src/ tests/
 
 预期输出：无错误
 
-- [ ] **步骤 3：查看 Git 状态**
+- [x] **步骤 3：查看 Git 状态**
 
 ```bash
 git status
@@ -1697,7 +1697,7 @@ git status
 
 预期输出：所有文件已提交
 
-- [ ] **步骤 4：查看提交历史**
+- [x] **步骤 4：查看提交历史**
 
 ```bash
 git log --oneline -15
@@ -1705,7 +1705,7 @@ git log --oneline -15
 
 预期输出：显示所有提交记录
 
-- [ ] **步骤 5：推送代码**
+- [x] **步骤 5：推送代码**
 
 ```bash
 git push origin main

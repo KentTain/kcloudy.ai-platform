@@ -1,6 +1,6 @@
 # 菜单管理页面改造实现计划
 
-> **面向 AI 代理的工作者：** 必需子技能：使用 superpowers:subagent-driven-development（推荐）或 superpowers:executing-plans 逐任务实现此计划。步骤使用复选框（`- [ ]`）语法来跟踪进度。
+> **面向 AI 代理的工作者：** 必需子技能：使用 superpowers:subagent-driven-development（推荐）或 superpowers:executing-plans 逐任务实现此计划。步骤使用复选框（`- [x]`）语法来跟踪进度。
 
 **目标：** 改造菜单管理页面为左右布局，右侧增加 Tabs 展示菜单信息和关联权限列表
 
@@ -26,7 +26,7 @@
 **文件：**
 - 修改：`server/python/src/iam/services/menu_service.py`
 
-- [ ] **步骤 1：在 MenuService 类中新增 get_menu_permissions 方法**
+- [x] **步骤 1：在 MenuService 类中新增 get_menu_permissions 方法**
 
 在 `menu_service.py` 文件末尾、`menu_service = MenuService()` 之前添加：
 
@@ -62,7 +62,7 @@
         return [PermissionResponse.model_validate(p) for p in permissions]
 ```
 
-- [ ] **步骤 2：Commit**
+- [x] **步骤 2：Commit**
 
 ```bash
 git add server/python/src/iam/services/menu_service.py
@@ -76,7 +76,7 @@ git commit -m "feat(iam): 新增 MenuService.get_menu_permissions 方法"
 **文件：**
 - 修改：`server/python/src/iam/controllers/admin/menu_controller.py`
 
-- [ ] **步骤 1：在 menu_controller.py 中新增导入和端点**
+- [x] **步骤 1：在 menu_controller.py 中新增导入和端点**
 
 在文件末尾添加新端点：
 
@@ -102,7 +102,7 @@ async def get_menu_permissions(
     return ApiResponse.success(data=permissions)
 ```
 
-- [ ] **步骤 2：Commit**
+- [x] **步骤 2：Commit**
 
 ```bash
 git add server/python/src/iam/controllers/admin/menu_controller.py
@@ -116,7 +116,7 @@ git commit -m "feat(iam): 新增 GET /menus/{menu_id}/permissions 端点"
 **文件：**
 - 修改：`web/vue/src/iam/api/menu.ts`
 
-- [ ] **步骤 1：在 menu.ts 中新增 API 函数**
+- [x] **步骤 1：在 menu.ts 中新增 API 函数**
 
 修改文件，添加导入和函数：
 
@@ -137,7 +137,7 @@ export const getMenuPermissions = (menuId: string) =>
   get<ApiResponse<Permission[]>>(`/iam/admin/v1/menus/${menuId}/permissions`);
 ```
 
-- [ ] **步骤 2：Commit**
+- [x] **步骤 2：Commit**
 
 ```bash
 git add web/vue/src/iam/api/menu.ts
@@ -151,7 +151,7 @@ git commit -m "feat(iam): 新增 getMenuPermissions API 函数"
 **文件：**
 - 重写：`web/vue/src/iam/pages/menus/MenuList.vue`
 
-- [ ] **步骤 1：重写 MenuList.vue 完整代码**
+- [x] **步骤 1：重写 MenuList.vue 完整代码**
 
 ```vue
 <script setup lang="ts">
@@ -420,7 +420,7 @@ onMounted(async () => {
 </template>
 ```
 
-- [ ] **步骤 2：Commit**
+- [x] **步骤 2：Commit**
 
 ```bash
 git add web/vue/src/iam/pages/menus/MenuList.vue
@@ -431,21 +431,21 @@ git commit -m "feat(iam): 改造菜单管理页面为左右布局 + Tabs 结构"
 
 ## 任务 5：集成测试 — 验证功能
 
-- [ ] **步骤 1：启动后端服务**
+- [x] **步骤 1：启动后端服务**
 
 ```bash
 cd server/python
 uv run python manage.py runserver
 ```
 
-- [ ] **步骤 2：启动前端服务**
+- [x] **步骤 2：启动前端服务**
 
 ```bash
 cd web/vue
 pnpm dev
 ```
 
-- [ ] **步骤 3：手动验证功能**
+- [x] **步骤 3：手动验证功能**
 
 验证点：
 1. 访问菜单管理页面 `/iam/menus`
@@ -456,7 +456,7 @@ pnpm dev
 6. 「权限列表」Tab 显示 DataTable
 7. 无关联权限时显示空状态
 
-- [ ] **步骤 4：最终 Commit**
+- [x] **步骤 4：最终 Commit**
 
 ```bash
 git add -A

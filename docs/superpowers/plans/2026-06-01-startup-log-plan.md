@@ -1,6 +1,6 @@
 # 启动完成日志整理 实现计划
 
-> **面向 AI 代理的工作者：** 必需子技能：使用 superpowers:subagent-driven-development（推荐）或 superpowers:executing-plans 逐任务实现此计划。步骤使用复选框（`- [ ]`）语法来跟踪进度。
+> **面向 AI 代理的工作者：** 必需子技能：使用 superpowers:subagent-driven-development（推荐）或 superpowers:executing-plans 逐任务实现此计划。步骤使用复选框（`- [x]`）语法来跟踪进度。
 
 **目标：** 为 Python 后端的三个启动入口（runserver、runtask、runlistener）增加结构化启动完成日志，按阶段输出耗时、已加载模块和访问地址。
 
@@ -28,7 +28,7 @@
 - 创建：`src/framework/utils/startup_timer.py`
 - 创建：`tests/framework/unit/utils/test_startup_timer.py`
 
-- [ ] **步骤 1：编写失败的测试 - PhaseInfo 数据类**
+- [x] **步骤 1：编写失败的测试 - PhaseInfo 数据类**
 
 创建测试文件 `tests/framework/unit/utils/test_startup_timer.py`：
 
@@ -194,7 +194,7 @@ class TestStartupTimer:
         assert timer.phases[0].name == "失败阶段"
 ```
 
-- [ ] **步骤 2：运行测试验证失败**
+- [x] **步骤 2：运行测试验证失败**
 
 ```bash
 cd server/python && uv run pytest tests/framework/unit/utils/test_startup_timer.py -v
@@ -202,13 +202,13 @@ cd server/python && uv run pytest tests/framework/unit/utils/test_startup_timer.
 
 预期：FAIL，报错 "No module named 'framework.utils.startup_timer'"
 
-- [ ] **步骤 3：创建 `src/framework/utils/__init__.py`（如不存在）**
+- [x] **步骤 3：创建 `src/framework/utils/__init__.py`（如不存在）**
 
 ```bash
 touch src/framework/utils/__init__.py
 ```
 
-- [ ] **步骤 4：编写 StartupTimer 实现代码**
+- [x] **步骤 4：编写 StartupTimer 实现代码**
 
 创建 `src/framework/utils/startup_timer.py`：
 
@@ -322,7 +322,7 @@ class StartupTimer:
         print("=" * 60 + "\n")
 ```
 
-- [ ] **步骤 5：运行测试验证通过**
+- [x] **步骤 5：运行测试验证通过**
 
 ```bash
 cd server/python && uv run pytest tests/framework/unit/utils/test_startup_timer.py -v
@@ -330,7 +330,7 @@ cd server/python && uv run pytest tests/framework/unit/utils/test_startup_timer.
 
 预期：PASS
 
-- [ ] **步骤 6：Commit**
+- [x] **步骤 6：Commit**
 
 ```bash
 git add src/framework/utils/startup_timer.py tests/framework/unit/utils/test_startup_timer.py
@@ -351,7 +351,7 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 **文件：**
 - 修改：`src/application_web.py`
 
-- [ ] **步骤 1：修改 application_web.py 导入部分**
+- [x] **步骤 1：修改 application_web.py 导入部分**
 
 在 `src/application_web.py` 文件顶部添加 `StartupTimer` 导入：
 
@@ -360,7 +360,7 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 from framework.utils.startup_timer import StartupTimer
 ```
 
-- [ ] **步骤 2：在 create_app 函数中集成模块加载计时**
+- [x] **步骤 2：在 create_app 函数中集成模块加载计时**
 
 修改 `create_app` 函数，在模块加载前后添加计时：
 
@@ -444,7 +444,7 @@ def create_app(module_names: list[str] | None = None) -> FastAPI:
     return app
 ```
 
-- [ ] **步骤 3：修改 lifespan 函数集成基础组件和数据初始化计时**
+- [x] **步骤 3：修改 lifespan 函数集成基础组件和数据初始化计时**
 
 修改 `lifespan` 函数：
 
@@ -494,7 +494,7 @@ async def lifespan(app: FastAPI):
     _logger.info("Demo 应用关闭")
 ```
 
-- [ ] **步骤 4：验证导入完整性**
+- [x] **步骤 4：验证导入完整性**
 
 确保所有需要的导入已添加：
 
@@ -518,7 +518,7 @@ from framework.utils.startup_timer import StartupTimer
 from demo.configs import settings
 ```
 
-- [ ] **步骤 5：运行框架测试确保无破坏**
+- [x] **步骤 5：运行框架测试确保无破坏**
 
 ```bash
 cd server/python && uv run pytest tests/framework/ -v
@@ -526,7 +526,7 @@ cd server/python && uv run pytest tests/framework/ -v
 
 预期：PASS
 
-- [ ] **步骤 6：Commit**
+- [x] **步骤 6：Commit**
 
 ```bash
 git add src/application_web.py
@@ -546,7 +546,7 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 **文件：**
 - 修改：`src/application_task.py`
 
-- [ ] **步骤 1：修改 application_task.py 导入部分**
+- [x] **步骤 1：修改 application_task.py 导入部分**
 
 在 `src/application_task.py` 文件顶部添加导入：
 
@@ -555,7 +555,7 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 from framework.utils.startup_timer import StartupTimer
 ```
 
-- [ ] **步骤 2：修改 run_task 函数集成启动计时**
+- [x] **步骤 2：修改 run_task 函数集成启动计时**
 
 修改 `run_task` 函数：
 
@@ -652,7 +652,7 @@ async def run_task(module_names: list[str] | None = None) -> None:
         _logger.info("所有任务调度器已停止")
 ```
 
-- [ ] **步骤 3：运行框架测试确保无破坏**
+- [x] **步骤 3：运行框架测试确保无破坏**
 
 ```bash
 cd server/python && uv run pytest tests/framework/ -v
@@ -660,7 +660,7 @@ cd server/python && uv run pytest tests/framework/ -v
 
 预期：PASS
 
-- [ ] **步骤 4：Commit**
+- [x] **步骤 4：Commit**
 
 ```bash
 git add src/application_task.py
@@ -679,7 +679,7 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 **文件：**
 - 修改：`src/application_listener.py`
 
-- [ ] **步骤 1：修改 application_listener.py 导入部分**
+- [x] **步骤 1：修改 application_listener.py 导入部分**
 
 在 `src/application_listener.py` 文件顶部添加导入：
 
@@ -688,7 +688,7 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 from framework.utils.startup_timer import StartupTimer
 ```
 
-- [ ] **步骤 2：修改 run_listener 函数集成启动计时**
+- [x] **步骤 2：修改 run_listener 函数集成启动计时**
 
 修改 `run_listener` 函数：
 
@@ -799,7 +799,7 @@ async def run_listener(module_names: list[str] | None = None) -> None:
         _logger.info("所有监听器已停止")
 ```
 
-- [ ] **步骤 3：运行框架测试确保无破坏**
+- [x] **步骤 3：运行框架测试确保无破坏**
 
 ```bash
 cd server/python && uv run pytest tests/framework/ -v
@@ -807,7 +807,7 @@ cd server/python && uv run pytest tests/framework/ -v
 
 预期：PASS
 
-- [ ] **步骤 4：Commit**
+- [x] **步骤 4：Commit**
 
 ```bash
 git add src/application_listener.py
@@ -823,7 +823,7 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 
 ## 任务 5：最终验证
 
-- [ ] **步骤 1：运行全部测试**
+- [x] **步骤 1：运行全部测试**
 
 ```bash
 cd server/python && uv run pytest -v
@@ -831,7 +831,7 @@ cd server/python && uv run pytest -v
 
 预期：PASS
 
-- [ ] **步骤 2：手动验证 Web 启动日志（可选，需依赖服务）**
+- [x] **步骤 2：手动验证 Web 启动日志（可选，需依赖服务）**
 
 ```bash
 cd server/python && uv run python manage.py runserver
@@ -857,7 +857,7 @@ API 文档: http://127.0.0.1:8000/docs
 ============================================================
 ```
 
-- [ ] **步骤 3：最终 Commit（如有未提交变更）**
+- [x] **步骤 3：最终 Commit（如有未提交变更）**
 
 ```bash
 git status

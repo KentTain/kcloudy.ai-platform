@@ -1,6 +1,6 @@
 # 远程插件市场功能实现计划
 
-> **面向 AI 代理的工作者：** 必需子技能：使用 superpowers:subagent-driven-development（推荐）或 superpowers:executing-plans 逐任务实现此计划。步骤使用复选框（`- [ ]`）语法来跟踪进度。
+> **面向 AI 代理的工作者：** 必需子技能：使用 superpowers:subagent-driven-development（推荐）或 superpowers:executing-plans 逐任务实现此计划。步骤使用复选框（`- [x]`）语法来跟踪进度。
 
 **目标：** 实现远程插件市场功能，支持配置多个外部市场源（Dify、ModelScope），浏览远程插件列表，选择性同步插件定义到本地，检测和应用插件更新。
 
@@ -64,7 +64,7 @@
 - 修改：`server/python/src/tenant/models/__init__.py`
 - 修改：`server/python/src/tenant/migrations/versions/001_initial_schema.py`
 
-- [ ] **步骤 1：编写市场配置模型**
+- [x] **步骤 1：编写市场配置模型**
 
 ```python
 # server/python/src/tenant/models/plugin_marketplace.py
@@ -148,7 +148,7 @@ class TenantPluginMarketplace(BaseModel, AuditMixin, ActiveRecordMixin):
     __table_args__ = ({"comment": "插件市场配置表"},)
 ```
 
-- [ ] **步骤 2：编写插件包存储模型**
+- [x] **步骤 2：编写插件包存储模型**
 
 ```python
 # server/python/src/tenant/models/plugin_package.py
@@ -209,7 +209,7 @@ class TenantPluginPackage(BaseModel, TimestampMixin, ActiveRecordMixin):
     )
 ```
 
-- [ ] **步骤 3：扩展插件定义模型**
+- [x] **步骤 3：扩展插件定义模型**
 
 在 `server/python/src/tenant/models/plugin_definition.py` 添加字段：
 
@@ -248,7 +248,7 @@ source_type: Mapped[str] = mapped_column(
 )
 ```
 
-- [ ] **步骤 4：更新模型导出**
+- [x] **步骤 4：更新模型导出**
 
 修改 `server/python/src/tenant/models/__init__.py`：
 
@@ -265,7 +265,7 @@ __all__ = [
 ]
 ```
 
-- [ ] **步骤 5：添加数据库迁移**
+- [x] **步骤 5：添加数据库迁移**
 
 在 `server/python/src/tenant/migrations/versions/001_initial_schema.py` 添加表定义：
 
@@ -326,12 +326,12 @@ op.add_column("plugin_definitions", sa.Column("package_id", postgresql.UUID(as_u
 op.add_column("plugin_definitions", sa.Column("source_type", sa.String(16), nullable=False, server_default="local"), schema="tenant")
 ```
 
-- [ ] **步骤 6：运行迁移验证**
+- [x] **步骤 6：运行迁移验证**
 
 运行：`cd server/python && uv run python manage.py db migrate --module tenant`
 预期：迁移成功，无错误
 
-- [ ] **步骤 7：Commit**
+- [x] **步骤 7：Commit**
 
 ```bash
 git add server/python/src/tenant/models/plugin_marketplace.py
@@ -356,7 +356,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 - 创建：`server/python/src/tenant/services/marketplace/__init__.py`
 - 创建：`server/python/src/tenant/services/marketplace/protocol.py`
 
-- [ ] **步骤 1：创建模块入口**
+- [x] **步骤 1：创建模块入口**
 
 ```python
 # server/python/src/tenant/services/marketplace/__init__.py
@@ -379,7 +379,7 @@ __all__ = [
 ]
 ```
 
-- [ ] **步骤 2：编写适配器协议和数据模型**
+- [x] **步骤 2：编写适配器协议和数据模型**
 
 ```python
 # server/python/src/tenant/services/marketplace/protocol.py
@@ -527,12 +527,12 @@ class MarketplaceAdapter(Protocol):
         ...
 ```
 
-- [ ] **步骤 3：运行类型检查验证**
+- [x] **步骤 3：运行类型检查验证**
 
 运行：`cd server/python && uv run mypy src/tenant/services/marketplace/protocol.py`
 预期：类型检查通过，无错误
 
-- [ ] **步骤 4：Commit**
+- [x] **步骤 4：Commit**
 
 ```bash
 git add server/python/src/tenant/services/marketplace/
@@ -552,7 +552,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 - 创建：`server/python/src/tenant/services/marketplace/adapters/__init__.py`
 - 创建：`server/python/src/tenant/services/marketplace/adapters/dify_adapter.py`
 
-- [ ] **步骤 1：创建适配器模块入口**
+- [x] **步骤 1：创建适配器模块入口**
 
 ```python
 # server/python/src/tenant/services/marketplace/adapters/__init__.py
@@ -565,7 +565,7 @@ __all__ = [
 ]
 ```
 
-- [ ] **步骤 2：编写 Dify 适配器**
+- [x] **步骤 2：编写 Dify 适配器**
 
 ```python
 # server/python/src/tenant/services/marketplace/adapters/dify_adapter.py
@@ -785,7 +785,7 @@ class DifyAdapter(MarketplaceAdapter):
             return None
 ```
 
-- [ ] **步骤 3：编写适配器单元测试**
+- [x] **步骤 3：编写适配器单元测试**
 
 创建测试文件 `server/python/tests/tenant/unit/services/marketplace/test_dify_adapter.py`：
 
@@ -826,12 +826,12 @@ async def test_build_headers_api_key(dify_adapter: DifyAdapter):
     assert headers["X-API-Key"] == "test-key"
 ```
 
-- [ ] **步骤 4：运行测试验证**
+- [x] **步骤 4：运行测试验证**
 
 运行：`cd server/python && uv run pytest tests/tenant/unit/services/marketplace/test_dify_adapter.py -v`
 预期：测试通过
 
-- [ ] **步骤 5：Commit**
+- [x] **步骤 5：Commit**
 
 ```bash
 git add server/python/src/tenant/services/marketplace/adapters/
@@ -851,7 +851,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 **文件：**
 - 创建：`server/python/src/tenant/services/marketplace/gateway.py`
 
-- [ ] **步骤 1：编写 MarketplaceGateway 服务**
+- [x] **步骤 1：编写 MarketplaceGateway 服务**
 
 ```python
 # server/python/src/tenant/services/marketplace/gateway.py
@@ -1049,7 +1049,7 @@ class MarketplaceGateway:
 marketplace_gateway = MarketplaceGateway()
 ```
 
-- [ ] **步骤 2：更新模块入口**
+- [x] **步骤 2：更新模块入口**
 
 更新 `server/python/src/tenant/services/marketplace/__init__.py`：
 
@@ -1076,12 +1076,12 @@ __all__ = [
 ]
 ```
 
-- [ ] **步骤 3：运行类型检查验证**
+- [x] **步骤 3：运行类型检查验证**
 
 运行：`cd server/python && uv run mypy src/tenant/services/marketplace/`
 预期：类型检查通过
 
-- [ ] **步骤 4：Commit**
+- [x] **步骤 4：Commit**
 
 ```bash
 git add server/python/src/tenant/services/marketplace/
@@ -1101,7 +1101,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 **文件：**
 - 创建：`server/python/src/tenant/schemas/admin/marketplace.py`
 
-- [ ] **步骤 1：编写市场 Schema**
+- [x] **步骤 1：编写市场 Schema**
 
 ```python
 # server/python/src/tenant/schemas/admin/marketplace.py
@@ -1239,7 +1239,7 @@ class MarketplaceQuery(BasePaginatedQuery):
     is_enabled: bool | None = None
 ```
 
-- [ ] **步骤 2：更新 Schema 导出**
+- [x] **步骤 2：更新 Schema 导出**
 
 修改 `server/python/src/tenant/schemas/admin/__init__.py`：
 
@@ -1257,7 +1257,7 @@ from tenant.schemas.admin.marketplace import (
 )
 ```
 
-- [ ] **步骤 3：Commit**
+- [x] **步骤 3：Commit**
 
 ```bash
 git add server/python/src/tenant/schemas/admin/
@@ -1278,7 +1278,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 - 创建：`server/python/src/tenant/controllers/admin/marketplace_controller.py`
 - 修改：`server/python/src/tenant/controllers/admin/__init__.py`
 
-- [ ] **步骤 1：编写市场控制器**
+- [x] **步骤 1：编写市场控制器**
 
 ```python
 # server/python/src/tenant/controllers/admin/marketplace_controller.py
@@ -1425,7 +1425,7 @@ async def list_remote_plugins(
     return ApiResponse.paginated(data=items, total=total, page=page, page_size=page_size)
 ```
 
-- [ ] **步骤 2：注册路由**
+- [x] **步骤 2：注册路由**
 
 修改 `server/python/src/tenant/controllers/admin/__init__.py`：
 
@@ -1437,7 +1437,7 @@ from tenant.controllers.admin.marketplace_controller import router as marketplac
 admin_router.include_router(marketplace_router, prefix="/v1", tags=["marketplace"])
 ```
 
-- [ ] **步骤 3：添加权限定义**
+- [x] **步骤 3：添加权限定义**
 
 修改 `server/python/src/tenant/module.py`，在权限列表中添加：
 
@@ -1447,12 +1447,12 @@ PermissionDef(code="tenant:marketplace:read", name="查看插件市场", resourc
 PermissionDef(code="tenant:marketplace:write", name="管理插件市场", resource="marketplace", action="write"),
 ```
 
-- [ ] **步骤 4：启动服务验证**
+- [x] **步骤 4：启动服务验证**
 
 运行：`cd server/python && uv run python manage.py runserver`
 预期：服务启动成功，路由注册成功
 
-- [ ] **步骤 5：Commit**
+- [x] **步骤 5：Commit**
 
 ```bash
 git add server/python/src/tenant/controllers/admin/
@@ -1475,7 +1475,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 - 创建：`web/vue/src/tenant/types/marketplace.ts`
 - 创建：`web/vue/src/tenant/api/marketplace.ts`
 
-- [ ] **步骤 1：编写类型定义**
+- [x] **步骤 1：编写类型定义**
 
 ```typescript
 // web/vue/src/tenant/types/marketplace.ts
@@ -1554,7 +1554,7 @@ export interface SyncResult {
 }
 ```
 
-- [ ] **步骤 2：编写 API 函数**
+- [x] **步骤 2：编写 API 函数**
 
 ```typescript
 // web/vue/src/tenant/api/marketplace.ts
@@ -1603,7 +1603,7 @@ export const syncPlugins = (data: SyncPluginsRequest) =>
   rawPost<ApiResponse<SyncResult>>('/tenant/admin/v1/marketplaces/sync', data);
 ```
 
-- [ ] **步骤 3：Commit**
+- [x] **步骤 3：Commit**
 
 ```bash
 git add web/vue/src/tenant/types/marketplace.ts
@@ -1625,7 +1625,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 **文件：**
 - 创建：`web/vue/src/tenant/pages/admin/MarketplaceListPage.vue`
 
-- [ ] **步骤 1：编写市场列表页面**
+- [x] **步骤 1：编写市场列表页面**
 
 ```vue
 <!-- web/vue/src/tenant/pages/admin/MarketplaceListPage.vue -->
@@ -1713,12 +1713,12 @@ onMounted(loadMarketplaces);
 </template>
 ```
 
-- [ ] **步骤 2：运行前端开发服务器验证**
+- [x] **步骤 2：运行前端开发服务器验证**
 
 运行：`cd web/vue && pnpm dev`
 预期：页面加载无错误
 
-- [ ] **步骤 3：Commit**
+- [x] **步骤 3：Commit**
 
 ```bash
 git add web/vue/src/tenant/pages/admin/MarketplaceListPage.vue
@@ -1738,7 +1738,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 **文件：**
 - 创建：`web/vue/src/tenant/pages/admin/MarketplaceFormPage.vue`
 
-- [ ] **步骤 1：编写市场表单页面**
+- [x] **步骤 1：编写市场表单页面**
 
 ```vue
 <!-- web/vue/src/tenant/pages/admin/MarketplaceFormPage.vue -->
@@ -1848,7 +1848,7 @@ async function handleSubmit() {
 </template>
 ```
 
-- [ ] **步骤 2：Commit**
+- [x] **步骤 2：Commit**
 
 ```bash
 git add web/vue/src/tenant/pages/admin/MarketplaceFormPage.vue
@@ -1867,7 +1867,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 **文件：**
 - 创建：`web/vue/src/tenant/pages/admin/RemotePluginBrowsePage.vue`
 
-- [ ] **步骤 1：编写远程插件浏览页面**
+- [x] **步骤 1：编写远程插件浏览页面**
 
 ```vue
 <!-- web/vue/src/tenant/pages/admin/RemotePluginBrowsePage.vue -->
@@ -1988,7 +1988,7 @@ onMounted(() => {
 </template>
 ```
 
-- [ ] **步骤 2：Commit**
+- [x] **步骤 2：Commit**
 
 ```bash
 git add web/vue/src/tenant/pages/admin/RemotePluginBrowsePage.vue
@@ -2008,7 +2008,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 **文件：**
 - 修改：`web/vue/src/tenant/router/index.ts`
 
-- [ ] **步骤 1：添加市场相关路由**
+- [x] **步骤 1：添加市场相关路由**
 
 在 `web/vue/src/tenant/router/index.ts` 添加路由：
 
@@ -2045,12 +2045,12 @@ import RemotePluginBrowsePage from '@/tenant/pages/admin/RemotePluginBrowsePage.
 },
 ```
 
-- [ ] **步骤 2：运行前端验证**
+- [x] **步骤 2：运行前端验证**
 
 运行：`cd web/vue && pnpm dev`
 预期：路由配置正确，页面可访问
 
-- [ ] **步骤 3：Commit**
+- [x] **步骤 3：Commit**
 
 ```bash
 git add web/vue/src/tenant/router/index.ts
@@ -2068,7 +2068,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 **文件：**
 - 创建：`server/python/tests/tenant/integration/test_marketplace_api.py`
 
-- [ ] **步骤 1：编写集成测试**
+- [x] **步骤 1：编写集成测试**
 
 ```python
 # server/python/tests/tenant/integration/test_marketplace_api.py
@@ -2110,12 +2110,12 @@ async def test_list_marketplaces(client: AsyncClient, admin_token: str):
     assert isinstance(data["data"], list)
 ```
 
-- [ ] **步骤 2：运行测试验证**
+- [x] **步骤 2：运行测试验证**
 
 运行：`cd server/python && uv run pytest tests/tenant/integration/test_marketplace_api.py -v`
 预期：测试通过
 
-- [ ] **步骤 3：Commit**
+- [x] **步骤 3：Commit**
 
 ```bash
 git add server/python/tests/tenant/integration/test_marketplace_api.py

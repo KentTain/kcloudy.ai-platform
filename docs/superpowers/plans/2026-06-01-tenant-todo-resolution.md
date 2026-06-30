@@ -1,6 +1,6 @@
 # Tenant 模块 TODO 解决方案 实现计划
 
-> **面向 AI 代理的工作者：** 必需子技能：使用 superpowers:subagent-driven-development（推荐）或 superpowers:executing-plans 逐任务实现此计划。步骤使用复选框（`- [ ]`）语法来跟踪进度。
+> **面向 AI 代理的工作者：** 必需子技能：使用 superpowers:subagent-driven-development（推荐）或 superpowers:executing-plans 逐任务实现此计划。步骤使用复选框（`- [x]`）语法来跟踪进度。
 
 **目标：** 解决 Tenant 模块中 8 处 TODO，将直接 import UserService 改为使用 IamClient，实现模块间解耦。
 
@@ -40,7 +40,7 @@
 - 修改：`server/python/src/iam/services/user_service.py`
 - 测试：`server/python/tests/iam/unit/services/test_user_service_tenants.py`
 
-- [ ] **步骤 1：编写失败的测试**
+- [x] **步骤 1：编写失败的测试**
 
 创建测试文件 `server/python/tests/iam/unit/services/test_user_service_tenants.py`：
 
@@ -108,12 +108,12 @@ class TestGetUserTenantsDetail:
         assert result == []
 ```
 
-- [ ] **步骤 2：运行测试验证失败**
+- [x] **步骤 2：运行测试验证失败**
 
 运行：`cd server/python && uv run pytest tests/iam/unit/services/test_user_service_tenants.py -v`
 预期：FAIL，报错 `AttributeError: type object 'UserService' has no attribute 'get_user_tenants_detail'`
 
-- [ ] **步骤 3：编写实现代码**
+- [x] **步骤 3：编写实现代码**
 
 在 `server/python/src/iam/services/user_service.py` 的 `UserService` 类中添加方法（在 `get_user_ids_by_tenant_id` 方法之后）：
 
@@ -144,12 +144,12 @@ class TestGetUserTenantsDetail:
             ]
 ```
 
-- [ ] **步骤 4：运行测试验证通过**
+- [x] **步骤 4：运行测试验证通过**
 
 运行：`cd server/python && uv run pytest tests/iam/unit/services/test_user_service_tenants.py -v`
 预期：PASS
 
-- [ ] **步骤 5：Commit**
+- [x] **步骤 5：Commit**
 
 ```bash
 git add server/python/src/iam/services/user_service.py server/python/tests/iam/unit/services/test_user_service_tenants.py
@@ -163,7 +163,7 @@ git commit -m "feat(iam): add get_user_tenants_detail method to UserService"
 **文件：**
 - 修改：`server/python/src/iam/controllers/inner/user_controller.py`
 
-- [ ] **步骤 1：编写响应模型和接口**
+- [x] **步骤 1：编写响应模型和接口**
 
 在 `server/python/src/iam/controllers/inner/user_controller.py` 中：
 
@@ -241,12 +241,12 @@ async def get_tenant_users(tenant_id: str) -> ORJSONResponse:
     )
 ```
 
-- [ ] **步骤 2：验证接口可访问**
+- [x] **步骤 2：验证接口可访问**
 
 运行服务：`cd server/python && uv run python manage.py runserver --module iam`
 访问：`http://localhost:8000/docs`，确认接口出现在文档中
 
-- [ ] **步骤 3：Commit**
+- [x] **步骤 3：Commit**
 
 ```bash
 git add server/python/src/iam/controllers/inner/user_controller.py
@@ -261,7 +261,7 @@ git commit -m "feat(iam): add inner APIs for user tenants and tenant users"
 - 修改：`server/python/src/framework/clients/iam_client.py`
 - 测试：`server/python/tests/framework/unit/test_iam_client.py`
 
-- [ ] **步骤 1：编写失败的测试**
+- [x] **步骤 1：编写失败的测试**
 
 创建测试文件 `server/python/tests/framework/unit/test_iam_client.py`：
 
@@ -371,12 +371,12 @@ class TestIamClientGetTenantUserIds:
         assert result == []
 ```
 
-- [ ] **步骤 2：运行测试验证失败**
+- [x] **步骤 2：运行测试验证失败**
 
 运行：`cd server/python && uv run pytest tests/framework/unit/test_iam_client.py -v`
 预期：FAIL，报错 `AttributeError: 'IamClient' object has no attribute 'get_user_tenants'`
 
-- [ ] **步骤 3：编写实现代码**
+- [x] **步骤 3：编写实现代码**
 
 在 `server/python/src/framework/clients/iam_client.py` 中：
 
@@ -463,12 +463,12 @@ class UserTenantInfo(BaseModel):
                 return [row[0] for row in result.all()]
 ```
 
-- [ ] **步骤 4：运行测试验证通过**
+- [x] **步骤 4：运行测试验证通过**
 
 运行：`cd server/python && uv run pytest tests/framework/unit/test_iam_client.py -v`
 预期：PASS
 
-- [ ] **步骤 5：Commit**
+- [x] **步骤 5：Commit**
 
 ```bash
 git add server/python/src/framework/clients/iam_client.py server/python/tests/framework/unit/test_iam_client.py
@@ -482,7 +482,7 @@ git commit -m "feat(framework): add get_user_tenants and get_tenant_user_ids to 
 **文件：**
 - 修改：`server/python/src/tenant/services/tenant_provider_impl.py`
 
-- [ ] **步骤 1：修改 validate_access 方法**
+- [x] **步骤 1：修改 validate_access 方法**
 
 找到 `validate_access` 方法（约第 42-64 行），将：
 
@@ -537,7 +537,7 @@ git commit -m "feat(framework): add get_user_tenants and get_tenant_user_ids to 
         return tenant_id in tenant_ids
 ```
 
-- [ ] **步骤 2：修改 get_user_tenants 方法**
+- [x] **步骤 2：修改 get_user_tenants 方法**
 
 找到 `get_user_tenants` 方法（约第 66-89 行），将：
 
@@ -594,12 +594,12 @@ git commit -m "feat(framework): add get_user_tenants and get_tenant_user_ids to 
         return [self._build_tenant_info(t) for t in tenants]
 ```
 
-- [ ] **步骤 3：验证修改正确**
+- [x] **步骤 3：验证修改正确**
 
 运行：`cd server/python && uv run python -c "from tenant.services.tenant_provider_impl import TenantProviderImpl; print('OK')"`
 预期：输出 `OK`
 
-- [ ] **步骤 4：Commit**
+- [x] **步骤 4：Commit**
 
 ```bash
 git add server/python/src/tenant/services/tenant_provider_impl.py
@@ -613,7 +613,7 @@ git commit -m "refactor(tenant): use IamClient in TenantProviderImpl"
 **文件：**
 - 修改：`server/python/src/tenant/controllers/inner/tenant_controller.py`
 
-- [ ] **步骤 1：修改 validate_tenant_access 函数**
+- [x] **步骤 1：修改 validate_tenant_access 函数**
 
 找到 `validate_tenant_access` 函数（约第 176-230 行），将第 212-220 行：
 
@@ -641,12 +641,12 @@ git commit -m "refactor(tenant): use IamClient in TenantProviderImpl"
     valid = tenant_id in tenant_ids
 ```
 
-- [ ] **步骤 2：验证修改正确**
+- [x] **步骤 2：验证修改正确**
 
 运行：`cd server/python && uv run python -c "from tenant.controllers.inner.tenant_controller import router; print('OK')"`
 预期：输出 `OK`
 
-- [ ] **步骤 3：Commit**
+- [x] **步骤 3：Commit**
 
 ```bash
 git add server/python/src/tenant/controllers/inner/tenant_controller.py
@@ -660,7 +660,7 @@ git commit -m "refactor(tenant): use IamClient in inner tenant controller"
 **文件：**
 - 修改：`server/python/src/tenant/controllers/console/tenant_controller.py`
 
-- [ ] **步骤 1：修改 list_user_tenants 函数**
+- [x] **步骤 1：修改 list_user_tenants 函数**
 
 找到 `list_user_tenants` 函数（约第 21-59 行），将：
 
@@ -753,7 +753,7 @@ async def list_user_tenants(user_id: str = "test_user") -> ORJSONResponse:
     return ORJSONResponse(content=Success(items))
 ```
 
-- [ ] **步骤 2：修改 switch_tenant 函数**
+- [x] **步骤 2：修改 switch_tenant 函数**
 
 找到 `switch_tenant` 函数（约第 95-148 行），将第 129-135 行：
 
@@ -780,12 +780,12 @@ async def list_user_tenants(user_id: str = "test_user") -> ORJSONResponse:
         raise HTTPException(status_code=403, detail="无权访问该租户")
 ```
 
-- [ ] **步骤 3：验证修改正确**
+- [x] **步骤 3：验证修改正确**
 
 运行：`cd server/python && uv run python -c "from tenant.controllers.console.tenant_controller import router; print('OK')"`
 预期：输出 `OK`
 
-- [ ] **步骤 4：Commit**
+- [x] **步骤 4：Commit**
 
 ```bash
 git add server/python/src/tenant/controllers/console/tenant_controller.py
@@ -799,7 +799,7 @@ git commit -m "refactor(tenant): use IamClient in console tenant controller"
 **文件：**
 - 修改：`server/python/src/tenant/controllers/admin/tenant_controller.py`
 
-- [ ] **步骤 1：修改 delete_tenant 函数**
+- [x] **步骤 1：修改 delete_tenant 函数**
 
 找到 `delete_tenant` 函数（约第 386-414 行），将第 402-408 行：
 
@@ -825,7 +825,7 @@ git commit -m "refactor(tenant): use IamClient in console tenant controller"
         raise HTTPException(status_code=400, detail="租户下存在用户，无法删除")
 ```
 
-- [ ] **步骤 2：修改 get_tenant_stats 函数**
+- [x] **步骤 2：修改 get_tenant_stats 函数**
 
 找到 `get_tenant_stats` 函数（约第 455-485 行），将第 471-476 行：
 
@@ -849,12 +849,12 @@ git commit -m "refactor(tenant): use IamClient in console tenant controller"
     user_count = len(user_ids)
 ```
 
-- [ ] **步骤 3：验证修改正确**
+- [x] **步骤 3：验证修改正确**
 
 运行：`cd server/python && uv run python -c "from tenant.controllers.admin.tenant_controller import router; print('OK')"`
 预期：输出 `OK`
 
-- [ ] **步骤 4：Commit**
+- [x] **步骤 4：Commit**
 
 ```bash
 git add server/python/src/tenant/controllers/admin/tenant_controller.py
@@ -865,17 +865,17 @@ git commit -m "refactor(tenant): use IamClient in admin tenant controller"
 
 ## 任务 8：验证并完成
 
-- [ ] **步骤 1：验证所有 TODO 已解决**
+- [x] **步骤 1：验证所有 TODO 已解决**
 
 运行：`cd server/python && grep -r "TODO.*inner.*IAM" src/tenant/`
 预期：无输出（所有 TODO 已解决）
 
-- [ ] **步骤 2：验证现有测试通过**
+- [x] **步骤 2：验证现有测试通过**
 
 运行：`cd server/python && uv run pytest tests/framework/unit/test_iam_client.py tests/iam/unit/services/test_user_service_tenants.py -v`
 预期：全部 PASS
 
-- [ ] **步骤 3：最终 Commit**
+- [x] **步骤 3：最终 Commit**
 
 ```bash
 git add -A
@@ -886,8 +886,8 @@ git commit -m "feat: resolve Tenant module TODOs using IamClient for cross-modul
 
 ## 验收清单
 
-- [ ] 所有 8 处 TODO 已移除
-- [ ] 新增 2 个 IAM inner 接口可访问
-- [ ] IamClient 新增 2 个方法测试通过
-- [ ] UserService 新增方法测试通过
-- [ ] 现有测试不受影响
+- [x] 所有 8 处 TODO 已移除
+- [x] 新增 2 个 IAM inner 接口可访问
+- [x] IamClient 新增 2 个方法测试通过
+- [x] UserService 新增方法测试通过
+- [x] 现有测试不受影响

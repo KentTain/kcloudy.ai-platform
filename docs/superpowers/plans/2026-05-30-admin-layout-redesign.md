@@ -1,6 +1,6 @@
 # AdminLayout 布局重设计 实现计划
 
-> **面向 AI 代理的工作者：** 必需子技能：使用 superpowers:subagent-driven-development（推荐）或 superpowers:executing-plans 逐任务实现此计划。步骤使用复选框（`- [ ]`）语法来跟踪进度。
+> **面向 AI 代理的工作者：** 必需子技能：使用 superpowers:subagent-driven-development（推荐）或 superpowers:executing-plans 逐任务实现此计划。步骤使用复选框（`- [x]`）语法来跟踪进度。
 
 **目标：** 重构 AdminLayout 布局，实现左右结构：左侧侧边栏（租户切换器 + 菜单），右侧上下结构（顶部导航 + 内容区）
 
@@ -39,7 +39,7 @@
 **文件：**
 - 创建：`web/vue/src/framework/stores/notification.ts`
 
-- [ ] **步骤 1：创建通知 Store**
+- [x] **步骤 1：创建通知 Store**
 
 ```typescript
 import { defineStore } from "pinia";
@@ -143,7 +143,7 @@ export const useNotificationStore = defineStore("notification", () => {
 export default useNotificationStore;
 ```
 
-- [ ] **步骤 2：导出 Store**
+- [x] **步骤 2：导出 Store**
 
 修改 `web/vue/src/framework/stores/index.ts`，添加导出：
 
@@ -151,7 +151,7 @@ export default useNotificationStore;
 export * from "./notification";
 ```
 
-- [ ] **步骤 3：Commit**
+- [x] **步骤 3：Commit**
 
 ```bash
 git add web/vue/src/framework/stores/notification.ts web/vue/src/framework/stores/index.ts
@@ -165,7 +165,7 @@ git commit -m "feat(framework): 添加通知状态管理 Store"
 **文件：**
 - 创建：`web/vue/src/framework/layouts/components/AppTenantSwitcher.vue`
 
-- [ ] **步骤 1：创建租户切换器组件**
+- [x] **步骤 1：创建租户切换器组件**
 
 ```vue
 <script setup lang="ts">
@@ -239,7 +239,7 @@ function switchTenant(tenantId: string) {
 </template>
 ```
 
-- [ ] **步骤 2：Commit**
+- [x] **步骤 2：Commit**
 
 ```bash
 git add web/vue/src/framework/layouts/components/AppTenantSwitcher.vue
@@ -253,7 +253,7 @@ git commit -m "feat(framework): 添加租户切换器组件"
 **文件：**
 - 创建：`web/vue/src/framework/layouts/components/AppSearchBox.vue`
 
-- [ ] **步骤 1：创建搜索框组件**
+- [x] **步骤 1：创建搜索框组件**
 
 ```vue
 <script setup lang="ts">
@@ -420,7 +420,7 @@ onUnmounted(() => {
 </template>
 ```
 
-- [ ] **步骤 2：Commit**
+- [x] **步骤 2：Commit**
 
 ```bash
 git add web/vue/src/framework/layouts/components/AppSearchBox.vue
@@ -434,7 +434,7 @@ git commit -m "feat(framework): 添加搜索框组件（动态展开 + 结果面
 **文件：**
 - 创建：`web/vue/src/framework/layouts/components/AppNotificationPanel.vue`
 
-- [ ] **步骤 1：创建通知面板组件**
+- [x] **步骤 1：创建通知面板组件**
 
 ```vue
 <script setup lang="ts">
@@ -568,7 +568,7 @@ function handleViewAll() {
 </template>
 ```
 
-- [ ] **步骤 2：Commit**
+- [x] **步骤 2：Commit**
 
 ```bash
 git add web/vue/src/framework/layouts/components/AppNotificationPanel.vue
@@ -582,7 +582,7 @@ git commit -m "feat(framework): 添加通知面板组件"
 **文件：**
 - 创建：`web/vue/src/framework/layouts/components/AppHeaderRight.vue`
 
-- [ ] **步骤 1：创建顶部导航右侧组件**
+- [x] **步骤 1：创建顶部导航右侧组件**
 
 ```vue
 <script setup lang="ts">
@@ -694,7 +694,7 @@ function handleLogout() {
 </template>
 ```
 
-- [ ] **步骤 2：Commit**
+- [x] **步骤 2：Commit**
 
 ```bash
 git add web/vue/src/framework/layouts/components/AppHeaderRight.vue
@@ -708,7 +708,7 @@ git commit -m "feat(framework): 添加顶部导航右侧组件（功能图标 + 
 **文件：**
 - 创建：`web/vue/src/framework/layouts/components/AppContentHeader.vue`
 
-- [ ] **步骤 1：创建内容页导航栏组件**
+- [x] **步骤 1：创建内容页导航栏组件**
 
 ```vue
 <script setup lang="ts">
@@ -795,7 +795,7 @@ const navTabs = computed(() => {
 </template>
 ```
 
-- [ ] **步骤 2：Commit**
+- [x] **步骤 2：Commit**
 
 ```bash
 git add web/vue/src/framework/layouts/components/AppContentHeader.vue
@@ -809,7 +809,7 @@ git commit -m "feat(framework): 添加内容页导航栏组件"
 **文件：**
 - 修改：`web/vue/src/framework/layouts/AdminLayout.vue`
 
-- [ ] **步骤 1：重构 AdminLayout 布局**
+- [x] **步骤 1：重构 AdminLayout 布局**
 
 ```vue
 <script setup lang="ts">
@@ -869,7 +869,7 @@ onMounted(() => {
 </template>
 ```
 
-- [ ] **步骤 2：删除 AppSidebarFooter 中不再需要的用户面板代码**
+- [x] **步骤 2：删除 AppSidebarFooter 中不再需要的用户面板代码**
 
 修改 `web/vue/src/framework/layouts/components/AppSidebarFooter.vue`，删除用户面板相关代码：
 
@@ -888,7 +888,7 @@ onMounted(() => {
 </template>
 ```
 
-- [ ] **步骤 3：Commit**
+- [x] **步骤 3：Commit**
 
 ```bash
 git add web/vue/src/framework/layouts/AdminLayout.vue web/vue/src/framework/layouts/components/AppSidebarFooter.vue
@@ -903,7 +903,7 @@ git commit -m "refactor(framework): 重构 AdminLayout 为左右布局结构"
 - 创建：`web/vue/src/framework/pages/PreviewLayoutPage.vue`
 - 修改：`web/vue/src/framework/router/index.ts`
 
-- [ ] **步骤 1：创建预览页面**
+- [x] **步骤 1：创建预览页面**
 
 ```vue
 <script setup lang="ts">
@@ -970,7 +970,7 @@ const datasets = ref([
 </template>
 ```
 
-- [ ] **步骤 2：添加预览路由**
+- [x] **步骤 2：添加预览路由**
 
 修改 `web/vue/src/framework/router/index.ts`，在 `constantRoutes` 中添加：
 
@@ -983,7 +983,7 @@ const datasets = ref([
 },
 ```
 
-- [ ] **步骤 3：Commit**
+- [x] **步骤 3：Commit**
 
 ```bash
 git add web/vue/src/framework/pages/PreviewLayoutPage.vue web/vue/src/framework/router/index.ts
@@ -994,13 +994,13 @@ git commit -m "feat(framework): 添加布局预览页面和路由"
 
 ## 任务 9：验证和清理
 
-- [ ] **步骤 1：启动开发服务器**
+- [x] **步骤 1：启动开发服务器**
 
 ```bash
 cd web/vue && pnpm dev
 ```
 
-- [ ] **步骤 2：访问预览页面验证布局**
+- [x] **步骤 2：访问预览页面验证布局**
 
 浏览器访问 `http://localhost:5173/preview/layout`，验证：
 - 左右布局结构正确
@@ -1010,7 +1010,7 @@ cd web/vue && pnpm dev
 - 用户面板下拉菜单
 - 内容页导航栏（收缩按钮 + 面包屑）
 
-- [ ] **步骤 3：最终 Commit**
+- [x] **步骤 3：最终 Commit**
 
 ```bash
 git add -A
