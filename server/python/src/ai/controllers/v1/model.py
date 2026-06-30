@@ -46,11 +46,21 @@ async def list_models(
             ]
 
             if llm_models:
+                # 提取图标 URL（优先使用 zh_Hans，fallback 到 en_US）
+                icon_small = None
+                icon_large = None
+                if provider.icon_small:
+                    icon_small = provider.icon_small.zh_Hans or provider.icon_small.en_US
+                if provider.icon_large:
+                    icon_large = provider.icon_large.zh_Hans or provider.icon_large.en_US
+
                 provider_items.append(
                     ProviderItem.from_entity(
                         provider_id=provider.provider,
                         provider_label=provider.label,
                         models=llm_models,
+                        icon_small=icon_small,
+                        icon_large=icon_large,
                     )
                 )
 

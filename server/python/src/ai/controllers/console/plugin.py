@@ -459,3 +459,87 @@ async def delete_credential(
     except Exception as e:
         _logger.exception("删除插件凭证失败")
         raise BadRequestError(f"删除插件凭证失败: {str(e)}")
+
+
+# ==================== 默认模型管理 ====================
+
+
+@router.get(
+    "/default-models",
+    summary="获取默认模型",
+    response_class=ORJSONResponse,
+)
+async def get_default_model(
+    model_type: str = Query(..., description="模型类型"),
+    session: AsyncSession = Depends(get_db_session),
+) -> ORJSONResponse:
+    """
+    获取默认模型配置
+
+    场景：用户查询默认模型配置
+    WHEN 请求 GET /console/v1/plugins/default-models?model_type=llm
+    THEN 返回该模型类型的默认模型配置
+    """
+    from ai.schemas.plugin_default_model import PluginDefaultModelResponse
+    from ai.services.plugin_default_model_service import plugin_default_model_service
+    from framework.common.ctx import get_tenant_id
+
+    try:
+        tenant_id = get_tenant_id()
+        default_model = await plugin_default_model_service.get_default_model(
+            session, tenant_id, model_type
+        )
+
+        if not default_model:
+            return ApiResponse.success(data=None)
+
+        return ApiResponse.success(
+            data=PluginDefaultModelResponse.model_validate(default_model)
+        )
+    except Exception as e:
+        _logger.exception("获取默认模型失败")
+        raise BadRequestError(f"获取默认模型失败: {str(e)}")
+
+
+@router.post(
+    "/default-models",
+    summary="设置默认模型",
+    response_class=ORJSONResponse,
+)
+async def set_default_model(
+    data: "PluginDefaultModelCreate" = Body(..., description="默认模型配置"),
+    session: AsyncSession = Depends(get_db_session),
+) -> ORJSONResponse:
+    """
+    设置默认模型配置
+
+    场景：用户设置默认模型
+    WHEN 请求 POST /console/v1/plugins/default-models
+    THEN 保存默认模型配置并返回结果
+    """
+    from ai.schemas.plugin_default_model import (
+        PluginDefaultModelCreate,
+        PluginDefaultModelResponse,
+    )
+    from ai.services.plugin_default_model_service import plugin_default_model_service
+    from framework.common.ctx import get_tenant_id
+
+    try:
+        tenant_id = get_tenant_id()
+        default_model = await plugin_default_model_service.set_default_model(
+            session=session,
+            tenant_id=tenant_id,
+            model_type=data.model_type,
+            plugin_id=data.plugin_id,
+            model_name=data.model_name,
+            credential_id=data.credential_id,
+            custom_base_url=data.custom_base_url,
+            custom_model_name=data.custom_model_name,
+        )
+
+        return ApiResponse.success(
+            data=PluginDefaultModelResponse.model_validate(default_model)
+        )
+    except Exception as e:
+        _logger.exception("设置默认模型失败")
+        raise BadRequestError(f"设置默认模型失败: {str(e)}")

@@ -6,7 +6,9 @@
 import { defineStore } from "pinia";
 import { ref, computed } from "vue";
 import { deleteConversation, getConversations } from "@/ai/api/conversation";
+import { getModels, getDefaultModel, setDefaultModel } from "@/ai/api/model";
 import type { ConversationListItem } from "@/ai/api/conversation";
+import type { ProviderItem, DefaultModel } from "@/ai/api/model";
 import type { Conversation, ModelConfig } from "@/ai/types";
 
 /**
@@ -50,6 +52,11 @@ export const useConversationStore = defineStore("conversation", () => {
   // 错误信息
   const error = ref<string | null>(null);
 
+  // 新增：模型提供商列表
+  const providers = ref<ProviderItem[]>([]);
+  // 新增：默认模型
+  const defaultModel = ref<DefaultModel | null>(null);
+
   // 当前会话 ID
   const activeConversationId = computed(() => activeConversation.value?.id ?? null);
 
@@ -70,6 +77,50 @@ export const useConversationStore = defineStore("conversation", () => {
       error.value = e instanceof Error ? e.message : "获取会话列表失败";
     } finally {
       loading.value = false;
+    }
+  };
+
+  /**
+   * 获取模型列表
+   */
+  const fetchModels = async () => {
+    try {
+      const response = await getModels();
+      providers.value = response.providers;
+    } catch (e) {
+      console.error("获取模型列表失败:", e);
+    }
+  };
+
+  /**
+   * 获取默认模型
+   */
+  const fetchDefaultModel = async (modelType = "llm") => {
+    try {
+      defaultModel.value = await getDefaultModel(modelType);
+      if (defaultModel.value && !currentModel.value.provider) {
+        setModel({
+          provider: defaultModel.value.plugin_id,
+          name: defaultModel.value.model_name || "",
+        });
+      }
+    } catch (e) {
+      console.error("获取默认模型失败:", e);
+    }
+  };
+
+  /**
+   * 设置默认模型
+   */
+  const saveDefaultModel = async (model: ModelConfig, modelType = "llm") => {
+    try {
+      await setDefaultModel({
+        model_type: modelType,
+        plugin_id: model.provider,
+        model_name: model.name,
+      });
+    } catch (e) {
+      console.error("设置默认模型失败:", e);
     }
   };
 
@@ -137,6 +188,10 @@ export const useConversationStore = defineStore("conversation", () => {
     isPending,
     error,
 
+    // 新增状态
+    providers,
+    defaultModel,
+
     // 方法
     fetchConversations,
     selectConversation,
@@ -145,6 +200,11 @@ export const useConversationStore = defineStore("conversation", () => {
     setModel,
     resetModel,
     clearError,
+
+    // 新增方法
+    fetchModels,
+    fetchDefaultModel,
+    saveDefaultModel,
   };
 });
 

@@ -143,3 +143,63 @@ export interface Conversation {
   /** 消息数量 */
   messageCount?: number;
 }
+
+/**
+ * 提供商信息
+ */
+export interface Provider {
+  /** 提供商 ID（插件 ID） */
+  id: string;
+  /** 提供商名称 */
+  name: string;
+  /** 提供商小图标 URL */
+  icon_small?: string;
+  /** 提供商大图标 URL */
+  icon_large?: string;
+}
+
+/**
+ * 模型信息
+ */
+export interface Model {
+  /** 模型 ID（格式: provider/model） */
+  id: string;
+  /** 模型名称 */
+  name: string;
+  /** 模型显示名称 */
+  label?: string;
+  /** 模型描述 */
+  description?: string;
+}
+
+/**
+ * 提供商及其模型
+ */
+export interface ProviderWithModels extends Provider {
+  /** 提供商下的模型列表 */
+  models: Model[];
+}
+
+/**
+ * 默认模型配置
+ */
+export interface DefaultModel {
+  /** 记录 ID */
+  id: string;
+  /** 租户 ID */
+  tenant_id: string;
+  /** 模型类型 */
+  model_type: string;
+  /** 插件 ID */
+  plugin_id: string;
+  /** 模型名称 */
+  model_name?: string;
+  /** 凭证 ID */
+  credential_id?: string;
+  /** 自定义 API 端点 */
+  custom_base_url?: string;
+  /** 自定义模型名称 */
+  custom_model_name?: string;
+  /** 是否有效 */
+  is_valid: boolean;
+}
