@@ -112,7 +112,16 @@ async def run_async_migrations() -> None:
 
 def run_migrations_online() -> None:
     """在线模式运行迁移"""
-    asyncio.run(run_async_migrations())
+    # 检测是否已经在事件循环中运行
+    try:
+        loop = asyncio.get_running_loop()
+        # 如果已在事件循环中，创建任务并等待完成
+        import nest_asyncio
+        nest_asyncio.apply()
+        loop.run_until_complete(run_async_migrations())
+    except RuntimeError:
+        # 没有运行中的事件循环，使用 asyncio.run()
+        asyncio.run(run_async_migrations())
 
 
 if context.is_offline_mode():
