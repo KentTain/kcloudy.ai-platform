@@ -747,6 +747,7 @@ dependencies = [
     { name = "loguru" },
     { name = "minio" },
     { name = "nanoid" },
+    { name = "nest-asyncio" },
     { name = "orjson" },
     { name = "oss2" },
     { name = "pgvector" },
@@ -835,6 +836,7 @@ requires-dist = [
     { name = "loguru", specifier = "==0.7.3" },
     { name = "minio", specifier = "==7.2.15" },
     { name = "nanoid", specifier = "==2.0.0" },
+    { name = "nest-asyncio", specifier = "==1.6.0" },
     { name = "orjson", specifier = "==3.10.15" },
     { name = "oss2", specifier = "==2.19.1" },
     { name = "pgvector", specifier = "==0.4.0" },
@@ -2062,6 +2064,15 @@ dependencies = [
 sdist = { url = "https://mirrors.huaweicloud.com/repository/pypi/packages/4b/20/733dac16f7cedc80b23093415822c9763302519cba0e7c8bcdb5c01fc512/neo4j-5.28.1.tar.gz", hash = "sha256:ae8e37a1d895099062c75bc359b2cce62099baac7be768d0eba7180c1298e214" }
 wheels = [
     { url = "https://mirrors.huaweicloud.com/repository/pypi/packages/6a/57/94225fe5e9dabdc0ff60c88cbfcedf11277f4b34e7ab1373d3e62dbdd207/neo4j-5.28.1-py3-none-any.whl", hash = "sha256:6755ef9e5f4e14b403aef1138fb6315b120631a0075c138b5ddb2a06b87b09fd" },
+]
+
+[[package]]
+name = "nest-asyncio"
+version = "1.6.0"
+source = { registry = "https://mirrors.huaweicloud.com/repository/pypi/simple" }
+sdist = { url = "https://mirrors.huaweicloud.com/repository/pypi/packages/83/f8/51569ac65d696c8ecbee95938f89d4abf00f47d58d48f6fbabfe8f0baefe/nest_asyncio-1.6.0.tar.gz", hash = "sha256:6f172d5449aca15afd6c646851f4e31e02c598d553a667e38cafa997cfec55fe" }
+wheels = [
+    { url = "https://mirrors.huaweicloud.com/repository/pypi/packages/a0/c4/c2971a3ba4c6103a3d10c4b0f24f461ddc027f0f09763220cf35ca1401b3/nest_asyncio-1.6.0-py3-none-any.whl", hash = "sha256:87af6efd6b5e897c81050477ef65c62e2b2f35d51703cae01aff2905b1852e1c" },
 ]
 
 [[package]]
