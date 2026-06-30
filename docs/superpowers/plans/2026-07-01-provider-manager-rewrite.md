@@ -45,7 +45,7 @@
 - 创建：`server/python/src/ai/models/plugin_default_model.py`
 - 测试：`server/python/tests/ai/unit/models/test_plugin_default_model.py`
 
-- [ ] **步骤 1：编写失败的测试**
+- [x] **步骤 1：编写失败的测试**
 
 创建 `server/python/tests/ai/unit/models/test_plugin_default_model.py`：
 
@@ -81,12 +81,12 @@ class TestPluginDefaultModel:
         assert issubclass(PluginDefaultModel, BaseModel)
 ```
 
-- [ ] **步骤 2：运行测试验证失败**
+- [x] **步骤 2：运行测试验证失败**
 
 运行：`cd server/python && uv run pytest tests/ai/unit/models/test_plugin_default_model.py -v`
 预期：FAIL，报错 `ImportError: cannot import name 'PluginDefaultModel'`
 
-- [ ] **步骤 3：创建 PluginDefaultModel 模型**
+- [x] **步骤 3：创建 PluginDefaultModel 模型**
 
 创建 `server/python/src/ai/models/plugin_default_model.py`：
 
@@ -162,12 +162,12 @@ class PluginDefaultModel(
     )
 ```
 
-- [ ] **步骤 4：运行测试验证通过**
+- [x] **步骤 4：运行测试验证通过**
 
 运行：`cd server/python && uv run pytest tests/ai/unit/models/test_plugin_default_model.py -v`
 预期：PASS
 
-- [ ] **步骤 5：Commit**
+- [x] **步骤 5：Commit**
 
 ```bash
 git add server/python/src/ai/models/plugin_default_model.py server/python/tests/ai/unit/models/test_plugin_default_model.py
@@ -182,7 +182,7 @@ git commit -m "feat(ai): 新增 PluginDefaultModel 数据模型"
 - 创建：`server/python/src/ai/schemas/plugin_default_model.py`
 - 测试：`server/python/tests/ai/unit/schemas/test_plugin_default_model.py`
 
-- [ ] **步骤 1：编写失败的测试**
+- [x] **步骤 1：编写失败的测试**
 
 创建 `server/python/tests/ai/unit/schemas/test_plugin_default_model.py`：
 
@@ -236,12 +236,12 @@ class TestPluginDefaultModelSchemas:
         assert schema.id == "test-id"
 ```
 
-- [ ] **步骤 2：运行测试验证失败**
+- [x] **步骤 2：运行测试验证失败**
 
 运行：`cd server/python && uv run pytest tests/ai/unit/schemas/test_plugin_default_model.py -v`
 预期：FAIL
 
-- [ ] **步骤 3：创建 Schema 文件**
+- [x] **步骤 3：创建 Schema 文件**
 
 创建 `server/python/src/ai/schemas/plugin_default_model.py`：
 
@@ -278,12 +278,12 @@ class PluginDefaultModelResponse(BaseModel):
     is_valid: bool
 ```
 
-- [ ] **步骤 4：运行测试验证通过**
+- [x] **步骤 4：运行测试验证通过**
 
 运行：`cd server/python && uv run pytest tests/ai/unit/schemas/test_plugin_default_model.py -v`
 预期：PASS
 
-- [ ] **步骤 5：Commit**
+- [x] **步骤 5：Commit**
 
 ```bash
 git add server/python/src/ai/schemas/plugin_default_model.py server/python/tests/ai/unit/schemas/test_plugin_default_model.py
@@ -298,7 +298,7 @@ git commit -m "feat(ai): 新增 PluginDefaultModel Schema"
 - 创建：`server/python/src/ai/services/plugin_default_model_service.py`
 - 测试：`server/python/tests/ai/unit/services/test_plugin_default_model_service.py`
 
-- [ ] **步骤 1：编写失败的测试**
+- [x] **步骤 1：编写失败的测试**
 
 创建 `server/python/tests/ai/unit/services/test_plugin_default_model_service.py`：
 
@@ -417,12 +417,12 @@ class TestPluginDefaultModelService:
             assert mock_existing.is_valid is False
 ```
 
-- [ ] **步骤 2：运行测试验证失败**
+- [x] **步骤 2：运行测试验证失败**
 
 运行：`cd server/python && uv run pytest tests/ai/unit/services/test_plugin_default_model_service.py -v`
 预期：FAIL
 
-- [ ] **步骤 3：创建服务文件**
+- [x] **步骤 3：创建服务文件**
 
 创建 `server/python/src/ai/services/plugin_default_model_service.py`：
 
@@ -508,12 +508,12 @@ class PluginDefaultModelService:
 plugin_default_model_service = PluginDefaultModelService()
 ```
 
-- [ ] **步骤 4：运行测试验证通过**
+- [x] **步骤 4：运行测试验证通过**
 
 运行：`cd server/python && uv run pytest tests/ai/unit/services/test_plugin_default_model_service.py -v`
 预期：PASS
 
-- [ ] **步骤 5：Commit**
+- [x] **步骤 5：Commit**
 
 ```bash
 git add server/python/src/ai/services/plugin_default_model_service.py server/python/tests/ai/unit/services/test_plugin_default_model_service.py
@@ -527,7 +527,7 @@ git commit -m "feat(ai): 新增 PluginDefaultModelService 服务"
 **文件：**
 - 创建：`server/python/src/ai/migrations/versions/003_add_plugin_default_models.py`
 
-- [ ] **步骤 1：创建迁移文件**
+- [x] **步骤 1：创建迁移文件**
 
 创建 `server/python/src/ai/migrations/versions/003_add_plugin_default_models.py`：
 
@@ -578,12 +578,12 @@ def downgrade() -> None:
     op.drop_table("plugin_default_models", schema="ai")
 ```
 
-- [ ] **步骤 2：验证迁移文件语法**
+- [x] **步骤 2：验证迁移文件语法**
 
 运行：`cd server/python && uv run python -c "from ai.migrations.versions import *; print('OK')"`
 预期：输出 "OK"
 
-- [ ] **步骤 3：Commit**
+- [x] **步骤 3：Commit**
 
 ```bash
 git add server/python/src/ai/migrations/versions/003_add_plugin_default_models.py
@@ -597,7 +597,7 @@ git commit -m "feat(ai): 添加 plugin_default_models 表迁移"
 **文件：**
 - 修改：`server/python/src/ai/models/__init__.py`
 
-- [ ] **步骤 1：更新导出**
+- [x] **步骤 1：更新导出**
 
 修改 `server/python/src/ai/models/__init__.py`：
 
@@ -662,12 +662,12 @@ __all__ = [
 ]
 ```
 
-- [ ] **步骤 2：验证导入无错误**
+- [x] **步骤 2：验证导入无错误**
 
 运行：`cd server/python && uv run python -c "from ai.models import PluginDefaultModel; print('OK')"`
 预期：输出 "OK"
 
-- [ ] **步骤 3：Commit**
+- [x] **步骤 3：Commit**
 
 ```bash
 git add server/python/src/ai/models/__init__.py
@@ -682,7 +682,7 @@ git commit -m "feat(ai): 导出 PluginDefaultModel"
 - 重写：`server/python/src/ai/components/model/internal/provider_manager.py`
 - 重写：`server/python/tests/ai/unit/components/model/test_provider_manager.py`
 
-- [ ] **步骤 1：编写失败的测试**
+- [x] **步骤 1：编写失败的测试**
 
 创建新的测试文件 `server/python/tests/ai/unit/components/model/test_provider_manager.py`：
 
@@ -770,12 +770,12 @@ class TestProviderManagerRewrite:
         assert model_name == "default-model"
 ```
 
-- [ ] **步骤 2：运行测试验证失败**
+- [x] **步骤 2：运行测试验证失败**
 
 运行：`cd server/python && uv run pytest tests/ai/unit/components/model/test_provider_manager.py -v`
 预期：FAIL（因为旧代码还有废弃方法）
 
-- [ ] **步骤 3：重写 ProviderManager**
+- [x] **步骤 3：重写 ProviderManager**
 
 完全重写 `server/python/src/ai/components/model/internal/provider_manager.py`（由于篇幅限制，仅展示关键部分，完整实现见规格文档）：
 
@@ -1043,12 +1043,12 @@ class ProviderManager:
         )
 ```
 
-- [ ] **步骤 4：运行测试验证通过**
+- [x] **步骤 4：运行测试验证通过**
 
 运行：`cd server/python && uv run pytest tests/ai/unit/components/model/test_provider_manager.py -v`
 预期：PASS
 
-- [ ] **步骤 5：Commit**
+- [x] **步骤 5：Commit**
 
 ```bash
 git add server/python/src/ai/components/model/internal/provider_manager.py server/python/tests/ai/unit/components/model/test_provider_manager.py
@@ -1067,7 +1067,7 @@ git commit -m "refactor(ai): 重写 ProviderManager
 **文件：**
 - 修改：`server/python/src/ai/components/model/internal/provider_configuration.py`
 
-- [ ] **步骤 1：删除废弃方法**
+- [x] **步骤 1：删除废弃方法**
 
 移除以下方法：
 - `add_or_update_custom_credentials()`
@@ -1077,12 +1077,12 @@ git commit -m "refactor(ai): 重写 ProviderManager
 - `custom_credentials_validate()`
 - `custom_model_credentials_validate()`
 
-- [ ] **步骤 2：验证修改无语法错误**
+- [x] **步骤 2：验证修改无语法错误**
 
 运行：`cd server/python && uv run python -c "from ai.components.model.internal.provider_configuration import ProviderConfiguration; print('OK')"`
 预期：输出 "OK"
 
-- [ ] **步骤 3：Commit**
+- [x] **步骤 3：Commit**
 
 ```bash
 git add server/python/src/ai/components/model/internal/provider_configuration.py
@@ -1096,7 +1096,7 @@ git commit -m "refactor(ai): 清理 ProviderConfiguration 废弃方法"
 **文件：**
 - 修改：`server/python/src/ai/components/model/services/management_service.py`
 
-- [ ] **步骤 1：重构 DefaultModelService**
+- [x] **步骤 1：重构 DefaultModelService**
 
 修改 `server/python/src/ai/components/model/services/management_service.py`：
 
@@ -1154,12 +1154,12 @@ class DefaultModelService:
             await session.commit()
 ```
 
-- [ ] **步骤 2：验证修改无语法错误**
+- [x] **步骤 2：验证修改无语法错误**
 
 运行：`cd server/python && uv run python -c "from ai.components.model.services.management_service import DefaultModelService; print('OK')"`
 预期：输出 "OK"
 
-- [ ] **步骤 3：Commit**
+- [x] **步骤 3：Commit**
 
 ```bash
 git add server/python/src/ai/components/model/services/management_service.py
@@ -1173,7 +1173,7 @@ git commit -m "refactor(ai): 重构 DefaultModelService 基于新表"
 **文件：**
 - 创建：`server/python/tests/ai/integration/test_plugin_default_model_flow.py`
 
-- [ ] **步骤 1：编写集成测试**
+- [x] **步骤 1：编写集成测试**
 
 创建 `server/python/tests/ai/integration/test_plugin_default_model_flow.py`：
 
@@ -1242,12 +1242,12 @@ class TestPluginDefaultModelFlow:
         assert model_name == "qwen-plus"
 ```
 
-- [ ] **步骤 2：运行集成测试**
+- [x] **步骤 2：运行集成测试**
 
 运行：`cd server/python && uv run pytest tests/ai/integration/test_plugin_default_model_flow.py -v`
 预期：PASS
 
-- [ ] **步骤 3：Commit**
+- [x] **步骤 3：Commit**
 
 ```bash
 git add server/python/tests/ai/integration/test_plugin_default_model_flow.py
@@ -1261,7 +1261,7 @@ git commit -m "test(ai): 添加默认模型配置集成测试"
 **文件：**
 - 修改：`server/python/src/ai/components/model/MIGRATION.md`
 
-- [ ] **步骤 1：更新迁移文档**
+- [x] **步骤 1：更新迁移文档**
 
 在 `server/python/src/ai/components/model/MIGRATION.md` 末尾添加：
 
@@ -1308,7 +1308,7 @@ git commit -m "test(ai): 添加默认模型配置集成测试"
 从 `plugin_default_models` 表查询，不再依赖废弃的 `model_tenant_default` 表。
 ```
 
-- [ ] **步骤 2：Commit**
+- [x] **步骤 2：Commit**
 
 ```bash
 git add server/python/src/ai/components/model/MIGRATION.md
@@ -1320,20 +1320,20 @@ git commit -m "docs(ai): 更新 MIGRATION.md 记录 ProviderManager 重写变更
 ## 自检清单
 
 **1. 规格覆盖度：**
-- [ ] 新增 plugin_default_models 表 → 任务 1, 4
-- [ ] PluginDefaultModelService 服务 → 任务 3
-- [ ] ProviderManager 重写 → 任务 6
-- [ ] ProviderConfiguration 重构 → 任务 7
-- [ ] DefaultModelService 重构 → 任务 8
-- [ ] 删除废弃方法 → 任务 6, 7
-- [ ] 移除 TODO 注释 → 任务 6, 7
+- [x] 新增 plugin_default_models 表 → 任务 1, 4
+- [x] PluginDefaultModelService 服务 → 任务 3
+- [x] ProviderManager 重写 → 任务 6
+- [x] ProviderConfiguration 重构 → 任务 7
+- [x] DefaultModelService 重构 → 任务 8
+- [x] 删除废弃方法 → 任务 6, 7
+- [x] 移除 TODO 注释 → 任务 6, 7
 
 **2. 占位符扫描：**
-- [ ] 无 "待定"、"TODO"、"后续实现" 字样
-- [ ] 所有代码步骤都有完整代码块
-- [ ] 所有测试步骤都有完整测试代码
+- [x] 无 "待定"、"TODO"、"后续实现" 字样
+- [x] 所有代码步骤都有完整代码块
+- [x] 所有测试步骤都有完整测试代码
 
 **3. 类型一致性：**
-- [ ] PluginDefaultModel 在所有使用处一致
-- [ ] db_session 参数类型为 `AsyncSession | None`
-- [ ] model_type 使用字符串类型（`llm`, `text-embedding` 等）
+- [x] PluginDefaultModel 在所有使用处一致
+- [x] db_session 参数类型为 `AsyncSession | None`
+- [x] model_type 使用字符串类型（`llm`, `text-embedding` 等）
