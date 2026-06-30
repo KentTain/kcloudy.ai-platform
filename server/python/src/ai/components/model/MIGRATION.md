@@ -187,3 +187,61 @@ Alon 的 LoggingCallback 使用模块级 logger 变量；本项目改为 logger.
 - `ModelProviderFactory` 中的凭证 Schema 验证（`get_provider_schema`、`get_model_schema`）
 
 这些标记将在 AI 模块的数据库模型创建后逐步完成。
+
+## 架构简化（2026-06-30）
+
+### 删除的模型
+
+以下模型已删除，模型定义现在完全来自插件 manifest：
+
+| 模型 | 说明 | 替代方案 |
+|------|------|---------|
+| ModelProvider | 模型提供商配置 | 插件 manifest 的 models_configuration |
+| ModelConfig | 具体模型配置 | 插件 manifest 的 models 列表 |
+
+### 新增字段
+
+| 表 | 字段 | 说明 |
+|----|------|------|
+| plugin_credentials | is_default | 标记是否为插件的默认凭证 |
+
+### 凭证获取流程变更
+
+**旧流程（Alon）：**
+1. 从 model_providers 表查询提供商配置
+2. 从 model_configs 表查询模型配置
+3. 从配置中获取凭证
+
+**新流程（AI Platform）：**
+1. 从插件 manifest 获取模型定义
+2. 从 plugin_credentials 表获取默认凭证（通过 is_default 字段）
+3. 通过 plugin_id 关联插件和凭证
+4. 凭证在 ProviderManager.get_configurations() 中自动注入到 CustomConfiguration
+
+### Session 传递链路
+
+凭证查询需要数据库 Session，通过以下链路传递：
+
+```
+ChatController (Depends(get_db_session))
+  → AlonChatModel(db_session=session)
+    → LLMService.invoke(..., db_session=db_session)
+      → ModelInstanceFactory.get_model_instance(..., db_session=db_session)
+        → ProviderManager.get_configurations(..., db_session=db_session)
+          → _inject_plugin_credentials(session, ...)
+```
+
+### ProviderManager 改造
+
+以下方法已废弃，保留仅为向后兼容：
+
+- `_get_all_providers()` - 模型定义来自插件
+- `_get_all_provider_model_settings()` - 模型设置由插件管理
+- `_get_all_custom_models()` - 自定义模型通过插件扩展
+- `get_default_model_record()` - 默认凭证通过 is_default 管理
+
+新增方法：
+
+- `_inject_plugin_credentials()` - 从 PluginCredential 表注入凭证
+- `_extract_plugin_id_from_provider()` - 从 provider 名称提取 plugin_id
+- `_extract_credentials_schema_from_provider()` - 提取凭证架构用于解密
