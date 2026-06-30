@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock
 import pytest
 import pytest_asyncio
 
-from ai.models.model_config import ModelType
+from ai_plugin.sdk.entities.model import ModelType
 
 
 @pytest.mark.integration

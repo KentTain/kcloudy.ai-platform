@@ -10,7 +10,7 @@ from ai.components.model.errors.error import (
     ProviderNotFoundError,
 )
 from ai.components.model.internal.model_instance_factory import ModelInstanceFactory
-from ai.models.model_config import ModelType
+from ai_plugin.sdk.entities.model import ModelType
 
 
 class TestModelInstanceFactoryInit:

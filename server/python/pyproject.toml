@@ -48,6 +48,8 @@ dependencies = [
   "yarl>=1.9.4,<2.0",
   "docstring_parser~=0.16.0",
   "gevent>=24.0.0",
+  # 模型市场
+  "modelscope>=1.10.0",
 ]
 
 [project.scripts]
