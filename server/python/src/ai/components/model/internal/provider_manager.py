@@ -29,6 +29,7 @@ from ai.components.model.schema.model_entities import (
     DefaultModelEntity,
 )
 from ai.models.plugin import PluginCredential
+from ai.services.credential_service import credential_service
 from ai_plugin.sdk.entities.model import ModelType
 from ai_plugin.sdk.entities.model.provider import (
     CredentialFormSchema,
@@ -586,10 +587,11 @@ class ProviderManager:
             if not plugin_id:
                 continue
 
-            # 从 PluginCredential 表查询凭证
+            # 从 PluginCredential 表查询默认凭证
             stmt = select(PluginCredential).where(
                 PluginCredential.tenant_id == provider_configurations.tenant_id,
                 PluginCredential.plugin_id == plugin_id,
+                PluginCredential.is_default == True,
                 PluginCredential.is_disabled == False,
             )
             result = await session.execute(stmt)
@@ -598,6 +600,9 @@ class ProviderManager:
             if not credentials_list:
                 continue
 
+            # 获取默认凭证
+            credential = credentials_list[0]
+
             # 获取凭证架构
             credentials_schema = self._extract_credentials_schema_from_provider(
                 provider_config.provider
@@ -605,11 +610,23 @@ class ProviderManager:
             if not credentials_schema:
                 continue
 
-            # 注入凭证到 custom_configuration
-            # 注意：这里需要根据实际的 ProviderConfiguration 结构进行调整
-            # 当前实现为示例，实际实现可能需要修改 custom_configuration
+            # 解密凭证
+            decrypted = credential_service.decrypt_credentials(
+                credential.credentials or {},
+                credentials_schema,
+            )
+
+            # 注入凭证到 custom_configuration.provider.credentials
+            if provider_config.custom_configuration.provider is None:
+                provider_config.custom_configuration.provider = CustomProviderConfiguration(
+                    credentials=decrypted
+                )
+            else:
+                provider_config.custom_configuration.provider.credentials = decrypted
+
             _logger.debug(
-                f"为 plugin {plugin_id} 找到 {len(credentials_list)} 个凭证"
+                f"已注入插件凭证 tenant_id={provider_configurations.tenant_id} "
+                f"plugin_id={plugin_id} provider={provider_name}"
             )
 
     def _extract_plugin_id_from_provider(self, provider: str) -> str | None:
