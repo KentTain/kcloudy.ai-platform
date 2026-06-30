@@ -18,11 +18,12 @@ import { useRouter } from "vue-router";
 import { Badge, Button, Card, DataTable, useDataTable } from "@/components";
 import { confirmAction, notifyError, notifySuccess } from "@/framework/utils/feedback";
 import {
+  checkUpdates,
   getMarketplaces,
   deleteMarketplace,
   testMarketplace,
 } from "@/tenant/api/marketplace";
-import type { Marketplace, MarketplaceTestResult } from "@/tenant/types/marketplace";
+import type { Marketplace, MarketplaceTestResult, PluginUpdateInfo } from "@/tenant/types/marketplace";
 
 const router = useRouter();
 
@@ -160,6 +161,16 @@ const columns: ColumnDef<Marketplace>[] = [
           {
             variant: "ghost",
             size: "sm",
+            onClick: () => handleCheckUpdates(marketplace),
+            disabled: !marketplace.is_enabled,
+          },
+          () => [h(RefreshCw, { class: "mr-1 h-3.5 w-3.5" }), "检查更新"]
+        ),
+        h(
+          Button,
+          {
+            variant: "ghost",
+            size: "sm",
             onClick: () => handleTest(marketplace),
             disabled: isTesting,
           },
@@ -223,6 +234,25 @@ const handleTest = async (marketplace: Marketplace) => {
     notifyError(errorMessage);
   } finally {
     testingIds.value.delete(marketplace.id);
+  }
+};
+
+// 检查更新
+const handleCheckUpdates = async (marketplace: Marketplace) => {
+  try {
+    const response = await checkUpdates(marketplace.id);
+    if (response.data) {
+      const updates = response.data.filter(u => u.has_update);
+      if (updates.length === 0) {
+        notifySuccess("所有插件已是最新版本");
+      } else {
+        notifySuccess(`发现 ${updates.length} 个插件有更新`);
+      }
+    }
+  } catch (error: any) {
+    console.error("检查更新失败:", error);
+    const errorMessage = error?.response?.data?.msg || error?.message || "检查更新失败";
+    notifyError(errorMessage);
   }
 };
 

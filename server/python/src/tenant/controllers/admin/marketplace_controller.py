@@ -9,6 +9,9 @@
 - 删除市场配置
 - 测试市场连接
 - 浏览远程插件
+- 同步插件
+- 检查更新
+- 应用更新
 """
 
 from fastapi import APIRouter, Depends
@@ -18,11 +21,16 @@ from framework.common.response import ApiResponse
 from framework.database.dependencies import get_db_session
 from tenant.middlewares.admin_auth_middleware import require_admin_permission
 from tenant.schemas.admin.marketplace import (
+    ApplyUpdateRequest,
+    ApplyUpdateResult,
     MarketplaceCreate,
     MarketplaceResponse,
     MarketplaceTestResponse,
     MarketplaceUpdate,
+    PluginUpdateResponse,
     RemotePluginResponse,
+    SyncPluginsRequest,
+    SyncResultResponse,
 )
 from tenant.services.marketplace import marketplace_gateway
 
@@ -203,5 +211,84 @@ async def list_remote_plugins(
         )
         items = [RemotePluginResponse.from_info(p).model_dump() for p in plugins]
         return ApiResponse.paginated(data=items, total=total, page=page, page_size=page_size)
+    except ValueError as e:
+        return ApiResponse.fail(message=str(e))
+
+
+@router.post("/marketplaces/sync")
+async def sync_plugins(
+    request: SyncPluginsRequest,
+    _perm: None = Depends(require_admin_permission("tenant:marketplace:write")),
+    session: AsyncSession = Depends(get_db_session),
+) -> ApiResponse:
+    """
+    同步选中插件
+
+    场景：平台管理员同步远程市场的插件到本地
+    WHEN 管理员请求 POST /tenant/admin/v1/marketplaces/sync
+    THEN 同步插件并返回同步结果
+    """
+    try:
+        result = await marketplace_gateway.sync_plugins(
+            session=session,
+            marketplace_id=request.marketplace_id,
+            plugins=[p.model_dump() for p in request.plugins],
+        )
+        await session.commit()
+        return ApiResponse.success(data=SyncResultResponse(**result).model_dump())
+    except ValueError as e:
+        return ApiResponse.fail(message=str(e))
+
+
+@router.get("/marketplaces/updates")
+async def check_updates(
+    marketplace_id: str,
+    _perm: None = Depends(require_admin_permission("tenant:marketplace:read")),
+    session: AsyncSession = Depends(get_db_session),
+) -> ApiResponse:
+    """
+    检查插件更新
+
+    场景：平台管理员检查已同步插件的更新
+    WHEN 管理员请求 GET /tenant/admin/v1/marketplaces/updates
+    THEN 返回插件更新列表
+    """
+    try:
+        updates = await marketplace_gateway.check_updates(
+            session=session, marketplace_id=marketplace_id
+        )
+        items = [PluginUpdateResponse(
+            plugin_id=u.plugin_id,
+            current_version=u.current_version,
+            latest_version=u.latest_version,
+            has_update=u.has_update,
+        ).model_dump() for u in updates]
+        return ApiResponse.success(data=items)
+    except ValueError as e:
+        return ApiResponse.fail(message=str(e))
+
+
+@router.post("/marketplaces/updates/{plugin_id}")
+async def apply_update(
+    plugin_id: str,
+    request: ApplyUpdateRequest,
+    _perm: None = Depends(require_admin_permission("tenant:marketplace:write")),
+    session: AsyncSession = Depends(get_db_session),
+) -> ApiResponse:
+    """
+    应用插件更新
+
+    场景：平台管理员为指定插件应用更新
+    WHEN 管理员请求 POST /tenant/admin/v1/marketplaces/updates/{plugin_id}
+    THEN 应用更新并返回更新结果
+    """
+    try:
+        result = await marketplace_gateway.apply_update(
+            session=session,
+            marketplace_id=request.marketplace_id,
+            plugin_id=plugin_id,
+        )
+        await session.commit()
+        return ApiResponse.success(data=ApplyUpdateResult(**result).model_dump())
     except ValueError as e:
         return ApiResponse.fail(message=str(e))
