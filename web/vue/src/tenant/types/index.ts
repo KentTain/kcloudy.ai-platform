@@ -59,8 +59,14 @@ export type {
   MarketplaceUpdate,
   MarketplaceTestResult,
   RemotePlugin,
+  SyncPluginItem,
   SyncPluginsRequest,
-  SyncResult,
+  SyncSuccessItem,
+  SyncFailedItem,
+  SyncSkippedItem,
+  SyncResultResponse,
+  PluginUpdateInfo,
+  ApplyUpdateResult,
 } from "./marketplace";
 
 // 资源配置引用
