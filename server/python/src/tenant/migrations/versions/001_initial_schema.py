@@ -277,6 +277,7 @@ def upgrade() -> None:
     op.create_index("ix_tenant_plugin_marketplaces_code", "plugin_marketplaces", ["code"], schema=MODULE_SCHEMA)
     op.create_index("ix_tenant_plugin_marketplaces_type", "plugin_marketplaces", ["type"], schema=MODULE_SCHEMA)
     op.create_index("ix_tenant_plugin_marketplaces_enabled", "plugin_marketplaces", ["is_enabled"], schema=MODULE_SCHEMA)
+    op.execute("COMMENT ON TABLE tenant.plugin_marketplaces IS '插件市场表'")
 
     op.create_table(
         "plugin_packages",
@@ -296,6 +297,7 @@ def upgrade() -> None:
     )
     op.create_index("ix_tenant_plugin_packages_plugin_id", "plugin_packages", ["plugin_id"], schema=MODULE_SCHEMA)
     op.create_index("ix_tenant_plugin_packages_marketplace", "plugin_packages", ["marketplace_id"], schema=MODULE_SCHEMA)
+    op.execute("COMMENT ON TABLE tenant.plugin_packages IS '插件包表'")
 
     # ==================== 依赖模块的表 ====================
 
