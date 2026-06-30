@@ -1362,7 +1362,7 @@ git commit -m "feat(ai): ProviderManager 实现凭证注入逻辑
 **文件：**
 - 修改：`server/python/src/ai/components/model/MIGRATION.md`
 
-- [ ] **步骤 1：更新 MIGRATION.md 记录变更**
+- [x] **步骤 1：更新 MIGRATION.md 记录变更**
 
 在 `server/python/src/ai/components/model/MIGRATION.md` 末尾添加：
 
@@ -1426,7 +1426,7 @@ ChatController (Depends(get_db_session))
 - `_extract_credentials_schema_from_provider()` - 提取凭证架构用于解密
 ```
 
-- [ ] **步骤 2：Commit**
+- [x] **步骤 2：Commit**
 
 ```bash
 git add server/python/src/ai/components/model/MIGRATION.md
