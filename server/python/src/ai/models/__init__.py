@@ -27,6 +27,7 @@ from .plugin import (
     TaskStatus,
 )
 from .plugin_config import PluginConfig
+from .plugin_default_model import PluginDefaultModel
 from .plugin_runtime_state import PluginRuntimeState
 
 __all__ = [
@@ -43,6 +44,7 @@ __all__ = [
     "CredentialScope",
     # 插件相关
     "PluginConfig",
+    "PluginDefaultModel",
     "PluginInstallTask",
     "PluginCredential",
     "PluginRuntimeState",
