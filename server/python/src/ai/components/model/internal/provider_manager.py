@@ -8,11 +8,6 @@
 使用 Redis 缓存来存储供应商配置，支持分布式环境下的缓存一致性
 """
 
-import json
-import warnings
-from collections import defaultdict
-from json import JSONDecodeError
-
 from loguru import logger
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -20,16 +15,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from ai.components.model.errors import ProviderNotFoundError
 from ai.components.model.internal.entities.provider_entities import (
     CustomConfiguration,
-    CustomModelConfiguration,
     CustomProviderConfiguration,
-    ModelSettings,
 )
-from ai.components.model.internal.helper.encrypter import decrypt_token
 from ai.components.model.internal.model_provider_factory import ModelProviderFactory
-from ai.components.model.schema.model_entities import (
-    DefaultModelEntity,
-)
 from ai.models.plugin import PluginCredential
+from ai.models.plugin_default_model import PluginDefaultModel
 from ai.services.credential_service import credential_service
 from ai_plugin.sdk.entities.model import ModelType
 from ai_plugin.sdk.entities.model.provider import (
@@ -123,7 +113,7 @@ class ProviderManager:
                         return provider_configurations
                     except Exception as deserialize_error:
                         _logger.warning(
-                            f"反序列化缓存数据失败 tenant_id={tenant_id}: {deserialize_error}, 将从数据库加载"
+                            f"反序列化缓存数据失败 tenant_id={tenant_id}: {deserialize_error}, 将从插件加载"
                         )
                 else:
                     _logger.debug(
@@ -131,69 +121,27 @@ class ProviderManager:
                     )
             except Exception as e:
                 _logger.warning(
-                    f"从 Redis 读取缓存失败 tenant_id={tenant_id}: {e}, 将从数据库加载"
+                    f"从 Redis 读取缓存失败 tenant_id={tenant_id}: {e}, 将从插件加载"
                 )
 
-        # 从数据库加载配置
-        _logger.debug(f"从数据库加载配置 tenant_id={tenant_id}")
+        # 从插件 manifest 加载配置
+        _logger.debug(f"从插件 manifest 加载配置 tenant_id={tenant_id}")
 
-        # 获取所有模型供应商记录
-        # TODO: 需要数据库模型支持
-        provider_name_to_provider_records_dict: dict[str, list] = (
-            await self._get_all_providers(tenant_id)
-        )
-
-        # 获取所有模型供应商实体定义
         model_provider_factory = ModelProviderFactory(tenant_id)
         provider_entities = await model_provider_factory.get_providers()
 
-        # 获取所有模型供应商模型设置
-        provider_name_to_provider_model_settings_dict = (
-            await self._get_all_provider_model_settings(tenant_id)
-        )
-
         provider_configurations = ProviderConfigurations(tenant_id=tenant_id)
 
-        # 获取所有模型供应商模型记录
-        provider_name_to_provider_model_records_dict = (
-            await self._get_all_custom_models(tenant_id)
-        )
-
-        # 构造每个模型供应商的配置对象
+        # 构造每个供应商的配置对象
         for provider_entity in provider_entities:
-            provider_name = provider_entity.provider
-            provider_records = provider_name_to_provider_records_dict.get(
-                provider_entity.provider, []
-            )
+            # 创建空的自定义配置
+            custom_configuration = CustomConfiguration(provider=None, models=[])
 
-            custom_model_records = provider_name_to_provider_model_records_dict.get(
-                provider_entity.provider, []
-            )
-
-            # 转换自定义配置
-            custom_configuration = await self._to_custom_configuration(
-                tenant_id,
-                provider_entity,
-                provider_records,
-                custom_model_records,
-            )
-
-            # 获取模型供应商模型设置
-            provider_model_settings = provider_name_to_provider_model_settings_dict.get(
-                provider_name
-            )
-
-            # 转换模型设置
-            model_settings = self._to_model_settings(
-                provider_entity=provider_entity,
-                provider_model_settings=provider_model_settings,
-            )
-
-            # 构造模型供应商配置对象
+            # 构造供应商配置对象
             provider_configuration = ProviderConfiguration(
                 provider=provider_entity,
                 custom_configuration=custom_configuration,
-                model_settings=model_settings,
+                model_settings=[],
                 tenant_id=tenant_id,
             )
 
@@ -253,46 +201,6 @@ class ProviderManager:
             model_type_instance=model_type_instance,
         )
 
-    @staticmethod
-    async def _get_all_custom_models(tenant_id: str) -> dict[str, list]:
-        """
-        获取所有自定义模型记录
-
-        .. deprecated::
-            此方法已废弃，自定义模型现在通过插件扩展。
-            保留方法签名以保持向后兼容，始终返回空字典。
-
-        :param tenant_id: 租户 ID
-        :return: 空字典
-        """
-        warnings.warn(
-            "_get_all_custom_models() is deprecated: custom models are now managed via plugins",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return defaultdict(list)
-
-    async def get_default_model(
-        self, tenant_id: str, model_type: ModelType
-    ) -> DefaultModelEntity | None:
-        """
-        获取指定模型类型的默认模型
-
-        .. deprecated::
-            此方法已废弃，默认模型现在通过 plugin_credentials.is_default 管理。
-            保留方法签名以保持向后兼容，始终返回 None。
-
-        :param tenant_id: 租户 ID
-        :param model_type: 模型类型
-        :return: None
-        """
-        warnings.warn(
-            "get_default_model() is deprecated: default models are now managed via plugin_credentials.is_default",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return None
-
     async def get_default_provider_model_name(
         self,
         tenant_id: str,
@@ -304,13 +212,24 @@ class ProviderManager:
 
         :param tenant_id: 租户 ID
         :param model_type: 模型类型
-        :param db_session: 数据库会话（可选，用于凭证注入）
-        :return: (供应商名称, 模型名称) 元组
+        :param db_session: 数据库会话（可选，用于查询默认模型）
+        :return: (供应商名称/plugin_id, 模型名称) 元组
         """
-        # 首先尝试获取已配置的默认模型
-        default_model = await self.get_default_model(tenant_id, model_type)
-        if default_model:
-            return default_model.provider.provider, default_model.model
+        # 从 plugin_default_models 表查询默认模型
+        if db_session:
+            default_model = await PluginDefaultModel.one_by_conditions(
+                db_session,
+                conditions=[
+                    PluginDefaultModel.tenant_id == tenant_id,
+                    PluginDefaultModel.model_type == model_type.value,
+                    PluginDefaultModel.is_valid == True,
+                ],
+            )
+            if default_model:
+                # 优先返回 model_name，如果没有则返回 custom_model_name
+                model_name = default_model.model_name or default_model.custom_model_name
+                if model_name:
+                    return default_model.plugin_id, model_name
 
         # 如果没有配置默认模型，则获取第一个可用的模型
         return await self._get_first_provider_first_model(tenant_id, model_type, db_session)
@@ -339,220 +258,6 @@ class ProviderManager:
 
         first_model = models[0]
         return first_model.provider.provider, first_model.model
-
-    async def update_default_model_record(
-        self,
-        tenant_id: str,
-        model_type: ModelType,
-        provider: str,
-        model: str,
-    ):
-        """
-        更新默认模型记录
-
-        .. deprecated::
-            此方法已废弃，默认模型现在通过 plugin_credentials.is_default 管理。
-            保留方法签名以保持向后兼容，不再执行任何操作。
-
-        :param tenant_id: 租户 ID
-        :param model_type: 模型类型
-        :param provider: 供应商名称
-        :param model: 模型名称
-        """
-        warnings.warn(
-            "update_default_model_record() is deprecated: default models are now managed via plugin_credentials.is_default",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-
-    async def _get_all_providers(self, tenant_id: str) -> dict[str, list]:
-        """
-        获取所有模型供应商记录
-
-        .. deprecated::
-            此方法已废弃，模型定义现在来自插件 manifest。
-            保留方法签名以保持向后兼容，始终返回空字典。
-
-        :param tenant_id: 租户 ID
-        :return: 空字典
-        """
-        warnings.warn(
-            "_get_all_providers() is deprecated: model definitions are now from plugin manifests",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return defaultdict(list)
-
-    async def _get_all_provider_model_settings(
-        self, tenant_id: str
-    ) -> dict[str, list]:
-        """
-        获取所有模型供应商模型设置
-
-        .. deprecated::
-            此方法已废弃，模型设置现在由插件管理。
-            保留方法签名以保持向后兼容，始终返回空字典。
-
-        :param tenant_id: 租户 ID
-        :return: 空字典
-        """
-        warnings.warn(
-            "_get_all_provider_model_settings() is deprecated: model settings are now managed by plugins",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return defaultdict(list)
-
-    async def _to_custom_configuration(
-        self,
-        tenant_id: str,
-        provider_entity: ProviderEntity,
-        provider_records: list,
-        custom_model_records: list,
-    ) -> CustomConfiguration:
-        """
-        转换为自定义配置对象
-
-        :param tenant_id: 租户 ID
-        :param provider_entity: 供应商实体
-        :param provider_records: 供应商记录列表
-        :param custom_model_records: 自定义模型记录列表
-        :return: 自定义配置对象
-        """
-        # 获取有效的供应商配置记录
-        provider_record = None
-        # TODO: 需要数据库模型支持
-        # for record in provider_records:
-        #     if record.provider_type == ProviderType.CUSTOM and record.is_valid:
-        #         provider_record = record
-        #         break
-
-        provider = None
-
-        if provider_record:
-            # 处理供应商凭证解密
-            if provider_entity.provider_credential_schema:
-                # 获取供应商凭证中的敏感变量
-                credential_secret_variables = self._extract_secret_variables(
-                    provider_entity.provider_credential_schema.credential_form_schemas,
-                )
-
-                # 解密供应商凭证
-                provider_credentials = {}
-                try:
-                    provider_credentials = (
-                        json.loads(provider_record.encrypted_config)
-                        if provider_record.encrypted_config
-                        else {}
-                    )
-                except JSONDecodeError:
-                    provider_credentials = {}
-
-                # 解密供应商凭证
-                for key in credential_secret_variables:
-                    if key in provider_credentials:
-                        provider_credentials[key] = decrypt_token(
-                            tenant_id, provider_credentials[key]
-                        )
-
-            # 创建自定义供应商配置
-            provider = CustomProviderConfiguration(credentials=provider_credentials)
-
-        # 获取模型凭证敏感变量
-        model_credential_secret_variables = self._extract_secret_variables(
-            provider_entity.model_credential_schema.credential_form_schemas
-            if provider_entity.model_credential_schema
-            else [],
-        )
-
-        # 获取自定义模型配置
-        custom_model_configurations = []
-        for custom_model_record in custom_model_records:
-            if not custom_model_record.encrypted_config:
-                continue
-
-            try:
-                provider_model_credentials = json.loads(
-                    custom_model_record.encrypted_config
-                )
-            except JSONDecodeError:
-                continue
-
-            # 解密模型凭证
-            for variable in model_credential_secret_variables:
-                if variable in provider_model_credentials:
-                    try:
-                        provider_model_credentials[variable] = decrypt_token(
-                            provider_model_credentials.get(variable)
-                        )
-                    except ValueError:
-                        pass
-
-            custom_model_configurations.append(
-                CustomModelConfiguration(
-                    model=custom_model_record.model_name,
-                    model_type=custom_model_record.model_type,
-                    credentials=provider_model_credentials,
-                ),
-            )
-
-        return CustomConfiguration(
-            provider=provider, models=custom_model_configurations
-        )
-
-    @staticmethod
-    def _extract_secret_variables(
-        credential_form_schemas: list[CredentialFormSchema],
-    ) -> list[str]:
-        """
-        提取敏感输入表单变量
-
-        :param credential_form_schemas: 凭证表单架构列表
-        :return: 敏感变量名称列表
-        """
-        secret_input_form_variables = []
-        for credential_form_schema in credential_form_schemas:
-            if credential_form_schema.type == FormType.SECRET_INPUT:
-                secret_input_form_variables.append(credential_form_schema.variable)
-
-        return secret_input_form_variables
-
-    def _to_model_settings(
-        self,
-        provider_entity: ProviderEntity,
-        provider_model_settings: list | None = None,
-    ) -> list[ModelSettings]:
-        """
-        转换为模型设置列表
-
-        :param provider_entity: 供应商实体
-        :param provider_model_settings: 供应商模型设置列表（可选）
-        :return: 模型设置列表
-        """
-        model_settings = []
-
-        if not provider_model_settings:
-            return model_settings
-
-        # 按模型类型和模型名称分组模型设置
-        model_setting_map: dict[ModelType, dict] = defaultdict(dict)
-        # TODO: 需要数据库模型支持
-        # for model_setting in provider_model_settings:
-        #     model_type = model_setting.model_type
-        #     model_setting_map[model_type][model_setting.model_name] = model_setting
-
-        # 创建模型设置对象
-        for model_type, model_setting_dict in model_setting_map.items():
-            for model, model_setting in model_setting_dict.items():
-                model_settings.append(
-                    ModelSettings(
-                        model=model,
-                        model_type=model_type,
-                        enabled=model_setting.enabled,
-                    ),
-                )
-
-        return model_settings
 
     async def _inject_plugin_credentials(
         self,
@@ -685,3 +390,20 @@ class ProviderManager:
             result.append(item)
 
         return result
+
+    @staticmethod
+    def _extract_secret_variables(
+        credential_form_schemas: list[CredentialFormSchema],
+    ) -> list[str]:
+        """
+        提取敏感输入表单变量
+
+        :param credential_form_schemas: 凭证表单架构列表
+        :return: 敏感变量名称列表
+        """
+        secret_input_form_variables = []
+        for credential_form_schema in credential_form_schemas:
+            if credential_form_schema.type == FormType.SECRET_INPUT:
+                secret_input_form_variables.append(credential_form_schema.variable)
+
+        return secret_input_form_variables

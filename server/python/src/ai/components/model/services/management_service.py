@@ -56,14 +56,6 @@ class ManagementService:
         """
         return ProviderService(self._provider_manager, self._tenant_id)
 
-    def default_models(self) -> DefaultModelService:
-        """
-        获取默认模型管理器
-
-        :return: 默认模型管理器
-        """
-        return DefaultModelService(self._provider_manager, self._tenant_id)
-
 
 class ModelService:
     """模型管理器"""
@@ -167,39 +159,3 @@ class ProviderService:
         :return: 供应商配置对象
         """
         return await self._provider_manager.get_configurations(self._tenant_id)
-
-
-class DefaultModelService:
-    """默认模型管理器"""
-
-    def __init__(self, provider_manager: ProviderManager, tenant_id: str):
-        self._provider_manager = provider_manager
-        self._tenant_id = tenant_id
-
-    async def get_default_model(self, model_type: ModelType):
-        """
-        获取默认模型信息
-
-        :param model_type: 模型类型
-        :return: 默认模型信息
-        """
-        return await self._provider_manager.get_default_model(
-            tenant_id=self._tenant_id, model_type=model_type
-        )
-
-    async def update_default_model(
-        self, model_type: ModelType, provider: str, model: str
-    ) -> None:
-        """
-        更新默认模型
-
-        :param model_type: 模型类型
-        :param provider: 供应商名称
-        :param model: 模型名称
-        """
-        await self._provider_manager.update_default_model_record(
-            tenant_id=self._tenant_id,
-            model_type=model_type,
-            provider=provider,
-            model=model,
-        )

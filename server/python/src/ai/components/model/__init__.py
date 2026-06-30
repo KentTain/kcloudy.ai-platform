@@ -8,7 +8,6 @@ from ai.components.model.internal.model_instance_factory import (
 )
 from ai.components.model.services import (
     BaseModelService,
-    DefaultModelService,
     EmbeddingService,
     LLMService,
     ManagementService,
@@ -23,7 +22,6 @@ __all__ = [
     "ModelInstanceFactory",
     # Services
     "BaseModelService",
-    "DefaultModelService",
     "EmbeddingService",
     "LLMService",
     "ManagementService",
