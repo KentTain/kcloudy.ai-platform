@@ -119,7 +119,7 @@ class TenantPluginDefinition(BaseModel, AuditMixin, ActiveRecordMixin):
         String(16),
         nullable=False,
         default="local",
-        server_default="local",
+        server_default=sa.text("'local'"),
         comment="来源类型：local, remote",
     )
 

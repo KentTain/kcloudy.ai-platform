@@ -2,7 +2,7 @@
 
 from datetime import datetime
 
-from sqlalchemy import Boolean, String, Text
+from sqlalchemy import Boolean, DateTime, String, Text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -72,6 +72,7 @@ class TenantPluginMarketplace(BaseModel, AuditMixin, ActiveRecordMixin):
         comment="同步配置",
     )
     last_sync_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
         comment="最后同步时间",
     )
     last_sync_status: Mapped[str | None] = mapped_column(
