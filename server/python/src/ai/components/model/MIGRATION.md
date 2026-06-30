@@ -233,12 +233,15 @@ ChatController (Depends(get_db_session))
 
 ### ProviderManager 改造
 
-以下方法已废弃，保留仅为向后兼容：
+以下方法已删除（功能已迁移至插件系统）：
 
-- `_get_all_providers()` - 模型定义来自插件
-- `_get_all_provider_model_settings()` - 模型设置由插件管理
-- `_get_all_custom_models()` - 自定义模型通过插件扩展
-- `get_default_model_record()` - 默认凭证通过 is_default 管理
+- `_get_all_providers()` - 模型定义现在来自插件 manifest
+- `_get_all_provider_model_settings()` - 模型设置现在由插件管理
+- `_get_all_custom_models()` - 自定义模型现在通过插件扩展
+- `get_default_model()` - 默认模型现在通过 `PluginDefaultModelService` 管理
+- `update_default_model_record()` - 默认模型现在通过 `PluginDefaultModelService.set_default_model()` 管理
+- `_to_custom_configuration()` - 不再需要，配置直接从插件加载
+- `_to_model_settings()` - 不再需要，设置由插件管理
 
 新增方法：
 
