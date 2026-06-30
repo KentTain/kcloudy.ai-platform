@@ -219,8 +219,8 @@ class PluginCredential(
 ):
     """插件凭证（全局多凭证池，预留个人维度）
 
-    注意：默认全局凭证仍存放在 PluginInstallation.runtime_config.credentials 中，本表不维护默认。
-    节点选择扩展凭证时需要显式指定 credential_id。
+    支持为每个插件维护多个凭证，通过 is_default 字段标识默认凭证。
+    节点选择凭证时，优先使用显式指定的 credential_id，否则使用默认凭证。
     """
 
     __tablename__ = "plugin_credentials"
