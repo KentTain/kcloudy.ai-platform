@@ -9,6 +9,7 @@
 """
 
 import json
+import warnings
 from collections import defaultdict
 from json import JSONDecodeError
 
@@ -257,22 +258,18 @@ class ProviderManager:
         """
         获取所有自定义模型记录
 
+        .. deprecated::
+            此方法已废弃，自定义模型现在通过插件扩展。
+            保留方法签名以保持向后兼容，始终返回空字典。
+
         :param tenant_id: 租户 ID
-        :return: 按供应商名称分组的自定义模型记录
+        :return: 空字典
         """
-        # TODO: 需要数据库模型支持
-        # async with async_session() as session:
-        #     stmt = select(ModelCustom).where(
-        #         ModelCustom.tenant_id == tenant_id, ModelCustom.is_valid == True
-        #     )
-        #     result = await session.execute(stmt)
-        #     custom_models = result.scalars().all()
-        #
-        #     custom_model_records = defaultdict(list)
-        #     for custom_model in custom_models:
-        #         custom_model_records[custom_model.provider_name].append(custom_model)
-        #
-        # return custom_model_records
+        warnings.warn(
+            "_get_all_custom_models() is deprecated: custom models are now managed via plugins",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return defaultdict(list)
 
     async def get_default_model(
@@ -281,23 +278,19 @@ class ProviderManager:
         """
         获取指定模型类型的默认模型
 
+        .. deprecated::
+            此方法已废弃，默认模型现在通过 plugin_credentials.is_default 管理。
+            保留方法签名以保持向后兼容，始终返回 None。
+
         :param tenant_id: 租户 ID
         :param model_type: 模型类型
-        :return: 默认模型实体（可能为 None）
+        :return: None
         """
-        # TODO: 需要数据库模型支持
-        # async with async_session() as session:
-        #     stmt = select(ModelTenantDefault).where(
-        #         ModelTenantDefault.tenant_id == tenant_id,
-        #         ModelTenantDefault.model_type == model_type,
-        #     )
-        #     result = await session.execute(stmt)
-        #     default_model_record = result.scalar_one_or_none()
-        #
-        #     if not default_model_record:
-        #         return None
-        #
-        #     ...
+        warnings.warn(
+            "get_default_model() is deprecated: default models are now managed via plugin_credentials.is_default",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return None
 
     async def get_default_provider_model_name(
@@ -357,36 +350,37 @@ class ProviderManager:
         """
         更新默认模型记录
 
+        .. deprecated::
+            此方法已废弃，默认模型现在通过 plugin_credentials.is_default 管理。
+            保留方法签名以保持向后兼容，不再执行任何操作。
+
         :param tenant_id: 租户 ID
         :param model_type: 模型类型
         :param provider: 供应商名称
         :param model: 模型名称
-        :return: 更新后的默认模型记录
         """
-        # TODO: 需要数据库模型支持
-        pass
+        warnings.warn(
+            "update_default_model_record() is deprecated: default models are now managed via plugin_credentials.is_default",
+            DeprecationWarning,
+            stacklevel=2,
+        )
 
     async def _get_all_providers(self, tenant_id: str) -> dict[str, list]:
         """
         获取所有模型供应商记录
 
+        .. deprecated::
+            此方法已废弃，模型定义现在来自插件 manifest。
+            保留方法签名以保持向后兼容，始终返回空字典。
+
         :param tenant_id: 租户 ID
-        :return: 按供应商名称分组的供应商记录字典
+        :return: 空字典
         """
-        # TODO: 需要数据库模型支持
-        # async with async_session() as session:
-        #     stmt = select(ModelProvider).where(ModelProvider.tenant_id == tenant_id)
-        #     result = await session.execute(stmt)
-        #     providers = result.scalars().all()
-        #
-        # # 按供应商名称分组
-        # provider_name_to_provider_records_dict = defaultdict(list)
-        # for provider in providers:
-        #     provider_name_to_provider_records_dict[provider.provider_name].append(
-        #         provider
-        #     )
-        #
-        # return dict(provider_name_to_provider_records_dict)
+        warnings.warn(
+            "_get_all_providers() is deprecated: model definitions are now from plugin manifests",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return defaultdict(list)
 
     async def _get_all_provider_model_settings(
@@ -395,25 +389,18 @@ class ProviderManager:
         """
         获取所有模型供应商模型设置
 
+        .. deprecated::
+            此方法已废弃，模型设置现在由插件管理。
+            保留方法签名以保持向后兼容，始终返回空字典。
+
         :param tenant_id: 租户 ID
-        :return: 按供应商名称分组的模型设置字典
+        :return: 空字典
         """
-        # TODO: 需要数据库模型支持
-        # async with async_session() as session:
-        #     stmt = select(ModelSetting).where(ModelSetting.tenant_id == tenant_id)
-        #     result = await session.execute(stmt)
-        #     provider_model_settings = result.scalars().all()
-        #
-        # # 按供应商名称分组
-        # provider_name_to_provider_model_settings_dict = defaultdict(list)
-        # for provider_model_setting in provider_model_settings:
-        #     provider_name_to_provider_model_settings_dict[
-        #         provider_model_setting.provider_name
-        #     ].append(
-        #         provider_model_setting,
-        #     )
-        #
-        # return dict(provider_name_to_provider_model_settings_dict)
+        warnings.warn(
+            "_get_all_provider_model_settings() is deprecated: model settings are now managed by plugins",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return defaultdict(list)
 
     async def _to_custom_configuration(
