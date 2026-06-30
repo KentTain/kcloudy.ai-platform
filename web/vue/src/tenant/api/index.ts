@@ -2,6 +2,7 @@
  * Tenant 模块 API 聚合导出
  */
 
+export * from "./marketplace";
 export * from "./module";
 export * from "./resourceConfig";
 export * from "./tenant";

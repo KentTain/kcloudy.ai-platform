@@ -52,6 +52,17 @@ export type {
   AssignModuleParams,
 } from "./admin";
 
+// 导出插件市场类型
+export type {
+  Marketplace,
+  MarketplaceCreate,
+  MarketplaceUpdate,
+  MarketplaceTestResult,
+  RemotePlugin,
+  SyncPluginsRequest,
+  SyncResult,
+} from "./marketplace";
+
 // 资源配置引用
 export interface ResourceConfigReference {
   id: string;
