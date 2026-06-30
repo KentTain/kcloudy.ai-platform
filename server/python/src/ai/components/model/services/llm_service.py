@@ -12,6 +12,8 @@ from collections.abc import AsyncGenerator, Sequence
 from typing import Any
 from weakref import WeakValueDictionary
 
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from ai.components.model.callbacks.base_callback import Callback
 from ai.components.model.internal.model_instance_factory import (
     ModelInstance,
@@ -80,6 +82,7 @@ class LLMService(BaseModelService):
         stop: Sequence[str] | None = None,
         user: str | None = None,
         callbacks: list[Callback] | None = None,
+        db_session: AsyncSession | None = None,
     ) -> LLMResult:
         """
         非流式 LLM 调用
@@ -92,6 +95,7 @@ class LLMService(BaseModelService):
         :param stop: 停止词
         :param user: 用户 ID
         :param callbacks: 回调函数列表
+        :param db_session: 数据库会话（可选，用于凭证查询）
         :return: LLM 调用结果
         :raises ValueError: 未配置默认供应商
         :raises Exception: 模型返回结果类型错误
@@ -104,6 +108,7 @@ class LLMService(BaseModelService):
             provider,
             model_type=ModelType.LLM,
             model=model,
+            db_session=db_session,
         )
 
         result = model_instance.invoke_llm(
@@ -132,6 +137,7 @@ class LLMService(BaseModelService):
         stop: Sequence[str] | None = None,
         user: str | None = None,
         callbacks: list[Callback] | None = None,
+        db_session: AsyncSession | None = None,
     ) -> AsyncGenerator[LLMResultChunk, None]:
         """
         流式 LLM 调用
@@ -144,6 +150,7 @@ class LLMService(BaseModelService):
         :param stop: 停止词
         :param user: 用户 ID
         :param callbacks: 回调函数列表
+        :param db_session: 数据库会话（可选，用于凭证查询）
         :return: 异步生成器，流式返回 LLMResultChunk
         :raises ValueError: 未配置默认供应商
         """
@@ -155,6 +162,7 @@ class LLMService(BaseModelService):
             provider,
             model_type=ModelType.LLM,
             model=model,
+            db_session=db_session,
         )
 
         async for chunk in model_instance.invoke_llm(
@@ -175,6 +183,7 @@ class LLMService(BaseModelService):
         model: str | None = None,
         provider: str | None = None,
         tools: Sequence[PromptMessageTool] | None = None,
+        db_session: AsyncSession | None = None,
     ) -> int:
         """
         计算 token 数量
@@ -183,6 +192,7 @@ class LLMService(BaseModelService):
         :param model: 模型名称（可选，不指定则使用默认模型）
         :param provider: 供应商名称（可选，不指定则使用默认供应商）
         :param tools: 工具调用
+        :param db_session: 数据库会话（可选，用于凭证查询）
         :return: token 数量
         :raises ValueError: 未配置默认供应商
         """
@@ -194,6 +204,7 @@ class LLMService(BaseModelService):
             provider,
             model_type=ModelType.LLM,
             model=model,
+            db_session=db_session,
         )
 
         return await model_instance.get_llm_num_tokens(prompt_messages, tools)
