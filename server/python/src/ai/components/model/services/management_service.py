@@ -11,6 +11,8 @@ from __future__ import annotations
 from loguru import logger
 
 from ai.components.model.internal.provider_manager import ProviderManager
+from ai.models.plugin_default_model import PluginDefaultModel
+from ai.services.plugin_default_model_service import plugin_default_model_service
 from ai_plugin.sdk.entities.model import ModelType
 
 _logger = logger.bind(name=__name__)
@@ -55,6 +57,14 @@ class ManagementService:
         :return: 供应商管理器
         """
         return ProviderService(self._provider_manager, self._tenant_id)
+
+    def default_models(self) -> DefaultModelService:
+        """
+        获取默认模型管理器
+
+        :return: 默认模型管理器
+        """
+        return DefaultModelService(self._tenant_id)
 
 
 class ModelService:
@@ -159,3 +169,57 @@ class ProviderService:
         :return: 供应商配置对象
         """
         return await self._provider_manager.get_configurations(self._tenant_id)
+
+
+class DefaultModelService:
+    """默认模型管理器（重构版）"""
+
+    def __init__(self, tenant_id: str):
+        self._tenant_id = tenant_id
+        self._service = plugin_default_model_service
+
+    async def get_default_model(self, model_type: ModelType) -> PluginDefaultModel | None:
+        """获取默认模型"""
+        from framework.database.dependencies import get_db_session
+
+        async with get_db_session() as session:
+            return await self._service.get_default_model(
+                session, self._tenant_id, model_type.value
+            )
+
+    async def set_default_model(
+        self,
+        model_type: ModelType,
+        plugin_id: str,
+        model_name: str | None = None,
+        credential_id: str | None = None,
+        custom_base_url: str | None = None,
+        custom_model_name: str | None = None,
+    ) -> PluginDefaultModel:
+        """设置默认模型"""
+        from framework.database.dependencies import get_db_session
+
+        async with get_db_session() as session:
+            result = await self._service.set_default_model(
+                session,
+                tenant_id=self._tenant_id,
+                model_type=model_type.value,
+                plugin_id=plugin_id,
+                model_name=model_name,
+                credential_id=credential_id,
+                custom_base_url=custom_base_url,
+                custom_model_name=custom_model_name,
+            )
+            await session.commit()
+            return result
+
+    async def clear_default_model(self, model_type: ModelType) -> None:
+        """清除默认模型"""
+        from framework.database.dependencies import get_db_session
+
+        async with get_db_session() as session:
+            await self._service.clear_default_model(
+                session, self._tenant_id, model_type.value
+            )
+            await session.commit()
+
