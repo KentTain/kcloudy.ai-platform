@@ -14,7 +14,7 @@
 ### 1.2 目标
 
 1. **完全重写 ProviderManager**：移除所有废弃代码和 TODO 注释
-2. **新增 tenant_default_models 表**：支持租户级别的默认模型配置
+2. **新增 plugin_default_models 表**：支持租户级别的默认模型配置
 3. **重构 DefaultModelService**：基于新数据模型实现默认模型管理
 4. **清理 ProviderConfiguration**：移除冗余的凭证管理方法
 
@@ -23,7 +23,7 @@
 | 包含 | 不包含 |
 |------|--------|
 | 重写 ProviderManager | 插件安装流程改造 |
-| 新增 tenant_default_models 表 | 前端配置页面改造 |
+| 新增 plugin_default_models 表 | 前端配置页面改造 |
 | 重构 DefaultModelService | 插件 manifest 格式变更 |
 | 清理 ProviderConfiguration | 新增 REST API（使用现有 inner 接口） |
 | 支持自定义模型（openai-api-compatible） | 多租户隔离逻辑变更 |
@@ -32,12 +32,12 @@
 
 ## 2. 数据模型设计
 
-### 2.1 新增表：tenant_default_models
+### 2.1 新增表：plugin_default_models
 
 统一管理租户的默认模型配置，支持标准模型和自定义模型。
 
 ```sql
-CREATE TABLE ai.tenant_default_models (
+CREATE TABLE ai.plugin_default_models (
     -- 主键
     id VARCHAR(36) PRIMARY KEY,
     
@@ -68,8 +68,8 @@ CREATE TABLE ai.tenant_default_models (
 );
 
 -- 索引
-CREATE INDEX ix_tenant_default_models_plugin_id ON ai.tenant_default_models(plugin_id);
-CREATE INDEX ix_tenant_default_models_credential_id ON ai.tenant_default_models(credential_id);
+CREATE INDEX ix_plugin_default_models_plugin_id ON ai.plugin_default_models(plugin_id);
+CREATE INDEX ix_plugin_default_models_credential_id ON ai.plugin_default_models(credential_id);
 ```
 
 ### 2.2 字段使用场景
@@ -85,14 +85,14 @@ CREATE INDEX ix_tenant_default_models_credential_id ON ai.tenant_default_models(
 ### 2.3 数据模型类
 
 ```python
-# server/python/src/ai/models/tenant_default_model.py
+# server/python/src/ai/models/plugin_default_model.py
 
-class TenantDefaultModel(BaseModel, AuditMixin, ActiveRecordMixin, TenantMixin):
+class PluginDefaultModel(BaseModel, AuditMixin, ActiveRecordMixin, TenantMixin):
     """租户默认模型配置"""
     
-    __tablename__ = "tenant_default_models"
+    __tablename__ = "plugin_default_models"
     __table_args__ = (
-        UniqueConstraint("tenant_id", "model_type", name="uq_tenant_default_models_tenant_type"),
+        UniqueConstraint("tenant_id", "model_type", name="uq_plugin_default_models_tenant_type"),
     )
     
     # 模型类型
@@ -153,8 +153,8 @@ class TenantDefaultModel(BaseModel, AuditMixin, ActiveRecordMixin, TenantMixin):
 | 方法 | 删除原因 |
 |------|---------|
 | `_get_all_custom_models()` | 已废弃，返回空字典，模型定义来自插件 manifest |
-| `get_default_model()` | 已废弃，返回 None，默认模型从 `tenant_default_models` 查询 |
-| `update_default_model_record()` | 已废弃，空操作，默认模型通过 `TenantDefaultModelService` 管理 |
+| `get_default_model()` | 已废弃，返回 None，默认模型从 `plugin_default_models` 查询 |
+| `update_default_model_record()` | 已废弃，空操作，默认模型通过 `PluginDefaultModelService` 管理 |
 | `_get_all_providers()` | 已废弃，返回空字典，供应商定义来自插件 manifest |
 | `_get_all_provider_model_settings()` | 已废弃，返回空字典，模型设置来自插件 manifest |
 
@@ -196,13 +196,13 @@ async def get_default_provider_model_name(self, tenant_id, model_type, db_sessio
 **新实现**：
 ```python
 async def get_default_provider_model_name(self, tenant_id, model_type, db_session):
-    # 从 tenant_default_models 表查询
-    default_model = await TenantDefaultModel.one_by_conditions(
+    # 从 plugin_default_models 表查询
+    default_model = await PluginDefaultModel.one_by_conditions(
         db_session,
         conditions=[
-            TenantDefaultModel.tenant_id == tenant_id,
-            TenantDefaultModel.model_type == model_type,
-            TenantDefaultModel.is_valid == True,
+            PluginDefaultModel.tenant_id == tenant_id,
+            PluginDefaultModel.model_type == model_type,
+            PluginDefaultModel.is_valid == True,
         ],
     )
     
@@ -223,8 +223,8 @@ async def get_default_provider_model_name(self, tenant_id, model_type, db_sessio
 
 | 方法 | 说明 |
 |------|------|
-| `_get_default_model_from_db()` | 从 `tenant_default_models` 表查询默认模型 |
-| `_build_provider_name()` | 根据 `TenantDefaultModel` 构造完整的 provider 名称 |
+| `_get_default_model_from_db()` | 从 `plugin_default_models` 表查询默认模型 |
+| `_build_provider_name()` | 根据 `PluginDefaultModel` 构造完整的 provider 名称 |
 
 ---
 
@@ -285,16 +285,16 @@ async def custom_credentials_validate(self, credentials: dict) -> dict:
 ### 5.1 新的服务类
 
 ```python
-# server/python/src/ai/services/tenant_default_model_service.py
+# server/python/src/ai/services/plugin_default_model_service.py
 
-class TenantDefaultModelService:
+class PluginDefaultModelService:
     """租户默认模型服务"""
     
     async def get_default_model(
         self, 
         session: AsyncSession, 
         model_type: ModelType
-    ) -> TenantDefaultModel | None:
+    ) -> PluginDefaultModel | None:
         """
         获取默认模型
         
@@ -312,7 +312,7 @@ class TenantDefaultModelService:
         credential_id: str | None = None,     # 自定义模型
         custom_base_url: str | None = None,   # 自定义模型
         custom_model_name: str | None = None, # 自定义模型
-    ) -> TenantDefaultModel:
+    ) -> PluginDefaultModel:
         """
         设置默认模型（upsert）
         
@@ -349,9 +349,9 @@ class DefaultModelService:
     
     def __init__(self, tenant_id: str):
         self._tenant_id = tenant_id
-        self._service = TenantDefaultModelService()
+        self._service = PluginDefaultModelService()
     
-    async def get_default_model(self, model_type: ModelType) -> TenantDefaultModel | None:
+    async def get_default_model(self, model_type: ModelType) -> PluginDefaultModel | None:
         """获取默认模型"""
         async with get_db_session() as session:
             return await self._service.get_default_model(session, model_type)
@@ -364,7 +364,7 @@ class DefaultModelService:
         credential_id: str | None = None,
         custom_base_url: str | None = None,
         custom_model_name: str | None = None,
-    ) -> TenantDefaultModel:
+    ) -> PluginDefaultModel:
         """设置默认模型"""
         async with get_db_session() as session:
             result = await self._service.set_default_model(
@@ -421,7 +421,7 @@ class DefaultModelService:
                                     ▼
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │ 1. 查询默认模型配置                                                          │
-│    SELECT * FROM ai.tenant_default_models                                   │
+│    SELECT * FROM ai.plugin_default_models                                   │
 │    WHERE tenant_id = ? AND model_type = 'llm' AND is_valid = true          │
 └─────────────────────────────────────────────────────────────────────────────┘
                                     │
@@ -473,9 +473,9 @@ class DefaultModelService:
 
 | 测试文件 | 测试内容 |
 |---------|---------|
-| `test_tenant_default_model.py` | 模型 CRUD、唯一约束、字段验证 |
+| `test_plugin_default_model.py` | 模型 CRUD、唯一约束、字段验证 |
 | `test_provider_manager.py` | get_configurations、get_default_provider_model_name |
-| `test_tenant_default_model_service.py` | 服务层 CRUD、upsert 逻辑 |
+| `test_plugin_default_model_service.py` | 服务层 CRUD、upsert 逻辑 |
 | `test_provider_configuration.py` | 简化后的凭证验证方法 |
 
 ### 7.2 集成测试
@@ -488,7 +488,7 @@ class DefaultModelService:
 ### 7.3 测试用例清单
 
 ```python
-class TestTenantDefaultModel:
+class TestPluginDefaultModel:
     def test_create_standard_model_default(self):
         """创建标准模型默认配置"""
         
@@ -525,12 +525,12 @@ class TestProviderManager:
 ### 8.1 数据库迁移
 
 ```python
-# 003_add_tenant_default_models.py
+# 003_add_plugin_default_models.py
 
 def upgrade():
-    # 创建 tenant_default_models 表
+    # 创建 plugin_default_models 表
     op.create_table(
-        "tenant_default_models",
+        "plugin_default_models",
         sa.Column("id", sa.String(36), primary_key=True),
         sa.Column("tenant_id", sa.String(36), nullable=False),
         sa.Column("model_type", sa.String(32), nullable=False),
@@ -544,18 +544,18 @@ def upgrade():
         sa.Column("updated_at", sa.DateTime(timezone=True), onupdate=sa.func.now()),
         sa.Column("created_by", sa.String(36), nullable=True),
         sa.Column("updated_by", sa.String(36), nullable=True),
-        sa.UniqueConstraint("tenant_id", "model_type", name="uq_tenant_default_models_tenant_type"),
+        sa.UniqueConstraint("tenant_id", "model_type", name="uq_plugin_default_models_tenant_type"),
         schema="ai",
     )
     
     # 创建索引
-    op.create_index("ix_tenant_default_models_plugin_id", "tenant_default_models", ["plugin_id"], schema="ai")
-    op.create_index("ix_tenant_default_models_credential_id", "tenant_default_models", ["credential_id"], schema="ai")
+    op.create_index("ix_plugin_default_models_plugin_id", "plugin_default_models", ["plugin_id"], schema="ai")
+    op.create_index("ix_plugin_default_models_credential_id", "plugin_default_models", ["credential_id"], schema="ai")
 
 def downgrade():
-    op.drop_index("ix_tenant_default_models_credential_id", schema="ai")
-    op.drop_index("ix_tenant_default_models_plugin_id", schema="ai")
-    op.drop_table("tenant_default_models", schema="ai")
+    op.drop_index("ix_plugin_default_models_credential_id", schema="ai")
+    op.drop_index("ix_plugin_default_models_plugin_id", schema="ai")
+    op.drop_table("plugin_default_models", schema="ai")
 ```
 
 ### 8.2 现有数据处理
@@ -564,7 +564,7 @@ def downgrade():
 
 ```sql
 -- 从废弃的 model_tenant_default 表迁移（如果存在）
-INSERT INTO ai.tenant_default_models (id, tenant_id, model_type, plugin_id, model_name, is_valid, created_at)
+INSERT INTO ai.plugin_default_models (id, tenant_id, model_type, plugin_id, model_name, is_valid, created_at)
 SELECT 
     uuid_generate_v4(),
     tenant_id,
@@ -584,17 +584,17 @@ ON CONFLICT (tenant_id, model_type) DO NOTHING;
 
 | 操作 | 文件 | 说明 |
 |------|------|------|
-| **新增** | `src/ai/models/tenant_default_model.py` | 默认模型数据模型 |
-| **新增** | `src/ai/schemas/tenant_default_model.py` | 默认模型 Schema（DTO） |
-| **新增** | `src/ai/services/tenant_default_model_service.py` | 默认模型服务 |
+| **新增** | `src/ai/models/plugin_default_model.py` | 默认模型数据模型 |
+| **新增** | `src/ai/schemas/plugin_default_model.py` | 默认模型 Schema（DTO） |
+| **新增** | `src/ai/services/plugin_default_model_service.py` | 默认模型服务 |
 | **重写** | `src/ai/components/model/internal/provider_manager.py` | 移除所有废弃方法和 TODO |
 | **重构** | `src/ai/components/model/internal/provider_configuration.py` | 移除凭证管理方法 |
 | **重构** | `src/ai/components/model/services/management_service.py` | 重构 DefaultModelService |
 | **修改** | `src/ai/models/__init__.py` | 导出新模型 |
-| **新增** | `src/ai/migrations/versions/003_add_tenant_default_models.py` | 迁移文件 |
-| **新增** | `tests/ai/unit/models/test_tenant_default_model.py` | 模型测试 |
+| **新增** | `src/ai/migrations/versions/003_add_plugin_default_models.py` | 迁移文件 |
+| **新增** | `tests/ai/unit/models/test_plugin_default_model.py` | 模型测试 |
 | **重写** | `tests/ai/unit/components/model/test_provider_manager.py` | ProviderManager 测试 |
-| **新增** | `tests/ai/unit/services/test_tenant_default_model_service.py` | 服务测试 |
+| **新增** | `tests/ai/unit/services/test_plugin_default_model_service.py` | 服务测试 |
 | **更新** | `src/ai/components/model/MIGRATION.md` | 迁移文档 |
 
 ---
