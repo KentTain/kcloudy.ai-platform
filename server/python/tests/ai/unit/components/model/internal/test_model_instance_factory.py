@@ -64,6 +64,7 @@ class TestModelInstanceFactoryGetModelInstance:
                 tenant_id="test-tenant",
                 provider="openai",
                 model_type=ModelType.LLM,
+                db_session=None,
             )
 
     @pytest.mark.asyncio
@@ -149,7 +150,7 @@ class TestModelInstanceFactoryGetDefaultProviderModelName:
         factory._provider_manager = AsyncMock()
 
         # 设置不同模型类型的默认值
-        async def mock_default(tenant_id, model_type):
+        async def mock_default(tenant_id, model_type, db_session=None):
             if model_type == ModelType.LLM:
                 return ("openai", "gpt-4")
             elif model_type == ModelType.TEXT_EMBEDDING:

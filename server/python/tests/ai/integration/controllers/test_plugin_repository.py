@@ -123,8 +123,8 @@ class TestPluginInstallationCRUD:
         result = await session.execute(
             text("""
                 INSERT INTO tenant.plugin_installations
-                (id, tenant_id, plugin_id, plugin_unique_identifier, status, created_at, updated_at)
-                VALUES (:id, :tenant_id, 'test/plugin', :uid, 'PENDING', NOW(), NOW())
+                (id, tenant_id, plugin_id, plugin_unique_identifier, status, auto_start, created_at, updated_at)
+                VALUES (:id, :tenant_id, 'test/plugin', :uid, 'PENDING', false, NOW(), NOW())
                 RETURNING id
             """),
             {"id": test_id, "tenant_id": tenant_id, "uid": f"test/plugin@1.0.0"}

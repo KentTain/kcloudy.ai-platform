@@ -1,8 +1,8 @@
 """会话与消息模型集成测试 — 多租户隔离和 CRUD
 
-基于数据库实际表结构（由 001_initial_schema.py 迁移创建）：
-- conversations: id, tenant_id, user_id, mode, status, title, summary, created_at, updated_at
-- messages: id, tenant_id, conversation_id, parent_message_id, role, content, status, error, metadata, created_at, updated_at
+基于数据库实际表结构（由迁移创建）：
+- conversations: id, tenant_id, app_id, name, status, mode, created_at, updated_at
+- messages: id, tenant_id, app_id, conversation_id, role, content, status, query, answer, message_metadata, token_count, created_at, updated_at
 """
 
 import uuid
@@ -62,7 +62,7 @@ class TestTableStructure:
             )
         )
         cols = [r[0] for r in result]
-        expected = ["id", "tenant_id", "user_id", "mode", "status", "title", "summary", "created_at", "updated_at"]
+        expected = ["app_id", "name", "status", "mode", "id", "created_at", "updated_at", "tenant_id"]
         assert cols == expected
 
     @pytest.mark.asyncio
@@ -76,7 +76,7 @@ class TestTableStructure:
             )
         )
         cols = [r[0] for r in result]
-        expected = ["id", "tenant_id", "conversation_id", "parent_message_id", "role", "content", "status", "error", "metadata", "created_at", "updated_at"]
+        expected = ["app_id", "conversation_id", "role", "content", "status", "query", "answer", "message_metadata", "token_count", "id", "created_at", "updated_at", "tenant_id"]
         assert cols == expected
 
 
@@ -92,34 +92,36 @@ class TestConversationCRUD:
     @pytest.mark.asyncio
     async def test_create_conversation(self, db_session, tenant_a_id, user_id):
         conv_id = str(uuid.uuid4())
+        app_id = str(uuid.uuid4())
         await db_session.execute(
             text(
-                "INSERT INTO ai.conversations (id, tenant_id, user_id, mode, status, title) "
-                "VALUES (:id, :tenant_id, :user_id, :mode, :status, :title)"
+                "INSERT INTO ai.conversations (id, tenant_id, app_id, mode, status, name) "
+                "VALUES (:id, :tenant_id, :app_id, :mode, :status, :name)"
             ),
-            {"id": conv_id, "tenant_id": tenant_a_id, "user_id": user_id, "mode": "chat", "status": "normal", "title": "测试会话"},
+            {"id": conv_id, "tenant_id": tenant_a_id, "app_id": app_id, "mode": "chat", "status": "normal", "name": "测试会话"},
         )
         await db_session.flush()
 
         result = await db_session.execute(
-            text("SELECT id, tenant_id, title, status FROM ai.conversations WHERE id = :id"),
+            text("SELECT id, tenant_id, name, status FROM ai.conversations WHERE id = :id"),
             {"id": conv_id},
         )
         row = result.first()
         assert row is not None
         assert row.tenant_id == tenant_a_id
-        assert row.title == "测试会话"
+        assert row.name == "测试会话"
         assert row.status == "normal"
 
     @pytest.mark.asyncio
     async def test_conversation_status_transitions(self, db_session, tenant_a_id, user_id):
         conv_id = str(uuid.uuid4())
+        app_id = str(uuid.uuid4())
         await db_session.execute(
             text(
-                "INSERT INTO ai.conversations (id, tenant_id, user_id, mode, status, title) "
-                "VALUES (:id, :tenant_id, :user_id, :mode, :status, :title)"
+                "INSERT INTO ai.conversations (id, tenant_id, app_id, mode, status, name) "
+                "VALUES (:id, :tenant_id, :app_id, :mode, :status, :name)"
             ),
-            {"id": conv_id, "tenant_id": tenant_a_id, "user_id": user_id, "mode": "chat", "status": "normal", "title": "状态测试"},
+            {"id": conv_id, "tenant_id": tenant_a_id, "app_id": app_id, "mode": "chat", "status": "normal", "name": "状态测试"},
         )
         await db_session.flush()
 
@@ -162,22 +164,23 @@ class TestMessageCRUD:
     @pytest.mark.asyncio
     async def test_create_message(self, db_session, tenant_a_id, user_id):
         conv_id = str(uuid.uuid4())
+        app_id = str(uuid.uuid4())
         await db_session.execute(
             text(
-                "INSERT INTO ai.conversations (id, tenant_id, user_id, mode, status) "
-                "VALUES (:id, :tenant_id, :user_id, :mode, :status)"
+                "INSERT INTO ai.conversations (id, tenant_id, app_id, mode, status, name) "
+                "VALUES (:id, :tenant_id, :app_id, :mode, :status, :name)"
             ),
-            {"id": conv_id, "tenant_id": tenant_a_id, "user_id": user_id, "mode": "chat", "status": "normal"},
+            {"id": conv_id, "tenant_id": tenant_a_id, "app_id": app_id, "mode": "chat", "status": "normal", "name": "测试会话"},
         )
         await db_session.flush()
 
         msg_id = str(uuid.uuid4())
         await db_session.execute(
             text(
-                "INSERT INTO ai.messages (id, tenant_id, conversation_id, role, content, status) "
-                "VALUES (:id, :tenant_id, :conv_id, :role, :content, :status)"
+                "INSERT INTO ai.messages (id, tenant_id, app_id, conversation_id, role, content, status) "
+                "VALUES (:id, :tenant_id, :app_id, :conv_id, :role, :content, :status)"
             ),
-            {"id": msg_id, "tenant_id": tenant_a_id, "conv_id": conv_id, "role": "user", "content": "你好", "status": "pending"},
+            {"id": msg_id, "tenant_id": tenant_a_id, "app_id": app_id, "conv_id": conv_id, "role": "user", "content": "你好", "status": "pending"},
         )
         await db_session.flush()
 
@@ -193,22 +196,23 @@ class TestMessageCRUD:
     @pytest.mark.asyncio
     async def test_message_status_transitions(self, db_session, tenant_a_id, user_id):
         conv_id = str(uuid.uuid4())
+        app_id = str(uuid.uuid4())
         await db_session.execute(
             text(
-                "INSERT INTO ai.conversations (id, tenant_id, user_id, mode, status) "
-                "VALUES (:id, :tenant_id, :user_id, :mode, :status)"
+                "INSERT INTO ai.conversations (id, tenant_id, app_id, mode, status, name) "
+                "VALUES (:id, :tenant_id, :app_id, :mode, :status, :name)"
             ),
-            {"id": conv_id, "tenant_id": tenant_a_id, "user_id": user_id, "mode": "chat", "status": "normal"},
+            {"id": conv_id, "tenant_id": tenant_a_id, "app_id": app_id, "mode": "chat", "status": "normal", "name": "测试会话"},
         )
         await db_session.flush()
 
         msg_id = str(uuid.uuid4())
         await db_session.execute(
             text(
-                "INSERT INTO ai.messages (id, tenant_id, conversation_id, role, content, status) "
-                "VALUES (:id, :tenant_id, :conv_id, :role, :content, :status)"
+                "INSERT INTO ai.messages (id, tenant_id, app_id, conversation_id, role, content, status) "
+                "VALUES (:id, :tenant_id, :app_id, :conv_id, :role, :content, :status)"
             ),
-            {"id": msg_id, "tenant_id": tenant_a_id, "conv_id": conv_id, "role": "user", "content": "测试", "status": "pending"},
+            {"id": msg_id, "tenant_id": tenant_a_id, "app_id": app_id, "conv_id": conv_id, "role": "user", "content": "测试", "status": "pending"},
         )
         await db_session.flush()
 
@@ -228,12 +232,13 @@ class TestMessageCRUD:
     @pytest.mark.asyncio
     async def test_message_metadata_jsonb(self, db_session, tenant_a_id, user_id):
         conv_id = str(uuid.uuid4())
+        app_id = str(uuid.uuid4())
         await db_session.execute(
             text(
-                "INSERT INTO ai.conversations (id, tenant_id, user_id, mode, status) "
-                "VALUES (:id, :tenant_id, :user_id, :mode, :status)"
+                "INSERT INTO ai.conversations (id, tenant_id, app_id, mode, status, name) "
+                "VALUES (:id, :tenant_id, :app_id, :mode, :status, :name)"
             ),
-            {"id": conv_id, "tenant_id": tenant_a_id, "user_id": user_id, "mode": "chat", "status": "normal"},
+            {"id": conv_id, "tenant_id": tenant_a_id, "app_id": app_id, "mode": "chat", "status": "normal", "name": "测试会话"},
         )
         await db_session.flush()
 
@@ -243,15 +248,15 @@ class TestMessageCRUD:
         msg_id = str(uuid.uuid4())
         await db_session.execute(
             text(
-                "INSERT INTO ai.messages (id, tenant_id, conversation_id, role, content, status, metadata) "
-                "VALUES (:id, :tenant_id, :conv_id, :role, :content, :status, CAST(:metadata AS jsonb))"
+                "INSERT INTO ai.messages (id, tenant_id, app_id, conversation_id, role, content, status, message_metadata) "
+                "VALUES (:id, :tenant_id, :app_id, :conv_id, :role, :content, :status, CAST(:metadata AS jsonb))"
             ),
-            {"id": msg_id, "tenant_id": tenant_a_id, "conv_id": conv_id, "role": "assistant", "content": "回答", "status": "completed", "metadata": json.dumps(metadata)},
+            {"id": msg_id, "tenant_id": tenant_a_id, "app_id": app_id, "conv_id": conv_id, "role": "assistant", "content": "回答", "status": "completed", "metadata": json.dumps(metadata)},
         )
         await db_session.flush()
 
         result = await db_session.execute(
-            text("SELECT metadata FROM ai.messages WHERE id = :id"),
+            text("SELECT message_metadata FROM ai.messages WHERE id = :id"),
             {"id": msg_id},
         )
         stored = result.scalar()
@@ -272,14 +277,15 @@ class TestTenantIsolation:
         """不同租户的会话应该相互隔离"""
         conv_a_id = str(uuid.uuid4())
         conv_b_id = str(uuid.uuid4())
+        app_id = str(uuid.uuid4())
         await db_session.execute(
             text(
-                "INSERT INTO ai.conversations (id, tenant_id, user_id, mode, status, title) "
-                "VALUES (:id, :tenant_id, :user_id, :mode, :status, :title)"
+                "INSERT INTO ai.conversations (id, tenant_id, app_id, mode, status, name) "
+                "VALUES (:id, :tenant_id, :app_id, :mode, :status, :name)"
             ),
             [
-                {"id": conv_a_id, "tenant_id": tenant_a_id, "user_id": user_id, "mode": "chat", "status": "normal", "title": "租户A的会话"},
-                {"id": conv_b_id, "tenant_id": tenant_b_id, "user_id": user_id, "mode": "chat", "status": "normal", "title": "租户B的会话"},
+                {"id": conv_a_id, "tenant_id": tenant_a_id, "app_id": app_id, "mode": "chat", "status": "normal", "name": "租户A的会话"},
+                {"id": conv_b_id, "tenant_id": tenant_b_id, "app_id": app_id, "mode": "chat", "status": "normal", "name": "租户B的会话"},
             ],
         )
         await db_session.flush()
@@ -297,14 +303,15 @@ class TestTenantIsolation:
         """不同租户的消息应该相互隔离"""
         conv_a_id = str(uuid.uuid4())
         conv_b_id = str(uuid.uuid4())
+        app_id = str(uuid.uuid4())
         await db_session.execute(
             text(
-                "INSERT INTO ai.conversations (id, tenant_id, user_id, mode, status, title) "
-                "VALUES (:id, :tenant_id, :user_id, :mode, :status, :title)"
+                "INSERT INTO ai.conversations (id, tenant_id, app_id, mode, status, name) "
+                "VALUES (:id, :tenant_id, :app_id, :mode, :status, :name)"
             ),
             [
-                {"id": conv_a_id, "tenant_id": tenant_a_id, "user_id": user_id, "mode": "chat", "status": "normal", "title": "租户A"},
-                {"id": conv_b_id, "tenant_id": tenant_b_id, "user_id": user_id, "mode": "chat", "status": "normal", "title": "租户B"},
+                {"id": conv_a_id, "tenant_id": tenant_a_id, "app_id": app_id, "mode": "chat", "status": "normal", "name": "租户A"},
+                {"id": conv_b_id, "tenant_id": tenant_b_id, "app_id": app_id, "mode": "chat", "status": "normal", "name": "租户B"},
             ],
         )
         await db_session.flush()
@@ -313,12 +320,12 @@ class TestTenantIsolation:
         msg_b_id = str(uuid.uuid4())
         await db_session.execute(
             text(
-                "INSERT INTO ai.messages (id, tenant_id, conversation_id, role, content, status) "
-                "VALUES (:id, :tenant_id, :conv_id, :role, :content, :status)"
+                "INSERT INTO ai.messages (id, tenant_id, app_id, conversation_id, role, content, status) "
+                "VALUES (:id, :tenant_id, :app_id, :conv_id, :role, :content, :status)"
             ),
             [
-                {"id": msg_a_id, "tenant_id": tenant_a_id, "conv_id": conv_a_id, "role": "user", "content": "租户A的问题", "status": "pending"},
-                {"id": msg_b_id, "tenant_id": tenant_b_id, "conv_id": conv_b_id, "role": "user", "content": "租户B的问题", "status": "pending"},
+                {"id": msg_a_id, "tenant_id": tenant_a_id, "app_id": app_id, "conv_id": conv_a_id, "role": "user", "content": "租户A的问题", "status": "pending"},
+                {"id": msg_b_id, "tenant_id": tenant_b_id, "app_id": app_id, "conv_id": conv_b_id, "role": "user", "content": "租户B的问题", "status": "pending"},
             ],
         )
         await db_session.flush()

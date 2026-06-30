@@ -48,7 +48,7 @@ class TestProviderManagerCredentialInjection:
         )
 
         # 验证没有变化
-        assert len(provider_configurations) == 0
+        assert len(provider_configurations.to_list()) == 0
 
     async def test_inject_plugin_credentials_with_plugin_provider(
         self, session: AsyncSession
