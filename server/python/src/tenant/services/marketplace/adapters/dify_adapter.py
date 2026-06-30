@@ -91,6 +91,9 @@ class DifyAdapter(MarketplaceAdapter):
     ) -> tuple[Sequence[RemotePluginInfo], int]:
         """获取远程插件列表"""
         url = config.get("url", "")
+        if not url:
+            return [], 0
+
         headers = self._build_headers(config)
 
         params: dict[str, Any] = {"page": page, "page_size": page_size}
@@ -99,16 +102,26 @@ class DifyAdapter(MarketplaceAdapter):
         if plugin_type:
             params["type"] = plugin_type
 
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            response = await client.get(f"{url.rstrip('/')}/plugins", headers=headers, params=params)
-            response.raise_for_status()
-            data = response.json()
+        try:
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                response = await client.get(f"{url.rstrip('/')}/plugins", headers=headers, params=params)
+                response.raise_for_status()
+                data = response.json()
 
-        plugins = []
-        for item in data.get("plugins", []):
-            plugins.append(self._parse_plugin(item, url))
+            plugins = []
+            for item in data.get("plugins", []):
+                plugins.append(self._parse_plugin(item, url))
 
-        return plugins, data.get("total", 0)
+            return plugins, data.get("total", 0)
+        except httpx.TimeoutException:
+            logger.error(f"获取 Dify 插件列表超时: {url}")
+            return [], 0
+        except httpx.HTTPStatusError as e:
+            logger.error(f"获取 Dify 插件列表失败: HTTP {e.response.status_code}")
+            return [], 0
+        except Exception as e:
+            logger.error(f"获取 Dify 插件列表异常: {e}")
+            return [], 0
 
     async def get_plugin(self, config: dict, plugin_id: str) -> RemotePluginInfo | None:
         """获取单个插件详情"""
