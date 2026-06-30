@@ -43,8 +43,8 @@ const searchForm = ref({
   type: "",
 });
 
-// 选中的插件
-const selectedPluginIds = ref<Set<string>>(new Set());
+// 选中的插件（plugin_id -> plugin_type）
+const selectedItems = ref<Map<string, string>>(new Map());
 const isSyncing = ref(false);
 
 // 加载市场信息
@@ -98,14 +98,14 @@ const columns: ColumnDef<RemotePlugin>[] = [
     header: () => h("input", {
       type: "checkbox",
       class: "cursor-pointer",
-      checked: selectedPluginIds.value.size > 0,
+      checked: selectedItems.value.size > 0,
       onChange: (e: Event) => {
         const target = e.target as HTMLInputElement;
         if (target.checked) {
           // 全选当前页
           // Note: 实际实现需要访问当前页数据
         } else {
-          selectedPluginIds.value.clear();
+          selectedItems.value.clear();
         }
       },
     }),
@@ -115,13 +115,13 @@ const columns: ColumnDef<RemotePlugin>[] = [
       return h("input", {
         type: "checkbox",
         class: "cursor-pointer",
-        checked: selectedPluginIds.value.has(plugin.plugin_id),
+        checked: selectedItems.value.has(plugin.plugin_id),
         onChange: (e: Event) => {
           const target = e.target as HTMLInputElement;
           if (target.checked) {
-            selectedPluginIds.value.add(plugin.plugin_id);
+            selectedItems.value.set(plugin.plugin_id, plugin.plugin_type);
           } else {
-            selectedPluginIds.value.delete(plugin.plugin_id);
+            selectedItems.value.delete(plugin.plugin_id);
           }
         },
       });
@@ -223,7 +223,7 @@ const handleSearch = () => {
 // 重置
 const handleReset = () => {
   searchForm.value = { keyword: "", type: "" };
-  selectedPluginIds.value.clear();
+  selectedItems.value.clear();
   dataTable.refresh(true);
 };
 
@@ -232,7 +232,7 @@ const handleSyncSingle = async (plugin: RemotePlugin) => {
   try {
     const response = await syncPlugins({
       marketplace_id: marketplaceId.value,
-      plugin_ids: [plugin.plugin_id],
+      plugins: [{ plugin_id: plugin.plugin_id, plugin_type: plugin.plugin_type }],
     });
     if (response.data) {
       if (response.data.success.length > 0) {
@@ -252,21 +252,25 @@ const handleSyncSingle = async (plugin: RemotePlugin) => {
 
 // 批量同步选中插件
 const handleSyncSelected = async () => {
-  if (selectedPluginIds.value.size === 0) {
+  if (selectedItems.value.size === 0) {
     notifyError("请先选择要同步的插件");
     return;
   }
 
   isSyncing.value = true;
   try {
+    const plugins = Array.from(selectedItems.value.entries()).map(([plugin_id, plugin_type]) => ({
+      plugin_id,
+      plugin_type,
+    }));
     const response = await syncPlugins({
       marketplace_id: marketplaceId.value,
-      plugin_ids: Array.from(selectedPluginIds.value),
+      plugins,
     });
     if (response.data) {
       const { success, failed, skipped } = response.data;
       notifySuccess(`同步完成: 成功 ${success.length} 个，跳过 ${skipped.length} 个，失败 ${failed.length} 个`);
-      selectedPluginIds.value.clear();
+      selectedItems.value.clear();
     }
   } catch (error: any) {
     console.error("批量同步插件失败:", error);
@@ -303,13 +307,13 @@ const handleBack = () => {
       <div class="flex items-center gap-2">
         <Button
           variant="outline"
-          :disabled="selectedPluginIds.size === 0 || isSyncing"
+          :disabled="selectedItems.size === 0 || isSyncing"
           data-testid="sync-selected-btn"
           @click="handleSyncSelected"
         >
           <Loader2 v-if="isSyncing" class="mr-1 h-4 w-4 animate-spin" />
           <CheckCircle v-else class="mr-1 h-4 w-4" />
-          {{ isSyncing ? "同步中..." : `同步选中 (${selectedPluginIds.size})` }}
+          {{ isSyncing ? "同步中..." : `同步选中 (${selectedItems.size})` }}
         </Button>
       </div>
     </div>

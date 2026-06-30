@@ -21,14 +21,19 @@ import {
   getMarketplaces,
   deleteMarketplace,
   testMarketplace,
+  checkUpdates,
 } from "@/tenant/api/marketplace";
-import type { Marketplace, MarketplaceTestResult } from "@/tenant/types/marketplace";
+import type { Marketplace, MarketplaceTestResult, PluginUpdateInfo } from "@/tenant/types/marketplace";
 
 const router = useRouter();
 
 // 测试结果缓存
 const testResults = ref<Map<string, MarketplaceTestResult>>(new Map());
 const testingIds = ref<Set<string>>(new Set());
+
+// 更新检查状态
+const updateResults = ref<Map<string, PluginUpdateInfo[]>>(new Map());
+const checkingUpdates = ref<Set<string>>(new Set());
 
 // 格式化日期
 function formatDate(dateStr?: string): string {
@@ -142,6 +147,7 @@ const columns: ColumnDef<Marketplace>[] = [
     cell: ({ row }) => {
       const marketplace = row.original;
       const isTesting = testingIds.value.has(marketplace.id);
+      const isCheckingUpdates = checkingUpdates.value.has(marketplace.id);
       const testResult = testResults.value.get(marketplace.id);
 
       return h("div", { class: "flex items-center gap-1" }, [
@@ -154,6 +160,21 @@ const columns: ColumnDef<Marketplace>[] = [
             disabled: !marketplace.is_enabled,
           },
           () => [h(ExternalLink, { class: "mr-1 h-3.5 w-3.5" }), "浏览"]
+        ),
+        h(
+          Button,
+          {
+            variant: "ghost",
+            size: "sm",
+            onClick: () => handleCheckUpdates(marketplace),
+            disabled: isCheckingUpdates || !marketplace.is_enabled,
+          },
+          () => [
+            isCheckingUpdates
+              ? h(Clock, { class: "mr-1 h-3.5 w-3.5 animate-spin" })
+              : h(RefreshCw, { class: "mr-1 h-3.5 w-3.5" }),
+            "更新",
+          ]
         ),
         h(
           Button,
@@ -223,6 +244,29 @@ const handleTest = async (marketplace: Marketplace) => {
     notifyError(errorMessage);
   } finally {
     testingIds.value.delete(marketplace.id);
+  }
+};
+
+// 检查更新
+const handleCheckUpdates = async (marketplace: Marketplace) => {
+  checkingUpdates.value.add(marketplace.id);
+  try {
+    const response = await checkUpdates(marketplace.id);
+    if (response.data) {
+      updateResults.value.set(marketplace.id, response.data);
+      const hasUpdates = response.data.filter(u => u.has_update).length;
+      if (hasUpdates > 0) {
+        notifySuccess(`发现 ${hasUpdates} 个插件有可用更新`);
+      } else {
+        notifySuccess("所有插件已是最新版本");
+      }
+    }
+  } catch (error: any) {
+    console.error("检查更新失败:", error);
+    const errorMessage = error?.response?.data?.msg || error?.message || "检查更新失败";
+    notifyError(errorMessage);
+  } finally {
+    checkingUpdates.value.delete(marketplace.id);
   }
 };
 
