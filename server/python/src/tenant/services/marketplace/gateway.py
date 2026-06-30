@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from tenant.models import TenantPluginMarketplace
 from tenant.services.marketplace.adapters.dify_adapter import DifyAdapter
 from tenant.services.marketplace.protocol import (
+    MarketplaceAdapter,
     MarketplaceTestResult,
     RemotePluginInfo,
 )
@@ -26,12 +27,20 @@ class MarketplaceGateway:
         "dify": DifyAdapter,
     }
 
-    def _get_adapter(self, market_type: str):
+    def _get_adapter(self, market_type: str) -> MarketplaceAdapter:
         """获取适配器实例"""
         adapter_class = self._adapters.get(market_type)
         if not adapter_class:
             raise ValueError(f"不支持的市场类型: {market_type}")
         return adapter_class()
+
+    def _build_adapter_config(self, marketplace: TenantPluginMarketplace) -> dict:
+        """构建适配器配置"""
+        return {
+            "url": marketplace.url,
+            "auth_type": marketplace.auth_type,
+            "auth_config": marketplace.auth_config,
+        }
 
     # ==================== 市场配置管理 ====================
 
@@ -134,11 +143,7 @@ class MarketplaceGateway:
             raise ValueError(f"市场不存在: {marketplace_id}")
 
         adapter = self._get_adapter(marketplace.type)
-        config = {
-            "url": marketplace.url,
-            "auth_type": marketplace.auth_type,
-            "auth_config": marketplace.auth_config,
-        }
+        config = self._build_adapter_config(marketplace)
         return await adapter.test_connection(config)
 
     # ==================== 远程插件浏览 ====================
@@ -161,11 +166,7 @@ class MarketplaceGateway:
             raise ValueError(f"市场已禁用: {marketplace.name}")
 
         adapter = self._get_adapter(marketplace.type)
-        config = {
-            "url": marketplace.url,
-            "auth_type": marketplace.auth_type,
-            "auth_config": marketplace.auth_config,
-        }
+        config = self._build_adapter_config(marketplace)
         return await adapter.list_plugins(config, keyword, plugin_type, page, page_size)
 
     async def get_remote_plugin(
@@ -180,11 +181,7 @@ class MarketplaceGateway:
             raise ValueError(f"市场不存在: {marketplace_id}")
 
         adapter = self._get_adapter(marketplace.type)
-        config = {
-            "url": marketplace.url,
-            "auth_type": marketplace.auth_type,
-            "auth_config": marketplace.auth_config,
-        }
+        config = self._build_adapter_config(marketplace)
         return await adapter.get_plugin(config, plugin_id)
 
 
