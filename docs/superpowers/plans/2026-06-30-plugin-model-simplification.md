@@ -1264,20 +1264,25 @@ class ProviderManager:
 
         return result
 
-    # ========== 废弃方法（保留向后兼容） ==========
+    # ========== 废弃方法（已标识 deprecated，保留向后兼容） ==========
 
     @staticmethod
     async def _get_all_custom_models(tenant_id: str) -> dict[str, list]:
         """
         获取所有自定义模型记录
 
-        注意：此方法已废弃，自定义模型现在通过插件扩展。
-        保留方法签名以保持向后兼容。
+        .. deprecated::
+            此方法已废弃，自定义模型现在通过插件扩展。
+            保留方法签名以保持向后兼容。
 
         :param tenant_id: 租户 ID
         :return: 空字典
         """
-        # 已废弃：自定义模型现在通过插件扩展
+        warnings.warn(
+            "_get_all_custom_models() is deprecated: custom models are now managed via plugins",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return defaultdict(list)
 
     async def get_default_model(
@@ -1286,13 +1291,19 @@ class ProviderManager:
         """
         获取指定模型类型的默认模型
 
-        注意：此方法已废弃，默认模型现在通过 plugin_credentials.is_default 管理。
-        保留方法签名以保持向后兼容。
+        .. deprecated::
+            此方法已废弃，默认模型现在通过 plugin_credentials.is_default 管理。
+            保留方法签名以保持向后兼容。
 
         :param tenant_id: 租户 ID
         :param model_type: 模型类型
         :return: None
         """
+        warnings.warn(
+            "get_default_model() is deprecated: default models are now managed via plugin_credentials.is_default",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return None
 
     async def update_default_model_record(
@@ -1305,21 +1316,32 @@ class ProviderManager:
         """
         更新默认模型记录
 
-        注意：此方法已废弃，默认模型现在通过 plugin_credentials.is_default 管理。
-        保留方法签名以保持向后兼容。
+        .. deprecated::
+            此方法已废弃，默认模型现在通过 plugin_credentials.is_default 管理。
+            保留方法签名以保持向后兼容。
         """
-        pass
+        warnings.warn(
+            "update_default_model_record() is deprecated: default models are now managed via plugin_credentials.is_default",
+            DeprecationWarning,
+            stacklevel=2,
+        )
 
     async def _get_all_providers(self, tenant_id: str) -> dict[str, list]:
         """
         获取所有模型供应商记录
 
-        注意：此方法已废弃，模型定义现在来自插件 manifest。
-        保留方法签名以保持向后兼容。
+        .. deprecated::
+            此方法已废弃，模型定义现在来自插件 manifest。
+            保留方法签名以保持向后兼容。
 
         :param tenant_id: 租户 ID
         :return: 空字典
         """
+        warnings.warn(
+            "_get_all_providers() is deprecated: model definitions are now from plugin manifests",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return defaultdict(list)
 
     async def _get_all_provider_model_settings(
@@ -1328,12 +1350,18 @@ class ProviderManager:
         """
         获取所有模型供应商模型设置
 
-        注意：此方法已废弃，模型设置现在由插件管理。
-        保留方法签名以保持向后兼容。
+        .. deprecated::
+            此方法已废弃，模型设置现在由插件管理。
+            保留方法签名以保持向后兼容。
 
         :param tenant_id: 租户 ID
         :return: 空字典
         """
+        warnings.warn(
+            "_get_all_provider_model_settings() is deprecated: model settings are now managed by plugins",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return defaultdict(list)
 ```
 
