@@ -271,3 +271,12 @@ class PluginCredential(
         default=False,
         comment="是否禁用",
     )
+
+    # 是否为默认凭证
+    is_default: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=False,
+        index=True,
+        comment="是否为默认凭证",
+    )
