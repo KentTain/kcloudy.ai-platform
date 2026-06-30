@@ -11,19 +11,21 @@ import {
   CheckCircle,
   XCircle,
   Clock,
+  Download,
 } from "@lucide/vue";
 import type { ColumnDef } from "@tanstack/vue-table";
 import { h, ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
-import { Badge, Button, Card, DataTable, useDataTable } from "@/components";
+import { Badge, Button, Card, DataTable, useDataTable, Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components";
 import { confirmAction, notifyError, notifySuccess } from "@/framework/utils/feedback";
 import {
   getMarketplaces,
   deleteMarketplace,
   testMarketplace,
   checkUpdates,
+  applyPluginUpdate,
 } from "@/tenant/api/marketplace";
-import type { Marketplace, MarketplaceTestResult, PluginUpdateInfo } from "@/tenant/types/marketplace";
+import type { Marketplace, MarketplaceTestResult, PluginUpdateInfo, ApplyUpdateResult } from "@/tenant/types/marketplace";
 
 const router = useRouter();
 
@@ -34,6 +36,11 @@ const testingIds = ref<Set<string>>(new Set());
 // 更新检查状态
 const updateResults = ref<Map<string, PluginUpdateInfo[]>>(new Map());
 const checkingUpdates = ref<Set<string>>(new Set());
+
+// 更新弹窗状态
+const showUpdateDialog = ref(false);
+const currentUpdateMarketplaceId = ref<string>("");
+const applyingUpdatePluginId = ref<string | null>(null);
 
 // 格式化日期
 function formatDate(dateStr?: string): string {
@@ -256,7 +263,8 @@ const handleCheckUpdates = async (marketplace: Marketplace) => {
       updateResults.value.set(marketplace.id, response.data);
       const hasUpdates = response.data.filter(u => u.has_update).length;
       if (hasUpdates > 0) {
-        notifySuccess(`发现 ${hasUpdates} 个插件有可用更新`);
+        currentUpdateMarketplaceId.value = marketplace.id;
+        showUpdateDialog.value = true;
       } else {
         notifySuccess("所有插件已是最新版本");
       }
@@ -267,6 +275,30 @@ const handleCheckUpdates = async (marketplace: Marketplace) => {
     notifyError(errorMessage);
   } finally {
     checkingUpdates.value.delete(marketplace.id);
+  }
+};
+
+// 应用更新
+const handleApplyUpdate = async (pluginId: string) => {
+  applyingUpdatePluginId.value = pluginId;
+  try {
+    const response = await applyPluginUpdate(pluginId, currentUpdateMarketplaceId.value);
+    if (response.data) {
+      notifySuccess(`插件 ${pluginId} 已更新到 ${response.data.new_version}`);
+      // 刷新更新列表
+      const updates = updateResults.value.get(currentUpdateMarketplaceId.value) || [];
+      const updated = updates.filter(u => u.plugin_id !== pluginId);
+      updateResults.value.set(currentUpdateMarketplaceId.value, updated);
+      if (updated.length === 0) {
+        showUpdateDialog.value = false;
+      }
+    }
+  } catch (error: any) {
+    console.error("应用更新失败:", error);
+    const errorMessage = error?.response?.data?.msg || error?.message || "应用更新失败";
+    notifyError(errorMessage);
+  } finally {
+    applyingUpdatePluginId.value = null;
   }
 };
 
@@ -338,5 +370,46 @@ const handleCreate = () => {
         <DataTable data-testid="marketplace-table" :data-table="dataTable" :fixed-layout="true" />
       </div>
     </div>
+
+    <!-- 更新列表弹窗 -->
+    <Dialog v-model:open="showUpdateDialog">
+      <DialogContent class="sm:max-w-[550px]">
+        <DialogHeader>
+          <DialogTitle>可用更新</DialogTitle>
+          <DialogDescription>以下插件有新版本可用，点击"应用"执行更新。</DialogDescription>
+        </DialogHeader>
+        <div class="max-h-[400px] overflow-y-auto">
+          <div
+            v-for="item in (updateResults.get(currentUpdateMarketplaceId) || []).filter(u => u.has_update)"
+            :key="item.plugin_id"
+            class="flex items-center justify-between border-b py-3 last:border-b-0"
+          >
+            <div class="min-w-0 flex-1">
+              <div class="font-medium text-sm">{{ item.plugin_id }}</div>
+              <div class="text-muted-foreground text-xs">
+                {{ item.current_version }} → {{ item.latest_version }}
+              </div>
+            </div>
+            <Button
+              size="sm"
+              :disabled="applyingUpdatePluginId === item.plugin_id"
+              @click="handleApplyUpdate(item.plugin_id)"
+            >
+              <Download class="mr-1 h-3.5 w-3.5" />
+              {{ applyingUpdatePluginId === item.plugin_id ? '更新中...' : '应用' }}
+            </Button>
+          </div>
+          <div
+            v-if="(updateResults.get(currentUpdateMarketplaceId) || []).filter(u => u.has_update).length === 0"
+            class="text-muted-foreground py-6 text-center text-sm"
+          >
+            没有可用的更新
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" @click="showUpdateDialog = false">关闭</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   </div>
 </template>
