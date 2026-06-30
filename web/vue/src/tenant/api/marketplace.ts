@@ -1,13 +1,15 @@
 import { rawDel, rawGet, rawPost, rawPut } from '@/framework/api/client';
 import type { ApiResponse } from '@/framework/api/types';
 import type {
+  ApplyUpdateResult,
   Marketplace,
   MarketplaceCreate,
   MarketplaceTestResult,
   MarketplaceUpdate,
+  PluginUpdateInfo,
   RemotePlugin,
   SyncPluginsRequest,
-  SyncResult,
+  SyncResultResponse,
 } from '@/tenant/types/marketplace';
 
 // ==================== 市场配置管理 ====================
@@ -43,4 +45,16 @@ export const getRemotePlugins = (
 // ==================== 同步 ====================
 
 export const syncPlugins = (data: SyncPluginsRequest) =>
-  rawPost<ApiResponse<SyncResult>>('/tenant/admin/v1/marketplaces/sync', data);
+  rawPost<ApiResponse<SyncResultResponse>>('/tenant/admin/v1/marketplaces/sync', data);
+
+// ==================== 更新 ====================
+
+export const checkUpdates = (marketplaceId: string) =>
+  rawGet<ApiResponse<PluginUpdateInfo[]>>('/tenant/admin/v1/marketplaces/updates', {
+    params: { marketplace_id: marketplaceId },
+  });
+
+export const applyPluginUpdate = (pluginId: string, marketplaceId: string) =>
+  rawPost<ApiResponse<ApplyUpdateResult>>(`/tenant/admin/v1/marketplaces/updates/${pluginId}`, {
+    marketplace_id: marketplaceId,
+  });

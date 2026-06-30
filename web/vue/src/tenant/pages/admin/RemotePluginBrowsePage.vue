@@ -43,8 +43,8 @@ const searchForm = ref({
   type: "",
 });
 
-// 选中的插件
-const selectedPluginIds = ref<Set<string>>(new Set());
+// 选中的插件 (plugin_id -> plugin_type)
+const selectedPluginIds = ref<Map<string, string>>(new Map());
 const isSyncing = ref(false);
 
 // 加载市场信息
@@ -119,7 +119,7 @@ const columns: ColumnDef<RemotePlugin>[] = [
         onChange: (e: Event) => {
           const target = e.target as HTMLInputElement;
           if (target.checked) {
-            selectedPluginIds.value.add(plugin.plugin_id);
+            selectedPluginIds.value.set(plugin.plugin_id, plugin.plugin_type);
           } else {
             selectedPluginIds.value.delete(plugin.plugin_id);
           }
@@ -232,7 +232,7 @@ const handleSyncSingle = async (plugin: RemotePlugin) => {
   try {
     const response = await syncPlugins({
       marketplace_id: marketplaceId.value,
-      plugin_ids: [plugin.plugin_id],
+      plugins: [{ plugin_id: plugin.plugin_id, plugin_type: plugin.plugin_type }],
     });
     if (response.data) {
       if (response.data.success.length > 0) {
@@ -259,9 +259,13 @@ const handleSyncSelected = async () => {
 
   isSyncing.value = true;
   try {
+    const plugins = Array.from(selectedPluginIds.value.entries()).map(([plugin_id, plugin_type]) => ({
+      plugin_id,
+      plugin_type,
+    }));
     const response = await syncPlugins({
       marketplace_id: marketplaceId.value,
-      plugin_ids: Array.from(selectedPluginIds.value),
+      plugins,
     });
     if (response.data) {
       const { success, failed, skipped } = response.data;

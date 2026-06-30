@@ -61,13 +61,49 @@ export interface RemotePlugin {
 
 // ==================== 同步 ====================
 
-export interface SyncPluginsRequest {
-  marketplace_id: string;
-  plugin_ids: string[];
+export interface SyncPluginItem {
+  plugin_id: string;
+  plugin_type: string;
 }
 
-export interface SyncResult {
-  success: string[];
-  failed: Array<{ plugin_id: string; message: string }>;
-  skipped: string[];
+export interface SyncPluginsRequest {
+  marketplace_id: string;
+  plugins: SyncPluginItem[];
+}
+
+export interface SyncSuccessItem {
+  plugin_id: string;
+  version: string;
+}
+
+export interface SyncFailedItem {
+  plugin_id: string;
+  message: string;
+}
+
+export interface SyncSkippedItem {
+  plugin_id: string;
+  reason: string;
+}
+
+export interface SyncResultResponse {
+  success: SyncSuccessItem[];
+  failed: SyncFailedItem[];
+  skipped: SyncSkippedItem[];
+}
+
+// ==================== 更新 ====================
+
+export interface PluginUpdateInfo {
+  plugin_id: string;
+  current_version: string;
+  latest_version: string;
+  has_update: boolean;
+}
+
+export interface ApplyUpdateResult {
+  plugin_id: string;
+  old_version: string;
+  new_version: string;
+  status: string;
 }
