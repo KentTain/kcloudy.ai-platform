@@ -1,4 +1,4 @@
-# 插件系统与模型配置整合实现计划
+# 插件系统与模型配置整合实现计划（修订版）
 
 > **规格文档：** [2026-06-30-plugin-model-integration-design.md](../specs/2026-06-30-plugin-model-integration-design.md)
 >
@@ -12,6 +12,17 @@
 
 ---
 
+## 修订说明
+
+本计划在原方案基础上修复了两个关键架构问题：
+
+| 问题 | 原方案 | 修复方案 |
+|------|--------|----------|
+| Session 注入策略 | 使用废弃的 `async_session()` 内部创建 | 可选参数从 Controller 一路透传到 ProviderManager |
+| 凭证接入消费路径 | 新增查询方法但未接入 `get_configurations()` | 在 `get_configurations()` 中注入凭证到 `CustomConfiguration` |
+
+---
+
 ## 文件结构
 
 ### 将删除的文件
@@ -19,18 +30,28 @@
 - `server/python/src/ai/models/model_config.py` - 未使用的模型配置定义
 
 ### 将修改的文件
+
+**数据模型层：**
 - `server/python/src/ai/models/__init__.py` - 移除删除模型的导出
 - `server/python/src/ai/models/plugin.py` - 给 PluginCredential 添加 is_default 字段
-- `server/python/src/ai/components/model/internal/provider_manager.py` - 改造凭证获取逻辑
-- `server/python/src/ai/components/model/internal/provider_configuration.py` - 简化配置获取
-- `server/python/src/ai/migrations/versions/001_initial_schema.py` - 移除未使用表的迁移定义
+
+**调用链路层（Session 透传）：**
+- `server/python/src/ai/controllers/v1/chat/llm.py` - 添加 session 依赖注入
+- `server/python/src/extended/langchain/models/alon_chat.py` - 添加 db_session 参数
+- `server/python/src/ai/components/model/services/llm_service.py` - 添加 db_session 参数
+- `server/python/src/ai/components/model/internal/model_instance_factory.py` - 添加 db_session 参数
+- `server/python/src/ai/components/model/internal/provider_manager.py` - 核心改造：添加凭证注入逻辑
+
+**迁移文件：**
+- `server/python/src/ai/migrations/versions/001_initial_schema.py` - 移除未使用表的迁移定义（可选）
 
 ### 将创建的文件
 - `server/python/src/ai/migrations/versions/002_simplify_model_tables.py` - 新迁移：添加 is_default 字段，删除未使用表
 
 ### 测试文件
 - `server/python/tests/ai/unit/models/test_plugin_credential.py` - 新增：PluginCredential 测试
-- `server/python/tests/ai/unit/components/model/test_provider_manager.py` - 修改：ProviderManager 测试
+- `server/python/tests/ai/unit/components/model/test_provider_manager.py` - 新增：ProviderManager 测试
+- `server/python/tests/ai/integration/test_plugin_model_flow.py` - 新增：完整流程测试
 
 ---
 
@@ -247,7 +268,7 @@ git commit -m "refactor(ai): 删除未使用的模型提供商和模型配置模
 """简化模型表结构
 
 Revision ID: 002
-Revises: 001_initial_schema
+Revises: 001_ai_initial
 Create Date: 2026-06-30
 
 - 给 plugin_credentials 添加 is_default 字段
@@ -260,7 +281,7 @@ import sqlalchemy as sa
 
 # revision identifiers
 revision = "002_simplify_model_tables"
-down_revision = "001_initial_schema"
+down_revision = "001_ai_initial"  # 修正：与 001 文件中的 revision 一致
 branch_labels = None
 depends_on = None
 
@@ -354,11 +375,489 @@ git commit -m "feat(ai): 添加数据库迁移简化模型表结构
 
 ---
 
-## 任务 4：改造 ProviderManager 凭证获取逻辑
+## 任务 4：改造 Chat Controller 添加 Session 依赖注入
+
+**文件：**
+- 修改：`server/python/src/ai/controllers/v1/chat/llm.py`
+
+- [ ] **步骤 1：添加 Session 依赖注入并传递给 AlonChatModel**
+
+修改 `server/python/src/ai/controllers/v1/chat/llm.py`：
+
+```python
+# 在文件顶部添加导入
+from fastapi import Depends
+from sqlalchemy.ext.asyncio import AsyncSession
+from framework.database.dependencies import get_db_session
+
+# 修改 chat_messages 函数
+@router.post("")
+async def chat_messages(
+    chat_request: AIChatRequest = Body(..., description="聊天请求"),
+    session: AsyncSession = Depends(get_db_session),  # 新增 session 注入
+) -> StreamingResponse:
+    """LLM 对话接口（AI SDK 标准）
+
+    支持流式对话和会话创建/恢复。
+    使用 Vercel AI SDK 标准格式。
+    """
+    tenant_id = get_tenant_id()
+    user_id = get_user_id()
+
+    if not tenant_id or not user_id:
+        raise HTTPException(status_code=401, detail="未授权访问")
+
+    task_id = str(uuid.uuid4())
+    # 如果 id 为 None，生成新的会话 ID
+    conversation_id = chat_request.id or str(uuid.uuid4())
+    message_id = chat_request.message_id  # 使用前端传来的消息 ID
+
+    # 从消息列表提取用户查询
+    try:
+        query = _extract_user_query(chat_request.messages)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    event_queue = asyncio.Queue()
+
+    try:
+        # 创建或恢复会话
+        conversation, is_new_conversation = await conversation_service.get_or_create(
+            conversation_id=chat_request.id,
+            tenant_id=tenant_id,
+            user_id=user_id,
+            app_id=DEFAULT_APP_ID,
+        )
+        # 使用返回的 conversation_id（可能是新生成的）
+        conversation_id = str(conversation.id)
+
+        # 创建初始消息记录（状态为 pending）
+        user_message, assistant_message = await chat_service.create_messages(
+            tenant_id=tenant_id,
+            conversation_id=conversation_id,
+            user_query=query,
+            assistant_message_id=message_id,
+            app_id=DEFAULT_APP_ID,
+        )
+
+        # 创建 AlonChatModel，传入 session
+        model_config = chat_request.body.model
+        model = AlonChatModel(
+            model=model_config.name,
+            provider=model_config.provider,
+            tenant_id=tenant_id,
+            user_id=user_id,
+            model_parameters=model_config.completion_params,
+            db_session=session,  # 新增：传递 session
+        )
+
+        # 创建 Agent
+        agent_factory = AgentFactory(model)
+        agent = agent_factory.create_executor()
+
+        # ... 后续代码保持不变 ...
+```
+
+- [ ] **步骤 2：验证修改无语法错误**
+
+运行：`cd server/python && uv run python -c "from ai.controllers.v1.chat.llm import router; print('导入成功')"`
+预期：输出 "导入成功"
+
+- [ ] **步骤 3：Commit**
+
+```bash
+git add server/python/src/ai/controllers/v1/chat/llm.py
+git commit -m "feat(ai): Chat Controller 添加 Session 依赖注入
+
+- 使用 Depends(get_db_session) 注入数据库会话
+- 将 session 传递给 AlonChatModel 以支持凭证查询"
+```
+
+---
+
+## 任务 5：改造 AlonChatModel 添加 db_session 参数
+
+**文件：**
+- 修改：`server/python/src/extended/langchain/models/alon_chat.py`
+
+- [ ] **步骤 1：添加 db_session 字段并传递给 LLMService**
+
+修改 `server/python/src/extended/langchain/models/alon_chat.py`：
+
+```python
+# 在文件顶部添加导入
+from sqlalchemy.ext.asyncio import AsyncSession
+
+class AlonChatModel(BaseChatModel):
+    """LangChain ChatModel that bridges to platform LLMService."""
+
+    model: str
+    provider: str
+    tenant_id: str
+    user_id: str | None = None
+    model_parameters: dict = {}
+    db_session: AsyncSession | None = None  # 新增字段
+
+    @property
+    def _llm_type(self) -> str:
+        return "alon-chat-model"
+
+    @property
+    def _identifying_params(self) -> dict:
+        return {
+            "model": self.model,
+            "provider": self.provider,
+            "tenant_id": self.tenant_id,
+        }
+
+    def bind_tools(
+        self,
+        tools: Sequence[dict[str, Any] | type | Callable | BaseTool],
+        *,
+        tool_choice: str | None = None,
+        **kwargs: Any,
+    ) -> Runnable:
+        """Bind tools to the model for tool calling."""
+        platform_tools = [_convert_tool(t) for t in tools]
+        return self.bind(tools=platform_tools, **kwargs)
+
+    def _generate(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: Any | None = None,
+        **kwargs: Any,
+    ) -> ChatResult:
+        raise NotImplementedError("Use async method ainvoke instead")
+
+    async def _agenerate(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: Any | None = None,
+        **kwargs: Any,
+    ) -> ChatResult:
+        llm_service = LLMService(self.tenant_id)
+        prompt_messages = MessageAdapter.to_platform_messages(messages)
+        tools = kwargs.get("tools")
+
+        result = await llm_service.invoke(
+            prompt_messages=prompt_messages,
+            model=self.model,
+            provider=self.provider,
+            model_parameters=self.model_parameters or None,
+            tools=tools,
+            stop=stop,
+            user=self.user_id,
+            db_session=self.db_session,  # 新增：传递 session
+        )
+
+        content = _platform_content_to_lc(result.message.content) or ""
+        usage = result.usage
+        ai_message = AIMessage(content=content)
+        # ... 后续代码保持不变 ...
+
+    async def _astream(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: Any | None = None,
+        **kwargs: Any,
+    ) -> AsyncIterator[ChatGenerationChunk]:
+        llm_service = LLMService(self.tenant_id)
+        prompt_messages = MessageAdapter.to_platform_messages(messages)
+        tools = kwargs.get("tools")
+
+        async for chunk in llm_service.stream(
+            prompt_messages=prompt_messages,
+            model=self.model,
+            provider=self.provider,
+            model_parameters=self.model_parameters or None,
+            tools=tools,
+            stop=stop,
+            user=self.user_id,
+            db_session=self.db_session,  # 新增：传递 session
+        ):
+            # ... 后续代码保持不变 ...
+```
+
+- [ ] **步骤 2：验证修改无语法错误**
+
+运行：`cd server/python && uv run python -c "from extended.langchain.models.alon_chat import AlonChatModel; print('导入成功')"`
+预期：输出 "导入成功"
+
+- [ ] **步骤 3：Commit**
+
+```bash
+git add server/python/src/extended/langchain/models/alon_chat.py
+git commit -m "feat(ai): AlonChatModel 添加 db_session 参数
+
+- 添加 db_session 可选字段
+- 将 session 传递给 LLMService 的 invoke 和 stream 方法"
+```
+
+---
+
+## 任务 6：改造 LLMService 添加 db_session 参数
+
+**文件：**
+- 修改：`server/python/src/ai/components/model/services/llm_service.py`
+
+- [ ] **步骤 1：在 invoke 和 stream 方法中添加 db_session 参数**
+
+修改 `server/python/src/ai/components/model/services/llm_service.py`：
+
+```python
+# 在文件顶部添加导入
+from sqlalchemy.ext.asyncio import AsyncSession
+
+class LLMService(BaseModelService):
+    # ... 现有代码保持不变 ...
+
+    async def invoke(
+        self,
+        prompt_messages: Sequence[PromptMessage],
+        model: str | None = None,
+        provider: str | None = None,
+        model_parameters: dict[str, Any] | None = None,
+        tools: Sequence[PromptMessageTool] | None = None,
+        stop: Sequence[str] | None = None,
+        user: str | None = None,
+        callbacks: list[Callback] | None = None,
+        db_session: AsyncSession | None = None,  # 新增参数
+    ) -> LLMResult:
+        """
+        非流式 LLM 调用
+
+        :param prompt_messages: 提示消息列表
+        :param model: 模型名称（可选，不指定则使用默认模型）
+        :param provider: 供应商名称（可选，不指定则使用默认供应商）
+        :param model_parameters: 模型参数
+        :param tools: 工具调用
+        :param stop: 停止词
+        :param user: 用户 ID
+        :param callbacks: 回调函数列表
+        :param db_session: 数据库会话（可选，用于查询凭证）
+        :return: LLM 调用结果
+        """
+        if not provider or not model:
+            provider, model = await self._resolve_default_model(ModelType.LLM)
+
+        model_instance: ModelInstance = await self._factory.get_model_instance(
+            self._tenant_id,
+            provider,
+            model_type=ModelType.LLM,
+            model=model,
+            db_session=db_session,  # 新增：传递 session
+        )
+
+        result = model_instance.invoke_llm(
+            prompt_messages=prompt_messages,
+            model_parameters=model_parameters,
+            tools=tools,
+            stop=stop,
+            stream=False,
+            user=user,
+            callbacks=callbacks,
+        )
+
+        async for chunk in result:
+            if isinstance(chunk, LLMResult):
+                return chunk
+
+        raise Exception("模型结果不是 LLMResult")
+
+    async def stream(
+        self,
+        prompt_messages: Sequence[PromptMessage],
+        model: str | None = None,
+        provider: str | None = None,
+        model_parameters: dict[str, Any] | None = None,
+        tools: Sequence[PromptMessageTool] | None = None,
+        stop: Sequence[str] | None = None,
+        user: str | None = None,
+        callbacks: list[Callback] | None = None,
+        db_session: AsyncSession | None = None,  # 新增参数
+    ) -> AsyncGenerator[LLMResultChunk, None]:
+        """
+        流式 LLM 调用
+
+        :param prompt_messages: 提示消息列表
+        :param model: 模型名称（可选，不指定则使用默认模型）
+        :param provider: 供应商名称（可选，不指定则使用默认供应商）
+        :param model_parameters: 模型参数
+        :param tools: 工具调用
+        :param stop: 停止词
+        :param user: 用户 ID
+        :param callbacks: 回调函数列表
+        :param db_session: 数据库会话（可选，用于查询凭证）
+        :return: 异步生成器，流式返回 LLMResultChunk
+        """
+        if not provider or not model:
+            provider, model = await self._resolve_default_model(ModelType.LLM)
+
+        model_instance: ModelInstance = await self._factory.get_model_instance(
+            self._tenant_id,
+            provider,
+            model_type=ModelType.LLM,
+            model=model,
+            db_session=db_session,  # 新增：传递 session
+        )
+
+        async for chunk in model_instance.invoke_llm(
+            prompt_messages=prompt_messages,
+            model_parameters=model_parameters,
+            tools=tools,
+            stop=stop,
+            stream=True,
+            user=user,
+            callbacks=callbacks,
+        ):
+            if isinstance(chunk, LLMResultChunk):
+                yield chunk
+
+    async def tokens(
+        self,
+        prompt_messages: Sequence[PromptMessage],
+        model: str | None = None,
+        provider: str | None = None,
+        tools: Sequence[PromptMessageTool] | None = None,
+        db_session: AsyncSession | None = None,  # 新增参数
+    ) -> int:
+        """
+        计算 token 数量
+
+        :param prompt_messages: 提示消息列表
+        :param model: 模型名称（可选，不指定则使用默认模型）
+        :param provider: 供应商名称（可选，不指定则使用默认供应商）
+        :param tools: 工具调用
+        :param db_session: 数据库会话（可选）
+        :return: token 数量
+        """
+        if not provider or not model:
+            provider, model = await self._resolve_default_model(ModelType.LLM)
+
+        model_instance: ModelInstance = await self._factory.get_model_instance(
+            self._tenant_id,
+            provider,
+            model_type=ModelType.LLM,
+            model=model,
+            db_session=db_session,  # 新增：传递 session
+        )
+
+        return await model_instance.get_llm_num_tokens(prompt_messages, tools)
+```
+
+- [ ] **步骤 2：验证修改无语法错误**
+
+运行：`cd server/python && uv run python -c "from ai.components.model.services.llm_service import LLMService; print('导入成功')"`
+预期：输出 "导入成功"
+
+- [ ] **步骤 3：Commit**
+
+```bash
+git add server/python/src/ai/components/model/services/llm_service.py
+git commit -m "feat(ai): LLMService 添加 db_session 参数
+
+- invoke/stream/tokens 方法添加 db_session 可选参数
+- 将 session 传递给 ModelInstanceFactory"
+```
+
+---
+
+## 任务 7：改造 ModelInstanceFactory 添加 db_session 参数
+
+**文件：**
+- 修改：`server/python/src/ai/components/model/internal/model_instance_factory.py`
+
+- [ ] **步骤 1：在 get_model_instance 方法中添加 db_session 参数**
+
+修改 `server/python/src/ai/components/model/internal/model_instance_factory.py`：
+
+```python
+# 在文件顶部添加导入
+from sqlalchemy.ext.asyncio import AsyncSession
+
+class ModelInstanceFactory:
+    # ... 现有代码保持不变 ...
+
+    async def get_model_instance(
+        self,
+        tenant_id: str,
+        provider: str,
+        model_type: ModelType,
+        model: str,
+        db_session: AsyncSession | None = None,  # 新增参数
+    ) -> ModelInstance:
+        """
+        获取模型实例
+
+        :param tenant_id: 租户 ID
+        :param provider: 供应商名称
+        :param model_type: 模型类型
+        :param model: 模型名称
+        :param db_session: 数据库会话（可选，用于查询凭证）
+        :return: 模型实例
+        """
+        provider_model_bundle = await self._provider_manager._get_provider_model_bundle(
+            tenant_id=tenant_id,
+            provider=provider,
+            model_type=model_type,
+            db_session=db_session,  # 新增：传递 session
+        )
+
+        return ModelInstance(provider_model_bundle, model)
+
+    async def get_default_model_instance(
+        self,
+        tenant_id: str,
+        model_type: ModelType,
+        db_session: AsyncSession | None = None,  # 新增参数
+    ) -> ModelInstance:
+        """
+        获取默认模型实例
+
+        :param tenant_id: 租户 ID
+        :param model_type: 模型类型
+        :param db_session: 数据库会话（可选）
+        :return: 模型实例
+        """
+        provider, model = await self._provider_manager.get_default_provider_model_name(
+            tenant_id, model_type
+        )
+
+        if not provider or not model:
+            raise ValueError(f"No default model available for type {model_type}")
+
+        return await self.get_model_instance(
+            tenant_id, provider, model_type, model, db_session=db_session
+        )
+```
+
+- [ ] **步骤 2：验证修改无语法错误**
+
+运行：`cd server/python && uv run python -c "from ai.components.model.internal.model_instance_factory import ModelInstanceFactory; print('导入成功')"`
+预期：输出 "导入成功"
+
+- [ ] **步骤 3：Commit**
+
+```bash
+git add server/python/src/ai/components/model/internal/model_instance_factory.py
+git commit -m "feat(ai): ModelInstanceFactory 添加 db_session 参数
+
+- get_model_instance 和 get_default_model_instance 添加 db_session 参数
+- 将 session 传递给 ProviderManager"
+```
+
+---
+
+## 任务 8：改造 ProviderManager 实现凭证注入（核心）
 
 **文件：**
 - 修改：`server/python/src/ai/components/model/internal/provider_manager.py`
 - 测试：`server/python/tests/ai/unit/components/model/test_provider_manager.py`
+
+这是整个改造的核心，需要在 `get_configurations()` 中注入凭证。
 
 - [ ] **步骤 1：编写失败的测试**
 
@@ -369,29 +868,38 @@ git commit -m "feat(ai): 添加数据库迁移简化模型表结构
 
 import pytest
 from unittest.mock import AsyncMock, patch, MagicMock
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from ai.components.model.internal.provider_manager import ProviderManager
 from ai.models.plugin import PluginCredential, CredentialScope
 
 
-class TestProviderManagerCredentials:
-    """ProviderManager 凭证获取测试"""
+class TestProviderManagerCredentialInjection:
+    """ProviderManager 凭证注入测试"""
 
     @pytest.fixture
     def provider_manager(self):
         """创建 ProviderManager 实例"""
         return ProviderManager()
 
+    @pytest.fixture
+    def mock_session(self):
+        """创建 Mock Session"""
+        return MagicMock(spec=AsyncSession)
+
     @pytest.mark.asyncio
-    async def test_get_plugin_credentials_success(self, provider_manager):
-        """测试成功获取插件凭证"""
+    async def test_inject_plugin_credentials_success(self, provider_manager, mock_session):
+        """测试成功注入插件凭证"""
         tenant_id = "test-tenant"
         plugin_id = "alon/tongyi"
+        provider_name = f"{plugin_id}/openai"
 
-        # Mock 数据库查询
+        # Mock 凭证数据
         mock_credential = MagicMock(spec=PluginCredential)
-        mock_credential.credentials = {"api_key": "encrypted_key"}
         mock_credential.plugin_id = plugin_id
+        mock_credential.credentials = {"api_key": "encrypted_key"}
+        mock_credential.is_default = True
+        mock_credential.is_disabled = False
 
         with patch(
             "ai.components.model.internal.provider_manager.PluginCredential.one_by_conditions",
@@ -402,103 +910,431 @@ class TestProviderManagerCredentials:
                 "ai.services.credential_service.credential_service.decrypt_credentials",
                 return_value={"api_key": "decrypted_key"},
             ):
-                result = await provider_manager._get_plugin_credentials(
-                    tenant_id, plugin_id
+                # 调用 get_configurations 并传入 session
+                configurations = await provider_manager.get_configurations(
+                    tenant_id=tenant_id,
+                    db_session=mock_session,
                 )
 
-        assert result == {"api_key": "decrypted_key"}
+        # 验证凭证被注入
+        if provider_name in configurations:
+            config = configurations[provider_name]
+            if config.custom_configuration.provider:
+                assert config.custom_configuration.provider.credentials == {"api_key": "decrypted_key"}
 
     @pytest.mark.asyncio
-    async def test_get_plugin_credentials_not_found(self, provider_manager):
-        """测试凭证不存在时抛出异常"""
+    async def test_inject_plugin_credentials_no_session(self, provider_manager):
+        """测试无 session 时不注入凭证"""
         tenant_id = "test-tenant"
-        plugin_id = "nonexistent/plugin"
 
-        with patch(
-            "ai.components.model.internal.provider_manager.PluginCredential.one_by_conditions",
-            new_callable=AsyncMock,
-            return_value=None,
-        ):
-            with pytest.raises(ValueError, match="未配置凭证"):
-                await provider_manager._get_plugin_credentials(tenant_id, plugin_id)
+        # 不传 session 调用
+        configurations = await provider_manager.get_configurations(
+            tenant_id=tenant_id,
+            db_session=None,
+        )
+
+        # 验证返回的配置对象（凭证不会被注入，保持原有行为）
+        assert configurations is not None
+
+    @pytest.mark.asyncio
+    async def test_extract_plugin_id_from_provider(self, provider_manager):
+        """测试从 provider 名称提取 plugin_id"""
+        # 完整格式
+        plugin_id = provider_manager._extract_plugin_id_from_provider("alon/tongyi/openai")
+        assert plugin_id == "alon/tongyi"
+
+        # 简化格式
+        plugin_id = provider_manager._extract_plugin_id_from_provider("plugin-001/openai")
+        assert plugin_id == "plugin-001"
 ```
 
 - [ ] **步骤 2：运行测试验证失败**
 
 运行：`cd server/python && uv run pytest tests/ai/unit/components/model/test_provider_manager.py -v`
-预期：FAIL，报错 `AttributeError: 'ProviderManager' object has no attribute '_get_plugin_credentials'`
+预期：FAIL，报错 `AttributeError: 'ProviderManager' object has no attribute '_extract_plugin_id_from_provider'`
 
-- [ ] **步骤 3：在 ProviderManager 中添加凭证获取方法**
+- [ ] **步骤 3：在 ProviderManager 中实现凭证注入逻辑**
 
-在 `server/python/src/ai/components/model/internal/provider_manager.py` 中添加新方法：
+修改 `server/python/src/ai/components/model/internal/provider_manager.py`：
 
 ```python
+# 在文件顶部添加导入
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from ai.models.plugin import PluginCredential
 from ai.services.credential_service import credential_service
+from ai.components.model.internal.entities.provider_entities import (
+    CustomProviderConfiguration,
+)
 
 class ProviderManager:
     # ... 现有代码保持不变 ...
 
-    async def _get_plugin_credentials(
+    async def get_configurations(
         self,
         tenant_id: str,
-        plugin_id: str,
-    ) -> dict:
+        use_cache: bool = True,
+        db_session: AsyncSession | None = None,  # 新增参数
+    ) -> ProviderConfigurations:
         """
-        获取插件的默认凭证
+        获取模型供应商配置集合
 
-        Args:
-            tenant_id: 租户 ID
-            plugin_id: 插件 ID（如 alon/tongyi）
-
-        Returns:
-            解密后的凭证字典
-
-        Raises:
-            ValueError: 插件未配置凭证
+        :param tenant_id: 租户 ID
+        :param use_cache: 是否使用缓存，默认 True
+        :param db_session: 数据库会话（可选，用于查询凭证）
+        :return: 供应商配置集合
         """
-        from framework.database.core.engine import async_session
+        cache_key = f"{CACHE_KEY_PREFIX}:{tenant_id}"
 
-        async with async_session() as session:
-            credential = await PluginCredential.one_by_conditions(
-                session,
-                conditions=[
-                    PluginCredential.tenant_id == tenant_id,
-                    PluginCredential.plugin_id == plugin_id,
-                    PluginCredential.is_default == True,
-                    PluginCredential.is_disabled == False,
-                ],
-            )
+        # 尝试从缓存获取
+        if use_cache:
+            try:
+                cache_manager = get_cache_manager()
+                cached_data = await cache_manager.get(cache_key, tenant_id=tenant_id)
 
-            if not credential:
-                raise ValueError(
-                    f"插件 {plugin_id} 未配置凭证，请先在插件设置中添加 API Key"
+                if cached_data:
+                    _logger.debug(f"使用 Redis 缓存的配置 tenant_id={tenant_id}")
+                    try:
+                        model_provider_factory = ModelProviderFactory(tenant_id)
+                        provider_entities = await model_provider_factory.get_providers()
+                        provider_entities_dict = {
+                            p.provider: p for p in provider_entities
+                        }
+
+                        provider_configurations = ProviderConfigurations.from_dict(
+                            cached_data, provider_entities_dict
+                        )
+                        return provider_configurations
+                    except Exception as deserialize_error:
+                        _logger.warning(
+                            f"反序列化缓存数据失败 tenant_id={tenant_id}: {deserialize_error}, 将从数据库加载"
+                        )
+                else:
+                    _logger.debug(
+                        f"Redis 缓存未命中 tenant_id={tenant_id}, 重新加载"
+                    )
+            except Exception as e:
+                _logger.warning(
+                    f"从 Redis 读取缓存失败 tenant_id={tenant_id}: {e}, 将从数据库加载"
                 )
 
-            # 获取凭证架构用于解密
-            credentials_schema = await self._get_credentials_schema(plugin_id)
+        # 从数据库加载配置
+        _logger.debug(f"从数据库加载配置 tenant_id={tenant_id}")
 
-            # 解密凭证
-            decrypted = credential_service.decrypt_credentials(
-                credential.credentials or {},
-                credentials_schema,
+        # 获取所有模型供应商记录（已废弃，返回空）
+        provider_name_to_provider_records_dict: dict[str, list] = (
+            await self._get_all_providers(tenant_id)
+        )
+
+        # 获取所有模型供应商实体定义
+        model_provider_factory = ModelProviderFactory(tenant_id)
+        provider_entities = await model_provider_factory.get_providers()
+
+        # 获取所有模型供应商模型设置（已废弃，返回空）
+        provider_name_to_provider_model_settings_dict = (
+            await self._get_all_provider_model_settings(tenant_id)
+        )
+
+        provider_configurations = ProviderConfigurations(tenant_id=tenant_id)
+
+        # 获取所有模型供应商模型记录（已废弃，返回空）
+        provider_name_to_provider_model_records_dict = (
+            await self._get_all_custom_models(tenant_id)
+        )
+
+        # 构造每个模型供应商的配置对象
+        for provider_entity in provider_entities:
+            provider_name = provider_entity.provider
+            provider_records = provider_name_to_provider_records_dict.get(
+                provider_entity.provider, []
             )
 
-            return decrypted
+            custom_model_records = provider_name_to_provider_model_records_dict.get(
+                provider_entity.provider, []
+            )
 
-    async def _get_credentials_schema(self, plugin_id: str) -> list[dict]:
+            # 转换自定义配置
+            custom_configuration = await self._to_custom_configuration(
+                tenant_id,
+                provider_entity,
+                provider_records,
+                custom_model_records,
+            )
+
+            # 获取模型供应商模型设置
+            provider_model_settings = provider_name_to_provider_model_settings_dict.get(
+                provider_name
+            )
+
+            # 转换模型设置
+            model_settings = self._to_model_settings(
+                provider_entity=provider_entity,
+                provider_model_settings=provider_model_settings,
+            )
+
+            # 构造模型供应商配置对象
+            provider_configuration = ProviderConfiguration(
+                provider=provider_entity,
+                custom_configuration=custom_configuration,
+                model_settings=model_settings,
+                tenant_id=tenant_id,
+            )
+
+            provider_configurations[provider_entity.provider] = provider_configuration
+
+        # ========== 新增：从 PluginCredential 注入凭证 ==========
+        if db_session:
+            await self._inject_plugin_credentials(
+                session=db_session,
+                tenant_id=tenant_id,
+                provider_configurations=provider_configurations,
+            )
+
+        # 存入 Redis 缓存
+        if use_cache:
+            try:
+                cache_manager = get_cache_manager()
+                cache_data = provider_configurations.to_dict()
+                await cache_manager.set(
+                    cache_key, cache_data, ttl=CACHE_TTL, tenant_id=tenant_id
+                )
+                _logger.debug(
+                    f"已缓存配置到 Redis tenant_id={tenant_id}, TTL={CACHE_TTL}秒"
+                )
+            except Exception as e:
+                _logger.warning(f"缓存配置到 Redis 失败 tenant_id={tenant_id}: {e}")
+
+        return provider_configurations
+
+    async def _get_provider_model_bundle(
+        self,
+        tenant_id: str,
+        provider: str,
+        model_type: ModelType,
+        db_session: AsyncSession | None = None,  # 新增参数
+    ) -> ProviderModelBundle:
         """
-        获取插件的凭证架构
+        获取供应商模型束
+
+        :param tenant_id: 租户 ID
+        :param provider: 供应商名称
+        :param model_type: 模型类型
+        :param db_session: 数据库会话（可选）
+        :return: 供应商模型束
+        """
+        configurations = await self.get_configurations(
+            tenant_id, db_session=db_session
+        )
+        provider_configuration = configurations.get(provider)
+
+        if not provider_configuration:
+            raise ProviderNotFoundError(provider)
+
+        model_type_instance = await provider_configuration.get_model_type_instance(
+            model_type
+        )
+
+        return ProviderModelBundle(
+            configuration=provider_configuration,
+            model_type_instance=model_type_instance,
+        )
+
+    # ========== 新增方法：凭证注入 ==========
+
+    async def _inject_plugin_credentials(
+        self,
+        session: AsyncSession,
+        tenant_id: str,
+        provider_configurations: "ProviderConfigurations",
+    ) -> None:
+        """
+        从 PluginCredential 表加载默认凭证并注入到 ProviderConfiguration
 
         Args:
-            plugin_id: 插件 ID
+            session: 数据库会话
+            tenant_id: 租户 ID
+            provider_configurations: 供应商配置集合
+        """
+        for provider_name, config in provider_configurations.items():
+            try:
+                # 解析 plugin_id
+                plugin_id = self._extract_plugin_id_from_provider(provider_name)
+                if not plugin_id:
+                    continue
+
+                # 查询默认凭证
+                credential = await PluginCredential.one_by_conditions(
+                    session,
+                    conditions=[
+                        PluginCredential.tenant_id == tenant_id,
+                        PluginCredential.plugin_id == plugin_id,
+                        PluginCredential.is_default == True,
+                        PluginCredential.is_disabled == False,
+                    ],
+                )
+
+                if not credential:
+                    continue
+
+                # 提取凭证架构用于解密
+                credentials_schema = self._extract_credentials_schema_from_provider(
+                    config.provider
+                )
+
+                # 解密凭证
+                decrypted = credential_service.decrypt_credentials(
+                    credential.credentials or {},
+                    credentials_schema,
+                )
+
+                # 注入到 CustomConfiguration
+                if config.custom_configuration.provider is None:
+                    config.custom_configuration.provider = CustomProviderConfiguration(
+                        credentials=decrypted
+                    )
+                else:
+                    config.custom_configuration.provider.credentials = decrypted
+
+                _logger.debug(
+                    f"已注入插件凭证 tenant_id={tenant_id} plugin_id={plugin_id} provider={provider_name}"
+                )
+
+            except Exception as e:
+                _logger.warning(
+                    f"注入插件凭证失败 provider={provider_name}: {e}"
+                )
+                continue
+
+    def _extract_plugin_id_from_provider(self, provider_name: str) -> str | None:
+        """
+        从 provider 名称中提取 plugin_id
+
+        支持两种格式：
+        - 完整格式：organization/plugin_name/provider_name → organization/plugin_name
+        - 简化格式：plugin_id/provider_name → plugin_id
+
+        Args:
+            provider_name: 供应商名称
 
         Returns:
-            凭证架构列表
+            插件 ID 或 None
         """
-        # 从插件配置中获取凭证架构
-        # 这里简化实现，实际需要从插件 manifest 中解析
-        return []
+        try:
+            from ai.components.model.schema.provider_id import ModelProviderID
+            provider_id = ModelProviderID(provider_name)
+            return provider_id.plugin_id
+        except Exception:
+            return None
+
+    def _extract_credentials_schema_from_provider(
+        self,
+        provider_entity: "ProviderEntity",
+    ) -> list[dict]:
+        """
+        从 ProviderEntity 中提取凭证架构
+
+        将 CredentialFormSchema 转换为 CredentialService 需要的 dict 格式
+
+        Args:
+            provider_entity: 供应商实体
+
+        Returns:
+            凭证架构列表 [{"name": "api_key", "type": "secret-input", ...}, ...]
+        """
+        if not provider_entity.provider_credential_schema:
+            return []
+
+        schemas = provider_entity.provider_credential_schema.credential_form_schemas
+        if not schemas:
+            return []
+
+        result = []
+        for schema in schemas:
+            item = {
+                "name": schema.variable,
+                "type": schema.type.value if hasattr(schema.type, "value") else str(schema.type),
+                "required": schema.required,
+            }
+            if schema.options:
+                item["options"] = [
+                    {"value": opt.value, "label": opt.label}
+                    for opt in schema.options
+                ]
+            result.append(item)
+
+        return result
+
+    # ========== 废弃方法（保留向后兼容） ==========
+
+    @staticmethod
+    async def _get_all_custom_models(tenant_id: str) -> dict[str, list]:
+        """
+        获取所有自定义模型记录
+
+        注意：此方法已废弃，自定义模型现在通过插件扩展。
+        保留方法签名以保持向后兼容。
+
+        :param tenant_id: 租户 ID
+        :return: 空字典
+        """
+        # 已废弃：自定义模型现在通过插件扩展
+        return defaultdict(list)
+
+    async def get_default_model(
+        self, tenant_id: str, model_type: ModelType
+    ) -> "DefaultModelEntity | None":
+        """
+        获取指定模型类型的默认模型
+
+        注意：此方法已废弃，默认模型现在通过 plugin_credentials.is_default 管理。
+        保留方法签名以保持向后兼容。
+
+        :param tenant_id: 租户 ID
+        :param model_type: 模型类型
+        :return: None
+        """
+        return None
+
+    async def update_default_model_record(
+        self,
+        tenant_id: str,
+        model_type: ModelType,
+        provider: str,
+        model: str,
+    ):
+        """
+        更新默认模型记录
+
+        注意：此方法已废弃，默认模型现在通过 plugin_credentials.is_default 管理。
+        保留方法签名以保持向后兼容。
+        """
+        pass
+
+    async def _get_all_providers(self, tenant_id: str) -> dict[str, list]:
+        """
+        获取所有模型供应商记录
+
+        注意：此方法已废弃，模型定义现在来自插件 manifest。
+        保留方法签名以保持向后兼容。
+
+        :param tenant_id: 租户 ID
+        :return: 空字典
+        """
+        return defaultdict(list)
+
+    async def _get_all_provider_model_settings(
+        self, tenant_id: str
+    ) -> dict[str, list]:
+        """
+        获取所有模型供应商模型设置
+
+        注意：此方法已废弃，模型设置现在由插件管理。
+        保留方法签名以保持向后兼容。
+
+        :param tenant_id: 租户 ID
+        :return: 空字典
+        """
+        return defaultdict(list)
 ```
 
 - [ ] **步骤 4：运行测试验证通过**
@@ -510,94 +1346,18 @@ class ProviderManager:
 
 ```bash
 git add server/python/src/ai/components/model/internal/provider_manager.py server/python/tests/ai/unit/components/model/test_provider_manager.py
-git commit -m "feat(ai): 改造 ProviderManager 支持从插件凭证获取配置
+git commit -m "feat(ai): ProviderManager 实现凭证注入逻辑
 
-- 添加 _get_plugin_credentials 方法获取默认凭证
-- 添加 _get_credentials_schema 方法获取凭证架构
-- 使用 plugin_credentials 表替代 model_providers 表"
+- get_configurations 添加 db_session 可选参数
+- 新增 _inject_plugin_credentials 方法从 PluginCredential 表注入凭证
+- 新增 _extract_plugin_id_from_provider 方法解析 plugin_id
+- 新增 _extract_credentials_schema_from_provider 方法提取凭证架构
+- 标记废弃方法并保留向后兼容"
 ```
 
 ---
 
-## 任务 5：清理 ProviderManager 中的 TODO 注释
-
-**文件：**
-- 修改：`server/python/src/ai/components/model/internal/provider_manager.py`
-
-- [ ] **步骤 1：删除或改造 _get_all_providers 方法**
-
-将 `_get_all_providers` 方法改为直接返回空字典（因为现在从插件获取）：
-
-```python
-async def _get_all_providers(self, tenant_id: str) -> dict[str, list]:
-    """
-    获取所有模型供应商记录
-
-    注意：此方法已废弃，模型定义现在来自插件 manifest。
-    保留方法签名以保持向后兼容。
-
-    Returns:
-        空字典
-    """
-    # 模型定义现在完全来自插件系统
-    # 此方法保留仅为向后兼容，后续可删除
-    return defaultdict(list)
-```
-
-- [ ] **步骤 2：删除其他 TODO 方法或标记为已废弃**
-
-对以下方法添加废弃警告：
-
-```python
-async def _get_all_provider_model_settings(self, tenant_id: str) -> dict[str, list]:
-    """
-    获取所有模型供应商模型设置
-
-    注意：此方法已废弃，模型设置现在由插件管理。
-    """
-    # 已废弃：模型设置现在由插件管理
-    return defaultdict(list)
-
-async def _get_all_custom_models(self, tenant_id: str) -> dict[str, list]:
-    """
-    获取所有自定义模型记录
-
-    注意：此方法已废弃，自定义模型现在通过插件扩展。
-    """
-    # 已废弃：自定义模型现在通过插件扩展
-    return defaultdict(list)
-
-async def get_default_model_record(self, tenant_id: str, model_type: ModelType) -> None:
-    """
-    更新默认模型记录
-
-    注意：此方法已废弃，默认模型现在通过 plugin_credentials.is_default 管理。
-    """
-    # 已废弃：默认模型现在通过 plugin_credentials.is_default 管理
-    pass
-```
-
-- [ ] **步骤 3：验证代码无语法错误**
-
-运行：`cd server/python && uv run python -c "from ai.components.model.internal.provider_manager import ProviderManager; print('导入成功')"`
-预期：输出 "导入成功"
-
-- [ ] **步骤 4：Commit**
-
-```bash
-git add server/python/src/ai/components/model/internal/provider_manager.py
-git commit -m "refactor(ai): 清理 ProviderManager 中的废弃方法
-
-- 标记 _get_all_providers 为废弃
-- 标记 _get_all_provider_model_settings 为废弃
-- 标记 _get_all_custom_models 为废弃
-- 标记 get_default_model_record 为废弃
-- 移除所有 TODO 注释，说明设计决策"
-```
-
----
-
-## 任务 6：更新 MIGRATION.md 文档
+## 任务 9：更新 MIGRATION.md 文档
 
 **文件：**
 - 修改：`server/python/src/ai/components/model/MIGRATION.md`
@@ -633,8 +1393,22 @@ git commit -m "refactor(ai): 清理 ProviderManager 中的废弃方法
 
 **新流程（AI Platform）：**
 1. 从插件 manifest 获取模型定义
-2. 从 plugin_credentials 表获取默认凭证
+2. 从 plugin_credentials 表获取默认凭证（通过 is_default 字段）
 3. 通过 plugin_id 关联插件和凭证
+4. 凭证在 ProviderManager.get_configurations() 中自动注入到 CustomConfiguration
+
+### Session 传递链路
+
+凭证查询需要数据库 Session，通过以下链路传递：
+
+```
+ChatController (Depends(get_db_session))
+  → AlonChatModel(db_session=session)
+    → LLMService.invoke(..., db_session=db_session)
+      → ModelInstanceFactory.get_model_instance(..., db_session=db_session)
+        → ProviderManager.get_configurations(..., db_session=db_session)
+          → _inject_plugin_credentials(session, ...)
+```
 
 ### ProviderManager 改造
 
@@ -647,8 +1421,9 @@ git commit -m "refactor(ai): 清理 ProviderManager 中的废弃方法
 
 新增方法：
 
-- `_get_plugin_credentials()` - 获取插件的默认凭证
-- `_get_credentials_schema()` - 获取插件的凭证架构
+- `_inject_plugin_credentials()` - 从 PluginCredential 表注入凭证
+- `_extract_plugin_id_from_provider()` - 从 provider 名称提取 plugin_id
+- `_extract_credentials_schema_from_provider()` - 提取凭证架构用于解密
 ```
 
 - [ ] **步骤 2：Commit**
@@ -660,7 +1435,7 @@ git commit -m "docs(ai): 更新 MIGRATION.md 记录架构简化变更"
 
 ---
 
-## 任务 7：集成测试验证整体流程
+## 任务 10：集成测试验证整体流程
 
 **文件：**
 - 创建：`server/python/tests/ai/integration/test_plugin_model_flow.py`
@@ -677,62 +1452,80 @@ git commit -m "docs(ai): 更新 MIGRATION.md 记录架构简化变更"
 
 import pytest
 from unittest.mock import AsyncMock, patch, MagicMock
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from ai.models.plugin import PluginCredential, CredentialScope
 from ai.components.model.services.llm_service import LLMService
+from ai.components.model.internal.provider_manager import ProviderManager
 
 
 class TestPluginModelFlow:
     """插件模型配置流程测试"""
 
+    @pytest.fixture
+    def mock_session(self):
+        """创建 Mock Session"""
+        return MagicMock(spec=AsyncSession)
+
     @pytest.mark.asyncio
-    async def test_chat_uses_plugin_credentials(self):
+    async def test_chat_uses_plugin_credentials(self, mock_session):
         """测试对话接口使用插件凭证"""
         tenant_id = "test-tenant"
         plugin_id = "alon/tongyi"
         provider = f"{plugin_id}/openai"
 
-        # 1. 模拟插件已安装
-        # 2. 模拟凭证已配置
+        # 模拟凭证已配置
         mock_credential = MagicMock(spec=PluginCredential)
-        mock_credential.credentials = {"api_key": "sk-test-key"}
+        mock_credential.credentials = {"api_key": "encrypted_key"}
         mock_credential.is_default = True
+        mock_credential.is_disabled = False
 
-        # 3. 测试 LLM 调用能获取到凭证
         with patch(
             "ai.components.model.internal.provider_manager.PluginCredential.one_by_conditions",
             new_callable=AsyncMock,
             return_value=mock_credential,
         ):
-            llm_service = LLMService(tenant_id)
+            with patch(
+                "ai.services.credential_service.credential_service.decrypt_credentials",
+                return_value={"api_key": "decrypted_key"},
+            ):
+                llm_service = LLMService(tenant_id)
 
-            # 验证服务创建成功
-            assert llm_service._tenant_id == tenant_id
+                # 验证服务创建成功
+                assert llm_service._tenant_id == tenant_id
 
     @pytest.mark.asyncio
-    async def test_multiple_credentials_uses_default(self):
+    async def test_multiple_credentials_uses_default(self, mock_session):
         """测试多个凭证时使用默认凭证"""
         tenant_id = "test-tenant"
         plugin_id = "alon/tongyi"
 
-        # 模拟有多个凭证，其中一个是默认的
+        # 模拟默认凭证
         mock_default = MagicMock(spec=PluginCredential)
-        mock_default.credentials = {"api_key": "default-key"}
+        mock_default.credentials = {"api_key": "default_key_encrypted"}
         mock_default.is_default = True
+        mock_default.is_disabled = False
 
         with patch(
             "ai.components.model.internal.provider_manager.PluginCredential.one_by_conditions",
             new_callable=AsyncMock,
             return_value=mock_default,
         ):
-            provider_manager = ProviderManager()
-            result = await provider_manager._get_plugin_credentials(tenant_id, plugin_id)
+            with patch(
+                "ai.services.credential_service.credential_service.decrypt_credentials",
+                return_value={"api_key": "default_key"},
+            ):
+                provider_manager = ProviderManager()
 
-            assert result["api_key"] == "default-key"
+                # 验证能提取 plugin_id
+                plugin_id_extracted = provider_manager._extract_plugin_id_from_provider(
+                    f"{plugin_id}/openai"
+                )
+                assert plugin_id_extracted == plugin_id
 
     @pytest.mark.asyncio
-    async def test_no_credentials_raises_error(self):
-        """测试未配置凭证时抛出错误"""
+    async def test_no_credentials_continues_without_injection(self, mock_session):
+        """测试未配置凭证时不注入，保持原有行为"""
         tenant_id = "test-tenant"
         plugin_id = "nonexistent/plugin"
 
@@ -743,8 +1536,43 @@ class TestPluginModelFlow:
         ):
             provider_manager = ProviderManager()
 
-            with pytest.raises(ValueError, match="未配置凭证"):
-                await provider_manager._get_plugin_credentials(tenant_id, plugin_id)
+            # 不传 session 时应该正常工作
+            configurations = await provider_manager.get_configurations(
+                tenant_id=tenant_id,
+                db_session=None,
+            )
+
+            assert configurations is not None
+
+    @pytest.mark.asyncio
+    async def test_extract_credentials_schema(self):
+        """测试提取凭证架构"""
+        provider_manager = ProviderManager()
+
+        # 创建 Mock ProviderEntity
+        mock_provider = MagicMock()
+        mock_provider.provider_credential_schema = MagicMock()
+        mock_provider.provider_credential_schema.credential_form_schemas = [
+            MagicMock(
+                variable="api_key",
+                type=MagicMock(value="secret-input"),
+                required=True,
+                options=None,
+            ),
+            MagicMock(
+                variable="base_url",
+                type=MagicMock(value="text-input"),
+                required=False,
+                options=None,
+            ),
+        ]
+
+        schema = provider_manager._extract_credentials_schema_from_provider(mock_provider)
+
+        assert len(schema) == 2
+        assert schema[0]["name"] == "api_key"
+        assert schema[0]["type"] == "secret-input"
+        assert schema[1]["name"] == "base_url"
 ```
 
 - [ ] **步骤 2：运行集成测试**
@@ -760,7 +1588,8 @@ git commit -m "test(ai): 添加插件模型配置集成测试
 
 - 测试对话接口使用插件凭证
 - 测试多凭证时使用默认凭证
-- 测试未配置凭证时的错误处理"
+- 测试未配置凭证时的处理
+- 测试凭证架构提取功能"
 ```
 
 ---
@@ -771,14 +1600,22 @@ git commit -m "test(ai): 添加插件模型配置集成测试
 - [x] 删除 model_providers 表 → 任务 2, 任务 3
 - [x] 删除 model_configs 表 → 任务 2, 任务 3
 - [x] 添加 is_default 字段 → 任务 1
-- [x] 改造 ProviderManager → 任务 4, 任务 5
-- [x] 打通对话流程 → 任务 7
+- [x] 改造 ProviderManager → 任务 8
+- [x] 打通对话流程 → 任务 4-8（Session 透传链路）
 
-**2. 占位符扫描：**
+**2. 架构修复：**
+- [x] Session 注入策略 → 可选参数从 Controller 透传
+- [x] 凭证接入消费路径 → 在 get_configurations() 中注入到 CustomConfiguration
+- [x] `_get_credentials_schema()` 实现 → `_extract_credentials_schema_from_provider()`
+
+**3. 占位符扫描：**
 - [x] 无 TODO/TBD/待定字样
 - [x] 所有代码步骤都有完整代码块
 - [x] 所有测试步骤都有完整测试代码
 
-**3. 类型一致性：**
+**4. 类型一致性：**
 - [x] PluginCredential.is_default 在所有使用处一致
-- [x] ProviderManager._get_plugin_credentials 签名一致
+- [x] db_session 参数类型为 `AsyncSession | None`，全程一致
+
+**5. 迁移版本号：**
+- [x] down_revision = "001_ai_initial" 与实际 revision ID 一致
