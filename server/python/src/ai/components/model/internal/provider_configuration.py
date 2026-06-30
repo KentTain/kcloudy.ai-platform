@@ -183,9 +183,6 @@ class ProviderConfiguration(BaseModel):
         :param credentials: 供应商凭证
         :return: 数据库记录和验证后的凭证
         """
-        # TODO: 需要数据库模型支持
-        # provider_record = await self._get_custom_provider_credentials()
-
         # 获取凭证表单中的敏感变量
         provider_credential_secret_variables = self.__extract_secret_variables(
             self.provider.provider_credential_schema.credential_form_schemas
@@ -228,9 +225,6 @@ class ProviderConfiguration(BaseModel):
         :param credentials: 供应商凭证
         :return: 验证后的凭证
         """
-        # TODO: 需要数据库模型支持
-        custom_model_record = None
-
         # 获取凭证表单中的敏感变量
         model_credential_secret_variables = self.__extract_secret_variables(
             self.provider.model_credential_schema.credential_form_schemas
@@ -264,33 +258,6 @@ class ProviderConfiguration(BaseModel):
                 credentials[key] = encrypt_token(self.tenant_id, value)
 
         return credentials
-
-    async def add_or_update_custom_credentials(self, credentials: dict) -> None:
-        """
-        新增或更新自定义供应商凭证
-
-        TODO: 需要数据库模型支持
-        """
-        # provider_record, credentials = await self.custom_credentials_validate(credentials)
-
-        # 保存供应商凭证到数据库
-        # ...
-
-        # 清除缓存
-        from ai.components.model.internal.provider_manager import ProviderManager
-
-        await ProviderManager.clear_cache(self.tenant_id)
-
-    async def delete_custom_credentials(self) -> None:
-        """
-        删除自定义供应商凭证
-
-        TODO: 需要数据库模型支持
-        """
-        # 清除缓存
-        from ai.components.model.internal.provider_manager import ProviderManager
-
-        await ProviderManager.clear_cache(self.tenant_id)
 
     async def get_model_type_instance(self, model_type: ModelType):
         """
