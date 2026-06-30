@@ -175,8 +175,8 @@ class TestCredentialCacheIntegration:
                     # 第一次调用（缓存未命中）
                     await provider_manager.get_configurations(tenant_id, use_cache=True)
 
-                    # 验证从数据库加载
-                    assert provider_manager._get_all_providers.called
+                    # 验证从插件加载（新的实现使用 ModelProviderFactory.get_providers）
+                    assert mock_factory.get_providers.called
 
     @pytest.mark.asyncio
     async def test_cache_invalidation_on_clear(

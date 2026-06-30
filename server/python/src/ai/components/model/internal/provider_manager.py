@@ -325,18 +325,16 @@ class ProviderManager:
         """
         从 provider 名称中提取 plugin_id
 
-        :param provider: provider 名称，例如 "plugin/alon/tongyi"
-        :return: plugin_id，例如 "alon/tongyi"，如果不是 plugin provider 则返回 None
+        :param provider: provider 名称，例如 "alon/tongyi/openai"
+        :return: plugin_id，例如 "alon/tongyi"，如果解析失败则返回 None
         """
-        if not provider.startswith("plugin/"):
-            return None
+        try:
+            from ai.components.model.schema.provider_id import ModelProviderID
 
-        # 去掉 "plugin/" 前缀
-        plugin_id = provider[7:]  # len("plugin/") = 7
-        if not plugin_id:
+            provider_id = ModelProviderID(provider)
+            return provider_id.plugin_id
+        except Exception:
             return None
-
-        return plugin_id
 
     def _extract_credentials_schema_from_provider(
         self, provider_entity: ProviderEntity

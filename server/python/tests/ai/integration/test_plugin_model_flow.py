@@ -87,15 +87,28 @@ class TestPluginModelFlow:
             new_callable=AsyncMock,
             return_value=None,
         ):
-            provider_manager = ProviderManager()
+            with patch(
+                "ai.components.model.internal.provider_manager.ModelProviderFactory"
+            ) as mock_factory_class:
+                mock_factory = MagicMock()
+                mock_factory.get_providers = AsyncMock(return_value=[])
+                mock_factory_class.return_value = mock_factory
 
-            # 不传 session 时应该正常工作
-            configurations = await provider_manager.get_configurations(
-                tenant_id=tenant_id,
-                db_session=None,
-            )
+                with patch(
+                    "ai.components.model.internal.provider_manager.ProviderConfigurations"
+                ) as mock_configs_class:
+                    mock_configs = MagicMock()
+                    mock_configs_class.return_value = mock_configs
 
-            assert configurations is not None
+                    provider_manager = ProviderManager()
+
+                    # 不传 session 时应该正常工作
+                    configurations = await provider_manager.get_configurations(
+                        tenant_id=tenant_id,
+                        db_session=None,
+                    )
+
+                    assert configurations is not None
 
     @pytest.mark.asyncio
     async def test_extract_credentials_schema(self):
