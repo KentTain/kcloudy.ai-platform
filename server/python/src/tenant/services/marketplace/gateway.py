@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any
 
 from loguru import logger
@@ -204,6 +204,9 @@ class MarketplaceGateway:
         from tenant.services.plugin_storage_service import plugin_storage_service
         from tenant.models import TenantPluginDefinition
 
+        if not plugins:
+            return {"success": [], "failed": [], "skipped": []}
+
         marketplace = await self.get_marketplace(session, marketplace_id)
         if not marketplace:
             raise ValueError(f"市场不存在: {marketplace_id}")
@@ -217,6 +220,17 @@ class MarketplaceGateway:
         failed = []
         skipped = []
 
+        # 批量查询所有 plugin_id，避免 N+1 问题
+        plugin_ids = [item["plugin_id"] for item in plugins]
+        existing_result = await session.execute(
+            select(TenantPluginDefinition).where(
+                TenantPluginDefinition.plugin_id.in_(plugin_ids)
+            )
+        )
+        existing_map = {
+            d.plugin_id: d for d in existing_result.scalars().all()
+        }
+
         for plugin_item in plugins:
             plugin_id = plugin_item["plugin_id"]
             plugin_type = plugin_item.get("plugin_type", "tool")
@@ -229,12 +243,7 @@ class MarketplaceGateway:
                     continue
 
                 # 2. 检查本地是否已存在
-                existing = await session.execute(
-                    select(TenantPluginDefinition).where(
-                        TenantPluginDefinition.plugin_id == plugin_id
-                    )
-                )
-                existing_def = existing.scalar_one_or_none()
+                existing_def = existing_map.get(plugin_id)
 
                 if existing_def and existing_def.remote_version == remote_info.version:
                     skipped.append({"plugin_id": plugin_id, "reason": "相同版本已存在"})
@@ -261,6 +270,7 @@ class MarketplaceGateway:
                     existing_def.update_available = False
                     existing_def.source_type = "remote"
                     existing_def.marketplace_id = marketplace_id
+                    existing_def.package_id = storage_path
                 else:
                     new_def = TenantPluginDefinition(
                         plugin_id=plugin_id,
@@ -274,6 +284,7 @@ class MarketplaceGateway:
                         remote_version=remote_info.version,
                         local_version=remote_info.version,
                         source_type="remote",
+                        package_id=storage_path,
                     )
                     session.add(new_def)
 
@@ -284,7 +295,7 @@ class MarketplaceGateway:
                 failed.append({"plugin_id": plugin_id, "message": str(e)})
 
         # 更新最后同步时间
-        marketplace.last_sync_at = datetime.utcnow()
+        marketplace.last_sync_at = datetime.now(UTC)
         marketplace.last_sync_status = "success" if not failed else "partial"
 
         return {"success": success, "failed": failed, "skipped": skipped}
@@ -300,6 +311,9 @@ class MarketplaceGateway:
         marketplace = await self.get_marketplace(session, marketplace_id)
         if not marketplace:
             raise ValueError(f"市场不存在: {marketplace_id}")
+
+        if not marketplace.is_enabled:
+            raise ValueError(f"市场已禁用: {marketplace.name}")
 
         adapter = self._get_adapter(marketplace.type)
         config = self._build_adapter_config(marketplace)
@@ -339,6 +353,7 @@ class MarketplaceGateway:
             select(TenantPluginDefinition).where(
                 TenantPluginDefinition.plugin_id == plugin_id,
                 TenantPluginDefinition.source_type == "remote",
+                TenantPluginDefinition.marketplace_id == marketplace_id,
             )
         )
         local_def = result.scalar_one_or_none()
@@ -352,11 +367,31 @@ class MarketplaceGateway:
             session, marketplace_id, [{"plugin_id": plugin_id}]
         )
 
+        is_success = any(
+            item["plugin_id"] == plugin_id for item in sync_result["success"]
+        )
+        is_skipped = any(
+            item["plugin_id"] == plugin_id for item in sync_result["skipped"]
+        )
+
+        if is_success:
+            new_version = next(
+                item["version"] for item in sync_result["success"]
+                if item["plugin_id"] == plugin_id
+            )
+            status = "updated"
+        elif is_skipped:
+            new_version = old_version
+            status = "skipped"
+        else:
+            new_version = old_version
+            status = "failed"
+
         return {
             "plugin_id": plugin_id,
             "old_version": old_version,
-            "new_version": local_def.local_version or old_version,
-            "status": "updated" if sync_result["success"] else "failed",
+            "new_version": new_version,
+            "status": status,
         }
 
 
