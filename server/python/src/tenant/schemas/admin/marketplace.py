@@ -35,11 +35,21 @@ class MarketplaceUpdate(BaseModel):
     description: str | None = Field(default=None, max_length=500, description="市场描述")
 
 
+# ==================== 同步 Schema ====================
+
+
+class SyncPluginItem(BaseModel):
+    """单个同步插件项"""
+
+    plugin_id: str = Field(..., description="插件ID")
+    plugin_type: str = Field(default="tool", description="插件类型")
+
+
 class SyncPluginsRequest(BaseModel):
     """同步插件请求"""
 
     marketplace_id: str = Field(..., description="市场ID")
-    plugin_ids: list[str] = Field(default_factory=list, description="插件ID列表")
+    plugins: list[SyncPluginItem] = Field(default_factory=list, description="插件列表")
 
 
 # ==================== 响应 Schema ====================
@@ -120,12 +130,60 @@ class RemotePluginResponse(BaseModel):
         )
 
 
+class SyncSuccessItem(BaseModel):
+    """同步成功项"""
+
+    plugin_id: str = Field(..., description="插件ID")
+    version: str = Field(..., description="版本")
+
+
+class SyncFailedItem(BaseModel):
+    """同步失败项"""
+
+    plugin_id: str = Field(..., description="插件ID")
+    message: str = Field(..., description="失败消息")
+
+
+class SyncSkippedItem(BaseModel):
+    """跳过项"""
+
+    plugin_id: str = Field(..., description="插件ID")
+    reason: str = Field(..., description="跳过原因")
+
+
 class SyncResultResponse(BaseModel):
     """同步结果响应"""
 
-    success: list[str] = Field(default_factory=list, description="成功同步的插件ID列表")
-    failed: list[dict[str, str]] = Field(default_factory=list, description="失败的插件列表")
-    skipped: list[str] = Field(default_factory=list, description="跳过的插件ID列表")
+    success: list[SyncSuccessItem] = Field(default_factory=list, description="成功列表")
+    failed: list[SyncFailedItem] = Field(default_factory=list, description="失败列表")
+    skipped: list[SyncSkippedItem] = Field(default_factory=list, description="跳过列表")
+
+
+# ==================== 更新 Schema ====================
+
+
+class PluginUpdateResponse(BaseModel):
+    """插件更新响应"""
+
+    plugin_id: str = Field(..., description="插件ID")
+    current_version: str = Field(..., description="当前版本")
+    latest_version: str = Field(..., description="最新版本")
+    has_update: bool = Field(..., description="是否有更新")
+
+
+class ApplyUpdateRequest(BaseModel):
+    """应用更新请求"""
+
+    marketplace_id: str = Field(..., description="市场ID")
+
+
+class ApplyUpdateResult(BaseModel):
+    """应用更新结果"""
+
+    plugin_id: str = Field(..., description="插件ID")
+    old_version: str = Field(..., description="旧版本")
+    new_version: str = Field(..., description="新版本")
+    status: str = Field(..., description="状态")
 
 
 # ==================== 查询 Schema ====================

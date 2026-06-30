@@ -3,14 +3,21 @@ Tenant 模块管理后台 Schemas
 """
 
 from .marketplace import (
+    ApplyUpdateRequest,
+    ApplyUpdateResult,
     MarketplaceCreate,
     MarketplaceQuery,
     MarketplaceResponse,
     MarketplaceTestResponse,
     MarketplaceUpdate,
+    PluginUpdateResponse,
     RemotePluginResponse,
+    SyncFailedItem,
+    SyncPluginItem,
     SyncPluginsRequest,
     SyncResultResponse,
+    SyncSkippedItem,
+    SyncSuccessItem,
 )
 from .module import (
     ModuleCreate,
@@ -70,6 +77,15 @@ __all__ = [
     "MarketplaceResponse",
     "MarketplaceTestResponse",
     "RemotePluginResponse",
+    # 同步
+    "SyncPluginItem",
     "SyncPluginsRequest",
+    "SyncSuccessItem",
+    "SyncFailedItem",
+    "SyncSkippedItem",
     "SyncResultResponse",
+    # 更新
+    "PluginUpdateResponse",
+    "ApplyUpdateRequest",
+    "ApplyUpdateResult",
 ]
