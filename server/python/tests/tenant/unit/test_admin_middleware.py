@@ -128,8 +128,25 @@ class TestAdminAuthMiddlewarePermissionCheck:
         assert call_next.called
 
     @pytest.mark.asyncio
-    async def test_non_get_request_allowed_with_delete_permission(self):
-        """permissions 包含 delete 权限时允许非 GET 请求"""
+    async def test_non_get_request_allowed_with_write_permission_for_delete(self):
+        """DELETE 请求需要 write 权限（非 delete 权限）"""
+        from tenant.middlewares.admin_auth_middleware import AdminAuthMiddleware
+
+        token = _setup_admin_token(permissions=["tenant:tenant:write"])
+        middleware = AdminAuthMiddleware(app=MagicMock())
+
+        request = MagicMock(spec=Request)
+        request.url.path = "/tenant/admin/v1/tenants/123"
+        request.method = "DELETE"
+        request.headers.get.return_value = f"Bearer {token}"
+
+        call_next = AsyncMock()
+        response = await middleware.dispatch(request, call_next)
+        assert call_next.called
+
+    @pytest.mark.asyncio
+    async def test_delete_request_rejected_with_only_delete_permission(self):
+        """仅拥有 delete 权限时 DELETE 请求应被拒绝（需要 write 权限）"""
         from tenant.middlewares.admin_auth_middleware import AdminAuthMiddleware
 
         token = _setup_admin_token(permissions=["tenant:tenant:delete"])
@@ -142,7 +159,8 @@ class TestAdminAuthMiddlewarePermissionCheck:
 
         call_next = AsyncMock()
         response = await middleware.dispatch(request, call_next)
-        assert call_next.called
+        # Should be rejected (call_next not called, error response returned)
+        assert not call_next.called
 
     @pytest.mark.asyncio
     async def test_non_get_request_allowed_with_wildcard_permission(self):

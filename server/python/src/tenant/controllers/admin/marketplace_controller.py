@@ -76,6 +76,7 @@ async def list_marketplaces(
     marketplaces = await marketplace_gateway.list_marketplaces(
         session=session,
         is_enabled=is_enabled,
+        type=type,
     )
     items = [MarketplaceResponse.from_entity(m).model_dump() for m in marketplaces]
     return ApiResponse.success(data=items)

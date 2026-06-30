@@ -91,11 +91,14 @@ class MarketplaceGateway:
         self,
         session: AsyncSession,
         is_enabled: bool | None = None,
+        type: str | None = None,
     ) -> Sequence[TenantPluginMarketplace]:
         """获取市场列表"""
         query = select(TenantPluginMarketplace)
         if is_enabled is not None:
             query = query.where(TenantPluginMarketplace.is_enabled == is_enabled)
+        if type is not None:
+            query = query.where(TenantPluginMarketplace.type == type)
         query = query.order_by(TenantPluginMarketplace.created_at.desc())
         result = await session.execute(query)
         return result.scalars().all()

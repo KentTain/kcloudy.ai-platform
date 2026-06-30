@@ -450,7 +450,7 @@ class AdminAuthMiddleware(BaseHTTPMiddleware):
             # 无法映射到模块的路径，根据方法放行
             return True
 
-        suffix = ":write" if method in ("POST", "PUT") else ":delete"
+        suffix = ":write" if method in ("POST", "PUT", "DELETE") else ":read"
         required_perm = f"{required_module}{suffix}"
 
         return required_perm in permissions
