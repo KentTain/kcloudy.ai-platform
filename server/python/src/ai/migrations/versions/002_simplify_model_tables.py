@@ -82,9 +82,16 @@ def downgrade() -> None:
         sa.Column("updated_at", sa.DateTime(timezone=True), onupdate=sa.func.now()),
         sa.Column("created_by", sa.String(36), nullable=True),
         sa.Column("updated_by", sa.String(36), nullable=True),
+        sa.ForeignKeyConstraint(["provider_id"], ["ai.model_providers.id"], ondelete="CASCADE"),
         schema="ai",
     )
 
-    # 3. 删除 is_default 字段
+    # 3. 创建索引
+    op.create_index("ix_ai_model_providers_plugin_id", "model_providers", ["plugin_id"], schema="ai")
+    op.create_index("ix_ai_model_providers_tenant_id", "model_providers", ["tenant_id"], schema="ai")
+    op.create_index("ix_ai_model_configs_provider_id", "model_configs", ["provider_id"], schema="ai")
+    op.create_index("ix_ai_model_configs_tenant_id", "model_configs", ["tenant_id"], schema="ai")
+
+    # 4. 删除 is_default 字段
     op.drop_index("ix_plugin_credentials_is_default", schema="ai")
     op.drop_column("plugin_credentials", "is_default", schema="ai")
