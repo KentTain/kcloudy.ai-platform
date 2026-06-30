@@ -87,5 +87,40 @@ class TenantPluginDefinition(BaseModel, AuditMixin, ActiveRecordMixin):
         server_default=sa.text("true"),
         comment="是否启用",
     )
+    # 远程插件市场相关字段
+    marketplace_id: Mapped[str | None] = mapped_column(
+        String(36),
+        comment="来源市场ID，本地注册的为 NULL",
+    )
+    remote_plugin_id: Mapped[str | None] = mapped_column(
+        String(128),
+        comment="远程市场的插件标识",
+    )
+    remote_version: Mapped[str | None] = mapped_column(
+        String(32),
+        comment="远程最新版本",
+    )
+    local_version: Mapped[str | None] = mapped_column(
+        String(32),
+        comment="本地存储版本",
+    )
+    update_available: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=False,
+        server_default=sa.text("false"),
+        comment="是否有新版本",
+    )
+    package_id: Mapped[str | None] = mapped_column(
+        String(36),
+        comment="关联的插件包记录",
+    )
+    source_type: Mapped[str] = mapped_column(
+        String(16),
+        nullable=False,
+        default="local",
+        server_default="local",
+        comment="来源类型：local, remote",
+    )
 
     __table_args__ = ({"comment": "插件定义表"},)

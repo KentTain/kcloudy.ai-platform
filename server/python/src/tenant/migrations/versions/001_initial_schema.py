@@ -11,7 +11,7 @@ Create Date: 2026-06-28
 - 资源配置表（database_configs、cache_configs、storage_configs、queue_configs、pubsub_configs）
 - 租户管理表（tenants、tenant_admins、tenant_business_configs、tenant_configs、tenant_modules）
 - 模块定义表（modules、module_menus、module_permissions、module_roles、module_menu_permissions、module_role_permissions）
-- 插件管理表（plugin_definitions、plugin_installations）
+- 插件管理表（plugin_definitions、plugin_installations、plugin_marketplaces、plugin_packages）
 - 同 schema 内外键
 
 """
@@ -197,6 +197,14 @@ def upgrade() -> None:
         sa.Column("manifest_type", sa.String(32), nullable=True, comment="清单类型"),
         sa.Column("is_recommended", sa.Boolean(), server_default=sa.text("false"), nullable=False, comment="是否推荐"),
         sa.Column("is_enabled", sa.Boolean(), server_default=sa.text("true"), nullable=False, comment="是否启用"),
+        # 远程插件市场相关字段
+        sa.Column("marketplace_id", sa.String(36), nullable=True, comment="来源市场ID，本地注册的为 NULL"),
+        sa.Column("remote_plugin_id", sa.String(128), nullable=True, comment="远程市场的插件标识"),
+        sa.Column("remote_version", sa.String(32), nullable=True, comment="远程最新版本"),
+        sa.Column("local_version", sa.String(32), nullable=True, comment="本地存储版本"),
+        sa.Column("update_available", sa.Boolean(), server_default=sa.text("false"), nullable=False, comment="是否有新版本"),
+        sa.Column("package_id", sa.String(36), nullable=True, comment="关联的插件包记录"),
+        sa.Column("source_type", sa.String(16), server_default="local", nullable=False, comment="来源类型：local, remote"),
         sa.Column("id", sa.String(36), nullable=False, comment="主键ID"),
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False, comment="创建时间"),
         sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False, comment="更新时间"),
@@ -231,6 +239,53 @@ def upgrade() -> None:
     op.create_index(op.f("ix_tenant_plugin_installations_plugin_id"), "plugin_installations", ["plugin_id"], schema=MODULE_SCHEMA)
     op.create_index(op.f("ix_tenant_plugin_installations_plugin_unique_identifier"), "plugin_installations", ["plugin_unique_identifier"], schema=MODULE_SCHEMA)
     op.create_index(op.f("ix_tenant_plugin_installations_tenant_id"), "plugin_installations", ["tenant_id"], schema=MODULE_SCHEMA)
+
+    # ==================== 插件市场相关表 ====================
+
+    op.create_table(
+        "plugin_marketplaces",
+        sa.Column("name", sa.String(64), nullable=False, comment="市场名称"),
+        sa.Column("code", sa.String(32), nullable=False, comment="市场编码"),
+        sa.Column("type", sa.String(32), nullable=False, comment="市场类型：dify, modelscope"),
+        sa.Column("url", sa.String(512), nullable=False, comment="市场 API 地址"),
+        sa.Column("auth_type", sa.String(16), nullable=False, server_default="none", comment="认证类型：none, api_key, token"),
+        sa.Column("auth_config", postgresql.JSONB(astext_type=sa.Text()), nullable=False, server_default="{}", comment="认证配置（加密存储）"),
+        sa.Column("is_enabled", sa.Boolean(), nullable=False, server_default=sa.text("true"), comment="是否启用"),
+        sa.Column("sync_config", postgresql.JSONB(astext_type=sa.Text()), nullable=False, server_default="{}", comment="同步配置"),
+        sa.Column("last_sync_at", sa.DateTime(timezone=True), nullable=True, comment="最后同步时间"),
+        sa.Column("last_sync_status", sa.String(16), nullable=True, comment="最后同步状态"),
+        sa.Column("description", sa.Text(), nullable=True, comment="市场描述"),
+        sa.Column("id", sa.String(36), nullable=False, comment="主键ID"),
+        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False, comment="创建时间"),
+        sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False, comment="更新时间"),
+        sa.Column("created_by", sa.String(36), nullable=True, comment="创建人"),
+        sa.Column("updated_by", sa.String(36), nullable=True, comment="更新人"),
+        sa.PrimaryKeyConstraint("id"),
+        sa.UniqueConstraint("code"),
+        schema=MODULE_SCHEMA,
+    )
+    op.create_index("ix_tenant_plugin_marketplaces_code", "plugin_marketplaces", ["code"], schema=MODULE_SCHEMA)
+    op.create_index("ix_tenant_plugin_marketplaces_type", "plugin_marketplaces", ["type"], schema=MODULE_SCHEMA)
+    op.create_index("ix_tenant_plugin_marketplaces_enabled", "plugin_marketplaces", ["is_enabled"], schema=MODULE_SCHEMA)
+
+    op.create_table(
+        "plugin_packages",
+        sa.Column("plugin_id", sa.String(128), nullable=False, comment="插件ID：author/name"),
+        sa.Column("version", sa.String(32), nullable=False, comment="版本号"),
+        sa.Column("marketplace_id", sa.String(36), nullable=True, comment="来源市场ID"),
+        sa.Column("storage_path", sa.String(512), nullable=False, comment="MinIO 存储路径"),
+        sa.Column("file_size", sa.BigInteger(), nullable=True, comment="文件大小（字节）"),
+        sa.Column("checksum", sa.String(128), nullable=True, comment="SHA256 校验和"),
+        sa.Column("manifest", postgresql.JSONB(astext_type=sa.Text()), nullable=True, comment="解析后的 manifest"),
+        sa.Column("id", sa.String(36), nullable=False, comment="主键ID"),
+        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False, comment="创建时间"),
+        sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False, comment="更新时间"),
+        sa.PrimaryKeyConstraint("id"),
+        sa.UniqueConstraint("plugin_id", "version", "marketplace_id", name="uq_plugin_packages_plugin_version_marketplace"),
+        schema=MODULE_SCHEMA,
+    )
+    op.create_index("ix_tenant_plugin_packages_plugin_id", "plugin_packages", ["plugin_id"], schema=MODULE_SCHEMA)
+    op.create_index("ix_tenant_plugin_packages_marketplace", "plugin_packages", ["marketplace_id"], schema=MODULE_SCHEMA)
 
     # ==================== 依赖模块的表 ====================
 

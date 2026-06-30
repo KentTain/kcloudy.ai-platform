@@ -31,6 +31,8 @@ from .tenant_config import TenantConfig
 from .tenant_module import TenantModule
 from .plugin_definition import TenantPluginDefinition
 from .plugin_installation import TenantPluginInstallation
+from .plugin_marketplace import TenantPluginMarketplace
+from .plugin_package import TenantPluginPackage
 
 __all__ = [
     "Base",
@@ -59,4 +61,6 @@ __all__ = [
     # 插件管理
     "TenantPluginDefinition",
     "TenantPluginInstallation",
+    "TenantPluginMarketplace",
+    "TenantPluginPackage",
 ]
