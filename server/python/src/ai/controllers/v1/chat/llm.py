@@ -10,9 +10,10 @@ from collections.abc import AsyncGenerator
 from typing import Any
 
 import orjson
-from fastapi import APIRouter, Body, HTTPException
+from fastapi import APIRouter, Body, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 from loguru import logger
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from ai.controllers.v1.chat.event_types import EventType
 from ai.listeners.services.pubsub.memory_task.constants import (
@@ -28,6 +29,7 @@ from extended.langchain.agents.agent_factory import AgentFactory
 from extended.langchain.callbacks import UIMessageChunkCallbackHandler
 from extended.langchain.models.alon_chat import AlonChatModel
 from framework.common.ctx import get_tenant_id, get_user_id
+from framework.database.dependencies import get_db_session
 
 _logger = logger.bind(name=__name__)
 
@@ -187,6 +189,7 @@ router = APIRouter(prefix="/chat-messages", tags=["LLM对话"])
 @router.post("")
 async def chat_messages(
     chat_request: AIChatRequest = Body(..., description="聊天请求"),
+    session: AsyncSession = Depends(get_db_session),
 ) -> StreamingResponse:
     """LLM 对话接口（AI SDK 标准）
 
@@ -240,6 +243,7 @@ async def chat_messages(
             tenant_id=tenant_id,
             user_id=user_id,
             model_parameters=model_config.completion_params,
+            db_session=session,
         )
 
         # 创建 Agent
