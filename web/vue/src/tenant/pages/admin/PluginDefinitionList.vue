@@ -13,6 +13,8 @@ import {
   Upload,
   FolderSearch,
   Download,
+  Play,
+  Square,
 } from "@lucide/vue";
 import type { ColumnDef } from "@tanstack/vue-table";
 import { h, ref } from "vue";
@@ -37,14 +39,20 @@ import {
   getPluginDefinitions,
   getPluginStatistics,
   updatePluginDefinition,
+  batchStartPluginInstallations,
+  batchStopPluginInstallations,
 } from "@/tenant/api/plugin";
-import type { PluginDefinition, PluginStatistics } from "@/tenant/api/plugin";
+import type { PluginDefinition, PluginStatistics, BatchStartStopResponse } from "@/tenant/api/plugin";
 import InstallToTenantsDialog from "./InstallToTenantsDialog.vue";
 
 const router = useRouter();
 
 const installDialogOpen = ref(false);
 const installTargetPlugin = ref<PluginDefinition | null>(null);
+
+const batchStartDialogOpen = ref(false);
+const batchStopDialogOpen = ref(false);
+const batchTargetPlugin = ref<PluginDefinition | null>(null);
 
 const handleInstallToTenants = (row: PluginDefinition) => {
   installTargetPlugin.value = row;
@@ -54,6 +62,28 @@ const handleInstallToTenants = (row: PluginDefinition) => {
 const handleInstalled = () => {
   dataTable.refresh();
   loadStats();
+};
+
+const handleBatchStart = (plugin: PluginDefinition) => {
+  batchTargetPlugin.value = plugin;
+  batchStartDialogOpen.value = true;
+};
+
+const handleBatchStop = (plugin: PluginDefinition) => {
+  batchTargetPlugin.value = plugin;
+  batchStopDialogOpen.value = true;
+};
+
+const handleBatchStarted = () => {
+  batchStartDialogOpen.value = false;
+  batchTargetPlugin.value = null;
+  dataTable.refresh();
+};
+
+const handleBatchStopped = () => {
+  batchStopDialogOpen.value = false;
+  batchTargetPlugin.value = null;
+  dataTable.refresh();
 };
 
 // 搜索筛选
@@ -204,6 +234,16 @@ const columns: ColumnDef<PluginDefinition>[] = [
           Button,
           { variant: "ghost", size: "sm", onClick: () => handleInstallToTenants(plugin) },
           () => [h(Download, { class: "mr-1 h-3.5 w-3.5" }), "安装"]
+        ),
+        h(
+          Button,
+          { variant: "ghost", size: "sm", onClick: () => handleBatchStart(plugin) },
+          () => [h(Play, { class: "mr-1 h-3.5 w-3.5" }), "启动"]
+        ),
+        h(
+          Button,
+          { variant: "ghost", size: "sm", onClick: () => handleBatchStop(plugin) },
+          () => [h(Square, { class: "mr-1 h-3.5 w-3.5" }), "停止"]
         ),
         h(
           Button,
