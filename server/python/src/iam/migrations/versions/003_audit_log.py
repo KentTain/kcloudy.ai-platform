@@ -1,7 +1,7 @@
 """审计日志字段类型调整
 
 Revision ID: 003_audit_log
-Revises: 002_initial
+Revises: 002_iam_enum_and_comment
 Create Date: 2026-07-01
 
 """
@@ -11,7 +11,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = "003_audit_log"
-down_revision = "002_initial"
+down_revision = "002_iam_enum_and_comment"
 branch_labels = None
 depends_on = None
 
@@ -19,44 +19,26 @@ depends_on = None
 def upgrade() -> None:
     """升级数据库"""
 
-    # 1. 删除旧字段（枚举类型）
-    op.drop_column("audit_log", "business_domain", schema="iam")
-    op.drop_column("audit_log", "operation_type", schema="iam")
-    op.drop_column("audit_log", "resource_type", schema="iam")
+    # 1. 使用 ALTER COLUMN TYPE 转换枚举为字符串（保留数据）
+    op.execute("""
+        ALTER TABLE iam.audit_log
+        ALTER COLUMN business_domain TYPE VARCHAR(64)
+        USING business_domain::text
+    """)
 
-    # 2. 添加新字段（字符串类型）
-    op.add_column(
-        "audit_log",
-        sa.Column(
-            "business_domain",
-            sa.String(64),
-            nullable=False,
-            comment="业务域（模块名称）",
-        ),
-        schema="iam",
-    )
-    op.add_column(
-        "audit_log",
-        sa.Column(
-            "operation_type",
-            sa.String(64),
-            nullable=False,
-            comment="操作类型",
-        ),
-        schema="iam",
-    )
-    op.add_column(
-        "audit_log",
-        sa.Column(
-            "resource_type",
-            sa.String(64),
-            nullable=False,
-            comment="资源类型",
-        ),
-        schema="iam",
-    )
+    op.execute("""
+        ALTER TABLE iam.audit_log
+        ALTER COLUMN operation_type TYPE VARCHAR(64)
+        USING operation_type::text
+    """)
 
-    # 3. 添加新字段
+    op.execute("""
+        ALTER TABLE iam.audit_log
+        ALTER COLUMN resource_type TYPE VARCHAR(64)
+        USING resource_type::text
+    """)
+
+    # 2. 添加新字段
     op.add_column(
         "audit_log",
         sa.Column(
@@ -68,10 +50,10 @@ def upgrade() -> None:
         schema="iam",
     )
 
-    # 4. 重命名字段
+    # 3. 重命名字段
     op.alter_column("audit_log", "details", new_column_name="detail", schema="iam")
 
-    # 5. 创建索引
+    # 4. 创建索引
     op.create_index(
         "ix_audit_log_permission_code",
         "audit_log",
@@ -79,7 +61,7 @@ def upgrade() -> None:
         schema="iam",
     )
 
-    # 6. 删除枚举类型
+    # 5. 删除枚举类型
     op.execute("DROP TYPE IF EXISTS iam.auditlogbusinesstype")
     op.execute("DROP TYPE IF EXISTS iam.auditlogoperationtype")
     op.execute("DROP TYPE IF EXISTS iam.auditlogresourcetype")

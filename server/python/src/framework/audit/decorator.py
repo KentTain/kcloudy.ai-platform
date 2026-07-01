@@ -4,6 +4,8 @@
 提供声明式的审计日志记录功能。
 """
 
+import asyncio
+from copy import deepcopy
 from functools import wraps
 from typing import Callable
 
@@ -51,13 +53,14 @@ def audit_log(
             # 1. 执行前：获取 before_data（如果有）
             before_data = None
             if before_data_getter:
-                import asyncio
-
                 result = before_data_getter(args, kwargs)
                 if asyncio.iscoroutine(result):
                     before_data = await result
                 else:
                     before_data = result
+                # 深拷贝 before_data，避免被后续修改影响
+                if before_data:
+                    before_data = deepcopy(before_data)
 
             # 2. 执行业务逻辑
             result = await func(*args, **kwargs)
@@ -84,7 +87,7 @@ def audit_log(
             if result and hasattr(result, "to_dict"):
                 context.after_data = result.to_dict()
             elif isinstance(result, dict):
-                context.after_data = result
+                context.after_data = deepcopy(result)
 
             # 7. 记录审计日志
             session = extract_session(args, kwargs)
