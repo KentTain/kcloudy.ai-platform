@@ -499,3 +499,163 @@ class TestPluginDefinitionAPIPatterns:
         import json
         data = json.loads(conflict.body)
         assert data["code"] == 409
+
+
+class TestInstallPluginToTenantsAPI:
+    """安装插件到租户 API 测试"""
+
+    @pytest.mark.asyncio
+    async def test_install_to_single_tenant_success(self):
+        """测试安装插件到单个租户成功"""
+        from fastapi import FastAPI
+        from framework.common.response import ApiResponse
+
+        tenant_id = str(uuid.uuid4())
+        plugin_id = "test/install-plugin"
+
+        mock_response = {
+            "success": [{"tenant_id": tenant_id, "plugin_id": plugin_id}],
+            "failed": [],
+            "skipped": [],
+        }
+
+        app = FastAPI()
+
+        @app.post("/tenant/admin/v1/plugin-definitions/{plugin_id:path}/install")
+        async def install(plugin_id: str, request: dict):
+            return ApiResponse.success(data=mock_response)
+
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            response = await client.post(
+                f"/tenant/admin/v1/plugin-definitions/{plugin_id}/install",
+                json={"tenant_ids": [tenant_id]},
+            )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["code"] == 200
+        assert len(data["data"]["success"]) == 1
+        assert data["data"]["success"][0]["tenant_id"] == tenant_id
+
+    @pytest.mark.asyncio
+    async def test_install_to_already_installed_tenant_skipped(self):
+        """测试安装到已安装的租户应跳过"""
+        from fastapi import FastAPI
+        from framework.common.response import ApiResponse
+
+        tenant_id = str(uuid.uuid4())
+        plugin_id = "test/install-dup"
+
+        mock_response = {
+            "success": [],
+            "failed": [],
+            "skipped": [{"tenant_id": tenant_id, "reason": "already_installed"}],
+        }
+
+        app = FastAPI()
+
+        @app.post("/tenant/admin/v1/plugin-definitions/{plugin_id:path}/install")
+        async def install(plugin_id: str, request: dict):
+            return ApiResponse.success(data=mock_response)
+
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            response = await client.post(
+                f"/tenant/admin/v1/plugin-definitions/{plugin_id}/install",
+                json={"tenant_ids": [tenant_id]},
+            )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data["data"]["skipped"]) == 1
+        assert data["data"]["skipped"][0]["reason"] == "already_installed"
+
+    @pytest.mark.asyncio
+    async def test_install_disabled_plugin_fails(self):
+        """测试安装已禁用的插件应失败"""
+        from fastapi import FastAPI
+        from framework.common.response import ApiResponse
+
+        plugin_id = "test/install-disabled"
+
+        app = FastAPI()
+
+        @app.post("/tenant/admin/v1/plugin-definitions/{plugin_id:path}/install")
+        async def install(plugin_id: str, request: dict):
+            return ApiResponse.fail("插件定义已禁用")
+
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            response = await client.post(
+                f"/tenant/admin/v1/plugin-definitions/{plugin_id}/install",
+                json={"tenant_ids": ["some-tenant-id"]},
+            )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["code"] != 200
+
+    @pytest.mark.asyncio
+    async def test_install_to_nonexistent_tenant_fails(self):
+        """测试安装到不存在的租户应记录失败"""
+        from fastapi import FastAPI
+        from framework.common.response import ApiResponse
+
+        fake_tenant_id = "00000000-0000-0000-0000-000000000000"
+        plugin_id = "test/install-no-tenant"
+
+        mock_response = {
+            "success": [],
+            "failed": [{"tenant_id": fake_tenant_id, "message": "租户不存在"}],
+            "skipped": [],
+        }
+
+        app = FastAPI()
+
+        @app.post("/tenant/admin/v1/plugin-definitions/{plugin_id:path}/install")
+        async def install(plugin_id: str, request: dict):
+            return ApiResponse.success(data=mock_response)
+
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            response = await client.post(
+                f"/tenant/admin/v1/plugin-definitions/{plugin_id}/install",
+                json={"tenant_ids": [fake_tenant_id]},
+            )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data["data"]["failed"]) == 1
+        assert data["data"]["failed"][0]["message"] == "租户不存在"
+
+    @pytest.mark.asyncio
+    async def test_install_batch_mixed_results(self):
+        """测试批量安装混合结果"""
+        from fastapi import FastAPI
+        from framework.common.response import ApiResponse
+
+        tenant_1 = str(uuid.uuid4())
+        tenant_2 = str(uuid.uuid4())
+        tenant_3 = str(uuid.uuid4())
+        plugin_id = "test/install-batch"
+
+        mock_response = {
+            "success": [{"tenant_id": tenant_1, "plugin_id": plugin_id}],
+            "failed": [{"tenant_id": tenant_3, "message": "租户不存在"}],
+            "skipped": [{"tenant_id": tenant_2, "reason": "already_installed"}],
+        }
+
+        app = FastAPI()
+
+        @app.post("/tenant/admin/v1/plugin-definitions/{plugin_id:path}/install")
+        async def install(plugin_id: str, request: dict):
+            return ApiResponse.success(data=mock_response)
+
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            response = await client.post(
+                f"/tenant/admin/v1/plugin-definitions/{plugin_id}/install",
+                json={"tenant_ids": [tenant_1, tenant_2, tenant_3]},
+            )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data["data"]["success"]) == 1
+        assert len(data["data"]["failed"]) == 1
+        assert len(data["data"]["skipped"]) == 1
