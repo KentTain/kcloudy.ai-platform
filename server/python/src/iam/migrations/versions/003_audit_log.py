@@ -1,64 +1,168 @@
-"""创建审计日志表
+"""审计日志字段类型调整
 
-Revision ID: 003_iam_audit_log
-Revises: 002_iam_enum_and_comment
+Revision ID: 003_audit_log
+Revises: 002_initial
 Create Date: 2026-07-01
 
 """
-from collections.abc import Sequence
 
-import sqlalchemy as sa
 from alembic import op
-from sqlalchemy.dialects import postgresql
+import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
-revision: str = "003_iam_audit_log"
-down_revision: str | None = "002_iam_enum_and_comment"
-branch_labels: str | Sequence[str] | None = None
-depends_on: str | Sequence[str] | None = None
-
-# 模块 schema
-MODULE_SCHEMA = "iam"
+revision = "003_audit_log"
+down_revision = "002_initial"
+branch_labels = None
+depends_on = None
 
 
 def upgrade() -> None:
-    # 创建 audit_log 表
-    op.create_table(
+    """升级数据库"""
+
+    # 1. 删除旧字段（枚举类型）
+    op.drop_column("audit_log", "business_domain", schema="iam")
+    op.drop_column("audit_log", "operation_type", schema="iam")
+    op.drop_column("audit_log", "resource_type", schema="iam")
+
+    # 2. 添加新字段（字符串类型）
+    op.add_column(
         "audit_log",
-        sa.Column("id", sa.String(36), primary_key=True),
-        sa.Column("tenant_id", sa.String(36), nullable=False, comment="租户ID"),
-        sa.Column("business_domain", sa.String(64), nullable=False, comment="业务域"),
-        sa.Column("business_domain_id", sa.String(64), nullable=True, comment="业务域ID"),
-        sa.Column("operator_by", sa.String(36), nullable=False, comment="操作用户ID"),
-        sa.Column("operator_name", sa.String(256), nullable=False, comment="操作用户名"),
-        sa.Column("operated_at", sa.DateTime(timezone=True), nullable=False, comment="操作时间"),
-        sa.Column("operation_type", sa.String(64), nullable=False, comment="操作类型"),
-        sa.Column("resource_type", sa.String(64), nullable=False, comment="资源类型"),
-        sa.Column("resource_id", sa.String(64), nullable=True, comment="主操作对象ID"),
-        sa.Column("resource_name", sa.String(256), nullable=False, comment="主操作对象名称"),
-        sa.Column("before_data", postgresql.JSONB, nullable=True, comment="操作前数据"),
-        sa.Column("after_data", postgresql.JSONB, nullable=True, comment="操作后数据"),
-        sa.Column("details", postgresql.JSONB, nullable=True, comment="操作详情"),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False, comment="创建时间"),
-        sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False, comment="更新时间"),
-        sa.Column("created_by", sa.String(36), nullable=True, comment="创建人"),
-        sa.Column("updated_by", sa.String(36), nullable=True, comment="更新人"),
-        schema=MODULE_SCHEMA,
+        sa.Column(
+            "business_domain",
+            sa.String(64),
+            nullable=False,
+            comment="业务域（模块名称）",
+        ),
+        schema="iam",
+    )
+    op.add_column(
+        "audit_log",
+        sa.Column(
+            "operation_type",
+            sa.String(64),
+            nullable=False,
+            comment="操作类型",
+        ),
+        schema="iam",
+    )
+    op.add_column(
+        "audit_log",
+        sa.Column(
+            "resource_type",
+            sa.String(64),
+            nullable=False,
+            comment="资源类型",
+        ),
+        schema="iam",
     )
 
-    # 创建索引
-    op.create_index("ix_audit_log_tenant_id", "audit_log", ["tenant_id"], schema=MODULE_SCHEMA)
-    op.create_index("ix_audit_log_business_domain", "audit_log", ["business_domain"], schema=MODULE_SCHEMA)
-    op.create_index("ix_audit_log_operator_by", "audit_log", ["operator_by"], schema=MODULE_SCHEMA)
-    op.create_index("ix_audit_log_operated_at", "audit_log", ["operated_at"], schema=MODULE_SCHEMA)
-    op.create_index("ix_audit_log_operation_type", "audit_log", ["operation_type"], schema=MODULE_SCHEMA)
-    op.create_index("ix_audit_log_resource_type", "audit_log", ["resource_type"], schema=MODULE_SCHEMA)
-    op.create_index("ix_audit_log_resource_id", "audit_log", ["resource_id"], schema=MODULE_SCHEMA)
+    # 3. 添加新字段
+    op.add_column(
+        "audit_log",
+        sa.Column(
+            "permission_code",
+            sa.String(128),
+            nullable=True,
+            comment="权限编码",
+        ),
+        schema="iam",
+    )
 
-    # 添加表级 comment
-    op.execute("COMMENT ON TABLE iam.audit_log IS '审计日志表'")
+    # 4. 重命名字段
+    op.alter_column("audit_log", "details", new_column_name="detail", schema="iam")
+
+    # 5. 创建索引
+    op.create_index(
+        "ix_audit_log_permission_code",
+        "audit_log",
+        ["permission_code"],
+        schema="iam",
+    )
+
+    # 6. 删除枚举类型
+    op.execute("DROP TYPE IF EXISTS iam.auditlogbusinesstype")
+    op.execute("DROP TYPE IF EXISTS iam.auditlogoperationtype")
+    op.execute("DROP TYPE IF EXISTS iam.auditlogresourcetype")
 
 
 def downgrade() -> None:
-    # 删除 audit_log 表
-    op.drop_table("audit_log", schema=MODULE_SCHEMA)
+    """回滚数据库"""
+
+    # 1. 删除索引
+    op.drop_index("ix_audit_log_permission_code", table_name="audit_log", schema="iam")
+
+    # 2. 删除新字段
+    op.drop_column("audit_log", "permission_code", schema="iam")
+
+    # 3. 重命名字段回退
+    op.alter_column("audit_log", "detail", new_column_name="details", schema="iam")
+
+    # 4. 删除字符串字段
+    op.drop_column("audit_log", "business_domain", schema="iam")
+    op.drop_column("audit_log", "operation_type", schema="iam")
+    op.drop_column("audit_log", "resource_type", schema="iam")
+
+    # 5. 创建枚举类型
+    op.execute(
+        "CREATE TYPE iam.auditlogbusinesstype AS ENUM ('library', 'knowledge_base', 'tag', 'role', 'system_role', 'user', 'dept', 'platform_setting')"
+    )
+    op.execute(
+        "CREATE TYPE iam.auditlogoperationtype AS ENUM ('library.library_create', 'user.user_create')"
+    )
+    op.execute(
+        "CREATE TYPE iam.auditlogresourcetype AS ENUM ('user', 'dept', 'role', 'system_role', 'tag', 'library')"
+    )
+
+    # 6. 添加枚举字段
+    op.add_column(
+        "audit_log",
+        sa.Column(
+            "business_domain",
+            sa.Enum(
+                "library",
+                "knowledge_base",
+                "tag",
+                "role",
+                "system_role",
+                "user",
+                "dept",
+                "platform_setting",
+                name="auditlogbusinesstype",
+                schema="iam",
+            ),
+            nullable=False,
+        ),
+        schema="iam",
+    )
+    op.add_column(
+        "audit_log",
+        sa.Column(
+            "operation_type",
+            sa.Enum(
+                "library.library_create",
+                "user.user_create",
+                name="auditlogoperationtype",
+                schema="iam",
+            ),
+            nullable=False,
+        ),
+        schema="iam",
+    )
+    op.add_column(
+        "audit_log",
+        sa.Column(
+            "resource_type",
+            sa.Enum(
+                "user",
+                "dept",
+                "role",
+                "system_role",
+                "tag",
+                "library",
+                name="auditlogresourcetype",
+                schema="iam",
+            ),
+            nullable=False,
+        ),
+        schema="iam",
+    )
