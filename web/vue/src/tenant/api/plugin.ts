@@ -137,6 +137,30 @@ export interface InstallToTenantsResponse {
   skipped: InstallSkippedItem[];
 }
 
+// ==================== 插件启停 ====================
+
+export interface BatchStartStopRequest {
+  plugin_id: string;
+  tenant_ids: string[];
+}
+
+export interface BatchOperationItem {
+  tenant_id: string;
+  plugin_id: string;
+  status: string;
+}
+
+export interface BatchOperationFailedItem {
+  tenant_id: string;
+  plugin_id: string;
+  error: string;
+}
+
+export interface BatchStartStopResponse {
+  success: BatchOperationItem[];
+  failed: BatchOperationFailedItem[];
+}
+
 // ==================== API 函数 ====================
 
 export const getPluginDefinitions = (params?: PluginDefinitionQuery) =>
@@ -183,4 +207,26 @@ export const getPluginStatistics = () =>
 
 export const installPluginToTenants = (pluginId: string, data: InstallToTenantsRequest) =>
   rawPost<ApiResponse<InstallToTenantsResponse>>(`/tenant/admin/v1/plugin-definitions/${pluginId}/install`, data);
+
+export const startPluginInstallation = (tenantId: string, pluginId: string) =>
+  rawPost<ApiResponse<{ tenant_id: string; plugin_id: string; status: string }>>(
+    `/tenant/admin/v1/plugin-installations/${tenantId}/${pluginId}/start`,
+  );
+
+export const stopPluginInstallation = (tenantId: string, pluginId: string) =>
+  rawPost<ApiResponse<{ tenant_id: string; plugin_id: string; status: string }>>(
+    `/tenant/admin/v1/plugin-installations/${tenantId}/${pluginId}/stop`,
+  );
+
+export const batchStartPluginInstallations = (data: BatchStartStopRequest) =>
+  rawPost<ApiResponse<BatchStartStopResponse>>(
+    '/tenant/admin/v1/plugin-installations/start/batch',
+    data,
+  );
+
+export const batchStopPluginInstallations = (data: BatchStartStopRequest) =>
+  rawPost<ApiResponse<BatchStartStopResponse>>(
+    '/tenant/admin/v1/plugin-installations/stop/batch',
+    data,
+  );
 
