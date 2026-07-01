@@ -485,6 +485,159 @@ class PluginDefinitionService:
             "exists": existing is not None,
         }
 
+    @staticmethod
+    async def install_to_tenants(
+        session: AsyncSession,
+        plugin_id: str,
+        request: "InstallToTenantsRequest",
+    ) -> "InstallToTenantsResponse":
+        """
+        安装插件到指定租户
+
+        流程：
+        1. 查询插件定义，校验存在且启用
+        2. 遍历租户列表，逐个安装
+        3. 同步创建 AI 侧 PluginConfig 和 PluginRuntimeState
+
+        Args:
+            session: 数据库会话
+            plugin_id: 插件ID
+            request: 安装请求
+
+        Returns:
+            InstallToTenantsResponse: 批量安装结果
+        """
+        from tenant.schemas.plugin import (
+            InstallFailedItem,
+            InstallSkippedItem,
+            InstallSuccessItem,
+            InstallToTenantsResponse,
+        )
+        from tenant.models.plugin_installation import TenantPluginInstallation
+        from tenant.models.tenant import Tenant
+        from ai.models.plugin_config import PluginConfig as AIPluginConfig
+        from ai.models.plugin_runtime_state import PluginRuntimeState
+        from framework.tenant.plugin_protocols import (
+            PluginInstallationDTO,
+            get_plugin_installation_provider,
+        )
+
+        # 1. 查询插件定义
+        stmt = select(TenantPluginDefinition).where(
+            TenantPluginDefinition.plugin_id == plugin_id
+        )
+        result = await session.execute(stmt)
+        definition = result.scalar_one_or_none()
+
+        if not definition:
+            raise NotFoundError(message=f"插件定义不存在: {plugin_id}")
+
+        if not definition.is_enabled:
+            raise ValueError(f"插件定义已禁用: {plugin_id}")
+
+        success: list[InstallSuccessItem] = []
+        failed: list[InstallFailedItem] = []
+        skipped: list[InstallSkippedItem] = []
+
+        provider = get_plugin_installation_provider()
+
+        for tenant_id in request.tenant_ids:
+            try:
+                # 校验租户存在
+                tenant_stmt = select(Tenant).where(Tenant.id == tenant_id)
+                tenant_result = await session.execute(tenant_stmt)
+                tenant = tenant_result.scalar_one_or_none()
+                if not tenant:
+                    failed.append(InstallFailedItem(
+                        tenant_id=tenant_id,
+                        message="租户不存在",
+                    ))
+                    continue
+
+                # 检查是否已安装
+                existing_stmt = select(TenantPluginInstallation).where(
+                    TenantPluginInstallation.tenant_id == tenant_id,
+                    TenantPluginInstallation.plugin_id == plugin_id,
+                )
+                existing_result = await session.execute(existing_stmt)
+                existing_installation = existing_result.scalar_one_or_none()
+                if existing_installation:
+                    skipped.append(InstallSkippedItem(
+                        tenant_id=tenant_id,
+                        reason="already_installed",
+                    ))
+                    continue
+
+                # 通过 Provider 创建安装记录（自动处理引用计数）
+                dto = PluginInstallationDTO(
+                    tenant_id=tenant_id,
+                    plugin_id=definition.plugin_id,
+                    plugin_unique_identifier=definition.plugin_unique_identifier,
+                    declaration=definition.declaration or {},
+                    status="PENDING",
+                    auto_start=request.auto_start,
+                    plugin_type=definition.install_type,
+                )
+                await provider.create_installation(tenant_id, dto)
+
+                # 同步 AI 侧：创建 PluginConfig
+                existing_config_stmt = select(AIPluginConfig).where(
+                    AIPluginConfig.tenant_id == tenant_id,
+                    AIPluginConfig.plugin_id == plugin_id,
+                )
+                existing_config_result = await session.execute(existing_config_stmt)
+                if not existing_config_result.scalar_one_or_none():
+                    ai_config = AIPluginConfig(
+                        tenant_id=tenant_id,
+                        plugin_id=definition.plugin_id,
+                        plugin_unique_identifier=definition.plugin_unique_identifier,
+                        plugin_config=definition.declaration,
+                        runtime_config={},
+                    )
+                    session.add(ai_config)
+
+                # 同步 AI 侧：创建 PluginRuntimeState
+                existing_runtime_stmt = select(PluginRuntimeState).where(
+                    PluginRuntimeState.tenant_id == tenant_id,
+                    PluginRuntimeState.plugin_id == plugin_id,
+                )
+                existing_runtime_result = await session.execute(existing_runtime_stmt)
+                if not existing_runtime_result.scalar_one_or_none():
+                    runtime_state = PluginRuntimeState(
+                        tenant_id=tenant_id,
+                        plugin_id=definition.plugin_id,
+                        status="inactive",
+                    )
+                    session.add(runtime_state)
+
+                # 更新安装记录状态为 INACTIVE
+                await provider.update_installation(
+                    tenant_id, plugin_id, {"status": "INACTIVE"}
+                )
+
+                success.append(InstallSuccessItem(
+                    tenant_id=tenant_id,
+                    plugin_id=plugin_id,
+                ))
+
+            except Exception as e:
+                _logger.error(f"安装插件到租户失败: tenant_id={tenant_id}, plugin_id={plugin_id}, error={e}")
+                failed.append(InstallFailedItem(
+                    tenant_id=tenant_id,
+                    message=str(e),
+                ))
+
+        _logger.info(
+            f"安装插件到租户完成: plugin_id={plugin_id}, "
+            f"success={len(success)}, failed={len(failed)}, skipped={len(skipped)}"
+        )
+
+        return InstallToTenantsResponse(
+            success=success,
+            failed=failed,
+            skipped=skipped,
+        )
+
 
 # 单例实例
 plugin_definition_service = PluginDefinitionService()
