@@ -2,20 +2,15 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AppPage from '@/framework/layouts/components/AppPage.vue'
-import { Button, DescriptionList, type DescriptionItem } from '@/components'
+import { Button } from '@/components'
 import { Checkbox } from '@/components/ui/checkbox'
+import { Label } from '@/components/ui/label'
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import {
-  Form,
-  FormControl,
-  FormItem,
-  FormLabel,
-} from '@/components/ui/form'
 import { ArrowLeft } from '@lucide/vue'
 import { notifyError, notifySuccess } from '@/framework/utils/feedback'
 import { getPluginDefinition, updatePluginDefinition } from '@/tenant/api/plugin'
@@ -98,17 +93,6 @@ const handleSave = async () => {
   }
 }
 
-const basicInfoItems = computed<DescriptionItem[]>(() => {
-  if (!plugin.value) return []
-
-  return [
-    { label: '插件 ID', value: plugin.value.plugin_id },
-    { label: '唯一标识', value: plugin.value.plugin_unique_identifier },
-    { label: '安装类型', value: plugin.value.install_type },
-    { label: '引用次数', value: String(plugin.value.refers) },
-  ]
-})
-
 onMounted(() => {
   loadPluginDetail()
 })
@@ -123,85 +107,98 @@ onMounted(() => {
       </Button>
     </template>
 
-    <div v-if="loading" class="space-y-6">
-      <div class="h-48 animate-pulse rounded-lg bg-muted" />
-      <div class="h-32 animate-pulse rounded-lg bg-muted" />
-    </div>
+    <Card class="flex min-h-0 flex-1 flex-col overflow-hidden">
+      <div class="min-w-0 flex-1 overflow-auto p-6">
+        <div v-if="loading" class="space-y-6">
+          <div class="h-48 animate-pulse rounded-lg bg-muted" />
+          <div class="h-32 animate-pulse rounded-lg bg-muted" />
+        </div>
 
-    <div v-else-if="plugin" class="space-y-6">
-      <!-- 基本信息卡（只读） -->
-      <Card>
-        <CardHeader>
-          <CardTitle>基本信息</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <DescriptionList :items="basicInfoItems" :columns="2" bordered data-testid="plugin-basic-info" />
-        </CardContent>
-      </Card>
+        <div v-else-if="plugin" class="space-y-6 min-w-0">
+          <!-- 基本信息卡（只读） -->
+          <Card class="min-w-0">
+            <CardHeader>
+              <CardTitle>基本信息</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div class="grid gap-4 md:grid-cols-2 min-w-0">
+                <div class="rounded-lg border p-4 min-w-0">
+                  <div class="text-muted-foreground text-xs">插件 ID</div>
+                  <div class="mt-2 font-medium break-all">{{ plugin.plugin_id }}</div>
+                </div>
+                <div class="rounded-lg border p-4 min-w-0">
+                  <div class="text-muted-foreground text-xs">唯一标识</div>
+                  <div class="mt-2 font-medium break-all">{{ plugin.plugin_unique_identifier }}</div>
+                </div>
+                <div class="rounded-lg border p-4 min-w-0">
+                  <div class="text-muted-foreground text-xs">安装类型</div>
+                  <div class="mt-2 font-medium">{{ plugin.install_type }}</div>
+                </div>
+                <div class="rounded-lg border p-4 min-w-0">
+                  <div class="text-muted-foreground text-xs">引用次数</div>
+                  <div class="mt-2 font-medium">{{ plugin.refers }}</div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
-      <!-- 状态设置卡 -->
-      <Card>
-        <CardHeader>
-          <CardTitle>状态设置</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Form class="space-y-4">
-            <FormItem>
-              <div class="flex items-center space-x-3">
-                <FormControl>
+          <!-- 状态设置卡 -->
+          <Card class="min-w-0">
+            <CardHeader>
+              <CardTitle>状态设置</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div class="space-y-6">
+                <div class="flex items-center space-x-3">
                   <Checkbox
                     id="is_recommended"
                     v-model:checked="formData.is_recommended"
                     data-testid="is-recommended-checkbox"
                   />
-                </FormControl>
-                <FormLabel for="is_recommended" class="cursor-pointer">
-                  是否推荐
-                </FormLabel>
-              </div>
-              <p class="mt-1 text-sm text-muted-foreground">
-                推荐的插件将在插件市场优先展示
-              </p>
-            </FormItem>
+                  <Label for="is_recommended" class="cursor-pointer">
+                    是否推荐
+                  </Label>
+                </div>
+                <p class="text-sm text-muted-foreground -mt-4 ml-7">
+                  推荐的插件将在插件市场优先展示
+                </p>
 
-            <FormItem>
-              <div class="flex items-center space-x-3">
-                <FormControl>
+                <div class="flex items-center space-x-3">
                   <Checkbox
                     id="is_enabled"
                     v-model:checked="formData.is_enabled"
                     data-testid="is-enabled-checkbox"
                   />
-                </FormControl>
-                <FormLabel for="is_enabled" class="cursor-pointer">
-                  启用状态
-                </FormLabel>
+                  <Label for="is_enabled" class="cursor-pointer">
+                    启用状态
+                  </Label>
+                </div>
+                <p class="text-sm text-muted-foreground -mt-4 ml-7">
+                  禁用后，租户将无法安装此插件
+                </p>
               </div>
-              <p class="mt-1 text-sm text-muted-foreground">
-                禁用后，租户将无法安装此插件
-              </p>
-            </FormItem>
-          </Form>
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
 
-      <!-- 操作按钮 -->
-      <div class="flex justify-end gap-3">
-        <Button variant="outline" @click="handleCancel" data-testid="cancel-button">
-          取消
-        </Button>
-        <Button
-          :disabled="!hasChanges || saving"
-          @click="handleSave"
-          data-testid="save-button"
-        >
-          {{ saving ? '保存中...' : '保存' }}
-        </Button>
+          <!-- 操作按钮 -->
+          <div class="flex justify-end gap-3">
+            <Button variant="outline" @click="handleCancel" data-testid="cancel-button">
+              取消
+            </Button>
+            <Button
+              :disabled="!hasChanges || saving"
+              @click="handleSave"
+              data-testid="save-button"
+            >
+              {{ saving ? '保存中...' : '保存' }}
+            </Button>
+          </div>
+        </div>
+
+        <div v-else class="text-center py-12 text-muted-foreground">
+          插件不存在或已被删除
+        </div>
       </div>
-    </div>
-
-    <div v-else class="text-center py-12 text-muted-foreground">
-      插件不存在或已被删除
-    </div>
+    </Card>
   </AppPage>
 </template>

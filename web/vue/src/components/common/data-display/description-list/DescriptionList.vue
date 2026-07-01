@@ -46,14 +46,14 @@ function getBadgeVariant(item: DescriptionItem): DescriptionItem['badgeVariant']
       v-for="(item, index) in items"
       :key="index"
       :class="cn(
-        'flex flex-col gap-1',
+        'flex min-w-0 flex-col gap-1',
         props.bordered && 'border-b border-border pb-3'
       )"
     >
       <dt class="text-sm text-muted-foreground">
         {{ item.label }}
       </dt>
-      <dd class="text-sm font-medium">
+      <dd class="text-sm font-medium break-all">
         <slot name="item" :item="item" :index="index">
           <template v-if="item.type === 'badge'">
             <Badge :variant="getBadgeVariant(item)">

@@ -335,7 +335,7 @@ async def get_plugin_statistics(
     return ApiResponse.success(data=statistics.model_dump())
 
 
-@router.get("/plugin-definitions/{plugin_id}")
+@router.get("/plugin-definitions/{plugin_id:path}")
 async def get_plugin_definition_detail(
     plugin_id: str,
     _perm: None = Depends(require_admin_permission("tenant:plugin:read")),
@@ -352,7 +352,7 @@ async def get_plugin_definition_detail(
     return ApiResponse.success(data=result.model_dump())
 
 
-@router.patch("/plugin-definitions/{plugin_id}")
+@router.patch("/plugin-definitions/{plugin_id:path}")
 async def update_plugin_definition(
     plugin_id: str,
     request: UpdatePluginDefinitionRequest,
@@ -372,7 +372,7 @@ async def update_plugin_definition(
     return ApiResponse.success(data=result.model_dump())
 
 
-@router.delete("/plugin-definitions/{plugin_id}")
+@router.delete("/plugin-definitions/{plugin_id:path}")
 async def delete_plugin_definition(
     plugin_id: str,
     _perm: None = Depends(require_admin_permission("tenant:plugin:write")),

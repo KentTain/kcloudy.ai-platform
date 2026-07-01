@@ -121,7 +121,7 @@ export const updatePluginDefinition = (id: string, data: UpdatePluginDefinitionR
   rawPatch<ApiResponse<PluginDefinition>>(`/tenant/admin/v1/plugin-definitions/${id}`, data);
 
 export const deletePluginDefinition = (id: string) =>
-  rawDel<ApiResponse<void>>('/tenant/admin/v1/plugin-definitions/');
+  rawDel<ApiResponse<void>>(`/tenant/admin/v1/plugin-definitions/${id}`);
 
 export const scanDirectoryForPlugins = (data: ScanDirectoryConfirmRequest) =>
   rawPost<ApiResponse<ScanDirectoryResponse>>('/tenant/admin/v1/plugin-definitions/scan', data);

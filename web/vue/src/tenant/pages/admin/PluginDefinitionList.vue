@@ -243,12 +243,12 @@ const handleReset = () => {
 
 // 查看详情
 const handleDetail = (row: PluginDefinition) => {
-  router.push(`/admin/plugin-definitions/${row.id}`);
+  router.push(`/admin/plugin-definitions/${row.plugin_id}`);
 };
 
 // 编辑
 const handleEdit = (row: PluginDefinition) => {
-  router.push(`/admin/plugin-definitions/${row.id}/edit`);
+  router.push(`/admin/plugin-definitions/${row.plugin_id}/edit`);
 };
 
 // 切换启用状态
@@ -257,7 +257,7 @@ const handleToggleEnabled = async (row: PluginDefinition) => {
   if (!(await confirmAction(`确定要${action}插件 "${row.plugin_id}" 吗？`))) return;
 
   try {
-    await updatePluginDefinition(row.id, { is_enabled: !row.is_enabled });
+    await updatePluginDefinition(row.plugin_id, { is_enabled: !row.is_enabled });
     notifySuccess(`插件已${action}`);
     dataTable.refresh();
     loadStats();
@@ -287,7 +287,7 @@ const handleDelete = async (row: PluginDefinition) => {
   if (!(await confirmAction('确定要删除插件 "" 吗？删除后不可恢复。'))) return;
 
   try {
-    await deletePluginDefinition(row.id);
+    await deletePluginDefinition(row.plugin_id);
     notifySuccess("插件已删除");
     dataTable.refresh();
     loadStats();

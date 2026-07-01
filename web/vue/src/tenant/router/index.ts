@@ -96,13 +96,13 @@ export const adminRoutes: RouteRecordRaw[] = [
         meta: { title: "上传插件包", hidden: true, requiresAdminAuth: true, permissions: ["tenant:plugin:write"] },
       },
       {
-        path: "plugin-definitions/:id",
+        path: "plugin-definitions/:id(.*)",
         name: "AdminPluginDefinitionDetail",
         component: () => import("@/tenant/pages/admin/PluginDefinitionDetailPage.vue"),
         meta: { title: "插件详情", hidden: true, requiresAdminAuth: true, permissions: ["tenant:plugin:read"] },
       },
       {
-        path: "plugin-definitions/:id/edit",
+        path: "plugin-definitions/:id(.*)/edit",
         name: "AdminPluginDefinitionEdit",
         component: () => import("@/tenant/pages/admin/PluginDefinitionEditPage.vue"),
         meta: { title: "编辑插件状态", hidden: true, requiresAdminAuth: true, permissions: ["tenant:plugin:write"] },
