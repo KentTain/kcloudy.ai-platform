@@ -94,7 +94,9 @@ const onSubmit = handleSubmit(async (values) => {
           </div>
 
           <form class="login-page__form" @submit="onSubmit">
-            <div v-if="error" class="login-page__error">{{ error }}</div>
+            <div class="login-page__error-container">
+              <div v-if="error" class="login-page__error">{{ error }}</div>
+            </div>
 
             <FormField v-slot="{ componentField }" name="username">
               <FormItem class="login-page__field">
@@ -358,7 +360,15 @@ const onSubmit = handleSubmit(async (values) => {
   margin-bottom: 0;
 }
 
+.login-page__error-container {
+  min-height: 2.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .login-page__error {
+  width: 100%;
   padding: 0.875rem 1rem;
   background: #fef2f2;
   border: 1px solid #fca5a5;
