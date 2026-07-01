@@ -8,6 +8,8 @@ from loguru import logger
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from framework.audit.decorator import audit_log
+from framework.audit.utils import get_model_before_data
 from iam.models import Permission, Role, RolePermission, UserRole
 from iam.services.permission_service import PermissionCheckService
 
@@ -18,6 +20,13 @@ class RoleService:
     """角色管理服务"""
 
     @staticmethod
+    @audit_log(
+        module="iam",
+        resource="role",
+        action="create",
+        resource_id_getter=lambda result: result.id,
+        resource_name_getter=lambda result: result.name,
+    )
     async def create(
         session: AsyncSession,
         code: str,
@@ -73,6 +82,16 @@ class RoleService:
         return result.scalar_one_or_none()
 
     @staticmethod
+    @audit_log(
+        module="iam",
+        resource="role",
+        action="update",
+        resource_id_getter=lambda result: result.id,
+        resource_name_getter=lambda result: result.name,
+        before_data_getter=lambda args, kwargs: get_model_before_data(
+            args, kwargs, model_class=Role, id_param="role_id"
+        ),
+    )
     async def update(
         session: AsyncSession,
         role_id: str,
@@ -102,6 +121,14 @@ class RoleService:
         return role
 
     @staticmethod
+    @audit_log(
+        module="iam",
+        resource="role",
+        action="delete",
+        before_data_getter=lambda args, kwargs: get_model_before_data(
+            args, kwargs, model_class=Role, id_param="role_id"
+        ),
+    )
     async def delete(session: AsyncSession, role_id: str) -> bool:
         """删除角色"""
         stmt = select(Role).where(Role.id == role_id)

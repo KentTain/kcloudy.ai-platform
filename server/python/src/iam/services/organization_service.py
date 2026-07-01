@@ -8,6 +8,8 @@ from loguru import logger
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from framework.audit.decorator import audit_log
+from framework.audit.utils import get_model_before_data
 from iam.models import Organization, User, UserOrganization
 from iam.schemas.org_user import (
     OrgUserTreeVo,
@@ -23,6 +25,13 @@ class OrganizationService:
     """组织管理服务"""
 
     @staticmethod
+    @audit_log(
+        module="iam",
+        resource="organization",
+        action="create",
+        resource_id_getter=lambda result: result.id,
+        resource_name_getter=lambda result: result.name,
+    )
     async def create(
         session: AsyncSession,
         tenant_id: str,
@@ -69,6 +78,16 @@ class OrganizationService:
         return list(result.scalars().all())
 
     @staticmethod
+    @audit_log(
+        module="iam",
+        resource="organization",
+        action="update",
+        resource_id_getter=lambda result: result.id,
+        resource_name_getter=lambda result: result.name,
+        before_data_getter=lambda args, kwargs: get_model_before_data(
+            args, kwargs, Organization, id_param="organization_id"
+        ),
+    )
     async def update(
         session: AsyncSession,
         organization_id: str,
@@ -102,6 +121,14 @@ class OrganizationService:
         return org
 
     @staticmethod
+    @audit_log(
+        module="iam",
+        resource="organization",
+        action="delete",
+        before_data_getter=lambda args, kwargs: get_model_before_data(
+            args, kwargs, model_class=Organization, id_param="organization_id"
+        ),
+    )
     async def delete(session: AsyncSession, organization_id: str) -> bool:
         """删除组织"""
         # 获取组织信息
