@@ -10,7 +10,28 @@ import type { ApiResponse } from "@/framework/api/types";
 // ==================== 类型定义 ====================
 
 /**
- * 插件信息
+ * 可用插件信息（插件市场）
+ */
+export interface AvailablePlugin {
+  plugin_id: string;
+  plugin_unique_identifier: string;
+  name: string;
+  author: string;
+  version: string;
+  description?: string;
+  icon?: string;
+  plugin_type: string;
+  runtime_type: string;
+  is_installed: boolean;
+  installation_status?: string;
+  is_recommended: boolean;
+  is_enabled: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+/**
+ * 插件信息（已安装）
  */
 export interface PluginInfo {
   plugin_id: string;
@@ -162,7 +183,7 @@ export async function getAvailablePlugins(params?: {
   is_recommended?: boolean;
   page?: number;
   page_size?: number;
-}): Promise<ApiResponse<unknown>> {
+}): Promise<ApiResponse<AvailablePlugin[]>> {
   return rawGet(`${CONSOLE_BASE}/available`, { params });
 }
 
