@@ -19,7 +19,7 @@ const loginSchema = toTypedSchema(
   }),
 );
 
-const { handleSubmit } = useForm({
+const { handleSubmit, setFieldError } = useForm({
   validationSchema: loginSchema,
   initialValues: {
     username: localStorage.getItem("last_admin_account") || "",
@@ -28,11 +28,9 @@ const { handleSubmit } = useForm({
 });
 
 const loading = ref(false);
-const error = ref("");
 
 const onSubmit = handleSubmit(async (values) => {
   loading.value = true;
-  error.value = "";
 
   try {
     const success = await adminAuthStore.login({
@@ -44,10 +42,11 @@ const onSubmit = handleSubmit(async (values) => {
       localStorage.setItem("last_admin_account", values.username);
       router.push("/admin/tenants");
     } else {
-      error.value = "用户名或密码错误";
+      setFieldError("password", "用户名或密码错误");
     }
   } catch (err: any) {
-    error.value = err?.response?.data?.msg || err?.message || "登录失败，请重试";
+    const message = err?.response?.data?.msg || err?.message || "登录失败，请重试";
+    setFieldError("password", message);
   } finally {
     loading.value = false;
   }
@@ -72,10 +71,6 @@ const onSubmit = handleSubmit(async (values) => {
         </div>
 
         <form class="admin-login-page__form" @submit="onSubmit">
-          <div class="admin-login-page__error-container">
-            <div v-if="error" class="admin-login-page__error">{{ error }}</div>
-          </div>
-
           <FormField v-slot="{ componentField }" name="username">
             <FormItem class="admin-login-page__field">
               <FormLabel>用户名</FormLabel>
@@ -203,24 +198,6 @@ const onSubmit = handleSubmit(async (values) => {
 
 .admin-login-page__field {
   margin-bottom: 0;
-}
-
-.admin-login-page__error-container {
-  min-height: 2.75rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.admin-login-page__error {
-  width: 100%;
-  padding: 0.75rem 1rem;
-  background: #fef2f2;
-  border: 1px solid #fca5a5;
-  border-radius: 0.5rem;
-  color: #dc2626;
-  font-size: 0.875rem;
-  text-align: center;
 }
 
 .admin-login-page__submit {
