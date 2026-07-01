@@ -143,21 +143,13 @@ class AIModule:
                     sort_order=2,
                     permission_codes=["ai:chat:read"],
                 ),
-                # 插件管理
+                # 插件管理（合并安装和管理）
                 MenuDef(
-                    code="ai.available-plugins",
-                    name="安装插件",
-                    path="/ai/plugins/market",
-                    icon="Download",
-                    sort_order=3,
-                    permission_codes=["ai:plugin:read"],
-                ),
-                MenuDef(
-                    code="ai.my-plugins",
-                    name="我的插件",
+                    code="ai.plugins",
+                    name="插件管理",
                     path="/ai/plugins",
                     icon="Puzzle",
-                    sort_order=4,
+                    sort_order=3,
                     permission_codes=["ai:plugin:read"],
                 ),
                 # plugins 隐藏二级菜单
@@ -165,7 +157,7 @@ class AIModule:
                     code="ai.plugins.config",
                     name="插件配置",
                     path="/ai/plugins/{id}/config",
-                    parent_code="ai.my-plugins",
+                    parent_code="ai.plugins",
                     sort_order=1,
                     is_visible=False,
                     permission_codes=["ai:plugin:write"],

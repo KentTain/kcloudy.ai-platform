@@ -17,16 +17,10 @@ export const aiRoutes: RouteRecordRaw[] = [
     meta: { title: "会话列表", icon: "list", requiresAuth: true },
   },
   {
-    path: "ai/plugins/market",
-    name: "AIPluginMarket",
-    component: () => import("@/ai/pages/PluginMarketPage.vue"),
-    meta: { title: "插件市场", icon: "store", requiresAuth: true },
-  },
-  {
     path: "ai/plugins",
-    name: "AIPluginList",
-    component: () => import("@/ai/pages/PluginList.vue"),
-    meta: { title: "我的插件", icon: "package", requiresAuth: true },
+    name: "AIPlugins",
+    component: () => import("@/ai/pages/PluginManagePage.vue"),
+    meta: { title: "插件管理", icon: "package", requiresAuth: true },
   },
   {
     path: "ai/plugins/:pluginId/config",
