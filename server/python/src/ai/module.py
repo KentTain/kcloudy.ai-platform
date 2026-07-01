@@ -43,7 +43,9 @@ class AIModule:
         from ai.controllers.admin.plugin import router as admin_plugin_router
         from ai.controllers.console.installations import router as installations_router
         from ai.controllers.console.plugin import router as console_plugin_router
-        from ai.controllers.console.runtime_states import router as runtime_states_router
+        from ai.controllers.console.runtime_states import (
+            router as runtime_states_router,
+        )
         from ai.controllers.inner.plugin import router as inner_plugin_router
         from ai.controllers.v1.chat.llm import router as chat_llm_router
         from ai.controllers.v1.conversation import router as conversation_router
@@ -54,9 +56,17 @@ class AIModule:
             (admin_plugin_router, "/ai/admin/v1/plugins", ["Admin - Plugin"]),
             # Console API - 插件安装管理（卸载、运行时管理、统计）
             # 注意：必须放在 console_plugin_router 之前，避免通配符路由拦截
-            (installations_router, "/ai/console/v1/plugins/installations", ["Console - Plugin Installations"]),
+            (
+                installations_router,
+                "/ai/console/v1/plugins/installations",
+                ["Console - Plugin Installations"],
+            ),
             # Console API - 批量运行时状态
-            (runtime_states_router, "/ai/console/v1/plugins/runtime-states", ["Console - Runtime States"]),
+            (
+                runtime_states_router,
+                "/ai/console/v1/plugins/runtime-states",
+                ["Console - Runtime States"],
+            ),
             # Console API - 插件列表和凭证管理
             (console_plugin_router, "/ai/console/v1/plugins", ["Console - Plugin"]),
             # Inner API - 内部接口
@@ -116,12 +126,30 @@ class AIModule:
             icon="Robot",
             version="1.0.0",
             menus=[
+                # 用户端菜单 - AI 对话
+                MenuDef(
+                    code="ai.chat",
+                    name="AI 对话",
+                    path="/ai",
+                    icon="MessageSquare",
+                    sort_order=1,
+                    permission_codes=["ai:chat:read"],
+                ),
+                MenuDef(
+                    code="ai.conversations",
+                    name="会话列表",
+                    path="/ai/conversations",
+                    icon="List",
+                    sort_order=2,
+                    permission_codes=["ai:chat:read"],
+                ),
+                # 管理端菜单 - 插件管理
                 MenuDef(
                     code="ai.plugins",
                     name="插件管理",
                     path="/ai/plugins",
                     icon="Puzzle",
-                    sort_order=1,
+                    sort_order=3,
                     permission_codes=["ai:plugin:read"],
                 ),
                 # plugins 隐藏二级菜单
@@ -154,9 +182,37 @@ class AIModule:
                 ),
             ],
             permissions=[
-                # 插件权限
-                PermissionDef(code="ai:plugin:read", name="查看插件", resource="plugin", action="read"),
-                PermissionDef(code="ai:plugin:write", name="编辑插件", resource="plugin", action="write"),
-                PermissionDef(code="ai:plugin:delete", name="删除插件", resource="plugin", action="delete"),
+                # AI 对话权限（用户端）
+                PermissionDef(
+                    code="ai:chat:read",
+                    name="使用 AI 对话",
+                    resource="chat",
+                    action="read",
+                ),
+                PermissionDef(
+                    code="ai:chat:write",
+                    name="发送对话消息",
+                    resource="chat",
+                    action="write",
+                ),
+                # 插件权限（管理端）
+                PermissionDef(
+                    code="ai:plugin:read",
+                    name="查看插件",
+                    resource="plugin",
+                    action="read",
+                ),
+                PermissionDef(
+                    code="ai:plugin:write",
+                    name="编辑插件",
+                    resource="plugin",
+                    action="write",
+                ),
+                PermissionDef(
+                    code="ai:plugin:delete",
+                    name="删除插件",
+                    resource="plugin",
+                    action="delete",
+                ),
             ],
         )
