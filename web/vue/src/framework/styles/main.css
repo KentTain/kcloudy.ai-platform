@@ -180,7 +180,7 @@
     * {
       @apply border-border outline-ring/50;
     }
-    
+
     body {
       @apply bg-background text-foreground font-sans;
       min-height: 100vh;
@@ -192,6 +192,22 @@
       transition:
         color 0.5s,
         background-color 0.5s;
+    }
+
+    /* 覆盖浏览器表单验证默认样式 */
+    input:invalid,
+    textarea:invalid,
+    select:invalid {
+      box-shadow: none;
+    }
+
+    /* 覆盖浏览器自动填充样式 */
+    input:-webkit-autofill,
+    input:-webkit-autofill:hover,
+    input:-webkit-autofill:focus,
+    input:-webkit-autofill:active {
+      -webkit-background-clip: text;
+      background-clip: text;
     }
   }
 }
