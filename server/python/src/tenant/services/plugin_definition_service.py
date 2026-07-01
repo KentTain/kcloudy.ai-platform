@@ -496,8 +496,9 @@ class PluginDefinitionService:
 
         流程：
         1. 查询插件定义，校验存在且启用
-        2. 遍历租户列表，逐个安装
-        3. 同步创建 AI 侧 PluginConfig 和 PluginRuntimeState
+        2. 遍历租户列表，校验租户存在性和安装状态
+        3. 通过 Inner API 批量创建 AI 侧数据
+        4. 根据 AI 侧结果创建 Tenant 侧安装记录
 
         Args:
             session: 数据库会话
@@ -507,6 +508,7 @@ class PluginDefinitionService:
         Returns:
             InstallToTenantsResponse: 批量安装结果
         """
+        from framework.clients.ai_client import get_ai_client, InstallationItem
         from tenant.schemas.plugin import (
             InstallFailedItem,
             InstallSkippedItem,
@@ -515,8 +517,6 @@ class PluginDefinitionService:
         )
         from tenant.models.plugin_installation import TenantPluginInstallation
         from tenant.models.tenant import Tenant
-        from ai.models.plugin_config import PluginConfig as AIPluginConfig
-        from ai.models.plugin_runtime_state import PluginRuntimeState
         from framework.tenant.plugin_protocols import (
             PluginInstallationDTO,
             get_plugin_installation_provider,
@@ -539,7 +539,9 @@ class PluginDefinitionService:
         failed: list[InstallFailedItem] = []
         skipped: list[InstallSkippedItem] = []
 
-        provider = get_plugin_installation_provider()
+        # 2. 准备批量安装数据
+        installation_items = []
+        valid_tenant_ids = []
 
         for tenant_id in request.tenant_ids:
             try:
@@ -568,63 +570,66 @@ class PluginDefinitionService:
                     ))
                     continue
 
-                # 通过 Provider 创建安装记录（自动处理引用计数）
-                dto = PluginInstallationDTO(
+                # 准备安装项
+                installation_items.append(InstallationItem(
                     tenant_id=tenant_id,
                     plugin_id=definition.plugin_id,
                     plugin_unique_identifier=definition.plugin_unique_identifier,
                     declaration=definition.declaration or {},
-                    status="PENDING",
                     auto_start=request.auto_start,
-                    plugin_type=definition.install_type,
-                )
-                await provider.create_installation(tenant_id, dto)
-
-                # 同步 AI 侧：创建 PluginConfig
-                existing_config_stmt = select(AIPluginConfig).where(
-                    AIPluginConfig.tenant_id == tenant_id,
-                    AIPluginConfig.plugin_id == plugin_id,
-                )
-                existing_config_result = await session.execute(existing_config_stmt)
-                if not existing_config_result.scalar_one_or_none():
-                    ai_config = AIPluginConfig(
-                        tenant_id=tenant_id,
-                        plugin_id=definition.plugin_id,
-                        plugin_unique_identifier=definition.plugin_unique_identifier,
-                        plugin_config=definition.declaration,
-                        runtime_config={},
-                    )
-                    session.add(ai_config)
-
-                # 同步 AI 侧：创建 PluginRuntimeState
-                existing_runtime_stmt = select(PluginRuntimeState).where(
-                    PluginRuntimeState.tenant_id == tenant_id,
-                    PluginRuntimeState.plugin_id == plugin_id,
-                )
-                existing_runtime_result = await session.execute(existing_runtime_stmt)
-                if not existing_runtime_result.scalar_one_or_none():
-                    runtime_state = PluginRuntimeState(
-                        tenant_id=tenant_id,
-                        plugin_id=definition.plugin_id,
-                        status="inactive",
-                    )
-                    session.add(runtime_state)
-
-                # 更新安装记录状态为 INACTIVE
-                await provider.update_installation(
-                    tenant_id, plugin_id, {"status": "INACTIVE"}
-                )
-
-                success.append(InstallSuccessItem(
-                    tenant_id=tenant_id,
-                    plugin_id=plugin_id,
                 ))
+                valid_tenant_ids.append(tenant_id)
 
             except Exception as e:
-                _logger.error(f"安装插件到租户失败: tenant_id={tenant_id}, plugin_id={plugin_id}, error={e}")
+                _logger.error(f"准备安装数据失败: tenant_id={tenant_id}, error={e}")
                 failed.append(InstallFailedItem(
                     tenant_id=tenant_id,
                     message=str(e),
+                ))
+
+        # 3. 通过 Inner API 批量创建 AI 侧数据
+        if installation_items:
+            ai_client = get_ai_client()
+            ai_result = await ai_client.batch_install_plugins(session, installation_items)
+
+            # 4. 根据 AI 侧结果创建 Tenant 侧记录
+            provider = get_plugin_installation_provider()
+
+            for item in ai_result.success:
+                try:
+                    # 创建 Tenant 侧安装记录
+                    dto = PluginInstallationDTO(
+                        tenant_id=item.tenant_id,
+                        plugin_id=definition.plugin_id,
+                        plugin_unique_identifier=definition.plugin_unique_identifier,
+                        declaration=definition.declaration or {},
+                        status="INACTIVE",  # AI 侧已创建，状态为 INACTIVE
+                        auto_start=request.auto_start,
+                        plugin_type=definition.install_type,
+                    )
+                    await provider.create_installation(item.tenant_id, dto)
+                    success.append(InstallSuccessItem(
+                        tenant_id=item.tenant_id,
+                        plugin_id=plugin_id,
+                    ))
+                except Exception as e:
+                    _logger.error(f"创建租户安装记录失败: tenant_id={item.tenant_id}, error={e}")
+                    failed.append(InstallFailedItem(
+                        tenant_id=item.tenant_id,
+                        message=f"创建安装记录失败: {str(e)}",
+                    ))
+
+            # 添加 AI 侧失败和跳过的记录
+            for item in ai_result.failed:
+                failed.append(InstallFailedItem(
+                    tenant_id=item.tenant_id,
+                    message=item.message,
+                ))
+
+            for item in ai_result.skipped:
+                skipped.append(InstallSkippedItem(
+                    tenant_id=item.tenant_id,
+                    reason=item.reason,
                 ))
 
         _logger.info(

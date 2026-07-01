@@ -170,18 +170,12 @@ class PluginInstallationProviderImpl(PluginInstallationProvider):
             ValueError: 安装记录不存在
             RuntimeError: 插件启动失败
         """
-        from framework.tenant.context import TenantContext
+        from framework.clients.ai_client import get_ai_client
 
-        # 设置租户上下文（AI 的 PluginManagementService 依赖此上下文）
-        TenantContext.set_tenant_id(tenant_id)
-
-        # 调用 AI 模块的 PluginManagementService 启动插件
+        # 通过 Inner API 调用 AI 模块启动插件
         async with get_task_session() as session:
-            from ai.services.plugin import plugin_management_service
-
-            result = await plugin_management_service.start_plugin_with_response(
-                session, plugin_id
-            )
+            ai_client = get_ai_client()
+            result = await ai_client.start_plugin(session, tenant_id, plugin_id)
 
             if not result.success:
                 raise RuntimeError(f"插件启动失败: {result.message}")
@@ -209,18 +203,12 @@ class PluginInstallationProviderImpl(PluginInstallationProvider):
             ValueError: 安装记录不存在
             RuntimeError: 插件停止失败
         """
-        from framework.tenant.context import TenantContext
+        from framework.clients.ai_client import get_ai_client
 
-        # 设置租户上下文
-        TenantContext.set_tenant_id(tenant_id)
-
-        # 调用 AI 模块的 PluginManagementService 停止插件
+        # 通过 Inner API 调用 AI 模块停止插件
         async with get_task_session() as session:
-            from ai.services.plugin import plugin_management_service
-
-            result = await plugin_management_service.stop_plugin_with_response(
-                session, plugin_id
-            )
+            ai_client = get_ai_client()
+            result = await ai_client.stop_plugin(session, tenant_id, plugin_id)
 
             if not result.success:
                 raise RuntimeError(f"插件停止失败: {result.message}")

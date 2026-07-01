@@ -47,6 +47,9 @@ class AIModule:
             router as runtime_states_router,
         )
         from ai.controllers.inner.plugin import router as inner_plugin_router
+        from ai.controllers.inner.plugin_management import (
+            router as inner_plugin_management_router,
+        )
         from ai.controllers.v1.chat.llm import router as chat_llm_router
         from ai.controllers.v1.conversation import router as conversation_router
         from ai.controllers.v1.model import router as model_router
@@ -71,6 +74,8 @@ class AIModule:
             (console_plugin_router, "/ai/console/v1/plugins", ["Console - Plugin"]),
             # Inner API - 内部接口
             (inner_plugin_router, "/ai/inner/v1", ["Inner - Plugin"]),
+            # Inner API - 插件管理接口
+            (inner_plugin_management_router, "/ai/inner/v1", ["Inner - Plugin Management"]),
             # Console API - LLM 对话接口
             (chat_llm_router, "/ai/console/v1", ["LLM对话"]),
             # Console API - 会话管理接口
