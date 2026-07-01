@@ -12,6 +12,7 @@ import {
   Users,
   Upload,
   FolderSearch,
+  Download,
 } from "@lucide/vue";
 import type { ColumnDef } from "@tanstack/vue-table";
 import { h, ref } from "vue";
@@ -38,8 +39,22 @@ import {
   updatePluginDefinition,
 } from "@/tenant/api/plugin";
 import type { PluginDefinition, PluginStatistics } from "@/tenant/api/plugin";
+import InstallToTenantsDialog from "./InstallToTenantsDialog.vue";
 
 const router = useRouter();
+
+const installDialogOpen = ref(false);
+const installTargetPlugin = ref<PluginDefinition | null>(null);
+
+const handleInstallToTenants = (row: PluginDefinition) => {
+  installTargetPlugin.value = row;
+  installDialogOpen.value = true;
+};
+
+const handleInstalled = () => {
+  dataTable.refresh();
+  loadStats();
+};
 
 // 搜索筛选
 const searchForm = ref({
@@ -184,6 +199,11 @@ const columns: ColumnDef<PluginDefinition>[] = [
           Button,
           { variant: "ghost", size: "sm", onClick: () => handleToggleEnabled(plugin) },
           () => [h(CheckCircle, { class: "mr-1 h-3.5 w-3.5" }), plugin.is_enabled ? "禁用" : "启用"]
+        ),
+        h(
+          Button,
+          { variant: "ghost", size: "sm", onClick: () => handleInstallToTenants(plugin) },
+          () => [h(Download, { class: "mr-1 h-3.5 w-3.5" }), "安装"]
         ),
         h(
           Button,
@@ -421,6 +441,12 @@ const handleDelete = async (row: PluginDefinition) => {
         <DataTable data-testid="plugin-table" :data-table="dataTable" :fixed-layout="true" />
       </div>
     </div>
+    <InstallToTenantsDialog
+      :plugin="installTargetPlugin"
+      :open="installDialogOpen"
+      @update:open="installDialogOpen = $event"
+      @installed="handleInstalled"
+    />
   </div>
 </template>
 
