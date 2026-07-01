@@ -26,7 +26,7 @@ async def get_all_menus(
     场景：管理员配置角色权限
     """
     menus = await menu_service.get_all_menus(session)
-    return ApiResponse.success(data=MenuListResponse(menus=menus).model_dump())
+    return ApiResponse.success(data={"menus": menus})
 
 
 @router.get("/menus/{menu_id}/permissions")
