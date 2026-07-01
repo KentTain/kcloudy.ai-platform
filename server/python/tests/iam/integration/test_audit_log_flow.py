@@ -9,7 +9,6 @@ import pytest
 from httpx import AsyncClient
 
 from iam.models import AuditLog
-from iam.models.enums import AuditLogBusinessType, AuditLogOperationType, AuditLogResourceType
 
 
 @pytest.mark.integration
@@ -60,12 +59,12 @@ class TestAuditLogAPI:
         log = AuditLog(
             id=str(uuid.uuid4()),
             tenant_id=test_tenant_id,
-            business_domain=AuditLogBusinessType.USER,
+            business_domain="user",
             operator_by=str(uuid.uuid4()),
             operator_name="test_user",
             operated_at=datetime.now(timezone.utc),
-            operation_type=AuditLogOperationType.USER_CREATE,
-            resource_type=AuditLogResourceType.USER,
+            operation_type="create",
+            resource_type="user",
             resource_name="Test User",
         )
         session.add(log)
@@ -77,7 +76,7 @@ class TestAuditLogAPI:
             params={
                 "page": 1,
                 "page_size": 20,
-                "business_domain": AuditLogBusinessType.USER,
+                "business_domain": "user",
                 "time_range": "7d",
             },
         )
@@ -104,12 +103,12 @@ class TestAuditLogAPI:
         log = AuditLog(
             id=str(uuid.uuid4()),
             tenant_id=test_tenant_id,
-            business_domain=AuditLogBusinessType.USER,
+            business_domain="user",
             operator_by=str(uuid.uuid4()),
             operator_name="test_user",
             operated_at=datetime.now(timezone.utc),
-            operation_type=AuditLogOperationType.USER_CREATE,
-            resource_type=AuditLogResourceType.USER,
+            operation_type="create",
+            resource_type="user",
             resource_name="Test User",
         )
         session.add(log)

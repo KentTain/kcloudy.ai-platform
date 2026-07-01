@@ -9,7 +9,6 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 
 from iam.models import AuditLog
-from iam.models.enums import AuditLogBusinessType, AuditLogOperationType, AuditLogResourceType
 from iam.services.audit_log_service import audit_log_service
 
 # 测试租户 ID
@@ -74,12 +73,12 @@ class TestAuditLogService:
         log = AuditLog(
             id="log-001",
             tenant_id=TEST_TENANT_ID,
-            business_domain=AuditLogBusinessType.USER,
+            business_domain="user",
             operator_by="user-001",
             operator_name="test_user",
             operated_at=datetime.now(timezone.utc),
-            operation_type=AuditLogOperationType.USER_CREATE,
-            resource_type=AuditLogResourceType.USER,
+            operation_type="create",
+            resource_type="user",
             resource_name="Test User",
         )
 
@@ -109,12 +108,12 @@ class TestAuditLogService:
         log = AuditLog(
             id="log-001",
             tenant_id=TEST_TENANT_ID,
-            business_domain=AuditLogBusinessType.USER,
+            business_domain="user",
             operator_by="user-001",
             operator_name="user1",
             operated_at=datetime.now(timezone.utc),
-            operation_type=AuditLogOperationType.USER_CREATE,
-            resource_type=AuditLogResourceType.USER,
+            operation_type="create",
+            resource_type="user",
             resource_name="User 1",
         )
 
@@ -128,11 +127,11 @@ class TestAuditLogService:
             tenant_id=TEST_TENANT_ID,
             page=1,
             page_size=20,
-            business_domain=AuditLogBusinessType.USER,
+            business_domain="user",
         )
 
         assert total == 1
-        assert logs[0].business_domain == AuditLogBusinessType.USER
+        assert logs[0].business_domain == "user"
 
     @pytest.mark.asyncio
     async def test_list_audit_logs_filter_by_time_range(self, session):
@@ -145,12 +144,12 @@ class TestAuditLogService:
         log = AuditLog(
             id="log-recent",
             tenant_id=TEST_TENANT_ID,
-            business_domain=AuditLogBusinessType.USER,
+            business_domain="user",
             operator_by="user-001",
             operator_name="user1",
             operated_at=now - timedelta(hours=2),
-            operation_type=AuditLogOperationType.USER_CREATE,
-            resource_type=AuditLogResourceType.USER,
+            operation_type="create",
+            resource_type="user",
             resource_name="User 1",
         )
 
@@ -182,12 +181,12 @@ class TestAuditLogService:
             log = AuditLog(
                 id=f"log-{i:03d}",
                 tenant_id=TEST_TENANT_ID,
-                business_domain=AuditLogBusinessType.USER,
+                business_domain="user",
                 operator_by=f"user-{i}",
                 operator_name=f"user_{i}",
                 operated_at=datetime.now(timezone.utc),
-                operation_type=AuditLogOperationType.USER_CREATE,
-                resource_type=AuditLogResourceType.USER,
+                operation_type="create",
+                resource_type="user",
                 resource_name=f"User {i}",
             )
             logs_data.append(log)
@@ -259,17 +258,17 @@ class TestAuditLogService:
         TenantContext.set_tenant_id(TEST_TENANT_ID)
 
         # Mock: 三个 distinct 查询（使用 .all() 而非 .scalars().all()）
-        business_mock = _build_mock_result(all_return=[(AuditLogBusinessType.USER,)])
-        action_mock = _build_mock_result(all_return=[(AuditLogOperationType.USER_CREATE,)])
-        resource_mock = _build_mock_result(all_return=[(AuditLogResourceType.USER,)])
+        business_mock = _build_mock_result(all_return=[("user",)])
+        action_mock = _build_mock_result(all_return=[("create",)])
+        resource_mock = _build_mock_result(all_return=[("user",)])
 
         session.execute = AsyncMock(side_effect=[business_mock, action_mock, resource_mock])
 
         options = await audit_log_service.get_audit_options(session)
 
         assert len(options.business_domains) == 1
-        assert options.business_domains[0].value == AuditLogBusinessType.USER.value
+        assert options.business_domains[0].value == "user"
         assert len(options.actions) == 1
-        assert options.actions[0].value == AuditLogOperationType.USER_CREATE.value
+        assert options.actions[0].value == "create"
         assert len(options.resource_types) == 1
-        assert options.resource_types[0].value == AuditLogResourceType.USER.value
+        assert options.resource_types[0].value == "user"

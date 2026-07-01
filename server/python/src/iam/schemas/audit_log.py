@@ -30,6 +30,7 @@ class AuditLogResponse(BaseModel):
     tenant_id: str
     business_domain: str = Field(description="业务域")
     business_domain_id: str | None = Field(default=None, description="业务域 ID")
+    permission_code: str | None = Field(default=None, description="权限编码")
     operator_by: str = Field(description="操作用户 ID")
     operator_name: str = Field(description="操作用户名")
     operated_at: datetime = Field(description="操作时间")
@@ -39,7 +40,7 @@ class AuditLogResponse(BaseModel):
     resource_name: str = Field(description="主操作对象名称")
     before_data: dict[str, Any] | None = Field(default=None, description="操作前数据")
     after_data: dict[str, Any] | None = Field(default=None, description="操作后数据")
-    details: dict[str, Any] | None = Field(default=None, description="操作详情")
+    detail: dict[str, Any] | None = Field(default=None, description="操作详情")
     created_at: datetime = Field(description="创建时间")
 
 

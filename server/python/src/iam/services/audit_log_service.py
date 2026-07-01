@@ -12,7 +12,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from framework.tenant.context import get_tenant_id
 from iam.models import AuditLog
-from iam.models.enums import AuditLogBusinessType, AuditLogOperationType, AuditLogResourceType
 from iam.schemas.audit_log import (
     AuditLogOptionsResponse,
     AuditLogResponse,
@@ -159,32 +158,20 @@ class AuditLogService:
         resource_types = [row[0] for row in resource_type_result.all()]
 
         # 构建选项响应
-        business_domain_options = []
-        for domain in business_domains:
-            try:
-                enum_value = AuditLogBusinessType(domain)
-                label = enum_value.label if hasattr(enum_value, "label") else domain
-            except ValueError:
-                label = domain
-            business_domain_options.append(AuditOptionSchema(value=domain, label=label))
+        business_domain_options = [
+            AuditOptionSchema(value=domain, label=domain)
+            for domain in business_domains
+        ]
 
-        action_options = []
-        for action in operation_types:
-            try:
-                enum_value = AuditLogOperationType(action)
-                label = AuditLogOperationType.__labels__.get(action, action)
-            except ValueError:
-                label = action
-            action_options.append(AuditOptionSchema(value=action, label=label))
+        action_options = [
+            AuditOptionSchema(value=action, label=action)
+            for action in operation_types
+        ]
 
-        resource_type_options = []
-        for resource in resource_types:
-            try:
-                enum_value = AuditLogResourceType(resource)
-                label = AuditLogResourceType.__labels__.get(resource, resource)
-            except ValueError:
-                label = resource
-            resource_type_options.append(AuditOptionSchema(value=resource, label=label))
+        resource_type_options = [
+            AuditOptionSchema(value=resource, label=resource)
+            for resource in resource_types
+        ]
 
         return AuditLogOptionsResponse(
             business_domains=business_domain_options,
