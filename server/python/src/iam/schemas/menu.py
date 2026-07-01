@@ -39,6 +39,8 @@ class MenuTreeNode(TreeNodeTreeVo):
             parent_id=menu.parent_id,
             parent_ids=menu.parent_ids,
             tree_leaf=menu.tree_leaf,
+            tree_level=menu.tree_level,
+            tree_sort=menu.tree_sort,
             tree_sorts=menu.tree_sorts,
             tree_names=menu.tree_names,
             module=menu.module,
