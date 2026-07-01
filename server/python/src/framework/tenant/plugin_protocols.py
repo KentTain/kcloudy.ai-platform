@@ -154,6 +154,36 @@ class PluginInstallationProvider(Protocol):
         """
         ...
 
+    async def start_installation(
+        self, tenant_id: str, plugin_id: str
+    ) -> PluginInstallationDTO:
+        """
+        启动租户插件（管理状态 + 启动进程）
+
+        Args:
+            tenant_id: 租户 ID
+            plugin_id: 插件 ID
+
+        Returns:
+            PluginInstallationDTO
+        """
+        ...
+
+    async def stop_installation(
+        self, tenant_id: str, plugin_id: str
+    ) -> PluginInstallationDTO:
+        """
+        停止租户插件（管理状态 + 停止进程）
+
+        Args:
+            tenant_id: 租户 ID
+            plugin_id: 插件 ID
+
+        Returns:
+            PluginInstallationDTO
+        """
+        ...
+
 
 # ============== 全局注册 ==============
 
