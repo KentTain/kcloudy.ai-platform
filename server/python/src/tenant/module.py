@@ -126,6 +126,7 @@ class TenantModule:
         处理插件安装/卸载失败事件，保障跨 Schema 数据一致性。
         """
         from tenant.listeners.setup import cleanup_listeners, setup_listeners
+
         return (setup_listeners, cleanup_listeners)
 
     def get_module_definition(self) -> ModuleDefinition:
@@ -141,48 +142,13 @@ class TenantModule:
             icon="Organization",
             version="1.0.0",
             menus=[
-                MenuDef(
-                    code="tenant.modules",
-                    name="模块管理",
-                    path="/admin/modules",
-                    icon="Puzzle",
-                    sort_order=1,
-                    permission_codes=["tenant:module:read"],
-                ),
-                # modules 隐藏二级菜单
-                MenuDef(
-                    code="tenant.modules.create",
-                    name="创建模块",
-                    path="/admin/modules/create",
-                    parent_code="tenant.modules",
-                    sort_order=1,
-                    is_visible=False,
-                    permission_codes=["tenant:module:write"],
-                ),
-                MenuDef(
-                    code="tenant.modules.detail",
-                    name="模块详情",
-                    path="/admin/modules/{id}",
-                    parent_code="tenant.modules",
-                    sort_order=2,
-                    is_visible=False,
-                    permission_codes=["tenant:module:read"],
-                ),
-                MenuDef(
-                    code="tenant.modules.edit",
-                    name="编辑模块",
-                    path="/admin/modules/{id}/edit",
-                    parent_code="tenant.modules",
-                    sort_order=3,
-                    is_visible=False,
-                    permission_codes=["tenant:module:write"],
-                ),
+                # 租户管理
                 MenuDef(
                     code="tenant.tenants",
                     name="租户管理",
                     path="/admin/tenants",
                     icon="Organization",
-                    sort_order=2,
+                    sort_order=1,
                     permission_codes=["tenant:tenant:read"],
                 ),
                 # tenants 隐藏二级菜单
@@ -213,6 +179,44 @@ class TenantModule:
                     is_visible=False,
                     permission_codes=["tenant:tenant:write"],
                 ),
+                # 模块管理
+                MenuDef(
+                    code="tenant.modules",
+                    name="模块管理",
+                    path="/admin/modules",
+                    icon="Puzzle",
+                    sort_order=2,
+                    permission_codes=["tenant:module:read"],
+                ),
+                # modules 隐藏二级菜单
+                MenuDef(
+                    code="tenant.modules.create",
+                    name="创建模块",
+                    path="/admin/modules/create",
+                    parent_code="tenant.modules",
+                    sort_order=1,
+                    is_visible=False,
+                    permission_codes=["tenant:module:write"],
+                ),
+                MenuDef(
+                    code="tenant.modules.detail",
+                    name="模块详情",
+                    path="/admin/modules/{id}",
+                    parent_code="tenant.modules",
+                    sort_order=2,
+                    is_visible=False,
+                    permission_codes=["tenant:module:read"],
+                ),
+                MenuDef(
+                    code="tenant.modules.edit",
+                    name="编辑模块",
+                    path="/admin/modules/{id}/edit",
+                    parent_code="tenant.modules",
+                    sort_order=3,
+                    is_visible=False,
+                    permission_codes=["tenant:module:write"],
+                ),
+                # 资源配置
                 MenuDef(
                     code="tenant.resources",
                     name="资源配置",
@@ -249,13 +253,50 @@ class TenantModule:
                     is_visible=False,
                     permission_codes=["tenant:resource:write"],
                 ),
-                # plugin-definitions 插件定义
+                # 插件市场
+                MenuDef(
+                    code="tenant.marketplaces",
+                    name="插件市场",
+                    path="/admin/marketplaces",
+                    icon="Store",
+                    sort_order=4,
+                    permission_codes=["tenant:marketplace:read"],
+                ),
+                # marketplaces 隐藏二级菜单
+                MenuDef(
+                    code="tenant.marketplaces.create",
+                    name="添加市场",
+                    path="/admin/marketplaces/create",
+                    parent_code="tenant.marketplaces",
+                    sort_order=1,
+                    is_visible=False,
+                    permission_codes=["tenant:marketplace:write"],
+                ),
+                MenuDef(
+                    code="tenant.marketplaces.edit",
+                    name="编辑市场",
+                    path="/admin/marketplaces/{id}/edit",
+                    parent_code="tenant.marketplaces",
+                    sort_order=2,
+                    is_visible=False,
+                    permission_codes=["tenant:marketplace:write"],
+                ),
+                MenuDef(
+                    code="tenant.marketplaces.plugins",
+                    name="浏览远程插件",
+                    path="/admin/marketplaces/{id}/plugins",
+                    parent_code="tenant.marketplaces",
+                    sort_order=3,
+                    is_visible=False,
+                    permission_codes=["tenant:marketplace:read"],
+                ),
+                # 插件定义
                 MenuDef(
                     code="tenant.plugin-definitions",
                     name="插件定义",
                     path="/admin/plugin-definitions",
                     icon="Puzzle",
-                    sort_order=4,
+                    sort_order=5,
                     permission_codes=["tenant:plugin:read"],
                 ),
                 # plugin-definitions 隐藏二级菜单

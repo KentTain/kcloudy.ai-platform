@@ -66,7 +66,7 @@ class PluginStatisticsService:
         )
         total_count = total_result.scalar() or 0
 
-        # 按安装类型分布
+        # 按安装类型分布（过滤掉 None 值）
         type_result = await session.execute(
             select(
                 TenantPluginDefinition.install_type,
@@ -74,7 +74,7 @@ class PluginStatisticsService:
             )
             .group_by(TenantPluginDefinition.install_type)
         )
-        by_type = {row[0]: row[1] for row in type_result.all()}
+        by_type = {row[0]: row[1] for row in type_result.all() if row[0] is not None}
 
         # 推荐插件数
         recommended_result = await session.execute(

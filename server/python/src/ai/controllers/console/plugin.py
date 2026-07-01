@@ -4,15 +4,14 @@ AI 模块控制台控制器
 提供插件列表、详情、凭证管理等用户端接口。
 """
 
-
 from fastapi import APIRouter, Body, Depends, Path, Query
 from fastapi.responses import ORJSONResponse
 from loguru import logger
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ai.schemas import (
-    CreatePluginCredential,
     CreateInstallTaskSuccessRespModel,
+    CreatePluginCredential,
     GetAvailablePluginsSuccessRespModel,
     GetInstallTaskDetailSuccessRespModel,
     GetInstallTaskListSuccessRespModel,
@@ -26,11 +25,15 @@ from ai.schemas import (
     SavePluginCredentialSuccessRespModel,
     UpdatePluginCredential,
 )
+from ai.schemas.plugin_default_model import (
+    PluginDefaultModelCreate,
+    PluginDefaultModelResponse,
+)
 from ai.services import plugin_management_service
 from ai.services.install_task_service import install_task_service
 from framework.common.exceptions import BadRequestError
-from framework.database.dependencies import get_db_session
 from framework.common.response import ApiResponse
+from framework.database.dependencies import get_db_session
 from iam.dependencies import require_permission
 
 _logger = logger.bind(name=__name__)
@@ -480,7 +483,6 @@ async def get_default_model(
     WHEN 请求 GET /console/v1/plugins/default-models?model_type=llm
     THEN 返回该模型类型的默认模型配置
     """
-    from ai.schemas.plugin_default_model import PluginDefaultModelResponse
     from ai.services.plugin_default_model_service import plugin_default_model_service
     from framework.common.ctx import get_tenant_id
 
@@ -507,7 +509,7 @@ async def get_default_model(
     response_class=ORJSONResponse,
 )
 async def set_default_model(
-    data: "PluginDefaultModelCreate" = Body(..., description="默认模型配置"),
+    data: PluginDefaultModelCreate = Body(..., description="默认模型配置"),
     session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """
@@ -517,10 +519,7 @@ async def set_default_model(
     WHEN 请求 POST /console/v1/plugins/default-models
     THEN 保存默认模型配置并返回结果
     """
-    from ai.schemas.plugin_default_model import (
-        PluginDefaultModelCreate,
-        PluginDefaultModelResponse,
-    )
+
     from ai.services.plugin_default_model_service import plugin_default_model_service
     from framework.common.ctx import get_tenant_id
 
