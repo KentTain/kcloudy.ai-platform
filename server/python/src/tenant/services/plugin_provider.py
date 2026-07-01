@@ -153,6 +153,84 @@ class PluginInstallationProviderImpl(PluginInstallationProvider):
 
             await installation.delete(session)
 
+    async def start_installation(
+        self, tenant_id: str, plugin_id: str
+    ) -> PluginInstallationDTO:
+        """
+        启动租户插件（管理状态 + 启动进程）
+
+        Args:
+            tenant_id: 租户 ID
+            plugin_id: 插件 ID
+
+        Returns:
+            PluginInstallationDTO
+
+        Raises:
+            ValueError: 安装记录不存在
+            RuntimeError: 插件启动失败
+        """
+        from framework.tenant.context import TenantContext
+
+        # 设置租户上下文（AI 的 PluginManagementService 依赖此上下文）
+        TenantContext.set_tenant_id(tenant_id)
+
+        # 调用 AI 模块的 PluginManagementService 启动插件
+        async with get_task_session() as session:
+            from ai.services.plugin import plugin_management_service
+
+            result = await plugin_management_service.start_plugin_with_response(
+                session, plugin_id
+            )
+
+            if not result.success:
+                raise RuntimeError(f"插件启动失败: {result.message}")
+
+        # 更新 tenant 侧安装状态为 ACTIVE
+        updated = await self.update_installation(
+            tenant_id, plugin_id, {"status": "ACTIVE"}
+        )
+        return updated
+
+    async def stop_installation(
+        self, tenant_id: str, plugin_id: str
+    ) -> PluginInstallationDTO:
+        """
+        停止租户插件（管理状态 + 停止进程）
+
+        Args:
+            tenant_id: 租户 ID
+            plugin_id: 插件 ID
+
+        Returns:
+            PluginInstallationDTO
+
+        Raises:
+            ValueError: 安装记录不存在
+            RuntimeError: 插件停止失败
+        """
+        from framework.tenant.context import TenantContext
+
+        # 设置租户上下文
+        TenantContext.set_tenant_id(tenant_id)
+
+        # 调用 AI 模块的 PluginManagementService 停止插件
+        async with get_task_session() as session:
+            from ai.services.plugin import plugin_management_service
+
+            result = await plugin_management_service.stop_plugin_with_response(
+                session, plugin_id
+            )
+
+            if not result.success:
+                raise RuntimeError(f"插件停止失败: {result.message}")
+
+        # 更新 tenant 侧安装状态为 INACTIVE
+        updated = await self.update_installation(
+            tenant_id, plugin_id, {"status": "INACTIVE"}
+        )
+        return updated
+
     async def _ensure_plugin_definition(
         self,
         session,
