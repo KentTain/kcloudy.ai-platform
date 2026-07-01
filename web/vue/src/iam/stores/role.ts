@@ -27,7 +27,6 @@ export const useRoleStore = defineStore("iam-role", () => {
       total.value = response.total ?? 0;
     } catch (error: any) {
       notifyError(getErrorMessage(error, "获取角色列表失败"));
-      console.error("fetchRoles error:", error);
     } finally {
       loading.value = false;
     }
@@ -41,7 +40,6 @@ export const useRoleStore = defineStore("iam-role", () => {
       return response.data;
     } catch (error: any) {
       notifyError(getErrorMessage(error, "获取角色详情失败"));
-      console.error("fetchRole error:", error);
     } finally {
       loading.value = false;
     }
@@ -57,7 +55,6 @@ export const useRoleStore = defineStore("iam-role", () => {
       return response.data;
     } catch (error: any) {
       notifyError(getErrorMessage(error, "创建角色失败"));
-      console.error("addRole error:", error);
     } finally {
       loading.value = false;
     }
@@ -75,7 +72,6 @@ export const useRoleStore = defineStore("iam-role", () => {
       return response.data;
     } catch (error: any) {
       notifyError(getErrorMessage(error, "更新角色失败"));
-      console.error("editRole error:", error);
     } finally {
       loading.value = false;
     }
@@ -90,7 +86,6 @@ export const useRoleStore = defineStore("iam-role", () => {
       notifySuccess("删除角色成功");
     } catch (error: any) {
       notifyError(getErrorMessage(error, "删除角色失败"));
-      console.error("removeRole error:", error);
     } finally {
       loading.value = false;
     }
@@ -104,7 +99,6 @@ export const useRoleStore = defineStore("iam-role", () => {
       return response.data;
     } catch (error: any) {
       notifyError(getErrorMessage(error, "获取角色权限失败"));
-      console.error("fetchRolePermissions error:", error);
     } finally {
       loading.value = false;
     }
@@ -118,7 +112,6 @@ export const useRoleStore = defineStore("iam-role", () => {
       notifySuccess("更新角色权限成功");
     } catch (error: any) {
       notifyError(getErrorMessage(error, "更新角色权限失败"));
-      console.error("updateRolePermissions error:", error);
       throw error;
     } finally {
       loading.value = false;

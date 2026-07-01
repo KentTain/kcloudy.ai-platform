@@ -130,7 +130,6 @@ export const useAuthStore = defineStore("iam-auth", () => {
       return response.data;
     } catch (error: any) {
       notifyError(getErrorMessage(error, "登录失败"));
-      console.error("login error:", error);
       throw error;
     } finally {
       loading.value = false;

@@ -27,7 +27,6 @@ export const useUserStore = defineStore("iam-user", () => {
       total.value = response.total ?? 0;
     } catch (error: any) {
       notifyError(getErrorMessage(error, "获取用户列表失败"));
-      console.error("fetchUsers error:", error);
     } finally {
       loading.value = false;
     }
@@ -41,7 +40,6 @@ export const useUserStore = defineStore("iam-user", () => {
       return response.data;
     } catch (error: any) {
       notifyError(getErrorMessage(error, "获取用户详情失败"));
-      console.error("fetchUser error:", error);
     } finally {
       loading.value = false;
     }
@@ -57,7 +55,6 @@ export const useUserStore = defineStore("iam-user", () => {
       return response.data;
     } catch (error: any) {
       notifyError(getErrorMessage(error, "创建用户失败"));
-      console.error("addUser error:", error);
     } finally {
       loading.value = false;
     }
@@ -75,7 +72,6 @@ export const useUserStore = defineStore("iam-user", () => {
       return response.data;
     } catch (error: any) {
       notifyError(getErrorMessage(error, "更新用户失败"));
-      console.error("editUser error:", error);
     } finally {
       loading.value = false;
     }
@@ -90,7 +86,6 @@ export const useUserStore = defineStore("iam-user", () => {
       notifySuccess("删除用户成功");
     } catch (error: any) {
       notifyError(getErrorMessage(error, "删除用户失败"));
-      console.error("removeUser error:", error);
     } finally {
       loading.value = false;
     }
@@ -114,7 +109,6 @@ export const useUserStore = defineStore("iam-user", () => {
       notifySuccess("更新用户状态成功");
     } catch (error: any) {
       notifyError(getErrorMessage(error, "更新用户状态失败"));
-      console.error("changeUserStatus error:", error);
     } finally {
       loading.value = false;
     }

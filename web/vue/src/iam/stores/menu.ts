@@ -18,7 +18,6 @@ export const useMenuStore = defineStore("iam-menu", () => {
     } catch (err: any) {
       error.value = getErrorMessage(err, "获取菜单失败");
       notifyError(error.value);
-      console.error("fetchMenus error:", err);
     } finally {
       loading.value = false;
     }

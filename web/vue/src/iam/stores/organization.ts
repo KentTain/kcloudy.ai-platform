@@ -34,7 +34,6 @@ export const useOrganizationStore = defineStore("iam-organization", () => {
       organizations.value = response.data;
     } catch (error: any) {
       notifyError(getErrorMessage(error, "获取组织列表失败"));
-      console.error("fetchOrganizations error:", error);
     } finally {
       loading.value = false;
     }
@@ -47,7 +46,6 @@ export const useOrganizationStore = defineStore("iam-organization", () => {
       organizationTree.value = response.data;
     } catch (error: any) {
       notifyError(getErrorMessage(error, "获取组织树失败"));
-      console.error("fetchOrganizationTree error:", error);
     } finally {
       loading.value = false;
     }
@@ -61,7 +59,6 @@ export const useOrganizationStore = defineStore("iam-organization", () => {
       return response.data;
     } catch (error: any) {
       notifyError(getErrorMessage(error, "获取组织详情失败"));
-      console.error("fetchOrganization error:", error);
     } finally {
       loading.value = false;
     }
@@ -76,7 +73,6 @@ export const useOrganizationStore = defineStore("iam-organization", () => {
       return response.data;
     } catch (error: any) {
       notifyError(getErrorMessage(error, "创建组织失败"));
-      console.error("addOrganization error:", error);
     } finally {
       loading.value = false;
     }
@@ -91,7 +87,6 @@ export const useOrganizationStore = defineStore("iam-organization", () => {
       return response.data;
     } catch (error: any) {
       notifyError(getErrorMessage(error, "更新组织失败"));
-      console.error("editOrganization error:", error);
     } finally {
       loading.value = false;
     }
@@ -105,7 +100,6 @@ export const useOrganizationStore = defineStore("iam-organization", () => {
       notifySuccess("删除组织成功");
     } catch (error: any) {
       notifyError(getErrorMessage(error, "删除组织失败"));
-      console.error("removeOrganization error:", error);
     } finally {
       loading.value = false;
     }
@@ -119,7 +113,6 @@ export const useOrganizationStore = defineStore("iam-organization", () => {
       notifySuccess("设置组织负责人成功");
     } catch (error: any) {
       notifyError(getErrorMessage(error, "设置组织负责人失败"));
-      console.error("updateLeader error:", error);
     } finally {
       loading.value = false;
     }
@@ -133,7 +126,6 @@ export const useOrganizationStore = defineStore("iam-organization", () => {
       return response.data;
     } catch (error: any) {
       notifyError(getErrorMessage(error, "获取组织用户失败"));
-      console.error("fetchUsers error:", error);
     } finally {
       loading.value = false;
     }

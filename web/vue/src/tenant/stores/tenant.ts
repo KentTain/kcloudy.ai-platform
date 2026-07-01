@@ -46,7 +46,6 @@ export const useTenantStore = defineStore("tenant", () => {
       };
     } catch (error: unknown) {
       notifyError(getErrorMessage(error, "获取租户列表失败"));
-      console.error("fetchTenants error:", error);
     } finally {
       loading.value = false;
     }
@@ -61,7 +60,6 @@ export const useTenantStore = defineStore("tenant", () => {
       return response.data;
     } catch (error: unknown) {
       notifyError(getErrorMessage(error, "获取租户详情失败"));
-      console.error("fetchTenant error:", error);
     } finally {
       loading.value = false;
     }
@@ -78,7 +76,6 @@ export const useTenantStore = defineStore("tenant", () => {
       return response.data;
     } catch (error: unknown) {
       notifyError(getErrorMessage(error, "创建租户失败"));
-      console.error("addTenant error:", error);
     } finally {
       loading.value = false;
     }
@@ -97,7 +94,6 @@ export const useTenantStore = defineStore("tenant", () => {
       return response.data;
     } catch (error: unknown) {
       notifyError(getErrorMessage(error, "更新租户失败"));
-      console.error("editTenant error:", error);
     } finally {
       loading.value = false;
     }
@@ -113,7 +109,6 @@ export const useTenantStore = defineStore("tenant", () => {
       notifySuccess("删除租户成功");
     } catch (error: unknown) {
       notifyError(getErrorMessage(error, "删除租户失败"));
-      console.error("removeTenant error:", error);
     } finally {
       loading.value = false;
     }
@@ -135,7 +130,6 @@ export const useTenantStore = defineStore("tenant", () => {
       return response.data;
     } catch (error: unknown) {
       notifyError(getErrorMessage(error, "激活租户失败"));
-      console.error("activate error:", error);
     } finally {
       loading.value = false;
     }
@@ -157,7 +151,6 @@ export const useTenantStore = defineStore("tenant", () => {
       return response.data;
     } catch (error: unknown) {
       notifyError(getErrorMessage(error, "停用租户失败"));
-      console.error("deactivate error:", error);
     } finally {
       loading.value = false;
     }
@@ -172,7 +165,6 @@ export const useTenantStore = defineStore("tenant", () => {
       return response.data;
     } catch (error: unknown) {
       notifyError(getErrorMessage(error, "获取当前租户失败"));
-      console.error("fetchCurrentTenant error:", error);
     } finally {
       loading.value = false;
     }
@@ -186,7 +178,6 @@ export const useTenantStore = defineStore("tenant", () => {
       myTenants.value = response.data;
     } catch (error: unknown) {
       notifyError(getErrorMessage(error, "获取我的租户列表失败"));
-      console.error("fetchMyTenants error:", error);
     } finally {
       loading.value = false;
     }
@@ -201,7 +192,6 @@ export const useTenantStore = defineStore("tenant", () => {
       notifySuccess("切换租户成功");
     } catch (error: unknown) {
       notifyError(getErrorMessage(error, "切换租户失败"));
-      console.error("switchTenant error:", error);
     } finally {
       loading.value = false;
     }
