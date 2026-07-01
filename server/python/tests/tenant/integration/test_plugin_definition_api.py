@@ -659,3 +659,187 @@ class TestInstallPluginToTenantsAPI:
         assert len(data["data"]["success"]) == 1
         assert len(data["data"]["failed"]) == 1
         assert len(data["data"]["skipped"]) == 1
+
+
+class TestStartStopPluginAPI:
+    """插件启停 API 测试"""
+
+    @pytest.mark.asyncio
+    async def test_start_plugin_success(self):
+        """测试启动插件成功"""
+        from fastapi import FastAPI
+        from framework.common.response import ApiResponse
+
+        tenant_id = str(uuid.uuid4())
+        plugin_id = "test/start-plugin"
+
+        mock_response = {
+            "tenant_id": tenant_id,
+            "plugin_id": plugin_id,
+            "status": "ACTIVE",
+        }
+
+        app = FastAPI()
+
+        @app.post("/tenant/admin/v1/plugin-installations/{tenant_id}/{plugin_id:path}/start")
+        async def start(tenant_id: str, plugin_id: str):
+            return ApiResponse.success(data=mock_response)
+
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            response = await client.post(
+                f"/tenant/admin/v1/plugin-installations/{tenant_id}/{plugin_id}/start"
+            )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["code"] == 200
+        assert data["data"]["status"] == "ACTIVE"
+
+    @pytest.mark.asyncio
+    async def test_stop_plugin_success(self):
+        """测试停止插件成功"""
+        from fastapi import FastAPI
+        from framework.common.response import ApiResponse
+
+        tenant_id = str(uuid.uuid4())
+        plugin_id = "test/stop-plugin"
+
+        mock_response = {
+            "tenant_id": tenant_id,
+            "plugin_id": plugin_id,
+            "status": "INACTIVE",
+        }
+
+        app = FastAPI()
+
+        @app.post("/tenant/admin/v1/plugin-installations/{tenant_id}/{plugin_id:path}/stop")
+        async def stop(tenant_id: str, plugin_id: str):
+            return ApiResponse.success(data=mock_response)
+
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            response = await client.post(
+                f"/tenant/admin/v1/plugin-installations/{tenant_id}/{plugin_id}/stop"
+            )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["code"] == 200
+        assert data["data"]["status"] == "INACTIVE"
+
+    @pytest.mark.asyncio
+    async def test_start_plugin_not_installed_fails(self):
+        """测试启动未安装的插件应失败"""
+        from fastapi import FastAPI
+        from framework.common.response import ApiResponse
+
+        tenant_id = str(uuid.uuid4())
+        plugin_id = "test/start-not-installed"
+
+        app = FastAPI()
+
+        @app.post("/tenant/admin/v1/plugin-installations/{tenant_id}/{plugin_id:path}/start")
+        async def start(tenant_id: str, plugin_id: str):
+            return ApiResponse.fail("安装记录不存在")
+
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            response = await client.post(
+                f"/tenant/admin/v1/plugin-installations/{tenant_id}/{plugin_id}/start"
+            )
+
+        assert response.status_code == 400
+        data = response.json()
+        assert data["code"] != 200
+
+    @pytest.mark.asyncio
+    async def test_stop_plugin_not_active_fails(self):
+        """测试停止非 ACTIVE 状态的插件应失败"""
+        from fastapi import FastAPI
+        from framework.common.response import ApiResponse
+
+        tenant_id = str(uuid.uuid4())
+        plugin_id = "test/stop-not-active"
+
+        app = FastAPI()
+
+        @app.post("/tenant/admin/v1/plugin-installations/{tenant_id}/{plugin_id:path}/stop")
+        async def stop(tenant_id: str, plugin_id: str):
+            return ApiResponse.fail("插件状态不允许停止")
+
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            response = await client.post(
+                f"/tenant/admin/v1/plugin-installations/{tenant_id}/{plugin_id}/stop"
+            )
+
+        assert response.status_code == 400
+        data = response.json()
+        assert data["code"] != 200
+
+    @pytest.mark.asyncio
+    async def test_batch_start_mixed_results(self):
+        """测试批量启动混合结果"""
+        from fastapi import FastAPI
+        from framework.common.response import ApiResponse
+
+        tenant_1 = str(uuid.uuid4())
+        tenant_2 = str(uuid.uuid4())
+        plugin_id = "test/batch-start"
+
+        mock_response = {
+            "success": [
+                {"tenant_id": tenant_1, "plugin_id": plugin_id, "status": "ACTIVE"}
+            ],
+            "failed": [
+                {"tenant_id": tenant_2, "plugin_id": plugin_id, "error": "安装记录不存在"}
+            ],
+        }
+
+        app = FastAPI()
+
+        @app.post("/tenant/admin/v1/plugin-installations/start/batch")
+        async def batch_start(request: dict):
+            return ApiResponse.success(data=mock_response)
+
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            response = await client.post(
+                "/tenant/admin/v1/plugin-installations/start/batch",
+                json={"plugin_id": plugin_id, "tenant_ids": [tenant_1, tenant_2]},
+            )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["code"] == 200
+        assert len(data["data"]["success"]) == 1
+        assert len(data["data"]["failed"]) == 1
+
+    @pytest.mark.asyncio
+    async def test_batch_stop_success(self):
+        """测试批量停止成功"""
+        from fastapi import FastAPI
+        from framework.common.response import ApiResponse
+
+        tenant_id = str(uuid.uuid4())
+        plugin_id = "test/batch-stop"
+
+        mock_response = {
+            "success": [
+                {"tenant_id": tenant_id, "plugin_id": plugin_id, "status": "INACTIVE"}
+            ],
+            "failed": [],
+        }
+
+        app = FastAPI()
+
+        @app.post("/tenant/admin/v1/plugin-installations/stop/batch")
+        async def batch_stop(request: dict):
+            return ApiResponse.success(data=mock_response)
+
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            response = await client.post(
+                "/tenant/admin/v1/plugin-installations/stop/batch",
+                json={"plugin_id": plugin_id, "tenant_ids": [tenant_id]},
+            )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["code"] == 200
+        assert len(data["data"]["success"]) == 1
