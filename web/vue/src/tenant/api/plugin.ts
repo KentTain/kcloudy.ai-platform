@@ -109,6 +109,34 @@ export interface PluginStatistics {
   cached_at?: string;
 }
 
+// ==================== 安装到租户 ====================
+
+export interface InstallToTenantsRequest {
+  tenant_ids: string[];
+  auto_start?: boolean;
+}
+
+export interface InstallSuccessItem {
+  tenant_id: string;
+  plugin_id: string;
+}
+
+export interface InstallFailedItem {
+  tenant_id: string;
+  message: string;
+}
+
+export interface InstallSkippedItem {
+  tenant_id: string;
+  reason: string;
+}
+
+export interface InstallToTenantsResponse {
+  success: InstallSuccessItem[];
+  failed: InstallFailedItem[];
+  skipped: InstallSkippedItem[];
+}
+
 // ==================== API 函数 ====================
 
 export const getPluginDefinitions = (params?: PluginDefinitionQuery) =>
@@ -152,4 +180,7 @@ export const uploadPluginPackage = (file: File, overwrite?: boolean) => {
 
 export const getPluginStatistics = () =>
   rawGet<ApiResponse<PluginStatistics>>('/tenant/admin/v1/plugin-definitions/statistics');
+
+export const installPluginToTenants = (pluginId: string, data: InstallToTenantsRequest) =>
+  rawPost<ApiResponse<InstallToTenantsResponse>>(`/tenant/admin/v1/plugin-definitions/${pluginId}/install`, data);
 
