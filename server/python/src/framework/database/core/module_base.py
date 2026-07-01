@@ -4,6 +4,7 @@
 为每个模块创建带 schema 的 DeclarativeBase 和 BaseModel。
 """
 
+from datetime import datetime
 from typing import Any
 
 from sqlalchemy import MetaData
@@ -57,10 +58,15 @@ def create_base_model(module_base: type) -> type:
         __abstract__ = True
 
         def to_dict(self) -> dict[str, Any]:
-            """转换为字典"""
-            return {
-                column.name: getattr(self, column.name)
-                for column in self.__table__.columns
-            }
+            """转换为字典，datetime 字段序列化为 ISO 格式字符串"""
+            result = {}
+            for column in self.__table__.columns:
+                value = getattr(self, column.name)
+                # 将 datetime 对象转换为 ISO 格式字符串
+                if isinstance(value, datetime):
+                    result[column.name] = value.isoformat()
+                else:
+                    result[column.name] = value
+            return result
 
     return ModuleBaseModel
