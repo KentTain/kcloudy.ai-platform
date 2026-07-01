@@ -106,8 +106,9 @@ class InstallToTenantsResponse(BaseModel):
 
 | 文件 | 操作 | 说明 |
 |------|------|------|
-| `server/python/src/tenant/schemas/admin/plugin_definition.py` | 新增 | InstallToTenantsRequest/Response Schema |
-| `server/python/src/tenant/routers/admin/plugin_definition.py` | 修改 | 新增 install_to_tenants 端点 |
+| `server/python/src/tenant/schemas/plugin.py` | 修改 | 新增 InstallToTenantsRequest/Response Schema |
+| `server/python/src/tenant/controllers/admin/plugin_controller.py` | 修改 | 新增 install_to_tenants 端点 |
+| `server/python/src/tenant/services/plugin_definition_service.py` | 修改 | 新增 install_to_tenants 业务逻辑 |
 
 ### 前端（新增/修改）
 
