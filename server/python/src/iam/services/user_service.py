@@ -12,6 +12,8 @@ from loguru import logger
 from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from framework.audit.decorator import audit_log
+from framework.audit.utils import get_model_before_data
 from framework.utils.crypto import (
     hash_password,
     validate_password_strength,
@@ -495,6 +497,13 @@ class UserService:
         }
 
     @staticmethod
+    @audit_log(
+        module="iam",
+        resource="user",
+        action="create",
+        resource_id_getter=lambda result: result.id,
+        resource_name_getter=lambda result: result.username,
+    )
     async def create_user(
         session: AsyncSession,
         username: str,
@@ -570,6 +579,16 @@ class UserService:
         return user
 
     @staticmethod
+    @audit_log(
+        module="iam",
+        resource="user",
+        action="update",
+        resource_id_getter=lambda result: result.id,
+        resource_name_getter=lambda result: result.username,
+        before_data_getter=lambda args, kwargs: get_model_before_data(
+            args, kwargs, model_class=User, id_param="user_id"
+        ),
+    )
     async def update_user(
         session: AsyncSession,
         user_id: str,
