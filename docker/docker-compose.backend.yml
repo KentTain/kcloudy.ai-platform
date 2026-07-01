@@ -29,6 +29,9 @@ services:
       - REDIS_SINGLE_PASSWORD=${REDIS_PASSWORD:-XdA9caoq}
       - REDIS_SINGLE_DB=${REDIS_DB:-0}
       - APP_ROLE=web
+      - PLUGIN_BASE_DIR=/data/plugins
+    volumes:
+      - ./data/plugins:/data/plugins
     depends_on:
       postgres:
         condition: service_healthy
@@ -67,6 +70,9 @@ services:
       - REDIS_SINGLE_PASSWORD=${REDIS_PASSWORD:-XdA9caoq}
       - REDIS_SINGLE_DB=${REDIS_DB:-0}
       - APP_ROLE=task
+      - PLUGIN_BASE_DIR=/data/plugins
+    volumes:
+      - ./data/plugins:/data/plugins
     depends_on:
       postgres:
         condition: service_healthy
@@ -99,6 +105,9 @@ services:
       - REDIS_SINGLE_PASSWORD=${REDIS_PASSWORD:-XdA9caoq}
       - REDIS_SINGLE_DB=${REDIS_DB:-0}
       - APP_ROLE=listener
+      - PLUGIN_BASE_DIR=/data/plugins
+    volumes:
+      - ./data/plugins:/data/plugins
     depends_on:
       postgres:
         condition: service_healthy

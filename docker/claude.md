@@ -176,6 +176,45 @@ sandbox (代码沙箱)
 docker compose -f docker-compose.backend.yml up -d sandbox
 ```
 
+### 插件目录挂载
+
+插件解压后的文件（包括 `_assets` 资源目录）存储在持久化卷中，避免容器重启后丢失。
+
+**挂载配置**：
+
+| 服务 | 容器路径 | 宿主机路径 | 说明 |
+|------|---------|-----------|------|
+| backend-platform-api | `/data/plugins` | `./data/plugins` | 插件运行时目录 |
+| backend-platform-task | `/data/plugins` | `./data/plugins` | 插件任务目录 |
+| backend-platform-listener | `/data/plugins` | `./data/plugins` | 插件监听目录 |
+
+**目录结构**：
+
+```text
+data/plugins/
+└── tenants/
+    └── {tenant_id}/
+        └── runtime/
+            └── {plugin_id}/
+                ├── plugin.zip          # 原始插件包
+                ├── manifest.yaml       # 插件清单
+                ├── _assets/            # 资源文件（图标等）
+                │   ├── icon_s_en.svg
+                │   └── icon_l_en.svg
+                └── ...                 # 其他插件文件
+```
+
+**环境变量**：
+
+- `PLUGIN_BASE_DIR=/data/plugins`：指定插件工作目录基路径
+
+**创建目录**：
+
+```bash
+# 首次部署时创建目录
+mkdir -p docker/data/plugins
+```
+
 ## 常用操作
 
 ```bash

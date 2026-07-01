@@ -89,3 +89,6 @@ web/vue/pnpm-workspace.yaml
 .claude/worktrees/
 .ms-playwright/
 .ms-playwright/
+
+# Docker data volumes
+docker/data/
