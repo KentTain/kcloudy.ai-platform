@@ -84,17 +84,35 @@ export interface PluginCredential {
   id: string;
   name: string;
   plugin_id: string;
-  config: Record<string, unknown>;
-  created_at: string;
-  updated_at: string;
+  scope: string;
+  provider_name?: string;
+  credentials?: Record<string, unknown>;
+  created_at?: string;
+  updated_at?: string;
 }
 
 /**
- * 插件凭证架构项
+ * 插件凭证架构字段（与后端 PluginCredentialsSchemaVo 对齐）
  */
-export interface PluginCredentialsSchema {
-  credentials_name: string;
-  credential_form_schema: Record<string, unknown>;
+export interface PluginCredentialsSchemaField {
+  name: string;
+  label?: string;
+  placeholder?: string;
+  type?: "secret-input" | "text-input" | "select" | "number" | "boolean";
+  required: boolean;
+  description?: string;
+  default?: string;
+  options?: { label: string; value: string }[];
+  help?: string;
+  url?: string;
+}
+
+/**
+ * 凭证验证结果
+ */
+export interface ValidateCredentialResult {
+  success: boolean;
+  error?: string;
 }
 
 // ==================== 配置管理类型 ====================
@@ -249,7 +267,7 @@ export async function getCredentialDetail(
  */
 export async function getPluginCredentialsSchema(
   pluginId: string
-): Promise<ApiResponse<PluginCredentialsSchema[]>> {
+): Promise<ApiResponse<PluginCredentialsSchemaField[]>> {
   return rawGet(`${CONSOLE_BASE}/${encodeURIComponent(pluginId)}/credentials-schema`);
 }
 
@@ -258,9 +276,9 @@ export async function getPluginCredentialsSchema(
  */
 export async function createPluginCredential(
   pluginId: string,
-  data: { name: string; config: Record<string, unknown> }
+  data: { name: string; credentials: Record<string, unknown> }
 ): Promise<ApiResponse<PluginCredential>> {
-  return rawPost(`${CONSOLE_BASE}/${encodeURIComponent(pluginId)}/credentials`, data);
+  return rawPost(`${CONSOLE_BASE}/${encodeURIComponent(pluginId)}/credentials`, { ...data, plugin_id: pluginId });
 }
 
 /**
@@ -269,7 +287,7 @@ export async function createPluginCredential(
 export async function updatePluginCredential(
   pluginId: string,
   credentialId: string,
-  data: { name?: string; config?: Record<string, unknown> }
+  data: { name?: string; credentials?: Record<string, unknown> }
 ): Promise<ApiResponse<PluginCredential>> {
   return rawPut(`${CONSOLE_BASE}/${encodeURIComponent(pluginId)}/credentials/${credentialId}`, data);
 }
@@ -282,6 +300,26 @@ export async function deletePluginCredential(
   credentialId: string
 ): Promise<ApiResponse<boolean>> {
   return rawDel(`${CONSOLE_BASE}/${encodeURIComponent(pluginId)}/credentials/${credentialId}`);
+}
+
+/**
+ * 验证插件凭证（前端提交的原始凭证）
+ */
+export async function validatePluginCredential(
+  pluginId: string,
+  data: { credentials: Record<string, unknown> }
+): Promise<ApiResponse<ValidateCredentialResult>> {
+  return rawPost(`${CONSOLE_BASE}/${encodeURIComponent(pluginId)}/credentials/validate`, data);
+}
+
+/**
+ * 验证已存储的插件凭证
+ */
+export async function validateStoredCredential(
+  pluginId: string,
+  credentialId: string
+): Promise<ApiResponse<ValidateCredentialResult>> {
+  return rawPost(`${CONSOLE_BASE}/${encodeURIComponent(pluginId)}/credentials/${credentialId}/validate`);
 }
 
 // ==================== 配置管理 API ====================

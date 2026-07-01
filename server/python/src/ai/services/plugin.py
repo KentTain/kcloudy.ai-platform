@@ -615,6 +615,136 @@ class PluginManagementService:
         await record.delete(session)
         return True
 
+    async def validate_credentials(
+        self,
+        tenant_id: str,
+        user_id: str,
+        plugin_id: str,
+        credentials: dict[str, Any],
+        session: AsyncSession,
+    ) -> "ValidateCredentialResult":
+        """验证前端提交的凭证是否有效"""
+        from ai.schemas.plugin import ValidateCredentialResult
+
+        try:
+            from ai.components.plugin.engine.core.plugin_manager import (
+                PluginManagerFactory,
+            )
+
+            plugin_manager = await PluginManagerFactory.get_manager(
+                tenant_id, session
+            )
+
+            if plugin_id not in plugin_manager.plugins:
+                return ValidateCredentialResult(
+                    success=False, error=f"插件 {plugin_id} 未安装或未运行"
+                )
+
+            plugin_info = plugin_manager.plugins[plugin_id]
+            plugin_type = getattr(
+                plugin_info.config.configuration, "type", None
+            )
+            plugin_type_str = plugin_type.value if plugin_type else "unknown"
+
+            if plugin_type_str == "model":
+                from ai.components.plugin.client.model_client import ModelClient
+
+                model_client = ModelClient()
+                # 从 models_configuration 获取 provider 名称
+                provider = plugin_id
+                if plugin_info.config.models_configuration:
+                    provider = plugin_info.config.models_configuration[
+                        0
+                    ].provider
+
+                result = await model_client.validate_provider_credentials(
+                    tenant_id=tenant_id,
+                    user_id=user_id,
+                    plugin_id=plugin_id,
+                    provider=provider,
+                    credentials=credentials,
+                )
+                return ValidateCredentialResult(success=result)
+            else:
+                from ai.components.plugin.client.tool_client import ToolClient
+
+                tool_client = ToolClient()
+                # 从 tools_configuration 获取 provider 名称
+                provider_name = plugin_id
+                if plugin_info.config.tools_configuration:
+                    provider_name = plugin_info.config.tools_configuration[
+                        0
+                    ].identity.name
+
+                result = await tool_client.validate_provider_credentials(
+                    tenant_id=tenant_id,
+                    user_id=user_id,
+                    provider_name=provider_name,
+                    credentials=credentials,
+                )
+                return ValidateCredentialResult(success=result)
+
+        except Exception as e:
+            _logger.exception(f"验证凭证失败: {plugin_id}")
+            return ValidateCredentialResult(success=False, error=str(e))
+
+    async def validate_stored_credential(
+        self,
+        tenant_id: str,
+        user_id: str,
+        plugin_id: str,
+        credential_id: str,
+        session: AsyncSession,
+    ) -> "ValidateCredentialResult":
+        """验证已存储的凭证是否有效（内部解密后验证）"""
+        from ai.schemas.plugin import ValidateCredentialResult
+
+        try:
+            record = await PluginCredential.one_by_id(session, credential_id)
+            if not record:
+                return ValidateCredentialResult(
+                    success=False, error="凭证不存在"
+                )
+
+            # 获取凭证架构用于解密
+            schema = await self.get_plugin_credentials_schema(
+                session, plugin_id
+            )
+            credentials_schema = credential_service.extract_credentials_schema(
+                None
+            )
+            # 从 plugin_config 获取 schema
+            plugin_config_record = await AIPluginConfig.one_by_conditions(
+                session,
+                conditions=[
+                    AIPluginConfig.tenant_id == tenant_id,
+                    AIPluginConfig.plugin_id == plugin_id,
+                ],
+            )
+            if plugin_config_record and plugin_config_record.plugin_config:
+                credentials_schema = (
+                    credential_service.extract_credentials_schema(
+                        plugin_config_record.plugin_config
+                    )
+                )
+
+            # 解密凭证
+            decrypted = credential_service.decrypt_credentials(
+                record.credentials or {}, credentials_schema
+            )
+
+            return await self.validate_credentials(
+                tenant_id=tenant_id,
+                user_id=user_id,
+                plugin_id=plugin_id,
+                credentials=decrypted,
+                session=session,
+            )
+
+        except Exception as e:
+            _logger.exception(f"验证已存储凭证失败: {plugin_id}/{credential_id}")
+            return ValidateCredentialResult(success=False, error=str(e))
+
     def _to_credential_vo(self, record: PluginCredential) -> PluginCredentialVo:
         """转换凭证记录为 VO"""
         return PluginCredentialVo(

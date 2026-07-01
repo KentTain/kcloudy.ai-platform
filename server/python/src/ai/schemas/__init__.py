@@ -58,6 +58,9 @@ from .plugin import (
     UpdatePluginConfigRequest,
     UpdatePluginCredential,
     UpdatePluginConfigSuccessRespModel,
+    ValidateCredentialRequest,
+    ValidateCredentialResult,
+    ValidateCredentialSuccessRespModel,
 )
 
 __all__ = [
@@ -121,4 +124,8 @@ __all__ = [
     "GetRuntimeStateSuccessRespModel",
     "GetRuntimeStateListSuccessRespModel",
     "GetPluginStatisticsSuccessRespModel",
+    # 凭证验证
+    "ValidateCredentialRequest",
+    "ValidateCredentialResult",
+    "ValidateCredentialSuccessRespModel",
 ]

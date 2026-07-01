@@ -223,6 +223,23 @@ class SavePluginCredentialSuccessRespModel(SuccessRespModel):
     data: PluginCredentialVo | None = Field(default=None, description="保存结果")
 
 
+class ValidateCredentialRequest(BaseModel):
+    """验证凭证请求"""
+
+    credentials: dict[str, Any] = Field(description="待验证的凭证内容(JSON)")
+
+
+class ValidateCredentialResult(BaseModel):
+    """验证凭证结果"""
+
+    success: bool = Field(description="验证是否成功")
+    error: str | None = Field(default=None, description="验证失败时的错误信息")
+
+
+class ValidateCredentialSuccessRespModel(SuccessRespModel):
+    data: ValidateCredentialResult | None = Field(default=None, description="验证结果")
+
+
 # ======================= 运行时管理 =======================
 
 

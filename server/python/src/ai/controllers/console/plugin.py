@@ -24,6 +24,8 @@ from ai.schemas import (
     PluginCredentialsSchemaVo,
     SavePluginCredentialSuccessRespModel,
     UpdatePluginCredential,
+    ValidateCredentialRequest,
+    ValidateCredentialResult,
 )
 from ai.schemas.plugin_default_model import (
     PluginDefaultModelCreate,
@@ -535,6 +537,76 @@ async def delete_credential(
     except Exception as e:
         _logger.exception("删除插件凭证失败")
         raise BadRequestError(f"删除插件凭证失败: {str(e)}")
+
+
+@router.post(
+    path="/{plugin_id:path}/credentials/validate",
+    summary="验证插件凭证（前端提交）",
+    response_class=ORJSONResponse,
+)
+async def validate_credential(
+    plugin_id: str = Path(..., description="插件ID"),
+    obj_in: ValidateCredentialRequest = Body(..., description="验证凭证请求体"),
+    session: AsyncSession = Depends(get_db_session),
+) -> ORJSONResponse:
+    """
+    验证插件凭证连通性（前端提交原始凭证）
+
+    场景：用户在凭证编辑弹窗中点击"测试连通性"
+    WHEN 请求 POST /console/v1/plugins/{plugin_id}/credentials/validate
+    THEN 验证凭证是否有效并返回结果
+    """
+    from framework.common.ctx import get_tenant_id, get_user_id
+
+    try:
+        tenant_id = get_tenant_id()
+        user_id = get_user_id()
+        result = await plugin_management_service.validate_credentials(
+            tenant_id=tenant_id,
+            user_id=user_id,
+            plugin_id=plugin_id,
+            credentials=obj_in.credentials,
+            session=session,
+        )
+        return ApiResponse.success(data=result.model_dump())
+    except Exception as e:
+        _logger.exception("验证插件凭证失败")
+        raise BadRequestError(f"验证插件凭证失败: {str(e)}")
+
+
+@router.post(
+    path="/{plugin_id:path}/credentials/{credential_id}/validate",
+    summary="验证已存储的插件凭证",
+    response_class=ORJSONResponse,
+)
+async def validate_stored_credential(
+    plugin_id: str = Path(..., description="插件ID"),
+    credential_id: str = Path(..., description="凭证ID"),
+    session: AsyncSession = Depends(get_db_session),
+) -> ORJSONResponse:
+    """
+    验证已存储的插件凭证连通性
+
+    场景：用户在凭证列表中点击"测试"按钮
+    WHEN 请求 POST /console/v1/plugins/{plugin_id}/credentials/{credential_id}/validate
+    THEN 解密凭证后验证是否有效并返回结果
+    """
+    from framework.common.ctx import get_tenant_id, get_user_id
+
+    try:
+        tenant_id = get_tenant_id()
+        user_id = get_user_id()
+        result = await plugin_management_service.validate_stored_credential(
+            tenant_id=tenant_id,
+            user_id=user_id,
+            plugin_id=plugin_id,
+            credential_id=credential_id,
+            session=session,
+        )
+        return ApiResponse.success(data=result.model_dump())
+    except Exception as e:
+        _logger.exception("验证已存储的插件凭证失败")
+        raise BadRequestError(f"验证已存储的插件凭证失败: {str(e)}")
 
 
 # ==================== 默认模型管理 ====================
