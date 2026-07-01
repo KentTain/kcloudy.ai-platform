@@ -353,6 +353,7 @@ const onSubmit = handleSubmit(async (values) => {
 
 .login-page__field {
   margin-bottom: 0;
+  min-height: 64px;
 }
 
 .login-page__submit {
