@@ -143,6 +143,77 @@ const menus = adminAuthStore.menus
 
 > **注意**：菜单数据在登录时已从 `/me` 接口获取，无需额外调用菜单接口。
 
+## DataTable 组件使用规范
+
+DataTable 是基于 TanStack Table 封装的数据表格组件，支持远程数据加载、分页、排序等功能。
+
+### 基本用法
+
+```typescript
+import { DataTable, useDataTable } from "@/components";
+import type { ColumnDef } from "@tanstack/vue-table";
+
+// 定义列
+const columns: ColumnDef<User>[] = [
+  { accessorKey: "name", header: "姓名", size: 120 },
+  { accessorKey: "email", header: "邮箱", size: 200 },
+  {
+    id: "actions",
+    header: "操作",
+    size: 150,
+    cell: ({ row }) => h(Button, { onClick: () => handleEdit(row.original) }, () => "编辑"),
+  },
+];
+
+// 初始化 DataTable
+const dataTable = useDataTable<User>({
+  columns,
+  remoteFetchFn: async ({ page, page_size }) => {
+    const response = await getUserList({ page, page_size });
+    return response;
+  },
+});
+```
+
+### 模板布局规范
+
+**必须使用固定布局**，确保表头和分页不随滚动条移动：
+
+```html
+<template>
+  <div class="flex h-full min-h-0 flex-col gap-4 p-4">
+    <!-- 其他内容（如统计卡片） -->
+
+    <!-- 搜索筛选区 + 数据表格区 -->
+    <div class="ring-foreground/10 bg-card rounded-xl text-sm ring-1 shadow-sm flex min-h-0 flex-1 flex-col overflow-hidden">
+      <!-- 搜索区域：固定在顶部 -->
+      <div class="shrink-0 border-b px-5 py-4">
+        <!-- 搜索表单 -->
+      </div>
+
+      <!-- 数据表格区域：flex-1 自动填充剩余空间 -->
+      <div class="flex min-h-0 flex-1 flex-col px-5 pt-4">
+        <DataTable :data-table="dataTable" :fixed-layout="true" />
+      </div>
+    </div>
+  </div>
+</template>
+```
+
+### 关键属性
+
+| 属性 | 说明 |
+|------|------|
+| `:data-table` | useDataTable 返回的实例 |
+| `:fixed-layout="true"` | **必须设置**，启用固定表头和分页 |
+
+### 布局关键点
+
+1. **外层容器**：`flex h-full min-h-0 flex-col`
+2. **卡片容器**：`flex min-h-0 flex-1 flex-col overflow-hidden`
+3. **搜索区域**：`shrink-0 border-b` 固定高度
+4. **表格区域**：`flex min-h-0 flex-1 flex-col`
+
 ## 测试
 
 测试文件位于 `tests/` 目录，按模块组织，每个模块下按测试类型划分 `unit/` 和 `e2e/` 目录。

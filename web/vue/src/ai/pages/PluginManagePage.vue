@@ -340,54 +340,63 @@ const handleInstall = async (plugin: AvailablePlugin) => {
       </Card>
     </div>
 
-    <!-- 搜索区域 -->
-    <div class="flex flex-wrap items-center gap-2">
-      <div class="relative flex-1">
-        <Search
-          class="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground"
-        />
-        <Input
-          v-model="searchForm.keyword"
-          placeholder="搜索插件..."
-          class="pl-8"
-          @keyup.enter="handleSearch"
-        />
+    <!-- 搜索筛选区 + 数据表格区 -->
+    <div class="ring-foreground/10 bg-card text-card-foreground rounded-xl text-sm ring-1 shadow-sm flex min-h-0 flex-1 flex-col overflow-hidden">
+      <div class="shrink-0 border-b px-5 py-4">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <div class="font-medium">插件列表</div>
+            <div class="text-muted-foreground mt-1 text-xs">安装和管理插件</div>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            <div class="relative">
+              <Search
+                class="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground"
+              />
+              <Input
+                v-model="searchForm.keyword"
+                placeholder="搜索插件..."
+                class="w-56 pl-8"
+                @keyup.enter="handleSearch"
+              />
+            </div>
+            <Select v-model="searchForm.plugin_type" @update:model-value="handleSearch">
+              <SelectTrigger class="w-[120px]">
+                <SelectValue placeholder="类型" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">全部类型</SelectItem>
+                <SelectItem value="model">模型</SelectItem>
+                <SelectItem value="tool">工具</SelectItem>
+                <SelectItem value="agent">代理</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select v-model="searchForm.status" @update:model-value="handleSearch">
+              <SelectTrigger class="w-[120px]">
+                <SelectValue placeholder="状态" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">全部状态</SelectItem>
+                <SelectItem value="installed">已安装</SelectItem>
+                <SelectItem value="not_installed">未安装</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button variant="outline" size="sm" @click="handleSearch">
+              <Search class="mr-1 h-4 w-4" />
+              搜索
+            </Button>
+            <Button variant="outline" size="sm" @click="handleReset">重置</Button>
+            <Button variant="outline" size="sm" @click="handleRefresh">
+              <RefreshCw class="mr-1 h-4 w-4" />
+              刷新
+            </Button>
+          </div>
+        </div>
       </div>
-      <Select v-model="searchForm.plugin_type" @update:model-value="handleSearch">
-        <SelectTrigger class="w-[140px]">
-          <SelectValue placeholder="类型" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">全部类型</SelectItem>
-          <SelectItem value="model">模型</SelectItem>
-          <SelectItem value="tool">工具</SelectItem>
-          <SelectItem value="agent">代理</SelectItem>
-        </SelectContent>
-      </Select>
-      <Select v-model="searchForm.status" @update:model-value="handleSearch">
-        <SelectTrigger class="w-[140px]">
-          <SelectValue placeholder="状态" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">全部状态</SelectItem>
-          <SelectItem value="installed">已安装</SelectItem>
-          <SelectItem value="not_installed">未安装</SelectItem>
-        </SelectContent>
-      </Select>
-      <Button @click="handleSearch">
-        <Search class="mr-2 h-4 w-4" />
-        搜索
-      </Button>
-      <Button variant="outline" @click="handleReset">重置</Button>
-      <Button variant="outline" @click="handleRefresh">
-        <RefreshCw class="mr-2 h-4 w-4" />
-        刷新
-      </Button>
-    </div>
 
-    <!-- 数据表格 -->
-    <div class="flex-1 overflow-auto rounded-md border">
-      <DataTable :data-table="dataTable" />
+      <div class="flex min-h-0 flex-1 flex-col px-5 pt-4">
+        <DataTable :data-table="dataTable" :fixed-layout="true" />
+      </div>
     </div>
   </div>
 </template>
