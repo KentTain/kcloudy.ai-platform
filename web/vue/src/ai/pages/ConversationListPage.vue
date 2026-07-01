@@ -19,6 +19,7 @@ import {
 import { useConversationStore } from "@/ai/stores";
 import { MessageSquare, Trash2, Plus, Loader2 } from "lucide-vue-next";
 import type { Conversation } from "@/ai/types";
+import { notifyError, getErrorMessage } from "@/framework/utils/feedback";
 
 const router = useRouter();
 const conversationStore = useConversationStore();
@@ -61,7 +62,7 @@ const handleConfirmDelete = async () => {
     deleteDialogOpen.value = false;
     conversationToDelete.value = null;
   } catch (error) {
-    console.error("删除会话失败:", error);
+    notifyError(getErrorMessage(error, "删除会话失败"));
   } finally {
     deleteLoading.value = false;
   }

@@ -19,6 +19,7 @@ import {
 import { useConversationStore } from "@/ai/stores";
 import { getModels, type ProviderItem } from "@/ai/api/model";
 import type { ModelConfig } from "@/ai/types";
+import { notifyError, getErrorMessage } from "@/framework/utils/feedback";
 
 const conversationStore = useConversationStore();
 
@@ -65,8 +66,9 @@ const loadModels = async () => {
     const response = await getModels();
     providers.value = response.providers;
   } catch (e) {
-    error.value = e instanceof Error ? e.message : "加载模型列表失败";
-    console.error("Failed to load models:", e);
+    const errorMsg = getErrorMessage(e, "加载模型列表失败");
+    error.value = errorMsg;
+    notifyError(errorMsg);
   } finally {
     loading.value = false;
   }

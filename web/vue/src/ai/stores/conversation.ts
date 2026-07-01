@@ -7,6 +7,7 @@ import { defineStore } from "pinia";
 import { ref, computed } from "vue";
 import { deleteConversation, getConversations } from "@/ai/api/conversation";
 import { getModels, getDefaultModel, setDefaultModel } from "@/ai/api/model";
+import { notifyError, getErrorMessage } from "@/framework/utils/feedback";
 import type { ConversationListItem } from "@/ai/api/conversation";
 import type { ProviderItem, DefaultModel } from "@/ai/api/model";
 import type { Conversation, ModelConfig } from "@/ai/types";
@@ -88,7 +89,7 @@ export const useConversationStore = defineStore("conversation", () => {
       const response = await getModels();
       providers.value = response.providers;
     } catch (e) {
-      console.error("获取模型列表失败:", e);
+      notifyError(getErrorMessage(e, "获取模型列表失败"));
     }
   };
 
@@ -105,7 +106,7 @@ export const useConversationStore = defineStore("conversation", () => {
         });
       }
     } catch (e) {
-      console.error("获取默认模型失败:", e);
+      notifyError(getErrorMessage(e, "获取默认模型失败"));
     }
   };
 
@@ -120,7 +121,7 @@ export const useConversationStore = defineStore("conversation", () => {
         model_name: model.name,
       });
     } catch (e) {
-      console.error("设置默认模型失败:", e);
+      notifyError(getErrorMessage(e, "设置默认模型失败"));
     }
   };
 

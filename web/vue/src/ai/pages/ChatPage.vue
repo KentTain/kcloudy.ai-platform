@@ -19,6 +19,7 @@ import { Button } from "@/components";
 import ToolCallItem from "@/ai/components/ToolCallItem.vue";
 import AiModelSelector from "@/ai/components/AiModelSelector.vue";
 import type { UIMessagePart, ToolCallPart, ToolResultPart } from "@/ai/types";
+import { notifyError, getErrorMessage } from "@/framework/utils/feedback";
 
 const route = useRoute();
 const router = useRouter();
@@ -41,7 +42,7 @@ const { messages, isLoading, error, sendMessage, stop, regenerate, setInput, rel
   id: activeConversationId,
   model: currentModel,
   onError: (err) => {
-    console.error("Chat error:", err);
+    notifyError(getErrorMessage(err, "对话发生错误"));
   },
 });
 
