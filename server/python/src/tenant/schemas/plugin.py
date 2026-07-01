@@ -224,3 +224,38 @@ class InstallToTenantsResponse(BaseModel):
     success: list[InstallSuccessItem] = Field(default_factory=list, description="成功列表")
     failed: list[InstallFailedItem] = Field(default_factory=list, description="失败列表")
     skipped: list[InstallSkippedItem] = Field(default_factory=list, description="跳过列表")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 插件启停 Schema
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+class BatchStartStopRequest(BaseModel):
+    """批量启停插件请求"""
+
+    plugin_id: str = Field(..., description="插件ID")
+    tenant_ids: list[str] = Field(..., min_length=1, description="目标租户ID列表")
+
+
+class BatchOperationItem(BaseModel):
+    """批量操作成功项"""
+
+    tenant_id: str = Field(..., description="租户ID")
+    plugin_id: str = Field(..., description="插件ID")
+    status: str = Field(..., description="操作后状态")
+
+
+class BatchOperationFailedItem(BaseModel):
+    """批量操作失败项"""
+
+    tenant_id: str = Field(..., description="租户ID")
+    plugin_id: str = Field(..., description="插件ID")
+    error: str = Field(..., description="错误信息")
+
+
+class BatchStartStopResponse(BaseModel):
+    """批量启停响应"""
+
+    success: list[BatchOperationItem] = Field(default_factory=list, description="成功列表")
+    failed: list[BatchOperationFailedItem] = Field(default_factory=list, description="失败列表")
