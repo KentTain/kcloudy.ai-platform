@@ -19,40 +19,11 @@ export default defineConfig(({ mode }) => {
       host: "0.0.0.0",
       port: 5173,
       proxy: {
-        // 业务模块 API 代理
-        "/tenant": {
-          target: apiTarget,
-          changeOrigin: true,
-        },
-        "/iam": {
-          target: apiTarget,
-          changeOrigin: true,
-        },
-        "/ai": {
-          target: apiTarget,
-          changeOrigin: true,
-        },
-        "/demo": {
-          target: apiTarget,
-          changeOrigin: true,
-        },
-        // 其他代理规则
+        // 统一 API 代理（前端 API 调用使用 /api 前缀）
         "/api": {
           target: apiTarget,
           changeOrigin: true,
           rewrite: (path) => path.replace(/^\/api/, ""),
-        },
-        "/admin/v1": {
-          target: apiTarget,
-          changeOrigin: true,
-        },
-        "/console": {
-          target: apiTarget,
-          changeOrigin: true,
-        },
-        "/health": {
-          target: apiTarget,
-          changeOrigin: true,
         },
       },
     },
