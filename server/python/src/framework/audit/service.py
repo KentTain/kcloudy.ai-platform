@@ -58,17 +58,14 @@ class AuditService:
             resource_type=context.resource,
             resource_id=context.resource_id,
             resource_name=context.resource_name,
+            permission_code=permission_code,
             operator_by=user_id,
             operator_name=user_name or "",
             operated_at=operated_at,
             before_data=context.before_data,
             after_data=context.after_data,
-            details=detail,
+            detail=detail,
         )
-
-        # 为测试设置额外的属性（任务 7 会将这些字段添加到模型）
-        audit_log.permission_code = permission_code
-        audit_log.detail = detail
 
         session.add(audit_log)
 
