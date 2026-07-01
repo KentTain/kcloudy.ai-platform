@@ -74,7 +74,13 @@ class PluginStatisticsService:
             )
             .group_by(TenantPluginDefinition.install_type)
         )
-        by_type = {row[0]: row[1] for row in type_result.all() if row[0] is not None}
+        # 将枚举值转换为字符串，过滤掉 None
+        by_type = {}
+        for row in type_result.all():
+            if row[0] is not None:
+                # 枚举值转换为字符串
+                key = row[0].value if hasattr(row[0], 'value') else str(row[0])
+                by_type[key] = row[1]
 
         # 推荐插件数
         recommended_result = await session.execute(
