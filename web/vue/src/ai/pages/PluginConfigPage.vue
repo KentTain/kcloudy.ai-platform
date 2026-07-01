@@ -3,7 +3,7 @@ import { ref, onMounted, computed } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { ArrowLeft, Save, RefreshCw, Plus, Plug, Pencil, Trash2 } from "lucide-vue-next";
 import { Button, Card, Badge, Input, Textarea } from "@/components";
-import { notifySuccess, notifyError } from "@/framework/utils/feedback";
+import { notifySuccess, notifyError, confirmAction } from "@/framework/utils/feedback";
 import {
   getPluginConfig,
   updatePluginConfig,
@@ -152,7 +152,7 @@ const handleEditCredential = (cred: PluginCredential) => {
 };
 
 const handleDeleteCredential = async (cred: PluginCredential) => {
-  if (!confirm(`确定删除凭证"${cred.name}"吗？`)) return;
+  if (!confirmAction(`确定删除凭证"${cred.name}"吗？`)) return;
   try {
     await deletePluginCredential(pluginId, cred.id);
     notifySuccess("凭证已删除");
