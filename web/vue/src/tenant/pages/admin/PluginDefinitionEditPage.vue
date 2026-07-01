@@ -107,8 +107,8 @@ onMounted(() => {
       </Button>
     </template>
 
-    <Card class="flex min-h-0 flex-1 flex-col overflow-hidden">
-      <div class="min-w-0 flex-1 overflow-auto p-6">
+    <div class="flex min-h-0 flex-1 flex-col overflow-hidden">
+      <div class="min-w-0 flex-1 overflow-auto p-1">
         <div v-if="loading" class="space-y-6">
           <div class="h-48 animate-pulse rounded-lg bg-muted" />
           <div class="h-32 animate-pulse rounded-lg bg-muted" />
@@ -199,6 +199,6 @@ onMounted(() => {
           插件不存在或已被删除
         </div>
       </div>
-    </Card>
+    </div>
   </AppPage>
 </template>

@@ -44,12 +44,12 @@ function isSecondaryMenuPath(path: string, menus: AdminMenuItem[]): boolean {
 
 /**
  * 检查路由路径是否匹配动态路由模式
- * 例如：/admin/tenants/abc 匹配 /admin/tenants/:id
+ * 支持多级动态参数（如 /admin/plugin-definitions/langgenius/ollama/edit）
  */
 function isDynamicRoutePath(path: string, menuPath: string): boolean {
   // 将菜单路径转换为正则表达式
   // 例如：/admin/tenants -> ^/admin/tenants(/.*)?$
-  const pattern = `^${menuPath}(/[^/]+)?$`;
+  const pattern = `^${menuPath}(/.*)?$`;
   return new RegExp(pattern).test(path);
 }
 
@@ -57,6 +57,8 @@ function isDynamicRoutePath(path: string, menuPath: string): boolean {
  * 从路由路径中提取二级菜单路径
  * 例如：/admin/tenants/abc -> /admin/tenants
  *       /admin/tenants/create -> /admin/tenants
+ *       /admin/plugin-definitions/langgenius/ollama -> /admin/plugin-definitions
+ *       /admin/plugin-definitions/langgenius/ollama/edit -> /admin/plugin-definitions
  */
 function extractMenuPath(path: string, menus: AdminMenuItem[]): string | null {
   for (const module of menus) {
