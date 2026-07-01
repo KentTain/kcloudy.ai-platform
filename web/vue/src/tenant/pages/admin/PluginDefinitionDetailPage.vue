@@ -17,9 +17,11 @@ import {
   ChevronUp,
   Check,
   Download,
+  Play,
+  Square,
 } from '@lucide/vue'
 import { notifyError, notifySuccess } from '@/framework/utils/feedback'
-import { getPluginDefinition } from '@/tenant/api/plugin'
+import { getPluginDefinition, startPluginInstallation, stopPluginInstallation } from '@/tenant/api/plugin'
 import type { PluginDefinitionDetail } from '@/tenant/api/plugin'
 import InstallToTenantsDialog from './InstallToTenantsDialog.vue'
 
@@ -40,6 +42,36 @@ const handleInstallToTenants = () => {
 
 const handleInstalled = () => {
   loadPluginDetail()
+}
+
+const handleStartPlugin = async () => {
+  if (!plugin.value) return
+  try {
+    const res = await startPluginInstallation(plugin.value.tenant_id || '', plugin.value.plugin_id)
+    if (res.code === 200) {
+      notifySuccess('插件启动成功')
+      loadPluginDetail()
+    } else {
+      notifyError(res.msg || '插件启动失败')
+    }
+  } catch (error) {
+    notifyError('插件启动失败')
+  }
+}
+
+const handleStopPlugin = async () => {
+  if (!plugin.value) return
+  try {
+    const res = await stopPluginInstallation(plugin.value.tenant_id || '', plugin.value.plugin_id)
+    if (res.code === 200) {
+      notifySuccess('插件停止成功')
+      loadPluginDetail()
+    } else {
+      notifyError(res.msg || '插件停止失败')
+    }
+  } catch (error) {
+    notifyError('插件停止失败')
+  }
 }
 
 const loadPluginDetail = async () => {
@@ -105,6 +137,14 @@ onMounted(() => {
       <Button variant="outline" @click="handleInstallToTenants" data-testid="install-to-tenants-button">
         <Download class="mr-1 h-4 w-4" />
         安装到租户
+      </Button>
+      <Button variant="outline" @click="handleStartPlugin" data-testid="start-plugin-button">
+        <Play class="mr-1 h-4 w-4" />
+        启动
+      </Button>
+      <Button variant="outline" @click="handleStopPlugin" data-testid="stop-plugin-button">
+        <Square class="mr-1 h-4 w-4" />
+        停止
       </Button>
     </template>
 
