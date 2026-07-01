@@ -16,10 +16,13 @@ from pathlib import Path
 from fastapi import APIRouter, Depends, File, Form, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from framework.common.exceptions import NotFoundError
 from framework.common.response import ApiResponse
 from framework.database.dependencies import get_db_session
 from tenant.middlewares.admin_auth_middleware import require_admin_permission
 from tenant.schemas.plugin import (
+    InstallToTenantsRequest,
+    InstallToTenantsResponse,
     ParsedPluginInfo,
     PluginDefinitionDetailResponse,
     PluginDefinitionPaginatedResponse,
@@ -390,3 +393,28 @@ async def delete_plugin_definition(
     """
     await plugin_definition_service.delete_definition(session, plugin_id)
     return ApiResponse.success(message="插件定义已删除")
+
+
+@router.post("/plugin-definitions/{plugin_id:path}/install")
+async def install_plugin_to_tenants(
+    plugin_id: str,
+    request: InstallToTenantsRequest,
+    _perm: None = Depends(require_admin_permission("tenant:plugin:write")),
+    session: AsyncSession = Depends(get_db_session),
+) -> ApiResponse:
+    """
+    安装插件到指定租户
+
+    场景：平台管理员将插件安装到多个租户
+    WHEN 管理员请求 POST /tenant/admin/v1/plugin-definitions/{plugin_id}/install
+    THEN 为每个目标租户创建安装记录，同步 AI 侧配置，不启动插件进程
+    """
+    try:
+        result = await plugin_definition_service.install_to_tenants(
+            session, plugin_id, request
+        )
+        return ApiResponse.success(data=result.model_dump())
+    except ValueError as e:
+        return ApiResponse.fail(message=str(e))
+    except NotFoundError as e:
+        return ApiResponse.fail(message=str(e))
