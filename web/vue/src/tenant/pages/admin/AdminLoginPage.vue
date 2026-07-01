@@ -198,7 +198,7 @@ const onSubmit = handleSubmit(async (values) => {
 
 .admin-login-page__field {
   margin-bottom: 0;
-  min-height: 64px;
+  max-height: 64px;
 }
 
 .admin-login-page__submit {
