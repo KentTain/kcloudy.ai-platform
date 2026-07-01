@@ -36,6 +36,7 @@ import type { User, Organization, RoleOption } from "@/iam/types"
 import type { TreeSelectNode } from "@/framework/types/tree"
 import { getOrganizationTree } from "@/iam/api/organization"
 import { getRoleOptions } from "@/iam/api/user"
+import { notifyError, getErrorMessage } from "@/framework/utils/feedback"
 
 interface Props {
   open: boolean
@@ -122,7 +123,7 @@ async function loadOptions() {
     organizationTree.value = orgRes.data || []
     roleOptions.value = roleRes.data || []
   } catch (error) {
-    console.error("加载选项失败:", error)
+    notifyError(getErrorMessage(error, "加载选项失败"))
   }
 }
 

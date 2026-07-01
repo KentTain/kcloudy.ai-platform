@@ -34,6 +34,7 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area"
 import type { AuditLog, AuditLogOptions, AuditOption } from "@/iam/types"
 import { getAuditLogs, getAuditOptions } from "@/iam/api/auditLog"
+import { notifyError, getErrorMessage } from "@/framework/utils/feedback"
 
 // ========== 状态 ==========
 
@@ -87,7 +88,7 @@ async function loadOptions() {
       resource_types: [],
     }
   } catch (error) {
-    console.error("加载选项失败:", error)
+    notifyError(getErrorMessage(error, "加载选项失败"))
   }
 }
 
