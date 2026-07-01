@@ -16,10 +16,12 @@ import {
   ChevronDown,
   ChevronUp,
   Check,
+  Download,
 } from '@lucide/vue'
 import { notifyError, notifySuccess } from '@/framework/utils/feedback'
 import { getPluginDefinition } from '@/tenant/api/plugin'
 import type { PluginDefinitionDetail } from '@/tenant/api/plugin'
+import InstallToTenantsDialog from './InstallToTenantsDialog.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -29,6 +31,16 @@ const loading = ref(false)
 const plugin = ref<PluginDefinitionDetail | null>(null)
 const declarationExpanded = ref(true)
 const copied = ref(false)
+
+const installDialogOpen = ref(false)
+
+const handleInstallToTenants = () => {
+  installDialogOpen.value = true
+}
+
+const handleInstalled = () => {
+  loadPluginDetail()
+}
 
 const loadPluginDetail = async () => {
   loading.value = true
@@ -89,6 +101,10 @@ onMounted(() => {
       <Button variant="outline" @click="handleBack" data-testid="back-button">
         <ArrowLeft class="mr-1 h-4 w-4" />
         返回列表
+      </Button>
+      <Button variant="outline" @click="handleInstallToTenants" data-testid="install-to-tenants-button">
+        <Download class="mr-1 h-4 w-4" />
+        安装到租户
       </Button>
     </template>
 
@@ -210,5 +226,11 @@ onMounted(() => {
         </div>
       </div>
     </div>
+    <InstallToTenantsDialog
+      :plugin="plugin"
+      :open="installDialogOpen"
+      @update:open="installDialogOpen = $event"
+      @installed="handleInstalled"
+    />
   </AppPage>
 </template>
