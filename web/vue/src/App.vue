@@ -2,10 +2,12 @@
 /**
  * App 根组件
  */
+import { Toaster } from "@/components/ui/sonner"
 </script>
 
 <template>
   <router-view />
+  <Toaster position="top-center" rich-colors :visibleToasts="3" />
 </template>
 
 <style>
