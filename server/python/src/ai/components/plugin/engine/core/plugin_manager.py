@@ -1316,6 +1316,85 @@ class TenantPluginManager:
                 del self.plugins[plugin_id]
             raise
 
+    def _build_asset_access_url(self, plugin_id: str, version: str, asset_path: str) -> str:
+        """构建资源文件的 API 访问 URL
+
+        将 manifest 中声明的资源相对路径（如 icon_s_en.svg）转换为完整的 API 代理路径，
+        前端可直接通过此 URL 访问插件资源文件。
+
+        Args:
+            plugin_id: 插件 ID（格式：author/name）
+            version: 插件版本
+            asset_path: 资源相对路径（如 icon_s_en.svg）
+
+        Returns:
+            str: 资源访问 URL（如 /ai/console/v1/plugins/assets/langgenius/deepseek/icon_s_en.svg）
+        """
+        if not asset_path:
+            return asset_path
+        # 如果已经是完整 URL，直接返回
+        if asset_path.startswith("http://") or asset_path.startswith("https://"):
+            return asset_path
+        # 构建 API 代理路径
+        return f"/ai/console/v1/plugins/assets/{plugin_id}/{asset_path}"
+
+    async def _inject_asset_urls(self, plugin_config: PluginConfig, plugin_id: str) -> PluginConfig:
+        """将插件配置中的资源相对路径注入为完整的 API 访问 URL
+
+        处理以下位置的资源引用：
+        - models_configuration 中的 icon_small / icon_large（I18nObject 类型）
+        - tools_configuration 中的 icon（str 类型）
+        - configuration 中的 icon（str 类型）
+
+        Args:
+            plugin_config: 插件配置对象
+            plugin_id: 插件 ID（格式：author/name）
+
+        Returns:
+            PluginConfig: 处理后的插件配置（注入完整资源 URL）
+        """
+        version = plugin_config.configuration.version
+
+        # 处理 configuration 中的 icon
+        if plugin_config.configuration.icon:
+            plugin_config.configuration.icon = self._build_asset_access_url(
+                plugin_id, version, plugin_config.configuration.icon
+            )
+
+        # 处理模型配置中的 icon_small / icon_large
+        if plugin_config.models_configuration:
+            for model_config in plugin_config.models_configuration:
+                # I18nObject 包含 en_US/zh_Hans 路径
+                if model_config.icon_small:
+                    if model_config.icon_small.en_US:
+                        model_config.icon_small.en_US = self._build_asset_access_url(
+                            plugin_id, version, model_config.icon_small.en_US
+                        )
+                    if model_config.icon_small.zh_Hans:
+                        model_config.icon_small.zh_Hans = self._build_asset_access_url(
+                            plugin_id, version, model_config.icon_small.zh_Hans
+                        )
+                if model_config.icon_large:
+                    if model_config.icon_large.en_US:
+                        model_config.icon_large.en_US = self._build_asset_access_url(
+                            plugin_id, version, model_config.icon_large.en_US
+                        )
+                    if model_config.icon_large.zh_Hans:
+                        model_config.icon_large.zh_Hans = self._build_asset_access_url(
+                            plugin_id, version, model_config.icon_large.zh_Hans
+                        )
+
+        # 处理工具配置中的 icon
+        if plugin_config.tools_configuration:
+            for tool_config in plugin_config.tools_configuration:
+                if tool_config.identity and tool_config.identity.icon:
+                    tool_config.identity.icon = self._build_asset_access_url(
+                        plugin_id, version, tool_config.identity.icon
+                    )
+
+        self.logger.info(f"已为插件 {plugin_id}@{version} 注入资源访问 URL")
+        return plugin_config
+
     async def _save_plugin_installation_to_database(
         self,
         session: AsyncSession,
@@ -1333,6 +1412,9 @@ class TenantPluginManager:
         provider = get_plugin_installation_provider()
 
         plugin_unique_identifier = f"{plugin_id}@{plugin_config.configuration.version}"
+
+        # 注入资源访问 URL（图标等）
+        plugin_config = await self._inject_asset_urls(plugin_config, plugin_id)
 
         # I18nObject 序列化辅助函数
         def serialize_i18n(obj):

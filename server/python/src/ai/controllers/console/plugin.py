@@ -5,7 +5,7 @@ AI 模块控制台控制器
 """
 
 from fastapi import APIRouter, Body, Depends, Path, Query
-from fastapi.responses import ORJSONResponse
+from fastapi.responses import ORJSONResponse, Response
 from loguru import logger
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -239,6 +239,79 @@ async def get_install_task_detail(
     except Exception as e:
         _logger.exception("获取安装任务详情失败")
         raise BadRequestError(f"获取安装任务详情失败: {str(e)}")
+
+
+@router.get(
+    "/assets/{plugin_id:path}/{asset_path:path}",
+    summary="获取插件资源文件",
+    response_class=Response,
+)
+async def get_plugin_asset(
+    plugin_id: str = Path(..., description="插件ID"),
+    asset_path: str = Path(..., description="资源文件相对路径"),
+    session: AsyncSession = Depends(get_db_session),
+) -> Response:
+    """
+    获取插件资源文件内容
+
+    用于访问插件包中 _assets 目录下的静态资源文件（如图标、图片等）。
+    资源优先从本地 workspace 读取，不存在时回退到 OSS。
+
+    场景：前端渲染插件图标
+    WHEN 请求 GET /ai/console/v1/plugins/assets/langgenius/deepseek/icon_s_en.svg
+    THEN 返回对应资源文件的原始内容，附带正确的 Content-Type
+
+    支持的 Content-Type 自动检测：svg、png、jpg、gif、json、yaml、css、js 等
+    """
+    _logger.info(
+        f"get_plugin_asset-> plugin_id:{plugin_id}, asset_path:{asset_path}"
+    )
+
+    from ai.components.plugin.engine.core.plugin_manager import PluginManagerFactory
+    from framework.common.ctx import get_tenant_id
+
+    try:
+        tenant_id = get_tenant_id()
+        if not tenant_id:
+            raise BadRequestError("租户 ID 不能为空")
+
+        plugin_manager = await PluginManagerFactory.get_manager(tenant_id, session)
+        content = await plugin_manager.get_plugin_asset(plugin_id, asset_path)
+
+        if content is None:
+            raise BadRequestError(f"资源文件不存在: {asset_path}")
+
+        # 根据文件扩展名确定 Content-Type
+        file_extension = (
+            asset_path.split(".")[-1].lower() if "." in asset_path else ""
+        )
+        content_type_map = {
+            "png": "image/png",
+            "jpg": "image/jpeg",
+            "jpeg": "image/jpeg",
+            "gif": "image/gif",
+            "svg": "image/svg+xml",
+            "ico": "image/x-icon",
+            "webp": "image/webp",
+            "json": "application/json",
+            "yaml": "application/x-yaml",
+            "yml": "application/x-yaml",
+            "txt": "text/plain",
+            "md": "text/markdown",
+            "css": "text/css",
+            "js": "application/javascript",
+            "html": "text/html",
+        }
+        content_type = content_type_map.get(
+            file_extension, "application/octet-stream"
+        )
+
+        return Response(content=content, media_type=content_type)
+    except BadRequestError:
+        raise
+    except Exception as e:
+        _logger.exception(f"获取插件资源文件失败: {plugin_id}/{asset_path}")
+        raise BadRequestError(f"获取插件资源文件失败: {str(e)}")
 
 
 @router.get(
