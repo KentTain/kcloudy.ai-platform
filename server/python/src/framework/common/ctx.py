@@ -28,6 +28,10 @@ class Context:
     tenant_name: str | None = None
     tenant_code: str | None = None
 
+    # 权限信息
+    permission_code: str | None = None
+    """当前操作的权限编码"""
+
     # 其他信息
     workspace_id: str | None = None
     extra: dict[str, Any] = field(default_factory=dict)
@@ -51,6 +55,7 @@ class Context:
             tenant_id=self.tenant_id,
             tenant_name=self.tenant_name,
             tenant_code=self.tenant_code,
+            permission_code=self.permission_code,
             workspace_id=self.workspace_id,
             extra=deepcopy(self.extra),
         )
@@ -147,3 +152,22 @@ def get_tenant_id() -> str | None:
 def get_workspace_id() -> str | None:
     """获取当前工作空间 ID"""
     return get_context().workspace_id
+
+
+def set_permission_code(code: str) -> None:
+    """
+    设置当前权限编码
+
+    Args:
+        code: 权限编码，如 "iam:user:create"
+    """
+
+    def modifier(ctx: Context) -> None:
+        ctx.permission_code = code
+
+    _update_context(modifier)
+
+
+def get_permission_code() -> str | None:
+    """获取当前权限编码"""
+    return get_context().permission_code
