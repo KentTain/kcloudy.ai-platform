@@ -32,18 +32,18 @@
 **文件：**
 - 修改：`web/vue/package.json`
 
-- [ ] **步骤 1：安装 vue-sonner 依赖**
+- [x] **步骤 1：安装 vue-sonner 依赖**
 
 ```bash
 cd web/vue && pnpm add vue-sonner
 ```
 
-- [ ] **步骤 2：验证依赖安装成功**
+- [x] **步骤 2：验证依赖安装成功**
 
 运行：`cd web/vue && pnpm list vue-sonner`
 预期：显示 vue-sonner 版本信息
 
-- [ ] **步骤 3：Commit 依赖变更**
+- [x] **步骤 3：Commit 依赖变更**
 
 ```bash
 git add web/vue/package.json web/vue/pnpm-lock.yaml
@@ -60,7 +60,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 - 创建：`web/vue/src/components/ui/sonner/Sonner.vue`
 - 创建：`web/vue/src/components/ui/sonner/index.ts`
 
-- [ ] **步骤 1：创建 Sonner.vue 组件**
+- [x] **步骤 1：创建 Sonner.vue 组件**
 
 ```vue
 <!-- web/vue/src/components/ui/sonner/Sonner.vue -->
@@ -94,14 +94,14 @@ const props = defineProps<ToasterProps>()
 </template>
 ```
 
-- [ ] **步骤 2：创建 index.ts 导出文件**
+- [x] **步骤 2：创建 index.ts 导出文件**
 
 ```typescript
 // web/vue/src/components/ui/sonner/index.ts
 export { default as Toaster } from "./Sonner.vue";
 ```
 
-- [ ] **步骤 3：Commit Sonner 组件**
+- [x] **步骤 3：Commit Sonner 组件**
 
 ```bash
 git add web/vue/src/components/ui/sonner/
@@ -121,7 +121,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 **文件：**
 - 修改：`web/vue/src/App.vue`
 
-- [ ] **步骤 1：更新 App.vue 注册 Toaster**
+- [x] **步骤 1：更新 App.vue 注册 Toaster**
 
 ```vue
 <!-- web/vue/src/App.vue -->
@@ -148,12 +148,12 @@ body,
 </style>
 ```
 
-- [ ] **步骤 2：验证组件导入正确**
+- [x] **步骤 2：验证组件导入正确**
 
 运行：`cd web/vue && pnpm type-check`
 预期：无类型错误
 
-- [ ] **步骤 3：Commit App.vue 变更**
+- [x] **步骤 3：Commit App.vue 变更**
 
 ```bash
 git add web/vue/src/App.vue
@@ -173,7 +173,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 **文件：**
 - 修改：`web/vue/src/framework/utils/feedback.ts`
 
-- [ ] **步骤 1：更新 feedback.ts**
+- [x] **步骤 1：更新 feedback.ts**
 
 ```typescript
 // web/vue/src/framework/utils/feedback.ts
@@ -272,12 +272,12 @@ export const getErrorMessage = (error: unknown, fallback: string) => {
 }
 ```
 
-- [ ] **步骤 2：验证类型检查通过**
+- [x] **步骤 2：验证类型检查通过**
 
 运行：`cd web/vue && pnpm type-check`
 预期：无类型错误
 
-- [ ] **步骤 3：Commit feedback.ts 变更**
+- [x] **步骤 3：Commit feedback.ts 变更**
 
 ```bash
 git add web/vue/src/framework/utils/feedback.ts
@@ -298,7 +298,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 **文件：**
 - 创建：`web/vue/tests/framework/unit/feedback.test.ts`
 
-- [ ] **步骤 1：编写单元测试**
+- [x] **步骤 1：编写单元测试**
 
 ```typescript
 // web/vue/tests/framework/unit/feedback.test.ts
@@ -434,12 +434,12 @@ describe("feedback utils", () => {
 })
 ```
 
-- [ ] **步骤 2：运行单元测试验证通过**
+- [x] **步骤 2：运行单元测试验证通过**
 
 运行：`cd web/vue && pnpm test:unit tests/framework/unit/feedback.test.ts --run`
 预期：所有测试通过
 
-- [ ] **步骤 3：Commit 单元测试**
+- [x] **步骤 3：Commit 单元测试**
 
 ```bash
 git add web/vue/tests/framework/unit/feedback.test.ts
@@ -460,7 +460,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 **文件：**
 - 创建：`web/vue/tests/framework/e2e/toast.spec.ts`
 
-- [ ] **步骤 1：编写 E2E 测试**
+- [x] **步骤 1：编写 E2E 测试**
 
 ```typescript
 // web/vue/tests/framework/e2e/toast.spec.ts
@@ -544,12 +544,12 @@ test.describe("Toast 通知测试", () => {
 })
 ```
 
-- [ ] **步骤 2：运行 E2E 测试验证通过**
+- [x] **步骤 2：运行 E2E 测试验证通过**
 
 运行：`cd web/vue && pnpm test:e2e tests/framework/e2e/toast.spec.ts`
 预期：所有测试通过（需要后端服务运行）
 
-- [ ] **步骤 3：Commit E2E 测试**
+- [x] **步骤 3：Commit E2E 测试**
 
 ```bash
 git add web/vue/tests/framework/e2e/toast.spec.ts
@@ -570,13 +570,13 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 **文件：**
 - 无文件变更，仅验证
 
-- [ ] **步骤 1：启动开发服务器**
+- [x] **步骤 1：启动开发服务器**
 
 ```bash
 cd web/vue && pnpm dev
 ```
 
-- [ ] **步骤 2：手动测试 Toast 功能**
+- [x] **步骤 2：手动测试 Toast 功能**
 
 1. 打开浏览器访问 http://localhost:5173
 2. 登录系统
@@ -585,7 +585,7 @@ cd web/vue && pnpm dev
 5. 验证 Toast 有正确的背景色和图标
 6. 验证 Toast 在 4 秒后自动消失
 
-- [ ] **步骤 3：运行所有测试验证通过**
+- [x] **步骤 3：运行所有测试验证通过**
 
 ```bash
 cd web/vue
