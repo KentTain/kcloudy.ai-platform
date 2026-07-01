@@ -108,8 +108,18 @@ class ModuleSyncService:
             existing_menus_by_ref = {}
             existing_menus_by_code = {}
 
-        # 按树层级排序，确保父菜单先创建
-        sorted_menus = sorted(module_menus, key=lambda m: m.parent_id or "")
+        # 拓扑排序：计算每个菜单的树层级深度，确保父菜单先于子菜单创建
+        def _get_menu_depth(menu: "ModuleMenu", menu_map: dict[str, "ModuleMenu"]) -> int:
+            """递归计算菜单的树层级深度"""
+            if not menu.parent_id or menu.parent_id == "root":
+                return 0
+            parent = menu_map.get(menu.parent_id)
+            if not parent:
+                return 0
+            return 1 + _get_menu_depth(parent, menu_map)
+
+        menu_map = {m.id: m for m in module_menus}
+        sorted_menus = sorted(module_menus, key=lambda m: _get_menu_depth(m, menu_map))
 
         for mm in sorted_menus:
             # 跳过 tenant 模块的菜单同步

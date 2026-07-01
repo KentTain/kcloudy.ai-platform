@@ -652,7 +652,7 @@ onMounted(() => {
     <!-- Body -->
     <div class="flex gap-4 h-[calc(100vh-200px)]" data-testid="org-page-body">
       <!-- 左侧：组织树 -->
-      <div class="w-[300px] shrink-0 flex flex-col border rounded-lg overflow-hidden bg-card" data-testid="org-tree-panel">
+      <div class="w-[300px] min-h-0 shrink-0 flex flex-col border rounded-lg overflow-hidden bg-card" data-testid="org-tree-panel">
         <div class="p-3 border-b bg-muted/30">
           <div class="relative">
             <Search class="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />

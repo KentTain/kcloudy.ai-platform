@@ -324,14 +324,14 @@ onUnmounted(() => {
     <div class="flex gap-4 flex-1 min-h-0">
       <!-- 左侧：权限列表 -->
       <div
-        class="w-[300px] shrink-0 flex flex-col border rounded-lg overflow-hidden bg-card"
+        class="w-[300px] min-h-0 shrink-0 flex flex-col border rounded-lg overflow-hidden bg-card"
         data-testid="permission-list"
       >
         <div class="p-3 border-b bg-muted/30">
           <span class="text-sm font-medium">权限列表</span>
         </div>
 
-        <ScrollArea class="flex-1">
+        <ScrollArea class="min-h-0 flex-1">
           <div v-if="loading" class="p-3 space-y-2" data-testid="permission-loading">
             <Skeleton v-for="i in 6" :key="i" class="h-10 w-full" />
           </div>

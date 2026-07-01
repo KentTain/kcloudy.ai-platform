@@ -90,6 +90,7 @@ async def update_organization(
             organization_id=organization_id,
             name=data.name,
             code=data.code,
+            parent_id=data.parent_id,
             sort_order=data.sort_order,
             leader_id=data.leader_id,
             status=data.status,

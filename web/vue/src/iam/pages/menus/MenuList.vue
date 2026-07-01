@@ -280,7 +280,7 @@ onMounted(() => {
     <!-- Body -->
     <div class="flex gap-4 h-[calc(100vh-200px)]">
       <!-- 左侧：菜单树 -->
-      <div data-testid="menu-tree-container" class="w-[300px] shrink-0 flex flex-col border rounded-lg overflow-hidden bg-card">
+      <div data-testid="menu-tree-container" class="w-[300px] min-h-0 shrink-0 flex flex-col border rounded-lg overflow-hidden bg-card">
         <div class="p-3 border-b bg-muted/30">
           <div class="relative">
             <Search class="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -293,7 +293,7 @@ onMounted(() => {
           </div>
         </div>
 
-        <ScrollArea class="flex-1">
+        <ScrollArea class="min-h-0 flex-1">
           <div v-if="loading" data-testid="menu-tree-loading" class="p-3 space-y-2">
             <Skeleton v-for="i in 8" :key="i" class="h-6 w-full" />
           </div>
