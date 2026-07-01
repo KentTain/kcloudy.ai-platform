@@ -21,6 +21,8 @@ from framework.common.response import ApiResponse
 from framework.database.dependencies import get_db_session
 from tenant.middlewares.admin_auth_middleware import require_admin_permission
 from tenant.schemas.plugin import (
+    BatchStartStopRequest,
+    BatchStartStopResponse,
     InstallToTenantsRequest,
     InstallToTenantsResponse,
     ParsedPluginInfo,
@@ -37,6 +39,7 @@ from tenant.schemas.plugin import (
     UploadPluginResponse,
 )
 from tenant.services.plugin_definition_service import plugin_definition_service
+from tenant.services.plugin_installation_service import plugin_installation_service
 from tenant.services.plugin_package_service import plugin_package_service
 from tenant.services.plugin_statistics_service import plugin_statistics_service
 
@@ -418,3 +421,87 @@ async def install_plugin_to_tenants(
         return ApiResponse.fail(message=str(e))
     except NotFoundError as e:
         return ApiResponse.fail(message=str(e))
+
+
+@router.post("/plugin-installations/{tenant_id}/{plugin_id}/start")
+async def start_plugin_installation(
+    tenant_id: str,
+    plugin_id: str,
+    _perm: None = Depends(require_admin_permission("tenant:plugin:write")),
+    session: AsyncSession = Depends(get_db_session),
+) -> ApiResponse:
+    """
+    启动租户插件
+
+    场景：平台管理员启动指定租户的插件
+    WHEN 管理员请求 POST /tenant/admin/v1/plugin-installations/{tenant_id}/{plugin_id}/start
+    THEN 启动插件进程，更新安装状态为 ACTIVE
+    """
+    try:
+        result = await plugin_installation_service.start_plugin(
+            session, tenant_id, plugin_id
+        )
+        return ApiResponse.success(data={"tenant_id": result.tenant_id, "plugin_id": result.plugin_id, "status": result.status})
+    except ValueError as e:
+        return ApiResponse.fail(message=str(e))
+    except RuntimeError as e:
+        return ApiResponse.fail(message=str(e))
+
+
+@router.post("/plugin-installations/{tenant_id}/{plugin_id}/stop")
+async def stop_plugin_installation(
+    tenant_id: str,
+    plugin_id: str,
+    _perm: None = Depends(require_admin_permission("tenant:plugin:write")),
+    session: AsyncSession = Depends(get_db_session),
+) -> ApiResponse:
+    """
+    停止租户插件
+
+    场景：平台管理员停止指定租户的插件
+    WHEN 管理员请求 POST /tenant/admin/v1/plugin-installations/{tenant_id}/{plugin_id}/stop
+    THEN 停止插件进程，更新安装状态为 INACTIVE
+    """
+    try:
+        result = await plugin_installation_service.stop_plugin(
+            session, tenant_id, plugin_id
+        )
+        return ApiResponse.success(data={"tenant_id": result.tenant_id, "plugin_id": result.plugin_id, "status": result.status})
+    except ValueError as e:
+        return ApiResponse.fail(message=str(e))
+    except RuntimeError as e:
+        return ApiResponse.fail(message=str(e))
+
+
+@router.post("/plugin-installations/start/batch")
+async def batch_start_plugin_installations(
+    request: BatchStartStopRequest,
+    _perm: None = Depends(require_admin_permission("tenant:plugin:write")),
+    session: AsyncSession = Depends(get_db_session),
+) -> ApiResponse:
+    """
+    批量启动插件（一个插件 → 多租户）
+
+    场景：平台管理员批量启动多个租户的同一插件
+    WHEN 管理员请求 POST /tenant/admin/v1/plugin-installations/start/batch
+    THEN 为每个目标租户启动插件，返回成功/失败列表
+    """
+    result = await plugin_installation_service.batch_start_plugins(session, request)
+    return ApiResponse.success(data=result.model_dump())
+
+
+@router.post("/plugin-installations/stop/batch")
+async def batch_stop_plugin_installations(
+    request: BatchStartStopRequest,
+    _perm: None = Depends(require_admin_permission("tenant:plugin:write")),
+    session: AsyncSession = Depends(get_db_session),
+) -> ApiResponse:
+    """
+    批量停止插件（一个插件 → 多租户）
+
+    场景：平台管理员批量停止多个租户的同一插件
+    WHEN 管理员请求 POST /tenant/admin/v1/plugin-installations/stop/batch
+    THEN 为每个目标租户停止插件，返回成功/失败列表
+    """
+    result = await plugin_installation_service.batch_stop_plugins(session, request)
+    return ApiResponse.success(data=result.model_dump())
