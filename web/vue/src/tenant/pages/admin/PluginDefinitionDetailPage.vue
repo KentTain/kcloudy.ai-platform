@@ -21,9 +21,10 @@ import {
   Square,
 } from '@lucide/vue'
 import { notifyError, notifySuccess } from '@/framework/utils/feedback'
-import { getPluginDefinition, startPluginInstallation, stopPluginInstallation } from '@/tenant/api/plugin'
+import { getPluginDefinition } from '@/tenant/api/plugin'
 import type { PluginDefinitionDetail } from '@/tenant/api/plugin'
 import InstallToTenantsDialog from './InstallToTenantsDialog.vue'
+import BatchStartStopDialog from './BatchStartStopDialog.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -35,6 +36,8 @@ const declarationExpanded = ref(true)
 const copied = ref(false)
 
 const installDialogOpen = ref(false)
+const startStopDialogOpen = ref(false)
+const startStopMode = ref<'start' | 'stop'>('start')
 
 const handleInstallToTenants = () => {
   installDialogOpen.value = true
@@ -44,34 +47,18 @@ const handleInstalled = () => {
   loadPluginDetail()
 }
 
-const handleStartPlugin = async () => {
-  if (!plugin.value) return
-  try {
-    const res = await startPluginInstallation(plugin.value.tenant_id || '', plugin.value.plugin_id)
-    if (res.code === 200) {
-      notifySuccess('插件启动成功')
-      loadPluginDetail()
-    } else {
-      notifyError(res.msg || '插件启动失败')
-    }
-  } catch (error) {
-    notifyError('插件启动失败')
-  }
+const handleStartPlugin = () => {
+  startStopMode.value = 'start'
+  startStopDialogOpen.value = true
 }
 
-const handleStopPlugin = async () => {
-  if (!plugin.value) return
-  try {
-    const res = await stopPluginInstallation(plugin.value.tenant_id || '', plugin.value.plugin_id)
-    if (res.code === 200) {
-      notifySuccess('插件停止成功')
-      loadPluginDetail()
-    } else {
-      notifyError(res.msg || '插件停止失败')
-    }
-  } catch (error) {
-    notifyError('插件停止失败')
-  }
+const handleStopPlugin = () => {
+  startStopMode.value = 'stop'
+  startStopDialogOpen.value = true
+}
+
+const handleStartStopDone = () => {
+  loadPluginDetail()
 }
 
 const loadPluginDetail = async () => {
@@ -271,6 +258,13 @@ onMounted(() => {
       :open="installDialogOpen"
       @update:open="installDialogOpen = $event"
       @installed="handleInstalled"
+    />
+    <BatchStartStopDialog
+      :plugin="plugin"
+      :open="startStopDialogOpen"
+      :mode="startStopMode"
+      @update:open="startStopDialogOpen = $event"
+      @done="handleStartStopDone"
     />
   </AppPage>
 </template>

@@ -39,11 +39,10 @@ import {
   getPluginDefinitions,
   getPluginStatistics,
   updatePluginDefinition,
-  batchStartPluginInstallations,
-  batchStopPluginInstallations,
 } from "@/tenant/api/plugin";
-import type { PluginDefinition, PluginStatistics, BatchStartStopResponse } from "@/tenant/api/plugin";
+import type { PluginDefinition, PluginStatistics } from "@/tenant/api/plugin";
 import InstallToTenantsDialog from "./InstallToTenantsDialog.vue";
+import BatchStartStopDialog from "./BatchStartStopDialog.vue";
 
 const router = useRouter();
 
@@ -486,6 +485,20 @@ const handleDelete = async (row: PluginDefinition) => {
       :open="installDialogOpen"
       @update:open="installDialogOpen = $event"
       @installed="handleInstalled"
+    />
+    <BatchStartStopDialog
+      :plugin="batchTargetPlugin"
+      :open="batchStartDialogOpen"
+      mode="start"
+      @update:open="batchStartDialogOpen = $event"
+      @done="handleBatchStarted"
+    />
+    <BatchStartStopDialog
+      :plugin="batchTargetPlugin"
+      :open="batchStopDialogOpen"
+      mode="stop"
+      @update:open="batchStopDialogOpen = $event"
+      @done="handleBatchStopped"
     />
   </div>
 </template>
