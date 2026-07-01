@@ -183,3 +183,44 @@ class ScanDirectoryConfirmRequest(BaseModel):
     directory: str = Field(..., description="服务器目录路径")
     recursive: bool = Field(default=False, description="是否递归扫描子目录")
     plugin_ids: list[str] = Field(default_factory=list, description="指定要导入的插件ID列表")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 安装到租户 Schema
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+class InstallToTenantsRequest(BaseModel):
+    """安装插件到租户请求"""
+
+    tenant_ids: list[str] = Field(..., min_length=1, description="目标租户ID列表")
+    auto_start: bool = Field(default=False, description="是否自动启动")
+
+
+class InstallSuccessItem(BaseModel):
+    """安装成功项"""
+
+    tenant_id: str = Field(..., description="租户ID")
+    plugin_id: str = Field(..., description="插件ID")
+
+
+class InstallFailedItem(BaseModel):
+    """安装失败项"""
+
+    tenant_id: str = Field(..., description="租户ID")
+    message: str = Field(..., description="错误信息")
+
+
+class InstallSkippedItem(BaseModel):
+    """安装跳过项"""
+
+    tenant_id: str = Field(..., description="租户ID")
+    reason: str = Field(..., description="跳过原因")
+
+
+class InstallToTenantsResponse(BaseModel):
+    """安装插件到租户响应"""
+
+    success: list[InstallSuccessItem] = Field(default_factory=list, description="成功列表")
+    failed: list[InstallFailedItem] = Field(default_factory=list, description="失败列表")
+    skipped: list[InstallSkippedItem] = Field(default_factory=list, description="跳过列表")
