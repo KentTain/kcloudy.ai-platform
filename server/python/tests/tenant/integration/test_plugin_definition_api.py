@@ -589,7 +589,7 @@ class TestInstallPluginToTenantsAPI:
                 json={"tenant_ids": ["some-tenant-id"]},
             )
 
-        assert response.status_code == 200
+        assert response.status_code == 400
         data = response.json()
         assert data["code"] != 200
 

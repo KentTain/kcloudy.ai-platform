@@ -154,7 +154,7 @@ class TestTenantPubSubOperations:
         # 使用本地 Redis 作为物理隔离实例
         config = TenantPubSubConfig(
             type=PubSubType.REDIS,
-            host="localhost",
+            host="kcloudy-redis",
             port=6379,
             password="XdA9caoq",
         )
@@ -234,7 +234,7 @@ class TestTenantPubSubOperations:
         # 使用本地 Redis 作为物理隔离实例
         config = TenantPubSubConfig(
             type=PubSubType.REDIS,
-            host="localhost",
+            host="kcloudy-redis",
             port=6379,
             password="XdA9caoq",
         )

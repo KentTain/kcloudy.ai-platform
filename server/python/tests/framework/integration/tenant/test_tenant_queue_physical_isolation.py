@@ -172,10 +172,10 @@ class TestTenantQueueOperations:
         """
         queue_name = cleanup_queue
 
-        # 使用本地 Redis 作为物理隔离实例
+        # 使用 Docker 服务名作为物理隔离实例
         config = TenantQueueConfig(
             type=QueueType.REDIS,
-            host="localhost",  # 使用本地 Redis 模拟
+            host="kcloudy-redis",
             port=6379,
             password="XdA9caoq",
         )
@@ -262,10 +262,10 @@ class TestTenantQueueOperations:
         """
         queue_name = cleanup_queue
 
-        # 使用本地 Redis 作为物理隔离实例
+        # 使用 Docker 服务名作为物理隔离实例
         config = TenantQueueConfig(
             type=QueueType.REDIS,
-            host="localhost",
+            host="kcloudy-redis",
             port=6379,
             password="XdA9caoq",
         )
@@ -377,10 +377,10 @@ class TestTenantQueueOperations:
         """
         queue_name = cleanup_queue
 
-        # 使用本地 Redis 作为物理隔离实例
+        # 使用 Docker 服务名作为物理隔离实例
         config = TenantQueueConfig(
             type=QueueType.REDIS,
-            host="localhost",
+            host="kcloudy-redis",
             port=6379,
             password="XdA9caoq",
         )
