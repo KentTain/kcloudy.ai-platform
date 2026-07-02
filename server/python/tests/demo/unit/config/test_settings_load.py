@@ -1,7 +1,9 @@
 """Settings Loading Tests"""
 
 import importlib
+import os
 import sys
+from unittest.mock import patch
 
 from pydantic import Field
 
@@ -84,35 +86,48 @@ class TestBaseSettings:
 
     def test_base_settings_creation(self):
         """Test creating BaseSettings subclass"""
-        class TestSettings(BaseSettings):
-            app_name: str = Field(default="test")
-            debug: bool = Field(default=False)
+        # 隔离环境变量，避免其他测试污染
+        with patch.dict(os.environ, {}, clear=False):
+            # 清除可能影响测试的环境变量
+            os.environ.pop("DEBUG", None)
+            os.environ.pop("debug", None)
 
-        settings = TestSettings()
+            class TestSettings(BaseSettings):
+                app_name: str = Field(default="test")
+                debug: bool = Field(default=False)
 
-        assert settings.app_name == "test"
-        assert settings.debug is False
+            settings = TestSettings()
+
+            assert settings.app_name == "test"
+            assert settings.debug is False
 
     def test_base_settings_from_dict(self):
         """Test BaseSettings.from_dict"""
-        class TestSettings(BaseSettings):
-            app_name: str
-            debug: bool
+        with patch.dict(os.environ, {}, clear=False):
+            os.environ.pop("APP_NAME", None)
+            os.environ.pop("DEBUG", None)
 
-        settings = TestSettings.from_dict({
-            "app_name": "custom",
-            "debug": True
-        })
+            class TestSettings(BaseSettings):
+                app_name: str
+                debug: bool
 
-        assert settings.app_name == "custom"
-        assert settings.debug is True
+            settings = TestSettings.from_dict({
+                "app_name": "custom",
+                "debug": True
+            })
+
+            assert settings.app_name == "custom"
+            assert settings.debug is True
 
     def test_base_settings_model_dump(self):
         """Test BaseSettings.model_dump"""
-        class TestSettings(BaseSettings):
-            app_name: str = "test"
+        with patch.dict(os.environ, {}, clear=False):
+            os.environ.pop("APP_NAME", None)
 
-        settings = TestSettings()
-        result = settings.model_dump()
+            class TestSettings(BaseSettings):
+                app_name: str = "test"
 
-        assert result["app_name"] == "test"
+            settings = TestSettings()
+            result = settings.model_dump()
+
+            assert result["app_name"] == "test"
