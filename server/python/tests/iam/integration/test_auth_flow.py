@@ -19,7 +19,7 @@ class TestAuthFlow:
     """认证流程测试"""
 
     @pytest.mark.asyncio
-    async def test_register_and_login_flow(self, session, postgres_available, test_tenant_id, cleanup_users):
+    async def test_register_and_login_flow(self, mock_session, postgres_available, test_tenant_id, cleanup_users):
         """
         场景：注册后登录流程
         WHEN: 用户注册 -> 登录 -> 访问受保护资源
@@ -33,7 +33,7 @@ class TestAuthFlow:
         password = "TestPass123!"
 
         user = await UserService.register(
-            session,
+            mock_session,
             username=username,
             password=password,
             tenant_id=test_tenant_id,
@@ -45,7 +45,7 @@ class TestAuthFlow:
 
         # 2. 登录获取 Token
         login_result = await AuthService.login(
-            session,
+            mock_session,
             account=username,
             password=password,
         )
@@ -60,7 +60,7 @@ class TestAuthFlow:
         assert payload.get("user_id") == user.id
 
     @pytest.mark.asyncio
-    async def test_login_with_wrong_password(self, session, postgres_available, test_tenant_id, cleanup_users):
+    async def test_login_with_wrong_password(self, mock_session, postgres_available, test_tenant_id, cleanup_users):
         """
         场景：错误密码登录
         WHEN: 使用错误密码登录
@@ -72,7 +72,7 @@ class TestAuthFlow:
         # 创建测试用户
         username = f"test_wrong_pwd_{uuid.uuid4().hex[:8]}"
         user = await UserService.register(
-            session,
+            mock_session,
             username=username,
             password="CorrectPass123!",
             tenant_id=test_tenant_id,
@@ -82,7 +82,7 @@ class TestAuthFlow:
         # 使用错误密码登录
         with pytest.raises(ValueError) as exc:
             await AuthService.login(
-                session,
+            mock_session,
                 account=username,
                 password="WrongPass456!",
             )
@@ -90,7 +90,7 @@ class TestAuthFlow:
         assert "用户名或密码错误" in str(exc.value)
 
     @pytest.mark.asyncio
-    async def test_token_refresh_flow(self, session, postgres_available, test_tenant_id, cleanup_users):
+    async def test_token_refresh_flow(self, mock_session, postgres_available, test_tenant_id, cleanup_users):
         """
         场景：Token 刷新流程
         WHEN: Access Token 过期后使用 Refresh Token 刷新
@@ -104,7 +104,7 @@ class TestAuthFlow:
         password = "TestPass123!"
 
         user = await UserService.register(
-            session,
+            mock_session,
             username=username,
             password=password,
             tenant_id=test_tenant_id,
@@ -112,7 +112,7 @@ class TestAuthFlow:
         cleanup_users.append(user.id)
 
         login_result = await AuthService.login(
-            session,
+            mock_session,
             account=username,
             password=password,
         )
@@ -129,7 +129,7 @@ class TestAuthFlow:
         assert payload.get("user_id") == user.id
 
     @pytest.mark.asyncio
-    async def test_logout_invalidates_token(self, session, postgres_available, test_tenant_id, cleanup_users):
+    async def test_logout_invalidates_token(self, mock_session, postgres_available, test_tenant_id, cleanup_users):
         """
         场景：登出后 Token 失效
         WHEN: 用户登出后使用原 Token
@@ -143,7 +143,7 @@ class TestAuthFlow:
         password = "TestPass123!"
 
         user = await UserService.register(
-            session,
+            mock_session,
             username=username,
             password=password,
             tenant_id=test_tenant_id,
@@ -151,7 +151,7 @@ class TestAuthFlow:
         cleanup_users.append(user.id)
 
         login_result = await AuthService.login(
-            session,
+            mock_session,
             account=username,
             password=password,
         )
@@ -161,7 +161,7 @@ class TestAuthFlow:
         assert logout_result is True
 
     @pytest.mark.asyncio
-    async def test_login_with_email(self, session, postgres_available, test_tenant_id, cleanup_users):
+    async def test_login_with_email(self, mock_session, postgres_available, test_tenant_id, cleanup_users):
         """
         场景：使用邮箱登录
         WHEN: 使用邮箱而不是用户名登录
@@ -173,7 +173,7 @@ class TestAuthFlow:
         # 创建测试用户
         email = f"test_email_{uuid.uuid4().hex[:8]}@test.com"
         user = await UserService.register(
-            session,
+            mock_session,
             username=f"user_{uuid.uuid4().hex[:8]}",
             password="TestPass123!",
             tenant_id=test_tenant_id,
@@ -183,7 +183,7 @@ class TestAuthFlow:
 
         # 使用邮箱登录
         login_result = await AuthService.login(
-            session,
+            mock_session,
             account=email,
             password="TestPass123!",
         )
@@ -191,7 +191,7 @@ class TestAuthFlow:
         assert login_result.access_token is not None
 
     @pytest.mark.asyncio
-    async def test_login_inactive_user_fails(self, session, postgres_available, test_tenant_id, cleanup_users):
+    async def test_login_inactive_user_fails(self, mock_session, postgres_available, test_tenant_id, cleanup_users):
         """
         场景：停用用户登录失败
         WHEN: 停用的用户尝试登录
@@ -203,7 +203,7 @@ class TestAuthFlow:
         # 创建测试用户
         username = f"test_inactive_{uuid.uuid4().hex[:8]}"
         user = await UserService.register(
-            session,
+            mock_session,
             username=username,
             password="TestPass123!",
             tenant_id=test_tenant_id,
@@ -211,12 +211,12 @@ class TestAuthFlow:
         cleanup_users.append(user.id)
 
         # 停用用户
-        await UserService.set_status(session, user.id, UserStatus.INACTIVE)
+        await UserService.set_status(mock_session, user.id, UserStatus.INACTIVE)
 
         # 尝试登录
         with pytest.raises(ValueError) as exc:
             await AuthService.login(
-                session,
+            mock_session,
                 account=username,
                 password="TestPass123!",
             )

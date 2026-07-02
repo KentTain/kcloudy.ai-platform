@@ -21,7 +21,7 @@ class TestAdminAuthServiceLoginRolePermission:
         _admin_tokens.clear()
 
     @pytest.mark.asyncio
-    async def test_login_stores_role_in_token_data(self):
+    async def test_login_stores_role_in_token_data(self, mock_session):
         """登录成功后 token_data 中包含 role 字段"""
         session = AsyncMock(spec=AsyncSession)
 
@@ -35,23 +35,30 @@ class TestAdminAuthServiceLoginRolePermission:
 
         scalar_result = MagicMock()
         scalar_result.scalar_one_or_none = MagicMock(return_value=admin_mock)
-        session.execute = AsyncMock(return_value=scalar_result)
+        mock_session.execute = AsyncMock(return_value=scalar_result)
 
-        with patch(
-            "tenant.middlewares.admin_auth_middleware.verify_password",
-            return_value=True,
-        ), patch(
-            "tenant.services.module_service.ModuleService.get_by_code",
-            AsyncMock(return_value=None),
+        with (
+            patch(
+                "tenant.middlewares.admin_auth_middleware.verify_password",
+                return_value=True,
+            ),
+            patch(
+                "tenant.services.module_service.ModuleService.get_by_code",
+                AsyncMock(return_value=None),
+            ),
         ):
-            token, admin, permissions = await AdminAuthService.login(session, "test_admin", "password")
+            token, admin, permissions = await AdminAuthService.login(
+                mock_session, "test_admin", "password"
+            )
 
         assert token is not None
         assert token in _admin_tokens
         assert _admin_tokens[token]["role"] == "tenantAdmin"
 
     @pytest.mark.asyncio
-    async def test_login_stores_permissions_when_role_has_permissions(self):
+    async def test_login_stores_permissions_when_role_has_permissions(
+        self, mock_session
+    ):
         """登录成功后 token_data 中包含 permissions 列表"""
         session = AsyncMock(spec=AsyncSession)
 
@@ -65,28 +72,44 @@ class TestAdminAuthServiceLoginRolePermission:
         # Mock 查询序列
         scalar_result = MagicMock()
         scalar_result.scalar_one_or_none = MagicMock(return_value=admin_mock)
-        session.execute = AsyncMock(return_value=scalar_result)
+        mock_session.execute = AsyncMock(return_value=scalar_result)
 
         # Mock ModuleService.get_by_code 返回 tenant 模块
         module_mock = MagicMock()
         module_mock.id = "module-tenant-001"
-        with patch(
-            "tenant.middlewares.admin_auth_middleware.verify_password",
-            return_value=True,
-        ), patch(
-            "tenant.services.module_service.ModuleService.get_by_code",
-            AsyncMock(return_value=module_mock),
-        ), patch.object(
-            AdminAuthService, "_get_role_permissions", AsyncMock(return_value=["tenant:module:read", "tenant:module:write", "tenant:module:delete"])
+        with (
+            patch(
+                "tenant.middlewares.admin_auth_middleware.verify_password",
+                return_value=True,
+            ),
+            patch(
+                "tenant.services.module_service.ModuleService.get_by_code",
+                AsyncMock(return_value=module_mock),
+            ),
+            patch.object(
+                AdminAuthService,
+                "_get_role_permissions",
+                AsyncMock(
+                    return_value=[
+                        "tenant:module:read",
+                        "tenant:module:write",
+                        "tenant:module:delete",
+                    ]
+                ),
+            ),
         ):
-            token, admin, permissions = await AdminAuthService.login(session, "test_admin", "password")
+            token, admin, permissions = await AdminAuthService.login(
+                mock_session, "test_admin", "password"
+            )
 
         assert token in _admin_tokens
         assert "permissions" in _admin_tokens[token]
         assert isinstance(_admin_tokens[token]["permissions"], list)
 
     @pytest.mark.asyncio
-    async def test_login_stores_empty_permissions_when_role_has_none(self):
+    async def test_login_stores_empty_permissions_when_role_has_none(
+        self, mock_session
+    ):
         """角色无权限时 permissions 为空列表"""
         session = AsyncMock(spec=AsyncSession)
 
@@ -99,20 +122,26 @@ class TestAdminAuthServiceLoginRolePermission:
 
         scalar_result = MagicMock()
         scalar_result.scalar_one_or_none = MagicMock(return_value=admin_mock)
-        session.execute = AsyncMock(return_value=scalar_result)
+        mock_session.execute = AsyncMock(return_value=scalar_result)
 
         module_mock = MagicMock()
         module_mock.id = "module-tenant-001"
-        with patch(
-            "tenant.middlewares.admin_auth_middleware.verify_password",
-            return_value=True,
-        ), patch(
-            "tenant.services.module_service.ModuleService.get_by_code",
-            AsyncMock(return_value=module_mock),
-        ), patch.object(
-            AdminAuthService, "_get_role_permissions", AsyncMock(return_value=[])
+        with (
+            patch(
+                "tenant.middlewares.admin_auth_middleware.verify_password",
+                return_value=True,
+            ),
+            patch(
+                "tenant.services.module_service.ModuleService.get_by_code",
+                AsyncMock(return_value=module_mock),
+            ),
+            patch.object(
+                AdminAuthService, "_get_role_permissions", AsyncMock(return_value=[])
+            ),
         ):
-            token, admin, permissions = await AdminAuthService.login(session, "test_admin", "password")
+            token, admin, permissions = await AdminAuthService.login(
+                mock_session, "test_admin", "password"
+            )
 
         assert token in _admin_tokens
         assert _admin_tokens[token]["permissions"] == []
@@ -125,19 +154,21 @@ class TestAdminAuthServiceGetAdminInfo:
         _admin_tokens.clear()
 
     @pytest.mark.asyncio
-    async def test_get_admin_info_returns_none_when_admin_not_found(self):
+    async def test_get_admin_info_returns_none_when_admin_not_found(self, mock_session):
         """管理员不存在时返回 None"""
         session = AsyncMock(spec=AsyncSession)
 
         scalar_result = MagicMock()
         scalar_result.scalar_one_or_none = MagicMock(return_value=None)
-        session.execute = AsyncMock(return_value=scalar_result)
+        mock_session.execute = AsyncMock(return_value=scalar_result)
 
-        result = await AdminAuthService.get_admin_info(session, "nonexistent-id")
+        result = await AdminAuthService.get_admin_info(mock_session, "nonexistent-id")
         assert result is None
 
     @pytest.mark.asyncio
-    async def test_get_admin_info_returns_admin_with_role_and_permissions(self):
+    async def test_get_admin_info_returns_admin_with_role_and_permissions(
+        self, mock_session
+    ):
         """get_admin_info 返回管理员信息包含 role 和 permissions"""
         session = AsyncMock(spec=AsyncSession)
 
@@ -149,14 +180,19 @@ class TestAdminAuthServiceGetAdminInfo:
         scalar_result = MagicMock()
         scalar_result.scalar_one_or_none = MagicMock(return_value=admin_mock)
         # This handles multiple execute calls (first for admin, rest for permissions/menus)
-        session.execute = AsyncMock(return_value=scalar_result)
+        mock_session.execute = AsyncMock(return_value=scalar_result)
 
-        with patch.object(
-            AdminAuthService, "_get_role_permissions", AsyncMock(return_value=["tenant:module:read"])
-        ), patch.object(
-            AdminAuthService, "_get_admin_menus", AsyncMock(return_value=[])
+        with (
+            patch.object(
+                AdminAuthService,
+                "_get_role_permissions",
+                AsyncMock(return_value=["tenant:module:read"]),
+            ),
+            patch.object(
+                AdminAuthService, "_get_admin_menus", AsyncMock(return_value=[])
+            ),
         ):
-            result = await AdminAuthService.get_admin_info(session, "admin-001")
+            result = await AdminAuthService.get_admin_info(mock_session, "admin-001")
 
         assert result is not None
         assert result["id"] == "admin-001"
@@ -166,7 +202,9 @@ class TestAdminAuthServiceGetAdminInfo:
         assert "menus" in result
 
     @pytest.mark.asyncio
-    async def test_get_admin_info_returns_empty_permissions_when_no_role(self):
+    async def test_get_admin_info_returns_empty_permissions_when_no_role(
+        self, mock_session
+    ):
         """管理员角色无权限时 permissions 为空列表"""
         session = AsyncMock(spec=AsyncSession)
 
@@ -177,14 +215,17 @@ class TestAdminAuthServiceGetAdminInfo:
 
         scalar_result = MagicMock()
         scalar_result.scalar_one_or_none = MagicMock(return_value=admin_mock)
-        session.execute = AsyncMock(return_value=scalar_result)
+        mock_session.execute = AsyncMock(return_value=scalar_result)
 
-        with patch.object(
-            AdminAuthService, "_get_role_permissions", AsyncMock(return_value=[])
-        ), patch.object(
-            AdminAuthService, "_get_admin_menus", AsyncMock(return_value=[])
+        with (
+            patch.object(
+                AdminAuthService, "_get_role_permissions", AsyncMock(return_value=[])
+            ),
+            patch.object(
+                AdminAuthService, "_get_admin_menus", AsyncMock(return_value=[])
+            ),
         ):
-            result = await AdminAuthService.get_admin_info(session, "admin-001")
+            result = await AdminAuthService.get_admin_info(mock_session, "admin-001")
 
         assert result is not None
         assert result["permissions"] == []
@@ -194,7 +235,7 @@ class TestAdminAuthServiceGetRolePermissions:
     """_get_role_permissions 辅助方法测试"""
 
     @pytest.mark.asyncio
-    async def test_get_role_permissions_returns_codes(self):
+    async def test_get_role_permissions_returns_codes(self, mock_session):
         """_get_role_permissions 返回权限码列表"""
         session = AsyncMock(spec=AsyncSession)
 
@@ -210,48 +251,58 @@ class TestAdminAuthServiceGetRolePermissions:
         rp_mock_2 = MagicMock()
         rp_mock_2.module_permission_id = "perm-002"
         rp_scalar = MagicMock()
-        rp_scalar.scalars = MagicMock(return_value=MagicMock(all=MagicMock(return_value=[rp_mock_1, rp_mock_2])))
+        rp_scalar.scalars = MagicMock(
+            return_value=MagicMock(all=MagicMock(return_value=[rp_mock_1, rp_mock_2]))
+        )
 
         # Mock module_permissions 查询
         perm_scalar = MagicMock()
-        perm_scalar.all = MagicMock(return_value=[("tenant:module:read",), ("tenant:module:write",)])
+        perm_scalar.all = MagicMock(
+            return_value=[("tenant:module:read",), ("tenant:module:write",)]
+        )
 
-        session.execute = AsyncMock(side_effect=[role_scalar, rp_scalar, perm_scalar])
+        mock_session.execute = AsyncMock(
+            side_effect=[role_scalar, rp_scalar, perm_scalar]
+        )
 
         module_mock = MagicMock()
         module_mock.id = "module-001"
 
         permissions = await AdminAuthService._get_role_permissions(
-            session, module_mock, "tenantAdmin"
+            mock_session, module_mock, "tenantAdmin"
         )
 
         assert permissions == ["tenant:module:read", "tenant:module:write"]
 
     @pytest.mark.asyncio
-    async def test_get_role_permissions_returns_empty_when_role_not_found(self):
+    async def test_get_role_permissions_returns_empty_when_role_not_found(
+        self, mock_session
+    ):
         """角色在 module_roles 表中不存在时返回空列表"""
         session = AsyncMock(spec=AsyncSession)
 
         role_scalar = MagicMock()
         role_scalar.scalar_one_or_none = MagicMock(return_value=None)
-        session.execute = AsyncMock(return_value=role_scalar)
+        mock_session.execute = AsyncMock(return_value=role_scalar)
 
         module_mock = MagicMock()
         module_mock.id = "module-001"
 
         permissions = await AdminAuthService._get_role_permissions(
-            session, module_mock, "nonexistent-role"
+            mock_session, module_mock, "nonexistent-role"
         )
 
         assert permissions == []
 
     @pytest.mark.asyncio
-    async def test_get_role_permissions_returns_empty_when_module_is_none(self):
+    async def test_get_role_permissions_returns_empty_when_module_is_none(
+        self, mock_session
+    ):
         """模块为 None 时返回空列表"""
         session = AsyncMock(spec=AsyncSession)
 
         permissions = await AdminAuthService._get_role_permissions(
-            session, None, "tenantAdmin"
+            mock_session, None, "tenantAdmin"
         )
 
         assert permissions == []
@@ -261,7 +312,7 @@ class TestAdminAuthServiceGetAdminMenus:
     """_get_admin_menus 辅助方法测试"""
 
     @pytest.mark.asyncio
-    async def test_get_admin_menus_filters_by_permissions(self):
+    async def test_get_admin_menus_filters_by_permissions(self, mock_session):
         """_get_admin_menus 根据权限过滤菜单"""
         import sqlalchemy
         from sqlalchemy import Table
@@ -315,27 +366,33 @@ class TestAdminAuthServiceGetAdminMenus:
         ):
             # 第一个 execute 调用（ModulePermission 查询）：返回 perm_id → code 映射
             perm_scalar = MagicMock()
-            perm_scalar.all = MagicMock(return_value=[("perm-001", "tenant:module:read")])
+            perm_scalar.all = MagicMock(
+                return_value=[("perm-001", "tenant:module:read")]
+            )
 
             # 第二个 execute 调用（ModuleMenuPermission 查询）：返回菜单权限关联
             mmp_mock_1 = MagicMock()
             mmp_mock_1.module_permission_id = "perm-001"
 
             mmp_scalar = MagicMock()
-            mmp_scalar.scalars = MagicMock(return_value=MagicMock(all=MagicMock(return_value=[mmp_mock_1])))
+            mmp_scalar.scalars = MagicMock(
+                return_value=MagicMock(all=MagicMock(return_value=[mmp_mock_1]))
+            )
 
-            session.execute = AsyncMock(side_effect=[perm_scalar, mmp_scalar])
+            mock_session.execute = AsyncMock(side_effect=[perm_scalar, mmp_scalar])
 
             # permissions that match: menu 1 has perm-001 which matches our perms
             menus = await AdminAuthService._get_admin_menus(
-                session, module_mock, ["tenant:module:read"]
+                mock_session, module_mock, ["tenant:module:read"]
             )
 
             # menu_1 should be included (its permission matches), menu_2 should not
             assert len(menus) > 0
 
     @pytest.mark.asyncio
-    async def test_get_admin_menus_returns_all_when_no_permissions_filter(self):
+    async def test_get_admin_menus_returns_all_when_no_permissions_filter(
+        self, mock_session
+    ):
         """无权限过滤参数时返回所有可见菜单"""
         session = AsyncMock(spec=AsyncSession)
 
@@ -366,7 +423,7 @@ class TestAdminAuthServiceGetAdminMenus:
             "tenant.services.module_menu_service.ModuleMenuService.list_menus",
             AsyncMock(return_value=[menu]),
         ):
-            menus = await AdminAuthService._get_admin_menus(session, module_mock)
+            menus = await AdminAuthService._get_admin_menus(mock_session, module_mock)
 
             assert len(menus) == 1
             assert menus[0]["code"] == "tenant"

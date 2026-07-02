@@ -38,8 +38,9 @@ Python 后端使用 FastAPI + SQLAlchemy 2.0 构建，是 AI Platform 的 Python
 
 ```
 demo / iam / ai ──▶ framework
-demo / iam ──▶ tenant
-framework ──X──▶ demo / iam / tenant
+demo / iam / ai ──▶ tenant
+framework ──X──▶ demo / iam / ai / tenant
+tenant ──X──▶ demo / iam / ai 
 ```
 
 - 业务模块可以依赖 `framework`

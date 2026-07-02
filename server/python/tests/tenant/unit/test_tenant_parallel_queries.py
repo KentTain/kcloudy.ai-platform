@@ -14,7 +14,7 @@ class TestBuildTenantVoParallel:
     """测试 build_tenant_vo 并行查询"""
 
     @pytest.mark.asyncio
-    async def test_build_tenant_vo_parallel_queries(self, session):
+    async def test_build_tenant_vo_parallel_queries(self, mock_session):
         """测试 build_tenant_vo 使用 asyncio.gather 并行查询"""
         # 创建 mock Tenant 对象
         mock_tenant = MagicMock()
@@ -81,7 +81,7 @@ class TestBuildTenantVoParallel:
             # 导入并调用 build_tenant_vo
             from tenant.controllers.admin.tenant_controller import build_tenant_vo
 
-            result = await build_tenant_vo(session, mock_tenant)
+            result = await build_tenant_vo(mock_session, mock_tenant)
 
             # 验证结果
             assert result is not None
@@ -95,7 +95,7 @@ class TestBuildTenantVoParallel:
             assert result.pubsub_config is not None
 
     @pytest.mark.asyncio
-    async def test_build_tenant_vo_with_null_configs(self, session):
+    async def test_build_tenant_vo_with_null_configs(self, mock_session):
         """测试 build_tenant_vo 处理空配置"""
         # 创建没有资源配置的租户
         mock_tenant = MagicMock()
@@ -140,7 +140,7 @@ class TestBuildTenantVoParallel:
         ):
             from tenant.controllers.admin.tenant_controller import build_tenant_vo
 
-            result = await build_tenant_vo(session, mock_tenant)
+            result = await build_tenant_vo(mock_session, mock_tenant)
 
             # 验证结果
             assert result is not None

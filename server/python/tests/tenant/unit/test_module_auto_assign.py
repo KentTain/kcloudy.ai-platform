@@ -36,7 +36,7 @@ class TestIamModuleAutoAssigner:
     """测试 IAM 实现"""
 
     @pytest.mark.asyncio
-    async def test_auto_assign_assigns_all_active_modules(self, session):
+    async def test_auto_assign_assigns_all_active_modules(self, mock_session):
         """自动分配所有活跃模块"""
         from iam.services.module_auto_assigner import IamModuleAutoAssigner
 
@@ -64,7 +64,7 @@ class TestIamModuleAutoAssigner:
         mock_existing_result.scalar_one_or_none.return_value = None
 
         # 第一个 execute 返回模块列表，后续返回空（幂等检查）
-        session.execute.side_effect = [
+        mock_session.execute.side_effect = [
             mock_result,
             mock_existing_result,
             mock_existing_result,
@@ -74,16 +74,16 @@ class TestIamModuleAutoAssigner:
             "iam.services.module_sync_service.ModuleSyncService.sync_module_assigned",
             new_callable=AsyncMock,
         ) as mock_sync:
-            await assigner.auto_assign(session, "tenant-1")
+            await assigner.auto_assign(mock_session, "tenant-1")
 
             # 验证：创建了 TenantModule
-            assert session.add.call_count >= 2  # 两个模块
+            assert mock_session.add.call_count >= 2  # 两个模块
 
             # 验证：调用了 sync_module_assigned
             assert mock_sync.call_count == 2
 
     @pytest.mark.asyncio
-    async def test_auto_assign_skips_existing(self, session):
+    async def test_auto_assign_skips_existing(self, mock_session):
         """跳过已分配的模块"""
         from iam.services.module_auto_assigner import IamModuleAutoAssigner
 
@@ -104,16 +104,16 @@ class TestIamModuleAutoAssigner:
         mock_existing_result = MagicMock()
         mock_existing_result.scalar_one_or_none.return_value = MagicMock()  # 已存在
 
-        session.execute.side_effect = [mock_result, mock_existing_result]
+        mock_session.execute.side_effect = [mock_result, mock_existing_result]
 
         with patch(
             "iam.services.module_sync_service.ModuleSyncService.sync_module_assigned",
             new_callable=AsyncMock,
         ) as mock_sync:
-            await assigner.auto_assign(session, "tenant-1")
+            await assigner.auto_assign(mock_session, "tenant-1")
 
             # 验证：没有创建新的 TenantModule
-            assert session.add.call_count == 0
+            assert mock_session.add.call_count == 0
             assert mock_sync.call_count == 0
 
 
@@ -121,11 +121,11 @@ class TestTenantServiceCreate:
     """测试 TenantService.create 集成"""
 
     @pytest.mark.asyncio
-    async def test_create_calls_auto_assigner(self, session):
+    async def test_create_calls_auto_assigner(self, mock_session):
         """创建租户时调用模块自动分配"""
         from tenant.services.tenant_service import TenantService
 
-        session.refresh = AsyncMock()
+        mock_session.refresh = AsyncMock()
 
         mock_tenant = MagicMock()
         mock_tenant.id = "tenant-1"
@@ -133,9 +133,9 @@ class TestTenantServiceCreate:
 
         mock_scalar = MagicMock()
         mock_scalar.one_or_none.return_value = None
-        session.execute.return_value = mock_scalar
+        mock_session.execute.return_value = mock_scalar
 
-        session.add.return_value = None
+        mock_session.add.return_value = None
 
         with (
             patch(
@@ -154,7 +154,7 @@ class TestTenantServiceCreate:
             mock_get_assigner.return_value = mock_assigner
 
             await TenantService.create(
-                session,
+                mock_session,
                 name="测试租户",
                 code="T001",
             )
@@ -165,11 +165,11 @@ class TestTenantServiceCreate:
             assert call_args[0][0] is session  # 同一个 session
 
     @pytest.mark.asyncio
-    async def test_create_without_assigner_still_works(self, session):
+    async def test_create_without_assigner_still_works(self, mock_session):
         """没有注册分配器时创建租户仍然正常工作"""
         from tenant.services.tenant_service import TenantService
 
-        session.refresh = AsyncMock()
+        mock_session.refresh = AsyncMock()
 
         mock_tenant = MagicMock()
         mock_tenant.id = "tenant-2"
@@ -177,7 +177,7 @@ class TestTenantServiceCreate:
 
         mock_scalar = MagicMock()
         mock_scalar.one_or_none.return_value = None
-        session.execute.return_value = mock_scalar
+        mock_session.execute.return_value = mock_scalar
 
         with (
             patch(
@@ -194,7 +194,7 @@ class TestTenantServiceCreate:
             ),
         ):
             tenant = await TenantService.create(
-                session,
+                mock_session,
                 name="测试租户",
                 code="T002",
             )

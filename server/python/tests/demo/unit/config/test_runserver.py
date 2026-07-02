@@ -53,7 +53,7 @@ class TestAlembicConfig:
         assert "demo/migrations/versions" in config.get_main_option("version_locations").replace("\\", "/")
 
         revisions = {revision.revision for revision in ScriptDirectory.from_config(config).walk_revisions()}
-        assert "001_demo" in revisions
+        assert "001_demo_initial" in revisions
 
     def test_module_alembic_config_iam(self):
         """IAM 模块的 Alembic 配置应正确设置"""
@@ -68,4 +68,4 @@ class TestAlembicConfig:
         assert "iam/migrations/versions" in config.get_main_option("version_locations").replace("\\", "/")
 
         revisions = {revision.revision for revision in ScriptDirectory.from_config(config).walk_revisions()}
-        assert "001_iam" in revisions
+        assert "001_iam_initial" in revisions

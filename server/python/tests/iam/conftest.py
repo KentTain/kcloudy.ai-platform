@@ -5,6 +5,7 @@ IAM 模块测试配置
 - 测试租户管理
 - 测试用户清理
 - Mock 数据库会话（session fixture）
+- 集成测试 HTTP 客户端 fixtures
 """
 
 import pytest
@@ -91,3 +92,53 @@ def cleanup_users():
     created_user_ids = []
     yield created_user_ids
     # 不在这里清理，避免事件循环问题
+
+
+# =============================================================================
+# 集成测试 HTTP 客户端 Fixtures
+# =============================================================================
+
+
+@pytest_asyncio.fixture
+async def async_client(integration_settings, postgres_available):
+    """
+    异步 HTTP 客户端 fixture（集成测试使用）。
+
+    需要后端服务运行。
+    """
+    if not postgres_available:
+        pytest.skip("PostgreSQL 服务不可用")
+
+    from httpx import AsyncClient, ASGITransport
+    from application_web import create_app
+
+    app = create_app()
+    transport = ASGITransport(app=app)
+
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        yield client
+
+
+@pytest_asyncio.fixture
+async def auth_headers(async_client, test_tenant_id, postgres_available):
+    """
+    认证头 fixture（集成测试使用）。
+
+    通过登录获取有效的 JWT token。
+    """
+    if not postgres_available:
+        pytest.skip("PostgreSQL 服务不可用")
+
+    # 登录获取 token
+    response = await async_client.post(
+        "/iam/console/v1/auth/login",
+        json={"username": "admin", "password": "admin123"},
+    )
+
+    if response.status_code != 200:
+        pytest.skip("无法登录获取认证 token")
+
+    data = response.json()
+    token = data.get("data", {}).get("access_token")
+
+    return {"Authorization": f"Bearer {token}"}

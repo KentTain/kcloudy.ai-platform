@@ -79,6 +79,7 @@ dev = [
   "commitizen==4.10.0",
   "aiosqlite>=0.22.1",
   "jurigged>=0.6.1",
+  "pytest-cov>=7.1.0",
 ]
 
 langchain = [

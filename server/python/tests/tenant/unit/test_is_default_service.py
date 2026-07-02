@@ -19,13 +19,13 @@ class TestClearExistingDefault:
     """_clear_existing_default 方法测试"""
 
     @pytest.mark.asyncio
-    async def test_clear_existing_default_executes_update(self, session):
+    async def test_clear_existing_default_executes_update(self, mock_session):
         """清除默认标记时执行 UPDATE 语句"""
-        await DatabaseConfigService._clear_existing_default(session)
-        session.execute.assert_called_once()
+        await DatabaseConfigService._clear_existing_default(mock_session)
+        mock_session.execute.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_clear_existing_default_for_all_services(self, session):
+    async def test_clear_existing_default_for_all_services(self, mock_session):
         """所有资源配置服务都支持清除默认标记"""
         services = [
             DatabaseConfigService,
@@ -36,16 +36,16 @@ class TestClearExistingDefault:
         ]
 
         for service in services:
-            await service._clear_existing_default(session)
-            session.execute.assert_called_once()
-            session.execute.reset_mock()
+            await service._clear_existing_default(mock_session)
+            mock_session.execute.assert_called_once()
+            mock_session.execute.reset_mock()
 
 
 class TestCreateDefaultConfig:
     """创建默认配置时的唯一性控制测试"""
 
     @pytest.mark.asyncio
-    async def test_create_with_is_default_clears_others(self, session):
+    async def test_create_with_is_default_clears_others(self, mock_session):
         """创建 is_default=True 的配置时清除其他默认标记"""
         with patch("tenant.services.base_resource_service.encrypt_password", side_effect=lambda x: f"enc_{x}"), \
              patch.object(DatabaseConfigService, "_clear_existing_default", new_callable=AsyncMock) as mock_clear:
@@ -65,7 +65,7 @@ class TestCreateDefaultConfig:
         mock_clear.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_create_without_is_default_does_not_clear_others(self, session):
+    async def test_create_without_is_default_does_not_clear_others(self, mock_session):
         """创建 is_default=False 的配置时不清除其他默认标记"""
         with patch("tenant.services.base_resource_service.encrypt_password", side_effect=lambda x: f"enc_{x}"), \
              patch.object(DatabaseConfigService, "_clear_existing_default", new_callable=AsyncMock) as mock_clear:
@@ -85,7 +85,7 @@ class TestCreateDefaultConfig:
         mock_clear.assert_not_called()
 
     @pytest.mark.asyncio
-    async def test_create_default_without_is_default_param_does_not_clear(self, session):
+    async def test_create_default_without_is_default_param_does_not_clear(self, mock_session):
         """创建时不传 is_default 参数（默认为 False）不清除其他默认标记"""
         with patch("tenant.services.base_resource_service.encrypt_password", side_effect=lambda x: f"enc_{x}"), \
              patch.object(DatabaseConfigService, "_clear_existing_default", new_callable=AsyncMock) as mock_clear:
@@ -108,7 +108,7 @@ class TestUpdateDefaultConfig:
     """更新配置为默认时的唯一性控制测试"""
 
     @pytest.mark.asyncio
-    async def test_update_to_default_clears_others(self, session):
+    async def test_update_to_default_clears_others(self, mock_session):
         """将配置更新为 is_default=True 时清除其他默认标记"""
         mock_config = MagicMock()
         mock_config.id = "config-1"
@@ -117,10 +117,10 @@ class TestUpdateDefaultConfig:
 
             result_mock = MagicMock()
             result_mock.scalar_one_or_none.return_value = mock_config
-            session.execute.return_value = result_mock
+            mock_session.execute.return_value = result_mock
 
             await DatabaseConfigService.update(
-                session,
+                mock_session,
                 "config-1",
                 is_default=True,
             )
@@ -128,7 +128,7 @@ class TestUpdateDefaultConfig:
         mock_clear.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_update_to_non_default_does_not_clear_others(self, session):
+    async def test_update_to_non_default_does_not_clear_others(self, mock_session):
         """将配置更新为 is_default=False 时不清除其他默认标记"""
         mock_config = MagicMock()
         mock_config.id = "config-1"
@@ -137,10 +137,10 @@ class TestUpdateDefaultConfig:
 
             result_mock = MagicMock()
             result_mock.scalar_one_or_none.return_value = mock_config
-            session.execute.return_value = result_mock
+            mock_session.execute.return_value = result_mock
 
             await DatabaseConfigService.update(
-                session,
+                mock_session,
                 "config-1",
                 is_default=False,
             )
@@ -148,7 +148,7 @@ class TestUpdateDefaultConfig:
         mock_clear.assert_not_called()
 
     @pytest.mark.asyncio
-    async def test_update_other_field_does_not_clear_others(self, session):
+    async def test_update_other_field_does_not_clear_others(self, mock_session):
         """更新其他字段（不涉及 is_default）时不清除默认标记"""
         mock_config = MagicMock()
         mock_config.id = "config-1"
@@ -158,10 +158,10 @@ class TestUpdateDefaultConfig:
 
             result_mock = MagicMock()
             result_mock.scalar_one_or_none.return_value = mock_config
-            session.execute.return_value = result_mock
+            mock_session.execute.return_value = result_mock
 
             await DatabaseConfigService.update(
-                session,
+                mock_session,
                 "config-1",
                 name="更新后的名称",
             )
@@ -169,14 +169,14 @@ class TestUpdateDefaultConfig:
         mock_clear.assert_not_called()
 
     @pytest.mark.asyncio
-    async def test_update_nonexistent_returns_none(self, session):
+    async def test_update_nonexistent_returns_none(self, mock_session):
         """更新不存在的配置返回 None"""
         result_mock = MagicMock()
         result_mock.scalar_one_or_none.return_value = None
-        session.execute.return_value = result_mock
+        mock_session.execute.return_value = result_mock
 
         result = await DatabaseConfigService.update(
-            session,
+            mock_session,
             "nonexistent",
             is_default=True,
         )
@@ -188,14 +188,14 @@ class TestGetDefaultConfig:
     """get_default_config 方法测试"""
 
     @pytest.mark.asyncio
-    async def test_returns_default_config(self, session):
+    async def test_returns_default_config(self, mock_session):
         """查询到默认配置时返回配置实例"""
         mock_config = MagicMock()
         mock_config.is_default = True
 
         result_mock = MagicMock()
         result_mock.scalar_one_or_none.return_value = mock_config
-        session.execute.return_value = result_mock
+        mock_session.execute.return_value = result_mock
 
         config = await DatabaseConfigService.get_default_config(session=session)
 
@@ -203,11 +203,11 @@ class TestGetDefaultConfig:
         assert config.is_default is True
 
     @pytest.mark.asyncio
-    async def test_returns_none_when_no_default(self, session):
+    async def test_returns_none_when_no_default(self, mock_session):
         """没有默认配置时返回 None"""
         result_mock = MagicMock()
         result_mock.scalar_one_or_none.return_value = None
-        session.execute.return_value = result_mock
+        mock_session.execute.return_value = result_mock
 
         config = await DatabaseConfigService.get_default_config(session=session)
 
@@ -233,7 +233,7 @@ class TestListConfigsDefaultOrdering:
     """配置列表默认排序测试"""
 
     @pytest.mark.asyncio
-    async def test_list_configs_orders_default_first(self, session):
+    async def test_list_configs_orders_default_first(self, mock_session):
         """配置列表中默认配置排在最前"""
         mock_default = MagicMock()
         mock_default.is_default = True
@@ -249,7 +249,7 @@ class TestListConfigsDefaultOrdering:
         list_result = MagicMock()
         list_result.scalars.return_value.all.return_value = [mock_default, mock_normal]
 
-        session.execute.side_effect = [count_result, list_result]
+        mock_session.execute.side_effect = [count_result, list_result]
 
         items, total = await DatabaseConfigService.list_configs(session=session)
 
@@ -261,7 +261,7 @@ class TestDeleteDefaultConfig:
     """删除默认配置时的警告测试"""
 
     @pytest.mark.asyncio
-    async def test_delete_default_config_raises_error(self, session):
+    async def test_delete_default_config_raises_error(self, mock_session):
         """删除默认配置时抛出 ConflictError"""
         from framework.common.exceptions import ConflictError
 
@@ -271,15 +271,15 @@ class TestDeleteDefaultConfig:
 
         query_result = MagicMock()
         query_result.scalar_one_or_none.return_value = mock_config
-        session.execute.return_value = query_result
+        mock_session.execute.return_value = query_result
 
         with pytest.raises(ConflictError) as exc_info:
-            await DatabaseConfigService.delete(session, "test-id")
+            await DatabaseConfigService.delete(mock_session, "test-id")
 
         assert "默认配置" in str(exc_info.value)
 
     @pytest.mark.asyncio
-    async def test_delete_normal_config_succeeds(self, session):
+    async def test_delete_normal_config_succeeds(self, mock_session):
         """删除非默认配置成功"""
         mock_config = MagicMock()
         mock_config.id = "test-id"
@@ -295,14 +295,14 @@ class TestDeleteDefaultConfig:
         delete_result.rowcount = 1
 
         # execute 调用顺序：查询配置 -> 检查引用计数 -> 执行删除
-        session.execute.side_effect = [query_result, count_result, delete_result]
+        mock_session.execute.side_effect = [query_result, count_result, delete_result]
 
-        result = await DatabaseConfigService.delete(session, "test-id")
+        result = await DatabaseConfigService.delete(mock_session, "test-id")
 
         assert result is True
 
     @pytest.mark.asyncio
-    async def test_delete_config_referenced_by_tenant_raises_error(self, session):
+    async def test_delete_config_referenced_by_tenant_raises_error(self, mock_session):
         """删除被租户引用的配置时抛出 ConflictError"""
         from framework.common.exceptions import ConflictError
 
@@ -316,20 +316,20 @@ class TestDeleteDefaultConfig:
         count_result = MagicMock()
         count_result.scalar.return_value = 3
 
-        session.execute.side_effect = [query_result, count_result]
+        mock_session.execute.side_effect = [query_result, count_result]
 
         with pytest.raises(ConflictError) as exc_info:
-            await DatabaseConfigService.delete(session, "test-id")
+            await DatabaseConfigService.delete(mock_session, "test-id")
 
         assert "租户使用" in str(exc_info.value)
 
     @pytest.mark.asyncio
-    async def test_delete_nonexistent_config_returns_false(self, session):
+    async def test_delete_nonexistent_config_returns_false(self, mock_session):
         """删除不存在的配置返回 False"""
         query_result = MagicMock()
         query_result.scalar_one_or_none.return_value = None
-        session.execute.return_value = query_result
+        mock_session.execute.return_value = query_result
 
-        result = await DatabaseConfigService.delete(session, "nonexistent-id")
+        result = await DatabaseConfigService.delete(mock_session, "nonexistent-id")
 
         assert result is False

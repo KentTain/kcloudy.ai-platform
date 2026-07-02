@@ -127,26 +127,27 @@ def pytest_ignore_collect(collection_path, config):
 
 
 # =============================================================================
-# 配置加载
+# 配置加载（模块级别，确保测试收集阶段配置已初始化）
 # =============================================================================
+
+# 在模块顶层初始化配置，防止测试导入阶段因配置未初始化而失败
+_config_dir = Path(__file__).resolve().parent.parent.parent / "config"
+if _config_dir.exists():
+    from framework.configs import init_settings
+
+    init_settings(_config_dir)
 
 
 @pytest.fixture(scope="session")
 def integration_settings():
     """
-    加载集成测试配置（session 级别）。
+    返回已加载的集成测试配置（session 级别）。
 
     使用 server/config/application-local.yml
     """
-    from framework.configs import init_settings
+    from framework.configs import get_settings
 
-    # conftest.py 在 server/python/tests/
-    # 配置在 server/config/
-    # 路径: conftest.py -> tests -> python -> server
-    config_dir = Path(__file__).resolve().parent.parent.parent / "config"
-    settings = init_settings(config_dir)
-
-    return settings
+    return get_settings()
 
 
 # =============================================================================

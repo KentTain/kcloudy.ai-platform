@@ -15,7 +15,7 @@ class TestAssignModule:
     """assign_module 方法测试"""
 
     @pytest.mark.asyncio
-    async def test_assign_module_success(self, session):
+    async def test_assign_module_success(self, mock_session):
         """成功分配模块"""
         mock_module = MagicMock()
         mock_module.id = "module-1"
@@ -35,25 +35,25 @@ class TestAssignModule:
             existing_result = MagicMock()
             existing_result.scalar_one_or_none.return_value = None
 
-            session.execute.side_effect = [module_result, existing_result]
-            session.add = MagicMock()
-            session.commit = AsyncMock()
-            session.refresh = AsyncMock()
+            mock_session.execute.side_effect = [module_result, existing_result]
+            mock_session.add = MagicMock()
+            mock_session.commit = AsyncMock()
+            mock_session.refresh = AsyncMock()
 
             # 设置 tenant_module.id
             def set_id_side_effect(tm):
                 tm.id = "tm-1"
 
-            session.add.side_effect = set_id_side_effect
+            mock_session.add.side_effect = set_id_side_effect
 
             result = await TenantModuleService.assign_module(
-                session,
+                mock_session,
                 tenant_id="tenant-1",
                 module_id="module-1",
                 started_at=datetime.now(),
             )
 
-        session.add.assert_called_once()
+        mock_session.add.assert_called_once()
         mock_publisher.publish.assert_called_once()
         # 验证发布的是 ModuleAssigned 事件
         call_args = mock_publisher.publish.call_args[0][0]
@@ -62,15 +62,15 @@ class TestAssignModule:
         assert call_args.module_id == "module-1"
 
     @pytest.mark.asyncio
-    async def test_assign_module_module_not_found(self, session):
+    async def test_assign_module_module_not_found(self, mock_session):
         """模块不存在时抛出错误"""
         module_result = MagicMock()
         module_result.scalar_one_or_none.return_value = None
-        session.execute.return_value = module_result
+        mock_session.execute.return_value = module_result
 
         with pytest.raises(ValueError) as exc_info:
             await TenantModuleService.assign_module(
-                session,
+                mock_session,
                 tenant_id="tenant-1",
                 module_id="nonexistent",
                 started_at=datetime.now(),
@@ -79,7 +79,7 @@ class TestAssignModule:
         assert "模块不存在" in str(exc_info.value)
 
     @pytest.mark.asyncio
-    async def test_assign_module_module_inactive(self, session):
+    async def test_assign_module_module_inactive(self, mock_session):
         """模块未启用时抛出错误"""
         mock_module = MagicMock()
         mock_module.id = "module-1"
@@ -88,11 +88,11 @@ class TestAssignModule:
 
         result = MagicMock()
         result.scalar_one_or_none.return_value = mock_module
-        session.execute.return_value = result
+        mock_session.execute.return_value = result
 
         with pytest.raises(ValueError) as exc_info:
             await TenantModuleService.assign_module(
-                session,
+                mock_session,
                 tenant_id="tenant-1",
                 module_id="module-1",
                 started_at=datetime.now(),
@@ -101,7 +101,7 @@ class TestAssignModule:
         assert "模块未启用" in str(exc_info.value)
 
     @pytest.mark.asyncio
-    async def test_assign_module_already_assigned(self, session):
+    async def test_assign_module_already_assigned(self, mock_session):
         """模块已分配时抛出错误"""
         mock_module = MagicMock()
         mock_module.id = "module-1"
@@ -117,11 +117,11 @@ class TestAssignModule:
         existing_result = MagicMock()
         existing_result.scalar_one_or_none.return_value = mock_existing
 
-        session.execute.side_effect = [module_result, existing_result]
+        mock_session.execute.side_effect = [module_result, existing_result]
 
         with pytest.raises(ValueError) as exc_info:
             await TenantModuleService.assign_module(
-                session,
+                mock_session,
                 tenant_id="tenant-1",
                 module_id="module-1",
                 started_at=datetime.now(),
@@ -130,7 +130,7 @@ class TestAssignModule:
         assert "租户已分配该模块" in str(exc_info.value)
 
     @pytest.mark.asyncio
-    async def test_assign_required_module_with_expiration_raises_error(self, session):
+    async def test_assign_required_module_with_expiration_raises_error(self, mock_session):
         """必须模块不允许设置过期时间"""
         mock_module = MagicMock()
         mock_module.id = "module-1"
@@ -144,11 +144,11 @@ class TestAssignModule:
         existing_result = MagicMock()
         existing_result.scalar_one_or_none.return_value = None
 
-        session.execute.side_effect = [module_result, existing_result]
+        mock_session.execute.side_effect = [module_result, existing_result]
 
         with pytest.raises(ValueError) as exc_info:
             await TenantModuleService.assign_module(
-                session,
+                mock_session,
                 tenant_id="tenant-1",
                 module_id="module-1",
                 started_at=datetime.now(),
@@ -163,7 +163,7 @@ class TestUnassignModule:
     """unassign_module 方法测试"""
 
     @pytest.mark.asyncio
-    async def test_unassign_module_success(self, session):
+    async def test_unassign_module_success(self, mock_session):
         """成功取消分配"""
         mock_module = MagicMock()
         mock_module.id = "module-1"
@@ -184,12 +184,12 @@ class TestUnassignModule:
             tm_result = MagicMock()
             tm_result.scalar_one_or_none.return_value = mock_tenant_module
 
-            session.execute.side_effect = [module_result, tm_result]
-            session.delete = AsyncMock()
-            session.commit = AsyncMock()
+            mock_session.execute.side_effect = [module_result, tm_result]
+            mock_session.delete = AsyncMock()
+            mock_session.commit = AsyncMock()
 
             result = await TenantModuleService.unassign_module(
-                session,
+                mock_session,
                 tenant_id="tenant-1",
                 module_id="module-1",
             )
@@ -202,15 +202,15 @@ class TestUnassignModule:
         assert isinstance(call_args, ModuleUnassigned)
 
     @pytest.mark.asyncio
-    async def test_unassign_module_not_found(self, session):
+    async def test_unassign_module_not_found(self, mock_session):
         """模块不存在时抛出错误"""
         module_result = MagicMock()
         module_result.scalar_one_or_none.return_value = None
-        session.execute.return_value = module_result
+        mock_session.execute.return_value = module_result
 
         with pytest.raises(ValueError) as exc_info:
             await TenantModuleService.unassign_module(
-                session,
+                mock_session,
                 tenant_id="tenant-1",
                 module_id="nonexistent",
             )
@@ -218,7 +218,7 @@ class TestUnassignModule:
         assert "模块不存在" in str(exc_info.value)
 
     @pytest.mark.asyncio
-    async def test_unassign_required_module_raises_error(self, session):
+    async def test_unassign_required_module_raises_error(self, mock_session):
         """取消必须模块分配时抛出错误"""
         mock_module = MagicMock()
         mock_module.id = "module-1"
@@ -227,11 +227,11 @@ class TestUnassignModule:
 
         result = MagicMock()
         result.scalar_one_or_none.return_value = mock_module
-        session.execute.return_value = result
+        mock_session.execute.return_value = result
 
         with pytest.raises(ValueError) as exc_info:
             await TenantModuleService.unassign_module(
-                session,
+                mock_session,
                 tenant_id="tenant-1",
                 module_id="module-1",
             )
@@ -240,7 +240,7 @@ class TestUnassignModule:
         assert "禁止取消分配" in str(exc_info.value)
 
     @pytest.mark.asyncio
-    async def test_unassign_module_not_assigned_returns_false(self, session):
+    async def test_unassign_module_not_assigned_returns_false(self, mock_session):
         """取消未分配的模块返回 False"""
         mock_module = MagicMock()
         mock_module.id = "module-1"
@@ -253,10 +253,10 @@ class TestUnassignModule:
         tm_result = MagicMock()
         tm_result.scalar_one_or_none.return_value = None
 
-        session.execute.side_effect = [module_result, tm_result]
+        mock_session.execute.side_effect = [module_result, tm_result]
 
         result = await TenantModuleService.unassign_module(
-            session,
+            mock_session,
             tenant_id="tenant-1",
             module_id="module-1",
         )
@@ -264,7 +264,7 @@ class TestUnassignModule:
         assert result is False
 
     @pytest.mark.asyncio
-    async def test_unassign_module_with_users_raises_error(self, session):
+    async def test_unassign_module_with_users_raises_error(self, mock_session):
         """模块角色被用户使用时抛出错误"""
         mock_module = MagicMock()
         mock_module.id = "module-1"
@@ -282,7 +282,7 @@ class TestUnassignModule:
             tm_result = MagicMock()
             tm_result.scalar_one_or_none.return_value = mock_tenant_module
 
-            session.execute.side_effect = [module_result, tm_result]
+            mock_session.execute.side_effect = [module_result, tm_result]
 
             # 模拟角色使用检查抛出错误
             mock_check.side_effect = ValueError(
@@ -291,7 +291,7 @@ class TestUnassignModule:
 
             with pytest.raises(ValueError) as exc_info:
                 await TenantModuleService.unassign_module(
-                    session,
+                    mock_session,
                     tenant_id="tenant-1",
                     module_id="module-1",
                 )
@@ -303,24 +303,24 @@ class TestCheckModuleRoleUsage:
     """_check_module_role_usage 方法测试"""
 
     @pytest.mark.asyncio
-    async def test_no_roles_defined(self, session):
+    async def test_no_roles_defined(self, mock_session):
         """模块未定义角色时跳过检查"""
         with patch("tenant.services.tenant_module_service.get_iam_client") as mock_get_client:
 
             # 模块角色查询返回空列表
             role_result = MagicMock()
             role_result.all.return_value = []
-            session.execute.return_value = role_result
+            mock_session.execute.return_value = role_result
 
             # 不应抛出异常
             await TenantModuleService._check_module_role_usage(
-                session, "tenant-1", "module-1", "demo"
+                mock_session, "tenant-1", "module-1", "demo"
             )
 
         mock_get_client.assert_not_called()
 
     @pytest.mark.asyncio
-    async def test_roles_not_in_use(self, session):
+    async def test_roles_not_in_use(self, mock_session):
         """角色未被用户使用"""
         mock_iam_client = MagicMock()
         mock_iam_client.check_module_role_usage = AsyncMock(return_value=[])
@@ -332,17 +332,17 @@ class TestCheckModuleRoleUsage:
             # 模块角色查询返回角色 ID 列表
             role_result = MagicMock()
             role_result.all.return_value = [("role-1",), ("role-2",)]
-            session.execute.return_value = role_result
+            mock_session.execute.return_value = role_result
 
             # 不应抛出异常
             await TenantModuleService._check_module_role_usage(
-                session, "tenant-1", "module-1", "demo"
+                mock_session, "tenant-1", "module-1", "demo"
             )
 
         mock_iam_client.check_module_role_usage.assert_awaited_once()
 
     @pytest.mark.asyncio
-    async def test_roles_in_use_raises_error(self, session):
+    async def test_roles_in_use_raises_error(self, mock_session):
         """角色被用户使用时抛出错误"""
         # 模拟角色使用情况
         mock_usage = MagicMock()
@@ -358,11 +358,11 @@ class TestCheckModuleRoleUsage:
 
             role_result = MagicMock()
             role_result.all.return_value = [("role-1",)]
-            session.execute.return_value = role_result
+            mock_session.execute.return_value = role_result
 
             with pytest.raises(ValueError) as exc_info:
                 await TenantModuleService._check_module_role_usage(
-                    session, "tenant-1", "module-1", "demo"
+                    mock_session, "tenant-1", "module-1", "demo"
                 )
 
             assert "管理员(5人)" in str(exc_info.value)
@@ -372,7 +372,7 @@ class TestListTenantModules:
     """list_tenant_modules 方法测试"""
 
     @pytest.mark.asyncio
-    async def test_returns_paginated_list(self, session):
+    async def test_returns_paginated_list(self, mock_session):
         """返回分页列表"""
         mock_tm1 = MagicMock()
         mock_tm1.id = "tm-1"
@@ -388,15 +388,15 @@ class TestListTenantModules:
         list_result = MagicMock()
         list_result.scalars.return_value.all.return_value = [mock_tm1, mock_tm2]
 
-        session.execute.side_effect = [count_result, list_result]
+        mock_session.execute.side_effect = [count_result, list_result]
 
-        items, total = await TenantModuleService.list_tenant_modules(session, "tenant-1")
+        items, total = await TenantModuleService.list_tenant_modules(mock_session, "tenant-1")
 
         assert len(items) == 2
         assert total == 2
 
     @pytest.mark.asyncio
-    async def test_returns_empty_list(self, session):
+    async def test_returns_empty_list(self, mock_session):
         """返回空列表"""
         count_result = MagicMock()
         count_result.scalar.return_value = 0
@@ -404,9 +404,9 @@ class TestListTenantModules:
         list_result = MagicMock()
         list_result.scalars.return_value.all.return_value = []
 
-        session.execute.side_effect = [count_result, list_result]
+        mock_session.execute.side_effect = [count_result, list_result]
 
-        items, total = await TenantModuleService.list_tenant_modules(session, "tenant-1")
+        items, total = await TenantModuleService.list_tenant_modules(mock_session, "tenant-1")
 
         assert len(items) == 0
         assert total == 0
@@ -416,7 +416,7 @@ class TestGetTenantModule:
     """get_tenant_module 方法测试"""
 
     @pytest.mark.asyncio
-    async def test_returns_tenant_module(self, session):
+    async def test_returns_tenant_module(self, mock_session):
         """返回租户模块分配记录"""
         mock_tm = MagicMock()
         mock_tm.id = "tm-1"
@@ -425,19 +425,19 @@ class TestGetTenantModule:
 
         result = MagicMock()
         result.scalar_one_or_none.return_value = mock_tm
-        session.execute.return_value = result
+        mock_session.execute.return_value = result
 
-        tm = await TenantModuleService.get_tenant_module(session, "tenant-1", "module-1")
+        tm = await TenantModuleService.get_tenant_module(mock_session, "tenant-1", "module-1")
 
         assert tm is mock_tm
 
     @pytest.mark.asyncio
-    async def test_returns_none_when_not_found(self, session):
+    async def test_returns_none_when_not_found(self, mock_session):
         """分配记录不存在时返回 None"""
         result = MagicMock()
         result.scalar_one_or_none.return_value = None
-        session.execute.return_value = result
+        mock_session.execute.return_value = result
 
-        tm = await TenantModuleService.get_tenant_module(session, "tenant-1", "nonexistent")
+        tm = await TenantModuleService.get_tenant_module(mock_session, "tenant-1", "nonexistent")
 
         assert tm is None

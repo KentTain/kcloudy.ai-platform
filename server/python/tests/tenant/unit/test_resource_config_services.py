@@ -19,7 +19,7 @@ class TestDatabaseConfigService:
     """数据库配置服务测试"""
 
     @pytest.mark.asyncio
-    async def test_list_configs_with_keyword(self, session):
+    async def test_list_configs_with_keyword(self, mock_session):
         """带关键词查询配置列表"""
         mock_config = MagicMock()
         mock_config.id = "config-1"
@@ -39,42 +39,42 @@ class TestDatabaseConfigService:
         list_result = MagicMock()
         list_result.scalars.return_value.all.return_value = [mock_config]
 
-        session.execute.side_effect = [count_result, list_result]
+        mock_session.execute.side_effect = [count_result, list_result]
 
         items, total = await DatabaseConfigService.list_configs(
-            session, page=1, page_size=20, keyword="测试"
+            mock_session, page=1, page_size=20, keyword="测试"
         )
 
         assert len(items) == 1
         assert total == 1
 
     @pytest.mark.asyncio
-    async def test_get_by_id_returns_config(self, session):
+    async def test_get_by_id_returns_config(self, mock_session):
         """根据 ID 获取配置"""
         mock_config = MagicMock()
         mock_config.id = "config-1"
 
         result = MagicMock()
         result.scalar_one_or_none.return_value = mock_config
-        session.execute.return_value = result
+        mock_session.execute.return_value = result
 
-        config = await DatabaseConfigService.get_by_id(session, "config-1")
+        config = await DatabaseConfigService.get_by_id(mock_session, "config-1")
 
         assert config is mock_config
 
     @pytest.mark.asyncio
-    async def test_create_encrypts_password(self, session):
+    async def test_create_encrypts_password(self, mock_session):
         """创建时加密密码"""
         with patch("tenant.services.base_resource_service.encrypt_password") as mock_encrypt:
 
             mock_encrypt.return_value = "encrypted_password"
 
-            session.add = MagicMock()
-            session.commit = AsyncMock()
-            session.refresh = AsyncMock()
+            mock_session.add = MagicMock()
+            mock_session.commit = AsyncMock()
+            mock_session.refresh = AsyncMock()
 
             await DatabaseConfigService.create(
-                session,
+                mock_session,
                 name="测试数据库",
                 type="postgresql",
                 host="localhost",
@@ -85,10 +85,10 @@ class TestDatabaseConfigService:
             )
 
         mock_encrypt.assert_called_once_with("plain_password")
-        session.add.assert_called_once()
+        mock_session.add.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_update_encrypts_password(self, session):
+    async def test_update_encrypts_password(self, mock_session):
         """更新时加密密码"""
         mock_config = MagicMock()
         mock_config.id = "config-1"
@@ -99,19 +99,19 @@ class TestDatabaseConfigService:
 
             result = MagicMock()
             result.scalar_one_or_none.return_value = mock_config
-            session.execute.return_value = result
-            session.commit = AsyncMock()
-            session.refresh = AsyncMock()
+            mock_session.execute.return_value = result
+            mock_session.commit = AsyncMock()
+            mock_session.refresh = AsyncMock()
 
             config = await DatabaseConfigService.update(
-                session, "config-1", password="new_password"
+                mock_session, "config-1", password="new_password"
             )
 
         mock_encrypt.assert_called_once_with("new_password")
         assert config is mock_config
 
     @pytest.mark.asyncio
-    async def test_delete_returns_true_on_success(self, session):
+    async def test_delete_returns_true_on_success(self, mock_session):
         """删除成功返回 True"""
         # 模拟配置查询返回非默认配置
         mock_config = MagicMock()
@@ -129,21 +129,21 @@ class TestDatabaseConfigService:
         delete_result = MagicMock()
         delete_result.rowcount = 1
 
-        session.execute.side_effect = [config_result, ref_result, delete_result]
-        session.flush = AsyncMock()
+        mock_session.execute.side_effect = [config_result, ref_result, delete_result]
+        mock_session.flush = AsyncMock()
 
-        success = await DatabaseConfigService.delete(session, "config-1")
+        success = await DatabaseConfigService.delete(mock_session, "config-1")
 
         assert success is True
 
     @pytest.mark.asyncio
-    async def test_test_connection_config_not_found(self, session):
+    async def test_test_connection_config_not_found(self, mock_session):
         """配置不存在时测试连接返回失败"""
         with patch.object(DatabaseConfigService, "get_by_id") as mock_get:
             mock_get.return_value = None
 
             success, message, latency = await DatabaseConfigService.test_connection(
-                session, "nonexistent"
+                mock_session, "nonexistent"
             )
 
         assert success is False
@@ -180,18 +180,18 @@ class TestStorageConfigService:
     """存储配置服务测试"""
 
     @pytest.mark.asyncio
-    async def test_create_encrypts_secret_key(self, session):
+    async def test_create_encrypts_secret_key(self, mock_session):
         """创建时加密密钥"""
         with patch("tenant.services.base_resource_service.encrypt_password") as mock_encrypt:
 
             mock_encrypt.return_value = "encrypted_secret"
 
-            session.add = MagicMock()
-            session.commit = AsyncMock()
-            session.refresh = AsyncMock()
+            mock_session.add = MagicMock()
+            mock_session.commit = AsyncMock()
+            mock_session.refresh = AsyncMock()
 
             await StorageConfigService.create(
-                session,
+                mock_session,
                 name="测试存储",
                 type="minio",
                 bucket="test-bucket",
@@ -207,31 +207,31 @@ class TestCacheConfigService:
     """缓存配置服务测试"""
 
     @pytest.mark.asyncio
-    async def test_test_connection_config_not_found(self, session):
+    async def test_test_connection_config_not_found(self, mock_session):
         """配置不存在时测试连接返回失败"""
         with patch.object(CacheConfigService, "get_by_id") as mock_get:
             mock_get.return_value = None
 
             success, message, latency = await CacheConfigService.test_connection(
-                session, "nonexistent"
+                mock_session, "nonexistent"
             )
 
         assert success is False
         assert "不存在" in message
 
     @pytest.mark.asyncio
-    async def test_create_encrypts_password(self, session):
+    async def test_create_encrypts_password(self, mock_session):
         """创建时加密密码"""
         with patch("tenant.services.base_resource_service.encrypt_password") as mock_encrypt:
 
             mock_encrypt.return_value = "encrypted_password"
 
-            session.add = MagicMock()
-            session.commit = AsyncMock()
-            session.refresh = AsyncMock()
+            mock_session.add = MagicMock()
+            mock_session.commit = AsyncMock()
+            mock_session.refresh = AsyncMock()
 
             await CacheConfigService.create(
-                session,
+                mock_session,
                 name="测试缓存",
                 host="localhost",
                 port=6379,
@@ -246,7 +246,7 @@ class TestQueueConfigService:
     """队列配置服务测试"""
 
     @pytest.mark.asyncio
-    async def test_test_connection_unsupported_type(self, session):
+    async def test_test_connection_unsupported_type(self, mock_session):
         """不支持的类型返回格式校验成功"""
         mock_config = MagicMock()
         mock_config.id = "config-1"
@@ -262,7 +262,7 @@ class TestQueueConfigService:
             mock_get.return_value = mock_config
 
             success, message, latency = await QueueConfigService.test_connection(
-                session, "config-1"
+                mock_session, "config-1"
             )
 
         assert success is True
@@ -273,7 +273,7 @@ class TestPubSubConfigService:
     """发布订阅配置服务测试"""
 
     @pytest.mark.asyncio
-    async def test_test_connection_unsupported_type(self, session):
+    async def test_test_connection_unsupported_type(self, mock_session):
         """不支持的类型返回格式校验成功"""
         mock_config = MagicMock()
         mock_config.id = "config-1"
@@ -288,25 +288,25 @@ class TestPubSubConfigService:
             mock_get.return_value = mock_config
 
             success, message, latency = await PubSubConfigService.test_connection(
-                session, "config-1"
+                mock_session, "config-1"
             )
 
         assert success is True
         assert "格式校验" in message
 
     @pytest.mark.asyncio
-    async def test_create_encrypts_password(self, session):
+    async def test_create_encrypts_password(self, mock_session):
         """创建时加密密码"""
         with patch("tenant.services.base_resource_service.encrypt_password") as mock_encrypt:
 
             mock_encrypt.return_value = "encrypted_password"
 
-            session.add = MagicMock()
-            session.commit = AsyncMock()
-            session.refresh = AsyncMock()
+            mock_session.add = MagicMock()
+            mock_session.commit = AsyncMock()
+            mock_session.refresh = AsyncMock()
 
             await PubSubConfigService.create(
-                session,
+                mock_session,
                 name="测试发布订阅",
                 type="redis",
                 host="localhost",
@@ -322,7 +322,7 @@ class TestDeleteProtection:
     """删除保护测试"""
 
     @pytest.mark.asyncio
-    async def test_delete_database_config_with_tenant_reference_raises_conflict(self, session):
+    async def test_delete_database_config_with_tenant_reference_raises_conflict(self, mock_session):
         """数据库配置被租户引用时删除抛出 ConflictError"""
         # 模拟配置查询返回非默认配置
         mock_config = MagicMock()
@@ -336,16 +336,16 @@ class TestDeleteProtection:
         ref_result = MagicMock()
         ref_result.scalar.return_value = 3  # 3 个租户引用
 
-        session.execute.side_effect = [config_result, ref_result]
+        mock_session.execute.side_effect = [config_result, ref_result]
 
         with pytest.raises(ConflictError) as exc_info:
-            await DatabaseConfigService.delete(session, "config-1")
+            await DatabaseConfigService.delete(mock_session, "config-1")
 
         assert "被租户使用" in str(exc_info.value.message)
-        assert session.commit.called is False  # 不应执行删除
+        assert mock_session.commit.called is False  # 不应执行删除
 
     @pytest.mark.asyncio
-    async def test_delete_storage_config_with_tenant_reference_raises_conflict(self, session):
+    async def test_delete_storage_config_with_tenant_reference_raises_conflict(self, mock_session):
         """存储配置被租户引用时删除抛出 ConflictError"""
         # 模拟配置查询返回非默认配置
         mock_config = MagicMock()
@@ -358,15 +358,15 @@ class TestDeleteProtection:
         ref_result = MagicMock()
         ref_result.scalar.return_value = 1  # 1 个租户引用
 
-        session.execute.side_effect = [config_result, ref_result]
+        mock_session.execute.side_effect = [config_result, ref_result]
 
         with pytest.raises(ConflictError) as exc_info:
-            await StorageConfigService.delete(session, "config-1")
+            await StorageConfigService.delete(mock_session, "config-1")
 
         assert "被租户使用" in str(exc_info.value.message)
 
     @pytest.mark.asyncio
-    async def test_delete_cache_config_with_tenant_reference_raises_conflict(self, session):
+    async def test_delete_cache_config_with_tenant_reference_raises_conflict(self, mock_session):
         """缓存配置被租户引用时删除抛出 ConflictError"""
         # 模拟配置查询返回非默认配置
         mock_config = MagicMock()
@@ -379,15 +379,15 @@ class TestDeleteProtection:
         ref_result = MagicMock()
         ref_result.scalar.return_value = 2
 
-        session.execute.side_effect = [config_result, ref_result]
+        mock_session.execute.side_effect = [config_result, ref_result]
 
         with pytest.raises(ConflictError) as exc_info:
-            await CacheConfigService.delete(session, "config-1")
+            await CacheConfigService.delete(mock_session, "config-1")
 
         assert "被租户使用" in str(exc_info.value.message)
 
     @pytest.mark.asyncio
-    async def test_delete_queue_config_with_tenant_reference_raises_conflict(self, session):
+    async def test_delete_queue_config_with_tenant_reference_raises_conflict(self, mock_session):
         """队列配置被租户引用时删除抛出 ConflictError"""
         # 模拟配置查询返回非默认配置
         mock_config = MagicMock()
@@ -400,15 +400,15 @@ class TestDeleteProtection:
         ref_result = MagicMock()
         ref_result.scalar.return_value = 5
 
-        session.execute.side_effect = [config_result, ref_result]
+        mock_session.execute.side_effect = [config_result, ref_result]
 
         with pytest.raises(ConflictError) as exc_info:
-            await QueueConfigService.delete(session, "config-1")
+            await QueueConfigService.delete(mock_session, "config-1")
 
         assert "被租户使用" in str(exc_info.value.message)
 
     @pytest.mark.asyncio
-    async def test_delete_pubsub_config_with_tenant_reference_raises_conflict(self, session):
+    async def test_delete_pubsub_config_with_tenant_reference_raises_conflict(self, mock_session):
         """发布订阅配置被租户引用时删除抛出 ConflictError"""
         # 模拟配置查询返回非默认配置
         mock_config = MagicMock()
@@ -421,15 +421,15 @@ class TestDeleteProtection:
         ref_result = MagicMock()
         ref_result.scalar.return_value = 1
 
-        session.execute.side_effect = [config_result, ref_result]
+        mock_session.execute.side_effect = [config_result, ref_result]
 
         with pytest.raises(ConflictError) as exc_info:
-            await PubSubConfigService.delete(session, "config-1")
+            await PubSubConfigService.delete(mock_session, "config-1")
 
         assert "被租户使用" in str(exc_info.value.message)
 
     @pytest.mark.asyncio
-    async def test_delete_config_without_reference_succeeds(self, session):
+    async def test_delete_config_without_reference_succeeds(self, mock_session):
         """配置无引用时删除成功"""
         # 模拟配置查询返回非默认配置
         mock_config = MagicMock()
@@ -447,22 +447,22 @@ class TestDeleteProtection:
         delete_result = MagicMock()
         delete_result.rowcount = 1
 
-        session.execute.side_effect = [config_result, ref_result, delete_result]
-        session.flush = AsyncMock()
+        mock_session.execute.side_effect = [config_result, ref_result, delete_result]
+        mock_session.flush = AsyncMock()
 
-        success = await DatabaseConfigService.delete(session, "config-1")
+        success = await DatabaseConfigService.delete(mock_session, "config-1")
 
         assert success is True
 
     @pytest.mark.asyncio
-    async def test_delete_config_not_found_returns_false(self, session):
+    async def test_delete_config_not_found_returns_false(self, mock_session):
         """删除不存在的配置返回 False"""
         # 配置查询返回 None
         config_result = MagicMock()
         config_result.scalar_one_or_none.return_value = None
 
-        session.execute.return_value = config_result
+        mock_session.execute.return_value = config_result
 
-        success = await DatabaseConfigService.delete(session, "nonexistent")
+        success = await DatabaseConfigService.delete(mock_session, "nonexistent")
 
         assert success is False
