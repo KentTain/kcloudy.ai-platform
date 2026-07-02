@@ -418,12 +418,12 @@ async def install_plugin_to_tenants(
         )
         return ApiResponse.success(data=result.model_dump())
     except ValueError as e:
-        return ApiResponse.fail(message=str(e))
+        return ApiResponse.fail(str(e))
     except NotFoundError as e:
-        return ApiResponse.fail(message=str(e))
+        return ApiResponse.fail(str(e))
 
 
-@router.post("/plugin-installations/{tenant_id}/{plugin_id}/start")
+@router.post("/plugin-installations/{tenant_id}/{plugin_id:path}/start")
 async def start_plugin_installation(
     tenant_id: str,
     plugin_id: str,
@@ -443,12 +443,12 @@ async def start_plugin_installation(
         )
         return ApiResponse.success(data={"tenant_id": result.tenant_id, "plugin_id": result.plugin_id, "status": result.status})
     except ValueError as e:
-        return ApiResponse.fail(message=str(e))
+        return ApiResponse.fail(str(e))
     except RuntimeError as e:
-        return ApiResponse.fail(message=str(e))
+        return ApiResponse.fail(str(e))
 
 
-@router.post("/plugin-installations/{tenant_id}/{plugin_id}/stop")
+@router.post("/plugin-installations/{tenant_id}/{plugin_id:path}/stop")
 async def stop_plugin_installation(
     tenant_id: str,
     plugin_id: str,
@@ -468,9 +468,9 @@ async def stop_plugin_installation(
         )
         return ApiResponse.success(data={"tenant_id": result.tenant_id, "plugin_id": result.plugin_id, "status": result.status})
     except ValueError as e:
-        return ApiResponse.fail(message=str(e))
+        return ApiResponse.fail(str(e))
     except RuntimeError as e:
-        return ApiResponse.fail(message=str(e))
+        return ApiResponse.fail(str(e))
 
 
 @router.post("/plugin-installations/start/batch")
