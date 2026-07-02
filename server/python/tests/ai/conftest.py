@@ -120,9 +120,7 @@ def tongyi_api_key():
 
     优先从环境变量 E2E_TONGYI_API_KEY 读取，如果未配置则使用默认测试配置。
     """
-    return os.environ.get(
-        "E2E_TONGYI_API_KEY", "sk-623fdfb2b75f43b8bb6a61b8b183359a"
-    )
+    return os.environ.get("E2E_TONGYI_API_KEY", "sk-623fdfb2b75f43b8bb6a61b8b183359a")
 
 
 @pytest.fixture
@@ -145,18 +143,16 @@ def gpustack_endpoint():
 
     优先从环境变量 E2E_GPUSTACK_ENDPOINT 读取，如果未配置则使用默认测试配置。
     """
-    return os.environ.get(
-        "E2E_GPUSTACK_ENDPOINT", "https://llm-stack.flydiysz.cn"
-    )
+    return os.environ.get("E2E_GPUSTACK_ENDPOINT", "https://llm-stack.flydiysz.cn")
 
 
 # GPUStack 可用模型列表（从实际测试获取）
 GPUSTACK_AVAILABLE_MODELS = [
-    "qwen3.5-9b",              # 聊天模型
-    "bge-large-zh-v1.5",       # Embedding 模型
-    "bge-reranker-large",      # Reranker 模型
-    "qwen3-embedding-0.6b",    # Embedding 模型
-    "qwen3-reranker-0.6b",     # Reranker 模型
+    "qwen3.5-9b",  # 聊天模型
+    "bge-large-zh-v1.5",  # Embedding 模型
+    "bge-reranker-large",  # Reranker 模型
+    "qwen3-embedding-0.6b",  # Embedding 模型
+    "qwen3-reranker-0.6b",  # Reranker 模型
 ]
 
 
@@ -165,20 +161,23 @@ GPUSTACK_AVAILABLE_MODELS = [
 # =============================================================================
 
 
-def _check_tongyi_api_key_available(api_key: str) -> bool:
-    """同步检测 tongyi API Key 是否有效"""
+@pytest.fixture(scope="session")
+def tongyi_api_key_available(tongyi_api_key):
+    """检测 tongyi API Key 是否可用（session 级别，同步检测）"""
     try:
-        payload = json.dumps({
-            "model": "qwen-plus",
-            "messages": [{"role": "user", "content": "hi"}],
-            "max_tokens": 1,
-        }).encode("utf-8")
+        payload = json.dumps(
+            {
+                "model": "qwen-plus",
+                "messages": [{"role": "user", "content": "hi"}],
+                "max_tokens": 1,
+            }
+        ).encode("utf-8")
 
         req = urllib.request.Request(
             "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions",
             data=payload,
             headers={
-                "Authorization": f"Bearer {api_key}",
+                "Authorization": f"Bearer {tongyi_api_key}",
                 "Content-Type": "application/json",
             },
             method="POST",
@@ -192,12 +191,13 @@ def _check_tongyi_api_key_available(api_key: str) -> bool:
         return False
 
 
-def _check_gpustack_api_key_available(api_key: str, endpoint: str) -> bool:
-    """同步检测 GPUStack API Key 是否有效"""
+@pytest.fixture(scope="session")
+def gpustack_api_key_available(gpustack_api_key, gpustack_endpoint):
+    """检测 GPUStack API Key 是否可用（session 级别，同步检测）"""
     try:
         req = urllib.request.Request(
-            f"{endpoint}/v1/models",
-            headers={"Authorization": f"Bearer {api_key}"},
+            f"{gpustack_endpoint}/v1/models",
+            headers={"Authorization": f"Bearer {gpustack_api_key}"},
             method="GET",
         )
 
@@ -211,28 +211,6 @@ def _check_gpustack_api_key_available(api_key: str, endpoint: str) -> bool:
         return False
     except Exception:
         return False
-
-
-@pytest.fixture(scope="session")
-def tongyi_api_key_available():
-    """检测 tongyi API Key 是否可用（session 级别，同步检测）"""
-    api_key = os.environ.get(
-        "E2E_TONGYI_API_KEY", "sk-623fdfb2b75f43b8bb6a61b8b183359a"
-    )
-    return _check_tongyi_api_key_available(api_key)
-
-
-@pytest.fixture(scope="session")
-def gpustack_api_key_available():
-    """检测 GPUStack API Key 是否可用（session 级别，同步检测）"""
-    api_key = os.environ.get(
-        "E2E_GPUSTACK_API_KEY",
-        "gpustack_14d9f2aee5629a0f_465d73985f7b8f370caecd9e3de838ec",
-    )
-    endpoint = os.environ.get(
-        "E2E_GPUSTACK_ENDPOINT", "https://llm-stack.flydiysz.cn"
-    )
-    return _check_gpustack_api_key_available(api_key, endpoint)
 
 
 # =============================================================================
