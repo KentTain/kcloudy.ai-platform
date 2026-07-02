@@ -19,7 +19,7 @@ def _build_mock_result(scalars_return=None, scalar_return=None, all_return=None)
     """构建 mock 的 execute 返回值
 
     注意：execute() 返回的是 Result 对象，它本身不是异步的。
-    只有 session.execute() 是异步的。
+    只有 mock_session.execute() 是异步的。
     """
     # Result 对象不是异步的，使用 MagicMock
     mock_result = MagicMock()
@@ -39,21 +39,21 @@ class TestAuditLogService:
     """审计日志服务测试"""
 
     @pytest.mark.asyncio
-    async def test_list_audit_logs_empty(self, session):
+    async def test_list_audit_logs_empty(self, mock_session):
         """
         场景：查询空审计日志列表
         WHEN: 数据库中无审计日志
         THEN: 返回空列表
         """
         # Mock: 空数据集
-        session.execute = AsyncMock()
+        mock_session.execute = AsyncMock()
         mock_result_count = _build_mock_result(scalar_return=0)
         mock_result_list = _build_mock_result(scalars_return=[])
 
-        session.execute.side_effect = [mock_result_count, mock_result_list]
+        mock_session.execute.side_effect = [mock_result_count, mock_result_list]
 
         logs, total = await audit_log_service.list_audit_logs(
-            session,
+            mock_session,
             tenant_id=TEST_TENANT_ID,
             page=1,
             page_size=20,
@@ -63,7 +63,7 @@ class TestAuditLogService:
         assert logs == []
 
     @pytest.mark.asyncio
-    async def test_list_audit_logs_with_data(self, session):
+    async def test_list_audit_logs_with_data(self, mock_session):
         """
         场景：查询审计日志列表
         WHEN: 数据库中有审计日志
@@ -85,10 +85,10 @@ class TestAuditLogService:
         mock_result_count = _build_mock_result(scalar_return=1)
         mock_result_list = _build_mock_result(scalars_return=[log])
 
-        session.execute = AsyncMock(side_effect=[mock_result_count, mock_result_list])
+        mock_session.execute = AsyncMock(side_effect=[mock_result_count, mock_result_list])
 
         logs, total = await audit_log_service.list_audit_logs(
-            session,
+            mock_session,
             tenant_id=TEST_TENANT_ID,
             page=1,
             page_size=20,
@@ -99,7 +99,7 @@ class TestAuditLogService:
         assert logs[0].operator_name == "test_user"
 
     @pytest.mark.asyncio
-    async def test_list_audit_logs_filter_by_business_domain(self, session):
+    async def test_list_audit_logs_filter_by_business_domain(self, mock_session):
         """
         场景：按业务域筛选审计日志
         WHEN: 指定业务域筛选条件
@@ -120,10 +120,10 @@ class TestAuditLogService:
         mock_result_count = _build_mock_result(scalar_return=1)
         mock_result_list = _build_mock_result(scalars_return=[log])
 
-        session.execute = AsyncMock(side_effect=[mock_result_count, mock_result_list])
+        mock_session.execute = AsyncMock(side_effect=[mock_result_count, mock_result_list])
 
         logs, total = await audit_log_service.list_audit_logs(
-            session,
+            mock_session,
             tenant_id=TEST_TENANT_ID,
             page=1,
             page_size=20,
@@ -134,7 +134,7 @@ class TestAuditLogService:
         assert logs[0].business_domain == "user"
 
     @pytest.mark.asyncio
-    async def test_list_audit_logs_filter_by_time_range(self, session):
+    async def test_list_audit_logs_filter_by_time_range(self, mock_session):
         """
         场景：按时间范围筛选审计日志
         WHEN: 指定时间范围筛选条件
@@ -156,10 +156,10 @@ class TestAuditLogService:
         mock_result_count = _build_mock_result(scalar_return=1)
         mock_result_list = _build_mock_result(scalars_return=[log])
 
-        session.execute = AsyncMock(side_effect=[mock_result_count, mock_result_list])
+        mock_session.execute = AsyncMock(side_effect=[mock_result_count, mock_result_list])
 
         logs, total = await audit_log_service.list_audit_logs(
-            session,
+            mock_session,
             tenant_id=TEST_TENANT_ID,
             page=1,
             page_size=20,
@@ -170,7 +170,7 @@ class TestAuditLogService:
         assert logs[0].id == "log-recent"
 
     @pytest.mark.asyncio
-    async def test_list_audit_logs_pagination(self, session):
+    async def test_list_audit_logs_pagination(self, mock_session):
         """
         场景：分页查询审计日志
         WHEN: 指定分页参数
@@ -198,7 +198,7 @@ class TestAuditLogService:
         mock_result_count3 = _build_mock_result(scalar_return=25)
         mock_result_page3 = _build_mock_result(scalars_return=logs_data[20:25])
 
-        session.execute = AsyncMock(side_effect=[
+        mock_session.execute = AsyncMock(side_effect=[
             mock_result_count, mock_result_page1,
             mock_result_count2, mock_result_page2,
             mock_result_count3, mock_result_page3,
@@ -206,27 +206,27 @@ class TestAuditLogService:
 
         # 第一页
         logs, total = await audit_log_service.list_audit_logs(
-            session, tenant_id=TEST_TENANT_ID, page=1, page_size=10,
+            mock_session, tenant_id=TEST_TENANT_ID, page=1, page_size=10,
         )
         assert total == 25
         assert len(logs) == 10
 
         # 第二页
         logs, total = await audit_log_service.list_audit_logs(
-            session, tenant_id=TEST_TENANT_ID, page=2, page_size=10,
+            mock_session, tenant_id=TEST_TENANT_ID, page=2, page_size=10,
         )
         assert total == 25
         assert len(logs) == 10
 
         # 第三页
         logs, total = await audit_log_service.list_audit_logs(
-            session, tenant_id=TEST_TENANT_ID, page=3, page_size=10,
+            mock_session, tenant_id=TEST_TENANT_ID, page=3, page_size=10,
         )
         assert total == 25
         assert len(logs) == 5
 
     @pytest.mark.asyncio
-    async def test_get_audit_options_empty(self, session):
+    async def test_get_audit_options_empty(self, mock_session):
         """
         场景：获取空审计选项
         WHEN: 数据库中无审计日志
@@ -238,16 +238,16 @@ class TestAuditLogService:
 
         # Mock: 三个 distinct 查询都返回空（使用 .all() 而非 .scalars().all()）
         mock_result = _build_mock_result(all_return=[])
-        session.execute = AsyncMock(return_value=mock_result)
+        mock_session.execute = AsyncMock(return_value=mock_result)
 
-        options = await audit_log_service.get_audit_options(session)
+        options = await audit_log_service.get_audit_options(mock_session)
 
         assert options.business_domains == []
         assert options.actions == []
         assert options.resource_types == []
 
     @pytest.mark.asyncio
-    async def test_get_audit_options_with_data(self, session):
+    async def test_get_audit_options_with_data(self, mock_session):
         """
         场景：获取审计选项
         WHEN: 数据库中有审计日志
@@ -262,9 +262,9 @@ class TestAuditLogService:
         action_mock = _build_mock_result(all_return=[("create",)])
         resource_mock = _build_mock_result(all_return=[("user",)])
 
-        session.execute = AsyncMock(side_effect=[business_mock, action_mock, resource_mock])
+        mock_session.execute = AsyncMock(side_effect=[business_mock, action_mock, resource_mock])
 
-        options = await audit_log_service.get_audit_options(session)
+        options = await audit_log_service.get_audit_options(mock_session)
 
         assert len(options.business_domains) == 1
         assert options.business_domains[0].value == "user"

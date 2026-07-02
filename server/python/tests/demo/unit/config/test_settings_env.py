@@ -1,4 +1,4 @@
-"""Settings Environment Override Tests"""
+﻿"""Settings Environment Override Tests"""
 
 import os
 from unittest.mock import patch
@@ -25,7 +25,14 @@ class TestSettingsEnvOverride:
 
     def test_env_var_with_prefix(self):
         """Test environment variables with prefix"""
-        with patch.dict(os.environ, {"APP_DEBUG": "true"}):
+        # Clear DEBUG env var first to avoid pollution from system environment
+        env_vars_to_clear = ["DEBUG", "APP_DEBUG"]
+        original_values = {k: os.environ.get(k) for k in env_vars_to_clear}
+        for k in env_vars_to_clear:
+            os.environ.pop(k, None)
+
+        try:
+            os.environ["APP_DEBUG"] = "true"
 
             class TestSettings(BaseSettings):
                 debug: bool = Field(default=False)
@@ -35,6 +42,41 @@ class TestSettingsEnvOverride:
             settings = TestSettings()
 
             assert settings.debug is False  # Default value
+        finally:
+            # Restore original values
+            for k, v in original_values.items():
+                if v is not None:
+                    os.environ[k] = v
+                else:
+                    os.environ.pop(k, None)
+
+    def test_env_var_isolation(self):
+        """Test that environment variables are properly isolated"""
+        # Clear relevant env vars first to avoid pollution
+        env_vars_to_clear = ["DEBUG", "APP_DEBUG"]
+        original_values = {k: os.environ.get(k) for k in env_vars_to_clear}
+        for k in env_vars_to_clear:
+            os.environ.pop(k, None)
+
+        try:
+            class TestSettings(BaseSettings):
+                debug: bool = Field(default=False)
+
+            # Without any DEBUG env var, should use default
+            settings = TestSettings()
+            assert settings.debug is False
+
+            # Now set DEBUG=true
+            os.environ["DEBUG"] = "true"
+            settings2 = TestSettings()
+            assert settings2.debug is True
+        finally:
+            # Restore original values
+            for k, v in original_values.items():
+                if v is not None:
+                    os.environ[k] = v
+                else:
+                    os.environ.pop(k, None)
 
     def test_secret_from_env(self):
         """Test loading secret from environment variable"""

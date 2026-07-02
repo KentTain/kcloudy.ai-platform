@@ -20,7 +20,7 @@ from iam.schemas.org_user import UserSimplePaginatedListResponse, UserSimpleVo
 def mock_session() -> AsyncMock:
     """创建模拟的数据库会话"""
     session = AsyncMock()
-    session.execute = AsyncMock()
+    mock_session.execute = AsyncMock()
     session.get = AsyncMock()
     session.flush = AsyncMock()
     session.refresh = AsyncMock()

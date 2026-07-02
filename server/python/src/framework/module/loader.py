@@ -225,6 +225,7 @@ def load_modules(
 
     # 4. 注册到注册中心
     for module in modules:
-        registry.register(module)
+        if module.name not in registry._modules:
+            registry.register(module)
 
     return modules

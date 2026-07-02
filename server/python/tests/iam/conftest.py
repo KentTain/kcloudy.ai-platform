@@ -100,10 +100,10 @@ def cleanup_users():
 # =============================================================================
 
 
-@pytest_asyncio.fixture
+@pytest_asyncio.fixture(scope="module")
 async def async_client(integration_settings, postgres_available):
     """
-    异步 HTTP 客户端 fixture（集成测试使用）。
+    异步 HTTP 客户端 fixture（module 级别，整个测试模块共享）。
 
     需要后端服务运行。
     """
@@ -112,9 +112,44 @@ async def async_client(integration_settings, postgres_available):
 
     from httpx import AsyncClient, ASGITransport
     from application_web import create_app
+    from framework.database.core.engine_pool import init_default_engine
+    from framework.cache.redis_util import RedisUtil
+
+    # 初始化数据库引擎（由于 ASGITransport 可能不会触发 lifespan）
+    sqlalchemy_config = integration_settings.sqlalchemy
+    init_default_engine(
+        database_url=sqlalchemy_config.url,
+        echo=sqlalchemy_config.echo,
+        pool_size=sqlalchemy_config.pool.size,
+        max_overflow=sqlalchemy_config.pool.max_overflow,
+    )
+
+    # 初始化 Redis
+    try:
+        await RedisUtil.init(integration_settings.redis)
+    except Exception:
+        pass
+
+    # 注册 TenantProvider
+    try:
+        from framework.tenant.tenant_protocols import register_tenant_provider
+        from application_web import _get_tenant_provider
+        provider = _get_tenant_provider()
+        if provider:
+            register_tenant_provider(provider)
+    except Exception:
+        pass
+
+    # 注册 TenantRoleCreator
+    try:
+        from framework.tenant.tenant_protocols import register_tenant_role_creator
+        from iam.services.tenant_role_creator import IAMTenantRoleCreator
+        register_tenant_role_creator(IAMTenantRoleCreator())
+    except Exception:
+        pass
 
     app = create_app()
-    transport = ASGITransport(app=app)
+    transport = ASGITransport(app=app, raise_app_exceptions=True)
 
     async with AsyncClient(transport=transport, base_url="http://test") as client:
         yield client
@@ -133,7 +168,7 @@ async def auth_headers(async_client, test_tenant_id, postgres_available):
     # 登录获取 token
     response = await async_client.post(
         "/iam/console/v1/auth/login",
-        json={"username": "admin", "password": "admin123"},
+        json={"account": "admin", "password": "admin123"},
     )
 
     if response.status_code != 200:
@@ -142,4 +177,7 @@ async def auth_headers(async_client, test_tenant_id, postgres_available):
     data = response.json()
     token = data.get("data", {}).get("access_token")
 
-    return {"Authorization": f"Bearer {token}"}
+    return {
+        "Authorization": f"Bearer {token}",
+        "X-Tenant-Id": test_tenant_id,
+    }

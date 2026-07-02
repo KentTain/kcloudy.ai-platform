@@ -19,7 +19,7 @@ class TestIAMTenantRoleCreator:
 
     @pytest.mark.asyncio
     @pytest.mark.unit
-    async def test_create_roles_creates_all_three_roles(self, creator):
+    async def test_create_roles_creates_all_three_roles(self, creator, mock_session):
         """测试创建三个默认角色"""
         mock_session = AsyncMock()
         mock_session.add = MagicMock()
@@ -41,7 +41,7 @@ class TestIAMTenantRoleCreator:
             existing_result,  # owner 幂等检查
             existing_result,  # admin 幂等检查
             existing_result,  # member 幂等检查
-            perms_result,     # 权限查询
+            perms_result,  # 权限查询
         ]
 
         await creator.create_roles(mock_session, "tenant-1")
@@ -51,7 +51,7 @@ class TestIAMTenantRoleCreator:
 
     @pytest.mark.asyncio
     @pytest.mark.unit
-    async def test_create_roles_with_owner_assignment(self, creator):
+    async def test_create_roles_with_owner_assignment(self, creator, mock_session):
         """测试 owner 角色自动分配给创建者"""
         mock_session = AsyncMock()
         mock_session.add = MagicMock()
@@ -70,8 +70,8 @@ class TestIAMTenantRoleCreator:
             existing_result,  # owner
             existing_result,  # admin
             existing_result,  # member
-            perms_result,     # 权限
-            ur_result,        # UserRole 幂等检查
+            perms_result,  # 权限
+            ur_result,  # UserRole 幂等检查
         ]
 
         await creator.create_roles(mock_session, "tenant-1", creator_user_id="user-1")
@@ -81,7 +81,7 @@ class TestIAMTenantRoleCreator:
 
     @pytest.mark.asyncio
     @pytest.mark.unit
-    async def test_create_roles_idempotent_skip_existing(self, creator):
+    async def test_create_roles_idempotent_skip_existing(self, creator, mock_session):
         """测试幂等性：已存在角色时跳过"""
         mock_session = AsyncMock()
         mock_session.add = MagicMock()
@@ -99,7 +99,7 @@ class TestIAMTenantRoleCreator:
             existing_result,  # owner 已存在
             existing_result,  # admin 已存在
             existing_result,  # member 已存在
-            perms_result,     # 权限
+            perms_result,  # 权限
         ]
 
         await creator.create_roles(mock_session, "tenant-1")
@@ -109,7 +109,9 @@ class TestIAMTenantRoleCreator:
 
     @pytest.mark.asyncio
     @pytest.mark.unit
-    async def test_create_roles_assigns_all_permissions_to_owner(self, creator):
+    async def test_create_roles_assigns_all_permissions_to_owner(
+        self, creator, mock_session
+    ):
         """测试 owner 获得所有权限"""
         mock_session = AsyncMock()
         mock_session.add = MagicMock()
@@ -137,10 +139,10 @@ class TestIAMTenantRoleCreator:
             existing_result,  # owner
             existing_result,  # admin
             existing_result,  # member
-            perms_result,     # 权限列表
-            rp_result,        # perm-1 幂等检查
-            rp_result,        # perm-2 幂等检查
-            ur_result,        # UserRole 幂等检查
+            perms_result,  # 权限列表
+            rp_result,  # perm-1 幂等检查
+            rp_result,  # perm-2 幂等检查
+            ur_result,  # UserRole 幂等检查
         ]
 
         await creator.create_roles(mock_session, "tenant-1", creator_user_id="user-1")
@@ -150,7 +152,7 @@ class TestIAMTenantRoleCreator:
 
     @pytest.mark.asyncio
     @pytest.mark.unit
-    async def test_create_roles_role_permission_idempotent(self, creator):
+    async def test_create_roles_role_permission_idempotent(self, creator, mock_session):
         """测试角色权限关联幂等性"""
         mock_session = AsyncMock()
         mock_session.add = MagicMock()
@@ -175,9 +177,9 @@ class TestIAMTenantRoleCreator:
             existing_result,  # owner
             existing_result,  # admin
             existing_result,  # member
-            perms_result,     # 权限列表
-            rp_result,        # RolePermission 幂等检查命中
-            ur_result,        # UserRole 幂等检查
+            perms_result,  # 权限列表
+            rp_result,  # RolePermission 幂等检查命中
+            ur_result,  # UserRole 幂等检查
         ]
 
         await creator.create_roles(mock_session, "tenant-1", creator_user_id="user-1")
@@ -187,7 +189,7 @@ class TestIAMTenantRoleCreator:
 
     @pytest.mark.asyncio
     @pytest.mark.unit
-    async def test_create_roles_user_role_idempotent(self, creator):
+    async def test_create_roles_user_role_idempotent(self, creator, mock_session):
         """测试用户角色关联幂等性"""
         mock_session = AsyncMock()
         mock_session.add = MagicMock()
@@ -207,8 +209,8 @@ class TestIAMTenantRoleCreator:
             existing_result,  # owner
             existing_result,  # admin
             existing_result,  # member
-            perms_result,     # 权限
-            ur_result,        # UserRole 幂等检查命中
+            perms_result,  # 权限
+            ur_result,  # UserRole 幂等检查命中
         ]
 
         await creator.create_roles(mock_session, "tenant-1", creator_user_id="user-1")
@@ -218,7 +220,7 @@ class TestIAMTenantRoleCreator:
 
     @pytest.mark.asyncio
     @pytest.mark.unit
-    async def test_create_roles_without_creator_user(self, creator):
+    async def test_create_roles_without_creator_user(self, creator, mock_session):
         """测试不传创建者时不分配 owner 角色"""
         mock_session = AsyncMock()
         mock_session.add = MagicMock()
@@ -234,7 +236,7 @@ class TestIAMTenantRoleCreator:
             existing_result,  # owner
             existing_result,  # admin
             existing_result,  # member
-            perms_result,     # 权限
+            perms_result,  # 权限
         ]
 
         await creator.create_roles(mock_session, "tenant-1", creator_user_id=None)
@@ -244,7 +246,7 @@ class TestIAMTenantRoleCreator:
 
     @pytest.mark.asyncio
     @pytest.mark.unit
-    async def test_create_roles_role_code_format(self, creator):
+    async def test_create_roles_role_code_format(self, creator, mock_session):
         """测试角色编码格式"""
         mock_session = AsyncMock()
         mock_session.add = MagicMock()
@@ -275,7 +277,7 @@ class TestIAMTenantRoleCreator:
 
     @pytest.mark.asyncio
     @pytest.mark.unit
-    async def test_create_roles_role_attributes(self, creator):
+    async def test_create_roles_role_attributes(self, creator, mock_session):
         """测试角色属性设置"""
         mock_session = AsyncMock()
         mock_session.add = MagicMock()

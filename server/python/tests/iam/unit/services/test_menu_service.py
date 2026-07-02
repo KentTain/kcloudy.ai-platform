@@ -14,7 +14,7 @@ class TestMenuService:
 
     @pytest.mark.asyncio
     @pytest.mark.unit
-    async def test_get_user_menus_with_permissions(self, session):
+    async def test_get_user_menus_with_permissions(self, mock_session):
         """
         场景：用户拥有权限时返回对应菜单
 
@@ -51,7 +51,7 @@ class TestMenuService:
         mock_mp_result.scalars.return_value.all.return_value = [mock_mp]
 
         # 设置模拟会话行为
-        session.execute.side_effect = [
+        mock_session.execute.side_effect = [
             mock_perm_result,  # 权限查询
             mock_menu_result,  # 菜单查询
             mock_mp_result,    # 菜单权限关联查询
@@ -64,14 +64,14 @@ class TestMenuService:
 
             # Act
             from iam.services.menu_service import MenuService
-            result = await MenuService.get_user_menus(session, "user-1")
+            result = await MenuService.get_user_menus(mock_session, "user-1")
 
             # Assert
             assert len(result) >= 0
 
     @pytest.mark.asyncio
     @pytest.mark.unit
-    async def test_get_user_menus_without_permissions(self, session):
+    async def test_get_user_menus_without_permissions(self, mock_session):
         """
         场景：用户无任何菜单权限时返回空数组
 
@@ -97,20 +97,20 @@ class TestMenuService:
         mock_mp_result = MagicMock()
         mock_mp_result.scalars.return_value.all.return_value = [mock_mp]
 
-        session.execute.side_effect = [
+        mock_session.execute.side_effect = [
             mock_perm_result,
             mock_menu_result,
             mock_mp_result,
         ]
 
         from iam.services.menu_service import MenuService
-        result = await MenuService.get_user_menus(session, "user-no-perms")
+        result = await MenuService.get_user_menus(mock_session, "user-no-perms")
 
         assert result == []
 
     @pytest.mark.asyncio
     @pytest.mark.unit
-    async def test_get_user_menus_public_menus_visible(self, session):
+    async def test_get_user_menus_public_menus_visible(self, mock_session):
         """
         场景：无权限限制的菜单对所有用户可见
 
@@ -133,7 +133,7 @@ class TestMenuService:
         mock_mp_result = MagicMock()
         mock_mp_result.scalars.return_value.all.return_value = []
 
-        session.execute.side_effect = [
+        mock_session.execute.side_effect = [
             mock_perm_result,
             mock_menu_result,
             mock_mp_result,
@@ -145,13 +145,13 @@ class TestMenuService:
             ]
 
             from iam.services.menu_service import MenuService
-            result = await MenuService.get_user_menus(session, "user-1")
+            result = await MenuService.get_user_menus(mock_session, "user-1")
 
             mock_build_tree.assert_called_once()
 
     @pytest.mark.asyncio
     @pytest.mark.unit
-    async def test_get_user_menus_empty_when_no_menus(self, session):
+    async def test_get_user_menus_empty_when_no_menus(self, mock_session):
         """
         场景：系统无菜单时返回空数组
         """
@@ -161,13 +161,13 @@ class TestMenuService:
         mock_menu_result = MagicMock()
         mock_menu_result.scalars.return_value.all.return_value = []
 
-        session.execute.side_effect = [
+        mock_session.execute.side_effect = [
             mock_perm_result,
             mock_menu_result,
         ]
 
         from iam.services.menu_service import MenuService
-        result = await MenuService.get_user_menus(session, "user-1")
+        result = await MenuService.get_user_menus(mock_session, "user-1")
 
         assert result == []
 
