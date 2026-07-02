@@ -100,12 +100,33 @@ def cleanup_users():
 # =============================================================================
 
 
-@pytest_asyncio.fixture(scope="module")
+@pytest.fixture
+def sync_client(integration_settings, postgres_available):
+    """
+    同步 HTTP 客户端 fixture（function 级别，每个测试独立）。
+
+    使用 TestClient 自动处理 lifespan 事件。
+    """
+    if not postgres_available:
+        pytest.skip("PostgreSQL 服务不可用")
+
+    from fastapi.testclient import TestClient
+    from application_web import create_app
+
+    app = create_app()
+
+    # TestClient 会自动处理 lifespan 事件
+    with TestClient(app=app, base_url="http://test") as client:
+        yield client
+
+
+@pytest_asyncio.fixture
 async def async_client(integration_settings, postgres_available):
     """
-    异步 HTTP 客户端 fixture（module 级别，整个测试模块共享）。
+    异步 HTTP 客户端 fixture（function 级别，每个测试独立）。
 
-    需要后端服务运行。
+    注意：由于 Starlette BaseHTTPMiddleware 与 pytest-asyncio 的兼容性问题，
+    推荐使用 sync_client 进行 API 集成测试。
     """
     if not postgres_available:
         pytest.skip("PostgreSQL 服务不可用")
@@ -115,7 +136,7 @@ async def async_client(integration_settings, postgres_available):
     from framework.database.core.engine_pool import init_default_engine
     from framework.cache.redis_util import RedisUtil
 
-    # 初始化数据库引擎（由于 ASGITransport 可能不会触发 lifespan）
+    # 初始化数据库引擎
     sqlalchemy_config = integration_settings.sqlalchemy
     init_default_engine(
         database_url=sqlalchemy_config.url,
@@ -125,10 +146,9 @@ async def async_client(integration_settings, postgres_available):
     )
 
     # 初始化 Redis
-    try:
-        await RedisUtil.init(integration_settings.redis)
-    except Exception:
-        pass
+    if RedisUtil.is_initialized():
+        await RedisUtil.close()
+    await RedisUtil.init(integration_settings.redis)
 
     # 注册 TenantProvider
     try:
@@ -150,9 +170,12 @@ async def async_client(integration_settings, postgres_available):
 
     app = create_app()
     transport = ASGITransport(app=app, raise_app_exceptions=True)
-
     async with AsyncClient(transport=transport, base_url="http://test") as client:
         yield client
+
+    # 清理
+    if RedisUtil.is_initialized():
+        await RedisUtil.close()
 
 
 @pytest_asyncio.fixture
@@ -167,6 +190,34 @@ async def auth_headers(async_client, test_tenant_id, postgres_available):
 
     # 登录获取 token
     response = await async_client.post(
+        "/iam/console/v1/auth/login",
+        json={"account": "admin", "password": "admin123"},
+    )
+
+    if response.status_code != 200:
+        pytest.skip("无法登录获取认证 token")
+
+    data = response.json()
+    token = data.get("data", {}).get("access_token")
+
+    return {
+        "Authorization": f"Bearer {token}",
+        "X-Tenant-Id": test_tenant_id,
+    }
+
+
+@pytest.fixture
+def sync_auth_headers(sync_client, test_tenant_id, postgres_available):
+    """
+    同步认证头 fixture（集成测试使用）。
+
+    通过登录获取有效的 JWT token。
+    """
+    if not postgres_available:
+        pytest.skip("PostgreSQL 服务不可用")
+
+    # 登录获取 token
+    response = sync_client.post(
         "/iam/console/v1/auth/login",
         json={"account": "admin", "password": "admin123"},
     )
