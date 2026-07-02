@@ -25,7 +25,20 @@ class TestModuleDefinitionSyncWithMock:
     def sync_service(self):
         """创建同步服务实例"""
         from framework.module.sync_service import ModuleDefinitionSyncService
-        return ModuleDefinitionSyncService()
+        from framework.tenant.sync_protocols import (
+            register_module_definition_sync_provider,
+            ModuleDefinitionSyncProvider,
+        )
+
+        # 注册 Mock Provider
+        mock_provider = MagicMock(spec=ModuleDefinitionSyncProvider)
+        register_module_definition_sync_provider(mock_provider)
+
+        yield ModuleDefinitionSyncService()
+
+        # 清理：重置全局 provider
+        from framework.tenant import sync_protocols
+        sync_protocols._sync_provider = None
 
     @pytest.mark.asyncio
     async def test_sync_module_with_mock_session(self, sync_service):
