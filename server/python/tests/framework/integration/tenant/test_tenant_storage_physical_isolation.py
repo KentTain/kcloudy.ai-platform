@@ -36,6 +36,12 @@ async def storage_manager(minio_client, minio_available, minio_test_bucket):
 
 
 @pytest_asyncio.fixture
+def minio_config(integration_settings):
+    """获取 MinIO 配置"""
+    return integration_settings.oss.minio
+
+
+@pytest_asyncio.fixture
 def unique_tenant_id():
     """生成唯一租户 ID"""
     return f"tenant-{uuid.uuid4().hex[:8]}"
@@ -88,7 +94,7 @@ class TestTenantStoragePhysicalIsolation:
 
     @pytest.mark.asyncio
     async def test_physical_isolation_path_no_prefix(
-        self, storage_manager, unique_tenant_id
+        self, storage_manager, unique_tenant_id, minio_config
     ):
         """
         场景: 物理隔离路径
@@ -99,10 +105,10 @@ class TestTenantStoragePhysicalIsolation:
         # 使用本地 MinIO 作为物理隔离实例
         config = TenantStorageConfig(
             type=StorageType.MINIO,
-            endpoint="localhost:9000",  # 本地 MinIO
+            endpoint=minio_config.endpoint,
             bucket="test-isolated-bucket",
-            access_key="minioadmin",
-            secret_key="minioadmin",
+            access_key=minio_config.access_key,
+            secret_key=minio_config.secret_key,
         )
 
         test_path = "uploads/document.pdf"

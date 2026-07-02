@@ -27,6 +27,12 @@ pytestmark = pytest.mark.integration
 
 
 @pytest_asyncio.fixture
+def redis_config(integration_settings):
+    """获取 Redis 配置"""
+    return integration_settings.redis.single
+
+
+@pytest_asyncio.fixture
 async def cache_manager(redis_client, redis_available):
     """缓存管理器实例"""
     import asyncio
@@ -143,7 +149,7 @@ class TestTenantPubSubOperations:
 
     @pytest.mark.asyncio
     async def test_publish_message_physical_isolation(
-        self, pubsub_manager, unique_tenant_id, unique_channel, redis_client
+        self, pubsub_manager, unique_tenant_id, unique_channel, redis_client, redis_config
     ):
         """
         场景: 发布消息 - 物理隔离
@@ -154,9 +160,9 @@ class TestTenantPubSubOperations:
         # 使用本地 Redis 作为物理隔离实例
         config = TenantPubSubConfig(
             type=PubSubType.REDIS,
-            host="kcloudy-redis",
-            port=6379,
-            password="XdA9caoq",
+            host=redis_config.host,
+            port=redis_config.port,
+            password=redis_config.password if redis_config.password else None,
         )
 
         # 构建频道名
@@ -223,7 +229,7 @@ class TestTenantPubSubOperations:
 
     @pytest.mark.asyncio
     async def test_subscribe_channel_physical_isolation(
-        self, pubsub_manager, unique_tenant_id, unique_channel, redis_client
+        self, pubsub_manager, unique_tenant_id, unique_channel, redis_client, redis_config
     ):
         """
         场景: 订阅频道 - 物理隔离
@@ -234,9 +240,9 @@ class TestTenantPubSubOperations:
         # 使用本地 Redis 作为物理隔离实例
         config = TenantPubSubConfig(
             type=PubSubType.REDIS,
-            host="kcloudy-redis",
-            port=6379,
-            password="XdA9caoq",
+            host=redis_config.host,
+            port=redis_config.port,
+            password=redis_config.password if redis_config.password else None,
         )
 
         # 订阅频道

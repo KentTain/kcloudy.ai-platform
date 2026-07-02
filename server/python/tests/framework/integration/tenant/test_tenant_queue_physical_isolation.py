@@ -23,6 +23,12 @@ pytestmark = pytest.mark.integration
 
 
 @pytest_asyncio.fixture
+def redis_config(integration_settings):
+    """获取 Redis 配置"""
+    return integration_settings.redis.single
+
+
+@pytest_asyncio.fixture
 async def cache_manager(redis_client, redis_available):
     """缓存管理器实例"""
     import asyncio
@@ -162,7 +168,7 @@ class TestTenantQueueOperations:
 
     @pytest.mark.asyncio
     async def test_send_message_physical_isolation(
-        self, queue_manager, unique_tenant_id, redis_client, cleanup_queue
+        self, queue_manager, unique_tenant_id, redis_client, cleanup_queue, redis_config
     ):
         """
         场景: 发送消息 - 物理隔离
@@ -172,12 +178,12 @@ class TestTenantQueueOperations:
         """
         queue_name = cleanup_queue
 
-        # 使用 Docker 服务名作为物理隔离实例
+        # 使用集成测试配置作为物理隔离实例
         config = TenantQueueConfig(
             type=QueueType.REDIS,
-            host="kcloudy-redis",
-            port=6379,
-            password="XdA9caoq",
+            host=redis_config.host,
+            port=redis_config.port,
+            password=redis_config.password if redis_config.password else None,
         )
 
         # 构建队列名
@@ -252,7 +258,7 @@ class TestTenantQueueOperations:
 
     @pytest.mark.asyncio
     async def test_consume_message_physical_isolation(
-        self, queue_manager, unique_tenant_id, redis_client, cleanup_queue
+        self, queue_manager, unique_tenant_id, redis_client, cleanup_queue, redis_config
     ):
         """
         场景: 消费消息 - 物理隔离
@@ -262,12 +268,12 @@ class TestTenantQueueOperations:
         """
         queue_name = cleanup_queue
 
-        # 使用 Docker 服务名作为物理隔离实例
+        # 使用集成测试配置作为物理隔离实例
         config = TenantQueueConfig(
             type=QueueType.REDIS,
-            host="kcloudy-redis",
-            port=6379,
-            password="XdA9caoq",
+            host=redis_config.host,
+            port=redis_config.port,
+            password=redis_config.password if redis_config.password else None,
         )
 
         # 构建队列名
@@ -367,7 +373,7 @@ class TestTenantQueueOperations:
 
     @pytest.mark.asyncio
     async def test_ack_message_physical_isolation(
-        self, queue_manager, unique_tenant_id, redis_client, cleanup_queue
+        self, queue_manager, unique_tenant_id, redis_client, cleanup_queue, redis_config
     ):
         """
         场景: 确认消息 - 物理隔离
@@ -377,12 +383,12 @@ class TestTenantQueueOperations:
         """
         queue_name = cleanup_queue
 
-        # 使用 Docker 服务名作为物理隔离实例
+        # 使用集成测试配置作为物理隔离实例
         config = TenantQueueConfig(
             type=QueueType.REDIS,
-            host="kcloudy-redis",
-            port=6379,
-            password="XdA9caoq",
+            host=redis_config.host,
+            port=redis_config.port,
+            password=redis_config.password if redis_config.password else None,
         )
 
         # 构建队列名

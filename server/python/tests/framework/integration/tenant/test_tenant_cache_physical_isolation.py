@@ -20,7 +20,7 @@ pytestmark = pytest.mark.integration
 
 
 @pytest_asyncio.fixture
-async def cache_manager(redis_client, redis_available):
+async def cache_manager(redis_client, redis_available, integration_settings):
     """缓存管理器实例"""
     import asyncio
 
@@ -37,6 +37,12 @@ async def cache_manager(redis_client, redis_available):
             await manager.close()
     except RuntimeError:
         pass
+
+
+@pytest_asyncio.fixture
+def redis_config(integration_settings):
+    """获取 Redis 配置"""
+    return integration_settings.redis.single
 
 
 @pytest_asyncio.fixture
@@ -98,7 +104,7 @@ class TestTenantCachePhysicalIsolation:
         assert cache_manager._is_physical_isolation(config) is False
 
     @pytest.mark.asyncio
-    async def test_reuse_cached_instance_client(self, cache_manager, unique_tenant_id):
+    async def test_reuse_cached_instance_client(self, cache_manager, unique_tenant_id, redis_config):
         """
         场景: 复用已缓存的实例客户端
 
@@ -110,9 +116,9 @@ class TestTenantCachePhysicalIsolation:
 
         # 使用本地 Redis 作为"物理隔离"实例（测试目的）
         config = TenantCacheConfig(
-            host="localhost",
-            port=6379,
-            password="XdA9caoq",
+            host=redis_config.host,
+            port=redis_config.port,
+            password=redis_config.password if redis_config.password else None,
             db=10,  # 使用不同的 DB 模拟隔离
         )
 
@@ -124,8 +130,8 @@ class TestTenantCachePhysicalIsolation:
         client2 = await cache_manager.get_client(unique_tenant_id, config)
         assert client2 is client1
 
-        # 验证实例被缓存
-        instance_key = "localhost:6379"
+        # 验证实例被缓存（使用配置中的实际 host）
+        instance_key = f"{redis_config.host}:{redis_config.port}"
         assert instance_key in cache_manager._instance_clients
 
     @pytest.mark.asyncio
@@ -161,7 +167,7 @@ class TestTenantCachePhysicalIsolation:
 
     @pytest.mark.asyncio
     async def test_physical_isolation_key_no_prefix(
-        self, cache_manager, unique_tenant_id
+        self, cache_manager, unique_tenant_id, redis_config
     ):
         """
         场景: 物理隔离 Key 不添加前缀
@@ -171,9 +177,9 @@ class TestTenantCachePhysicalIsolation:
         """
         # 使用本地 Redis 作为物理隔离实例
         config = TenantCacheConfig(
-            host="localhost",
-            port=6379,
-            password="XdA9caoq",
+            host=redis_config.host,
+            port=redis_config.port,
+            password=redis_config.password if redis_config.password else None,
             db=11,  # 使用独立 DB 避免冲突
         )
 
@@ -296,7 +302,7 @@ class TestTenantCacheInstanceManagement:
     """实例管理测试"""
 
     @pytest.mark.asyncio
-    async def test_instance_client_caching(self, cache_manager, unique_tenant_id):
+    async def test_instance_client_caching(self, cache_manager, unique_tenant_id, redis_config):
         """实例客户端缓存机制"""
         config1 = TenantCacheConfig(host="redis-a.com", port=6379)
         config2 = TenantCacheConfig(host="redis-a.com", port=6379)  # 相同实例
@@ -304,7 +310,10 @@ class TestTenantCacheInstanceManagement:
 
         # 模拟客户端创建（使用本地 Redis）
         config_local = TenantCacheConfig(
-            host="localhost", port=6379, password="XdA9caoq", db=12
+            host=redis_config.host,
+            port=redis_config.port,
+            password=redis_config.password if redis_config.password else None,
+            db=12,
         )
 
         client1 = await cache_manager.get_client(unique_tenant_id, config_local)
@@ -314,13 +323,16 @@ class TestTenantCacheInstanceManagement:
         assert client1 is client2
 
     @pytest.mark.asyncio
-    async def test_release_idle_instances(self, cache_manager, unique_tenant_id):
+    async def test_release_idle_instances(self, cache_manager, unique_tenant_id, redis_config):
         """释放空闲实例客户端"""
         # 创建实例客户端
         from datetime import datetime, timedelta
 
         config = TenantCacheConfig(
-            host="localhost", port=6379, password="XdA9caoq", db=13
+            host=redis_config.host,
+            port=redis_config.port,
+            password=redis_config.password if redis_config.password else None,
+            db=13,
         )
         await cache_manager.get_client(unique_tenant_id, config)
 
