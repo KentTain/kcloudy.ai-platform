@@ -5,6 +5,7 @@ E2E 测试配置
 - pytest 标记配置（默认跳过 e2e）
 - Windows 事件循环策略（ProactorEventLoop，支持子进程）
 - 服务可用性检测
+- API Key 可用性检测
 - 数据库引擎和会话（NullPool）
 - 资源清理
 - 插件包路径
@@ -21,8 +22,12 @@ E2E 测试配置
 """
 
 import asyncio
+import json
 import os
+import ssl
 import sys
+import urllib.error
+import urllib.request
 import time
 import uuid
 from datetime import datetime
@@ -65,6 +70,81 @@ def pytest_collection_modifyitems(config, items):
         for item in items:
             if item.get_closest_marker("e2e") is not None:
                 item.add_marker(skip_e2e)
+
+
+# =============================================================================
+# API Key 可用性检测（同步检测，与基础设施检测模式一致）
+# =============================================================================
+
+
+def _check_tongyi_api_key_available(api_key: str) -> bool:
+    """同步检测 tongyi API Key 是否有效"""
+    try:
+        payload = json.dumps({
+            "model": "qwen-plus",
+            "messages": [{"role": "user", "content": "hi"}],
+            "max_tokens": 1,
+        }).encode("utf-8")
+
+        req = urllib.request.Request(
+            "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions",
+            data=payload,
+            headers={
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json",
+            },
+            method="POST",
+        )
+
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            return resp.status == 200
+    except urllib.error.HTTPError:
+        return False
+    except Exception:
+        return False
+
+
+def _check_gpustack_api_key_available(api_key: str, endpoint: str) -> bool:
+    """同步检测 GPUStack API Key 是否有效"""
+    try:
+        req = urllib.request.Request(
+            f"{endpoint}/v1/models",
+            headers={"Authorization": f"Bearer {api_key}"},
+            method="GET",
+        )
+
+        ctx = ssl.create_default_context()
+        ctx.check_hostname = False
+        ctx.verify_mode = ssl.CERT_NONE
+
+        with urllib.request.urlopen(req, timeout=10, context=ctx) as resp:
+            return resp.status == 200
+    except urllib.error.HTTPError:
+        return False
+    except Exception:
+        return False
+
+
+@pytest.fixture(scope="session")
+def tongyi_api_key_available():
+    """检测 tongyi API Key 是否可用（session 级别，同步检测）"""
+    api_key = os.environ.get(
+        "E2E_TONGYI_API_KEY", "sk-623fdfb2b75f43b8bb6a61b8b183359a"
+    )
+    return _check_tongyi_api_key_available(api_key)
+
+
+@pytest.fixture(scope="session")
+def gpustack_api_key_available():
+    """检测 GPUStack API Key 是否可用（session 级别，同步检测）"""
+    api_key = os.environ.get(
+        "E2E_GPUSTACK_API_KEY",
+        "gpustack_14d9f2aee5629a0f_465d73985f7b8f370caecd9e3de838ec",
+    )
+    endpoint = os.environ.get(
+        "E2E_GPUSTACK_ENDPOINT", "https://llm-stack.flydiysz.cn"
+    )
+    return _check_gpustack_api_key_available(api_key, endpoint)
 
 
 # =============================================================================

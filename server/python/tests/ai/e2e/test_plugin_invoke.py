@@ -60,6 +60,7 @@ class TestPluginInvokeTongyi:
         test_tenant_id: str,
         plugin_package_path: callable,
         tongyi_api_key: str,
+        tongyi_api_key_available: bool,
         plugin_provider,
     ) -> None:
         """
@@ -71,6 +72,9 @@ class TestPluginInvokeTongyi:
         - 系统成功调用 tongyi API
         - 返回有效的模型响应
         """
+        if not tongyi_api_key_available:
+            pytest.skip("tongyi API Key 无效或服务不可用")
+
         plugin_id = "langgenius/tongyi"
         helper = PluginTestHelper(tenant_id=test_tenant_id)
 
@@ -168,6 +172,7 @@ class TestPluginInvokeTongyi:
         test_tenant_id: str,
         plugin_package_path: callable,
         tongyi_api_key: str,
+        tongyi_api_key_available: bool,
         plugin_provider,
     ) -> None:
         """
@@ -178,6 +183,9 @@ class TestPluginInvokeTongyi:
         - 系统返回多个增量响应
         - 最后一个响应标记为完成
         """
+        if not tongyi_api_key_available:
+            pytest.skip("tongyi API Key 无效或服务不可用")
+
         plugin_id = "langgenius/tongyi"
         helper = PluginTestHelper(tenant_id=test_tenant_id)
 
@@ -286,6 +294,7 @@ class TestPluginInvokeGpustack:
         plugin_package_path: callable,
         gpustack_api_key: str,
         gpustack_endpoint: str,
+        gpustack_api_key_available: bool,
         plugin_provider,
     ) -> None:
         """
@@ -298,6 +307,9 @@ class TestPluginInvokeGpustack:
         - 返回有效的模型响应
         """
         # 使用 fixture 提供的 endpoint（优先环境变量，否则使用默认测试配置）
+        if not gpustack_api_key_available:
+            pytest.skip("GPUStack API Key 无效或服务不可用")
+
         endpoint_url = gpustack_endpoint
 
         # 检查模型名称环境变量（可选，有默认值）

@@ -36,6 +36,7 @@ class TestPluginFullLifecycle:
         test_tenant_id: str,
         plugin_package_path: callable,
         tongyi_api_key: str,
+        tongyi_api_key_available: bool,
         cleanup_test_resources: dict,
         plugin_provider,
     ) -> None:
@@ -52,6 +53,9 @@ class TestPluginFullLifecycle:
         - 验证每个步骤都成功完成
         - 验证最终资源完全清理
         """
+        if not tongyi_api_key_available:
+            pytest.skip("tongyi API Key 无效或服务不可用")
+
         # 初始化辅助工具
         helper = PluginTestHelper(test_tenant_id)
 
@@ -232,6 +236,7 @@ class TestPluginFullLifecycle:
         plugin_package_path: callable,
         gpustack_endpoint: str,
         gpustack_api_key: str,
+        gpustack_api_key_available: bool,
         cleanup_test_resources: dict,
         plugin_provider,
     ) -> None:
@@ -248,6 +253,8 @@ class TestPluginFullLifecycle:
         - 验证每个步骤都成功完成
         - 验证最终资源完全清理
         """
+        if not gpustack_api_key_available:
+            pytest.skip("GPUStack API Key 无效或服务不可用")
         import os
 
         # 初始化辅助工具
