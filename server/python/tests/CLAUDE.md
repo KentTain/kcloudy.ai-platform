@@ -54,6 +54,19 @@ uv run pytest tests/iam/ -v
 uv run pytest tests/tenant/ -v
 ```
 
+e2e 测试运行方式：
+
+```bash
+# 显示跳过原因（推荐）
+uv run pytest -v -rs tests/ai/e2e/
+
+# 显示所有跳过原因的详细信息
+uv run pytest -v -rs -s tests/ai/e2e/
+
+# 完整输出（包括 traceback）
+uv run pytest -v --tb=short tests/ai/e2e/
+```
+
 ## 测试类型
 
 | 类型 | 目录 | 约定 |
@@ -97,6 +110,34 @@ uv run pytest tests/tenant/ -v
 | `mock_session` | 模拟数据库会话（单元测试） | function |
 
 模块专属 fixtures 见对应模块测试文档。
+
+## 模块级 fixtures 示例
+
+### AI 模块 fixtures（tests/ai/conftest.py）
+
+AI 模块提供 API Key 可用性检测 fixtures，用于 E2E 测试：
+
+| Fixture | 说明 | 作用域 |
+|---------|------|--------|
+| `tongyi_api_key_available` | 检测通义千问 API Key 是否可用 | session |
+| `gpustack_api_key_available` | 检测 GPUStack API Key 是否可用 | session |
+| `tongyi_api_key` | 获取通义千问 API Key | function |
+| `gpustack_api_key` | 获取 GPUStack API Key | function |
+| `gpustack_endpoint` | 获取 GPUStack Endpoint | function |
+
+**API Key 检测原理**：
+
+- `tongyi_api_key_available`：向通义千问 API 发送测试请求，验证返回状态
+- `gpustack_api_key_available`：向 GPUStack `/v1/models` 端点发送 GET 请求验证
+
+**环境变量配置**：
+
+```bash
+# 可选：配置自定义 API Key（默认使用内置测试 Key）
+export E2E_TONGYI_API_KEY="your-api-key"
+export E2E_GPUSTACK_API_KEY="your-api-key"
+export E2E_GPUSTACK_ENDPOINT="https://your-endpoint"
+```
 
 ## 编写测试规则
 

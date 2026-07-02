@@ -5,7 +5,6 @@
 import httpx
 import pytest
 
-
 # =============================================================================
 # 通义千问 (Tongyi) 测试
 # =============================================================================
@@ -18,8 +17,15 @@ class TestTongyiConnectivity:
     BASE_URL = "https://dashscope.aliyuncs.com/compatible-mode/v1"
 
     @pytest.mark.asyncio
-    async def test_list_models(self, tongyi_api_key):
+    async def test_list_models(
+        self,
+        tongyi_api_key_available: bool,
+        tongyi_api_key: str,
+    ):
         """测试模型列表接口"""
+        if not tongyi_api_key_available:
+            pytest.skip("Tongyi API Key 不可用")
+
         async with httpx.AsyncClient(timeout=10.0) as client:
             response = await client.get(
                 f"{self.BASE_URL}/models",
@@ -32,8 +38,15 @@ class TestTongyiConnectivity:
         assert len(models) > 0
 
     @pytest.mark.asyncio
-    async def test_chat_completion(self, tongyi_api_key):
+    async def test_chat_completion(
+        self,
+        tongyi_api_key_available: bool,
+        tongyi_api_key: str,
+    ):
         """测试聊天补全接口（qwen-plus）"""
+        if not tongyi_api_key_available:
+            pytest.skip("Tongyi API Key 不可用")
+
         async with httpx.AsyncClient(timeout=30.0) as client:
             response = await client.post(
                 f"{self.BASE_URL}/chat/completions",
@@ -64,8 +77,16 @@ class TestGPUStackConnectivity:
     """GPUStack API 连通性测试"""
 
     @pytest.mark.asyncio
-    async def test_list_models(self, gpustack_api_key, gpustack_endpoint):
+    async def test_list_models(
+        self,
+        gpustack_api_key_available: bool,
+        gpustack_api_key: str,
+        gpustack_endpoint: str,
+    ):
         """测试模型列表接口"""
+        if not gpustack_api_key_available:
+            pytest.skip("GPUStack API Key 不可用")
+
         async with httpx.AsyncClient(timeout=10.0, verify=False) as client:
             response = await client.get(
                 f"{gpustack_endpoint}/v1/models",
@@ -78,8 +99,16 @@ class TestGPUStackConnectivity:
         assert len(models) > 0
 
     @pytest.mark.asyncio
-    async def test_chat_completion(self, gpustack_api_key, gpustack_endpoint):
+    async def test_chat_completion(
+        self,
+        gpustack_api_key_available: bool,
+        gpustack_api_key: str,
+        gpustack_endpoint: str,
+    ):
         """测试聊天补全接口（qwen3.5-9b）"""
+        if not gpustack_api_key_available:
+            pytest.skip("GPUStack API Key 不可用")
+
         async with httpx.AsyncClient(timeout=30.0, verify=False) as client:
             response = await client.post(
                 f"{gpustack_endpoint}/v1/chat/completions",
@@ -99,8 +128,16 @@ class TestGPUStackConnectivity:
         assert "choices" in data
 
     @pytest.mark.asyncio
-    async def test_embedding(self, gpustack_api_key, gpustack_endpoint):
+    async def test_embedding(
+        self,
+        gpustack_api_key_available: bool,
+        gpustack_api_key: str,
+        gpustack_endpoint: str,
+    ):
         """测试 Embedding 接口（bge-large-zh-v1.5）"""
+        if not gpustack_api_key_available:
+            pytest.skip("GPUStack API Key 不可用")
+
         async with httpx.AsyncClient(timeout=10.0, verify=False) as client:
             response = await client.post(
                 f"{gpustack_endpoint}/v1/embeddings",
@@ -120,8 +157,16 @@ class TestGPUStackConnectivity:
         assert len(embedding) == 1024
 
     @pytest.mark.asyncio
-    async def test_rerank(self, gpustack_api_key, gpustack_endpoint):
+    async def test_rerank(
+        self,
+        gpustack_api_key_available: bool,
+        gpustack_api_key: str,
+        gpustack_endpoint: str,
+    ):
         """测试 Rerank 接口（bge-reranker-large）"""
+        if not gpustack_api_key_available:
+            pytest.skip("GPUStack API Key 不可用")
+
         async with httpx.AsyncClient(timeout=10.0, verify=False) as client:
             response = await client.post(
                 f"{gpustack_endpoint}/v1/rerank",
