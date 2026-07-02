@@ -51,7 +51,7 @@ class TestCreateDefaultConfig:
              patch.object(DatabaseConfigService, "_clear_existing_default", new_callable=AsyncMock) as mock_clear:
 
             await DatabaseConfigService.create(
-                session=session,
+                session=mock_session,
                 name="新默认数据库",
                 type="postgresql",
                 host="localhost",
@@ -71,7 +71,7 @@ class TestCreateDefaultConfig:
              patch.object(DatabaseConfigService, "_clear_existing_default", new_callable=AsyncMock) as mock_clear:
 
             await DatabaseConfigService.create(
-                session=session,
+                session=mock_session,
                 name="非默认数据库",
                 type="postgresql",
                 host="localhost",
@@ -91,7 +91,7 @@ class TestCreateDefaultConfig:
              patch.object(DatabaseConfigService, "_clear_existing_default", new_callable=AsyncMock) as mock_clear:
 
             await DatabaseConfigService.create(
-                session=session,
+                session=mock_session,
                 name="普通数据库",
                 type="postgresql",
                 host="localhost",
@@ -197,7 +197,7 @@ class TestGetDefaultConfig:
         result_mock.scalar_one_or_none.return_value = mock_config
         mock_session.execute.return_value = result_mock
 
-        config = await DatabaseConfigService.get_default_config(session=session)
+        config = await DatabaseConfigService.get_default_config(session=mock_session)
 
         assert config is mock_config
         assert config.is_default is True
@@ -209,7 +209,7 @@ class TestGetDefaultConfig:
         result_mock.scalar_one_or_none.return_value = None
         mock_session.execute.return_value = result_mock
 
-        config = await DatabaseConfigService.get_default_config(session=session)
+        config = await DatabaseConfigService.get_default_config(session=mock_session)
 
         assert config is None
 
@@ -251,7 +251,7 @@ class TestListConfigsDefaultOrdering:
 
         mock_session.execute.side_effect = [count_result, list_result]
 
-        items, total = await DatabaseConfigService.list_configs(session=session)
+        items, total = await DatabaseConfigService.list_configs(session=mock_session)
 
         assert total == 2
         assert items[0].is_default is True

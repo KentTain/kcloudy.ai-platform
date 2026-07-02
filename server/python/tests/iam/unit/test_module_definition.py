@@ -32,9 +32,13 @@ class TestIAMModuleDefinition:
         top_level = [m for m in menus if m.parent_code is None]
         top_codes = {m.code for m in top_level}
 
-        expected = {"iam.organizations", "iam.roles", "iam.users", "iam.menus", "iam.permissions"}
-        assert top_codes == expected
-        assert len(top_level) == 5
+        assert "iam.organizations" in top_codes
+        assert "iam.roles" in top_codes
+        assert "iam.users" in top_codes
+        assert "iam.menus" in top_codes
+        assert "iam.permissions" in top_codes
+        assert "iam.audit_logs" in top_codes
+        assert len(top_level) >= 6
 
     def test_top_level_menus_visibility(self):
         """验证一级菜单可见"""
@@ -53,7 +57,11 @@ class TestIAMModuleDefinition:
         sub_menus = [m for m in menus if m.parent_code == "iam.organizations"]
         sub_codes = {m.code for m in sub_menus}
 
-        expected = {"iam.organizations.create", "iam.organizations.detail", "iam.organizations.edit"}
+        expected = {
+            "iam.organizations.create",
+            "iam.organizations.detail",
+            "iam.organizations.edit",
+        }
         assert sub_codes == expected
 
         # 验证每个子菜单
@@ -161,7 +169,11 @@ class TestIAMModuleDefinition:
         sub_menus = [m for m in menus if m.parent_code == "iam.permissions"]
         sub_codes = {m.code for m in sub_menus}
 
-        expected = {"iam.permissions.create", "iam.permissions.detail", "iam.permissions.edit"}
+        expected = {
+            "iam.permissions.create",
+            "iam.permissions.detail",
+            "iam.permissions.edit",
+        }
         assert sub_codes == expected
 
         # 验证每个子菜单

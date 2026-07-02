@@ -48,7 +48,7 @@ class TestPluginProviderRefactored:
             mock_session_ctx.return_value.__aexit__ = AsyncMock(return_value=None)
 
             with patch(
-                "tenant.services.plugin_provider.get_ai_client",
+                "framework.clients.ai_client.get_ai_client",
                 return_value=mock_client,
             ):
                 provider = PluginInstallationProviderImpl()
@@ -100,7 +100,7 @@ class TestPluginProviderRefactored:
             mock_session_ctx.return_value.__aexit__ = AsyncMock(return_value=None)
 
             with patch(
-                "tenant.services.plugin_provider.get_ai_client",
+                "framework.clients.ai_client.get_ai_client",
                 return_value=mock_client,
             ):
                 provider = PluginInstallationProviderImpl()
@@ -155,20 +155,31 @@ class TestPluginDefinitionServiceRefactored:
         )
 
         mock_session = MagicMock()
-        mock_session.execute = AsyncMock()
+        # 模拟三次查询：插件定义、租户存在、已安装检查
+        def_execute = MagicMock()
+        def_result = MagicMock()
+        def_result.scalar_one_or_none.return_value = mock_definition
 
-        # Mock 查询结果
-        mock_result = MagicMock()
-        mock_result.scalar_one_or_none.return_value = mock_definition
-        mock_session.execute.return_value = mock_result
+        tenant_result = MagicMock()
+        tenant_result.scalar_one_or_none.return_value = mock_tenant
+
+        existing_result = MagicMock()
+        existing_result.scalar_one_or_none.return_value = None  # 未安装
+
+        def_execute.side_effect = [def_result, tenant_result, existing_result]
+        mock_session.execute = AsyncMock(side_effect=def_execute.side_effect)
 
         with patch(
-            "tenant.services.plugin_definition_service.get_ai_client",
+            "framework.clients.ai_client.get_ai_client",
             return_value=mock_client,
         ):
             with patch(
-                "tenant.services.plugin_definition_service.select"
-            ) as mock_select:
+                "framework.tenant.plugin_protocols.get_plugin_installation_provider"
+            ) as mock_provider:
+                mock_provider_instance = MagicMock()
+                mock_provider_instance.create_installation = AsyncMock()
+                mock_provider.return_value = mock_provider_instance
+
                 service = PluginDefinitionService()
 
                 # Mock request

@@ -162,7 +162,7 @@ class TestTenantServiceCreate:
             # 验证：自动分配被调用（使用同一 session）
             mock_assigner.auto_assign.assert_awaited_once()
             call_args = mock_assigner.auto_assign.await_args
-            assert call_args[0][0] is session  # 同一个 session
+            assert call_args[0][0] is mock_session  # 同一个 session
 
     @pytest.mark.asyncio
     async def test_create_without_assigner_still_works(self, mock_session):

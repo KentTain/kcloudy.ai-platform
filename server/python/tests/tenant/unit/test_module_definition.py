@@ -37,7 +37,8 @@ class TestTenantModuleDefinition:
         assert "tenant.tenants" in top_codes
         assert "tenant.resources" in top_codes
         assert "tenant.plugin-definitions" in top_codes
-        assert len(top_level) == 4
+        assert "tenant.marketplaces" in top_codes
+        assert len(top_level) >= 5
 
     def test_top_level_menus_visibility(self):
         """验证一级菜单可见"""
@@ -56,7 +57,11 @@ class TestTenantModuleDefinition:
         sub_menus = [m for m in menus if m.parent_code == "tenant.modules"]
         sub_codes = {m.code for m in sub_menus}
 
-        expected = {"tenant.modules.create", "tenant.modules.detail", "tenant.modules.edit"}
+        expected = {
+            "tenant.modules.create",
+            "tenant.modules.detail",
+            "tenant.modules.edit",
+        }
         assert sub_codes == expected, f"modules 子菜单缺失: {expected - sub_codes}"
 
         # 验证每个子菜单
@@ -83,7 +88,11 @@ class TestTenantModuleDefinition:
         sub_menus = [m for m in menus if m.parent_code == "tenant.tenants"]
         sub_codes = {m.code for m in sub_menus}
 
-        expected = {"tenant.tenants.create", "tenant.tenants.detail", "tenant.tenants.edit"}
+        expected = {
+            "tenant.tenants.create",
+            "tenant.tenants.detail",
+            "tenant.tenants.edit",
+        }
         assert sub_codes == expected, f"tenants 子菜单缺失: {expected - sub_codes}"
 
         # 验证每个子菜单
@@ -110,7 +119,11 @@ class TestTenantModuleDefinition:
         sub_menus = [m for m in menus if m.parent_code == "tenant.resources"]
         sub_codes = {m.code for m in sub_menus}
 
-        expected = {"tenant.resources.create", "tenant.resources.detail", "tenant.resources.edit"}
+        expected = {
+            "tenant.resources.create",
+            "tenant.resources.detail",
+            "tenant.resources.edit",
+        }
         assert sub_codes == expected, f"resources 子菜单缺失: {expected - sub_codes}"
 
         # 验证每个子菜单

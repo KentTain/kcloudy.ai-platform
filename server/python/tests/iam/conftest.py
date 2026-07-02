@@ -19,13 +19,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 
 @pytest_asyncio.fixture
-def session(mock_session):
+def session(postgres_session):
     """
-    模拟数据库会话（单元测试使用）。
+    数据库会话（集成测试使用）。
 
-    这是 mock_session 的别名，用于 IAM 模块单元测试。
+    这是 postgres_session 的别名，用于 IAM 模块集成测试。
+    单元测试请直接使用 mock_session。
     """
-    return mock_session
+    return postgres_session
 
 
 # =============================================================================
