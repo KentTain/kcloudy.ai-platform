@@ -1,65 +1,41 @@
 """
-AI 模块测试公共配置
+AI 模块测试配置
 
-提供所有测试类型（unit/integration/e2e）共享的 fixtures：
-- 环境变量设置
-- Windows 事件循环策略修复
-- 配置加载
+提供 AI 模块的测试 fixtures：
+- AI 设置加载
 - 测试数据生成（tenant_id、user_id）
 - API Key 配置
-- mock 数据 fixtures
+- Mock 数据 fixtures
 """
 
 import os
-import sys
+import shutil
 import uuid
-from pathlib import Path
-
-from unittest.mock import AsyncMock
 
 import pytest
 
 # =============================================================================
-# 环境变量设置
+# UV_PATH 环境变量设置
 # =============================================================================
-os.environ.setdefault("PYTHON_SERVICE_ENV", "local")
-os.environ.setdefault("TZ", "Asia/Shanghai")
 
-# 设置 UV_PATH（如果未设置）
 if not os.environ.get("UV_PATH"):
-    import shutil
-
     uv_path = shutil.which("uv")
     if uv_path:
         os.environ["UV_PATH"] = uv_path
 
 # =============================================================================
-# Windows 事件循环策略修复
-# 注意：不在此处全局设置事件循环策略，由各子目录 conftest.py 按需设置
-# - integration 测试：使用 SelectorEventLoop（asyncpg 兼容性更好）
-# - e2e 测试：使用 ProactorEventLoop（支持子进程如 uv 命令）
+# AI 设置加载
 # =============================================================================
-
-
-# =============================================================================
-# 配置加载
-# =============================================================================
-
-# 配置目录（相对于 server/python/tests/ai/）
-_CONFIG_DIR = Path(__file__).resolve().parent.parent.parent.parent / "config"
-
-
-def _load_settings():
-    """加载测试配置"""
-    from framework.configs import init_settings
-
-    return init_settings(_CONFIG_DIR)
 
 
 @pytest.fixture(scope="session")
-def ai_settings():
-    """加载 AI 测试配置（session 级别）"""
-    return _load_settings()
+def ai_settings(integration_settings):
+    """
+    加载 AI 测试配置（session 级别）。
+
+    复用根 conftest.py 的 integration_settings fixture。
+    """
+    return integration_settings
 
 
 # =============================================================================
@@ -134,12 +110,6 @@ GPUSTACK_AVAILABLE_MODELS = [
 # =============================================================================
 # Mock Fixtures（单元测试使用）
 # =============================================================================
-
-
-@pytest.fixture
-def session():
-    """异步数据库会话 mock fixture"""
-    return AsyncMock()
 
 
 @pytest.fixture

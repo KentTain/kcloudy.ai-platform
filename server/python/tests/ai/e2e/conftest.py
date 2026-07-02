@@ -3,6 +3,7 @@ E2E 测试配置
 
 提供 E2E 测试特有的 fixtures：
 - pytest 标记配置（默认跳过 e2e）
+- Windows 事件循环策略（ProactorEventLoop，支持子进程）
 - 服务可用性检测
 - 数据库引擎和会话（NullPool）
 - 资源清理
@@ -31,7 +32,6 @@ from typing import Callable
 import pytest
 import pytest_asyncio
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
-
 
 # =============================================================================
 # Windows 事件循环策略修复
@@ -68,75 +68,6 @@ def pytest_collection_modifyitems(config, items):
 
 
 # =============================================================================
-# 服务可用性检测
-# =============================================================================
-
-
-def _check_postgres_available(settings):
-    """同步检测 PostgreSQL 服务是否可用"""
-    import socket
-
-    try:
-        url = settings.sqlalchemy.url
-        parts = url.split("@")[1].split("/")[0].split(":")
-        host = parts[0]
-        port = int(parts[1]) if len(parts) > 1 else 5432
-
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.settimeout(2)
-        result = sock.connect_ex((host, port))
-        sock.close()
-        return result == 0
-    except Exception:
-        return False
-
-
-def _check_redis_available(settings):
-    """同步检测 Redis 服务是否可用"""
-    import socket
-
-    try:
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.settimeout(2)
-        result = sock.connect_ex(
-            (settings.redis.single.host, settings.redis.single.port)
-        )
-        sock.close()
-        return result == 0
-    except Exception:
-        return False
-
-
-@pytest.fixture(scope="session")
-def postgres_available(ai_settings):
-    """检测 PostgreSQL 服务是否可用"""
-    return _check_postgres_available(ai_settings)
-
-
-@pytest.fixture(scope="session")
-def redis_available(ai_settings):
-    """检测 Redis 服务是否可用"""
-    return _check_redis_available(ai_settings)
-
-
-@pytest.fixture(scope="session")
-def minio_available(ai_settings):
-    """检测 MinIO 服务是否可用"""
-    import socket
-    try:
-        endpoint = ai_settings.oss.minio.endpoint
-        host = endpoint.split(":")[0]
-        port = int(endpoint.split(":")[1]) if ":" in endpoint else 9000
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.settimeout(2)
-        result = sock.connect_ex((host, port))
-        sock.close()
-        return result == 0
-    except Exception:
-        return False
-
-
-# =============================================================================
 # E2E 测试租户（覆盖上层的 test_tenant_id，使用 e2e- 前缀）
 # =============================================================================
 
@@ -149,6 +80,55 @@ def test_tenant_id():
     格式: e2e-test-{uuid8}
     """
     return "e2e-test-" + uuid.uuid4().hex[:8]
+
+
+# =============================================================================
+# 数据库会话夹具
+# =============================================================================
+
+
+@pytest_asyncio.fixture
+async def e2e_engine(ai_settings, postgres_available):
+    """E2E 测试数据库引擎（NullPool）"""
+    if not postgres_available:
+        pytest.skip("PostgreSQL 服务不可用")
+
+    from sqlalchemy.pool import NullPool
+
+    engine = create_async_engine(
+        ai_settings.sqlalchemy.url,
+        echo=ai_settings.sqlalchemy.echo,
+        poolclass=NullPool,
+    )
+
+    yield engine
+
+    try:
+        await engine.dispose()
+    except Exception:
+        pass
+
+
+@pytest_asyncio.fixture
+async def e2e_session(e2e_engine):
+    """E2E 测试数据库会话"""
+    session = AsyncSession(bind=e2e_engine, expire_on_commit=False)
+    try:
+        yield session
+    except Exception:
+        try:
+            await session.rollback()
+        except Exception:
+            pass
+        raise
+    finally:
+        try:
+            loop = asyncio.get_running_loop()
+            if not loop.is_closed():
+                await session.rollback()
+                await session.close()
+        except RuntimeError:
+            pass
 
 
 # =============================================================================
@@ -255,57 +235,6 @@ async def cleanup_test_resources(ai_settings, test_tenant_id, redis_available):
 
 
 # =============================================================================
-# 数据库会话夹具
-# =============================================================================
-
-
-@pytest_asyncio.fixture
-async def e2e_engine(ai_settings, postgres_available):
-    """E2E 测试数据库引擎（NullPool）"""
-    if not postgres_available:
-        pytest.skip("PostgreSQL 服务不可用")
-
-    from sqlalchemy.pool import NullPool
-
-    engine = create_async_engine(
-        ai_settings.sqlalchemy.url,
-        echo=ai_settings.sqlalchemy.echo,
-        poolclass=NullPool,
-    )
-
-    yield engine
-
-    try:
-        await engine.dispose()
-    except Exception:
-        pass
-
-
-@pytest_asyncio.fixture
-async def e2e_session(e2e_engine):
-    """E2E 测试数据库会话"""
-    session = AsyncSession(bind=e2e_engine, expire_on_commit=False)
-    try:
-        yield session
-    except Exception:
-        try:
-            await session.rollback()
-        except Exception:
-            pass
-        raise
-    finally:
-        try:
-            import asyncio
-
-            loop = asyncio.get_running_loop()
-            if not loop.is_closed():
-                await session.rollback()
-                await session.close()
-        except RuntimeError:
-            pass
-
-
-# =============================================================================
 # 插件包路径夹具
 # =============================================================================
 
@@ -361,30 +290,6 @@ def plugin_package_path() -> Callable[[str | None], Path]:
 # =============================================================================
 # 辅助夹具
 # =============================================================================
-
-
-@pytest_asyncio.fixture
-async def init_redis(ai_settings, redis_available):
-    """初始化 Redis 连接（function 级别）"""
-    if not redis_available:
-        pytest.skip("Redis 服务不可用")
-
-    from framework.cache.redis_util import RedisUtil
-
-    if RedisUtil.is_initialized():
-        try:
-            await RedisUtil.close()
-        except Exception:
-            pass
-
-    await RedisUtil.init(ai_settings.redis)
-
-    yield
-
-    try:
-        await RedisUtil.close()
-    except Exception:
-        pass
 
 
 @pytest.fixture
