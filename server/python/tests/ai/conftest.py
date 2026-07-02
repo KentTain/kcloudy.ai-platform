@@ -3,6 +3,7 @@ AI 模块测试配置
 
 提供 AI 模块的测试 fixtures：
 - AI 设置加载
+- 数据库引擎和会话（集成测试）
 - 测试数据生成（tenant_id、user_id）
 - API Key 配置
 - Mock 数据 fixtures
@@ -13,6 +14,8 @@ import shutil
 import uuid
 
 import pytest
+import pytest_asyncio
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 
 # =============================================================================
 # UV_PATH 环境变量设置
@@ -36,6 +39,51 @@ def ai_settings(integration_settings):
     复用根 conftest.py 的 integration_settings fixture。
     """
     return integration_settings
+
+
+# =============================================================================
+# 数据库 Fixtures（集成测试使用）
+# =============================================================================
+
+
+@pytest_asyncio.fixture
+async def ai_async_engine(ai_settings, postgres_available):
+    """
+    AI 模块异步数据库引擎（function 级别）。
+
+    用于 AI 模块的集成测试。
+    """
+    if not postgres_available:
+        pytest.skip("PostgreSQL 服务不可用")
+
+    engine = create_async_engine(
+        url=ai_settings.sqlalchemy.url,
+        echo=False,
+        pool_pre_ping=True,
+    )
+
+    yield engine
+
+    try:
+        await engine.dispose()
+    except Exception:
+        pass
+
+
+@pytest_asyncio.fixture
+async def ai_async_session(ai_async_engine):
+    """
+    AI 模块异步数据库会话（function 级别）。
+    """
+    session = AsyncSession(bind=ai_async_engine, expire_on_commit=False)
+    try:
+        yield session
+    finally:
+        try:
+            await session.rollback()
+            await session.close()
+        except Exception:
+            pass
 
 
 # =============================================================================
