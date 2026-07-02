@@ -63,25 +63,26 @@ async def test_installation_record(
             plugin_type="test",
         )
         e2e_session.add(installation)
-        await e2e_session.flush()
-        await e2e_session.refresh(installation)
+        await e2e_session.commit()
 
     else:
         # 更新状态为 ACTIVE
         installation.status = "ACTIVE"
-        await e2e_session.flush()
-        await e2e_session.refresh(installation)
+        await e2e_session.commit()
 
     yield installation
 
     # 清理测试数据
-    await e2e_session.execute(
-        delete(TenantPluginInstallation).where(
-            TenantPluginInstallation.tenant_id == test_tenant_id,
-            TenantPluginInstallation.plugin_id == TEST_PLUGIN_ID,
+    try:
+        await e2e_session.execute(
+            delete(TenantPluginInstallation).where(
+                TenantPluginInstallation.tenant_id == test_tenant_id,
+                TenantPluginInstallation.plugin_id == TEST_PLUGIN_ID,
+            )
         )
-    )
-    await e2e_session.commit()
+        await e2e_session.commit()
+    except Exception:
+        await e2e_session.rollback()
 
 
 @pytest_asyncio.fixture
@@ -111,6 +112,7 @@ class TestEventListeners:
     async def test_plugin_installation_failed_event(
         self,
         e2e_session: AsyncSession,
+        e2e_engine,
         test_tenant_id: str,
         test_installation_record: TenantPluginInstallation,
         redis_initialized: None,
@@ -143,14 +145,15 @@ class TestEventListeners:
         # 步骤 2：等待监听器处理
         await asyncio.sleep(3)
 
-        # 步骤 3：验证状态更新
-        result = await e2e_session.execute(
-            select(TenantPluginInstallation).where(
-                TenantPluginInstallation.tenant_id == test_tenant_id,
-                TenantPluginInstallation.plugin_id == TEST_PLUGIN_ID,
+        # 步骤 3：验证状态更新（使用新 session 避免 asyncio 事件循环不匹配）
+        async with AsyncSession(bind=e2e_engine, expire_on_commit=False) as fresh_session:
+            result = await fresh_session.execute(
+                select(TenantPluginInstallation).where(
+                    TenantPluginInstallation.tenant_id == test_tenant_id,
+                    TenantPluginInstallation.plugin_id == TEST_PLUGIN_ID,
+                )
             )
-        )
-        installation = result.scalar_one_or_none()
+            installation = result.scalar_one_or_none()
 
         assert installation is not None, "安装记录应存在"
         assert installation.status == "FAILED", (

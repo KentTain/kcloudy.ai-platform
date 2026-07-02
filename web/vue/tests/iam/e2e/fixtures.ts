@@ -35,7 +35,7 @@ export { test, expect };
  * @param account 账号，默认 'admin'
  * @param password 密码，默认 'admin123'
  */
-export { userLoginViaAPI as iamUserLogin };
+export { userLoginViaAPI as iamUserLogin, userLoginViaAPI };
 
 // ============================================================================
 // Token 获取辅助函数
