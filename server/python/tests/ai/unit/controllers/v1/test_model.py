@@ -46,6 +46,8 @@ class TestListModels:
         mock_provider.label.zh_Hans = "OpenAI"
         mock_provider.label.en_US = "OpenAI"
         mock_provider.models = []
+        mock_provider.icon_small = None  # 避免 MagicMock 导致 Pydantic 验证失败
+        mock_provider.icon_large = None
 
         # 模拟模型数据
         mock_model = MagicMock()
@@ -89,6 +91,8 @@ class TestListModels:
         mock_provider.label = MagicMock()
         mock_provider.label.zh_Hans = "OpenAI"
         mock_provider.label.en_US = "OpenAI"
+        mock_provider.icon_small = None  # 避免 MagicMock 导致 Pydantic 验证失败
+        mock_provider.icon_large = None
 
         # LLM 模型
         llm_model = MagicMock()

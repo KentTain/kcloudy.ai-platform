@@ -113,20 +113,20 @@ def test_user_id():
 # =============================================================================
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def tongyi_api_key():
     """
-    获取通义千问 API Key。
+    获取通义千问 API Key（session 级别）。
 
     优先从环境变量 E2E_TONGYI_API_KEY 读取，如果未配置则使用默认测试配置。
     """
     return os.environ.get("E2E_TONGYI_API_KEY", "sk-623fdfb2b75f43b8bb6a61b8b183359a")
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def gpustack_api_key():
     """
-    获取 GPUStack API Key。
+    获取 GPUStack API Key（session 级别）。
 
     优先从环境变量 E2E_GPUSTACK_API_KEY 读取，如果未配置则使用默认测试配置。
     """
@@ -136,10 +136,10 @@ def gpustack_api_key():
     )
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def gpustack_endpoint():
     """
-    获取 GPUStack Endpoint。
+    获取 GPUStack Endpoint（session 级别）。
 
     优先从环境变量 E2E_GPUSTACK_ENDPOINT 读取，如果未配置则使用默认测试配置。
     """

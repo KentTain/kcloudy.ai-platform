@@ -238,7 +238,7 @@ class TestCredentialUpdateCacheInvalidation:
 
 @pytest.mark.integration
 @pytest.mark.skipif(
-    True,  # 默认跳过，需要真实 Redis 环境
+    False,  # Docker 环境已部署，启用真实 Redis 测试
     reason="需要真实 Redis 环境，请手动启用此测试",
 )
 class TestCredentialCacheWithRealRedis:
@@ -272,17 +272,18 @@ class TestCredentialCacheWithRealRedis:
     @pytest.mark.asyncio
     async def test_real_cache_set_and_get(self, redis_client):
         """测试真实缓存写入和读取"""
+        import json
+
         tenant_id = "test-real-cache-tenant"
         cache_key = f"{CACHE_KEY_PREFIX}:{tenant_id}"
         test_data = {"providers": {"test": "data"}}
 
-        # 写入缓存
-        await redis_client.set(cache_key, test_data, ttl=CACHE_TTL)
+        # 写入缓存（序列化为 JSON）
+        await redis_client.set(cache_key, json.dumps(test_data), ttl=CACHE_TTL)
 
-        # 读取缓存
+        # 读取缓存（反序列化 JSON）
         result = await redis_client.get(cache_key)
-
-        assert result == test_data
+        assert json.loads(result) == test_data
 
         # 清理
         await redis_client.delete(cache_key)
@@ -290,16 +291,18 @@ class TestCredentialCacheWithRealRedis:
     @pytest.mark.asyncio
     async def test_real_cache_expiration(self, redis_client):
         """测试真实缓存过期"""
+        import json
+
         tenant_id = "test-cache-expiration"
         cache_key = f"{CACHE_KEY_PREFIX}:{tenant_id}"
         test_data = {"providers": {}}
 
         # 写入缓存，TTL 为 1 秒
-        await redis_client.set(cache_key, test_data, ttl=1)
+        await redis_client.set(cache_key, json.dumps(test_data), ttl=1)
 
         # 立即读取应该命中
         result = await redis_client.get(cache_key)
-        assert result == test_data
+        assert json.loads(result) == test_data
 
         # 等待过期
         import asyncio

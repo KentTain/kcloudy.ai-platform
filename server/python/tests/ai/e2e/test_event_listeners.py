@@ -32,7 +32,7 @@ TEST_TENANT_ID = "00000000-0000-0000-0000-000000000000"
 TEST_PLUGIN_ID = "test/event-listener-test"
 
 
-async def test_plugin_installation_failed_event():
+async def _test_plugin_installation_failed_event():
     """
     测试插件安装失败事件处理
 
@@ -124,7 +124,7 @@ async def test_plugin_installation_failed_event():
             return False
 
 
-async def test_plugin_uninstall_failed_event():
+async def _test_plugin_uninstall_failed_event():
     """
     测试插件卸载失败事件处理
 
@@ -256,10 +256,10 @@ async def main():
         return
 
     # 测试插件安装失败事件
-    results["installation_failed"] = await test_plugin_installation_failed_event()
+    results["installation_failed"] = await _test_plugin_installation_failed_event()
 
     # 测试插件卸载失败事件
-    results["uninstall_failed"] = await test_plugin_uninstall_failed_event()
+    results["uninstall_failed"] = await _test_plugin_uninstall_failed_event()
 
     # 清理测试数据
     await cleanup_test_data()
