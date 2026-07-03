@@ -69,11 +69,13 @@ class TestInstallTaskExecutorExecute:
             executor = InstallTaskExecutor()
             await executor.execute(_make_task_data())
 
-        # 核心断言：调用统一安装编排，传入下载的插件包字节
-        mock_plugin_manager.install_plugin.assert_awaited_once_with(
-            mock_session,
-            plugin_package=b"fake-package-bytes",
-        )
+        # 核心断言：调用统一安装编排，传入下载的插件包字节与 auto_start
+        mock_plugin_manager.install_plugin.assert_awaited_once()
+        call = mock_plugin_manager.install_plugin.call_args
+        assert call.args[0] is mock_session
+        assert call.kwargs["plugin_package"] == b"fake-package-bytes"
+        install_request = call.kwargs["install_request"]
+        assert install_request.auto_start is False
 
     @pytest.mark.asyncio
     async def test_execute_missing_task_data_returns_early(self):

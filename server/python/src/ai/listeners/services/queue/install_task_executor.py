@@ -9,6 +9,7 @@ from __future__ import annotations
 import logging
 from typing import Any
 
+from ai.components.plugin.engine.models.request import InstallRequest
 from ai.services.install_task_service import install_task_service
 from framework.database.dependencies import get_task_session
 from framework.events.domain_events import PluginInstallationFailed
@@ -93,9 +94,11 @@ class InstallTaskExecutor:
                 plugin_manager = await PluginManagerFactory.get_manager(
                     tenant_id, session
                 )
+                install_request = InstallRequest(auto_start=auto_start)
                 await plugin_manager.install_plugin(
                     session,
                     plugin_package=package_data,
+                    install_request=install_request,
                 )
 
                 await install_task_service.update_task_step(
