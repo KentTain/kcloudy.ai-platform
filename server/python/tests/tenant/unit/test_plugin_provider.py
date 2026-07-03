@@ -33,7 +33,6 @@ def sample_dto():
             "tools_configuration": [],
         },
         status="PENDING",
-        auto_start=False,
         freeze_threshold_hours=24,
         plugin_type="local",
         runtime_type="python",
@@ -58,7 +57,6 @@ class TestCreateInstallation:
         mock_installation.plugin_id = sample_dto.plugin_id
         mock_installation.plugin_unique_identifier = sample_dto.plugin_unique_identifier
         mock_installation.status = "PENDING"
-        mock_installation.auto_start = sample_dto.auto_start
         mock_installation.freeze_threshold_hours = sample_dto.freeze_threshold_hours
         mock_installation.plugin_type = sample_dto.plugin_type
         mock_installation.runtime_type = sample_dto.runtime_type
@@ -108,7 +106,6 @@ class TestCreateInstallation:
         mock_installation.plugin_id = sample_dto.plugin_id
         mock_installation.plugin_unique_identifier = sample_dto.plugin_unique_identifier
         mock_installation.status = "PENDING"
-        mock_installation.auto_start = sample_dto.auto_start
         mock_installation.freeze_threshold_hours = sample_dto.freeze_threshold_hours
         mock_installation.plugin_type = sample_dto.plugin_type
         mock_installation.runtime_type = sample_dto.runtime_type
@@ -150,7 +147,6 @@ class TestUpdateInstallation:
         mock_installation.plugin_id = "author/plugin-name"
         mock_installation.plugin_unique_identifier = sample_dto.plugin_unique_identifier
         mock_installation.status = "PENDING"
-        mock_installation.auto_start = False
         mock_installation.freeze_threshold_hours = 24
         mock_installation.plugin_type = "local"
         mock_installation.runtime_type = "python"
@@ -255,7 +251,6 @@ class TestGetTenantInstallations:
         mock_installation1.plugin_id = "author/plugin-1"
         mock_installation1.plugin_unique_identifier = "author/plugin-1:1.0.0@abc123"
         mock_installation1.status = "ACTIVE"
-        mock_installation1.auto_start = True
         mock_installation1.freeze_threshold_hours = 24
         mock_installation1.plugin_type = "local"
         mock_installation1.runtime_type = "python"
@@ -265,7 +260,6 @@ class TestGetTenantInstallations:
         mock_installation2.plugin_id = "author/plugin-2"
         mock_installation2.plugin_unique_identifier = "author/plugin-2:1.0.0@def456"
         mock_installation2.status = "PENDING"
-        mock_installation2.auto_start = False
         mock_installation2.freeze_threshold_hours = 24
         mock_installation2.plugin_type = "remote"
         mock_installation2.runtime_type = "nodejs"
@@ -317,7 +311,6 @@ class TestGetInstallation:
         mock_installation.plugin_id = "author/plugin-name"
         mock_installation.plugin_unique_identifier = "author/plugin-name:1.0.0@abc123"
         mock_installation.status = "ACTIVE"
-        mock_installation.auto_start = True
         mock_installation.freeze_threshold_hours = 24
         mock_installation.plugin_type = "local"
         mock_installation.runtime_type = "python"

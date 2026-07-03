@@ -6,6 +6,7 @@ AI 模块通过此实现访问 Tenant 侧的安装记录，不直接访问 Tenan
 """
 
 from collections.abc import Sequence
+from datetime import datetime
 
 from loguru import logger
 
@@ -90,7 +91,6 @@ class PluginInstallationProviderImpl(PluginInstallationProvider):
                 plugin_id=data.plugin_id,
                 plugin_unique_identifier=data.plugin_unique_identifier,
                 status="PENDING",
-                auto_start=data.auto_start,
                 freeze_threshold_hours=data.freeze_threshold_hours,
                 plugin_type=data.plugin_type,
                 runtime_type=data.runtime_type,
@@ -219,6 +219,39 @@ class PluginInstallationProviderImpl(PluginInstallationProvider):
         )
         return updated
 
+    async def update_installation_status(
+        self, tenant_id: str, plugin_id: str, status: str
+    ) -> PluginInstallationDTO:
+        """
+        更新安装状态（供 AI 模块调用）
+
+        Args:
+            tenant_id: 租户 ID
+            plugin_id: 插件 ID
+            status: 新状态（ACTIVE / INACTIVE）
+
+        Returns:
+            PluginInstallationDTO
+
+        Raises:
+            ValueError: 安装记录不存在
+        """
+        async with get_task_session() as session:
+            installation = await TenantPluginInstallation.first_by_fields(
+                session, {"tenant_id": tenant_id, "plugin_id": plugin_id}
+            )
+            if not installation:
+                raise ValueError(
+                    f"安装记录不存在: tenant_id={tenant_id}, plugin_id={plugin_id}"
+                )
+
+            update_data = {"status": status}
+            if status == "INACTIVE":
+                update_data["installed_at"] = datetime.now()
+
+            await installation.update(session, update_data)
+            return self._to_dto(installation)
+
     async def _ensure_plugin_definition(
         self,
         session,
@@ -299,7 +332,7 @@ class PluginInstallationProviderImpl(PluginInstallationProvider):
             plugin_unique_identifier=installation.plugin_unique_identifier,
             declaration={},  # 注意：installation 对象不包含 declaration，需要单独查询
             status=installation.status,
-            auto_start=installation.auto_start,
+            installed_at=getattr(installation, "installed_at", None),  # 兼容旧数据
             freeze_threshold_hours=installation.freeze_threshold_hours,
             plugin_type=installation.plugin_type,
             runtime_type=installation.runtime_type,

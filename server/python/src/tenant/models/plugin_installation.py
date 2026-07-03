@@ -6,7 +6,9 @@
 配置和运行时状态剥离到 AI Schema。
 """
 
-from sqlalchemy import Boolean, Integer, String, UniqueConstraint
+from datetime import datetime
+
+from sqlalchemy import Boolean, DateTime, Integer, String, UniqueConstraint, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from framework.database.mixins.active_record import ActiveRecordMixin
@@ -61,6 +63,11 @@ class TenantPluginInstallation(BaseModel, AuditMixin, ActiveRecordMixin, TenantM
         String(16),
         nullable=True,
         comment="运行时类型",
+    )
+    installed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+        comment="安装完成时间",
     )
 
     __table_args__ = (
