@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { TreeSelectNode } from '@/framework/types/tree'
 import type { HTMLAttributes } from 'vue'
-import { computed, ref, watch } from 'vue'
+import { ref, watch } from 'vue'
 import { cn } from '@/lib/utils'
 import { ChevronRight, ChevronDown, Loader2 } from '@lucide/vue'
 import Checkbox from '@/components/ui/checkbox/Checkbox.vue'
@@ -259,7 +259,7 @@ watch(
       :has-children-fn="hasChildren"
       :get-children-fn="getChildren"
       :has-node-slot="!!$slots.node"
-      :has-node-content-slot="!!$slots.nodeContent"
+      :has-node-content-slot="!!$slots['node-content']"
       :checkable="checkable"
       :cascade="cascade"
       :disabled="disabled"

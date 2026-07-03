@@ -4,7 +4,7 @@
  *
  * 统一显示可安装和已安装的插件，类似应用商店的设计
  */
-import { ref, h, computed, onMounted } from "vue";
+import { ref, h } from "vue";
 import type { ColumnDef } from "@tanstack/vue-table";
 import { Badge, Button, Input, DataTable, useDataTable, Card } from "@/components";
 import {
@@ -56,12 +56,6 @@ const statistics = ref({
   installed: 0,
   recommended: 0,
 });
-
-// 格式化日期
-function formatDate(dateStr?: string): string {
-  if (!dateStr) return "--";
-  return new Date(dateStr).toLocaleString();
-}
 
 // 状态颜色映射
 const statusColorMap: Record<string, "default" | "secondary" | "destructive" | "outline"> = {

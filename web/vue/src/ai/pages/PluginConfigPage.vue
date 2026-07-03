@@ -61,7 +61,6 @@ const dialogOpen = ref(false);
 const dialogMode = ref<"create" | "edit">("create");
 const editingCredential = ref<PluginCredential | null>(null);
 const testingCredentialId = ref<string | null>(null);
-const noCredentialSchema = ref(false);
 
 // ===== 测试连接 =====
 const testingConnection = ref(false);

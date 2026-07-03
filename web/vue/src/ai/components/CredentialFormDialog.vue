@@ -5,7 +5,7 @@
  * 根据插件的 credentials-schema 动态生成表单字段，
  * 支持新增/编辑凭证和测试连通性。
  */
-import { ref, watch, onMounted } from "vue";
+import { ref, watch } from "vue";
 import { Button } from "@/components";
 import {
   Dialog,

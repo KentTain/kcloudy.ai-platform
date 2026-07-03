@@ -158,7 +158,7 @@ function initForm() {
       email: "",
       phone: "",
       organization_id: "",
-    })
+    } as any)
   }
 }
 

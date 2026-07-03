@@ -568,16 +568,19 @@ async function loadOrgNodesCallback(): Promise<OrgTreeNode[]> {
     const res = await getOrganizationTree()
     const orgs = res.data || []
     function toOrgTreeNodes(nodes: Organization[]): OrgTreeNode[] {
-      return nodes.map((d) => ({
-        id: d.id,
-        name: d.name,
-        code: d.code ?? undefined,
-        parent_id: d.parent_id ?? undefined,
-        has_user_num: d.direct_member_count || 0,
-        has_org_num: d.children?.length || 0,
-        tree_leaf: !d.children || d.children.length === 0,
-        children: d.children ? toOrgTreeNodes(d.children) : undefined,
-      }))
+      return nodes.map((d) => {
+        const children = d.children ? toOrgTreeNodes(d.children) : undefined
+        return {
+          id: d.id,
+          name: d.name,
+          code: d.code ?? undefined,
+          parent_id: d.parent_id ?? undefined,
+          has_user_num: d.direct_member_count || 0,
+          has_org_num: d.children?.length || 0,
+          tree_leaf: !d.children || d.children.length === 0,
+          children,
+        }
+      })
     }
     return toOrgTreeNodes(orgs)
   } catch {

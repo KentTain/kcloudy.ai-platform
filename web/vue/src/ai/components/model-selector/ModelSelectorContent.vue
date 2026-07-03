@@ -2,7 +2,7 @@
 import type { AcceptableValue } from "reka-ui";
 import type { HTMLAttributes } from "vue";
 
-import { Dialog, DialogContent, DialogTitle } from "@/components";
+import { DialogContent, DialogTitle } from "@/components";
 import { Command } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
 
