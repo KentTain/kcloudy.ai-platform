@@ -70,8 +70,15 @@ class InstallTaskService:
         plugin_id = request.plugin_id
 
         # 1. 检查插件定义是否存在
-        definition_stmt = select(TenantPluginDefinition).where(
-            TenantPluginDefinition.plugin_id == plugin_id,
+        # 注：plugin_id 可能存在多版本记录，取最新创建的启用版本
+        definition_stmt = (
+            select(TenantPluginDefinition)
+            .where(
+                TenantPluginDefinition.plugin_id == plugin_id,
+                TenantPluginDefinition.is_enabled == True,
+            )
+            .order_by(TenantPluginDefinition.created_at.desc())
+            .limit(1)
         )
         result = await session.execute(definition_stmt)
         definition = result.scalar_one_or_none()

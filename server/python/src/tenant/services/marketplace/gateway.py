@@ -227,11 +227,15 @@ class MarketplaceGateway:
                     failed.append({"plugin_id": plugin_id, "message": "远程插件不存在"})
                     continue
 
-                # 2. 检查本地是否已存在
+                # 2. 检查本地是否已存在（取最新的启用版本）
                 existing = await session.execute(
-                    select(TenantPluginDefinition).where(
-                        TenantPluginDefinition.plugin_id == plugin_id
+                    select(TenantPluginDefinition)
+                    .where(
+                        TenantPluginDefinition.plugin_id == plugin_id,
+                        TenantPluginDefinition.is_enabled == True,
                     )
+                    .order_by(TenantPluginDefinition.created_at.desc())
+                    .limit(1)
                 )
                 existing_def = existing.scalar_one_or_none()
 

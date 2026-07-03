@@ -68,7 +68,7 @@ async def preview_scan_directory(
         )
         return ApiResponse.success(data=results)
     except ValueError as e:
-        return ApiResponse.fail(message=str(e))
+        return ApiResponse.fail(msg=str(e))
 
 
 @router.post("/plugin-definitions/parse")
@@ -86,7 +86,7 @@ async def parse_plugin_package_preview(
     """
     # 验证文件格式
     if not file.filename or not file.filename.endswith(".zip"):
-        return ApiResponse.fail(message="请上传 .zip 格式的插件包")
+        return ApiResponse.fail(msg="请上传 .zip 格式的插件包")
 
     # 读取文件内容
     package_data = await file.read()
@@ -98,7 +98,7 @@ async def parse_plugin_package_preview(
         )
         return ApiResponse.success(data=result)
     except ValueError as e:
-        return ApiResponse.fail(message=f"插件包解析失败: {str(e)}")
+        return ApiResponse.fail(msg=f"插件包解析失败: {str(e)}")
 
 
 @router.post("/plugin-definitions/scan")
@@ -124,10 +124,10 @@ async def scan_directory_for_plugins(
     directory = Path(request.directory)
 
     if not directory.exists():
-        return ApiResponse.fail(message=f"目录不存在: {request.directory}")
+        return ApiResponse.fail(msg=f"目录不存在: {request.directory}")
 
     if not directory.is_dir():
-        return ApiResponse.fail(message=f"路径不是目录: {request.directory}")
+        return ApiResponse.fail(msg=f"路径不是目录: {request.directory}")
 
     # 收集所有 .zip 文件
     if request.recursive:
@@ -251,7 +251,7 @@ async def upload_plugin_package(
     """
     # 验证文件格式
     if not file.filename or not file.filename.endswith(".zip"):
-        return ApiResponse.fail(message="请上传 .zip 格式的插件包")
+        return ApiResponse.fail(msg="请上传 .zip 格式的插件包")
 
     # 读取文件内容
     package_data = await file.read()
@@ -260,7 +260,7 @@ async def upload_plugin_package(
     try:
         package_info = plugin_package_service.parse_package_from_bytes(package_data)
     except Exception as e:
-        return ApiResponse.fail(message=f"插件包解析失败: {str(e)}")
+        return ApiResponse.fail(msg=f"插件包解析失败: {str(e)}")
 
     # 注册插件定义
     try:
@@ -286,8 +286,10 @@ async def upload_plugin_package(
     except Exception as e:
         error_msg = str(e)
         if "已存在" in error_msg:
-            return ApiResponse.fail(message=f"插件定义已存在: {package_info.plugin_id}，如需覆盖请设置 overwrite=true")
-        return ApiResponse.fail(message=f"注册失败: {error_msg}")
+            return ApiResponse.fail(
+                msg=f"插件定义已存在: {package_info.plugin_id}，如需覆盖请设置 overwrite=true"
+            )
+        return ApiResponse.fail(msg=f"注册失败: {error_msg}")
 
 
 @router.get("/plugin-definitions")
@@ -442,7 +444,13 @@ async def start_plugin_installation(
         result = await plugin_installation_service.start_plugin(
             session, tenant_id, plugin_id
         )
-        return ApiResponse.success(data={"tenant_id": result.tenant_id, "plugin_id": result.plugin_id, "status": result.status})
+        return ApiResponse.success(
+            data={
+                "tenant_id": result.tenant_id,
+                "plugin_id": result.plugin_id,
+                "status": result.status,
+            }
+        )
     except ValueError as e:
         return ApiResponse.fail(str(e))
     except RuntimeError as e:
@@ -467,7 +475,13 @@ async def stop_plugin_installation(
         result = await plugin_installation_service.stop_plugin(
             session, tenant_id, plugin_id
         )
-        return ApiResponse.success(data={"tenant_id": result.tenant_id, "plugin_id": result.plugin_id, "status": result.status})
+        return ApiResponse.success(
+            data={
+                "tenant_id": result.tenant_id,
+                "plugin_id": result.plugin_id,
+                "status": result.status,
+            }
+        )
     except ValueError as e:
         return ApiResponse.fail(str(e))
     except RuntimeError as e:
@@ -534,7 +548,9 @@ async def list_plugin_installations(
 async def uninstall_plugin_installation(
     tenant_id: str,
     plugin_id: str,
-    _perm: None = Depends(require_admin_permission("tenant:plugin-installation:delete")),
+    _perm: None = Depends(
+        require_admin_permission("tenant:plugin-installation:delete")
+    ),
     session: AsyncSession = Depends(get_db_session),
 ) -> ApiResponse:
     """
@@ -548,7 +564,9 @@ async def uninstall_plugin_installation(
         ValueError: 安装记录不存在、状态不允许卸载
     """
     try:
-        await plugin_installation_service.uninstall_plugin(session, tenant_id, plugin_id)
+        await plugin_installation_service.uninstall_plugin(
+            session, tenant_id, plugin_id
+        )
         await session.commit()
         return ApiResponse.success(message="卸载成功")
     except ValueError as e:

@@ -60,9 +60,15 @@ class PluginDefinitionService:
         # 构建插件唯一标识符
         plugin_unique_identifier = f"{package_info.plugin_id}:{package_info.version}@{package_info.package_hash}"
 
-        # 检查是否已存在
-        existing_stmt = select(TenantPluginDefinition).where(
-            TenantPluginDefinition.plugin_id == package_info.plugin_id
+        # 检查是否已存在（取最新的启用版本）
+        existing_stmt = (
+            select(TenantPluginDefinition)
+            .where(
+                TenantPluginDefinition.plugin_id == package_info.plugin_id,
+                TenantPluginDefinition.is_enabled == True,
+            )
+            .order_by(TenantPluginDefinition.created_at.desc())
+            .limit(1)
         )
         existing_result = await session.execute(existing_stmt)
         existing_definition = existing_result.scalar_one_or_none()
@@ -231,8 +237,14 @@ class PluginDefinitionService:
         Raises:
             NotFoundError: 插件定义不存在
         """
-        stmt = select(TenantPluginDefinition).where(
-            TenantPluginDefinition.plugin_id == plugin_id
+        stmt = (
+            select(TenantPluginDefinition)
+            .where(
+                TenantPluginDefinition.plugin_id == plugin_id,
+                TenantPluginDefinition.is_enabled == True,
+            )
+            .order_by(TenantPluginDefinition.created_at.desc())
+            .limit(1)
         )
         result = await session.execute(stmt)
         definition = result.scalar_one_or_none()
@@ -274,9 +286,15 @@ class PluginDefinitionService:
         Raises:
             NotFoundError: 插件定义不存在
         """
-        # 查询现有定义
-        stmt = select(TenantPluginDefinition).where(
-            TenantPluginDefinition.plugin_id == plugin_id
+        # 查询现有定义（取最新的启用版本）
+        stmt = (
+            select(TenantPluginDefinition)
+            .where(
+                TenantPluginDefinition.plugin_id == plugin_id,
+                TenantPluginDefinition.is_enabled == True,
+            )
+            .order_by(TenantPluginDefinition.created_at.desc())
+            .limit(1)
         )
         result = await session.execute(stmt)
         definition = result.scalar_one_or_none()
@@ -320,9 +338,15 @@ class PluginDefinitionService:
             NotFoundError: 插件定义不存在
             ConflictError: 插件定义仍被租户引用
         """
-        # 查询现有定义
-        stmt = select(TenantPluginDefinition).where(
-            TenantPluginDefinition.plugin_id == plugin_id
+        # 查询现有定义（取最新的启用版本）
+        stmt = (
+            select(TenantPluginDefinition)
+            .where(
+                TenantPluginDefinition.plugin_id == plugin_id,
+                TenantPluginDefinition.is_enabled == True,
+            )
+            .order_by(TenantPluginDefinition.created_at.desc())
+            .limit(1)
         )
         result = await session.execute(stmt)
         definition = result.scalar_one_or_none()
@@ -527,9 +551,15 @@ class PluginDefinitionService:
             InstallSuccessItem,
         )
 
-        # 1. 查询插件定义
-        stmt = select(TenantPluginDefinition).where(
-            TenantPluginDefinition.plugin_id == plugin_id
+        # 1. 查询插件定义（取最新的启用版本）
+        stmt = (
+            select(TenantPluginDefinition)
+            .where(
+                TenantPluginDefinition.plugin_id == plugin_id,
+                TenantPluginDefinition.is_enabled == True,
+            )
+            .order_by(TenantPluginDefinition.created_at.desc())
+            .limit(1)
         )
         result = await session.execute(stmt)
         definition = result.scalar_one_or_none()

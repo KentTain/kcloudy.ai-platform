@@ -62,9 +62,11 @@ async def create_marketplace(
             description=request.description,
         )
         await session.commit()
-        return ApiResponse.success(data=MarketplaceResponse.from_entity(marketplace).model_dump())
+        return ApiResponse.success(
+            data=MarketplaceResponse.from_entity(marketplace).model_dump()
+        )
     except ValueError as e:
-        return ApiResponse.fail(message=str(e))
+        return ApiResponse.fail(msg=str(e))
 
 
 @router.get("/marketplaces")
@@ -105,8 +107,10 @@ async def get_marketplace(
     """
     marketplace = await marketplace_gateway.get_marketplace(session, marketplace_id)
     if not marketplace:
-        return ApiResponse.fail(message="市场不存在")
-    return ApiResponse.success(data=MarketplaceResponse.from_entity(marketplace).model_dump())
+        return ApiResponse.fail(msg="市场不存在")
+    return ApiResponse.success(
+        data=MarketplaceResponse.from_entity(marketplace).model_dump()
+    )
 
 
 @router.put("/marketplaces/{marketplace_id}")
@@ -130,9 +134,11 @@ async def update_marketplace(
             **request.model_dump(exclude_unset=True),
         )
         await session.commit()
-        return ApiResponse.success(data=MarketplaceResponse.from_entity(marketplace).model_dump())
+        return ApiResponse.success(
+            data=MarketplaceResponse.from_entity(marketplace).model_dump()
+        )
     except ValueError as e:
-        return ApiResponse.fail(message=str(e))
+        return ApiResponse.fail(msg=str(e))
 
 
 @router.delete("/marketplaces/{marketplace_id}")
@@ -153,7 +159,7 @@ async def delete_marketplace(
         await session.commit()
         return ApiResponse.success(message="市场已删除")
     except ValueError as e:
-        return ApiResponse.fail(message=str(e))
+        return ApiResponse.fail(msg=str(e))
 
 
 @router.post("/marketplaces/{marketplace_id}/test")
@@ -180,7 +186,7 @@ async def test_marketplace(
             ).model_dump()
         )
     except ValueError as e:
-        return ApiResponse.fail(message=str(e))
+        return ApiResponse.fail(msg=str(e))
 
 
 @router.get("/marketplaces/{marketplace_id}/plugins")
@@ -210,9 +216,11 @@ async def list_remote_plugins(
             page_size=page_size,
         )
         items = [RemotePluginResponse.from_info(p).model_dump() for p in plugins]
-        return ApiResponse.paginated(data=items, total=total, page=page, page_size=page_size)
+        return ApiResponse.paginated(
+            data=items, total=total, page=page, page_size=page_size
+        )
     except ValueError as e:
-        return ApiResponse.fail(message=str(e))
+        return ApiResponse.fail(msg=str(e))
 
 
 @router.post("/marketplaces/sync")
@@ -237,7 +245,7 @@ async def sync_plugins(
         await session.commit()
         return ApiResponse.success(data=SyncResultResponse(**result).model_dump())
     except ValueError as e:
-        return ApiResponse.fail(message=str(e))
+        return ApiResponse.fail(msg=str(e))
 
 
 @router.get("/marketplaces/updates")
@@ -257,15 +265,18 @@ async def check_updates(
         updates = await marketplace_gateway.check_updates(
             session=session, marketplace_id=marketplace_id
         )
-        items = [PluginUpdateResponse(
-            plugin_id=u.plugin_id,
-            current_version=u.current_version,
-            latest_version=u.latest_version,
-            has_update=u.has_update,
-        ).model_dump() for u in updates]
+        items = [
+            PluginUpdateResponse(
+                plugin_id=u.plugin_id,
+                current_version=u.current_version,
+                latest_version=u.latest_version,
+                has_update=u.has_update,
+            ).model_dump()
+            for u in updates
+        ]
         return ApiResponse.success(data=items)
     except ValueError as e:
-        return ApiResponse.fail(message=str(e))
+        return ApiResponse.fail(msg=str(e))
 
 
 @router.post("/marketplaces/updates/{plugin_id}")
@@ -291,4 +302,4 @@ async def apply_update(
         await session.commit()
         return ApiResponse.success(data=ApplyUpdateResult(**result).model_dump())
     except ValueError as e:
-        return ApiResponse.fail(message=str(e))
+        return ApiResponse.fail(msg=str(e))
