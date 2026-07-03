@@ -32,6 +32,7 @@ from tenant.models.plugin_installation import TenantPluginInstallation
 
 # 测试配置
 TEST_PLUGIN_ID = "test/event-listener-test"
+TEST_PLUGIN_ID_ACTIVE = "test/event-listener-active"
 
 
 @pytest_asyncio.fixture
@@ -40,9 +41,9 @@ async def test_installation_record(
     test_tenant_id: str,
 ):
     """
-    创建测试插件安装记录
+    创建测试插件安装记录（PENDING 状态）
 
-    自动创建并清理测试数据。
+    自动创建并清理测试数据。PENDING 是唯一可合法转为 FAILED 的状态。
     """
     # 检查是否已存在
     result = await e2e_session.execute(
@@ -54,20 +55,20 @@ async def test_installation_record(
     installation = result.scalar_one_or_none()
 
     if not installation:
-        # 创建测试安装记录
+        # 创建测试安装记录（PENDING 状态）
         installation = TenantPluginInstallation(
             tenant_id=test_tenant_id,
             plugin_id=TEST_PLUGIN_ID,
             plugin_unique_identifier=TEST_PLUGIN_ID,
-            status="ACTIVE",
+            status="PENDING",
             plugin_type="test",
         )
         e2e_session.add(installation)
         await e2e_session.commit()
 
     else:
-        # 更新状态为 ACTIVE
-        installation.status = "ACTIVE"
+        # 更新状态为 PENDING
+        installation.status = "PENDING"
         await e2e_session.commit()
 
     yield installation
@@ -77,7 +78,9 @@ async def test_installation_record(
         await e2e_session.execute(
             delete(TenantPluginInstallation).where(
                 TenantPluginInstallation.tenant_id == test_tenant_id,
-                TenantPluginInstallation.plugin_id == TEST_PLUGIN_ID,
+                TenantPluginInstallation.plugin_id.in_(
+                    [TEST_PLUGIN_ID, TEST_PLUGIN_ID_ACTIVE]
+                ),
             )
         )
         await e2e_session.commit()
@@ -118,17 +121,17 @@ class TestEventListeners:
         redis_initialized: None,
     ) -> None:
         """
-        测试插件安装失败事件处理
+        测试插件安装失败事件处理（PENDING → FAILED）
 
         场景：
-        1. 创建测试插件安装记录（状态为 ACTIVE）
+        1. 创建测试插件安装记录（状态为 PENDING）
         2. 发布 PluginInstallationFailed 事件
         3. 等待监听器处理
         4. 验证安装记录状态更新为 FAILED
 
         验证点：
         1. 事件发布成功
-        2. 安装记录状态更新为 FAILED
+        2. PENDING 安装记录状态更新为 FAILED
         """
         TenantContext.set_tenant_id(test_tenant_id)
 
@@ -158,6 +161,68 @@ class TestEventListeners:
         assert installation is not None, "安装记录应存在"
         assert installation.status == "FAILED", (
             f"状态应更新为 FAILED，实际为 {installation.status}"
+        )
+
+        TenantContext.clear()
+
+    async def test_plugin_installation_failed_event_idempotent_skip(
+        self,
+        e2e_session: AsyncSession,
+        e2e_engine,
+        test_tenant_id: str,
+        redis_initialized: None,
+    ) -> None:
+        """
+        测试插件安装失败事件幂等保护（ACTIVE 不被覆盖）
+
+        场景：
+        1. 创建测试插件安装记录（状态为 ACTIVE）
+        2. 发布 PluginInstallationFailed 事件
+        3. 等待监听器处理
+        4. 验证安装记录状态保持 ACTIVE（幂等跳过）
+
+        验证点：
+        1. ACTIVE 状态的安装记录不应被覆盖为 FAILED
+        """
+        TenantContext.set_tenant_id(test_tenant_id)
+
+        # 创建 ACTIVE 安装记录
+        active_installation = TenantPluginInstallation(
+            tenant_id=test_tenant_id,
+            plugin_id=TEST_PLUGIN_ID_ACTIVE,
+            plugin_unique_identifier=TEST_PLUGIN_ID_ACTIVE,
+            status="ACTIVE",
+            plugin_type="test",
+        )
+        e2e_session.add(active_installation)
+        await e2e_session.commit()
+
+        # 发布事件
+        publisher = get_event_publisher()
+        event = PluginInstallationFailed(
+            tenant_id=test_tenant_id,
+            plugin_id=TEST_PLUGIN_ID_ACTIVE,
+            error_message="测试事件：幂等跳过",
+        )
+
+        await publisher.publish(event)
+
+        # 等待监听器处理
+        await asyncio.sleep(3)
+
+        # 验证状态保持 ACTIVE（幂等保护）
+        async with AsyncSession(bind=e2e_engine, expire_on_commit=False) as fresh_session:
+            result = await fresh_session.execute(
+                select(TenantPluginInstallation).where(
+                    TenantPluginInstallation.tenant_id == test_tenant_id,
+                    TenantPluginInstallation.plugin_id == TEST_PLUGIN_ID_ACTIVE,
+                )
+            )
+            installation = result.scalar_one_or_none()
+
+        assert installation is not None, "安装记录应存在"
+        assert installation.status == "ACTIVE", (
+            f"ACTIVE 状态不应被覆盖为 FAILED，实际为 {installation.status}"
         )
 
         TenantContext.clear()

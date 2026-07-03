@@ -57,6 +57,14 @@ class PluginInstallationFailedHandler:
                     },
                 )
                 if installation:
+                    # 幂等保护：仅 PENDING → FAILED，不覆盖已完成的安装
+                    if installation.status != "PENDING":
+                        _logger.info(
+                            f"跳过 FAILED 标记: 插件 {plugin_id} 当前状态为 "
+                            f"{installation.status}，仅 PENDING 可转为 FAILED"
+                        )
+                        return
+
                     installation.status = "FAILED"
                     await session.commit()
                     _logger.info(

@@ -155,16 +155,26 @@ def _parse_message_data(message_data: dict) -> dict[str, Any] | None:
     if not message_data:
         return None
 
-    # 消息格式: {"task_type": "plugin_install", "payload": "{...}"}
     import json
 
+    # 消息格式: {"task_type": "plugin_install", "task_id": "...", "tenant_id": "...", ...}
+    # 或旧格式: {"payload": "{...}"}
     payload = message_data.get("payload")
-    if not payload:
-        return None
+    if payload:
+        try:
+            if isinstance(payload, str):
+                return json.loads(payload)
+            return payload
+        except json.JSONDecodeError:
+            return None
 
-    try:
-        if isinstance(payload, str):
-            return json.loads(payload)
-        return payload
-    except json.JSONDecodeError:
-        return None
+    # 新格式：字段直接在消息中
+    if message_data.get("task_id") and message_data.get("plugin_id"):
+        result = dict(message_data)
+        # auto_start 可能是字符串 "True"/"False"
+        auto_start = result.get("auto_start")
+        if isinstance(auto_start, str):
+            result["auto_start"] = auto_start.lower() == "true"
+        return result
+
+    return None

@@ -682,7 +682,10 @@ class TenantPluginManager:
         plugin_package: bytes,
         install_request: InstallRequest | None = None,
     ) -> str:
-        """安装插件"""
+        """安装插件
+
+        解析和校验后，委托给 _execute_installation() 执行统一安装编排。
+        """
         self.logger.info("开始安装插件")
 
         #  第一阶段：解析插件包（包含_assets提取）
@@ -700,61 +703,20 @@ class TenantPluginManager:
             f"{plugin_config.configuration.author}/{plugin_config.configuration.name}"
         )
 
+        auto_start = install_request.auto_start if install_request else False
+        config_override = install_request.config_override if install_request else {}
+
         try:
-            # 下面的步骤如果出错了，需要回滚
-
-            #  第四阶段：本地安装插件文件
-            self.logger.info(f"开始准备插件文件: {plugin_id}")
-            await self._install_plugin_files(plugin_id, plugin_package)
-
-            #  第五阶段：创建运行时并执行重量级预处理
-            plugin_info = PluginInfo(config=plugin_config, installed_at=datetime.now())
-
-            runtime = await self.runtime_factory.create_runtime(
-                plugin_info, self.workspace_dir / plugin_id
-            )
-
-            self.logger.info(f"开始插件重量级预处理: {plugin_id}")
-            await runtime.prepare()  #  这里执行所有重量级操作
-            self.logger.info(f"插件预处理完成: {plugin_id}")
-
-            #  第六阶段：本地安装成功后，上传插件包和_assets到OSS
-            self.logger.info(f"本地安装成功，开始上传到OSS: {plugin_id}")
-
-            # 上传插件包
-            oss_path = await self._upload_plugin_to_oss(
-                plugin_id, plugin_config.configuration.version, plugin_package
-            )
-
-            # 上传_assets文件
-            assets_upload_result = await self._upload_plugin_assets_to_oss(
-                plugin_id=plugin_id,
-                version=plugin_config.configuration.version,
-                assets=package_info.assets,
-            )
-
-            #  第七阶段：注册插件到数据库和内存
-            install_info = {
-                "oss_path": oss_path,
-                "version": plugin_config.configuration.version,
-                "package_hash": package_info.package_hash,
-                "assets_count": len(package_info.assets),
-                "assets_upload_result": assets_upload_result,
-            }
-            config_override = install_request.config_override if install_request else {}
-            await self._register_plugin_installation(
+            #  第四阶段：统一安装编排
+            await self._execute_installation(
                 session,
-                plugin_config,
+                plugin_package,
                 plugin_id,
-                install_info,
-                install_request.auto_start if install_request else False,
-                config_override,
+                plugin_config,
+                package_info,
+                auto_start=auto_start,
+                config_override=config_override,
             )
-
-            #  第八阶段：如果需要自动启动
-            if install_request and install_request.auto_start:
-                self.logger.info(f"自动启动插件: {plugin_id}")
-                # await self.start_plugin(plugin_id) ## 不自动启动插件了，主要是性能考虑，延迟到调用阶段启动
 
             self.logger.info(
                 f"插件安装成功: {plugin_id}@{plugin_config.configuration.version} (包含 {len(package_info.assets)} 个资源文件)",
@@ -770,7 +732,7 @@ class TenantPluginManager:
                     session,
                     plugin_config if "plugin_config" in locals() else None,
                     plugin_id if "plugin_id" in locals() else None,
-                    oss_path if "oss_path" in locals() else None,
+                    None,  # oss_path 在 _execute_installation 内部管理
                 )
             except Exception:
                 self.logger.exception("回滚操作失败")
@@ -1281,39 +1243,172 @@ class TenantPluginManager:
                 shutil.rmtree(plugin_dir, ignore_errors=True)
             raise ValueError(f"插件文件准备失败: {e}")
 
-    async def _register_plugin_installation(
+    async def _execute_installation(
         self,
         session: AsyncSession,
-        plugin_config: PluginConfig,
+        plugin_package: bytes,
         plugin_id: str,
-        install_info: dict[str, Any],
-        auto_start: bool,
-        config_override: dict[str, Any],
-    ):
-        """注册插件安装到数据库和内存"""
+        plugin_config: PluginConfig,
+        package_info: PluginPackageInfo,
+        auto_start: bool = False,
+        config_override: dict[str, Any] | None = None,
+    ) -> str:
+        """统一安装编排
+
+        操作顺序：先创建 PENDING 记录，再执行外部操作，成功后更新 ACTIVE。
+        外部操作失败时标记 FAILED（仅 PENDING→FAILED，幂等）并发布事件。
+
+        Args:
+            session: 数据库会话
+            plugin_package: 插件包字节
+            plugin_id: 插件 ID
+            plugin_config: 插件配置
+            package_info: 插件包信息
+            auto_start: 是否自动启动
+            config_override: 运行时配置覆盖
+
+        Returns:
+            str: 插件 ID
+        """
+        from ai_plugin.sdk.entities import I18nObject
+
+        provider = get_plugin_installation_provider()
+        plugin_unique_identifier = f"{plugin_id}@{plugin_config.configuration.version}"
+
+        # I18nObject 序列化辅助函数
+        def serialize_i18n(obj):
+            from pydantic import BaseModel
+
+            if isinstance(obj, I18nObject):
+                return {"en_US": obj.en_US, "zh_Hans": obj.zh_Hans}
+            elif isinstance(obj, BaseModel):
+                return serialize_i18n(obj.model_dump(mode="json"))
+            elif isinstance(obj, dict):
+                return {k: serialize_i18n(v) for k, v in obj.items()}
+            elif isinstance(obj, list):
+                return [serialize_i18n(item) for item in obj]
+            return obj
+
+        # ── 步骤 1: 创建 PENDING 记录（DB 先于外部操作）──
+        declaration = {
+            "author": plugin_config.configuration.author,
+            "name": plugin_config.configuration.name,
+            "version": plugin_config.configuration.version,
+            "description": serialize_i18n(plugin_config.configuration.description),
+            "type": self.convert_to_plugin_type(plugin_config).value,
+        }
+
+        installation_dto = PluginInstallationDTO(
+            tenant_id=self.tenant_id,
+            plugin_id=plugin_id,
+            plugin_unique_identifier=plugin_unique_identifier,
+            declaration=declaration,
+            status="PENDING",
+            auto_start=auto_start,
+            plugin_type=self.convert_to_plugin_type(plugin_config).value,
+            runtime_type="local",
+        )
+        await provider.create_installation(self.tenant_id, installation_dto)
+        self.logger.info(f"插件 PENDING 记录已创建: {plugin_id}")
+
+        # ── 步骤 2: 创建 AI 侧记录 ──
+        plugin_config = await self._inject_asset_urls(plugin_config, plugin_id)
+        config_dict = serialize_i18n(plugin_config.model_dump(mode="json"))
+
+        ai_config = AIPluginConfig(
+            tenant_id=self.tenant_id,
+            plugin_id=plugin_id,
+            plugin_unique_identifier=plugin_unique_identifier,
+            plugin_config=config_dict,
+            runtime_config=config_override or {},
+        )
+        session.add(ai_config)
+
+        runtime_state = PluginRuntimeState(
+            tenant_id=self.tenant_id,
+            plugin_id=plugin_id,
+            status="inactive",
+        )
+        session.add(runtime_state)
+        await session.flush()
+        self.logger.info(f"AI 侧记录已创建: {plugin_id}")
+
         try:
-            # 创建PluginInfo对象
+            # ── 步骤 3: 安装插件文件到本地 ──
+            self.logger.info(f"开始准备插件文件: {plugin_id}")
+            await self._install_plugin_files(plugin_id, plugin_package)
+
+            # ── 步骤 4: 创建运行时并执行预处理 ──
             plugin_info = PluginInfo(config=plugin_config, installed_at=datetime.now())
+            runtime = await self.runtime_factory.create_runtime(
+                plugin_info, self.workspace_dir / plugin_id
+            )
+            self.logger.info(f"开始插件重量级预处理: {plugin_id}")
+            await runtime.prepare()
+            self.logger.info(f"插件预处理完成: {plugin_id}")
 
-            # 注册插件到内存
-            self.plugins[plugin_id] = plugin_info
-
-            # 保存插件信息到数据库
-            await self._save_plugin_installation_to_database(
-                session,
-                plugin_config,
-                plugin_id,
-                install_info,
-                auto_start,
-                config_override,
+            # ── 步骤 5: 上传到 OSS ──
+            self.logger.info(f"开始上传到OSS: {plugin_id}")
+            await self._upload_plugin_to_oss(
+                plugin_id, plugin_config.configuration.version, plugin_package
+            )
+            await self._upload_plugin_assets_to_oss(
+                plugin_id=plugin_id,
+                version=plugin_config.configuration.version,
+                assets=package_info.assets,
             )
 
-            self.logger.info(f"插件注册成功: {plugin_id}")
+            # ── 步骤 6: 更新 Tenant 侧状态为 ACTIVE ──
+            await provider.update_installation(
+                self.tenant_id,
+                plugin_id,
+                {"status": "ACTIVE"},
+            )
 
-        except Exception:
-            # 清理失败的注册
-            if plugin_id in self.plugins:
-                del self.plugins[plugin_id]
+            # ── 步骤 7: 更新 AI 侧运行时状态 + 注册内存 ──
+            runtime_state.status = "active"
+            await session.flush()
+            self.plugins[plugin_id] = plugin_info
+
+            self.logger.info(f"插件安装编排完成: {plugin_id}")
+            return plugin_id
+
+        except Exception as e:
+            self.logger.exception(f"安装编排失败: {plugin_id}")
+
+            # 幂等标记 FAILED：仅 PENDING→FAILED
+            try:
+                installation = await provider.get_installation(
+                    self.tenant_id, plugin_id
+                )
+                if installation and installation.status == "PENDING":
+                    await provider.update_installation(
+                        self.tenant_id,
+                        plugin_id,
+                        {"status": "FAILED"},
+                    )
+                    self.logger.info(f"插件安装记录已标记为 FAILED: {plugin_id}")
+                else:
+                    self.logger.info(
+                        f"跳过 FAILED 标记: 插件 {plugin_id} 状态为 "
+                        f"{installation.status if installation else '不存在'}"
+                    )
+            except Exception:
+                self.logger.exception(f"标记安装状态为 FAILED 失败: {plugin_id}")
+
+            # 发布安装失败事件
+            try:
+                publisher = get_event_publisher()
+                event = PluginInstallationFailed(
+                    tenant_id=self.tenant_id,
+                    plugin_id=plugin_id,
+                    error_message=str(e),
+                )
+                await publisher.publish(event)
+                self.logger.info(f"已发布插件安装失败事件: {plugin_id}")
+            except Exception:
+                self.logger.exception(f"发布插件安装失败事件失败: {plugin_id}")
+
             raise
 
     def _build_asset_access_url(self, plugin_id: str, version: str, asset_path: str) -> str:
@@ -1394,125 +1489,6 @@ class TenantPluginManager:
 
         self.logger.info(f"已为插件 {plugin_id}@{version} 注入资源访问 URL")
         return plugin_config
-
-    async def _save_plugin_installation_to_database(
-        self,
-        session: AsyncSession,
-        plugin_config: PluginConfig,
-        plugin_id: str,
-        install_info: dict[str, Any],
-        auto_start: bool,
-        config_override: dict[str, Any],
-    ):
-        """保存插件安装信息到数据库"""
-        import json
-
-        from ai_plugin.sdk.entities import I18nObject
-
-        provider = get_plugin_installation_provider()
-
-        plugin_unique_identifier = f"{plugin_id}@{plugin_config.configuration.version}"
-
-        # 注入资源访问 URL（图标等）
-        plugin_config = await self._inject_asset_urls(plugin_config, plugin_id)
-
-        # I18nObject 序列化辅助函数
-        def serialize_i18n(obj):
-            """递归序列化 I18nObject 和 Pydantic 模型"""
-            from pydantic import BaseModel
-
-            if isinstance(obj, I18nObject):
-                return {"en_US": obj.en_US, "zh_Hans": obj.zh_Hans}
-            elif isinstance(obj, BaseModel):
-                # 处理 Pydantic 模型
-                return serialize_i18n(obj.model_dump(mode="json"))
-            elif isinstance(obj, dict):
-                return {k: serialize_i18n(v) for k, v in obj.items()}
-            elif isinstance(obj, list):
-                return [serialize_i18n(item) for item in obj]
-            return obj
-
-        # 构建声明内容（序列化 I18nObject）
-        declaration = {
-            "author": plugin_config.configuration.author,
-            "name": plugin_config.configuration.name,
-            "version": plugin_config.configuration.version,
-            "description": serialize_i18n(plugin_config.configuration.description),
-            "type": self.convert_to_plugin_type(plugin_config).value,
-        }
-
-        installation_dto = PluginInstallationDTO(
-            tenant_id=self.tenant_id,
-            plugin_id=plugin_id,
-            plugin_unique_identifier=plugin_unique_identifier,
-            declaration=declaration,
-            status="PENDING",
-            auto_start=auto_start,
-            plugin_type=self.convert_to_plugin_type(plugin_config).value,
-            runtime_type="local",
-        )
-
-        try:
-            # 1. 创建 Tenant 侧记录
-            await provider.create_installation(self.tenant_id, installation_dto)
-
-            # 2. 创建 AI 侧 PluginConfig
-            # 使用前面定义的 serialize_i18n 函数序列化配置
-            config_dict = serialize_i18n(plugin_config.model_dump(mode="json"))
-
-            ai_config = AIPluginConfig(
-                tenant_id=self.tenant_id,
-                plugin_id=plugin_id,
-                plugin_unique_identifier=plugin_unique_identifier,
-                plugin_config=config_dict,
-                runtime_config={},
-            )
-            session.add(ai_config)
-
-            # 3. 创建 AI 侧 PluginRuntimeState
-            runtime_state = PluginRuntimeState(
-                tenant_id=self.tenant_id,
-                plugin_id=plugin_id,
-                status="active",
-            )
-            session.add(runtime_state)
-
-            await session.flush()
-
-            # 4. 更新状态为 ACTIVE
-            await provider.update_installation(
-                self.tenant_id,
-                plugin_id,
-                {"status": "ACTIVE"},
-            )
-
-            self.logger.info(f"插件安装数据保存成功: {plugin_id}")
-
-        except Exception as e:
-            # 标记安装失败
-            try:
-                await provider.update_installation(
-                    self.tenant_id,
-                    plugin_id,
-                    {"status": "FAILED", "error": str(e)},
-                )
-            except Exception:
-                self.logger.exception(f"更新安装状态失败: {plugin_id}")
-
-            # 发布插件安装失败事件，通知 Tenant 侧
-            try:
-                publisher = get_event_publisher()
-                event = PluginInstallationFailed(
-                    tenant_id=self.tenant_id,
-                    plugin_id=plugin_id,
-                    error_message=str(e),
-                )
-                await publisher.publish(event)
-                self.logger.info(f"已发布插件安装失败事件: {plugin_id}")
-            except Exception:
-                self.logger.exception(f"发布插件安装失败事件失败: {plugin_id}")
-
-            raise
 
     def convert_to_plugin_type(self, plugin_config: PluginConfig) -> DBPluginType:
         """将插件配置转换为数据库插件类型"""
