@@ -706,7 +706,6 @@ class TenantPluginManager:
             f"{plugin_config.configuration.author}/{plugin_config.configuration.name}"
         )
 
-        auto_start = install_request.auto_start if install_request else False
         config_override = install_request.config_override if install_request else {}
 
         try:
@@ -717,7 +716,6 @@ class TenantPluginManager:
                 plugin_id,
                 plugin_config,
                 package_info,
-                auto_start=auto_start,
                 config_override=config_override,
             )
 
@@ -1253,12 +1251,11 @@ class TenantPluginManager:
         plugin_id: str,
         plugin_config: PluginConfig,
         package_info: PluginPackageInfo,
-        auto_start: bool = False,
         config_override: dict[str, Any] | None = None,
     ) -> str:
         """统一安装编排
 
-        操作顺序：先创建 PENDING 记录，再执行外部操作，成功后更新 ACTIVE。
+        操作顺序：先创建 PENDING 记录，再执行外部操作，成功后更新 INACTIVE。
         外部操作失败时标记 FAILED（仅 PENDING→FAILED，幂等）并发布事件。
 
         Args:
@@ -1267,7 +1264,6 @@ class TenantPluginManager:
             plugin_id: 插件 ID
             plugin_config: 插件配置
             package_info: 插件包信息
-            auto_start: 是否自动启动
             config_override: 运行时配置覆盖
 
         Returns:
@@ -1320,7 +1316,7 @@ class TenantPluginManager:
                 plugin_unique_identifier=plugin_unique_identifier,
                 declaration=declaration,
                 status="PENDING",
-                auto_start=auto_start,
+                auto_start=False,  # 统一为 False，安装后不自动启动
                 plugin_type=self.convert_to_plugin_type(plugin_config).value,
                 runtime_type="local",
             )
@@ -1374,16 +1370,14 @@ class TenantPluginManager:
                 assets=package_info.assets,
             )
 
-            # ── 步骤 6: 更新 Tenant 侧状态为 ACTIVE ──
+            # ── 步骤 6: 更新 Tenant 侧状态为 INACTIVE ──
             await provider.update_installation(
                 self.tenant_id,
                 plugin_id,
-                {"status": "ACTIVE"},
+                {"status": "INACTIVE"},
             )
 
-            # ── 步骤 7: 更新 AI 侧运行时状态 + 注册内存 ──
-            runtime_state.status = "active"
-            await session.flush()
+            # ── 步骤 7: 注册内存（runtime_state 已是 inactive）──
             self.plugins[plugin_id] = plugin_info
 
             self.logger.info(f"插件安装编排完成: {plugin_id}")
