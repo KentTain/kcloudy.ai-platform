@@ -259,3 +259,44 @@ class BatchStartStopResponse(BaseModel):
 
     success: list[BatchOperationItem] = Field(default_factory=list, description="成功列表")
     failed: list[BatchOperationFailedItem] = Field(default_factory=list, description="失败列表")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 插件安装记录管理 Schema
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+class PluginInstallationQuery(BasePaginatedQuery):
+    """插件安装记录查询请求"""
+
+    tenant_id: str | None = Field(default=None, description="租户ID筛选")
+    plugin_id: str | None = Field(default=None, description="插件ID筛选")
+    status: str | None = Field(default=None, description="状态筛选（PENDING/ACTIVE/INACTIVE/FAILED）")
+
+
+class PluginInstallationResponse(BaseModel):
+    """插件安装记录响应"""
+
+    id: str = Field(..., description="记录ID")
+    tenant_id: str = Field(..., description="租户ID")
+    plugin_id: str = Field(..., description="插件ID")
+    plugin_unique_identifier: str = Field(..., description="插件唯一标识符")
+    status: str = Field(..., description="状态")
+    auto_start: bool = Field(default=False, description="是否自动启动")
+    freeze_threshold_hours: int = Field(default=24, description="冻结阈值小时数")
+    plugin_type: str | None = Field(None, description="插件类型")
+    runtime_type: str | None = Field(None, description="运行时类型")
+    installed_at: datetime | None = Field(None, description="安装完成时间")
+    created_at: datetime | None = Field(None, description="创建时间")
+    updated_at: datetime | None = Field(None, description="更新时间")
+    created_by: str | None = Field(None, description="创建人")
+    updated_by: str | None = Field(None, description="更新人")
+
+
+class PluginInstallationPaginatedResponse(BaseModel):
+    """插件安装记录分页列表响应"""
+
+    items: list[PluginInstallationResponse] = Field(default_factory=list, description="安装记录列表")
+    total: int = Field(default=0, description="总数量")
+    page: int = Field(default=1, description="当前页码")
+    page_size: int = Field(default=20, description="每页条数")
