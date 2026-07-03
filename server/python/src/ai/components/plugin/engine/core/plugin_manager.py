@@ -844,9 +844,48 @@ class TenantPluginManager:
 
         return deleted_count
 
-    async def start_plugin(self, plugin_id: str) -> bool:
-        """启动插件（公共接口）"""
-        return await self._start_plugin_internal(plugin_id)
+    async def start_plugin(
+        self, plugin_id: str, session: AsyncSession | None = None
+    ) -> bool:
+        """启动插件（公共接口）
+
+        Args:
+            plugin_id: 插件 ID
+            session: 数据库会话（可选）
+
+        Returns:
+            bool: 启动是否成功
+        """
+        # 检查插件是否存在
+        if plugin_id not in self.plugins:
+            raise ValueError(f"插件不存在: {plugin_id}")
+
+        # 检查配置是否存在
+        plugin_info = self.plugins[plugin_id]
+        if not plugin_info.config:
+            self.logger.warning(
+                f"插件配置不存在，可能未正确安装: {plugin_id}"
+            )
+            raise ValueError(f"插件配置不存在: {plugin_id}")
+
+        # 检查是否已验证（通过配置完整性判断）
+        try:
+            # 简单验证配置完整性
+            if not plugin_info.config.configuration:
+                self.logger.warning(
+                    f"插件配置不完整，缺少 configuration: {plugin_id}"
+                )
+        except Exception as e:
+            self.logger.warning(f"插件配置验证失败: {plugin_id}, 错误: {e}")
+
+        # 启动插件
+        success = await self._start_plugin_internal(plugin_id)
+
+        if success and session:
+            # 更新运行时状态和通知 tenant
+            await self._update_plugin_running_by_installation(session, plugin_id)
+
+        return success
 
     async def _update_plugin_last_accessed(self, session: AsyncSession, plugin_id: str):
         """更新插件最后访问时间（更新 AI 侧运行时状态）"""
