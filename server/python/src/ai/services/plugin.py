@@ -42,6 +42,7 @@ from ai.schemas.plugin import (
     StopPluginResponse,
     UpdatePluginConfigRequest,
     UpdatePluginCredential,
+    ValidateCredentialResult,
 )
 from ai.services.credential_service import credential_service
 from framework.common.ctx import get_tenant_id, get_user_id
@@ -200,9 +201,7 @@ class PluginManagementService:
         conditions = [TenantPluginDefinition.is_enabled == True]
 
         if keyword:
-            conditions.append(
-                TenantPluginDefinition.plugin_id.ilike(f"%{keyword}%")
-            )
+            conditions.append(TenantPluginDefinition.plugin_id.ilike(f"%{keyword}%"))
 
         if is_recommended is not None:
             conditions.append(TenantPluginDefinition.is_recommended == is_recommended)
@@ -234,26 +233,33 @@ class PluginManagementService:
             is_installed = definition.plugin_id in installed_plugin_ids
             installation_status = installation_status_map.get(definition.plugin_id)
 
-            all_items.append(AvailablePluginVo(
-                plugin_id=definition.plugin_id,
-                plugin_unique_identifier=definition.plugin_unique_identifier,
-                name=configuration.get("label", {}).get("zh_Hans")
-                or configuration.get("label", {}).get("en_US")
-                or definition.plugin_id.split("/")[-1],
-                author=configuration.get("author", definition.plugin_id.split("/")[0] if "/" in definition.plugin_id else "unknown"),
-                version=configuration.get("version", ""),
-                description=configuration.get("description", {}).get("zh_Hans", "")
-                or configuration.get("description", {}).get("en_US", ""),
-                icon=configuration.get("icon"),
-                plugin_type=plugin_type,
-                runtime_type="local",  # 默认本地运行
-                is_installed=is_installed,
-                installation_status=installation_status,
-                is_recommended=definition.is_recommended,
-                is_enabled=definition.is_enabled,
-                created_at=definition.created_at,
-                updated_at=definition.updated_at,
-            ))
+            all_items.append(
+                AvailablePluginVo(
+                    plugin_id=definition.plugin_id,
+                    plugin_unique_identifier=definition.plugin_unique_identifier,
+                    name=configuration.get("label", {}).get("zh_Hans")
+                    or configuration.get("label", {}).get("en_US")
+                    or definition.plugin_id.split("/")[-1],
+                    author=configuration.get(
+                        "author",
+                        definition.plugin_id.split("/")[0]
+                        if "/" in definition.plugin_id
+                        else "unknown",
+                    ),
+                    version=configuration.get("version", ""),
+                    description=configuration.get("description", {}).get("zh_Hans", "")
+                    or configuration.get("description", {}).get("en_US", ""),
+                    icon=configuration.get("icon"),
+                    plugin_type=plugin_type,
+                    runtime_type="local",  # 默认本地运行
+                    is_installed=is_installed,
+                    installation_status=installation_status,
+                    is_recommended=definition.is_recommended,
+                    is_enabled=definition.is_enabled,
+                    created_at=definition.created_at,
+                    updated_at=definition.updated_at,
+                )
+            )
 
         # 6. 计算筛选后的 total 并分页
         total = len(all_items)
@@ -622,18 +628,15 @@ class PluginManagementService:
         plugin_id: str,
         credentials: dict[str, Any],
         session: AsyncSession,
-    ) -> "ValidateCredentialResult":
+    ) -> ValidateCredentialResult:
         """验证前端提交的凭证是否有效"""
-        from ai.schemas.plugin import ValidateCredentialResult
 
         try:
             from ai.components.plugin.engine.core.plugin_manager import (
                 PluginManagerFactory,
             )
 
-            plugin_manager = await PluginManagerFactory.get_manager(
-                tenant_id, session
-            )
+            plugin_manager = await PluginManagerFactory.get_manager(tenant_id, session)
 
             if plugin_id not in plugin_manager.plugins:
                 return ValidateCredentialResult(
@@ -641,9 +644,7 @@ class PluginManagementService:
                 )
 
             plugin_info = plugin_manager.plugins[plugin_id]
-            plugin_type = getattr(
-                plugin_info.config.configuration, "type", None
-            )
+            plugin_type = getattr(plugin_info.config.configuration, "type", None)
             plugin_type_str = plugin_type.value if plugin_type else "unknown"
 
             if plugin_type_str == "model":
@@ -653,9 +654,7 @@ class PluginManagementService:
                 # 从 models_configuration 获取 provider 名称
                 provider = plugin_id
                 if plugin_info.config.models_configuration:
-                    provider = plugin_info.config.models_configuration[
-                        0
-                    ].provider
+                    provider = plugin_info.config.models_configuration[0].provider
 
                 result = await model_client.validate_provider_credentials(
                     tenant_id=tenant_id,
@@ -702,17 +701,11 @@ class PluginManagementService:
         try:
             record = await PluginCredential.one_by_id(session, credential_id)
             if not record:
-                return ValidateCredentialResult(
-                    success=False, error="凭证不存在"
-                )
+                return ValidateCredentialResult(success=False, error="凭证不存在")
 
             # 获取凭证架构用于解密
-            schema = await self.get_plugin_credentials_schema(
-                session, plugin_id
-            )
-            credentials_schema = credential_service.extract_credentials_schema(
-                None
-            )
+            schema = await self.get_plugin_credentials_schema(session, plugin_id)
+            credentials_schema = credential_service.extract_credentials_schema(None)
             # 从 plugin_config 获取 schema
             plugin_config_record = await AIPluginConfig.one_by_conditions(
                 session,
@@ -722,10 +715,8 @@ class PluginManagementService:
                 ],
             )
             if plugin_config_record and plugin_config_record.plugin_config:
-                credentials_schema = (
-                    credential_service.extract_credentials_schema(
-                        plugin_config_record.plugin_config
-                    )
+                credentials_schema = credential_service.extract_credentials_schema(
+                    plugin_config_record.plugin_config
                 )
 
             # 解密凭证
@@ -1324,7 +1315,9 @@ class PluginManagementService:
                 ai_config.runtime_config = new_runtime
                 # 强制标记 JSON 字段已修改
                 flag_modified(ai_config, "runtime_config")
-                _logger.info(f"更新配置: plugin_id={plugin_id}, old={current_runtime}, new={new_runtime}")
+                _logger.info(
+                    f"更新配置: plugin_id={plugin_id}, old={current_runtime}, new={new_runtime}"
+                )
 
         await session.flush()
         await session.refresh(ai_config)
@@ -1379,7 +1372,11 @@ class PluginManagementService:
         # 计算成功率
         success_rate = None
         if runtime_state.call_count and runtime_state.call_count > 0:
-            success_rate = (runtime_state.call_count - (runtime_state.error_count or 0)) / runtime_state.call_count * 100
+            success_rate = (
+                (runtime_state.call_count - (runtime_state.error_count or 0))
+                / runtime_state.call_count
+                * 100
+            )
 
         return RuntimeStateResponse(
             plugin_id=plugin_id,
@@ -1390,9 +1387,15 @@ class PluginManagementService:
             call_count=runtime_state.call_count or 0,
             error_count=runtime_state.error_count or 0,
             success_rate=success_rate,
-            last_started_at=runtime_state.last_started_at.isoformat() if runtime_state.last_started_at else None,
-            last_stopped_at=runtime_state.last_stopped_at.isoformat() if runtime_state.last_stopped_at else None,
-            last_accessed_at=runtime_state.last_accessed_at.isoformat() if runtime_state.last_accessed_at else None,
+            last_started_at=runtime_state.last_started_at.isoformat()
+            if runtime_state.last_started_at
+            else None,
+            last_stopped_at=runtime_state.last_stopped_at.isoformat()
+            if runtime_state.last_stopped_at
+            else None,
+            last_accessed_at=runtime_state.last_accessed_at.isoformat()
+            if runtime_state.last_accessed_at
+            else None,
             health_status=self._calculate_health_status(runtime_state),
             last_error=runtime_state.last_error,
         )
@@ -1480,15 +1483,17 @@ class PluginManagementService:
                 elif status == "frozen":
                     frozen_count += 1
 
-            items.append(RuntimeStateItem(
-                plugin_id=inst.plugin_id,
-                plugin_name=plugin_name,
-                status=status,
-                process_id=process_id,
-                port=port,
-                memory_mb=memory_mb,
-                cpu_percent=cpu_percent,
-            ))
+            items.append(
+                RuntimeStateItem(
+                    plugin_id=inst.plugin_id,
+                    plugin_name=plugin_name,
+                    status=status,
+                    process_id=process_id,
+                    port=port,
+                    memory_mb=memory_mb,
+                    cpu_percent=cpu_percent,
+                )
+            )
 
         return RuntimeStateListResponse(
             items=items,
@@ -1581,7 +1586,9 @@ class PluginManagementService:
 
     # ==================== 统计仪表板 ====================
 
-    async def get_statistics(self, session: AsyncSession) -> PluginUsageStatisticsResponse:
+    async def get_statistics(
+        self, session: AsyncSession
+    ) -> PluginUsageStatisticsResponse:
         """获取插件使用统计"""
         tenant_id = get_tenant_id()
         if not tenant_id:
@@ -1615,7 +1622,8 @@ class PluginManagementService:
         inactive_count = sum(1 for st in runtime_states if st.status == "inactive")
         frozen_count = sum(1 for st in runtime_states if st.status == "frozen")
         error_count = sum(
-            1 for st in runtime_states
+            1
+            for st in runtime_states
             if st.status == "active" and st.error_count and st.error_count > 0
         )
 
@@ -1631,7 +1639,9 @@ class PluginManagementService:
         error_invocations = sum(st.error_count or 0 for st in runtime_states)
         success_rate = 0.0
         if total_invocations > 0:
-            success_rate = (total_invocations - error_invocations) / total_invocations * 100
+            success_rate = (
+                (total_invocations - error_invocations) / total_invocations * 100
+            )
 
         # 今日调用数（暂时使用总调用数，后续可实现按日期统计）
         today_invocations = total_invocations

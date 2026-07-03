@@ -13,6 +13,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from framework.common.exceptions import ConflictError, NotFoundError
 from tenant.models.plugin_definition import TenantPluginDefinition
 from tenant.schemas.plugin import (
+    InstallToTenantsRequest,
+    InstallToTenantsResponse,
     PluginDefinitionDetailResponse,
     PluginDefinitionPaginatedResponse,
     PluginDefinitionQuery,
@@ -56,9 +58,7 @@ class PluginDefinitionService:
             ConflictError: 插件定义已存在且 overwrite=False
         """
         # 构建插件唯一标识符
-        plugin_unique_identifier = (
-            f"{package_info.plugin_id}:{package_info.version}@{package_info.package_hash}"
-        )
+        plugin_unique_identifier = f"{package_info.plugin_id}:{package_info.version}@{package_info.package_hash}"
 
         # 检查是否已存在
         existing_stmt = select(TenantPluginDefinition).where(
@@ -97,7 +97,9 @@ class PluginDefinitionService:
         await session.flush()
         await session.refresh(definition)
 
-        _logger.info(f"注册插件定义成功: {package_info.plugin_id}:{package_info.version}")
+        _logger.info(
+            f"注册插件定义成功: {package_info.plugin_id}:{package_info.version}"
+        )
 
         return PluginDefinitionService._to_response(definition)
 
@@ -128,9 +130,7 @@ class PluginDefinitionService:
         )
 
         # 更新插件定义
-        plugin_unique_identifier = (
-            f"{package_info.plugin_id}:{package_info.version}@{package_info.package_hash}"
-        )
+        plugin_unique_identifier = f"{package_info.plugin_id}:{package_info.version}@{package_info.package_hash}"
 
         existing.plugin_unique_identifier = plugin_unique_identifier
         existing.declaration = package_info.declaration
@@ -174,7 +174,9 @@ class PluginDefinitionService:
 
         # 推荐状态筛选
         if query.is_recommended is not None:
-            conditions.append(TenantPluginDefinition.is_recommended == query.is_recommended)
+            conditions.append(
+                TenantPluginDefinition.is_recommended == query.is_recommended
+            )
 
         # 启用状态筛选
         if query.is_enabled is not None:
@@ -417,26 +419,30 @@ class PluginDefinitionService:
                 name = manifest.get("name", package_info.name)
                 description = manifest.get("description", "")
 
-                results.append({
-                    "plugin_id": package_info.plugin_id,
-                    "version": package_info.version,
-                    "name": name,
-                    "description": description,
-                    "exists": package_info.plugin_id in existing_ids,
-                    "status": "ready",
-                    "error_message": None,
-                })
+                results.append(
+                    {
+                        "plugin_id": package_info.plugin_id,
+                        "version": package_info.version,
+                        "name": name,
+                        "description": description,
+                        "exists": package_info.plugin_id in existing_ids,
+                        "status": "ready",
+                        "error_message": None,
+                    }
+                )
             except Exception as e:
                 # 解析失败
-                results.append({
-                    "plugin_id": zip_file.name,
-                    "version": "unknown",
-                    "name": zip_file.stem,
-                    "description": "",
-                    "exists": False,
-                    "status": "invalid",
-                    "error_message": str(e),
-                })
+                results.append(
+                    {
+                        "plugin_id": zip_file.name,
+                        "version": "unknown",
+                        "name": zip_file.stem,
+                        "description": "",
+                        "exists": False,
+                        "status": "invalid",
+                        "error_message": str(e),
+                    }
+                )
 
         return results
 
@@ -489,8 +495,8 @@ class PluginDefinitionService:
     async def install_to_tenants(
         session: AsyncSession,
         plugin_id: str,
-        request: "InstallToTenantsRequest",
-    ) -> "InstallToTenantsResponse":
+        request: InstallToTenantsRequest,
+    ) -> InstallToTenantsResponse:
         """
         安装插件到指定租户
 
@@ -508,18 +514,17 @@ class PluginDefinitionService:
         Returns:
             InstallToTenantsResponse: 批量安装结果
         """
-        from framework.clients.ai_client import get_ai_client, InstallationItem
+        from framework.clients.ai_client import InstallationItem, get_ai_client
+        from framework.tenant.plugin_protocols import (
+            PluginInstallationDTO,
+            get_plugin_installation_provider,
+        )
+        from tenant.models.plugin_installation import TenantPluginInstallation
+        from tenant.models.tenant import Tenant
         from tenant.schemas.plugin import (
             InstallFailedItem,
             InstallSkippedItem,
             InstallSuccessItem,
-            InstallToTenantsResponse,
-        )
-        from tenant.models.plugin_installation import TenantPluginInstallation
-        from tenant.models.tenant import Tenant
-        from framework.tenant.plugin_protocols import (
-            PluginInstallationDTO,
-            get_plugin_installation_provider,
         )
 
         # 1. 查询插件定义
@@ -550,10 +555,12 @@ class PluginDefinitionService:
                 tenant_result = await session.execute(tenant_stmt)
                 tenant = tenant_result.scalar_one_or_none()
                 if not tenant:
-                    failed.append(InstallFailedItem(
-                        tenant_id=tenant_id,
-                        message="租户不存在",
-                    ))
+                    failed.append(
+                        InstallFailedItem(
+                            tenant_id=tenant_id,
+                            message="租户不存在",
+                        )
+                    )
                     continue
 
                 # 检查是否已安装
@@ -564,33 +571,41 @@ class PluginDefinitionService:
                 existing_result = await session.execute(existing_stmt)
                 existing_installation = existing_result.scalar_one_or_none()
                 if existing_installation:
-                    skipped.append(InstallSkippedItem(
-                        tenant_id=tenant_id,
-                        reason="already_installed",
-                    ))
+                    skipped.append(
+                        InstallSkippedItem(
+                            tenant_id=tenant_id,
+                            reason="already_installed",
+                        )
+                    )
                     continue
 
                 # 准备安装项
-                installation_items.append(InstallationItem(
-                    tenant_id=tenant_id,
-                    plugin_id=definition.plugin_id,
-                    plugin_unique_identifier=definition.plugin_unique_identifier,
-                    declaration=definition.declaration or {},
-                    auto_start=request.auto_start,
-                ))
+                installation_items.append(
+                    InstallationItem(
+                        tenant_id=tenant_id,
+                        plugin_id=definition.plugin_id,
+                        plugin_unique_identifier=definition.plugin_unique_identifier,
+                        declaration=definition.declaration or {},
+                        auto_start=request.auto_start,
+                    )
+                )
                 valid_tenant_ids.append(tenant_id)
 
             except Exception as e:
                 _logger.error(f"准备安装数据失败: tenant_id={tenant_id}, error={e}")
-                failed.append(InstallFailedItem(
-                    tenant_id=tenant_id,
-                    message=str(e),
-                ))
+                failed.append(
+                    InstallFailedItem(
+                        tenant_id=tenant_id,
+                        message=str(e),
+                    )
+                )
 
         # 3. 通过 Inner API 批量创建 AI 侧数据
         if installation_items:
             ai_client = get_ai_client()
-            ai_result = await ai_client.batch_install_plugins(session, installation_items)
+            ai_result = await ai_client.batch_install_plugins(
+                session, installation_items
+            )
 
             # 4. 根据 AI 侧结果创建 Tenant 侧记录
             provider = get_plugin_installation_provider()
@@ -608,29 +623,39 @@ class PluginDefinitionService:
                         plugin_type=definition.install_type,
                     )
                     await provider.create_installation(item.tenant_id, dto)
-                    success.append(InstallSuccessItem(
-                        tenant_id=item.tenant_id,
-                        plugin_id=plugin_id,
-                    ))
+                    success.append(
+                        InstallSuccessItem(
+                            tenant_id=item.tenant_id,
+                            plugin_id=plugin_id,
+                        )
+                    )
                 except Exception as e:
-                    _logger.error(f"创建租户安装记录失败: tenant_id={item.tenant_id}, error={e}")
-                    failed.append(InstallFailedItem(
-                        tenant_id=item.tenant_id,
-                        message=f"创建安装记录失败: {str(e)}",
-                    ))
+                    _logger.error(
+                        f"创建租户安装记录失败: tenant_id={item.tenant_id}, error={e}"
+                    )
+                    failed.append(
+                        InstallFailedItem(
+                            tenant_id=item.tenant_id,
+                            message=f"创建安装记录失败: {str(e)}",
+                        )
+                    )
 
             # 添加 AI 侧失败和跳过的记录
             for item in ai_result.failed:
-                failed.append(InstallFailedItem(
-                    tenant_id=item.tenant_id,
-                    message=item.message,
-                ))
+                failed.append(
+                    InstallFailedItem(
+                        tenant_id=item.tenant_id,
+                        message=item.message,
+                    )
+                )
 
             for item in ai_result.skipped:
-                skipped.append(InstallSkippedItem(
-                    tenant_id=item.tenant_id,
-                    reason=item.reason,
-                ))
+                skipped.append(
+                    InstallSkippedItem(
+                        tenant_id=item.tenant_id,
+                        reason=item.reason,
+                    )
+                )
 
         _logger.info(
             f"安装插件到租户完成: plugin_id={plugin_id}, "
