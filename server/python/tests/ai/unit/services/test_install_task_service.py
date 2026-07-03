@@ -78,17 +78,10 @@ class TestCreateInstallTask:
 
         request = InstallPluginRequest(plugin_id="test-author/test-plugin")
 
-        mock_provider = MagicMock()
-        mock_provider.create_installation = AsyncMock()
-        mock_provider.update_installation = AsyncMock()
-
         with patch(
             "ai.services.install_task_service.get_tenant_id", side_effect=get_tenant_id
         ), patch(
             "ai.services.install_task_service.get_user_id", side_effect=get_user_id
-        ), patch(
-            "ai.services.install_task_service.get_plugin_installation_provider",
-            return_value=mock_provider,
         ), patch(
             "ai.services.install_task_service.RedisUtil.xadd", new_callable=AsyncMock
         ):
@@ -100,10 +93,8 @@ class TestCreateInstallTask:
         assert result.status == "pending"
         assert "安装任务已创建" in result.message
 
-        # 验证添加了任务记录（安装记录通过 Provider 协议创建，不在此 session）
+        # 验证添加了任务记录（PENDING 记录由 _execute_installation 统一创建）
         assert session.add.call_count == 1
-        # 验证通过 Provider 创建 PENDING 安装记录
-        mock_provider.create_installation.assert_awaited_once()
         assert session.flush.await_count >= 1
 
     @pytest.mark.asyncio
@@ -203,17 +194,10 @@ class TestCreateInstallTask:
 
         request = InstallPluginRequest(plugin_id="test-author/test-plugin")
 
-        mock_provider = MagicMock()
-        mock_provider.create_installation = AsyncMock()
-        mock_provider.update_installation = AsyncMock()
-
         with patch(
             "ai.services.install_task_service.get_tenant_id", side_effect=get_tenant_id
         ), patch(
             "ai.services.install_task_service.get_user_id", side_effect=get_user_id
-        ), patch(
-            "ai.services.install_task_service.get_plugin_installation_provider",
-            return_value=mock_provider,
         ), patch(
             "ai.services.install_task_service.RedisUtil.xadd",
             new_callable=AsyncMock,
@@ -224,8 +208,8 @@ class TestCreateInstallTask:
 
         # 入队失败时仍然返回响应，但任务状态已更新为 failed
         assert isinstance(result, InstallPluginResponse)
-        # 验证入队失败后通过 Provider 回滚安装记录为 FAILED
-        mock_provider.update_installation.assert_awaited()
+        # 验证任务状态已更新为 failed（通过 session.flush 保存）
+        assert session.flush.await_count >= 1
 
 
 class TestUpdateTaskStatus:

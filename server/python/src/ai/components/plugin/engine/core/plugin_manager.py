@@ -429,14 +429,17 @@ class TenantPluginManager:
     async def _check_duplicate_installation(
         self, session: AsyncSession, plugin_config: PluginConfig
     ) -> None:
-        """检查是否已经安装了相同或不同版本的插件"""
+        """检查是否已经安装了相同或不同版本的插件
+
+        仅 ACTIVE 状态阻止重复安装，允许 FAILED 状态重新安装。
+        """
         plugin_id = (
             f"{plugin_config.configuration.author}/{plugin_config.configuration.name}"
         )
 
         provider = get_plugin_installation_provider()
         existing = await provider.get_installation(self.tenant_id, plugin_id)
-        if existing:
+        if existing and existing.status == "ACTIVE":
             raise ValueError(f"插件 {plugin_id} 已安装")
         return None
 
@@ -1298,18 +1301,31 @@ class TenantPluginManager:
             "type": self.convert_to_plugin_type(plugin_config).value,
         }
 
-        installation_dto = PluginInstallationDTO(
-            tenant_id=self.tenant_id,
-            plugin_id=plugin_id,
-            plugin_unique_identifier=plugin_unique_identifier,
-            declaration=declaration,
-            status="PENDING",
-            auto_start=auto_start,
-            plugin_type=self.convert_to_plugin_type(plugin_config).value,
-            runtime_type="local",
-        )
-        await provider.create_installation(self.tenant_id, installation_dto)
-        self.logger.info(f"插件 PENDING 记录已创建: {plugin_id}")
+        # 检查是否已存在安装记录（支持重试场景）
+        existing = await provider.get_installation(self.tenant_id, plugin_id)
+        if existing:
+            if existing.status == "ACTIVE":
+                # ACTIVE 状态不应到达这里（已被 _check_duplicate_installation 捕获）
+                raise ValueError(f"插件 {plugin_id} 已安装")
+            # PENDING/FAILED 状态允许重新安装，更新状态为 PENDING
+            self.logger.info(f"发现已存在记录（状态: {existing.status}），更新为 PENDING: {plugin_id}")
+            await provider.update_installation(
+                self.tenant_id, plugin_id, {"status": "PENDING"}
+            )
+        else:
+            # 不存在记录，创建新的 PENDING 记录
+            installation_dto = PluginInstallationDTO(
+                tenant_id=self.tenant_id,
+                plugin_id=plugin_id,
+                plugin_unique_identifier=plugin_unique_identifier,
+                declaration=declaration,
+                status="PENDING",
+                auto_start=auto_start,
+                plugin_type=self.convert_to_plugin_type(plugin_config).value,
+                runtime_type="local",
+            )
+            await provider.create_installation(self.tenant_id, installation_dto)
+            self.logger.info(f"插件 PENDING 记录已创建: {plugin_id}")
 
         # ── 步骤 2: 创建 AI 侧记录 ──
         plugin_config = await self._inject_asset_urls(plugin_config, plugin_id)

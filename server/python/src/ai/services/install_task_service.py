@@ -26,10 +26,6 @@ from framework.cache.redis_util import RedisUtil
 from framework.common.ctx import get_tenant_id, get_user_id
 from framework.common.exceptions import BadRequestError, NotFoundError
 from framework.configs import get_settings
-from framework.tenant.plugin_protocols import (
-    PluginInstallationDTO,
-    get_plugin_installation_provider,
-)
 from tenant.models.plugin_definition import TenantPluginDefinition
 from tenant.models.plugin_installation import TenantPluginInstallation
 
@@ -113,23 +109,10 @@ class InstallTaskService:
         )
         session.add(task)
 
-        # 5. 创建 Tenant 侧安装记录（PENDING 状态），通过 Provider 协议
-        provider = get_plugin_installation_provider()
-        installation_dto = PluginInstallationDTO(
-            tenant_id=tenant_id,
-            plugin_id=plugin_id,
-            plugin_unique_identifier=definition.plugin_unique_identifier,
-            declaration=definition.declaration if definition.declaration else {},
-            status="PENDING",
-            auto_start=request.auto_start,
-            plugin_type="local",
-            runtime_type="local",
-        )
-        await provider.create_installation(tenant_id, installation_dto)
-
         await session.flush()
 
-        # 6. 发送任务到 Redis Stream 队列（无租户前缀，全局队列）
+        # 5. 发送任务到 Redis Stream 队列（无租户前缀，全局队列）
+        # 注：PENDING 记录由 _execute_installation 统一创建，避免职责重叠
         try:
             queue_name = "plugin_install_tasks"
             message = {
@@ -147,13 +130,6 @@ class InstallTaskService:
             # 回滚任务状态
             task.status = "failed"
             task.error_message = f"任务入队失败: {str(e)}"
-            # 回滚安装记录为 FAILED
-            try:
-                await provider.update_installation(
-                    tenant_id, plugin_id, {"status": "FAILED"}
-                )
-            except Exception:
-                _logger.exception(f"回滚安装记录状态失败: {plugin_id}")
             await session.flush()
 
         return InstallPluginResponse(
