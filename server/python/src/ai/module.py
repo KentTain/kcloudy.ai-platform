@@ -43,6 +43,9 @@ class AIModule:
         from ai.controllers.admin.plugin import router as admin_plugin_router
         from ai.controllers.console.installations import router as installations_router
         from ai.controllers.console.plugin import router as console_plugin_router
+        from ai.controllers.console.plugin_config_controller import (
+            router as plugin_config_router,
+        )
         from ai.controllers.console.runtime_states import (
             router as runtime_states_router,
         )
@@ -63,6 +66,13 @@ class AIModule:
                 installations_router,
                 "/ai/console/v1/plugins/installations",
                 ["Console - Plugin Installations"],
+            ),
+            # Console API - 插件配置管理（配置、测试、启动、停止）
+            # 注意：路径参数版本，与 installations_router 共享前缀
+            (
+                plugin_config_router,
+                "/ai/console/v1/plugins/installations",
+                ["Console - Plugin Config"],
             ),
             # Console API - 批量运行时状态
             (
