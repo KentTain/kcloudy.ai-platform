@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { ArrowLeft, Save, RefreshCw, Plus, Plug, Pencil, Trash2, ZapCircle, CheckCircle2, XCircle } from "lucide-vue-next";
-import { Button, Card, Badge, Input, Textarea, Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components";
+import { ArrowLeft, Save, RefreshCw, Plus, Plug, Pencil, Trash2, Zap, CheckCircle2, XCircle } from "lucide-vue-next";
+import { Button, Card, Badge, Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components";
 import { notifySuccess, notifyError, confirmAction } from "@/framework/utils/feedback";
 import {
   getPluginConfig,
@@ -371,7 +371,7 @@ onMounted(() => {
           :disabled="testingConnection"
           @click="handleTestConnection"
         >
-          <ZapCircle v-if="!testingConnection" class="mr-1 h-4 w-4" />
+          <Zap v-if="!testingConnection" class="mr-1 h-4 w-4" />
           <RefreshCw v-else class="mr-1 h-4 w-4 animate-spin" />
           {{ testingConnection ? "测试中..." : "测试连接" }}
         </Button>

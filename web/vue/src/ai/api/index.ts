@@ -6,4 +6,4 @@
 export * from "./conversation";
 export * from "./model";
 export * from "./plugin";
-export * from "./pluginConfig";
+export * as pluginConfigApi from "./pluginConfig";
