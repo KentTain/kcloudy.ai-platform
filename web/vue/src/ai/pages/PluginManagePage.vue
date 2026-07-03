@@ -20,6 +20,7 @@ import {
   createPluginInstallation,
   type AvailablePlugin,
 } from "@/ai/api/plugin";
+import { startPlugin, stopPlugin } from "@/ai/api/pluginConfig";
 import {
   Search,
   RefreshCw,
@@ -29,6 +30,8 @@ import {
   Package,
   Sparkles,
   Settings,
+  Play,
+  Square,
 } from "lucide-vue-next";
 import { useRouter } from "vue-router";
 
@@ -43,6 +46,9 @@ const searchForm = ref({
 
 // 安装中的插件ID集合
 const installingPlugins = ref<Set<string>>(new Set());
+
+// 启停中的插件ID集合
+const operatingPlugins = ref<Set<string>>(new Set());
 
 // 统计数据
 const statistics = ref({
@@ -60,6 +66,8 @@ function formatDate(dateStr?: string): string {
 // 状态颜色映射
 const statusColorMap: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
   INSTALLED: "default",
+  ACTIVE: "default",
+  INACTIVE: "outline",
   PENDING: "outline",
   INSTALLING: "outline",
   FAILED: "destructive",
@@ -68,6 +76,8 @@ const statusColorMap: Record<string, "default" | "secondary" | "destructive" | "
 // 状态文本映射
 const statusTextMap: Record<string, string> = {
   INSTALLED: "已安装",
+  ACTIVE: "运行中",
+  INACTIVE: "已停止",
   PENDING: "待安装",
   INSTALLING: "安装中",
   FAILED: "安装失败",
@@ -157,16 +167,18 @@ const columns: ColumnDef<AvailablePlugin>[] = [
   {
     accessorKey: "status",
     header: "状态",
-    size: 100,
+    size: 120,
     cell: ({ row }) => {
       const plugin = row.original;
       if (plugin.is_installed) {
         const status = plugin.installation_status || "INSTALLED";
-        return h(
-          Badge,
-          { variant: statusColorMap[status] || "outline" },
-          () => statusTextMap[status] || status
-        );
+        return h("div", { class: "flex flex-col gap-1" }, [
+          h(
+            Badge,
+            { variant: statusColorMap[status] || "outline" },
+            () => statusTextMap[status] || status
+          ),
+        ]);
       }
       return h(Badge, { variant: "secondary" }, () => "未安装");
     },
@@ -174,13 +186,18 @@ const columns: ColumnDef<AvailablePlugin>[] = [
   {
     id: "actions",
     header: "操作",
-    size: 150,
+    size: 200,
     cell: ({ row }) => {
       const plugin = row.original;
       const isInstalling = installingPlugins.value.has(plugin.plugin_id);
+      const isOperating = operatingPlugins.value.has(plugin.plugin_id);
 
       if (plugin.is_installed) {
-        return h("div", { class: "flex items-center gap-1" }, [
+        const status = plugin.installation_status || "INSTALLED";
+        const isActive = status === "ACTIVE";
+        const isInactive = status === "INACTIVE";
+
+        const actionButtons = [
           h(
             Button,
             {
@@ -190,16 +207,55 @@ const columns: ColumnDef<AvailablePlugin>[] = [
             },
             () => [h(Settings, { class: "mr-1 h-3.5 w-3.5" }), "配置"]
           ),
-          h(
-            Button,
-            {
-              variant: "outline",
-              size: "sm",
-              disabled: true,
-            },
-            () => [h(Check, { class: "mr-1 h-3.5 w-3.5" }), "已安装"]
-          ),
-        ]);
+        ];
+
+        if (isActive) {
+          actionButtons.push(
+            h(
+              Button,
+              {
+                variant: "ghost",
+                size: "sm",
+                disabled: isOperating,
+                onClick: () => handleStop(plugin),
+              },
+              () =>
+                isOperating
+                  ? [h(Loader2, { class: "mr-1 h-3.5 w-3.5 animate-spin" }), "停止中"]
+                  : [h(Square, { class: "mr-1 h-3.5 w-3.5" }), "停止"]
+            )
+          );
+        } else if (isInactive) {
+          actionButtons.push(
+            h(
+              Button,
+              {
+                variant: "ghost",
+                size: "sm",
+                disabled: isOperating,
+                onClick: () => handleStart(plugin),
+              },
+              () =>
+                isOperating
+                  ? [h(Loader2, { class: "mr-1 h-3.5 w-3.5 animate-spin" }), "启动中"]
+                  : [h(Play, { class: "mr-1 h-3.5 w-3.5" }), "启动"]
+            )
+          );
+        } else {
+          actionButtons.push(
+            h(
+              Button,
+              {
+                variant: "outline",
+                size: "sm",
+                disabled: true,
+              },
+              () => [h(Check, { class: "mr-1 h-3.5 w-3.5" }), statusTextMap[status] || status]
+            )
+          );
+        }
+
+        return h("div", { class: "flex items-center gap-1" }, actionButtons);
       }
 
       return h(
@@ -291,6 +347,55 @@ const handleInstall = async (plugin: AvailablePlugin) => {
     notifyError(errorMessage);
   } finally {
     installingPlugins.value.delete(plugin.plugin_id);
+  }
+};
+
+// 启动插件
+const handleStart = async (plugin: AvailablePlugin) => {
+  operatingPlugins.value.add(plugin.plugin_id);
+
+  try {
+    const response = await startPlugin(plugin.plugin_id);
+    if (response.code === 200) {
+      const warning = response.data?.warning;
+      if (warning) {
+        notifySuccess(`插件 "${plugin.name}" 已启动（${warning}）`);
+      } else {
+        notifySuccess(`插件 "${plugin.name}" 已启动`);
+      }
+      dataTable.refresh();
+    } else {
+      notifyError(response.msg || "启动失败");
+    }
+  } catch (error: any) {
+    console.error("启动插件失败:", error);
+    const errorMessage =
+      error?.response?.data?.msg || error?.message || "启动失败";
+    notifyError(errorMessage);
+  } finally {
+    operatingPlugins.value.delete(plugin.plugin_id);
+  }
+};
+
+// 停止插件
+const handleStop = async (plugin: AvailablePlugin) => {
+  operatingPlugins.value.add(plugin.plugin_id);
+
+  try {
+    const response = await stopPlugin(plugin.plugin_id);
+    if (response.code === 200) {
+      notifySuccess(`插件 "${plugin.name}" 已停止`);
+      dataTable.refresh();
+    } else {
+      notifyError(response.msg || "停止失败");
+    }
+  } catch (error: any) {
+    console.error("停止插件失败:", error);
+    const errorMessage =
+      error?.response?.data?.msg || error?.message || "停止失败";
+    notifyError(errorMessage);
+  } finally {
+    operatingPlugins.value.delete(plugin.plugin_id);
   }
 };
 </script>
