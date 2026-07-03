@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { ArrowLeft, Save, RefreshCw, Plus, Plug, Pencil, Trash2 } from "lucide-vue-next";
-import { Button, Card, Badge, Input, Textarea } from "@/components";
+import { ArrowLeft, Save, RefreshCw, Plus, Plug, Pencil, Trash2, ZapCircle, CheckCircle2, XCircle } from "lucide-vue-next";
+import { Button, Card, Badge, Input, Textarea, Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components";
 import { notifySuccess, notifyError, confirmAction } from "@/framework/utils/feedback";
 import {
   getPluginConfig,
@@ -13,6 +13,7 @@ import {
   type PluginConfigResponse,
   type PluginCredential,
 } from "@/ai/api/plugin";
+import { testPlugin, type TestPluginResponse } from "@/ai/api/pluginConfig";
 import CredentialFormDialog from "@/ai/components/CredentialFormDialog.vue";
 
 const route = useRoute();
@@ -61,6 +62,11 @@ const dialogMode = ref<"create" | "edit">("create");
 const editingCredential = ref<PluginCredential | null>(null);
 const testingCredentialId = ref<string | null>(null);
 const noCredentialSchema = ref(false);
+
+// ===== 测试连接 =====
+const testingConnection = ref(false);
+const testResult = ref<TestPluginResponse | null>(null);
+const testDialogOpen = ref(false);
 
 const loadConfig = async () => {
   loading.value = true;
@@ -135,6 +141,36 @@ const formatJson = () => {
     runtimeConfigJson.value = JSON.stringify(parsed, null, 2);
   } catch {
     // 格式化失败，保持原样
+  }
+};
+
+// 测试插件配置连接
+const handleTestConnection = async () => {
+  testingConnection.value = true;
+  testResult.value = null;
+  try {
+    const response = await testPlugin(pluginId);
+    if (response.data) {
+      testResult.value = response.data;
+      testDialogOpen.value = true;
+      if (response.data.validated) {
+        notifySuccess("连接测试通过");
+      } else {
+        notifyError(`连接测试失败: ${response.data.message}`);
+      }
+    }
+  } catch (error: any) {
+    console.error("测试连接失败:", error);
+    const errorMessage = error?.response?.data?.msg || error?.message || "测试连接失败";
+    testResult.value = {
+      plugin_id: pluginId,
+      validated: false,
+      message: errorMessage,
+    };
+    testDialogOpen.value = true;
+    notifyError(errorMessage);
+  } finally {
+    testingConnection.value = false;
   }
 };
 
@@ -331,6 +367,15 @@ onMounted(() => {
       <div class="flex justify-end gap-2">
         <Button variant="outline" @click="handleBack">取消</Button>
         <Button
+          variant="outline"
+          :disabled="testingConnection"
+          @click="handleTestConnection"
+        >
+          <ZapCircle v-if="!testingConnection" class="mr-1 h-4 w-4" />
+          <RefreshCw v-else class="mr-1 h-4 w-4 animate-spin" />
+          {{ testingConnection ? "测试中..." : "测试连接" }}
+        </Button>
+        <Button
           :disabled="!hasChanges || !isJsonValid || saving"
           @click="handleSave"
         >
@@ -345,6 +390,40 @@ onMounted(() => {
     <div v-else class="flex flex-1 items-center justify-center">
       <div class="text-muted-foreground">插件配置不存在</div>
     </div>
+
+    <!-- 测试结果对话框 -->
+    <Dialog v-model:open="testDialogOpen">
+      <DialogContent class="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>连接测试结果</DialogTitle>
+          <DialogDescription>
+            插件「{{ pluginId }}」配置连接测试结果
+          </DialogDescription>
+        </DialogHeader>
+        <div v-if="testResult" class="space-y-4 py-2">
+          <div class="flex flex-col items-center gap-2">
+            <CheckCircle2
+              v-if="testResult.validated"
+              class="h-12 w-12 text-green-500"
+            />
+            <XCircle v-else class="h-12 w-12 text-destructive" />
+            <div
+              class="text-lg font-medium"
+              :class="testResult.validated ? 'text-green-600' : 'text-destructive'"
+            >
+              {{ testResult.validated ? "连接成功" : "连接失败" }}
+            </div>
+          </div>
+          <div class="rounded-md bg-muted/50 p-3">
+            <div class="text-sm text-muted-foreground">详细消息</div>
+            <div class="mt-1 text-sm break-all">{{ testResult.message }}</div>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button @click="testDialogOpen = false">关闭</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
 
     <!-- 凭证编辑弹窗 -->
     <CredentialFormDialog
