@@ -105,10 +105,15 @@ export interface TenantListStats {
   expired_count: number;
 }
 
-// 带统计的租户列表响应（继承自 ApiResponse）
-export interface TenantListResponse extends ApiResponse<Tenant[]> {
+// 租户列表项（包含分页和统计）
+export interface TenantListData {
+  items: Tenant[];
+  total: number;
   stats: TenantListStats;
 }
+
+// 带统计的租户列表响应（继承自 ApiResponse）
+export interface TenantListResponse extends ApiResponse<TenantListData> {}
 
 // 用户租户信息
 export interface UserTenantResponse {

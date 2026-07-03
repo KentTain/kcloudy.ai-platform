@@ -225,7 +225,7 @@ function flattenMenus(menuList: MenuTreeNode[], level = 0): MenuFlatItem[] {
       code: menu.code || "",
       path: menu.path || "",
       icon: menu.icon || "",
-      sort_order: menu.sort_order || 0,
+      sort_order: menu.tree_sort || 0,
       parent_id: menu.parent_id,
       tree_level: level,
     })
