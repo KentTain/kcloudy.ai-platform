@@ -107,6 +107,12 @@ export const adminRoutes: RouteRecordRaw[] = [
         component: () => import("@/tenant/pages/admin/PluginDefinitionEditPage.vue"),
         meta: { title: "编辑插件状态", hidden: true, requiresAdminAuth: true, permissions: ["tenant:plugin:write"] },
       },
+      {
+        path: "plugin-installations",
+        name: "AdminPluginInstallations",
+        component: () => import("@/tenant/pages/admin/PluginInstallationList.vue"),
+        meta: { title: "安装记录", requiresAdminAuth: true, permissions: ["tenant:plugin:read"] },
+      },
       // ==================== 插件市场管理 ====================
       {
         path: "marketplaces",

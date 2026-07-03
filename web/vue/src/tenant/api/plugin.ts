@@ -160,6 +160,28 @@ export interface BatchStartStopResponse {
   failed: BatchOperationFailedItem[];
 }
 
+// ==================== 插件安装记录 ====================
+
+export interface PluginInstallation {
+  tenant_id: string;
+  plugin_id: string;
+  plugin_unique_identifier: string;
+  declaration: Record<string, any>;
+  status: string; // PENDING / ACTIVE / INACTIVE / FAILED
+  installed_at?: string;
+  plugin_type?: string;
+  runtime_type?: string;
+  source?: string;
+}
+
+export interface PluginInstallationQuery {
+  page?: number;
+  page_size?: number;
+  tenant_id?: string;
+  plugin_id?: string;
+  status?: string;
+}
+
 // ==================== API 函数 ====================
 
 export const getPluginDefinitions = (params?: PluginDefinitionQuery) =>
@@ -227,5 +249,15 @@ export const batchStopPluginInstallations = (data: BatchStartStopRequest) =>
   rawPost<ApiResponse<BatchStartStopResponse>>(
     '/tenant/admin/v1/plugin-installations/stop/batch',
     data,
+  );
+
+// ==================== 插件安装记录管理 ====================
+
+export const getPluginInstallations = (params?: PluginInstallationQuery) =>
+  rawGet<ApiResponse<PluginInstallation[]>>('/tenant/admin/v1/plugin-installations', { params });
+
+export const uninstallPluginInstallation = (tenantId: string, pluginId: string) =>
+  rawDel<ApiResponse<void>>(
+    `/tenant/admin/v1/plugin-installations/${tenantId}/${pluginId}`,
   );
 
