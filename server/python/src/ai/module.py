@@ -150,12 +150,14 @@ class AIModule:
                     sort_order=1,
                     permission_codes=["ai:chat:read"],
                 ),
+                # AI 对话二级菜单
                 MenuDef(
                     code="ai.conversations",
                     name="会话列表",
                     path="/ai/conversations",
+                    parent_code="ai.chat",
                     icon="List",
-                    sort_order=2,
+                    sort_order=1,
                     permission_codes=["ai:chat:read"],
                 ),
                 # 插件管理（合并安装和管理）

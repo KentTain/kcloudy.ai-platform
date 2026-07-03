@@ -74,6 +74,23 @@ class TestPluginPackageParse:
         assert result.declaration is not None, "声明内容不应为空"
         assert "_manifest" in result.declaration, "声明应包含 _manifest 字段"
 
+        # 验证图标字段存在
+        assert "icon" in result.declaration.get("_manifest", {}), (
+            "声明应包含 icon 字段"
+        )
+        icon_path = result.declaration["_manifest"]["icon"]
+        assert icon_path, "图标路径不应为空"
+        assert icon_path == "icon_s_en.png", (
+            f"图标路径应为 'icon_s_en.png'，实际为 '{icon_path}'"
+        )
+
+        # 验证图标文件在插件包中存在
+        with zipfile.ZipFile(tongyi_path, "r") as zf:
+            asset_icon_path = f"_assets/{icon_path}"
+            assert asset_icon_path in zf.namelist(), (
+                f"图标文件 '{asset_icon_path}' 应在插件包的 _assets 目录中存在"
+            )
+
     @pytest.mark.e2e
     @pytest.mark.asyncio
     async def test_parse_gpustack_plugin_package(
@@ -125,6 +142,23 @@ class TestPluginPackageParse:
         # 验证声明内容
         assert result.declaration is not None, "声明内容不应为空"
         assert "_manifest" in result.declaration, "声明应包含 _manifest 字段"
+
+        # 验证图标字段存在
+        assert "icon" in result.declaration.get("_manifest", {}), (
+            "声明应包含 icon 字段"
+        )
+        icon_path = result.declaration["_manifest"]["icon"]
+        assert icon_path, "图标路径不应为空"
+        assert icon_path == "icon_s_en.png", (
+            f"图标路径应为 'icon_s_en.png'，实际为 '{icon_path}'"
+        )
+
+        # 验证图标文件在插件包中存在
+        with zipfile.ZipFile(gpustack_path, "r") as zf:
+            asset_icon_path = f"_assets/{icon_path}"
+            assert asset_icon_path in zf.namelist(), (
+                f"图标文件 '{asset_icon_path}' 应在插件包的 _assets 目录中存在"
+            )
 
     @pytest.mark.e2e
     @pytest.mark.asyncio

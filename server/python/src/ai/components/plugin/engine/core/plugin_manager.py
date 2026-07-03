@@ -1276,6 +1276,14 @@ class TenantPluginManager:
         plugin_dir.mkdir(parents=True, exist_ok=True)
 
         try:
+            # 检查插件目录是否已存在完整的插件文件（manifest.yaml 和 _assets 目录）
+            manifest_path = plugin_dir / "manifest.yaml"
+            assets_dir = plugin_dir / "_assets"
+
+            if manifest_path.exists() and assets_dir.exists() and assets_dir.is_dir():
+                self.logger.info(f"插件目录已存在完整文件，跳过解压: {plugin_dir}")
+                return
+
             # 保存原始插件包
             package_path = plugin_dir / "plugin.zip"
             with open(package_path, "wb") as f:
@@ -1340,13 +1348,18 @@ class TenantPluginManager:
             return obj
 
         # ── 步骤 1: 创建 PENDING 记录（DB 先于外部操作）──
-        declaration = {
-            "author": plugin_config.configuration.author,
-            "name": plugin_config.configuration.name,
-            "version": plugin_config.configuration.version,
-            "description": serialize_i18n(plugin_config.configuration.description),
-            "type": self.convert_to_plugin_type(plugin_config).value,
-        }
+        # 从 package_info 获取完整的声明信息
+        declaration = package_info.declaration if package_info and hasattr(package_info, 'declaration') else {}
+
+        # 如果没有 declaration，从 plugin_config 构建
+        if not declaration:
+            declaration = {
+                "author": plugin_config.configuration.author,
+                "name": plugin_config.configuration.name,
+                "version": plugin_config.configuration.version,
+                "description": serialize_i18n(plugin_config.configuration.description),
+                "type": self.convert_to_plugin_type(plugin_config).value,
+            }
 
         # 检查是否已存在安装记录（支持重试场景）
         existing = await provider.get_installation(self.tenant_id, plugin_id)
@@ -1367,7 +1380,6 @@ class TenantPluginManager:
                 plugin_unique_identifier=plugin_unique_identifier,
                 declaration=declaration,
                 status="PENDING",
-                auto_start=False,  # 统一为 False，安装后不自动启动
                 plugin_type=self.convert_to_plugin_type(plugin_config).value,
                 runtime_type="local",
             )
@@ -1787,30 +1799,30 @@ class TenantPluginManager:
             self.logger.exception(f"工具插件连接测试失败: {plugin_id}")
             return False, f"连接失败: {str(e)}"
 
-    async def get_plugin_asset(self, plugin_id: str, asset_path: str) -> bytes | None:
-        """获取插件资源文件内容"""
+    async def get_plugin_asset(
+        self, plugin_id: str, asset_path: str, session: "AsyncSession | None" = None
+    ) -> bytes | None:
+        """获取插件资源文件内容
+
+        优先从本地文件系统读取，不需要插件在内存中。
+        本地不存在时回退到 OSS。
+
+        Args:
+            plugin_id: 插件 ID
+            asset_path: 资源文件相对路径
+            session: 可选的数据库会话（用于从数据库查询版本信息）
+
+        Returns:
+            资源文件内容，失败返回 None
+        """
         try:
-            # 检查插件是否存在
-            if plugin_id not in self.plugins:
-                self.logger.warning(f"插件不存在: {plugin_id}")
-                return None
-
-            plugin_info = self.plugins[plugin_id]
-
-            plugin_config = plugin_info.config
-            if not plugin_config:
-                self.logger.warning(f"插件配置不存在: {plugin_id}")
-                return None
-
-            version = plugin_config.configuration.version
-
-            # 先尝试从本地读取
-            local_asset_path = self.workspace_dir / plugin_id / "_assets" / asset_path
-
             # 检查路径是否安全，是否存在..等
             if ".." in asset_path:
                 self.logger.warning(f"资源文件路径不安全: {asset_path}")
                 return None
+
+            # 先尝试从本地读取（不要求插件在内存中）
+            local_asset_path = self.workspace_dir / plugin_id / "_assets" / asset_path
 
             if local_asset_path.exists():
                 try:
@@ -1823,7 +1835,37 @@ class TenantPluginManager:
                         f"读取本地资源文件失败: {local_asset_path}, {e}"
                     )
 
-            # 如果本地不存在，尝试从OSS下载
+            # 如果本地不存在，尝试从 OSS 下载
+            # 需要从数据库或内存中获取版本信息
+            version = None
+
+            # 优先从内存获取
+            if plugin_id in self.plugins:
+                plugin_info = self.plugins[plugin_id]
+                if plugin_info.config:
+                    version = plugin_info.config.configuration.version
+
+            # 如果内存中没有，尝试从数据库获取
+            if not version and session:
+                from sqlalchemy import select
+                from ai.models.plugin_config import PluginConfig as AIPluginConfig
+
+                result = await session.execute(
+                    select(AIPluginConfig).where(
+                        AIPluginConfig.tenant_id == self.tenant_id,
+                        AIPluginConfig.plugin_id == plugin_id,
+                    )
+                )
+                ai_config = result.scalar_one_or_none()
+                if ai_config and ai_config.plugin_config:
+                    version = ai_config.plugin_config.get("configuration", {}).get(
+                        "version"
+                    )
+
+            if not version:
+                self.logger.warning(f"无法获取插件版本信息: {plugin_id}")
+                return None
+
             self.logger.info(
                 f"本地资源文件不存在，尝试从OSS下载: {plugin_id}/{asset_path}"
             )

@@ -183,8 +183,10 @@ class PluginManagementService:
         installed_result = await session.execute(installed_plugins_stmt)
         installed_plugin_ids = set(row[0] for row in installed_result.fetchall())
 
-        # 2. 查询安装状态
+        # 2. 查询安装状态和配置
         installation_status_map: dict[str, str] = {}
+        installed_plugin_configs: dict[str, dict] = {}
+
         if installed_plugin_ids:
             status_stmt = select(
                 TenantPluginInstallation.plugin_id,
@@ -196,6 +198,17 @@ class PluginManagementService:
             status_result = await session.execute(status_stmt)
             for row in status_result.fetchall():
                 installation_status_map[row[0]] = row[1]
+
+            # 查询已安装插件的配置（包含图标 URL）
+            from ai.models.plugin_config import PluginConfig as AIPluginConfig
+
+            config_stmt = select(AIPluginConfig).where(
+                AIPluginConfig.tenant_id == tenant_id,
+                AIPluginConfig.plugin_id.in_(installed_plugin_ids),
+            )
+            config_result = await session.execute(config_stmt)
+            for config in config_result.scalars().all():
+                installed_plugin_configs[config.plugin_id] = config.plugin_config or {}
 
         # 3. 构建查询条件
         conditions = [TenantPluginDefinition.is_enabled == True]
@@ -233,23 +246,68 @@ class PluginManagementService:
             is_installed = definition.plugin_id in installed_plugin_ids
             installation_status = installation_status_map.get(definition.plugin_id)
 
+            # 获取图标：优先级：插件配置 > configuration > _manifest
+            icon = None
+
+            # 1. 已安装插件：从 AI 侧插件配置获取（包含完整的 URL）
+            if is_installed and definition.plugin_id in installed_plugin_configs:
+                plugin_config = installed_plugin_configs[definition.plugin_id]
+                config_configuration = plugin_config.get("configuration", {})
+                icon = config_configuration.get("icon")
+
+            # 2. 从插件定义的 configuration 获取
+            if not icon:
+                icon = configuration.get("icon")
+
+            # 3. 从插件定义的 _manifest 获取
+            if not icon:
+                manifest = declaration.get("_manifest", {})
+                icon = manifest.get("icon")
+
+            # 获取版本：优先级：插件配置 > configuration > _manifest
+            version = ""
+            if is_installed and definition.plugin_id in installed_plugin_configs:
+                plugin_config = installed_plugin_configs[definition.plugin_id]
+                config_configuration = plugin_config.get("configuration", {})
+                version = config_configuration.get("version", "")
+
+            if not version:
+                version = configuration.get("version", "")
+
+            if not version:
+                manifest = declaration.get("_manifest", {})
+                version = manifest.get("version", "")
+
+            # 获取名称：优先级：插件配置 > configuration > _manifest
+            name = ""
+            if is_installed and definition.plugin_id in installed_plugin_configs:
+                plugin_config = installed_plugin_configs[definition.plugin_id]
+                config_configuration = plugin_config.get("configuration", {})
+                label = config_configuration.get("label", {})
+                name = label.get("zh_Hans") or label.get("en_US") or ""
+
+            if not name:
+                label = configuration.get("label", {})
+                name = label.get("zh_Hans") or label.get("en_US")
+
+            if not name:
+                name = definition.plugin_id.split("/")[-1]
+
             all_items.append(
                 AvailablePluginVo(
                     plugin_id=definition.plugin_id,
                     plugin_unique_identifier=definition.plugin_unique_identifier,
-                    name=configuration.get("label", {}).get("zh_Hans")
-                    or configuration.get("label", {}).get("en_US")
-                    or definition.plugin_id.split("/")[-1],
+                    name=name,
                     author=configuration.get(
                         "author",
                         definition.plugin_id.split("/")[0]
                         if "/" in definition.plugin_id
                         else "unknown",
                     ),
-                    version=configuration.get("version", ""),
+                    version=version,
                     description=configuration.get("description", {}).get("zh_Hans", "")
                     or configuration.get("description", {}).get("en_US", ""),
-                    icon=configuration.get("icon"),
+                    icon=icon,
                     plugin_type=plugin_type,
                     runtime_type="local",  # 默认本地运行
                     is_installed=is_installed,
@@ -1099,7 +1157,9 @@ class PluginManagementService:
 
             plugin_manager = await PluginManagerFactory.get_manager(tenant_id, session)
 
-            asset_content = await plugin_manager.get_plugin_asset(plugin_id, asset_path)
+            asset_content = await plugin_manager.get_plugin_asset(
+                plugin_id, asset_path, session
+            )
 
             if asset_content is None:
                 raise ValueError(f"插件资源文件不存在: {plugin_id}/{asset_path}")

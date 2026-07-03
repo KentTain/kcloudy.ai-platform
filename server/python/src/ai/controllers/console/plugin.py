@@ -278,7 +278,7 @@ async def get_plugin_asset(
             raise BadRequestError("租户 ID 不能为空")
 
         plugin_manager = await PluginManagerFactory.get_manager(tenant_id, session)
-        content = await plugin_manager.get_plugin_asset(plugin_id, asset_path)
+        content = await plugin_manager.get_plugin_asset(plugin_id, asset_path, session)
 
         if content is None:
             raise BadRequestError(f"资源文件不存在: {asset_path}")
