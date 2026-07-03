@@ -84,7 +84,8 @@ class TestPluginInstall:
         - 系统创建 PluginInstallation 记录
         - 系统创建虚拟环境并安装依赖
         - 系统上传插件包到 OSS
-        - 安装状态变为 ACTIVE
+        - 安装状态变为 INACTIVE（需要配置和启动才能变为 ACTIVE）
+        - installed_at 字段已填充
         """
         # 设置租户上下文
         TenantContext.set_tenant_id(test_tenant_id)
@@ -104,17 +105,17 @@ class TestPluginInstall:
         await manager.initialize(e2e_session)
 
         try:
-            # 安装插件
-            install_request = InstallRequest(auto_start=False)
+            # 安装插件（不传 auto_start，默认为 False）
+            install_request = InstallRequest()
             plugin_id = await manager.install_plugin(
                 e2e_session, package_data, install_request
             )
 
-            # 等待插件状态变为 ACTIVE
+            # 等待插件状态变为 INACTIVE
             await helper.wait_for_plugin_status(
                 e2e_session,
                 plugin_id,
-                PluginStatus.ACTIVE,
+                PluginStatus.INACTIVE,
                 timeout=60.0,
             )
 
@@ -124,10 +125,13 @@ class TestPluginInstall:
 
             assert installation is not None, f"插件安装记录不存在: {plugin_id}"
             assert installation.plugin_id == plugin_id
-            assert installation.status.upper() == "ACTIVE", (
-                f"插件状态应为 ACTIVE，实际为: {installation.status}"
+            assert installation.status.upper() == "INACTIVE", (
+                f"插件状态应为 INACTIVE，实际为: {installation.status}"
             )
             assert installation.tenant_id == test_tenant_id
+
+            # 验证 installed_at 字段已填充
+            assert installation.installed_at is not None, "installed_at 字段应为已填充"
 
             # 验证虚拟环境目录存在
             plugin_dir = manager.workspace_dir / plugin_id
@@ -211,16 +215,16 @@ class TestPluginInstall:
 
         try:
             # 第一次安装
-            install_request = InstallRequest(auto_start=False)
+            install_request = InstallRequest()
             plugin_id = await manager.install_plugin(
                 e2e_session, package_data, install_request
             )
 
-            # 等待插件状态变为 ACTIVE
+            # 等待插件状态变为 INACTIVE
             await helper.wait_for_plugin_status(
                 e2e_session,
                 plugin_id,
-                PluginStatus.ACTIVE,
+                PluginStatus.INACTIVE,
                 timeout=60.0,
             )
 
@@ -290,16 +294,16 @@ class TestPluginInstall:
 
         try:
             # 先安装插件
-            install_request = InstallRequest(auto_start=False)
+            install_request = InstallRequest()
             plugin_id = await manager.install_plugin(
                 e2e_session, package_data, install_request
             )
 
-            # 等待插件状态变为 ACTIVE
+            # 等待插件状态变为 INACTIVE
             await helper.wait_for_plugin_status(
                 e2e_session,
                 plugin_id,
-                PluginStatus.ACTIVE,
+                PluginStatus.INACTIVE,
                 timeout=60.0,
             )
 
@@ -402,16 +406,16 @@ class TestPluginInstall:
 
         try:
             # 安装插件
-            install_request = InstallRequest(auto_start=False)
+            install_request = InstallRequest()
             plugin_id = await manager.install_plugin(
                 e2e_session, package_data, install_request
             )
 
-            # 等待插件状态变为 ACTIVE
+            # 等待插件状态变为 INACTIVE
             await helper.wait_for_plugin_status(
                 e2e_session,
                 plugin_id,
-                PluginStatus.ACTIVE,
+                PluginStatus.INACTIVE,
                 timeout=60.0,
             )
 
