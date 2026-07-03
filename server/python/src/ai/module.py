@@ -177,6 +177,15 @@ class AIModule:
                     is_visible=False,
                     permission_codes=["ai:plugin:write"],
                 ),
+                MenuDef(
+                    code="ai.plugins.install",
+                    name="安装插件",
+                    path="/ai/plugins/install",
+                    parent_code="ai.plugins",
+                    sort_order=2,
+                    is_visible=False,
+                    permission_codes=["ai:plugin:write"],
+                ),
             ],
             permissions=[
                 # AI 对话权限（用户端）
