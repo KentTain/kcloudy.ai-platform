@@ -5,7 +5,6 @@ import { computed } from "vue";
 
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
-import ScrollBar from "@/components/ui/scroll-area/ScrollBar.vue";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import DataTablePagination from "./DataTablePagination.vue";
 import type { DataTableState } from "./use-data-table";
@@ -92,7 +91,6 @@ function getColumnStyle(column: Column<any>) {
           </TableRow>
         </TableBody>
       </Table>
-      <ScrollBar orientation="horizontal" />
     </ScrollArea>
 
     <DataTablePagination :table="dataTable.table" />
