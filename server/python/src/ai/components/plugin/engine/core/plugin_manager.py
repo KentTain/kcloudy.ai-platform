@@ -987,6 +987,18 @@ class TenantPluginManager:
                 except Exception:
                     self.logger.exception(f"更新插件运行时状态失败: {plugin_id}")
 
+                # 通知 tenant 更新状态为 INACTIVE
+                try:
+                    provider = get_plugin_installation_provider()
+                    await provider.update_installation(
+                        self.tenant_id, plugin_id, {"status": "INACTIVE"}
+                    )
+                    self.logger.debug(
+                        f"已通过 Provider 更新插件状态为 INACTIVE: {plugin_id}"
+                    )
+                except Exception:
+                    self.logger.exception(f"通知 tenant 更新状态失败: {plugin_id}")
+
             self.logger.info(f"插件停止成功: {plugin_id}")
             return True
 
