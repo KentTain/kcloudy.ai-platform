@@ -348,11 +348,11 @@ class InstallTaskManager:
                             break
 
                 # 获取配置参数
-                auto_start = True  # 默认值
+                # 固定 auto_start 为 False，安装后不自动启动
+                auto_start = False
                 force = False  # 默认值
 
                 if task and task.metadata:
-                    auto_start = task.metadata.get("auto_start", True)
                     force = task.metadata.get("force", False)
 
                 install_request = InstallRequest(
