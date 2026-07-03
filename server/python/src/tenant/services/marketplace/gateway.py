@@ -333,12 +333,16 @@ class MarketplaceGateway:
         if not marketplace:
             raise ValueError(f"市场不存在: {marketplace_id}")
 
-        # 获取本地插件定义
+        # 获取本地插件定义（取最新的启用版本）
         result = await session.execute(
-            select(TenantPluginDefinition).where(
+            select(TenantPluginDefinition)
+            .where(
                 TenantPluginDefinition.plugin_id == plugin_id,
                 TenantPluginDefinition.source_type == "remote",
+                TenantPluginDefinition.is_enabled == True,
             )
+            .order_by(TenantPluginDefinition.created_at.desc())
+            .limit(1)
         )
         local_def = result.scalar_one_or_none()
         if not local_def:
