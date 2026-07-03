@@ -1625,6 +1625,168 @@ class TenantPluginManager:
 
     # ===== 插件资源文件管理方法 =====
 
+    async def test_plugin_connection(
+        self, session: AsyncSession, plugin_id: str
+    ) -> tuple[bool, str]:
+        """
+        测试插件配置连接
+
+        根据插件类型调用对应的验证方法：
+        - Model 类型：验证 API Key、Endpoint 等凭证
+        - Tool 类型：验证工具可用性
+
+        Args:
+            session: 数据库会话
+            plugin_id: 插件 ID
+
+        Returns:
+            tuple[validated, message]: 验证结果和消息
+        """
+        try:
+            # 1. 检查插件是否存在
+            if plugin_id not in self.plugins:
+                return False, f"插件 {plugin_id} 未安装"
+
+            plugin_info = self.plugins[plugin_id]
+            if not plugin_info.config:
+                return False, "插件配置不存在"
+
+            # 2. 获取 AI 侧配置
+            config_result = await session.execute(
+                select(AIPluginConfig).where(
+                    AIPluginConfig.tenant_id == self.tenant_id,
+                    AIPluginConfig.plugin_id == plugin_id,
+                )
+            )
+            ai_config = config_result.scalar_one_or_none()
+
+            if not ai_config or not ai_config.plugin_config:
+                return False, "插件未配置，请先配置插件"
+
+            # 3. 获取凭证信息
+            credentials = ai_config.plugin_config.get("credentials", {})
+            if not credentials:
+                return False, "未配置凭证信息"
+
+            # 4. 获取插件类型
+            plugin_config = plugin_info.config
+            plugin_type = None
+
+            # 判断插件类型：优先根据配置判断
+            if hasattr(plugin_config, "models_configuration") and plugin_config.models_configuration:
+                plugin_type = "model"
+            elif hasattr(plugin_config, "tools_configuration") and plugin_config.tools_configuration:
+                plugin_type = "tool"
+            else:
+                # 尝试从 configuration.type 获取
+                if hasattr(plugin_config, "configuration") and hasattr(plugin_config.configuration, "type"):
+                    plugin_type = str(plugin_config.configuration.type.value) if plugin_config.configuration.type else None
+
+            if not plugin_type:
+                return False, "无法确定插件类型"
+
+            # 5. 根据插件类型验证凭证
+            if plugin_type == "model":
+                # Model 类型：使用 ModelClient 验证
+                return await self._test_model_plugin_connection(
+                    plugin_id, plugin_config, credentials
+                )
+            elif plugin_type == "tool":
+                # Tool 类型：使用 ToolClient 验证
+                return await self._test_tool_plugin_connection(
+                    plugin_id, plugin_config, credentials
+                )
+            else:
+                # 其他类型暂不支持
+                return False, f"不支持的插件类型: {plugin_type}"
+
+        except Exception as e:
+            self.logger.exception(f"测试插件连接失败: {plugin_id}")
+            return False, f"连接失败: {str(e)}"
+
+    async def _test_model_plugin_connection(
+        self, plugin_id: str, plugin_config: Any, credentials: dict
+    ) -> tuple[bool, str]:
+        """
+        测试模型插件连接
+
+        Args:
+            plugin_id: 插件 ID
+            plugin_config: 插件配置
+            credentials: 凭证信息
+
+        Returns:
+            tuple[validated, message]: 验证结果和消息
+        """
+        try:
+            from ai.components.plugin.client.model_client import ModelClient
+
+            model_client = ModelClient()
+
+            # 从 models_configuration 获取 provider 名称
+            provider = plugin_id
+            if plugin_config.models_configuration:
+                provider = plugin_config.models_configuration[0].provider
+
+            # 调用验证方法
+            result = await model_client.validate_provider_credentials(
+                tenant_id=self.tenant_id,
+                user_id="system",  # 系统调用
+                plugin_id=plugin_id,
+                provider=provider,
+                credentials=credentials,
+            )
+
+            if result:
+                return True, "连接成功"
+            else:
+                return False, "凭证验证失败，请检查 API Key 和 Endpoint 配置"
+
+        except Exception as e:
+            self.logger.exception(f"模型插件连接测试失败: {plugin_id}")
+            return False, f"连接失败: {str(e)}"
+
+    async def _test_tool_plugin_connection(
+        self, plugin_id: str, plugin_config: Any, credentials: dict
+    ) -> tuple[bool, str]:
+        """
+        测试工具插件连接
+
+        Args:
+            plugin_id: 插件 ID
+            plugin_config: 插件配置
+            credentials: 凭证信息
+
+        Returns:
+            tuple[validated, message]: 验证结果和消息
+        """
+        try:
+            from ai.components.plugin.client.tool_client import ToolClient
+
+            tool_client = ToolClient()
+
+            # 从 tools_configuration 获取 provider 名称
+            provider_name = plugin_id
+            if plugin_config.tools_configuration:
+                provider_name = plugin_config.tools_configuration[0].identity.name
+
+            # 调用验证方法
+            result = await tool_client.validate_provider_credentials(
+                tenant_id=self.tenant_id,
+                user_id="system",  # 系统调用
+                provider=provider_name,
+                credentials=credentials,
+            )
+
+            if result:
+                return True, "连接成功"
+            else:
+                return False, "凭证验证失败，请检查工具配置"
+
+        except Exception as e:
+            self.logger.exception(f"工具插件连接测试失败: {plugin_id}")
+            return False, f"连接失败: {str(e)}"
+
     async def get_plugin_asset(self, plugin_id: str, asset_path: str) -> bytes | None:
         """获取插件资源文件内容"""
         try:

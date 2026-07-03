@@ -113,8 +113,6 @@ class PluginConfigService:
 
         Returns:
             PluginTestResponse
-
-        TODO: 调用插件的实际测试连接接口
         """
         # 获取插件配置
         result = await session.execute(
@@ -132,13 +130,14 @@ class PluginConfigService:
                 message="插件未配置，请先配置插件",
             )
 
-        # TODO: 调用插件的实际测试连接接口
-        # 目前使用模拟逻辑，验证配置是否包含必要字段
         try:
-            # 简单验证：检查配置是否非空
-            # 实际实现应该根据插件类型调用对应的测试连接接口
-            validated = True
-            message = "连接成功"
+            # 调用插件管理器的实际测试连接接口
+            from ai.components.plugin.engine.core.plugin_manager import (
+                PluginManagerFactory,
+            )
+
+            manager = await PluginManagerFactory.get_manager(tenant_id, session)
+            validated, message = await manager.test_plugin_connection(session, plugin_id)
 
             # 更新配置的验证状态
             config.plugin_config["validated"] = validated
