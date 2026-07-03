@@ -16,11 +16,14 @@ import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ai.components.model.services.llm_service import LLMService
+from ai.components.plugin.engine.models.enums import PluginStatus
+from ai.services.plugin_config_service import plugin_config_service
 from ai_plugin.sdk.entities.model.message import (
     SystemPromptMessage,
     UserPromptMessage,
 )
 from ai_plugin.sdk.interfaces.model.large_language_model import LLMResult
+from framework.tenant.context import TenantContext
 from framework.tenant.plugin_protocols import get_plugin_installation_provider
 from tests.ai.e2e.helpers.plugin_test_helper import PluginTestHelper
 
@@ -46,26 +49,26 @@ class TestPluginFullLifecycle:
         场景：tongyi 插件完整生命周期
         - 上传并安装 tongyi 插件包
         - 配置 tongyi API Key 凭证
+        - 测试配置连接
         - 启动插件
         - 调用模型生成
         - 停止插件
         - 卸载插件
         - 验证每个步骤都成功完成
         - 验证最终资源完全清理
+
+        流程：安装 → 配置 → 测试 → 启动 → 调用 → 停止 → 卸载
         """
         if not tongyi_api_key_available:
             pytest.skip("tongyi API Key 无效或服务不可用")
 
         # 初始化辅助工具
         helper = PluginTestHelper(test_tenant_id)
+        TenantContext.set_tenant_id(test_tenant_id)
 
         # 获取插件包路径
         tongyi_path: Path = plugin_package_path("tongyi")
         plugin_id = "langgenius/tongyi"
-
-        # 记录初始资源状态
-        initial_plugins = await helper.get_all_plugins(e2e_session)
-        initial_running = await helper.get_running_plugins(e2e_session)
 
         # -------------------------------------------------------------------------
         # 步骤 1：安装插件
@@ -73,77 +76,66 @@ class TestPluginFullLifecycle:
         plugin_id = await helper.install_plugin_from_path(
             e2e_session,
             str(tongyi_path),
-            auto_start=False,  # 不自动启动，稍后手动启动
         )
 
-        # 验证安装成功
-        plugin_info = await helper.assert_plugin_installed(e2e_session, plugin_id)
-        # plugin_info["id"] 和 plugin_info["status"] 可能是 None，验证 plugin_id 在 manager.plugins 中即可
-        assert plugin_id in (await helper.get_all_plugins(e2e_session)), f"插件应已安装: {plugin_id}"
-        # 从数据库记录验证状态
-        from framework.tenant.plugin_protocols import get_plugin_installation_provider
+        # 验证安装成功，状态为 INACTIVE
+        await helper.wait_for_plugin_status(
+            e2e_session,
+            plugin_id,
+            PluginStatus.INACTIVE,
+            timeout=60.0,
+        )
         provider = get_plugin_installation_provider()
         installation = await provider.get_installation(test_tenant_id, plugin_id)
         assert installation is not None, "安装记录应存在"
-        assert installation.status.upper() in ("ACTIVE", "INACTIVE"), f"状态应为 ACTIVE 或 INACTIVE，实际: {installation.status}"
+        assert installation.status.upper() == "INACTIVE", (
+            f"状态应为 INACTIVE，实际: {installation.status}"
+        )
 
         # -------------------------------------------------------------------------
         # 步骤 2：配置凭证
         # -------------------------------------------------------------------------
-        manager = await helper.get_manager(e2e_session)
-
-        # 更新插件配置，添加 API Key
-        # 查找现有配置
-        from sqlalchemy import select
-
-        from ai.models.plugin_config import PluginConfig as AIPluginConfig
-
-        config_result = await e2e_session.execute(
-            select(AIPluginConfig).where(
-                AIPluginConfig.tenant_id == test_tenant_id,
-                AIPluginConfig.plugin_id == plugin_id,
-            )
+        config_response = await plugin_config_service.config_plugin(
+            session=e2e_session,
+            tenant_id=test_tenant_id,
+            plugin_id=plugin_id,
+            plugin_config={
+                "credentials": {
+                    "dashscope_api_key": tongyi_api_key,
+                }
+            },
+            runtime_config=None,
         )
-        ai_config = config_result.scalar_one_or_none()
-
-        if ai_config and ai_config.plugin_config:
-            plugin_config = ai_config.plugin_config.copy()
-        else:
-            plugin_config = {}
-
-        # 设置凭证
-        if "runtime_configuration" not in plugin_config:
-            plugin_config["runtime_configuration"] = {}
-
-        # tongyi 使用 dashscope_api_key
-        plugin_config["runtime_configuration"]["credentials"] = {
-            "dashscope_api_key": tongyi_api_key,
-        }
-
-        # 更新配置
-        if ai_config:
-            ai_config.plugin_config = plugin_config
-        else:
-            ai_config = AIPluginConfig(
-                tenant_id=test_tenant_id,
-                plugin_id=plugin_id,
-                plugin_config=plugin_config,
-            )
-            e2e_session.add(ai_config)
-
-        await e2e_session.flush()
+        assert config_response.plugin_id == plugin_id
 
         # -------------------------------------------------------------------------
-        # 步骤 3：启动插件
+        # 步骤 3：测试配置连接
         # -------------------------------------------------------------------------
-        success = await manager.start_plugin(plugin_id)
-        assert success is True, "启动插件失败"
+        test_response = await plugin_config_service.test_plugin(
+            session=e2e_session,
+            tenant_id=test_tenant_id,
+            plugin_id=plugin_id,
+        )
+        assert test_response.plugin_id == plugin_id
+        assert test_response.validated is True, f"配置测试失败: {test_response.message}"
+
+        # -------------------------------------------------------------------------
+        # 步骤 4：启动插件
+        # -------------------------------------------------------------------------
+        start_response = await plugin_config_service.start_plugin(
+            session=e2e_session,
+            tenant_id=test_tenant_id,
+            plugin_id=plugin_id,
+        )
+        assert start_response.status == "ACTIVE", (
+            f"插件启动失败，状态: {start_response.status}, 警告: {start_response.warning}"
+        )
 
         # 等待插件状态变为 ACTIVE
         await helper.wait_for_plugin_status(
             e2e_session,
             plugin_id,
-            "ACTIVE",
+            PluginStatus.ACTIVE,
             timeout=60.0,
         )
 
@@ -152,7 +144,7 @@ class TestPluginFullLifecycle:
         assert runtime_info["status"] == "active"
 
         # -------------------------------------------------------------------------
-        # 步骤 4：调用模型生成
+        # 步骤 5：调用模型生成
         # -------------------------------------------------------------------------
         try:
             llm_service = LLMService(test_tenant_id)
@@ -184,16 +176,22 @@ class TestPluginFullLifecycle:
             pytest.skip(f"模型调用失败（可能是 API 配额限制）：{e}")
 
         # -------------------------------------------------------------------------
-        # 步骤 5：停止插件
+        # 步骤 6：停止插件
         # -------------------------------------------------------------------------
-        success = await manager.stop_plugin(plugin_id, e2e_session)
-        assert success is True, "停止插件失败"
+        stop_response = await plugin_config_service.stop_plugin(
+            session=e2e_session,
+            tenant_id=test_tenant_id,
+            plugin_id=plugin_id,
+        )
+        assert stop_response.status == "INACTIVE", (
+            f"插件停止失败，状态: {stop_response.status}"
+        )
 
         # 等待插件状态变为 INACTIVE
         await helper.wait_for_plugin_status(
             e2e_session,
             plugin_id,
-            "INACTIVE",
+            PluginStatus.INACTIVE,
             timeout=30.0,
         )
 
@@ -202,17 +200,15 @@ class TestPluginFullLifecycle:
         assert is_running is False, "插件应该已停止"
 
         # -------------------------------------------------------------------------
-        # 步骤 6：卸载插件
+        # 步骤 7：卸载插件
         # -------------------------------------------------------------------------
         from ai.services.plugin import plugin_management_service
-        from framework.tenant.context import TenantContext
 
-        TenantContext.set_tenant_id(test_tenant_id)
         result = await plugin_management_service.uninstall_plugin(e2e_session, plugin_id)
         assert result.success is True, "卸载插件失败"
 
         # -------------------------------------------------------------------------
-        # 步骤 7：验证资源清理
+        # 步骤 8：验证资源清理
         # -------------------------------------------------------------------------
         # 验证插件从内存中移除
         plugins_after = await helper.get_all_plugins(e2e_session)
@@ -246,12 +242,15 @@ class TestPluginFullLifecycle:
         场景：gpustack 插件完整生命周期
         - 上传并安装 gpustack 插件包
         - 配置 gpustack API Key 和 Endpoint
+        - 测试配置连接
         - 启动插件
         - 调用模型生成
         - 停止插件
         - 卸载插件
         - 验证每个步骤都成功完成
         - 验证最终资源完全清理
+
+        流程：安装 → 配置 → 测试 → 启动 → 调用 → 停止 → 卸载
         """
         if not gpustack_api_key_available:
             pytest.skip("GPUStack API Key 无效或服务不可用")
@@ -259,14 +258,11 @@ class TestPluginFullLifecycle:
 
         # 初始化辅助工具
         helper = PluginTestHelper(test_tenant_id)
+        TenantContext.set_tenant_id(test_tenant_id)
 
         # 获取插件包路径
         gpustack_path: Path = plugin_package_path("gpustack")
         plugin_id = "langgenius/gpustack"
-
-        # 记录初始资源状态
-        initial_plugins = await helper.get_all_plugins(e2e_session)
-        initial_running = await helper.get_running_plugins(e2e_session)
 
         # -------------------------------------------------------------------------
         # 步骤 1：安装插件
@@ -274,77 +270,67 @@ class TestPluginFullLifecycle:
         plugin_id = await helper.install_plugin_from_path(
             e2e_session,
             str(gpustack_path),
-            auto_start=False,
         )
 
-        # 验证安装成功
-        plugin_info = await helper.assert_plugin_installed(e2e_session, plugin_id)
-        # plugin_info["id"] 和 plugin_info["status"] 可能是 None，验证 plugin_id 在 manager.plugins 中即可
-        assert plugin_id in (await helper.get_all_plugins(e2e_session)), f"插件应已安装: {plugin_id}"
-        # 从数据库记录验证状态
-        from framework.tenant.plugin_protocols import get_plugin_installation_provider
+        # 验证安装成功，状态为 INACTIVE
+        await helper.wait_for_plugin_status(
+            e2e_session,
+            plugin_id,
+            PluginStatus.INACTIVE,
+            timeout=60.0,
+        )
         provider = get_plugin_installation_provider()
         installation = await provider.get_installation(test_tenant_id, plugin_id)
         assert installation is not None, "安装记录应存在"
-        assert installation.status.upper() in ("ACTIVE", "INACTIVE"), f"状态应为 ACTIVE 或 INACTIVE，实际: {installation.status}"
+        assert installation.status.upper() == "INACTIVE", (
+            f"状态应为 INACTIVE，实际: {installation.status}"
+        )
 
         # -------------------------------------------------------------------------
         # 步骤 2：配置凭证
         # -------------------------------------------------------------------------
-        manager = await helper.get_manager(e2e_session)
-
-        # 更新插件配置
-        from sqlalchemy import select
-
-        from ai.models.plugin_config import PluginConfig as AIPluginConfig
-
-        config_result = await e2e_session.execute(
-            select(AIPluginConfig).where(
-                AIPluginConfig.tenant_id == test_tenant_id,
-                AIPluginConfig.plugin_id == plugin_id,
-            )
+        config_response = await plugin_config_service.config_plugin(
+            session=e2e_session,
+            tenant_id=test_tenant_id,
+            plugin_id=plugin_id,
+            plugin_config={
+                "credentials": {
+                    "api_key": gpustack_api_key,
+                    "endpoint": gpustack_endpoint,
+                }
+            },
+            runtime_config=None,
         )
-        ai_config = config_result.scalar_one_or_none()
-
-        if ai_config and ai_config.plugin_config:
-            plugin_config = ai_config.plugin_config.copy()
-        else:
-            plugin_config = {}
-
-        # 设置凭证
-        if "runtime_configuration" not in plugin_config:
-            plugin_config["runtime_configuration"] = {}
-
-        # GPUStack 使用 api_key 和 endpoint
-        plugin_config["runtime_configuration"]["credentials"] = {
-            "api_key": gpustack_api_key,
-            "endpoint": gpustack_endpoint,
-        }
-
-        # 更新配置
-        if ai_config:
-            ai_config.plugin_config = plugin_config
-        else:
-            ai_config = AIPluginConfig(
-                tenant_id=test_tenant_id,
-                plugin_id=plugin_id,
-                plugin_config=plugin_config,
-            )
-            e2e_session.add(ai_config)
-
-        await e2e_session.flush()
+        assert config_response.plugin_id == plugin_id
 
         # -------------------------------------------------------------------------
-        # 步骤 3：启动插件
+        # 步骤 3：测试配置连接
         # -------------------------------------------------------------------------
-        success = await manager.start_plugin(plugin_id)
-        assert success is True, "启动插件失败"
+        test_response = await plugin_config_service.test_plugin(
+            session=e2e_session,
+            tenant_id=test_tenant_id,
+            plugin_id=plugin_id,
+        )
+        assert test_response.plugin_id == plugin_id
+        assert test_response.validated is True, f"配置测试失败: {test_response.message}"
+
+        # -------------------------------------------------------------------------
+        # 步骤 4：启动插件
+        # -------------------------------------------------------------------------
+        start_response = await plugin_config_service.start_plugin(
+            session=e2e_session,
+            tenant_id=test_tenant_id,
+            plugin_id=plugin_id,
+        )
+        assert start_response.status == "ACTIVE", (
+            f"插件启动失败，状态: {start_response.status}, 警告: {start_response.warning}"
+        )
 
         # 等待插件状态变为 ACTIVE
         await helper.wait_for_plugin_status(
             e2e_session,
             plugin_id,
-            "ACTIVE",
+            PluginStatus.ACTIVE,
             timeout=60.0,
         )
 
@@ -353,7 +339,7 @@ class TestPluginFullLifecycle:
         assert runtime_info["status"] == "active"
 
         # -------------------------------------------------------------------------
-        # 步骤 4：调用模型生成
+        # 步骤 5：调用模型生成
         # -------------------------------------------------------------------------
         try:
             # 获取可用模型列表
@@ -405,16 +391,22 @@ class TestPluginFullLifecycle:
             pytest.skip(f"模型调用失败：{e}")
 
         # -------------------------------------------------------------------------
-        # 步骤 5：停止插件
+        # 步骤 6：停止插件
         # -------------------------------------------------------------------------
-        success = await manager.stop_plugin(plugin_id, e2e_session)
-        assert success is True, "停止插件失败"
+        stop_response = await plugin_config_service.stop_plugin(
+            session=e2e_session,
+            tenant_id=test_tenant_id,
+            plugin_id=plugin_id,
+        )
+        assert stop_response.status == "INACTIVE", (
+            f"插件停止失败，状态: {stop_response.status}"
+        )
 
         # 等待插件状态变为 INACTIVE
         await helper.wait_for_plugin_status(
             e2e_session,
             plugin_id,
-            "INACTIVE",
+            PluginStatus.INACTIVE,
             timeout=30.0,
         )
 
@@ -423,17 +415,15 @@ class TestPluginFullLifecycle:
         assert is_running is False, "插件应该已停止"
 
         # -------------------------------------------------------------------------
-        # 步骤 6：卸载插件
+        # 步骤 7：卸载插件
         # -------------------------------------------------------------------------
         from ai.services.plugin import plugin_management_service
-        from framework.tenant.context import TenantContext
 
-        TenantContext.set_tenant_id(test_tenant_id)
         result = await plugin_management_service.uninstall_plugin(e2e_session, plugin_id)
         assert result.success is True, "卸载插件失败"
 
         # -------------------------------------------------------------------------
-        # 步骤 7：验证资源清理
+        # 步骤 8：验证资源清理
         # -------------------------------------------------------------------------
         # 验证插件从内存中移除
         plugins_after = await helper.get_all_plugins(e2e_session)
@@ -464,12 +454,13 @@ class TestPluginFullLifecycle:
         场景：插件生命周期资源清理
         - 安装插件
         - 启动插件
-        - 强制停止插件（模拟异常）
+        - 停止插件
         - 卸载插件
         - 验证所有资源都被正确清理
         """
         # 初始化辅助工具
         helper = PluginTestHelper(test_tenant_id)
+        TenantContext.set_tenant_id(test_tenant_id)
 
         # 获取 tongyi 插件包路径
         tongyi_path: Path = plugin_package_path("tongyi")
@@ -481,17 +472,25 @@ class TestPluginFullLifecycle:
         plugin_id = await helper.install_plugin_from_path(
             e2e_session,
             str(tongyi_path),
-            auto_start=False,
         )
 
-        manager = await helper.get_manager(e2e_session)
+        # 验证状态为 INACTIVE
+        await helper.wait_for_plugin_status(
+            e2e_session, plugin_id, PluginStatus.INACTIVE, timeout=60.0
+        )
 
         # 启动插件
-        success = await manager.start_plugin(plugin_id)
-        assert success is True
+        start_response = await plugin_config_service.start_plugin(
+            session=e2e_session,
+            tenant_id=test_tenant_id,
+            plugin_id=plugin_id,
+        )
+        assert start_response.status == "ACTIVE", (
+            f"插件启动失败，状态: {start_response.status}, 警告: {start_response.warning}"
+        )
 
         await helper.wait_for_plugin_status(
-            e2e_session, plugin_id, "ACTIVE", timeout=60.0
+            e2e_session, plugin_id, PluginStatus.ACTIVE, timeout=60.0
         )
 
         # 验证插件正在运行
@@ -502,20 +501,26 @@ class TestPluginFullLifecycle:
         # 正常停止和卸载
         # -------------------------------------------------------------------------
         # 停止插件
-        success = await manager.stop_plugin(plugin_id, e2e_session)
-        assert success is True
+        stop_response = await plugin_config_service.stop_plugin(
+            session=e2e_session,
+            tenant_id=test_tenant_id,
+            plugin_id=plugin_id,
+        )
+        assert stop_response.status == "INACTIVE", (
+            f"插件停止失败，状态: {stop_response.status}"
+        )
 
         # 卸载插件
         from ai.services.plugin import plugin_management_service
-        from framework.tenant.context import TenantContext
 
-        TenantContext.set_tenant_id(test_tenant_id)
         result = await plugin_management_service.uninstall_plugin(e2e_session, plugin_id)
         assert result.success is True
 
         # -------------------------------------------------------------------------
         # 验证资源清理
         # -------------------------------------------------------------------------
+        manager = await helper.get_manager(e2e_session)
+
         # 验证内存中的插件信息已清理
         assert plugin_id not in manager.plugins, "内存中的插件信息应已清理"
 
@@ -552,3 +557,87 @@ class TestPluginFullLifecycle:
         )
         runtime_state = state_result.scalar_one_or_none()
         assert runtime_state is None, "运行时状态记录应已删除"
+
+    @pytest.mark.e2e
+    @pytest.mark.asyncio
+    async def test_plugin_config_validation_failed(
+        self,
+        e2e_session: AsyncSession,
+        test_tenant_id: str,
+        plugin_package_path: callable,
+        cleanup_test_resources: dict,
+        plugin_provider,
+    ) -> None:
+        """
+        测试插件配置验证失败场景
+
+        场景：配置验证失败
+        - 安装插件
+        - 配置无效凭证（空 credentials）
+        - 测试配置连接，返回验证失败
+        - 验证插件状态保持 INACTIVE（未启动）
+
+        流程：安装 → 配置（无效）→ 测试（失败）
+        """
+        # 初始化辅助工具
+        helper = PluginTestHelper(test_tenant_id)
+        TenantContext.set_tenant_id(test_tenant_id)
+
+        # 获取 tongyi 插件包路径
+        tongyi_path: Path = plugin_package_path("tongyi")
+        plugin_id = "langgenius/tongyi"
+
+        try:
+            # 步骤 1：安装插件
+            plugin_id = await helper.install_plugin_from_path(
+                e2e_session,
+                str(tongyi_path),
+            )
+
+            # 验证状态为 INACTIVE
+            await helper.wait_for_plugin_status(
+                e2e_session,
+                plugin_id,
+                PluginStatus.INACTIVE,
+                timeout=60.0,
+            )
+
+            # 步骤 2：配置插件（使用空凭证，模拟无效配置）
+            config_response = await plugin_config_service.config_plugin(
+                session=e2e_session,
+                tenant_id=test_tenant_id,
+                plugin_id=plugin_id,
+                plugin_config={},
+                runtime_config=None,
+            )
+            assert config_response.plugin_id == plugin_id
+
+            # 步骤 3：测试配置连接（应返回验证失败）
+            test_response = await plugin_config_service.test_plugin(
+                session=e2e_session,
+                tenant_id=test_tenant_id,
+                plugin_id=plugin_id,
+            )
+            assert test_response.plugin_id == plugin_id
+            assert test_response.validated is False, (
+                f"空配置时测试应返回验证失败，实际: {test_response.validated}"
+            )
+
+            # 步骤 4：验证插件状态仍为 INACTIVE（未启动）
+            provider = get_plugin_installation_provider()
+            installation = await provider.get_installation(test_tenant_id, plugin_id)
+            assert installation is not None, "安装记录应存在"
+            assert installation.status.upper() == "INACTIVE", (
+                f"未启动的插件状态应为 INACTIVE，实际: {installation.status}"
+            )
+
+        finally:
+            # 清理：卸载插件
+            try:
+                from ai.services.plugin import plugin_management_service
+
+                await plugin_management_service.uninstall_plugin(
+                    e2e_session, plugin_id
+                )
+            except Exception:
+                pass
