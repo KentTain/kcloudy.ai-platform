@@ -183,6 +183,22 @@ class PluginInstallationProvider(Protocol):
         """
         ...
 
+    async def update_installation_status(
+        self, tenant_id: str, plugin_id: str, status: str
+    ) -> PluginInstallationDTO:
+        """
+        更新安装状态（由 AI 模块调用）
+
+        Args:
+            tenant_id: 租户 ID
+            plugin_id: 插件 ID
+            status: 新状态（ACTIVE / INACTIVE）
+
+        Returns:
+            PluginInstallationDTO
+        """
+        ...
+
 
 # ============== 全局注册 ==============
 
