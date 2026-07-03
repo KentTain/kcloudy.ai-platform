@@ -73,7 +73,7 @@ const sizeClasses: Record<string, string> = {
 <template>
   <div class="relative">
     <Select
-      :model-value="modelValue?.toString() || ''"
+      :model-value="modelValue?.toString() ?? undefined"
       :disabled="disabled"
       @update:model-value="handleChange"
     >

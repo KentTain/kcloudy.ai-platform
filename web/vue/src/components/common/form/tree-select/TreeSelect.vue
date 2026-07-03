@@ -253,9 +253,9 @@ watch(
 );
 
 // 选中的值数组
-const selectedValues = computed(() => {
+const selectedValues = computed<TreeSelectValue[]>(() => {
   if (props.modelValue == null) return [];
-  return props.multiple ? (Array.isArray(props.modelValue) ? props.modelValue : []) : [props.modelValue];
+  return props.multiple ? (Array.isArray(props.modelValue) ? props.modelValue as TreeSelectValue[] : []) : [props.modelValue as TreeSelectValue];
 });
 
 // 根据值查找节点
@@ -294,7 +294,7 @@ const filterTree = (nodes: TreeSelectNode[], query: string): TreeSelectNode[] =>
   if (!query.trim()) return nodes;
   const lowerQuery = query.toLowerCase();
   return nodes
-    .map((node) => {
+    .map((node): TreeSelectNode | null => {
       const nameMatch = node.name.toLowerCase().includes(lowerQuery);
       const filteredChildren = node.children ? filterTree(node.children, query) : [];
       if (nameMatch || filteredChildren.length > 0) {

@@ -571,8 +571,8 @@ async function loadOrgNodesCallback(): Promise<OrgTreeNode[]> {
       return nodes.map((d) => ({
         id: d.id,
         name: d.name,
-        code: d.code,
-        parent_id: d.parent_id,
+        code: d.code ?? undefined,
+        parent_id: d.parent_id ?? undefined,
         has_user_num: d.direct_member_count || 0,
         has_org_num: d.children?.length || 0,
         tree_leaf: !d.children || d.children.length === 0,

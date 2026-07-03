@@ -4,7 +4,7 @@
  * 基于 shadcn-vue Table 原语，封装 columns/loading/empty
  */
 import {
-  Table,
+  Table as UITable,
   TableBody,
   TableCell,
   TableHead,
@@ -72,7 +72,7 @@ const alignClass = (align?: "left" | "center" | "right") => {
 
 <template>
   <div class="overflow-x-auto rounded-md border" v-if="border">
-    <Table>
+    <UITable>
       <TableHeader>
         <TableRow class="bg-muted/50 hover:bg-muted/50">
           <TableHead
@@ -142,9 +142,9 @@ const alignClass = (align?: "left" | "center" | "right") => {
           </TableRow>
         </template>
       </TableBody>
-    </Table>
+    </UITable>
   </div>
-  <Table v-else>
+  <UITable v-else>
     <TableHeader>
       <TableRow class="bg-muted/50 hover:bg-muted/50">
         <TableHead
@@ -214,5 +214,5 @@ const alignClass = (align?: "left" | "center" | "right") => {
         </TableRow>
       </template>
     </TableBody>
-  </Table>
+  </UITable>
 </template>

@@ -31,12 +31,12 @@ const emit = defineEmits<{
 // 使用 useTreeData 转换组织数据
 const { treeData, selectedIds } = useTreeData<Organization, TreeSelectNode>({
   source: computed(() => props.organizations),
-  modelValue: () => {
+  modelValue: computed(() => {
     if (props.mode === 'single') {
       return typeof props.modelValue === 'string' && props.modelValue ? [props.modelValue] : []
     }
     return Array.isArray(props.modelValue) ? props.modelValue : []
-  },
+  }),
   mode: props.mode,
 })
 

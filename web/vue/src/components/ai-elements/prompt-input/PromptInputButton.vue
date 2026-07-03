@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils'
 import { Comment, computed, Text, toRef, useSlots } from 'vue'
 
 type InputGroupButtonProps = InstanceType<typeof InputGroupButton>['$props']
+type ButtonSize = NonNullable<InputGroupButtonProps['size']>
 
 interface Props extends /* @vue-ignore */ InputGroupButtonProps {
   class?: HTMLAttributes['class']
@@ -18,7 +19,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 const slots = useSlots() as { default?: () => VNode[] }
 
-const computedSize = computed<string>(() => {
+const computedSize = computed<ButtonSize>(() => {
   if (props.size)
     return props.size
 
