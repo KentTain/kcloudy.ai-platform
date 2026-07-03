@@ -30,7 +30,9 @@ import pytest
 from ai.components.plugin.engine.core.plugin_manager import PluginManagerFactory
 from ai.components.plugin.engine.models.enums import PluginStatus
 from ai.components.plugin.engine.models.request import InstallRequest
+from ai.services.plugin_config_service import plugin_config_service
 from ai_plugin.sdk.entities.model.message import UserPromptMessage
+from framework.tenant.context import TenantContext
 from framework.tenant.plugin_protocols import get_plugin_installation_provider
 
 from tests.ai.e2e.helpers.plugin_test_helper import PluginTestHelper
@@ -71,26 +73,60 @@ class TestPluginInvokeTongyi:
         - 调用模型生成接口
         - 系统成功调用 tongyi API
         - 返回有效的模型响应
+
+        流程：安装 → 配置 → 启动 → 调用
         """
         if not tongyi_api_key_available:
             pytest.skip("tongyi API Key 无效或服务不可用")
 
         plugin_id = "langgenius/tongyi"
         helper = PluginTestHelper(tenant_id=test_tenant_id)
+        TenantContext.set_tenant_id(test_tenant_id)
 
         try:
-            # 1. 安装并启动插件
+            # 1. 安装插件（不自动启动）
             package_path: Path = plugin_package_path("tongyi")
             installed_plugin_id = await helper.install_plugin_from_path(
                 session=e2e_session,
                 package_path=str(package_path),
-                auto_start=True,
             )
             assert installed_plugin_id == plugin_id, (
                 f"插件 ID 应为 '{plugin_id}'，实际为 '{installed_plugin_id}'"
             )
 
-            # 2. 等待插件状态为 ACTIVE
+            # 2. 验证插件状态为 INACTIVE
+            await helper.wait_for_plugin_status(
+                session=e2e_session,
+                plugin_id=plugin_id,
+                target_status=PluginStatus.INACTIVE,
+                timeout=60.0,
+            )
+
+            # 3. 配置插件凭证
+            config_response = await plugin_config_service.config_plugin(
+                session=e2e_session,
+                tenant_id=test_tenant_id,
+                plugin_id=plugin_id,
+                plugin_config={
+                    "credentials": {
+                        "dashscope_api_key": tongyi_api_key,
+                    }
+                },
+                runtime_config=None,
+            )
+            assert config_response.plugin_id == plugin_id
+
+            # 4. 启动插件
+            start_response = await plugin_config_service.start_plugin(
+                session=e2e_session,
+                tenant_id=test_tenant_id,
+                plugin_id=plugin_id,
+            )
+            assert start_response.status == "ACTIVE", (
+                f"插件启动失败，状态: {start_response.status}, 警告: {start_response.warning}"
+            )
+
+            # 5. 验证插件状态为 ACTIVE
             await helper.wait_for_plugin_status(
                 session=e2e_session,
                 plugin_id=plugin_id,
@@ -98,7 +134,7 @@ class TestPluginInvokeTongyi:
                 timeout=30.0,
             )
 
-            # 3. 调用 tongyi 模型
+            # 6. 调用 tongyi 模型
             manager = await helper.get_manager(e2e_session)
 
             # 构造模型调用请求
@@ -182,23 +218,57 @@ class TestPluginInvokeTongyi:
         - 以流式模式调用 tongyi 模型
         - 系统返回多个增量响应
         - 最后一个响应标记为完成
+
+        流程：安装 → 配置 → 启动 → 调用
         """
         if not tongyi_api_key_available:
             pytest.skip("tongyi API Key 无效或服务不可用")
 
         plugin_id = "langgenius/tongyi"
         helper = PluginTestHelper(tenant_id=test_tenant_id)
+        TenantContext.set_tenant_id(test_tenant_id)
 
         try:
-            # 1. 安装并启动插件
+            # 1. 安装插件（不自动启动）
             package_path: Path = plugin_package_path("tongyi")
             await helper.install_plugin_from_path(
                 session=e2e_session,
                 package_path=str(package_path),
-                auto_start=True,
             )
 
-            # 2. 等待插件状态为 ACTIVE
+            # 2. 验证插件状态为 INACTIVE
+            await helper.wait_for_plugin_status(
+                session=e2e_session,
+                plugin_id=plugin_id,
+                target_status=PluginStatus.INACTIVE,
+                timeout=60.0,
+            )
+
+            # 3. 配置插件凭证
+            config_response = await plugin_config_service.config_plugin(
+                session=e2e_session,
+                tenant_id=test_tenant_id,
+                plugin_id=plugin_id,
+                plugin_config={
+                    "credentials": {
+                        "dashscope_api_key": tongyi_api_key,
+                    }
+                },
+                runtime_config=None,
+            )
+            assert config_response.plugin_id == plugin_id
+
+            # 4. 启动插件
+            start_response = await plugin_config_service.start_plugin(
+                session=e2e_session,
+                tenant_id=test_tenant_id,
+                plugin_id=plugin_id,
+            )
+            assert start_response.status == "ACTIVE", (
+                f"插件启动失败，状态: {start_response.status}, 警告: {start_response.warning}"
+            )
+
+            # 5. 验证插件状态为 ACTIVE
             await helper.wait_for_plugin_status(
                 session=e2e_session,
                 plugin_id=plugin_id,
@@ -206,7 +276,7 @@ class TestPluginInvokeTongyi:
                 timeout=30.0,
             )
 
-            # 3. 流式调用 tongyi 模型
+            # 6. 流式调用 tongyi 模型
             manager = await helper.get_manager(e2e_session)
 
             invoke_request = {
@@ -305,6 +375,8 @@ class TestPluginInvokeGpustack:
         - 调用模型生成接口
         - 系统成功调用 gpustack API
         - 返回有效的模型响应
+
+        流程：安装 → 配置 → 启动 → 调用
         """
         # 使用 fixture 提供的 endpoint（优先环境变量，否则使用默认测试配置）
         if not gpustack_api_key_available:
@@ -317,20 +389,55 @@ class TestPluginInvokeGpustack:
 
         plugin_id = "langgenius/gpustack"
         helper = PluginTestHelper(tenant_id=test_tenant_id)
+        TenantContext.set_tenant_id(test_tenant_id)
 
         try:
-            # 1. 安装并启动插件
+            # 1. 安装插件（不自动启动）
             package_path: Path = plugin_package_path("gpustack")
             installed_plugin_id = await helper.install_plugin_from_path(
                 session=e2e_session,
                 package_path=str(package_path),
-                auto_start=True,
             )
             assert installed_plugin_id == plugin_id, (
                 f"插件 ID 应为 '{plugin_id}'，实际为 '{installed_plugin_id}'"
             )
 
-            # 2. 等待插件状态为 ACTIVE
+            # 2. 验证插件状态为 INACTIVE
+            await helper.wait_for_plugin_status(
+                session=e2e_session,
+                plugin_id=plugin_id,
+                target_status=PluginStatus.INACTIVE,
+                timeout=60.0,
+            )
+
+            # 3. 配置插件凭证
+            config_response = await plugin_config_service.config_plugin(
+                session=e2e_session,
+                tenant_id=test_tenant_id,
+                plugin_id=plugin_id,
+                plugin_config={
+                    "credentials": {
+                        "api_key": gpustack_api_key,
+                        "endpoint_url": endpoint_url,
+                        "mode": "chat",
+                        "context_size": "4096",
+                    }
+                },
+                runtime_config=None,
+            )
+            assert config_response.plugin_id == plugin_id
+
+            # 4. 启动插件
+            start_response = await plugin_config_service.start_plugin(
+                session=e2e_session,
+                tenant_id=test_tenant_id,
+                plugin_id=plugin_id,
+            )
+            assert start_response.status == "ACTIVE", (
+                f"插件启动失败，状态: {start_response.status}, 警告: {start_response.warning}"
+            )
+
+            # 5. 验证插件状态为 ACTIVE
             await helper.wait_for_plugin_status(
                 session=e2e_session,
                 plugin_id=plugin_id,
@@ -338,7 +445,7 @@ class TestPluginInvokeGpustack:
                 timeout=30.0,
             )
 
-            # 3. 调用 gpustack 模型
+            # 6. 调用 gpustack 模型
             manager = await helper.get_manager(e2e_session)
 
             invoke_request = {
@@ -429,20 +536,54 @@ class TestPluginInvokeError:
         - 使用无效 API Key 调用模型
         - 系统返回认证失败错误
         - 错误包含详细错误信息
+
+        流程：安装 → 配置 → 启动 → 调用
         """
         plugin_id = "langgenius/tongyi"
         helper = PluginTestHelper(tenant_id=test_tenant_id)
+        TenantContext.set_tenant_id(test_tenant_id)
 
         try:
-            # 1. 安装并启动插件
+            # 1. 安装插件（不自动启动）
             package_path: Path = plugin_package_path("tongyi")
             await helper.install_plugin_from_path(
                 session=e2e_session,
                 package_path=str(package_path),
-                auto_start=True,
             )
 
-            # 2. 等待插件状态为 ACTIVE
+            # 2. 验证插件状态为 INACTIVE
+            await helper.wait_for_plugin_status(
+                session=e2e_session,
+                plugin_id=plugin_id,
+                target_status=PluginStatus.INACTIVE,
+                timeout=60.0,
+            )
+
+            # 3. 配置插件凭证（使用无效 API Key）
+            config_response = await plugin_config_service.config_plugin(
+                session=e2e_session,
+                tenant_id=test_tenant_id,
+                plugin_id=plugin_id,
+                plugin_config={
+                    "credentials": {
+                        "dashscope_api_key": "invalid-api-key-for-testing-12345",
+                    }
+                },
+                runtime_config=None,
+            )
+            assert config_response.plugin_id == plugin_id
+
+            # 4. 启动插件
+            start_response = await plugin_config_service.start_plugin(
+                session=e2e_session,
+                tenant_id=test_tenant_id,
+                plugin_id=plugin_id,
+            )
+            assert start_response.status == "ACTIVE", (
+                f"插件启动失败，状态: {start_response.status}, 警告: {start_response.warning}"
+            )
+
+            # 5. 验证插件状态为 ACTIVE
             await helper.wait_for_plugin_status(
                 session=e2e_session,
                 plugin_id=plugin_id,
@@ -450,7 +591,7 @@ class TestPluginInvokeError:
                 timeout=30.0,
             )
 
-            # 3. 使用无效 API Key 调用模型
+            # 6. 使用无效 API Key 调用模型
             manager = await helper.get_manager(e2e_session)
 
             invoke_request = {
