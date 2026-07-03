@@ -113,7 +113,6 @@ export interface PluginStatistics {
 
 export interface InstallToTenantsRequest {
   tenant_ids: string[];
-  auto_start?: boolean;
 }
 
 export interface InstallSuccessItem {
