@@ -69,13 +69,14 @@ const onProfileSubmit = handleProfileSubmit(async (values) => {
       phone: values.phone || undefined,
     })
     const currentUserInfo = frameworkUserStore.userInfo
-    if (currentUserInfo) {
+    const data = response.data
+    if (currentUserInfo && data) {
       frameworkUserStore.setUserInfo({
         ...currentUserInfo,
-        username: response.data.username,
-        nickname: response.data.nickname || currentUserInfo.nickname,
-        avatar: response.data.avatar,
-        email: response.data.email,
+        username: data.username,
+        nickname: data.nickname || currentUserInfo.nickname,
+        avatar: data.avatar,
+        email: data.email,
         roles: currentUserInfo.roles,
         permissions: currentUserInfo.permissions,
       })

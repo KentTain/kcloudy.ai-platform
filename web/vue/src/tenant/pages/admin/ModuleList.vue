@@ -24,6 +24,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { confirmAction, notifyError, notifySuccess } from "@/framework/utils/feedback";
+import { createPaginatedResponse } from "@/framework/api/types";
 import { deleteModule, getModules } from "@/tenant/api/module";
 import type { Module } from "@/tenant/types/admin";
 
@@ -144,13 +145,15 @@ const dataTable = useDataTable<Module>({
     });
     // 提取统计数据
     const items = response.data;
-    stats.value = {
-      totalCount: response.total,
-      activeCount: items.filter((item) => item.is_active).length,
-      needCount: items.filter((item) => item.is_need).length,
-      assignedCount: items.reduce((sum, item) => sum + (item.tenant_count || 0), 0),
-    };
-    return response;
+    if (items) {
+      stats.value = {
+        totalCount: response.total || 0,
+        activeCount: items.filter((item) => item.is_active).length,
+        needCount: items.filter((item) => item.is_need).length,
+        assignedCount: items.reduce((sum, item) => sum + (item.tenant_count || 0), 0),
+      };
+    }
+    return createPaginatedResponse(response);
   },
 });
 

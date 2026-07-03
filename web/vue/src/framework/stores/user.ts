@@ -46,15 +46,15 @@ export const useUserStore = defineStore("user", () => {
   const currentTenant = computed<TenantInfo | null>(() => {
     if (!userInfo.value?.tenantId) return null;
     // 从 tenants 列表中找到当前租户，这样可以保留 is_default 字段
-    const tenant = userInfo.value.tenants?.find((t) => t.id === userInfo.value.tenantId);
+    const tenant = userInfo.value!.tenants?.find((t) => t.id === userInfo.value!.tenantId);
     if (tenant) {
       return tenant;
     }
     // 如果 tenants 列表中没有找到，使用基本信息
     return {
-      id: userInfo.value.tenantId,
-      name: userInfo.value.tenantName || "",
-      code: userInfo.value.tenantCode || "",
+      id: userInfo.value!.tenantId,
+      name: userInfo.value!.tenantName || "",
+      code: userInfo.value!.tenantCode || "",
     };
   });
 

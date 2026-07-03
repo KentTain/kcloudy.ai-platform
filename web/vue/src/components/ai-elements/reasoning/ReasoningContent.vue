@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { HTMLAttributes } from 'vue'
+import type { HTMLAttributes, VNode } from 'vue'
 import { CollapsibleContent } from '@/components/ui/collapsible'
 import { cn } from '@/lib/utils'
 import { computed, useSlots } from 'vue'
@@ -12,7 +12,7 @@ interface Props {
 }
 
 const props = defineProps<Props>()
-const slots = useSlots()
+const slots = useSlots() as { default?: () => VNode[] }
 
 const slotContent = computed<string | undefined>(() => {
   const nodes = slots.default?.()

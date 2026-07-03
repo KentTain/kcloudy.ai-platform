@@ -439,7 +439,8 @@ const pubsubDataTable = useDataTable<PubsubConfig>({
 })
 
 // DataTable 实例映射
-const dataTableMap: Record<ResourceType, ReturnType<typeof useDataTable<ResourceConfig>>> = {
+// 注意：由于 TypeScript 泛型的不变性，这里使用 any 类型
+const dataTableMap: Record<ResourceType, ReturnType<typeof useDataTable<any>>> = {
   database: databaseDataTable,
   storage: storageDataTable,
   cache: cacheDataTable,

@@ -77,8 +77,8 @@ const handleClick = (event: MouseEvent) => {
 
 <template>
   <Button
-    :variant="variantMap[variant]"
-    :size="sizeMap[size]"
+    :variant="(variantMap[variant] ?? 'default') as any"
+    :size="(sizeMap[size] ?? 'default') as any"
     :disabled="disabled || loading"
     :type="type"
     :class="cn(block && 'w-full', variantOverride[variant])"

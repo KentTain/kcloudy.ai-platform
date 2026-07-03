@@ -67,3 +67,26 @@ export function unwrap<T>(res: ApiResponse<T>): T {
   }
   throw new Error(res.msg);
 }
+
+/**
+ * 构造分页响应（用于 DataTable remoteFetchFn）
+ *
+ * @param res - 原始 API 响应
+ * @returns 符合 ApiResponse<T[]> 类型的分页响应
+ *
+ * @example
+ * const res = await getUsers({ page, page_size });
+ * return createPaginatedResponse(res);
+ */
+export function createPaginatedResponse<T>(
+  res: Pick<ApiResponse<T[]>, 'code' | 'msg' | 'data' | 'total' | 'page' | 'page_size'>
+): ApiResponse<T[]> {
+  return {
+    code: res.code,
+    msg: res.msg,
+    data: res.data ?? [],
+    total: res.total ?? 0,
+    page: res.page,
+    page_size: res.page_size,
+  };
+}

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { TreeSelectNode } from '@/framework/types/tree'
 import type { HTMLAttributes } from 'vue'
-import { computed, h, ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { cn } from '@/lib/utils'
 import { ChevronRight, ChevronDown, Loader2 } from '@lucide/vue'
 import Checkbox from '@/components/ui/checkbox/Checkbox.vue'

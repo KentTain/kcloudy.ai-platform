@@ -21,6 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { notifyError, notifySuccess } from "@/framework/utils/feedback";
+import { createPaginatedResponse } from "@/framework/api/types";
 import {
   getMarketplace,
   getRemotePlugins,
@@ -201,12 +202,14 @@ const dataTable = useDataTable<RemotePlugin>({
       keyword: searchForm.value.keyword || undefined,
       type: searchForm.value.type || undefined,
     });
-    return {
+    return createPaginatedResponse({
+      code: response.code,
+      msg: response.msg,
       data: response.data || [],
       total: response.data?.length || 0,
       page,
       page_size,
-    };
+    });
   },
 });
 

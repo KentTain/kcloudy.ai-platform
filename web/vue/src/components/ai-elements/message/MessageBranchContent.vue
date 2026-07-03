@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { HTMLAttributes } from 'vue'
+import type { HTMLAttributes, VNode } from 'vue'
 import { cn } from '@/lib/utils'
 import { computed, Fragment, isVNode, onMounted, useSlots, watch } from 'vue'
 import { useMessageBranchContext } from './context'
@@ -9,7 +9,7 @@ interface Props {
 }
 
 const props = defineProps<Props>()
-const slots = useSlots()
+const slots = useSlots() as { default?: () => VNode[] }
 
 const { currentBranch, setBranches } = useMessageBranchContext()
 
@@ -25,7 +25,7 @@ const branchVNodes = computed(() => {
 
   const allNodes = nodes.flatMap(extractChildren)
 
-  return allNodes.filter((node) => {
+  return allNodes.filter((node: VNode) => {
     if (!isVNode(node))
       return false
     return node.type && typeof node.type === 'object'

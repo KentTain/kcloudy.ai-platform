@@ -17,6 +17,7 @@ import { h, ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { Badge, Button, Card, DataTable, useDataTable } from "@/components";
 import { confirmAction, notifyError, notifySuccess } from "@/framework/utils/feedback";
+import { createPaginatedResponse } from "@/framework/api/types";
 import {
   checkUpdates,
   getMarketplaces,
@@ -206,12 +207,14 @@ const dataTable = useDataTable<Marketplace>({
   columns,
   remoteFetchFn: async () => {
     const response = await getMarketplaces();
-    return {
+    return createPaginatedResponse({
+      code: response.code,
+      msg: response.msg,
       data: response.data || [],
       total: response.data?.length || 0,
       page: 1,
       page_size: 100,
-    };
+    });
   },
 });
 

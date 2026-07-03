@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { CSSProperties, HTMLAttributes } from 'vue'
+import type { CSSProperties, HTMLAttributes, VNode } from 'vue'
 import { cn } from '@/lib/utils'
 import { motion } from 'motion-v'
 import { computed, useSlots } from 'vue'
@@ -17,7 +17,7 @@ const props = withDefaults(defineProps<TextShimmerProps>(), {
   spread: 2,
 })
 
-const slots = useSlots()
+const slots = useSlots() as { default?: () => VNode[] }
 
 const textContent = computed(() => {
   const defaultSlot = slots.default?.()
@@ -25,7 +25,7 @@ const textContent = computed(() => {
     return ''
 
   return defaultSlot
-    .map((vnode) => {
+    .map((vnode: VNode) => {
       if (typeof vnode.children === 'string') {
         return vnode.children
       }

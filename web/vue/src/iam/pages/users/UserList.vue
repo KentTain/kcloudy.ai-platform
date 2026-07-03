@@ -41,6 +41,7 @@ import {
 } from "@/components/ui/select"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { confirmAction, notifySuccess, notifyError, getErrorMessage } from "@/framework/utils/feedback"
+import { createPaginatedResponse } from "@/framework/api/types"
 import type { User, UserStats, Organization, RoleOption } from "@/iam/types"
 import {
   getUsers,
@@ -288,14 +289,7 @@ const dataTable = useDataTable<User>({
       organization_id: filters.value.organization_id || undefined,
       include_children: filters.value.include_children,
     })
-    return {
-      code: res.code,
-      data: res.data || [],
-      msg: res.msg,
-      page: res.page || page,
-      page_size: res.page_size || page_size,
-      total: res.total || 0,
-    }
+    return createPaginatedResponse(res)
   },
 })
 
