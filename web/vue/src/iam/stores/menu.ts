@@ -14,7 +14,7 @@ export const useMenuStore = defineStore("iam-menu", () => {
     error.value = null;
     try {
       const response = await getMenus();
-      menus.value = response.data.menus;
+      menus.value = response.data?.menus ?? [];
     } catch (err: any) {
       error.value = getErrorMessage(err, "获取菜单失败");
       notifyError(error.value);

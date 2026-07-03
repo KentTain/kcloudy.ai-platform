@@ -50,12 +50,12 @@ const loadUserDetail = async () => {
       getRoles({ page: 1, page_size: 100 }),
       getOrganizations(),
     ])
-    roles.value = rolesRes.data
-    organizations.value = orgsRes.data
-    selectedRoleIds.value = rolesRes.data.map(role => role.id)
-    allRoles.value = allRolesRes.data
-    allOrganizations.value = allOrganizationsRes.data
-    selectedOrganizationIds.value = orgsRes.data.map(org => org.id)
+    roles.value = rolesRes.data ?? []
+    organizations.value = orgsRes.data ?? []
+    selectedRoleIds.value = (rolesRes.data ?? []).map(role => role.id)
+    allRoles.value = allRolesRes.data ?? []
+    allOrganizations.value = allOrganizationsRes.data ?? []
+    selectedOrganizationIds.value = (orgsRes.data ?? []).map(org => org.id)
   } catch (error) {
     notifyError(getErrorMessage(error, '加载用户详情失败'))
   } finally {
@@ -75,7 +75,12 @@ const handleResetPassword = async () => {
   resettingPassword.value = true
   try {
     const response = await resetUserPassword(userId.value)
-    notifySuccess(`密码重置成功，新密码：${response.data.password}`)
+    const password = response.data?.password
+    if (password) {
+      notifySuccess(`密码重置成功，新密码：${password}`)
+    } else {
+      notifySuccess('密码重置成功')
+    }
   } catch (error) {
     notifyError(getErrorMessage(error, '重置密码失败'))
   } finally {
@@ -88,8 +93,8 @@ const handleSaveRoles = async () => {
   try {
     await assignUserRoles(userId.value, selectedRoleIds.value)
     const rolesRes = await getUserRoles(userId.value)
-    roles.value = rolesRes.data
-    selectedRoleIds.value = rolesRes.data.map(role => role.id)
+    roles.value = rolesRes.data ?? []
+    selectedRoleIds.value = (rolesRes.data ?? []).map(role => role.id)
     notifySuccess('角色分配保存成功')
   } catch (error) {
     notifyError(getErrorMessage(error, '角色分配保存失败'))
@@ -103,8 +108,8 @@ const handleSaveOrganizations = async () => {
   try {
     await assignUserOrganizations(userId.value, selectedOrganizationIds.value)
     const orgsRes = await getUserOrganizations(userId.value)
-    organizations.value = orgsRes.data
-    selectedOrganizationIds.value = orgsRes.data.map(org => org.id)
+    organizations.value = orgsRes.data ?? []
+    selectedOrganizationIds.value = (orgsRes.data ?? []).map(org => org.id)
     notifySuccess('组织分配保存成功')
   } catch (error) {
     notifyError(getErrorMessage(error, '组织分配保存失败'))

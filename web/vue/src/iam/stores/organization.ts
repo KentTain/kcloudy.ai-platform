@@ -31,7 +31,7 @@ export const useOrganizationStore = defineStore("iam-organization", () => {
     loading.value = true;
     try {
       const response = await getOrganizations(params);
-      organizations.value = response.data;
+      organizations.value = response.data ?? [];
     } catch (error: any) {
       notifyError(getErrorMessage(error, "获取组织列表失败"));
     } finally {
@@ -43,7 +43,7 @@ export const useOrganizationStore = defineStore("iam-organization", () => {
     loading.value = true;
     try {
       const response = await getOrganizationTree();
-      organizationTree.value = response.data;
+      organizationTree.value = response.data ?? [];
     } catch (error: any) {
       notifyError(getErrorMessage(error, "获取组织树失败"));
     } finally {
@@ -122,8 +122,8 @@ export const useOrganizationStore = defineStore("iam-organization", () => {
     loading.value = true;
     try {
       const response = await getOrganizationUsers(id);
-      organizationUsers.value = response.data;
-      return response.data;
+      organizationUsers.value = response.data ?? [];
+      return response.data ?? [];
     } catch (error: any) {
       notifyError(getErrorMessage(error, "获取组织用户失败"));
     } finally {

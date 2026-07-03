@@ -49,10 +49,13 @@ export const useRoleStore = defineStore("iam-role", () => {
     loading.value = true;
     try {
       const response = await createRole(data);
-      roles.value.unshift(response.data);
-      total.value++;
+      const newRole = response.data;
+      if (newRole) {
+        roles.value.unshift(newRole);
+        total.value++;
+      }
       notifySuccess("创建角色成功");
-      return response.data;
+      return newRole;
     } catch (error: any) {
       notifyError(getErrorMessage(error, "创建角色失败"));
     } finally {
@@ -64,12 +67,15 @@ export const useRoleStore = defineStore("iam-role", () => {
     loading.value = true;
     try {
       const response = await updateRole(id, data);
-      const index = roles.value.findIndex((r) => r.id === id);
-      if (index !== -1) {
-        roles.value[index] = response.data;
+      const updatedRole = response.data;
+      if (updatedRole) {
+        const index = roles.value.findIndex((r) => r.id === id);
+        if (index !== -1) {
+          roles.value[index] = updatedRole;
+        }
       }
       notifySuccess("更新角色成功");
-      return response.data;
+      return updatedRole;
     } catch (error: any) {
       notifyError(getErrorMessage(error, "更新角色失败"));
     } finally {
@@ -95,8 +101,8 @@ export const useRoleStore = defineStore("iam-role", () => {
     loading.value = true;
     try {
       const response = await getRolePermissions(role_id);
-      currentRolePermissions.value = response.data;
-      return response.data;
+      currentRolePermissions.value = response.data ?? [];
+      return response.data ?? [];
     } catch (error: any) {
       notifyError(getErrorMessage(error, "获取角色权限失败"));
     } finally {

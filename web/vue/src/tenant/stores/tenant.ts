@@ -37,9 +37,10 @@ export const useTenantStore = defineStore("tenant", () => {
     loading.value = true;
     try {
       const response = await getTenants(params);
-      tenants.value = response.data.items ?? [];
-      total.value = response.data.total ?? 0;
-      stats.value = response.data.stats ?? {
+      const data = response.data;
+      tenants.value = data?.items ?? [];
+      total.value = data?.total ?? 0;
+      stats.value = data?.stats ?? {
         total_count: 0,
         inactive_count: 0,
         expired_count: 0,
@@ -86,12 +87,15 @@ export const useTenantStore = defineStore("tenant", () => {
     loading.value = true;
     try {
       const response = await updateTenant(id, data);
-      const index = tenants.value.findIndex((t) => t.id === id);
-      if (index !== -1) {
-        tenants.value[index] = response.data;
+      const updatedTenant = response.data;
+      if (updatedTenant) {
+        const index = tenants.value.findIndex((t) => t.id === id);
+        if (index !== -1) {
+          tenants.value[index] = updatedTenant;
+        }
       }
       notifySuccess("更新租户成功");
-      return response.data;
+      return updatedTenant;
     } catch (error: unknown) {
       notifyError(getErrorMessage(error, "更新租户失败"));
     } finally {
@@ -119,15 +123,18 @@ export const useTenantStore = defineStore("tenant", () => {
     loading.value = true;
     try {
       const response = await activateTenant(id);
-      const index = tenants.value.findIndex((t) => t.id === id);
-      if (index !== -1) {
-        tenants.value[index] = response.data;
-      }
-      if (currentTenant.value?.id === id) {
-        currentTenant.value = response.data;
+      const activatedTenant = response.data;
+      if (activatedTenant) {
+        const index = tenants.value.findIndex((t) => t.id === id);
+        if (index !== -1) {
+          tenants.value[index] = activatedTenant;
+        }
+        if (currentTenant.value?.id === id) {
+          currentTenant.value = activatedTenant;
+        }
       }
       notifySuccess("激活租户成功");
-      return response.data;
+      return activatedTenant;
     } catch (error: unknown) {
       notifyError(getErrorMessage(error, "激活租户失败"));
     } finally {
@@ -140,15 +147,18 @@ export const useTenantStore = defineStore("tenant", () => {
     loading.value = true;
     try {
       const response = await deactivateTenant(id);
-      const index = tenants.value.findIndex((t) => t.id === id);
-      if (index !== -1) {
-        tenants.value[index] = response.data;
-      }
-      if (currentTenant.value?.id === id) {
-        currentTenant.value = response.data;
+      const deactivatedTenant = response.data;
+      if (deactivatedTenant) {
+        const index = tenants.value.findIndex((t) => t.id === id);
+        if (index !== -1) {
+          tenants.value[index] = deactivatedTenant;
+        }
+        if (currentTenant.value?.id === id) {
+          currentTenant.value = deactivatedTenant;
+        }
       }
       notifySuccess("停用租户成功");
-      return response.data;
+      return deactivatedTenant;
     } catch (error: unknown) {
       notifyError(getErrorMessage(error, "停用租户失败"));
     } finally {
@@ -175,7 +185,7 @@ export const useTenantStore = defineStore("tenant", () => {
     loading.value = true;
     try {
       const response = await getMyTenants();
-      myTenants.value = response.data;
+      myTenants.value = response.data ?? [];
     } catch (error: unknown) {
       notifyError(getErrorMessage(error, "获取我的租户列表失败"));
     } finally {

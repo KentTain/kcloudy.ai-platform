@@ -49,10 +49,13 @@ export const useUserStore = defineStore("iam-user", () => {
     loading.value = true;
     try {
       const response = await createUser(data);
-      users.value.unshift(response.data);
-      total.value++;
+      const newUser = response.data;
+      if (newUser) {
+        users.value.unshift(newUser);
+        total.value++;
+      }
       notifySuccess("创建用户成功");
-      return response.data;
+      return newUser;
     } catch (error: any) {
       notifyError(getErrorMessage(error, "创建用户失败"));
     } finally {
@@ -64,12 +67,15 @@ export const useUserStore = defineStore("iam-user", () => {
     loading.value = true;
     try {
       const response = await updateUser(id, data);
-      const index = users.value.findIndex((u) => u.id === id);
-      if (index !== -1) {
-        users.value[index] = response.data;
+      const updatedUser = response.data;
+      if (updatedUser) {
+        const index = users.value.findIndex((u) => u.id === id);
+        if (index !== -1) {
+          users.value[index] = updatedUser;
+        }
       }
       notifySuccess("更新用户成功");
-      return response.data;
+      return updatedUser;
     } catch (error: any) {
       notifyError(getErrorMessage(error, "更新用户失败"));
     } finally {

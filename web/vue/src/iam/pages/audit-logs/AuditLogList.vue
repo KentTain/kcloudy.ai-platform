@@ -353,7 +353,7 @@ onMounted(() => {
             <div class="rounded-md border p-3">
               <p class="text-sm text-muted-foreground">业务域</p>
               <p class="mt-1.5 font-medium">
-                {{ options.business_domains.find((d) => d.value === activeLog.business_domain)?.label ?? activeLog.business_domain ?? "-" }}
+                {{ options.business_domains.find((d) => d.value === activeLog?.business_domain)?.label ?? activeLog?.business_domain ?? "-" }}
               </p>
             </div>
             <div class="rounded-md border p-3">
