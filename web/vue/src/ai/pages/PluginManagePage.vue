@@ -198,6 +198,7 @@ const columns: ColumnDef<AvailablePlugin>[] = [
               variant: "ghost",
               size: "sm",
               onClick: () => handleConfig(plugin),
+              "data-testid": "config-btn",
             },
             () => [h(Settings, { class: "mr-1 h-3.5 w-3.5" }), "配置"]
           ),
@@ -211,6 +212,7 @@ const columns: ColumnDef<AvailablePlugin>[] = [
                 variant: "ghost",
                 size: "sm",
                 disabled: isOperating,
+                "data-testid": "stop-btn",
                 onClick: () => handleStop(plugin),
               },
               () =>
@@ -227,6 +229,7 @@ const columns: ColumnDef<AvailablePlugin>[] = [
                 variant: "ghost",
                 size: "sm",
                 disabled: isOperating,
+                "data-testid": "start-btn",
                 onClick: () => handleStart(plugin),
               },
               () =>
@@ -257,6 +260,7 @@ const columns: ColumnDef<AvailablePlugin>[] = [
         {
           variant: "default",
           size: "sm",
+          "data-testid": "install-btn",
           disabled: isInstalling,
           onClick: () => handleInstall(plugin),
         },
@@ -454,13 +458,13 @@ const handleStop = async (plugin: AvailablePlugin) => {
               />
               <Input
                 v-model="searchForm.keyword"
-                placeholder="搜索插件..."
+                placeholder="搜索插件..." data-testid="search-input"
                 class="w-56 pl-8"
                 @keyup.enter="handleSearch"
               />
             </div>
             <Select v-model="searchForm.plugin_type" @update:model-value="handleSearch">
-              <SelectTrigger class="w-[120px]">
+              <SelectTrigger class="w-[120px]" data-testid="type-select">
                 <SelectValue placeholder="类型" />
               </SelectTrigger>
               <SelectContent>
@@ -471,7 +475,7 @@ const handleStop = async (plugin: AvailablePlugin) => {
               </SelectContent>
             </Select>
             <Select v-model="searchForm.status" @update:model-value="handleSearch">
-              <SelectTrigger class="w-[120px]">
+              <SelectTrigger class="w-[120px]" data-testid="status-select">
                 <SelectValue placeholder="状态" />
               </SelectTrigger>
               <SelectContent>
@@ -494,7 +498,7 @@ const handleStop = async (plugin: AvailablePlugin) => {
       </div>
 
       <div class="flex min-h-0 flex-1 flex-col px-5 pt-4">
-        <DataTable :data-table="dataTable" :fixed-layout="true" />
+        <DataTable :data-table="dataTable" :fixed-layout="true" data-testid="plugin-list-table" />
       </div>
     </div>
   </div>

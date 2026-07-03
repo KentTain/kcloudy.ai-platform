@@ -232,7 +232,7 @@ onMounted(() => {
   <div class="flex h-full min-h-0 flex-col gap-4 p-4" data-testid="plugin-config-page">
     <!-- 页面标题区 -->
     <div class="flex items-center gap-3">
-      <Button variant="ghost" size="sm" @click="handleBack">
+      <Button variant="ghost" size="sm" data-testid="back-btn" @click="handleBack">
         <ArrowLeft class="mr-1 h-4 w-4" />
         返回列表
       </Button>
@@ -337,10 +337,10 @@ onMounted(() => {
           <div class="flex items-center justify-between">
             <h3 class="font-medium">运行时配置</h3>
             <div class="flex gap-2">
-              <Button variant="outline" size="sm" @click="formatJson">
+              <Button variant="outline" size="sm" data-testid="format-btn" @click="formatJson">
                 格式化
               </Button>
-              <Button variant="outline" size="sm" @click="handleReset" :disabled="!hasChanges">
+              <Button variant="outline" size="sm" data-testid="reset-btn" @click="handleReset" :disabled="!hasChanges">
                 重置
               </Button>
             </div>
@@ -349,7 +349,7 @@ onMounted(() => {
           <!-- JSON 编辑器 -->
           <div class="space-y-2">
             <textarea
-              v-model="runtimeConfigJson"
+              v-model="runtimeConfigJson" data-testid="runtime-config-editor"
               class="min-h-[300px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               :class="{ 'border-destructive': !isJsonValid }"
               placeholder="{}"
@@ -368,6 +368,7 @@ onMounted(() => {
         <Button
           variant="outline"
           :disabled="testingConnection"
+          data-testid="test-connection-btn"
           @click="handleTestConnection"
         >
           <Zap v-if="!testingConnection" class="mr-1 h-4 w-4" />
@@ -377,6 +378,7 @@ onMounted(() => {
         <Button
           :disabled="!hasChanges || !isJsonValid || saving"
           @click="handleSave"
+          data-testid="save-btn"
         >
           <Save v-if="!saving" class="mr-1 h-4 w-4" />
           <RefreshCw v-else class="mr-1 h-4 w-4 animate-spin" />
@@ -391,7 +393,7 @@ onMounted(() => {
     </div>
 
     <!-- 测试结果对话框 -->
-    <Dialog v-model:open="testDialogOpen">
+    <Dialog v-model:open="testDialogOpen" data-testid="test-result-dialog">
       <DialogContent class="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>连接测试结果</DialogTitle>
@@ -425,7 +427,7 @@ onMounted(() => {
     </Dialog>
 
     <!-- 凭证编辑弹窗 -->
-    <CredentialFormDialog
+    <CredentialFormDialog data-testid="credential-form-dialog"
       v-model:open="dialogOpen"
       :plugin-id="pluginId"
       :mode="dialogMode"

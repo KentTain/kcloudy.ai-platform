@@ -260,6 +260,7 @@ const mergeToolParts = (parts: (ToolCallPart | ToolResultPart)[]): (ToolCallPart
           <!-- 空状态 -->
           <div
             v-if="messages.length === 0"
+            data-testid="empty-state"
             class="flex h-full flex-col items-center justify-center gap-4 text-muted-foreground"
           >
             <div class="text-4xl">💬</div>
@@ -318,7 +319,7 @@ const mergeToolParts = (parts: (ToolCallPart | ToolResultPart)[]): (ToolCallPart
             <div class="flex items-center justify-between gap-2 border-t p-2">
               <div class="flex items-center gap-2">
                 <!-- 模型选择器 -->
-                <AiModelSelector />
+                <AiModelSelector data-testid="model-selector" />
               </div>
               <div class="flex items-center gap-1">
                 <!-- 会话列表面板切换 -->
@@ -326,6 +327,7 @@ const mergeToolParts = (parts: (ToolCallPart | ToolResultPart)[]): (ToolCallPart
                   variant="ghost"
                   size="icon"
                   class="size-8"
+                  data-testid="toggle-panel-btn"
                   :title="panelOpen ? '收起会话列表' : '展开会话列表'"
                   @click="togglePanel"
                 >
@@ -349,6 +351,7 @@ const mergeToolParts = (parts: (ToolCallPart | ToolResultPart)[]): (ToolCallPart
                   v-if="isLoading"
                   variant="secondary"
                   size="sm"
+                  data-testid="stop-generate-btn"
                   @click="handleStop"
                 >
                   <Square class="mr-1 size-4" />
@@ -380,7 +383,7 @@ const mergeToolParts = (parts: (ToolCallPart | ToolResultPart)[]): (ToolCallPart
           </div>
           <!-- 新建会话按钮（固定不滚动） -->
           <div class="shrink-0 border-b px-2 py-1.5">
-            <Button variant="ghost" size="sm" class="w-full justify-start gap-2" @click="handleNewChat">
+            <Button variant="ghost" size="sm" class="w-full justify-start gap-2" data-testid="new-chat-btn" @click="handleNewChat">
               <Plus class="size-4" />
               新建会话
             </Button>
