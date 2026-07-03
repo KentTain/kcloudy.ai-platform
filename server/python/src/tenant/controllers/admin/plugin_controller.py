@@ -426,6 +426,57 @@ async def install_plugin_to_tenants(
         return ApiResponse.fail(str(e))
 
 
+@router.get("/plugin-installations")
+async def list_plugin_installations(
+    query: PluginInstallationQuery = Depends(),
+    _perm: None = Depends(require_admin_permission("tenant:plugin-installation:read")),
+    session: AsyncSession = Depends(get_db_session),
+) -> ApiResponse:
+    """
+    查询插件安装记录列表
+
+    场景：平台管理员查询插件安装记录
+    WHEN 管理员请求 GET /tenant/admin/v1/plugin-installations
+    THEN 返回插件安装记录分页列表，支持租户、插件、状态筛选
+    """
+    result = await plugin_installation_service.list_installations(session, query)
+    return ApiResponse.paginated(
+        data=result.items,
+        total=result.total,
+        page=result.page,
+        page_size=result.page_size,
+    )
+
+
+@router.delete("/plugin-installations/{tenant_id}/{plugin_id:path}")
+async def uninstall_plugin_installation(
+    tenant_id: str,
+    plugin_id: str,
+    _perm: None = Depends(
+        require_admin_permission("tenant:plugin-installation:delete")
+    ),
+    session: AsyncSession = Depends(get_db_session),
+) -> ApiResponse:
+    """
+    卸载插件（仅限 INACTIVE/FAILED 状态）
+
+    场景：平台管理员卸载指定租户的插件
+    WHEN 管理员请求 DELETE /tenant/admin/v1/plugin-installations/{tenant_id}/{plugin_id}
+    THEN 检查插件状态为 INACTIVE 或 FAILED，删除安装记录，减少引用计数
+
+    Raises:
+        ValueError: 安装记录不存在、状态不允许卸载
+    """
+    try:
+        await plugin_installation_service.uninstall_plugin(
+            session, tenant_id, plugin_id
+        )
+        await session.commit()
+        return ApiResponse.success(msg="卸载成功")
+    except ValueError as e:
+        return ApiResponse.fail(str(e))
+
+
 @router.post("/plugin-installations/{tenant_id}/{plugin_id:path}/start")
 async def start_plugin_installation(
     tenant_id: str,
@@ -520,54 +571,3 @@ async def batch_stop_plugin_installations(
     """
     result = await plugin_installation_service.batch_stop_plugins(session, request)
     return ApiResponse.success(data=result.model_dump())
-
-
-@router.get("/plugin-installations")
-async def list_plugin_installations(
-    query: PluginInstallationQuery = Depends(),
-    _perm: None = Depends(require_admin_permission("tenant:plugin-installation:read")),
-    session: AsyncSession = Depends(get_db_session),
-) -> ApiResponse:
-    """
-    查询插件安装记录列表
-
-    场景：平台管理员查询插件安装记录
-    WHEN 管理员请求 GET /tenant/admin/v1/plugin-installations
-    THEN 返回插件安装记录分页列表，支持租户、插件、状态筛选
-    """
-    result = await plugin_installation_service.list_installations(session, query)
-    return ApiResponse.paginated(
-        data=result.items,
-        total=result.total,
-        page=result.page,
-        page_size=result.page_size,
-    )
-
-
-@router.delete("/plugin-installations/{tenant_id}/{plugin_id:path}")
-async def uninstall_plugin_installation(
-    tenant_id: str,
-    plugin_id: str,
-    _perm: None = Depends(
-        require_admin_permission("tenant:plugin-installation:delete")
-    ),
-    session: AsyncSession = Depends(get_db_session),
-) -> ApiResponse:
-    """
-    卸载插件（仅限 INACTIVE/FAILED 状态）
-
-    场景：平台管理员卸载指定租户的插件
-    WHEN 管理员请求 DELETE /tenant/admin/v1/plugin-installations/{tenant_id}/{plugin_id}
-    THEN 检查插件状态为 INACTIVE 或 FAILED，删除安装记录，减少引用计数
-
-    Raises:
-        ValueError: 安装记录不存在、状态不允许卸载
-    """
-    try:
-        await plugin_installation_service.uninstall_plugin(
-            session, tenant_id, plugin_id
-        )
-        await session.commit()
-        return ApiResponse.success(msg="卸载成功")
-    except ValueError as e:
-        return ApiResponse.fail(str(e))

@@ -350,6 +350,7 @@ class AdminAuthMiddleware(BaseHTTPMiddleware):
         "/tenant/admin/v1/resources": "tenant:resource",
         "/tenant/admin/v1/resource-configs": "tenant:resource",
         "/tenant/admin/v1/plugin-definitions": "tenant:plugin",
+        "/tenant/admin/v1/plugin-installations": "tenant:plugin-installation",
         "/tenant/admin/v1/marketplaces": "tenant:marketplace",
     }
 

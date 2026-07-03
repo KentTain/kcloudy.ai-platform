@@ -81,18 +81,20 @@ export async function configPlugin(
   pluginId: string,
   data: ConfigPluginRequest,
 ): Promise<ApiResponse<ConfigPluginResponse>> {
-  return rawPost(`${CONSOLE_BASE}/${encodeURIComponent(pluginId)}/config`, data);
+  return rawPatch(`${CONSOLE_BASE}/config`, data, { params: { plugin_id: pluginId } });
 }
 
 /**
  * 测试插件配置连接
  *
  * 使用已保存的配置测试插件是否能正常连接
+ * TODO: 后端需要添加 /installations/test 端点
  */
 export async function testPlugin(
   pluginId: string,
 ): Promise<ApiResponse<TestPluginResponse>> {
-  return rawPost(`${CONSOLE_BASE}/${encodeURIComponent(pluginId)}/test`);
+  // 后端暂无独立测试端点，使用 runtime-state 检查插件是否可达
+  return rawGet(`${CONSOLE_BASE}/runtime-state`, { params: { plugin_id: pluginId } });
 }
 
 /**
@@ -103,7 +105,7 @@ export async function testPlugin(
 export async function startPlugin(
   pluginId: string,
 ): Promise<ApiResponse<StartPluginResponse>> {
-  return rawPost(`${CONSOLE_BASE}/${encodeURIComponent(pluginId)}/start`);
+  return rawPost(`${CONSOLE_BASE}/start`, null, { params: { plugin_id: pluginId } });
 }
 
 /**
@@ -114,5 +116,5 @@ export async function startPlugin(
 export async function stopPlugin(
   pluginId: string,
 ): Promise<ApiResponse<StopPluginResponse>> {
-  return rawPost(`${CONSOLE_BASE}/${encodeURIComponent(pluginId)}/stop`);
+  return rawPost(`${CONSOLE_BASE}/stop`, null, { params: { plugin_id: pluginId } });
 }
