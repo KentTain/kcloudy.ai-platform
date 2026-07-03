@@ -327,6 +327,25 @@ class TenantModule:
                     is_visible=False,
                     permission_codes=["tenant:plugin:write"],
                 ),
+                # 插件安装记录
+                MenuDef(
+                    code="tenant.plugin-installations",
+                    name="插件安装记录",
+                    path="/admin/plugin-installations",
+                    icon="Puzzle",
+                    sort_order=6,
+                    permission_codes=["tenant:plugin-installation:read"],
+                ),
+                # plugin-installations 隐藏二级菜单
+                MenuDef(
+                    code="tenant.plugin-installations.detail",
+                    name="安装记录详情",
+                    path="/admin/plugin-installations/{tenant_id}/{plugin_id}",
+                    parent_code="tenant.plugin-installations",
+                    sort_order=1,
+                    is_visible=False,
+                    permission_codes=["tenant:plugin-installation:read"],
+                ),
             ],
             default_roles=[
                 RoleDef(
@@ -433,6 +452,25 @@ class TenantModule:
                     name="管理插件市场",
                     resource="marketplace",
                     action="write",
+                ),
+                # 插件安装记录管理
+                PermissionDef(
+                    code="tenant:plugin-installation:read",
+                    name="查看插件安装记录",
+                    resource="plugin-installation",
+                    action="read",
+                ),
+                PermissionDef(
+                    code="tenant:plugin-installation:write",
+                    name="编辑插件安装记录",
+                    resource="plugin-installation",
+                    action="write",
+                ),
+                PermissionDef(
+                    code="tenant:plugin-installation:delete",
+                    name="卸载插件",
+                    resource="plugin-installation",
+                    action="delete",
                 ),
             ],
         )
