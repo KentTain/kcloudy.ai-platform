@@ -434,7 +434,7 @@ function getPluginStatusVariant(plugin: AvailablePlugin): "default" | "secondary
 
             <!-- 悬停操作按钮：左下角 -->
             <div
-              class="absolute bottom-3 left-3 flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100"
+              class="absolute bottom-3 right-3 flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100"
             >
               <!-- 已安装插件的操作 -->
               <template v-if="plugin.is_installed">
