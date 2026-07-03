@@ -157,7 +157,7 @@ async def delete_marketplace(
     try:
         await marketplace_gateway.delete_marketplace(session, marketplace_id)
         await session.commit()
-        return ApiResponse.success(message="市场已删除")
+        return ApiResponse.success(msg="市场已删除")
     except ValueError as e:
         return ApiResponse.fail(msg=str(e))
 

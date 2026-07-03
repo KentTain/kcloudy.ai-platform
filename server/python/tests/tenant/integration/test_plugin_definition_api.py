@@ -34,6 +34,7 @@ class TestPluginDefinitionListAPI:
     async def test_list_plugin_definitions_success(self):
         """测试获取插件定义列表成功"""
         from fastapi import FastAPI
+
         from framework.common.response import ApiResponse
 
         mock_response = {
@@ -62,7 +63,9 @@ class TestPluginDefinitionListAPI:
         async def list_definitions():
             return ApiResponse.success(data=mock_response)
 
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as client:
             response = await client.get("/tenant/admin/v1/plugin-definitions")
 
         assert response.status_code == 200
@@ -74,6 +77,7 @@ class TestPluginDefinitionListAPI:
     async def test_list_plugin_definitions_with_filters(self):
         """测试带筛选条件获取插件定义列表"""
         from fastapi import FastAPI
+
         from framework.common.response import ApiResponse
 
         mock_response = {
@@ -89,7 +93,9 @@ class TestPluginDefinitionListAPI:
         async def list_definitions(keyword: str = None, type: str = None):
             return ApiResponse.success(data=mock_response)
 
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as client:
             response = await client.get(
                 "/tenant/admin/v1/plugin-definitions",
                 params={"keyword": "test", "type": "plugin"},
@@ -105,6 +111,7 @@ class TestPluginDefinitionDetailAPI:
     async def test_get_plugin_definition_detail_success(self):
         """测试获取插件定义详情成功"""
         from fastapi import FastAPI
+
         from framework.common.response import ApiResponse
 
         plugin_id = "test-plugin"
@@ -129,8 +136,12 @@ class TestPluginDefinitionDetailAPI:
         async def get_detail(plugin_id: str):
             return ApiResponse.success(data=mock_response)
 
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-            response = await client.get(f"/tenant/admin/v1/plugin-definitions/{plugin_id}")
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as client:
+            response = await client.get(
+                f"/tenant/admin/v1/plugin-definitions/{plugin_id}"
+            )
 
         assert response.status_code == 200
         data = response.json()
@@ -142,6 +153,7 @@ class TestPluginDefinitionDetailAPI:
         """测试获取不存在的插件定义详情"""
         from fastapi import FastAPI
         from fastapi.responses import ORJSONResponse
+
         from framework.common.exceptions import NotFoundError
 
         app = FastAPI()
@@ -152,10 +164,16 @@ class TestPluginDefinitionDetailAPI:
 
         @app.exception_handler(NotFoundError)
         async def not_found_handler(request, exc):
-            return ORJSONResponse(status_code=404, content={"code": 404, "message": str(exc)})
+            return ORJSONResponse(
+                status_code=404, content={"code": 404, "message": str(exc)}
+            )
 
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-            response = await client.get("/tenant/admin/v1/plugin-definitions/nonexistent")
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as client:
+            response = await client.get(
+                "/tenant/admin/v1/plugin-definitions/nonexistent"
+            )
 
         assert response.status_code == 404
 
@@ -167,6 +185,7 @@ class TestPluginDefinitionUpdateAPI:
     async def test_update_plugin_definition_mark_recommended(self):
         """测试标记插件定义为推荐"""
         from fastapi import FastAPI
+
         from framework.common.response import ApiResponse
 
         plugin_id = "test-plugin"
@@ -184,7 +203,9 @@ class TestPluginDefinitionUpdateAPI:
         async def update(plugin_id: str, request: dict):
             return ApiResponse.success(data=mock_response)
 
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as client:
             response = await client.patch(
                 f"/tenant/admin/v1/plugin-definitions/{plugin_id}",
                 json={"is_recommended": True},
@@ -199,6 +220,7 @@ class TestPluginDefinitionUpdateAPI:
     async def test_update_plugin_definition_disable(self):
         """测试禁用插件定义"""
         from fastapi import FastAPI
+
         from framework.common.response import ApiResponse
 
         plugin_id = "test-plugin"
@@ -216,7 +238,9 @@ class TestPluginDefinitionUpdateAPI:
         async def update(plugin_id: str, request: dict):
             return ApiResponse.success(data=mock_response)
 
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as client:
             response = await client.patch(
                 f"/tenant/admin/v1/plugin-definitions/{plugin_id}",
                 json={"is_enabled": False},
@@ -235,6 +259,7 @@ class TestPluginDefinitionDeleteAPI:
     async def test_delete_plugin_definition_success(self):
         """测试删除插件定义成功"""
         from fastapi import FastAPI
+
         from framework.common.response import ApiResponse
 
         plugin_id = "test-plugin"
@@ -243,10 +268,14 @@ class TestPluginDefinitionDeleteAPI:
 
         @app.delete("/tenant/admin/v1/plugin-definitions/{plugin_id}")
         async def delete(plugin_id: str):
-            return ApiResponse.success(message="插件定义已删除")
+            return ApiResponse.success(msg="插件定义已删除")
 
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-            response = await client.delete(f"/tenant/admin/v1/plugin-definitions/{plugin_id}")
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as client:
+            response = await client.delete(
+                f"/tenant/admin/v1/plugin-definitions/{plugin_id}"
+            )
 
         assert response.status_code == 200
         data = response.json()
@@ -257,6 +286,7 @@ class TestPluginDefinitionDeleteAPI:
         """测试删除有引用的插件定义失败"""
         from fastapi import FastAPI
         from fastapi.responses import ORJSONResponse
+
         from framework.common.exceptions import ConflictError
 
         app = FastAPI()
@@ -267,12 +297,18 @@ class TestPluginDefinitionDeleteAPI:
 
         @app.exception_handler(ConflictError)
         async def conflict_handler(request, exc):
-            return ORJSONResponse(status_code=409, content={"code": 409, "message": str(exc)})
+            return ORJSONResponse(
+                status_code=409, content={"code": 409, "message": str(exc)}
+            )
 
         plugin_id = "test-plugin"
 
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-            response = await client.delete(f"/tenant/admin/v1/plugin-definitions/{plugin_id}")
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as client:
+            response = await client.delete(
+                f"/tenant/admin/v1/plugin-definitions/{plugin_id}"
+            )
 
         assert response.status_code == 409
 
@@ -284,6 +320,7 @@ class TestPluginDefinitionStatisticsAPI:
     async def test_get_plugin_statistics_success(self):
         """测试获取插件统计数据成功"""
         from fastapi import FastAPI
+
         from framework.common.response import ApiResponse
 
         mock_response = {
@@ -306,8 +343,12 @@ class TestPluginDefinitionStatisticsAPI:
         async def get_statistics():
             return ApiResponse.success(data=mock_response)
 
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-            response = await client.get("/tenant/admin/v1/plugin-definitions/statistics")
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as client:
+            response = await client.get(
+                "/tenant/admin/v1/plugin-definitions/statistics"
+            )
 
         assert response.status_code == 200
         data = response.json()
@@ -323,6 +364,7 @@ class TestPluginDefinitionUploadAPI:
     async def test_upload_plugin_package_success(self):
         """测试上传插件包成功"""
         from fastapi import FastAPI
+
         from framework.common.response import ApiResponse
 
         mock_response = {
@@ -339,7 +381,9 @@ class TestPluginDefinitionUploadAPI:
         async def upload():
             return ApiResponse.success(data=mock_response)
 
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as client:
             response = await client.post("/tenant/admin/v1/plugin-definitions/upload")
 
         assert response.status_code == 200
@@ -348,6 +392,7 @@ class TestPluginDefinitionUploadAPI:
     async def test_upload_plugin_package_invalid_format(self):
         """测试上传非 zip 格式文件失败"""
         from fastapi import FastAPI
+
         from framework.common.response import ApiResponse
 
         app = FastAPI()
@@ -356,7 +401,9 @@ class TestPluginDefinitionUploadAPI:
         async def upload():
             return ApiResponse.fail("请上传 .zip 格式的插件包")
 
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as client:
             response = await client.post("/tenant/admin/v1/plugin-definitions/upload")
 
         assert response.status_code == 400
@@ -371,6 +418,7 @@ class TestPluginDefinitionScanAPI:
     async def test_scan_directory_success(self):
         """测试扫描目录成功"""
         from fastapi import FastAPI
+
         from framework.common.response import ApiResponse
 
         mock_response = {
@@ -387,7 +435,9 @@ class TestPluginDefinitionScanAPI:
         async def scan(request: dict):
             return ApiResponse.success(data=mock_response)
 
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as client:
             response = await client.post(
                 "/tenant/admin/v1/plugin-definitions/scan",
                 json={"directory": "/tmp", "recursive": False},
@@ -402,6 +452,7 @@ class TestPluginDefinitionScanAPI:
     async def test_scan_directory_not_exists(self):
         """测试扫描不存在的目录"""
         from fastapi import FastAPI
+
         from framework.common.response import ApiResponse
 
         app = FastAPI()
@@ -410,7 +461,9 @@ class TestPluginDefinitionScanAPI:
         async def scan(request: dict):
             return ApiResponse.fail("目录不存在")
 
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as client:
             response = await client.post(
                 "/tenant/admin/v1/plugin-definitions/scan",
                 json={"directory": "/nonexistent", "recursive": False},
@@ -424,6 +477,7 @@ class TestPluginDefinitionScanAPI:
     async def test_scan_directory_empty(self):
         """测试扫描空目录"""
         from fastapi import FastAPI
+
         from framework.common.response import ApiResponse
 
         mock_response = {
@@ -440,7 +494,9 @@ class TestPluginDefinitionScanAPI:
         async def scan(request: dict):
             return ApiResponse.success(data=mock_response)
 
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as client:
             response = await client.post(
                 "/tenant/admin/v1/plugin-definitions/scan",
                 json={"directory": "/tmp", "recursive": False},
@@ -464,6 +520,7 @@ class TestPluginDefinitionAPIPatterns:
         assert success_response.status_code == 200
         content = success_response.body
         import json
+
         data = json.loads(content)
         assert data["code"] == 200
         assert "data" in data
@@ -476,6 +533,7 @@ class TestPluginDefinitionAPIPatterns:
         fail_response = ApiResponse.fail("测试错误")
         assert fail_response.status_code == 400
         import json
+
         data = json.loads(fail_response.body)
         assert data["code"] == 400
         assert data["msg"] == "测试错误"
@@ -487,6 +545,7 @@ class TestPluginDefinitionAPIPatterns:
         not_found = ApiResponse.not_found("插件定义不存在")
         assert not_found.status_code == 404
         import json
+
         data = json.loads(not_found.body)
         assert data["code"] == 404
 
@@ -497,6 +556,7 @@ class TestPluginDefinitionAPIPatterns:
         conflict = ApiResponse.conflict("插件定义仍被租户引用")
         assert conflict.status_code == 409
         import json
+
         data = json.loads(conflict.body)
         assert data["code"] == 409
 
@@ -508,6 +568,7 @@ class TestInstallPluginToTenantsAPI:
     async def test_install_to_single_tenant_success(self):
         """测试安装插件到单个租户成功"""
         from fastapi import FastAPI
+
         from framework.common.response import ApiResponse
 
         tenant_id = str(uuid.uuid4())
@@ -525,7 +586,9 @@ class TestInstallPluginToTenantsAPI:
         async def install(plugin_id: str, request: dict):
             return ApiResponse.success(data=mock_response)
 
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as client:
             response = await client.post(
                 f"/tenant/admin/v1/plugin-definitions/{plugin_id}/install",
                 json={"tenant_ids": [tenant_id]},
@@ -541,6 +604,7 @@ class TestInstallPluginToTenantsAPI:
     async def test_install_to_already_installed_tenant_skipped(self):
         """测试安装到已安装的租户应跳过"""
         from fastapi import FastAPI
+
         from framework.common.response import ApiResponse
 
         tenant_id = str(uuid.uuid4())
@@ -558,7 +622,9 @@ class TestInstallPluginToTenantsAPI:
         async def install(plugin_id: str, request: dict):
             return ApiResponse.success(data=mock_response)
 
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as client:
             response = await client.post(
                 f"/tenant/admin/v1/plugin-definitions/{plugin_id}/install",
                 json={"tenant_ids": [tenant_id]},
@@ -573,6 +639,7 @@ class TestInstallPluginToTenantsAPI:
     async def test_install_disabled_plugin_fails(self):
         """测试安装已禁用的插件应失败"""
         from fastapi import FastAPI
+
         from framework.common.response import ApiResponse
 
         plugin_id = "test/install-disabled"
@@ -583,7 +650,9 @@ class TestInstallPluginToTenantsAPI:
         async def install(plugin_id: str, request: dict):
             return ApiResponse.fail("插件定义已禁用")
 
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as client:
             response = await client.post(
                 f"/tenant/admin/v1/plugin-definitions/{plugin_id}/install",
                 json={"tenant_ids": ["some-tenant-id"]},
@@ -597,6 +666,7 @@ class TestInstallPluginToTenantsAPI:
     async def test_install_to_nonexistent_tenant_fails(self):
         """测试安装到不存在的租户应记录失败"""
         from fastapi import FastAPI
+
         from framework.common.response import ApiResponse
 
         fake_tenant_id = "00000000-0000-0000-0000-000000000000"
@@ -614,7 +684,9 @@ class TestInstallPluginToTenantsAPI:
         async def install(plugin_id: str, request: dict):
             return ApiResponse.success(data=mock_response)
 
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as client:
             response = await client.post(
                 f"/tenant/admin/v1/plugin-definitions/{plugin_id}/install",
                 json={"tenant_ids": [fake_tenant_id]},
@@ -629,6 +701,7 @@ class TestInstallPluginToTenantsAPI:
     async def test_install_batch_mixed_results(self):
         """测试批量安装混合结果"""
         from fastapi import FastAPI
+
         from framework.common.response import ApiResponse
 
         tenant_1 = str(uuid.uuid4())
@@ -648,7 +721,9 @@ class TestInstallPluginToTenantsAPI:
         async def install(plugin_id: str, request: dict):
             return ApiResponse.success(data=mock_response)
 
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as client:
             response = await client.post(
                 f"/tenant/admin/v1/plugin-definitions/{plugin_id}/install",
                 json={"tenant_ids": [tenant_1, tenant_2, tenant_3]},
@@ -668,6 +743,7 @@ class TestStartStopPluginAPI:
     async def test_start_plugin_success(self):
         """测试启动插件成功"""
         from fastapi import FastAPI
+
         from framework.common.response import ApiResponse
 
         tenant_id = str(uuid.uuid4())
@@ -681,11 +757,15 @@ class TestStartStopPluginAPI:
 
         app = FastAPI()
 
-        @app.post("/tenant/admin/v1/plugin-installations/{tenant_id}/{plugin_id:path}/start")
+        @app.post(
+            "/tenant/admin/v1/plugin-installations/{tenant_id}/{plugin_id:path}/start"
+        )
         async def start(tenant_id: str, plugin_id: str):
             return ApiResponse.success(data=mock_response)
 
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as client:
             response = await client.post(
                 f"/tenant/admin/v1/plugin-installations/{tenant_id}/{plugin_id}/start"
             )
@@ -699,6 +779,7 @@ class TestStartStopPluginAPI:
     async def test_stop_plugin_success(self):
         """测试停止插件成功"""
         from fastapi import FastAPI
+
         from framework.common.response import ApiResponse
 
         tenant_id = str(uuid.uuid4())
@@ -712,11 +793,15 @@ class TestStartStopPluginAPI:
 
         app = FastAPI()
 
-        @app.post("/tenant/admin/v1/plugin-installations/{tenant_id}/{plugin_id:path}/stop")
+        @app.post(
+            "/tenant/admin/v1/plugin-installations/{tenant_id}/{plugin_id:path}/stop"
+        )
         async def stop(tenant_id: str, plugin_id: str):
             return ApiResponse.success(data=mock_response)
 
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as client:
             response = await client.post(
                 f"/tenant/admin/v1/plugin-installations/{tenant_id}/{plugin_id}/stop"
             )
@@ -730,6 +815,7 @@ class TestStartStopPluginAPI:
     async def test_start_plugin_not_installed_fails(self):
         """测试启动未安装的插件应失败"""
         from fastapi import FastAPI
+
         from framework.common.response import ApiResponse
 
         tenant_id = str(uuid.uuid4())
@@ -737,11 +823,15 @@ class TestStartStopPluginAPI:
 
         app = FastAPI()
 
-        @app.post("/tenant/admin/v1/plugin-installations/{tenant_id}/{plugin_id:path}/start")
+        @app.post(
+            "/tenant/admin/v1/plugin-installations/{tenant_id}/{plugin_id:path}/start"
+        )
         async def start(tenant_id: str, plugin_id: str):
             return ApiResponse.fail("安装记录不存在")
 
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as client:
             response = await client.post(
                 f"/tenant/admin/v1/plugin-installations/{tenant_id}/{plugin_id}/start"
             )
@@ -754,6 +844,7 @@ class TestStartStopPluginAPI:
     async def test_stop_plugin_not_active_fails(self):
         """测试停止非 ACTIVE 状态的插件应失败"""
         from fastapi import FastAPI
+
         from framework.common.response import ApiResponse
 
         tenant_id = str(uuid.uuid4())
@@ -761,11 +852,15 @@ class TestStartStopPluginAPI:
 
         app = FastAPI()
 
-        @app.post("/tenant/admin/v1/plugin-installations/{tenant_id}/{plugin_id:path}/stop")
+        @app.post(
+            "/tenant/admin/v1/plugin-installations/{tenant_id}/{plugin_id:path}/stop"
+        )
         async def stop(tenant_id: str, plugin_id: str):
             return ApiResponse.fail("插件状态不允许停止")
 
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as client:
             response = await client.post(
                 f"/tenant/admin/v1/plugin-installations/{tenant_id}/{plugin_id}/stop"
             )
@@ -778,6 +873,7 @@ class TestStartStopPluginAPI:
     async def test_batch_start_mixed_results(self):
         """测试批量启动混合结果"""
         from fastapi import FastAPI
+
         from framework.common.response import ApiResponse
 
         tenant_1 = str(uuid.uuid4())
@@ -789,7 +885,11 @@ class TestStartStopPluginAPI:
                 {"tenant_id": tenant_1, "plugin_id": plugin_id, "status": "ACTIVE"}
             ],
             "failed": [
-                {"tenant_id": tenant_2, "plugin_id": plugin_id, "error": "安装记录不存在"}
+                {
+                    "tenant_id": tenant_2,
+                    "plugin_id": plugin_id,
+                    "error": "安装记录不存在",
+                }
             ],
         }
 
@@ -799,7 +899,9 @@ class TestStartStopPluginAPI:
         async def batch_start(request: dict):
             return ApiResponse.success(data=mock_response)
 
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as client:
             response = await client.post(
                 "/tenant/admin/v1/plugin-installations/start/batch",
                 json={"plugin_id": plugin_id, "tenant_ids": [tenant_1, tenant_2]},
@@ -815,6 +917,7 @@ class TestStartStopPluginAPI:
     async def test_batch_stop_success(self):
         """测试批量停止成功"""
         from fastapi import FastAPI
+
         from framework.common.response import ApiResponse
 
         tenant_id = str(uuid.uuid4())
@@ -833,7 +936,9 @@ class TestStartStopPluginAPI:
         async def batch_stop(request: dict):
             return ApiResponse.success(data=mock_response)
 
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as client:
             response = await client.post(
                 "/tenant/admin/v1/plugin-installations/stop/batch",
                 json={"plugin_id": plugin_id, "tenant_ids": [tenant_id]},

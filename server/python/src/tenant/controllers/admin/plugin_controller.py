@@ -398,7 +398,7 @@ async def delete_plugin_definition(
         ConflictError: 插件定义仍被租户引用（refers > 0）
     """
     await plugin_definition_service.delete_definition(session, plugin_id)
-    return ApiResponse.success(message="插件定义已删除")
+    return ApiResponse.success(msg="插件定义已删除")
 
 
 @router.post("/plugin-definitions/{plugin_id:path}/install")
@@ -568,6 +568,6 @@ async def uninstall_plugin_installation(
             session, tenant_id, plugin_id
         )
         await session.commit()
-        return ApiResponse.success(message="卸载成功")
+        return ApiResponse.success(msg="卸载成功")
     except ValueError as e:
         return ApiResponse.fail(str(e))
