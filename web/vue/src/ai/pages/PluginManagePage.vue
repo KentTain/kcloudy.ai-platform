@@ -5,10 +5,8 @@
  * 卡片式布局，类似应用商店设计。类型筛选为按钮组，无限滚动加载。
  */
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from "vue";
-import { Badge, Button, Input, Card } from "@/components";
-import { Tabs, TabsList, TabsTrigger } from "@/components";
+import { Badge, Button, Input, Card, Tabs, TabsList, TabsTrigger, Skeleton } from "@/components";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Skeleton } from "@/components/ui/skeleton";
 import { notifySuccess, notifyError } from "@/framework/utils/feedback";
 import {
   getAvailablePlugins,
@@ -138,6 +136,7 @@ async function fetchPlugins(append = false) {
     // 请求被取消或网络错误，静默处理
   } finally {
     loading.value = false;
+    nextTick(() => setupObserver());
   }
 }
 
@@ -163,13 +162,16 @@ function setupObserver() {
   if (observer) observer.disconnect();
   if (!sentinelRef.value) return;
 
+  // ScrollArea 使用 Radix 的实现，可滚动视口是 [data-reka-scroll-area-viewport]
+  const viewport = scrollContainer.value?.$el?.querySelector('[data-reka-scroll-area-viewport]') ?? null;
+
   observer = new IntersectionObserver(
     (entries) => {
       if (entries[0]?.isIntersecting && hasMore.value && !loading.value) {
         loadMore();
       }
     },
-    { root: scrollContainer.value, rootMargin: "200px", threshold: 0 },
+    { root: viewport, rootMargin: "200px", threshold: 0 },
   );
   observer.observe(sentinelRef.value);
 }
@@ -379,7 +381,7 @@ function getPluginStatusVariant(plugin: AvailablePlugin): "default" | "secondary
       </div>
 
       <!-- 卡片列表区域 -->
-      <ScrollArea class="flex-1" ref="scrollContainer" @scroll="setupObserver">
+      <ScrollArea class="flex-1" ref="scrollContainer">
         <div class="grid grid-cols-2 gap-4 p-5 xl:grid-cols-3 2xl:grid-cols-4">
           <!-- 插件卡片 -->
           <div
