@@ -411,6 +411,7 @@ async def plugin_runtime_setup(
         LocalPluginRuntime,
     )
     from ai.components.plugin.engine.models.plugin import PluginInfo
+    from tests.ai.e2e._venv_utils import get_venv_python
 
     plugin_id = "langgenius/tongyi"
     workspace_dir = (
@@ -433,7 +434,7 @@ async def plugin_runtime_setup(
         check=True,
         capture_output=True,
     )
-    python_interpreter = str(venv_path / "bin" / "python")
+    python_interpreter = str(get_venv_python(venv_path))
 
     processor = PluginConfigProcessor(plugin_dir=workspace_dir)
     processor.parse_plugin_config()

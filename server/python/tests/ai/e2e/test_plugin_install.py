@@ -30,6 +30,7 @@ from framework.storage import get_storage_provider
 from framework.tenant.context import TenantContext
 from framework.tenant.plugin_protocols import get_plugin_installation_provider
 from tests.ai.e2e.helpers.plugin_test_helper import PluginTestHelper
+from tests.ai.e2e._venv_utils import get_venv_python
 
 
 @pytest_asyncio.fixture
@@ -136,11 +137,8 @@ class TestPluginInstall:
             manifest_path = plugin_dir / "manifest.yaml"
             assert manifest_path.exists(), f"manifest.yaml 不存在: {manifest_path}"
 
-            # 验证虚拟环境存在（检查 python 可执行文件）
-            venv_python = plugin_dir / ".venv" / "bin" / "python"
-            if not venv_python.exists():
-                # Windows 路径
-                venv_python = plugin_dir / ".venv" / "Scripts" / "python.exe"
+            # 验证虚拟环境存在（检查 python 可执行文件，跨平台）
+            venv_python = get_venv_python(plugin_dir / ".venv")
 
             assert venv_python.exists(), f"虚拟环境 Python 不存在: {venv_python}"
 
