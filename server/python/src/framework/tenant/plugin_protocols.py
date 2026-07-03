@@ -22,11 +22,10 @@ class PluginInstallationDTO:
     plugin_unique_identifier: str
     declaration: dict  # 完整声明内容
     status: str = "PENDING"  # PENDING / ACTIVE / INACTIVE / FAILED
-    auto_start: bool = False
+    installed_at: datetime | None = None  # 新增：安装完成时间
     freeze_threshold_hours: int = 24
     plugin_type: str | None = None
     runtime_type: str | None = None
-    installed_at: datetime | None = None  # 安装完成时间
     install_config: dict | None = None  # 安装配置
     source: str | None = None  # 来源
     meta: dict | None = None  # 元数据
