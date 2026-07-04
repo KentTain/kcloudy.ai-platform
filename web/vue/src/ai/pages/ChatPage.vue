@@ -13,6 +13,7 @@ import { Conversation } from "@/components/ai-elements/conversation";
 import { Message, MessageContent, MessageActions, MessageAction } from "@/components/ai-elements/message";
 import { PromptInput, PromptInputTextarea, PromptInputSubmit } from "@/components/ai-elements/prompt-input";
 import { MessageResponse } from "@/components/ai-elements/message";
+import { ThinkingBlock } from "@/components/ai-elements/thinking";
 import { useChat } from "@/ai/composables";
 import { useConversationStore } from "@/ai/stores";
 import { RotateCcw, Square, Trash2, PanelRight, Plus, Loader2 } from "lucide-vue-next";
@@ -27,7 +28,7 @@ import {
 } from "@/components";
 import ToolCallItem from "@/ai/components/ToolCallItem.vue";
 import AiModelSelector from "@/ai/components/AiModelSelector.vue";
-import type { UIMessagePart, ToolCallPart, ToolResultPart } from "@/ai/types";
+import type { UIMessagePart, ToolCallPart, ToolResultPart, ThinkingPart } from "@/ai/types";
 import type { Conversation as ConversationType } from "@/ai/types";
 import { notifyError, getErrorMessage } from "@/framework/utils/feedback";
 
@@ -215,6 +216,11 @@ const getToolParts = (parts: UIMessagePart[]): (ToolCallPart | ToolResultPart)[]
   return parts.filter((p) => p.type === "tool-call" || p.type === "tool-result") as (ToolCallPart | ToolResultPart)[];
 };
 
+// 从消息部分提取思考部分
+const getThinkingParts = (parts: UIMessagePart[]): ThinkingPart[] => {
+  return parts.filter((p) => p.type === "thinking") as ThinkingPart[];
+};
+
 // 合并工具调用和工具结果（按 toolCallId 配对）
 const mergeToolParts = (parts: (ToolCallPart | ToolResultPart)[]): (ToolCallPart | ToolResultPart)[] => {
   const toolCallMap = new Map<string, { call?: ToolCallPart; result?: ToolResultPart }>();
@@ -273,6 +279,16 @@ const mergeToolParts = (parts: (ToolCallPart | ToolResultPart)[]): (ToolCallPart
             <template v-for="message in messages" :key="message.id">
               <Message :from="message.role" :data-testid="message.role === 'user' ? 'user-message' : 'assistant-message'">
                 <MessageContent>
+                  <!-- 思考过程展示（仅在 assistant 消息中显示） -->
+                  <template v-if="message.role === 'assistant' && getThinkingParts(message.parts).length > 0">
+                    <ThinkingBlock
+                      v-for="(thinkingPart, index) in getThinkingParts(message.parts)"
+                      :key="index"
+                      :thinking="thinkingPart.thinking"
+                      :title="thinkingPart.title"
+                      :step-type="thinkingPart.stepType"
+                    />
+                  </template>
                   <!-- 工具调用展示（仅在 assistant 消息中显示） -->
                   <template v-if="message.role === 'assistant' && hasToolParts(message.parts)">
                     <div class="mb-3">
