@@ -1,6 +1,6 @@
 # 租户插件安装功能 实现计划
 
-> **面向 AI 代理的工作者：** 必需子技能：使用 superpowers:subagent-driven-development（推荐）或 superpowers:executing-plans 逐任务实现此计划。步骤使用复选框（`- [ ]`）语法来跟踪进度。
+> **面向 AI 代理的工作者：** 必需子技能：使用 superpowers:subagent-driven-development（推荐）或 superpowers:executing-plans 逐任务实现此计划。步骤使用复选框（`- [x]`）语法来跟踪进度。
 
 **目标：** 从插件定义页给租户安装插件，支持单个和批量安装（一个插件→多租户），同步 AI 侧 PluginConfig 和 PluginRuntimeState 但不启动进程。
 
@@ -899,7 +899,7 @@ git commit -m "feat(tenant): 插件定义详情页集成安装到租户弹窗"
 运行：`cd server/python && python -m pytest tests/tenant/integration/test_plugin_definition_api.py -v -k "TestInstallPluginToTenants"`
 预期：全部 PASS
 
-- [ ] **步骤 3：启动前端 dev server，验证页面交互**
+- [x] **步骤 3：启动前端 dev server，验证页面交互**
 
 运行：`cd web/vue && pnpm dev`
 
@@ -910,7 +910,7 @@ git commit -m "feat(tenant): 插件定义详情页集成安装到租户弹窗"
 4. 插件定义详情页有"安装到租户"按钮
 5. 功能正常工作
 
-- [ ] **步骤 4：最终 Commit**
+- [x] **步骤 4：最终 Commit**
 
 ```bash
 git add -A
