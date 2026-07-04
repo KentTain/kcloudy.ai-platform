@@ -107,7 +107,7 @@ pnpm test:coverage:check
 |------|------|
 | unit/components/ | ModelSelector、ToolCallItem 组件测试 |
 | unit/composables/ | useChat 组合式函数测试 |
-| unit/pages/ | ConversationListPage 页面测试 |
+| unit/pages/ | ModelConfigPage 页面测试 |
 | unit/stores/ | conversation Store 测试 |
 | e2e/ | E2E 端到端测试（Playwright） |
 
