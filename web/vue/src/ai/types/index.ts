@@ -4,9 +4,20 @@
  */
 
 /**
+ * 推理步骤类型
+ */
+export type ReasoningStepType =
+  | "reasoning"
+  | "decision"
+  | "tool_selection"
+  | "tool_execution"
+  | "result_analysis"
+  | "error_handling";
+
+/**
  * UI 消息部分类型
  */
-export type UIMessagePartType = "text" | "image" | "tool-call" | "tool-result";
+export type UIMessagePartType = "thinking" | "text" | "image" | "tool-call" | "tool-result";
 
 /**
  * UI 消息部分基础接口
@@ -21,6 +32,16 @@ export interface UIMessagePartBase {
 export interface TextPart extends UIMessagePartBase {
   type: "text";
   text: string;
+}
+
+/**
+ * 思考过程消息部分
+ */
+export interface ThinkingPart extends UIMessagePartBase {
+  type: "thinking";
+  thinking: string;
+  title?: string;
+  stepType?: ReasoningStepType;
 }
 
 /**
@@ -54,7 +75,7 @@ export interface ToolResultPart extends UIMessagePartBase {
 /**
  * UI 消息部分联合类型
  */
-export type UIMessagePart = TextPart | ImagePart | ToolCallPart | ToolResultPart;
+export type UIMessagePart = ThinkingPart | TextPart | ImagePart | ToolCallPart | ToolResultPart;
 
 /**
  * 消息角色
