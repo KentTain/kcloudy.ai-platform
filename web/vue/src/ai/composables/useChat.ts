@@ -7,7 +7,62 @@
 import { isRef, onScopeDispose, ref, type Ref, shallowRef, toValue, watch, watchEffect } from "vue";
 import { Chat } from "@ai-sdk/vue";
 import { DefaultChatTransport, type UIMessage as AiUIMessage } from "ai";
-import type { ModelConfig, UIMessage } from "@/ai/types";
+import type { ModelConfig, UIMessage, ThinkingPart, UIMessagePart } from "@/ai/types";
+
+/**
+ * 处理思考事件，重组消息 parts
+ *
+ * @param messages 原始消息列表
+ * @returns 处理后的消息列表
+ */
+function processThinkingEvents(messages: UIMessage[]): UIMessage[] {
+  return messages.map((message) => {
+    // 提取所有思考部分
+    const thinkingParts: ThinkingPart[] = [];
+    const otherParts: UIMessagePart[] = [];
+
+    for (const part of message.parts) {
+      if (part.type === "thinking") {
+        thinkingParts.push(part as ThinkingPart);
+      } else {
+        otherParts.push(part);
+      }
+    }
+
+    // 如果没有思考部分，直接返回原消息
+    if (thinkingParts.length === 0) {
+      return message;
+    }
+
+    // 合并相同 ID 的思考部分
+    const mergedThinkingParts: Map<string, ThinkingPart> = new Map();
+    for (const part of thinkingParts) {
+      const id = part.thinking; // 使用 thinking 内容作为唯一标识
+      const existing = mergedThinkingParts.get(id);
+      if (existing) {
+        // 合并内容
+        existing.thinking += "\n" + part.thinking;
+      } else {
+        // 限制长度 10k 字符
+        if (part.thinking.length > 10000) {
+          part.thinking = part.thinking.substring(0, 10000) + "...(内容过长已截断)";
+        }
+        mergedThinkingParts.set(id, { ...part });
+      }
+    }
+
+    // 重组 parts：思考在前，其他部分在后
+    const reorderedParts: UIMessagePart[] = [
+      ...Array.from(mergedThinkingParts.values()),
+      ...otherParts,
+    ];
+
+    return {
+      ...message,
+      parts: reorderedParts,
+    };
+  });
+}
 
 /**
  * useChat 配置选项
@@ -128,7 +183,8 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
   // 实时同步：流式传输过程中自动更新消息
   const stopWatcher = watchEffect(() => {
     if (chat.value) {
-      messages.value = [...(chat.value.messages as UIMessage[])];
+      // 处理思考事件并重组消息
+      messages.value = processThinkingEvents([...(chat.value.messages as UIMessage[])]);
     }
   });
 
