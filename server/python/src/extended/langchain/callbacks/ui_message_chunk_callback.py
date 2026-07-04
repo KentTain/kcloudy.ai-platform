@@ -8,6 +8,10 @@
 - on_tool_start -> tool-call (工具调用开始)
 - on_tool_end -> tool-result (工具调用结束)
 - on_tool_error -> tool-result (工具调用错误)
+- on_chain_start -> thinking-start (Agent 决策步骤)
+- on_chain_end -> thinking-end (决策步骤结束)
+- on_llm_start -> thinking-start (LLM 推理过程，非第一次调用)
+- on_llm_end -> thinking-end (LLM 推理步骤结束)
 """
 
 from __future__ import annotations
@@ -20,6 +24,8 @@ from langchain_core.callbacks import AsyncCallbackHandler
 from loguru import logger
 
 from ai.controllers.v1.chat.event_types import EventType
+from extended.langchain.callbacks.reasoning_step_builder import ReasoningStepBuilder
+from extended.langchain.callbacks.reasoning_types import ReasoningStepType
 
 _logger = logger.bind(name=__name__)
 
@@ -30,11 +36,12 @@ class UIMessageChunkCallbackHandler(AsyncCallbackHandler):
     职责边界：
     - 监听 LangChain LLM 流式输出事件（on_llm_new_token）
     - 监听 LangChain 工具调用事件（on_tool_start, on_tool_end）
-    - 转换为 AI SDK 标准格式（text-delta, tool-call, tool-result）
+    - 监听 LangChain 推理步骤事件（on_chain_start, on_chain_end, on_llm_start, on_llm_end）
+    - 转换为 AI SDK 标准格式（text-delta, tool-call, tool-result, thinking-*）
     - 发送到事件队列供 SSE 流消费
 
     架构设计：
-    所有事件（包括文本流和工具调用）统一通过 CallbackHandler 处理，
+    所有事件（包括文本流、工具调用和推理步骤）统一通过 CallbackHandler 处理，
     符合规格定义的单一路径架构：
     agent.astream_events() → UIMessageChunkCallbackHandler → event_queue
 
@@ -43,18 +50,29 @@ class UIMessageChunkCallbackHandler(AsyncCallbackHandler):
     - 数据库持久化
     """
 
-    def __init__(self, event_queue: asyncio.Queue, message_id: str = "") -> None:
+    def __init__(
+        self,
+        event_queue: asyncio.Queue,
+        message_id: str = "",
+        thinking_config: dict[str, Any] | None = None,
+    ) -> None:
         """初始化回调处理器
 
         Args:
             event_queue: 事件队列，用于发送 SSE 事件
             message_id: 消息 ID，用于生成 text-delta 事件的 id
+            thinking_config: 思考过程功能配置
         """
         super().__init__()
         self.event_queue = event_queue
         self._tool_call_ids: dict[str, str] = {}  # run_id -> tool_call_id 映射
         self.message_id = message_id
         self.full_content = ""  # 累积文本内容
+
+        # 思考过程功能配置
+        self.thinking_enabled = thinking_config.get("enabled", True) if thinking_config else True
+        self.reasoning_builder = ReasoningStepBuilder(event_queue) if self.thinking_enabled else None
+        self.first_llm_call = True  # 标记是否是第一次 LLM 调用
 
     async def on_tool_start(
         self,
@@ -256,3 +274,200 @@ class UIMessageChunkCallbackHandler(AsyncCallbackHandler):
 
         except Exception:
             _logger.exception("处理 llm_new_token 事件时出错")
+
+    async def on_chain_start(
+        self,
+        serialized: dict[str, Any],
+        inputs: dict[str, Any],
+        *,
+        run_id: uuid.UUID,
+        parent_run_id: uuid.UUID | None = None,
+        tags: list[str] | None = None,
+        metadata: dict[str, Any] | None = None,
+        **kwargs: Any,
+    ) -> None:
+        """链式调用开始（Agent 决策、工具链等）
+
+        捕获 Agent 的决策步骤和推理过程
+        """
+        if not self.thinking_enabled or not self.reasoning_builder:
+            return
+
+        try:
+            # 判断是否是 Agent 决策步骤
+            chain_name = serialized.get("name", "")
+
+            # 检查是否为 Agent 或决策相关的链
+            if self._is_agent_decision(chain_name, metadata):
+                # 提取决策上下文
+                decision_context = self._extract_decision_context(inputs)
+
+                # 开始推理步骤
+                await self.reasoning_builder.start_reasoning_step(
+                    step_type=ReasoningStepType.DECISION,
+                    title=f"决策: {chain_name}",
+                    metadata={
+                        "run_id": str(run_id),
+                        "parent_run_id": str(parent_run_id) if parent_run_id else None,
+                        "chain_name": chain_name,
+                    }
+                )
+
+                # 输出决策内容
+                if decision_context:
+                    await self.reasoning_builder.append_reasoning_content(
+                        f"分析输入: {decision_context}\n"
+                    )
+
+        except Exception:
+            _logger.exception("处理 chain_start 事件时出错")
+
+    async def on_chain_end(
+        self,
+        outputs: dict[str, Any],
+        *,
+        run_id: uuid.UUID,
+        parent_run_id: uuid.UUID | None = None,
+        **kwargs: Any,
+    ) -> None:
+        """链式调用结束"""
+        if not self.thinking_enabled or not self.reasoning_builder:
+            return
+
+        try:
+            # 结束当前活跃的推理步骤（如果有）
+            if self.reasoning_builder.step_stack:
+                # 输出决策结果
+                if outputs:
+                    result_summary = self._summarize_output(outputs)
+                    await self.reasoning_builder.append_reasoning_content(
+                        f"决策结果: {result_summary}\n"
+                    )
+
+                await self.reasoning_builder.end_reasoning_step()
+
+        except Exception:
+            _logger.exception("处理 chain_end 事件时出错")
+
+    async def on_llm_start(
+        self,
+        serialized: dict[str, Any],
+        prompts: list[str],
+        *,
+        run_id: uuid.UUID,
+        parent_run_id: uuid.UUID | None = None,
+        tags: list[str] | None = None,
+        metadata: dict[str, Any] | None = None,
+        **kwargs: Any,
+    ) -> None:
+        """LLM 调用开始
+
+        区分：
+        - 第一次 LLM 调用：生成思考过程
+        - 后续 LLM 调用：可能是工具调用后的分析
+        """
+        if not self.thinking_enabled or not self.reasoning_builder:
+            return
+
+        try:
+            # 如果不是第一次调用，说明是工具调用后的推理
+            if not self.first_llm_call:
+                await self.reasoning_builder.start_reasoning_step(
+                    step_type=ReasoningStepType.RESULT_ANALYSIS,
+                    title="分析工具结果",
+                    metadata={
+                        "run_id": str(run_id),
+                        "parent_run_id": str(parent_run_id) if parent_run_id else None,
+                    }
+                )
+
+                # 输出分析提示
+                if prompts:
+                    prompt_summary = self._summarize_prompts(prompts)
+                    await self.reasoning_builder.append_reasoning_content(
+                        f"基于工具结果进行分析: {prompt_summary}\n"
+                    )
+
+            self.first_llm_call = False
+
+        except Exception:
+            _logger.exception("处理 llm_start 事件时出错")
+
+    async def on_llm_end(
+        self,
+        response: Any,
+        *,
+        run_id: uuid.UUID,
+        parent_run_id: uuid.UUID | None = None,
+        **kwargs: Any,
+    ) -> None:
+        """LLM 调用结束"""
+        if not self.thinking_enabled or not self.reasoning_builder:
+            return
+
+        try:
+            # 结束推理步骤（如果有）
+            if self.reasoning_builder.step_stack:
+                await self.reasoning_builder.end_reasoning_step()
+
+        except Exception:
+            _logger.exception("处理 llm_end 事件时出错")
+
+    def _is_agent_decision(self, chain_name: str, metadata: dict | None) -> bool:
+        """判断是否是 Agent 决策步骤
+
+        Args:
+            chain_name: 链名称
+            metadata: 元数据
+
+        Returns:
+            是否为决策步骤
+        """
+        # 检查名称中是否包含关键词
+        decision_keywords = ["agent", "decision", "planner", "reasoning"]
+        return any(kw in chain_name.lower() for kw in decision_keywords)
+
+    def _extract_decision_context(self, inputs: dict[str, Any]) -> str:
+        """提取决策上下文
+
+        Args:
+            inputs: 输入参数
+
+        Returns:
+            决策上下文字符串
+        """
+        if "input" in inputs:
+            return str(inputs["input"])
+        elif "query" in inputs:
+            return str(inputs["query"])
+        return ""
+
+    def _summarize_output(self, outputs: dict[str, Any]) -> str:
+        """总结输出内容
+
+        Args:
+            outputs: 输出字典
+
+        Returns:
+            输出摘要
+        """
+        if "output" in outputs:
+            output = outputs["output"]
+            if isinstance(output, str):
+                return output[:100] + "..." if len(output) > 100 else output
+        return "完成"
+
+    def _summarize_prompts(self, prompts: list[str]) -> str:
+        """总结提示内容
+
+        Args:
+            prompts: 提示列表
+
+        Returns:
+            提示摘要
+        """
+        if not prompts:
+            return ""
+        # 取第一个提示的前 100 字符
+        first_prompt = prompts[0]
+        return first_prompt[:100] + "..." if len(first_prompt) > 100 else first_prompt

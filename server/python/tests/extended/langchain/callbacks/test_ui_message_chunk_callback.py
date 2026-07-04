@@ -7,6 +7,7 @@ import pytest
 
 from ai.controllers.v1.chat.event_types import EventType
 from extended.langchain.callbacks import UIMessageChunkCallbackHandler
+from extended.langchain.callbacks.reasoning_types import ReasoningStepType
 
 
 @pytest.fixture
@@ -360,3 +361,61 @@ class TestUIMessageChunkCallbackHandler:
         assert events[1]["toolName"] == "search"
         assert events[2]["type"] == EventType.TOOL_RESULT
         assert events[2]["result"] == "search result"
+
+
+class TestUIMessageChunkCallbackHandlerThinking:
+    """测试思考过程捕获功能"""
+
+    @pytest.mark.asyncio
+    async def test_on_chain_start_captures_decision(
+        self, callback_handler: UIMessageChunkCallbackHandler, event_queue: asyncio.Queue
+    ):
+        """测试 on_chain_start 捕获决策步骤"""
+        run_id = uuid.uuid4()
+        serialized = {"name": "agent_decision"}
+        inputs = {"input": "用户问题"}
+
+        await callback_handler.on_chain_start(
+            serialized=serialized,
+            inputs=inputs,
+            run_id=run_id,
+        )
+
+        # 验证思考事件
+        event = event_queue.get_nowait()
+        assert event["type"] == EventType.THINKING_START
+        assert event["stepType"] == "decision"
+
+    @pytest.mark.asyncio
+    async def test_on_llm_start_captures_reasoning_after_first_call(
+        self, callback_handler: UIMessageChunkCallbackHandler, event_queue: asyncio.Queue
+    ):
+        """测试 on_llm_start 在第一次调用后捕获推理过程"""
+        run_id = uuid.uuid4()
+
+        # 第一次 LLM 调用
+        await callback_handler.on_llm_start(
+            serialized={},
+            prompts=["分析问题"],
+            run_id=run_id,
+        )
+
+        # 不应该创建思考步骤（第一次调用不创建）
+        assert callback_handler.reasoning_builder.step_stack == []
+        assert callback_handler.first_llm_call == False
+
+        # 清空队列
+        while not event_queue.empty():
+            event_queue.get_nowait()
+
+        # 第二次 LLM 调用（工具调用后）
+        await callback_handler.on_llm_start(
+            serialized={},
+            prompts=["基于工具结果分析"],
+            run_id=uuid.uuid4(),
+        )
+
+        # 应该创建思考步骤
+        event = event_queue.get_nowait()
+        assert event["type"] == EventType.THINKING_START
+        assert event["stepType"] == "result_analysis"
