@@ -112,6 +112,9 @@ async def _sse_generator(
     - data: {"type":"text-start","id":"..."}
     - data: {"type":"text-delta","id":"...","delta":"..."}
     - data: {"type":"text-end","id":"..."}
+    - data: {"type":"thinking-start","id":"...","stepType":"..."}
+    - data: {"type":"thinking-delta","id":"...","delta":"..."}
+    - data: {"type":"thinking-end","id":"..."}
     - data: {"type":"tool-call","toolCallId":"...","toolName":"...","args":{...}}
     - data: {"type":"tool-result","toolCallId":"...","result":"..."}
     - data: {"type":"finish","finishReason":"stop","usage":{...}}
@@ -120,6 +123,8 @@ async def _sse_generator(
     start_time = time.time()
     text_id = f"text-{uuid.uuid4().hex[:8]}"
     text_started = False
+    thinking_started = False
+    thinking_id = None  # 跟踪当前活跃的思考块 ID
 
     # 发送 start 事件
     yield _format_sse_line({"type": EventType.START, "messageId": message_id})
@@ -134,8 +139,19 @@ async def _sse_generator(
 
             event_type = event.get("type")
 
+            # 处理思考过程事件
+            if event_type == EventType.THINKING_START:
+                thinking_id = event.get("id")
+                thinking_started = True
+                yield _format_sse_line(event)
+            elif event_type == EventType.THINKING_DELTA:
+                yield _format_sse_line(event)
+            elif event_type == EventType.THINKING_END:
+                thinking_started = False
+                thinking_id = None
+                yield _format_sse_line(event)
             # 处理文本增量事件
-            if event_type == EventType.TEXT_DELTA:
+            elif event_type == EventType.TEXT_DELTA:
                 if not text_started:
                     yield _format_sse_line(
                         {"type": EventType.TEXT_START, "id": text_id}
@@ -149,6 +165,14 @@ async def _sse_generator(
                     yield _format_sse_line({"type": EventType.TEXT_END, "id": text_id})
                     text_started = False
             elif event_type == EventType.FINISH:
+                # 确保思考块已关闭
+                if thinking_started and thinking_id:
+                    yield _format_sse_line({
+                        "type": EventType.THINKING_END,
+                        "id": thinking_id,
+                    })
+                    thinking_started = False
+                    thinking_id = None
                 # 确保文本块已关闭
                 if text_started:
                     yield _format_sse_line({"type": EventType.TEXT_END, "id": text_id})
