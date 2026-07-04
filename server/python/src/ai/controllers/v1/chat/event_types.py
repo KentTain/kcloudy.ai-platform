@@ -17,3 +17,8 @@ class EventType(str, Enum):
     TOOL_RESULT = "tool-result"
     FINISH = "finish"
     ERROR = "error"
+
+    # 思考过程事件
+    THINKING_START = "thinking-start"    # 思考块开始
+    THINKING_DELTA = "thinking-delta"    # 思考内容增量
+    THINKING_END = "thinking-end"        # 思考块结束
