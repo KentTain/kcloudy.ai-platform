@@ -22,6 +22,12 @@ export const aiRoutes: RouteRecordRaw[] = [
     component: () => import("@/ai/pages/PluginConfigPage.vue"),
     meta: { title: "插件配置", hidden: true, requiresAuth: true },
   },
+  {
+    path: "ai/model-config",
+    name: "AIModelConfig",
+    component: () => import("@/ai/pages/ModelConfigPage.vue"),
+    meta: { title: "模型配置", icon: "cpu", requiresAuth: true },
+  },
 ];
 
 export default aiRoutes;

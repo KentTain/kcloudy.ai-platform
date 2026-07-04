@@ -42,6 +42,9 @@ class AIModule:
         """
         from ai.controllers.admin.plugin import router as admin_plugin_router
         from ai.controllers.console.installations import router as installations_router
+        from ai.controllers.console.model_config_controller import (
+            router as model_config_router,
+        )
         from ai.controllers.console.plugin import router as console_plugin_router
         from ai.controllers.console.plugin_config_controller import (
             router as plugin_config_router,
@@ -82,6 +85,12 @@ class AIModule:
             ),
             # Console API - 插件列表和凭证管理
             (console_plugin_router, "/ai/console/v1/plugins", ["Console - Plugin"]),
+            # Console API - 模型配置
+            (
+                model_config_router,
+                "/ai/console/v1/model-config",
+                ["Console - Model Config"],
+            ),
             # Inner API - 内部接口
             (inner_plugin_router, "/ai/inner/v1", ["Inner - Plugin"]),
             # Inner API - 插件管理接口
@@ -187,6 +196,15 @@ class AIModule:
                     sort_order=2,
                     is_visible=False,
                     permission_codes=["ai:plugin:write"],
+                ),
+                # 模型配置
+                MenuDef(
+                    code="ai.model-config",
+                    name="模型配置",
+                    path="/ai/model-config",
+                    icon="Cpu",
+                    sort_order=2,
+                    permission_codes=["ai:plugin:read"],
                 ),
             ],
             permissions=[
