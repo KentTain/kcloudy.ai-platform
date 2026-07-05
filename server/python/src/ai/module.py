@@ -58,6 +58,7 @@ class AIModule:
         )
         from ai.controllers.v1.chat.llm import router as chat_llm_router
         from ai.controllers.v1.conversation import router as conversation_router
+        from ai.controllers.v1.files import router as files_router
         from ai.controllers.v1.model import router as model_router
 
         return [
@@ -101,6 +102,8 @@ class AIModule:
             (conversation_router, "/ai/console/v1", ["会话管理"]),
             # Console API - 模型列表接口
             (model_router, "/ai/console/v1", ["模型列表"]),
+            # Console API - 文件上传接口
+            (files_router, "/ai/console/v1", ["文件管理"]),
         ]
 
     def get_middlewares(self) -> list[type]:
