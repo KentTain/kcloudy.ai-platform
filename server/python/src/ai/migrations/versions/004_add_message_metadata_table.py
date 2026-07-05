@@ -38,11 +38,13 @@ def upgrade() -> None:
     op.create_index("idx_message_metadata_message_id", "message_metadata", ["message_id"], schema="ai")
     op.create_index("idx_message_metadata_tenant_id", "message_metadata", ["tenant_id"], schema="ai")
     op.create_index("idx_message_metadata_user_id", "message_metadata", ["user_id"], schema="ai")
+    op.create_index("idx_tenant_user", "message_metadata", ["tenant_id", "user_id"], schema="ai")
     op.create_index("idx_message_metadata_created_at", "message_metadata", ["created_at"], schema="ai")
 
 
 def downgrade() -> None:
     op.drop_index("idx_message_metadata_created_at", schema="ai")
+    op.drop_index("idx_tenant_user", schema="ai")
     op.drop_index("idx_message_metadata_user_id", schema="ai")
     op.drop_index("idx_message_metadata_tenant_id", schema="ai")
     op.drop_index("idx_message_metadata_message_id", schema="ai")

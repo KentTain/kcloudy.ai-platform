@@ -1,6 +1,6 @@
 """消息元数据模型"""
 
-from sqlalchemy import Integer, SmallInteger, String, Text
+from sqlalchemy import Integer, SmallInteger, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from ai.models import BaseModel
@@ -10,7 +10,10 @@ class MessageMetadata(BaseModel):
     """消息元数据模型"""
 
     __tablename__ = "message_metadata"
-    __table_args__ = ({"schema": "ai", "comment": "消息元数据"},)
+    __table_args__ = (
+        UniqueConstraint("message_id", "tenant_id", name="uq_message_tenant"),
+        {"schema": "ai", "comment": "消息元数据"},
+    )
 
     message_id: Mapped[str] = mapped_column(
         String(255), nullable=False, index=True, comment="消息ID"
