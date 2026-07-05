@@ -24,5 +24,5 @@ class TestEventTypeThinking:
 
     def test_all_event_types_count(self):
         """测试事件类型总数"""
-        # 原有 8 个 + 新增 3 个 = 11 个
-        assert len(EventType) == 11
+        # 原有 8 个 + 思考 3 个 + 新增 6 个 = 17 个
+        assert len(EventType) == 17
