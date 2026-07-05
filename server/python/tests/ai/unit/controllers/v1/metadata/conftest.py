@@ -83,6 +83,12 @@ class _MockSession:
                 self._records[mid]["rating"] = obj.rating
                 self._records[mid]["feedback"] = obj.feedback
 
+    async def refresh(self, obj):
+        """模拟 SQLAlchemy session.refresh()"""
+        now = datetime.now()
+        if hasattr(obj, "created_at") and obj.created_at is None:
+            obj.created_at = now
+
     async def rollback(self):
         pass
 

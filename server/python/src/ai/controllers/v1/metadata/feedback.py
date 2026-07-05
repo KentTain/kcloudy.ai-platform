@@ -5,18 +5,15 @@
 
 from fastapi import APIRouter, Depends
 from fastapi.responses import ORJSONResponse
-from loguru import logger
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ai.models.message_metadata import MessageMetadata
 from ai.schemas.metadata import FeedbackResponse, SubmitFeedbackRequest
+from ai.services.feedback_service import feedback_service
 from framework.database.dependencies import get_db_session
 from framework.tenant.context import TenantContext
 from iam.dependencies import get_current_user_id
 
 router = APIRouter()
-_logger = logger.bind(name=__name__)
 
 
 @router.post("/feedback")
@@ -29,33 +26,13 @@ async def submit_feedback(
 
     tenant_id = TenantContext.get_tenant_id()
 
-    # 检查是否已存在
-    result = await session.execute(
-        select(MessageMetadata).where(
-            MessageMetadata.message_id == request.message_id,
-            MessageMetadata.tenant_id == tenant_id,
-        )
+    # 调用 Service 层处理业务逻辑
+    metadata = await feedback_service.submit_feedback(
+        session=session,
+        tenant_id=tenant_id,
+        user_id=user_id,
+        request=request,
     )
-    metadata = result.scalar_one_or_none()
-
-    if metadata:
-        # 更新反馈
-        metadata.rating = request.rating
-        metadata.feedback = request.feedback
-        _logger.info(f"Updated feedback for message {request.message_id}")
-    else:
-        # 创建新记录
-        metadata = MessageMetadata(
-            message_id=request.message_id,
-            tenant_id=tenant_id,
-            user_id=user_id,
-            rating=request.rating,
-            feedback=request.feedback,
-        )
-        session.add(metadata)
-        _logger.info(f"Created feedback for message {request.message_id}")
-
-    await session.commit()
 
     return ORJSONResponse(
         content={
