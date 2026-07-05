@@ -164,6 +164,22 @@ async def _sse_generator(
                 if text_started:
                     yield _format_sse_line({"type": EventType.TEXT_END, "id": text_id})
                     text_started = False
+            # 处理来源引用事件
+            elif event_type == EventType.SOURCE_URL:
+                yield _format_sse_line(event)
+            elif event_type == EventType.SOURCE_DOCUMENT:
+                yield _format_sse_line(event)
+            # 处理文件上传事件
+            elif event_type == EventType.FILE_UPLOAD_START:
+                yield _format_sse_line(event)
+            elif event_type == EventType.FILE_UPLOAD_END:
+                yield _format_sse_line(event)
+            # 处理数据事件
+            elif event_type == EventType.DATA:
+                yield _format_sse_line(event)
+            # 处理警告事件
+            elif event_type == EventType.WARNING:
+                yield _format_sse_line(event)
             elif event_type == EventType.FINISH:
                 # 确保思考块已关闭
                 if thinking_started and thinking_id:
