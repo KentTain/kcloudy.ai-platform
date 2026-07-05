@@ -100,7 +100,7 @@
 - 创建：`server/python/src/extended/langchain/callbacks/reasoning_types.py`
 - 测试：`server/python/tests/extended/langchain/callbacks/test_reasoning_types.py`
 
-- [ ] **步骤 1：编写 ReasoningStepType 枚举测试**
+- [x] **步骤 1：编写 ReasoningStepType 枚举测试**
 
 创建测试文件：
 
@@ -129,13 +129,13 @@ class TestReasoningStepType:
         assert ReasoningStepType("decision") == ReasoningStepType.DECISION
 ```
 
-- [ ] **步骤 2：运行测试验证失败**
+- [x] **步骤 2：运行测试验证失败**
 
 运行：`uv run pytest server/python/tests/extended/langchain/callbacks/test_reasoning_types.py -v`
 
 预期：FAIL，报错 `ModuleNotFoundError: No module named 'extended.langchain.callbacks.reasoning_types'`
 
-- [ ] **步骤 3：创建 reasoning_types.py 文件**
+- [x] **步骤 3：创建 reasoning_types.py 文件**
 
 ```python
 # server/python/src/extended/langchain/callbacks/reasoning_types.py
@@ -204,13 +204,13 @@ class ReasoningStep:
         return result
 ```
 
-- [ ] **步骤 4：运行测试验证通过**
+- [x] **步骤 4：运行测试验证通过**
 
 运行：`uv run pytest server/python/tests/extended/langchain/callbacks/test_reasoning_types.py -v`
 
 预期：PASS
 
-- [ ] **步骤 5：编写 ReasoningStep 数据类测试**
+- [x] **步骤 5：编写 ReasoningStep 数据类测试**
 
 在测试文件中添加：
 
@@ -266,13 +266,13 @@ class TestReasoningStep:
         assert result["delta"] == "选择天气查询工具"
 ```
 
-- [ ] **步骤 6：运行测试验证通过**
+- [x] **步骤 6：运行测试验证通过**
 
 运行：`uv run pytest server/python/tests/extended/langchain/callbacks/test_reasoning_types.py::TestReasoningStep -v`
 
 预期：PASS
 
-- [ ] **步骤 7：Commit**
+- [x] **步骤 7：Commit**
 
 ```bash
 git add server/python/src/extended/langchain/callbacks/reasoning_types.py
@@ -299,7 +299,7 @@ Co-Authored-By: Happy <yesreply@happy.engineering>"
 - 修改：`server/python/src/ai/controllers/v1/chat/event_types.py`
 - 测试：`server/python/tests/ai/unit/controllers/v1/chat/test_event_types.py`
 
-- [ ] **步骤 1：编写 EventType 扩展测试**
+- [x] **步骤 1：编写 EventType 扩展测试**
 
 创建测试文件：
 
@@ -334,13 +334,13 @@ class TestEventTypeThinking:
         assert len(EventType) == 11
 ```
 
-- [ ] **步骤 2：运行测试验证失败**
+- [x] **步骤 2：运行测试验证失败**
 
 运行：`uv run pytest server/python/tests/ai/unit/controllers/v1/chat/test_event_types.py -v`
 
 预期：FAIL，报错 `AttributeError: THINKING_START`
 
-- [ ] **步骤 3：修改 event_types.py 添加思考事件类型**
+- [x] **步骤 3：修改 event_types.py 添加思考事件类型**
 
 ```python
 # server/python/src/ai/controllers/v1/chat/event_types.py
@@ -371,13 +371,13 @@ class EventType(str, Enum):
     THINKING_END = "thinking-end"        # 思考块结束
 ```
 
-- [ ] **步骤 4：运行测试验证通过**
+- [x] **步骤 4：运行测试验证通过**
 
 运行：`uv run pytest server/python/tests/ai/unit/controllers/v1/chat/test_event_types.py -v`
 
 预期：PASS
 
-- [ ] **步骤 5：Commit**
+- [x] **步骤 5：Commit**
 
 ```bash
 git add server/python/src/ai/controllers/v1/chat/event_types.py
@@ -408,7 +408,7 @@ Co-Authored-By: Happy <yesreply@happy.engineering>"
 
 ### 3.1 基础结构和初始化
 
-- [ ] **步骤 1：编写 ReasoningStepBuilder 初始化测试**
+- [x] **步骤 1：编写 ReasoningStepBuilder 初始化测试**
 
 ```python
 # server/python/tests/extended/langchain/callbacks/test_reasoning_step_builder.py
@@ -450,13 +450,13 @@ class TestReasoningStepBuilderInit:
         assert ReasoningStepBuilder.BATCH_INTERVAL == 0.1
 ```
 
-- [ ] **步骤 2：运行测试验证失败**
+- [x] **步骤 2：运行测试验证失败**
 
 运行：`uv run pytest server/python/tests/extended/langchain/callbacks/test_reasoning_step_builder.py::TestReasoningStepBuilderInit -v`
 
 预期：FAIL，报错 `ModuleNotFoundError`
 
-- [ ] **步骤 3：创建 ReasoningStepBuilder 基础结构**
+- [x] **步骤 3：创建 ReasoningStepBuilder 基础结构**
 
 ```python
 # server/python/src/extended/langchain/callbacks/reasoning_step_builder.py
@@ -525,7 +525,7 @@ class ReasoningStepBuilder:
         ]
 ```
 
-- [ ] **步骤 4：运行测试验证通过**
+- [x] **步骤 4：运行测试验证通过**
 
 运行：`uv run pytest server/python/tests/extended/langchain/callbacks/test_reasoning_step_builder.py::TestReasoningStepBuilderInit -v`
 
@@ -533,7 +533,7 @@ class ReasoningStepBuilder:
 
 ### 3.2 实现开始推理步骤
 
-- [ ] **步骤 5：编写 start_reasoning_step 测试**
+- [x] **步骤 5：编写 start_reasoning_step 测试**
 
 在测试文件中添加：
 
@@ -602,13 +602,13 @@ class TestReasoningStepBuilderStartStep:
         assert len(builder.step_stack) == ReasoningStepBuilder.MAX_REASONING_DEPTH
 ```
 
-- [ ] **步骤 6：运行测试验证失败**
+- [x] **步骤 6：运行测试验证失败**
 
 运行：`uv run pytest server/python/tests/extended/langchain/callbacks/test_reasoning_step_builder.py::TestReasoningStepBuilderStartStep -v`
 
 预期：FAIL，报错 `AttributeError: 'ReasoningStepBuilder' object has no attribute 'start_reasoning_step'`
 
-- [ ] **步骤 7：实现 start_reasoning_step 方法**
+- [x] **步骤 7：实现 start_reasoning_step 方法**
 
 在 ReasoningStepBuilder 类中添加：
 
@@ -669,7 +669,7 @@ class TestReasoningStepBuilderStartStep:
         return step.id
 ```
 
-- [ ] **步骤 8：运行测试验证通过**
+- [x] **步骤 8：运行测试验证通过**
 
 运行：`uv run pytest server/python/tests/extended/langchain/callbacks/test_reasoning_step_builder.py::TestReasoningStepBuilderStartStep -v`
 
@@ -677,7 +677,7 @@ class TestReasoningStepBuilderStartStep:
 
 ### 3.3 实现追加推理内容（含敏感信息过滤）
 
-- [ ] **步骤 9：编写 append_reasoning_content 测试**
+- [x] **步骤 9：编写 append_reasoning_content 测试**
 
 在测试文件中添加：
 
@@ -759,13 +759,13 @@ class TestReasoningStepBuilderAppendContent:
         assert event["delta"] == "正常思考内容"
 ```
 
-- [ ] **步骤 10：运行测试验证失败**
+- [x] **步骤 10：运行测试验证失败**
 
 运行：`uv run pytest server/python/tests/extended/langchain/callbacks/test_reasoning_step_builder.py::TestReasoningStepBuilderAppendContent -v`
 
 预期：FAIL
 
-- [ ] **步骤 11：实现 append_reasoning_content 和敏感信息过滤**
+- [x] **步骤 11：实现 append_reasoning_content 和敏感信息过滤**
 
 在 ReasoningStepBuilder 类中添加：
 
@@ -854,7 +854,7 @@ class TestReasoningStepBuilderAppendContent:
         return content
 ```
 
-- [ ] **步骤 12：运行测试验证通过**
+- [x] **步骤 12：运行测试验证通过**
 
 运行：`uv run pytest server/python/tests/extended/langchain/callbacks/test_reasoning_step_builder.py::TestReasoningStepBuilderAppendContent -v`
 
@@ -862,7 +862,7 @@ class TestReasoningStepBuilderAppendContent:
 
 ### 3.4 实现结束推理步骤
 
-- [ ] **步骤 13：编写 end_reasoning_step 测试**
+- [x] **步骤 13：编写 end_reasoning_step 测试**
 
 在测试文件中添加：
 
@@ -935,13 +935,13 @@ class TestReasoningStepBuilderEndStep:
         assert end_event["type"] == EventType.THINKING_END
 ```
 
-- [ ] **步骤 14：运行测试验证失败**
+- [x] **步骤 14：运行测试验证失败**
 
 运行：`uv run pytest server/python/tests/extended/langchain/callbacks/test_reasoning_step_builder.py::TestReasoningStepBuilderEndStep -v`
 
 预期：FAIL
 
-- [ ] **步骤 15：实现 end_reasoning_step 方法**
+- [x] **步骤 15：实现 end_reasoning_step 方法**
 
 在 ReasoningStepBuilder 类中添加：
 
@@ -986,19 +986,19 @@ class TestReasoningStepBuilderEndStep:
         )
 ```
 
-- [ ] **步骤 16：运行测试验证通过**
+- [x] **步骤 16：运行测试验证通过**
 
 运行：`uv run pytest server/python/tests/extended/langchain/callbacks/test_reasoning_step_builder.py::TestReasoningStepBuilderEndStep -v`
 
 预期：PASS
 
-- [ ] **步骤 17：运行所有 ReasoningStepBuilder 测试**
+- [x] **步骤 17：运行所有 ReasoningStepBuilder 测试**
 
 运行：`uv run pytest server/python/tests/extended/langchain/callbacks/test_reasoning_step_builder.py -v`
 
 预期：所有测试 PASS
 
-- [ ] **步骤 18：Commit**
+- [x] **步骤 18：Commit**
 
 ```bash
 git add server/python/src/extended/langchain/callbacks/reasoning_step_builder.py
@@ -1025,7 +1025,7 @@ Co-Authored-By: Happy <yesreply@happy.engineering>"
 - 修改：`server/python/src/extended/langchain/callbacks/ui_message_chunk_callback.py`
 - 测试：`server/python/tests/extended/langchain/callbacks/test_ui_message_chunk_callback.py`
 
-- [ ] **步骤 1：读取现有 UIMessageChunkCallbackHandler 代码**
+- [x] **步骤 1：读取现有 UIMessageChunkCallbackHandler 代码**
 
 现有代码位置：`server/python/src/extended/langchain/callbacks/ui_message_chunk_callback.py`
 
@@ -1035,7 +1035,7 @@ Co-Authored-By: Happy <yesreply@happy.engineering>"
 - `on_tool_error`
 - `on_llm_new_token`
 
-- [ ] **步骤 2：编写扩展回调测试**
+- [x] **步骤 2：编写扩展回调测试**
 
 在测试文件中添加：
 
@@ -1106,13 +1106,13 @@ class TestUIMessageChunkCallbackHandlerThinking:
         assert event["stepType"] == "result_analysis"
 ```
 
-- [ ] **步骤 3：运行测试验证失败**
+- [x] **步骤 3：运行测试验证失败**
 
 运行：`uv run pytest server/python/tests/extended/langchain/callbacks/test_ui_message_chunk_callback.py::TestUIMessageChunkCallbackHandlerThinking -v`
 
 预期：FAIL，报错 `AttributeError: 'UIMessageChunkCallbackHandler' object has no attribute 'reasoning_builder'`
 
-- [ ] **步骤 4：修改 UIMessageChunkCallbackHandler __init__**
+- [x] **步骤 4：修改 UIMessageChunkCallbackHandler __init__**
 
 修改 `__init__` 方法：
 
@@ -1157,7 +1157,7 @@ class UIMessageChunkCallbackHandler(AsyncCallbackHandler):
         self.first_llm_call = True  # 标记是否是第一次 LLM 调用
 ```
 
-- [ ] **步骤 5：实现 on_chain_start 方法**
+- [x] **步骤 5：实现 on_chain_start 方法**
 
 在类中添加新方法：
 
@@ -1210,7 +1210,7 @@ class UIMessageChunkCallbackHandler(AsyncCallbackHandler):
             _logger.exception("处理 chain_start 事件时出错")
 ```
 
-- [ ] **步骤 6：实现辅助方法**
+- [x] **步骤 6：实现辅助方法**
 
 添加辅助方法：
 
@@ -1245,7 +1245,7 @@ class UIMessageChunkCallbackHandler(AsyncCallbackHandler):
         return ""
 ```
 
-- [ ] **步骤 7：实现 on_chain_end 方法**
+- [x] **步骤 7：实现 on_chain_end 方法**
 
 ```python
     async def on_chain_end(
@@ -1291,7 +1291,7 @@ class UIMessageChunkCallbackHandler(AsyncCallbackHandler):
         return "完成"
 ```
 
-- [ ] **步骤 8：实现 on_llm_start 和 on_llm_end 方法**
+- [x] **步骤 8：实现 on_llm_start 和 on_llm_end 方法**
 
 ```python
     async def on_llm_start(
@@ -1374,19 +1374,19 @@ class UIMessageChunkCallbackHandler(AsyncCallbackHandler):
         return first_prompt[:100] + "..." if len(first_prompt) > 100 else first_prompt
 ```
 
-- [ ] **步骤 9：运行测试验证通过**
+- [x] **步骤 9：运行测试验证通过**
 
 运行：`uv run pytest server/python/tests/extended/langchain/callbacks/test_ui_message_chunk_callback.py::TestUIMessageChunkCallbackHandlerThinking -v`
 
 预期：PASS
 
-- [ ] **步骤 10：运行所有回调测试**
+- [x] **步骤 10：运行所有回调测试**
 
 运行：`uv run pytest server/python/tests/extended/langchain/callbacks/test_ui_message_chunk_callback.py -v`
 
 预期：所有测试 PASS
 
-- [ ] **步骤 11：Commit**
+- [x] **步骤 11：Commit**
 
 ```bash
 git add server/python/src/extended/langchain/callbacks/ui_message_chunk_callback.py
@@ -1413,11 +1413,11 @@ Co-Authored-By: Happy <yesreply@happy.engineering>"
 **文件：**
 - 修改：`server/python/src/ai/controllers/v1/chat/llm.py`
 
-- [ ] **步骤 1：读取现有 SSE Generator 代码**
+- [x] **步骤 1：读取现有 SSE Generator 代码**
 
 现有代码位置：`server/python/src/ai/controllers/v1/chat/llm.py` 中的 `_sse_generator()` 函数
 
-- [ ] **步骤 2：添加 thinking_started 标志**
+- [x] **步骤 2：添加 thinking_started 标志**
 
 在 `_sse_generator()` 函数中添加：
 
@@ -1433,7 +1433,7 @@ async def _sse_generator() -> AsyncGenerator[str, None]:
     # ... 现有代码 ...
 ```
 
-- [ ] **步骤 3：处理思考事件**
+- [x] **步骤 3：处理思考事件**
 
 在事件处理循环中添加：
 
@@ -1470,11 +1470,11 @@ async def _sse_generator() -> AsyncGenerator[str, None]:
             break
 ```
 
-- [ ] **步骤 4：测试 SSE Generator**
+- [x] **步骤 4：测试 SSE Generator**
 
 手动测试或编写集成测试验证思考事件流。
 
-- [ ] **步骤 5：Commit**
+- [x] **步骤 5：Commit**
 
 ```bash
 git add server/python/src/ai/controllers/v1/chat/llm.py
@@ -1498,7 +1498,7 @@ Co-Authored-By: Happy <yesreply@happy.engineering>"
 **文件：**
 - 修改：`web/vue/src/ai/types/index.ts`
 
-- [ ] **步骤 1：定义 ReasoningStepType 类型**
+- [x] **步骤 1：定义 ReasoningStepType 类型**
 
 ```typescript
 // web/vue/src/ai/types/index.ts
@@ -1532,7 +1532,7 @@ export interface ThinkingPart extends UIMessagePartBase {
 export type UIMessagePart = TextPart | ImagePart | ToolCallPart | ToolResultPart | ThinkingPart
 ```
 
-- [ ] **步骤 2：Commit**
+- [x] **步骤 2：Commit**
 
 ```bash
 git add web/vue/src/ai/types/index.ts
@@ -1560,7 +1560,7 @@ Co-Authored-By: Happy <yesreply@happy.engineering>"
 
 **重要说明：** 此组件基于现有 Reasoning 组件封装，复用其折叠功能，仅添加步骤类型标签。
 
-- [ ] **步骤 1：创建 ThinkingBlock 组件**
+- [x] **步骤 1：创建 ThinkingBlock 组件**
 
 ```vue
 <!-- web/vue/src/components/ai-elements/thinking/ThinkingBlock.vue -->
@@ -1630,7 +1630,7 @@ const badgeLabel = computed(() => {
 </template>
 ```
 
-- [ ] **步骤 2：创建组件测试**
+- [x] **步骤 2：创建组件测试**
 
 ```typescript
 // web/vue/tests/ai/unit/components/ThinkingBlock.test.ts
@@ -1685,20 +1685,20 @@ describe('ThinkingBlock', () => {
 })
 ```
 
-- [ ] **步骤 3：运行测试**
+- [x] **步骤 3：运行测试**
 
 ```bash
 pnpm test:unit web/vue/tests/ai/unit/components/ThinkingBlock.test.ts --run
 ```
 
-- [ ] **步骤 4：导出组件**
+- [x] **步骤 4：导出组件**
 
 ```typescript
 // web/vue/src/components/ai-elements/thinking/index.ts
 export { default as ThinkingBlock } from './ThinkingBlock.vue'
 ```
 
-- [ ] **步骤 5：Commit**
+- [x] **步骤 5：Commit**
 
 ```bash
 git add web/vue/src/components/ai-elements/thinking/
@@ -1724,7 +1724,7 @@ Co-Authored-By: Happy <yesreply@happy.engineering>"
 **文件：**
 - 修改：`web/vue/src/ai/composables/useChat.ts`
 
-- [ ] **步骤 1：添加 processThinkingEvents 函数**
+- [x] **步骤 1：添加 processThinkingEvents 函数**
 
 ```typescript
 // web/vue/src/ai/composables/useChat.ts
@@ -1796,7 +1796,7 @@ function processThinkingEvents(messages: UIMessage[]): UIMessage[] {
 }
 ```
 
-- [ ] **步骤 2：在 watchEffect 中应用处理**
+- [x] **步骤 2：在 watchEffect 中应用处理**
 
 ```typescript
 // 在现有的 watchEffect 中修改
@@ -1809,7 +1809,7 @@ watchEffect(() => {
 })
 ```
 
-- [ ] **步骤 3：Commit**
+- [x] **步骤 3：Commit**
 
 ```bash
 git add web/vue/src/ai/composables/useChat.ts
@@ -1834,7 +1834,7 @@ Co-Authored-By: Happy <yesreply@happy.engineering>"
 **文件：**
 - 修改：`web/vue/src/ai/pages/ChatPage.vue`
 
-- [ ] **步骤 1：导入 ThinkingBlock 组件**
+- [x] **步骤 1：导入 ThinkingBlock 组件**
 
 ```typescript
 // web/vue/src/ai/pages/ChatPage.vue
@@ -1842,7 +1842,7 @@ Co-Authored-By: Happy <yesreply@happy.engineering>"
 import { ThinkingBlock } from '@/components/ai-elements/thinking'
 ```
 
-- [ ] **步骤 2：在消息渲染中添加思考块**
+- [x] **步骤 2：在消息渲染中添加思考块**
 
 ```vue
 <template>
@@ -1870,7 +1870,7 @@ import { ThinkingBlock } from '@/components/ai-elements/thinking'
 </template>
 ```
 
-- [ ] **步骤 3：Commit**
+- [x] **步骤 3：Commit**
 
 ```bash
 git add web/vue/src/ai/pages/ChatPage.vue
@@ -1913,7 +1913,7 @@ uv run pytest tests/extended/langchain/callbacks/ -v --cov=src/extended/langchai
 **文件：**
 - 创建：`server/python/tests/ai/integration/test_thinking_process.py`
 
-- [ ] **步骤 1：编写集成测试**
+- [x] **步骤 1：编写集成测试**
 
 ```python
 # server/python/tests/ai/integration/test_thinking_process.py
@@ -1937,7 +1937,7 @@ async def test_sensitive_info_filtering():
     pass
 ```
 
-- [ ] **步骤 2：运行集成测试**
+- [x] **步骤 2：运行集成测试**
 
 ```bash
 cd server/python
@@ -1949,7 +1949,7 @@ uv run pytest tests/ai/integration/test_thinking_process.py -v
 **文件：**
 - 创建：`web/vue/tests/ai/e2e/thinking-process.spec.ts`
 
-- [ ] **步骤 3：编写 E2E 测试**
+- [x] **步骤 3：编写 E2E 测试**
 
 ```typescript
 // web/vue/tests/ai/e2e/thinking-process.spec.ts
@@ -1965,13 +1965,13 @@ test('思考块折叠/展开交互', async ({ page }) => {
 })
 ```
 
-- [ ] **步骤 4：运行 E2E 测试**
+- [x] **步骤 4：运行 E2E 测试**
 
 ```bash
 pnpm test:e2e web/vue/tests/ai/e2e/thinking-process.spec.ts
 ```
 
-- [ ] **步骤 5：Commit 测试文件**
+- [x] **步骤 5：Commit 测试文件**
 
 ```bash
 git add server/python/tests/ai/integration/test_thinking_process.py
