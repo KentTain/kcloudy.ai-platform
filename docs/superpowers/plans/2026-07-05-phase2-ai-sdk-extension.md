@@ -97,7 +97,7 @@ web/vue/src/
 - 创建：`server/python/src/ai/schemas/metadata.py`
 - 创建：`server/python/tests/ai/unit/models/test_message_metadata.py`
 
-- [ ] **步骤 1：编写元数据模型测试**
+- [x] **步骤 1：编写元数据模型测试**
 
 创建测试：
 
@@ -134,12 +134,12 @@ class TestMessageMetadata:
         assert metadata.prompt_tokens is None
 ```
 
-- [ ] **步骤 2：运行测试验证失败**
+- [x] **步骤 2：运行测试验证失败**
 
 运行：`cd server/python && uv run pytest tests/ai/unit/models/test_message_metadata.py -v`
 预期：FAIL，报错 "No module named 'ai.models.message_metadata'"
 
-- [ ] **步骤 3：实现元数据模型**
+- [x] **步骤 3：实现元数据模型**
 
 创建文件：
 
@@ -202,12 +202,12 @@ class UsageStatsResponse(BaseModel):
     period: str
 ```
 
-- [ ] **步骤 4：运行测试验证通过**
+- [x] **步骤 4：运行测试验证通过**
 
 运行：`cd server/python && uv run pytest tests/ai/unit/models/test_message_metadata.py -v`
 预期：测试 PASS
 
-- [ ] **步骤 5：创建数据库迁移**
+- [x] **步骤 5：创建数据库迁移**
 
 运行：`cd server/python && uv run alembic revision -m "add_message_metadata_table"`
 
@@ -248,7 +248,7 @@ def downgrade():
 
 运行迁移：`cd server/python && uv run alembic upgrade head`
 
-- [ ] **步骤 6：Commit**
+- [x] **步骤 6：Commit**
 
 ```bash
 git add server/python/src/ai/models/message_metadata.py \
@@ -278,7 +278,7 @@ Co-Authored-By: Happy <yesreply@happy.engineering>"
 - 创建：`server/python/src/ai/controllers/v1/metadata/feedback.py`
 - 创建：`server/python/tests/ai/unit/controllers/v1/metadata/test_feedback.py`
 
-- [ ] **步骤 1：编写反馈接口测试**
+- [x] **步骤 1：编写反馈接口测试**
 
 创建测试：
 
@@ -329,12 +329,12 @@ class TestFeedback:
         assert data["data"]["rating"] == 2
 ```
 
-- [ ] **步骤 2：运行测试验证失败**
+- [x] **步骤 2：运行测试验证失败**
 
 运行：`cd server/python && uv run pytest tests/ai/unit/controllers/v1/metadata/test_feedback.py -v`
 预期：FAIL，报错 404
 
-- [ ] **步骤 3：实现反馈接口**
+- [x] **步骤 3：实现反馈接口**
 
 创建文件：
 
@@ -414,7 +414,7 @@ async def submit_feedback(
     })
 ```
 
-- [ ] **步骤 4：注册路由到 AI 模块**
+- [x] **步骤 4：注册路由到 AI 模块**
 
 修改文件 `src/ai/module.py`：
 
@@ -426,12 +426,12 @@ from ai.controllers.v1.metadata import router as metadata_router
 app.include_router(metadata_router, prefix="/ai/console/v1")
 ```
 
-- [ ] **步骤 5：运行测试验证通过**
+- [x] **步骤 5：运行测试验证通过**
 
 运行：`cd server/python && uv run pytest tests/ai/unit/controllers/v1/metadata/test_feedback.py -v`
 预期：所有测试 PASS
 
-- [ ] **步骤 6：Commit**
+- [x] **步骤 6：Commit**
 
 ```bash
 git add server/python/src/ai/controllers/v1/metadata/ \
@@ -457,7 +457,7 @@ Co-Authored-By: Happy <yesreply@happy.engineering>"
 - 创建：`server/python/src/ai/controllers/v1/metadata/stats.py`
 - 创建：`server/python/tests/ai/unit/controllers/v1/metadata/test_stats.py`
 
-- [ ] **步骤 1：编写统计接口测试**
+- [x] **步骤 1：编写统计接口测试**
 
 创建测试：
 
@@ -493,12 +493,12 @@ class TestStats:
         assert "period" in data["data"]
 ```
 
-- [ ] **步骤 2：运行测试验证失败**
+- [x] **步骤 2：运行测试验证失败**
 
 运行：`cd server/python && uv run pytest tests/ai/unit/controllers/v1/metadata/test_stats.py -v`
 预期：FAIL，报错 404
 
-- [ ] **步骤 3：实现统计接口**
+- [x] **步骤 3：实现统计接口**
 
 创建文件：
 
@@ -592,7 +592,7 @@ async def get_usage_stats(
     })
 ```
 
-- [ ] **步骤 4：注册路由**
+- [x] **步骤 4：注册路由**
 
 修改 `src/ai/controllers/v1/metadata/__init__.py`：
 
@@ -602,12 +602,12 @@ from ai.controllers.v1.metadata.stats import router as stats_router
 router.include_router(stats_router)
 ```
 
-- [ ] **步骤 5：运行测试验证通过**
+- [x] **步骤 5：运行测试验证通过**
 
 运行：`cd server/python && uv run pytest tests/ai/unit/controllers/v1/metadata/test_stats.py -v`
 预期：测试 PASS
 
-- [ ] **步骤 6：Commit**
+- [x] **步骤 6：Commit**
 
 ```bash
 git add server/python/src/ai/controllers/v1/metadata/stats.py \
