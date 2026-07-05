@@ -416,7 +416,7 @@ Co-Authored-By: Happy <yesreply@happy.engineering>"
 - 创建：`server/python/src/extended/langchain/callbacks/processors/source_processor.py`
 - 创建：`server/python/tests/extended/langchain/callbacks/processors/test_source_processor.py`
 
-- [ ] **步骤 1：编写 SourceProcessor 测试**
+- [x] **步骤 1：编写 SourceProcessor 测试**
 
 创建测试：
 
@@ -498,12 +498,12 @@ class TestSourceProcessor:
         assert SourceProcessor.supported_types() == ["source-url", "source-document"]
 ```
 
-- [ ] **步骤 2：运行测试验证失败**
+- [x] **步骤 2：运行测试验证失败**
 
 运行：`cd server/python && uv run pytest tests/extended/langchain/callbacks/processors/test_source_processor.py -v`
 预期：FAIL，报错 "No module named 'extended.langchain.callbacks.processors.source_processor'"
 
-- [ ] **步骤 3：实现 SourceProcessor**
+- [x] **步骤 3：实现 SourceProcessor**
 
 创建文件：
 
@@ -589,12 +589,12 @@ class SourceProcessor(UIPartProcessor):
         return sources
 ```
 
-- [ ] **步骤 4：运行测试验证通过**
+- [x] **步骤 4：运行测试验证通过**
 
 运行：`cd server/python && uv run pytest tests/extended/langchain/callbacks/processors/test_source_processor.py -v`
 预期：所有测试 PASS
 
-- [ ] **步骤 5：Commit**
+- [x] **步骤 5：Commit**
 
 ```bash
 git add server/python/src/extended/langchain/callbacks/processors/source_processor.py \
@@ -620,7 +620,7 @@ Co-Authored-By: Happy <yesreply@happy.engineering>"
 - 修改：`server/python/src/ai/controllers/v1/chat/event_types.py`
 - 创建：`server/python/tests/ai/unit/controllers/v1/chat/test_event_types_extension.py`
 
-- [ ] **步骤 1：编写事件类型测试**
+- [x] **步骤 1：编写事件类型测试**
 
 创建测试：
 
@@ -655,12 +655,12 @@ class TestEventTypeExtension:
         assert EventType.WARNING == "warning"
 ```
 
-- [ ] **步骤 2：运行测试验证失败**
+- [x] **步骤 2：运行测试验证失败**
 
 运行：`cd server/python && uv run pytest tests/ai/unit/controllers/v1/chat/test_event_types_extension.py -v`
 预期：FAIL，报错 "EventType has no attribute 'SOURCE_URL'"
 
-- [ ] **步骤 3：扩展 EventType 枚举**
+- [x] **步骤 3：扩展 EventType 枚举**
 
 修改文件：
 
@@ -705,12 +705,12 @@ class EventType(str, Enum):
     ERROR = "error"
 ```
 
-- [ ] **步骤 4：运行测试验证通过**
+- [x] **步骤 4：运行测试验证通过**
 
 运行：`cd server/python && uv run pytest tests/ai/unit/controllers/v1/chat/test_event_types_extension.py -v`
 预期：所有测试 PASS
 
-- [ ] **步骤 5：Commit**
+- [x] **步骤 5：Commit**
 
 ```bash
 git add server/python/src/ai/controllers/v1/chat/event_types.py \
@@ -737,7 +737,7 @@ Co-Authored-By: Happy <yesreply@happy.engineering>"
 - 修改：`web/vue/src/ai/types/index.ts`
 - 创建：`web/vue/tests/ai/unit/types/test_message_parts.test.ts`
 
-- [ ] **步骤 1：编写类型测试**
+- [x] **步骤 1：编写类型测试**
 
 创建测试：
 
@@ -807,12 +807,12 @@ describe('Message Part Types', () => {
 })
 ```
 
-- [ ] **步骤 2：运行测试验证失败**
+- [x] **步骤 2：运行测试验证失败**
 
 运行：`cd web/vue && pnpm test:unit tests/ai/unit/types/test_message_parts.test.ts --run`
 预期：FAIL，报错类型不存在
 
-- [ ] **步骤 3：扩展类型定义**
+- [x] **步骤 3：扩展类型定义**
 
 修改文件：
 
@@ -1065,12 +1065,12 @@ export interface DefaultModel {
 }
 ```
 
-- [ ] **步骤 4：运行测试验证通过**
+- [x] **步骤 4：运行测试验证通过**
 
 运行：`cd web/vue && pnpm test:unit tests/ai/unit/types/test_message_parts.test.ts --run`
 预期：所有测试 PASS
 
-- [ ] **步骤 5：Commit**
+- [x] **步骤 5：Commit**
 
 ```bash
 git add web/vue/src/ai/types/index.ts \
@@ -1100,7 +1100,7 @@ Co-Authored-By: Happy <yesreply@happy.engineering>"
 - 创建：`web/vue/src/components/ai-elements/source/index.ts`
 - 创建：`web/vue/tests/ai/unit/components/SourceRenderer.test.ts`
 
-- [ ] **步骤 1：编写 SourceUrlCard 组件测试**
+- [x] **步骤 1：编写 SourceUrlCard 组件测试**
 
 创建测试：
 
@@ -1140,12 +1140,12 @@ describe('SourceUrlCard', () => {
 })
 ```
 
-- [ ] **步骤 2：运行测试验证失败**
+- [x] **步骤 2：运行测试验证失败**
 
 运行：`cd web/vue && pnpm test:unit tests/ai/unit/components/SourceRenderer.test.ts --run`
 预期：FAIL，报错组件不存在
 
-- [ ] **步骤 3：实现 SourceUrlCard 组件**
+- [x] **步骤 3：实现 SourceUrlCard 组件**
 
 创建文件：
 
@@ -1180,12 +1180,12 @@ defineProps<Props>()
 </template>
 ```
 
-- [ ] **步骤 4：运行测试验证通过**
+- [x] **步骤 4：运行测试验证通过**
 
 运行：`cd web/vue && pnpm test:unit tests/ai/unit/components/SourceRenderer.test.ts --run`
 预期：测试 PASS
 
-- [ ] **步骤 5：编写 SourceDocumentCard 测试**
+- [x] **步骤 5：编写 SourceDocumentCard 测试**
 
 添加测试：
 
@@ -1227,7 +1227,7 @@ describe('SourceDocumentCard', () => {
 })
 ```
 
-- [ ] **步骤 6：实现 SourceDocumentCard 组件**
+- [x] **步骤 6：实现 SourceDocumentCard 组件**
 
 创建文件：
 
@@ -1265,12 +1265,12 @@ const handlePreview = () => {
 </template>
 ```
 
-- [ ] **步骤 7：运行所有 Source 测试**
+- [x] **步骤 7：运行所有 Source 测试**
 
 运行：`cd web/vue && pnpm test:unit tests/ai/unit/components/SourceRenderer.test.ts --run`
 预期：所有测试 PASS
 
-- [ ] **步骤 8：创建 SourceRenderer 主组件和导出**
+- [x] **步骤 8：创建 SourceRenderer 主组件和导出**
 
 创建文件：
 
@@ -1312,7 +1312,7 @@ export { default as SourceUrlCard } from './SourceUrlCard.vue'
 export { default as SourceDocumentCard } from './SourceDocumentCard.vue'
 ```
 
-- [ ] **步骤 9：Commit**
+- [x] **步骤 9：Commit**
 
 ```bash
 git add web/vue/src/components/ai-elements/source/ \
@@ -1339,7 +1339,7 @@ Co-Authored-By: Happy <yesreply@happy.engineering>"
 - 创建：`server/python/src/extended/langchain/callbacks/processors/file_processor.py`
 - 创建：`server/python/tests/extended/langchain/callbacks/processors/test_file_processor.py`
 
-- [ ] **步骤 1：编写 FileProcessor 测试**
+- [x] **步骤 1：编写 FileProcessor 测试**
 
 创建测试：
 
@@ -1398,12 +1398,12 @@ class TestFileProcessor:
         assert FileProcessor.supported_types() == ["file"]
 ```
 
-- [ ] **步骤 2：运行测试验证失败**
+- [x] **步骤 2：运行测试验证失败**
 
 运行：`cd server/python && uv run pytest tests/extended/langchain/callbacks/processors/test_file_processor.py -v`
 预期：FAIL，报错 "No module named 'extended.langchain.callbacks.processors.file_processor'"
 
-- [ ] **步骤 3：实现 FileProcessor**
+- [x] **步骤 3：实现 FileProcessor**
 
 创建文件：
 
@@ -1501,12 +1501,12 @@ class FileProcessor(UIPartProcessor):
         return files
 ```
 
-- [ ] **步骤 4：运行测试验证通过**
+- [x] **步骤 4：运行测试验证通过**
 
 运行：`cd server/python && uv run pytest tests/extended/langchain/callbacks/processors/test_file_processor.py -v`
 预期：所有测试 PASS
 
-- [ ] **步骤 5：Commit**
+- [x] **步骤 5：Commit**
 
 ```bash
 git add server/python/src/extended/langchain/callbacks/processors/file_processor.py \
@@ -1535,7 +1535,7 @@ Co-Authored-By: Happy <yesreply@happy.engineering>"
 - 创建：`web/vue/src/components/ai-elements/file/index.ts`
 - 创建：`web/vue/tests/ai/unit/components/FileRenderer.test.ts`
 
-- [ ] **步骤 1：编写 FileAttachment 组件测试**
+- [x] **步骤 1：编写 FileAttachment 组件测试**
 
 创建测试：
 
@@ -1591,12 +1591,12 @@ describe('FileAttachment', () => {
 })
 ```
 
-- [ ] **步骤 2：运行测试验证失败**
+- [x] **步骤 2：运行测试验证失败**
 
 运行：`cd web/vue && pnpm test:unit tests/ai/unit/components/FileRenderer.test.ts --run`
 预期：FAIL，报错组件不存在
 
-- [ ] **步骤 3：实现 FileAttachment 组件**
+- [x] **步骤 3：实现 FileAttachment 组件**
 
 创建文件：
 
@@ -1653,12 +1653,12 @@ const handlePreview = () => {
 </template>
 ```
 
-- [ ] **步骤 4：运行测试验证通过**
+- [x] **步骤 4：运行测试验证通过**
 
 运行：`cd web/vue && pnpm test:unit tests/ai/unit/components/FileRenderer.test.ts --run`
 预期：测试 PASS
 
-- [ ] **步骤 5：创建 FileRenderer 主组件和导出**
+- [x] **步骤 5：创建 FileRenderer 主组件和导出**
 
 创建文件：
 
@@ -1692,7 +1692,7 @@ export { default as FileAttachment } from './FileAttachment.vue'
 export { default as FileUploadButton } from './FileUploadButton.vue'
 ```
 
-- [ ] **步骤 6：Commit**
+- [x] **步骤 6：Commit**
 
 ```bash
 git add web/vue/src/components/ai-elements/file/ \
@@ -1720,7 +1720,7 @@ Co-Authored-By: Happy <yesreply@happy.engineering>"
 - 创建：`web/vue/src/components/ai-elements/file/FileUploadButton.vue`
 - 创建：`web/vue/tests/ai/unit/composables/useFileUpload.test.ts`
 
-- [ ] **步骤 1：编写 useFileUpload 测试**
+- [x] **步骤 1：编写 useFileUpload 测试**
 
 创建测试：
 
@@ -1753,12 +1753,12 @@ describe('useFileUpload', () => {
 })
 ```
 
-- [ ] **步骤 2：运行测试验证失败**
+- [x] **步骤 2：运行测试验证失败**
 
 运行：`cd web/vue && pnpm test:unit tests/ai/unit/composables/useFileUpload.test.ts --run`
 预期：FAIL，报错函数不存在
 
-- [ ] **步骤 3：实现 useFileUpload**
+- [x] **步骤 3：实现 useFileUpload**
 
 创建文件：
 
@@ -1813,7 +1813,7 @@ export function useFileUpload() {
 }
 ```
 
-- [ ] **步骤 4：实现 FileUploadButton**
+- [x] **步骤 4：实现 FileUploadButton**
 
 创建文件：
 
@@ -1872,12 +1872,12 @@ const handleButtonClick = () => {
 </template>
 ```
 
-- [ ] **步骤 5：运行测试验证通过**
+- [x] **步骤 5：运行测试验证通过**
 
 运行：`cd web/vue && pnpm test:unit tests/ai/unit/composables/useFileUpload.test.ts --run`
 预期：测试 PASS
 
-- [ ] **步骤 6：Commit**
+- [x] **步骤 6：Commit**
 
 ```bash
 git add web/vue/src/ai/composables/useFileUpload.ts \
@@ -1905,7 +1905,7 @@ Co-Authored-By: Happy <yesreply@happy.engineering>"
 - 创建：`server/python/src/extended/langchain/callbacks/processors/data_processor.py`
 - 创建：`server/python/tests/extended/langchain/callbacks/processors/test_data_processor.py`
 
-- [ ] **步骤 1：编写 DataProcessor 测试**
+- [x] **步骤 1：编写 DataProcessor 测试**
 
 创建测试：
 
@@ -1979,12 +1979,12 @@ class TestDataProcessor:
         assert DataProcessor.supported_types() == ["table", "json"]
 ```
 
-- [ ] **步骤 2：运行测试验证失败**
+- [x] **步骤 2：运行测试验证失败**
 
 运行：`cd server/python && uv run pytest tests/extended/langchain/callbacks/processors/test_data_processor.py -v`
 预期：FAIL，报错 "No module named 'extended.langchain.callbacks.processors.data_processor'"
 
-- [ ] **步骤 3：实现 DataProcessor**
+- [x] **步骤 3：实现 DataProcessor**
 
 创建文件：
 
@@ -2075,12 +2075,12 @@ class DataProcessor(UIPartProcessor):
         return data_items
 ```
 
-- [ ] **步骤 4：运行测试验证通过**
+- [x] **步骤 4：运行测试验证通过**
 
 运行：`cd server/python && uv run pytest tests/extended/langchain/callbacks/processors/test_data_processor.py -v`
 预期：所有测试 PASS
 
-- [ ] **步骤 5：Commit**
+- [x] **步骤 5：Commit**
 
 ```bash
 git add server/python/src/extended/langchain/callbacks/processors/data_processor.py \
@@ -2109,7 +2109,7 @@ Co-Authored-By: Happy <yesreply@happy.engineering>"
 - 创建：`web/vue/src/components/ai-elements/data/index.ts`
 - 创建：`web/vue/tests/ai/unit/components/DataRenderer.test.ts`
 
-- [ ] **步骤 1：编写 TableRenderer 和 JsonRenderer 组件测试**
+- [x] **步骤 1：编写 TableRenderer 和 JsonRenderer 组件测试**
 
 创建测试：
 
@@ -2155,12 +2155,12 @@ describe('JsonRenderer', () => {
 })
 ```
 
-- [ ] **步骤 2：运行测试验证失败**
+- [x] **步骤 2：运行测试验证失败**
 
 运行：`cd web/vue && pnpm test:unit tests/ai/unit/components/DataRenderer.test.ts --run`
 预期：FAIL，报错组件不存在
 
-- [ ] **步骤 3：实现 TableRenderer 组件**
+- [x] **步骤 3：实现 TableRenderer 组件**
 
 创建文件：
 
@@ -2211,7 +2211,7 @@ defineProps<Props>()
 </template>
 ```
 
-- [ ] **步骤 4：实现 JsonRenderer 组件**
+- [x] **步骤 4：实现 JsonRenderer 组件**
 
 创建文件：
 
@@ -2238,7 +2238,7 @@ const formattedJson = computed(() => {
 </template>
 ```
 
-- [ ] **步骤 5：创建 DataRenderer 主组件和导出**
+- [x] **步骤 5：创建 DataRenderer 主组件和导出**
 
 创建文件：
 
@@ -2275,12 +2275,12 @@ export { default as TableRenderer } from './TableRenderer.vue'
 export { default as JsonRenderer } from './JsonRenderer.vue'
 ```
 
-- [ ] **步骤 6：运行测试验证通过**
+- [x] **步骤 6：运行测试验证通过**
 
 运行：`cd web/vue && pnpm test:unit tests/ai/unit/components/DataRenderer.test.ts --run`
 预期：所有测试 PASS
 
-- [ ] **步骤 7：Commit**
+- [x] **步骤 7：Commit**
 
 ```bash
 git add web/vue/src/components/ai-elements/data/ \
@@ -2309,7 +2309,7 @@ Co-Authored-By: Happy <yesreply@happy.engineering>"
 - 创建：`server/python/src/ai/schemas/file.py`
 - 创建：`server/python/tests/ai/unit/controllers/v1/files/test_upload.py`
 
-- [ ] **步骤 1：编写文件上传接口测试**
+- [x] **步骤 1：编写文件上传接口测试**
 
 创建测试：
 
@@ -2358,12 +2358,12 @@ class TestFileUpload:
         assert response.status_code in [200, 400]
 ```
 
-- [ ] **步骤 2：运行测试验证失败**
+- [x] **步骤 2：运行测试验证失败**
 
 运行：`cd server/python && uv run pytest tests/ai/unit/controllers/v1/files/test_upload.py -v`
 预期：FAIL，报错接口不存在
 
-- [ ] **步骤 3：实现文件上传接口**
+- [x] **步骤 3：实现文件上传接口**
 
 创建文件：
 
@@ -2452,7 +2452,7 @@ router = APIRouter(prefix="/files", tags=["文件管理"])
 router.include_router(upload_router)
 ```
 
-- [ ] **步骤 4：注册路由到 AI 模块**
+- [x] **步骤 4：注册路由到 AI 模块**
 
 修改文件 `src/ai/module.py`：
 
@@ -2464,12 +2464,12 @@ from ai.controllers.v1.files import router as files_router
 app.include_router(files_router, prefix="/ai/console/v1")
 ```
 
-- [ ] **步骤 5：运行测试验证通过**
+- [x] **步骤 5：运行测试验证通过**
 
 运行：`cd server/python && uv run pytest tests/ai/unit/controllers/v1/files/test_upload.py -v`
 预期：所有测试 PASS
 
-- [ ] **步骤 6：Commit**
+- [x] **步骤 6：Commit**
 
 ```bash
 git add server/python/src/ai/controllers/v1/files/ \
@@ -2497,7 +2497,7 @@ Co-Authored-By: Happy <yesreply@happy.engineering>"
 - 修改：`server/python/src/ai/controllers/v1/chat/llm.py`
 - 创建：`server/python/tests/ai/unit/controllers/v1/chat/test_sse_extension.py`
 
-- [ ] **步骤 1：编写 SSE Generator 扩展测试**
+- [x] **步骤 1：编写 SSE Generator 扩展测试**
 
 创建测试：
 
@@ -2579,12 +2579,12 @@ class TestSSEExtension:
         assert any("table" in line for line in outputs)
 ```
 
-- [ ] **步骤 2：运行测试验证失败**
+- [x] **步骤 2：运行测试验证失败**
 
 运行：`cd server/python && uv run pytest tests/ai/unit/controllers/v1/chat/test_sse_extension.py -v`
 预期：FAIL，报错事件未处理
 
-- [ ] **步骤 3：扩展 SSE Generator**
+- [x] **步骤 3：扩展 SSE Generator**
 
 修改文件：
 
@@ -2630,12 +2630,12 @@ async def _sse_generator(
         yield f"event: error\ndata: {json.dumps({'error': str(e)})}\n\n"
 ```
 
-- [ ] **步骤 4：运行测试验证通过**
+- [x] **步骤 4：运行测试验证通过**
 
 运行：`cd server/python && uv run pytest tests/ai/unit/controllers/v1/chat/test_sse_extension.py -v`
 预期：所有测试 PASS
 
-- [ ] **步骤 5：Commit**
+- [x] **步骤 5：Commit**
 
 ```bash
 git add server/python/src/ai/controllers/v1/chat/llm.py \
@@ -2663,7 +2663,7 @@ Co-Authored-By: Happy <yesreply@happy.engineering>"
 - 修改：`web/vue/src/ai/composables/useChat.ts`
 - 创建：`web/vue/tests/ai/unit/composables/useChatExtension.test.ts`
 
-- [ ] **步骤 1：编写 useChat 扩展测试**
+- [x] **步骤 1：编写 useChat 扩展测试**
 
 创建测试：
 
@@ -2716,12 +2716,12 @@ describe('useChat Extension', () => {
 })
 ```
 
-- [ ] **步骤 2：运行测试验证失败**
+- [x] **步骤 2：运行测试验证失败**
 
 运行：`cd web/vue && pnpm test:unit tests/ai/unit/composables/useChatExtension.test.ts --run`
 预期：FAIL，报错事件未处理
 
-- [ ] **步骤 3：扩展 useChat**
+- [x] **步骤 3：扩展 useChat**
 
 修改文件：
 
@@ -2786,12 +2786,12 @@ if (event.type === 'warning') {
 }
 ```
 
-- [ ] **步骤 4：运行测试验证通过**
+- [x] **步骤 4：运行测试验证通过**
 
 运行：`cd web/vue && pnpm test:unit tests/ai/unit/composables/useChatExtension.test.ts --run`
 预期：测试 PASS
 
-- [ ] **步骤 5：Commit**
+- [x] **步骤 5：Commit**
 
 ```bash
 git add web/vue/src/ai/composables/useChat.ts \
@@ -2818,7 +2818,7 @@ Co-Authored-By: Happy <yesreply@happy.engineering>"
 **文件：**
 - 创建：`server/python/tests/ai/integration/test_ai_sdk_extension.py`
 
-- [ ] **步骤 1：编写完整的 SSE 事件流测试**
+- [x] **步骤 1：编写完整的 SSE 事件流测试**
 
 创建测试：
 
@@ -2944,12 +2944,12 @@ class TestAISDKExtensionIntegration:
         assert registry.get_processor("json") is not None
 ```
 
-- [ ] **步骤 2：运行集成测试**
+- [x] **步骤 2：运行集成测试**
 
 运行：`cd server/python && uv run pytest tests/ai/integration/test_ai_sdk_extension.py -v`
 预期：所有测试 PASS
 
-- [ ] **步骤 3：Commit**
+- [x] **步骤 3：Commit**
 
 ```bash
 git add server/python/tests/ai/integration/test_ai_sdk_extension.py
@@ -2973,7 +2973,7 @@ Co-Authored-By: Happy <yesreply@happy.engineering>"
 **文件：**
 - 创建：`web/vue/tests/ai/e2e/ai-sdk-extension.spec.ts`
 
-- [ ] **步骤 1：编写端到端用户交互测试**
+- [x] **步骤 1：编写端到端用户交互测试**
 
 创建测试：
 
@@ -3057,12 +3057,12 @@ test.describe('AI SDK Extension E2E', () => {
 })
 ```
 
-- [ ] **步骤 2：运行 E2E 测试**
+- [x] **步骤 2：运行 E2E 测试**
 
 运行：`cd web/vue && pnpm test:e2e tests/ai/e2e/ai-sdk-extension.spec.ts`
 预期：所有测试 PASS
 
-- [ ] **步骤 3：Commit**
+- [x] **步骤 3：Commit**
 
 ```bash
 git add web/vue/tests/ai/e2e/ai-sdk-extension.spec.ts
