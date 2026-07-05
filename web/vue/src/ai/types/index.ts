@@ -17,7 +17,17 @@ export type ReasoningStepType =
 /**
  * UI 消息部分类型
  */
-export type UIMessagePartType = "thinking" | "text" | "image" | "tool-call" | "tool-result";
+export type UIMessagePartType =
+  | "thinking"
+  | "text"
+  | "image"
+  | "tool-call"
+  | "tool-result"
+  | "source-url"
+  | "source-document"
+  | "file"
+  | "table"
+  | "json";
 
 /**
  * UI 消息部分基础接口
@@ -73,9 +83,59 @@ export interface ToolResultPart extends UIMessagePartBase {
 }
 
 /**
+ * 来源 URL 消息部分
+ */
+export interface SourceUrlPart extends UIMessagePartBase {
+  type: "source-url";
+  sourceId: string;
+  url: string;
+  title?: string;
+}
+
+/**
+ * 来源文档消息部分
+ */
+export interface SourceDocumentPart extends UIMessagePartBase {
+  type: "source-document";
+  sourceId: string;
+  mediaType: string;
+  url: string;
+  title?: string;
+}
+
+/**
+ * 文件消息部分
+ */
+export interface FilePart extends UIMessagePartBase {
+  type: "file";
+  mediaType: string;
+  url: string;
+  filename?: string;
+  size?: number;
+}
+
+/**
+ * 数据消息部分
+ */
+export interface DataPart extends UIMessagePartBase {
+  type: "table" | "json";
+  id: string;
+  content: unknown;
+}
+
+/**
  * UI 消息部分联合类型
  */
-export type UIMessagePart = ThinkingPart | TextPart | ImagePart | ToolCallPart | ToolResultPart;
+export type UIMessagePart =
+  | ThinkingPart
+  | TextPart
+  | ImagePart
+  | ToolCallPart
+  | ToolResultPart
+  | SourceUrlPart
+  | SourceDocumentPart
+  | FilePart
+  | DataPart;
 
 /**
  * 消息角色
