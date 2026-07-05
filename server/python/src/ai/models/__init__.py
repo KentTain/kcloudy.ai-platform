@@ -15,6 +15,7 @@ BaseModel = create_base_model(Base)
 from .conversation import Conversation
 from .enums import ConversationMode, ConversationStatus, MessageRole, MessageStatus
 from .message import Message
+from .message_metadata import MessageMetadata
 from .plugin import (
     CredentialScope,
     InstallType,
@@ -55,4 +56,5 @@ __all__ = [
     "MessageRole",
     "Conversation",
     "Message",
+    "MessageMetadata",
 ]
