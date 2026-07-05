@@ -7,7 +7,7 @@
 import { isRef, onScopeDispose, ref, type Ref, shallowRef, toValue, watch, watchEffect } from "vue";
 import { Chat } from "@ai-sdk/vue";
 import { DefaultChatTransport, type UIMessage as AiUIMessage } from "ai";
-import type { ModelConfig, UIMessage, ThinkingPart, UIMessagePart } from "@/ai/types";
+import type { ModelConfig, UIMessage, ThinkingPart, UIMessagePart, SourceUrlPart, SourceDocumentPart, FilePart, DataPart } from "@/ai/types";
 
 /**
  * 处理思考事件，重组消息 parts
@@ -19,18 +19,27 @@ function processThinkingEvents(messages: UIMessage[]): UIMessage[] {
   return messages.map((message) => {
     // 提取所有思考部分
     const thinkingParts: ThinkingPart[] = [];
+    const sourceParts: UIMessagePart[] = [];
+    const fileParts: UIMessagePart[] = [];
+    const dataParts: UIMessagePart[] = [];
     const otherParts: UIMessagePart[] = [];
 
     for (const part of message.parts) {
       if (part.type === "thinking") {
         thinkingParts.push(part as ThinkingPart);
+      } else if (part.type === "source-url" || part.type === "source-document") {
+        sourceParts.push(part);
+      } else if (part.type === "file") {
+        fileParts.push(part);
+      } else if (part.type === "table" || part.type === "json") {
+        dataParts.push(part);
       } else {
         otherParts.push(part);
       }
     }
 
-    // 如果没有思考部分，直接返回原消息
-    if (thinkingParts.length === 0) {
+    // 如果没有特殊部分，直接返回原消息
+    if (thinkingParts.length === 0 && sourceParts.length === 0 && fileParts.length === 0 && dataParts.length === 0) {
       return message;
     }
 
@@ -51,9 +60,12 @@ function processThinkingEvents(messages: UIMessage[]): UIMessage[] {
       }
     }
 
-    // 重组 parts：思考在前，其他部分在后
+    // 重组 parts：思考 → 来源 → 文件 → 数据 → 其他
     const reorderedParts: UIMessagePart[] = [
       ...Array.from(mergedThinkingParts.values()),
+      ...sourceParts,
+      ...fileParts,
+      ...dataParts,
       ...otherParts,
     ];
 
