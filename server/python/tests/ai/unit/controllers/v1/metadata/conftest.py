@@ -83,6 +83,18 @@ class _MockSession:
                 self._records[mid]["rating"] = obj.rating
                 self._records[mid]["feedback"] = obj.feedback
 
+    async def flush(self):
+        """模拟 SQLAlchemy session.flush()"""
+        now = datetime.now()
+        for obj in self.added_objects:
+            if hasattr(obj, "created_at") and obj.created_at is None:
+                obj.created_at = now
+            # 同步 mock 对象的 rating/feedback 变更到存储
+            mid = obj.message_id
+            if mid in self._records:
+                self._records[mid]["rating"] = obj.rating
+                self._records[mid]["feedback"] = obj.feedback
+
     async def refresh(self, obj):
         """模拟 SQLAlchemy session.refresh()"""
         now = datetime.now()

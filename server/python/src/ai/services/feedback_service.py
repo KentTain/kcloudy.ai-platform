@@ -21,8 +21,8 @@ class FeedbackService:
     提供反馈的提交、更新等业务逻辑方法。
     """
 
-    @staticmethod
     async def submit_feedback(
+        self,
         session: AsyncSession,
         tenant_id: str,
         user_id: str,
@@ -40,39 +40,34 @@ class FeedbackService:
             MessageMetadata: 消息元数据对象
         """
         # 检查是否已存在
-        try:
-            result = await session.execute(
-                select(MessageMetadata).where(
-                    MessageMetadata.message_id == request.message_id,
-                    MessageMetadata.tenant_id == tenant_id,
-                )
+        result = await session.execute(
+            select(MessageMetadata).where(
+                MessageMetadata.message_id == request.message_id,
+                MessageMetadata.tenant_id == tenant_id,
             )
-            metadata = result.scalar_one_or_none()
+        )
+        metadata = result.scalar_one_or_none()
 
-            if metadata:
-                # 更新反馈
-                metadata.rating = request.rating
-                metadata.feedback = request.feedback
-                _logger.info(f"Updated feedback for message {request.message_id}")
-            else:
-                # 创建新记录
-                metadata = MessageMetadata(
-                    message_id=request.message_id,
-                    tenant_id=tenant_id,
-                    user_id=user_id,
-                    rating=request.rating,
-                    feedback=request.feedback,
-                )
-                session.add(metadata)
-                _logger.info(f"Created feedback for message {request.message_id}")
+        if metadata:
+            # 更新反馈
+            metadata.rating = request.rating
+            metadata.feedback = request.feedback
+            _logger.info(f"Updated feedback for message {request.message_id}")
+        else:
+            # 创建新记录
+            metadata = MessageMetadata(
+                message_id=request.message_id,
+                tenant_id=tenant_id,
+                user_id=user_id,
+                rating=request.rating,
+                feedback=request.feedback,
+            )
+            session.add(metadata)
+            _logger.info(f"Created feedback for message {request.message_id}")
 
-            await session.commit()
-            await session.refresh(metadata)
-            return metadata
-        except Exception:
-            await session.rollback()
-            _logger.error(f"Failed to submit feedback for message {request.message_id}")
-            raise
+        await session.flush()
+        await session.refresh(metadata)
+        return metadata
 
 
 # 服务单例
