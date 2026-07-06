@@ -1418,7 +1418,7 @@ Co-Authored-By: Happy <yesreply@happy.engineering>"
 - 创建：`web/vue/src/components/ai-elements/metadata/index.ts`
 - 创建：`web/vue/tests/ai/unit/components/MessageFeedback.test.ts`
 
-- [ ] **步骤 1：编写 MessageFeedback 测试**
+- [x] **步骤 1：编写 MessageFeedback 测试**
 
 创建测试：
 
@@ -1462,12 +1462,12 @@ describe('MessageFeedback', () => {
 })
 ```
 
-- [ ] **步骤 2：运行测试验证失败**
+- [x] **步骤 2：运行测试验证失败**
 
 运行：`cd web/vue && pnpm test:unit tests/ai/unit/components/MessageFeedback.test.ts --run`
 预期：FAIL，报错组件不存在
 
-- [ ] **步骤 3：实现 MessageFeedback 组件**
+- [x] **步骤 3：实现 MessageFeedback 组件**
 
 创建文件：
 
@@ -1587,12 +1587,12 @@ export { default as MessageFeedback } from './MessageFeedback.vue'
 export { default as UsageStats } from './UsageStats.vue'
 ```
 
-- [ ] **步骤 4：运行测试验证通过**
+- [x] **步骤 4：运行测试验证通过**
 
 运行：`cd web/vue && pnpm test:unit tests/ai/unit/components/MessageFeedback.test.ts --run`
 预期：测试 PASS
 
-- [ ] **步骤 5：Commit**
+- [x] **步骤 5：Commit**
 
 ```bash
 git add web/vue/src/components/ai-elements/metadata/ \
