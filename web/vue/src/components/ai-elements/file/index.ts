@@ -1,2 +1,5 @@
 export { default as FileRenderer } from './FileRenderer.vue'
 export { default as FileAttachment } from './FileAttachment.vue'
+export { default as FilePreview } from './FilePreview.vue'
+export { default as PdfViewer } from './PdfViewer.vue'
+export { default as ImageViewer } from './ImageViewer.vue'

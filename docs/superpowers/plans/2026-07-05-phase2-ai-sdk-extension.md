@@ -1832,7 +1832,7 @@ Co-Authored-By: Happy <yesreply@happy.engineering>"
 - 创建：`web/vue/src/components/ai-elements/file/ImageViewer.vue`
 - 创建：`web/vue/tests/ai/unit/components/FilePreview.test.ts`
 
-- [ ] **步骤 1：编写 FilePreview 测试**
+- [x] **步骤 1：编写 FilePreview 测试**
 
 创建测试：
 
@@ -1878,16 +1878,16 @@ describe('FilePreview', () => {
 })
 ```
 
-- [ ] **步骤 2：运行测试验证失败**
+- [x] **步骤 2：运行测试验证失败**
 
 运行：`cd web/vue && pnpm test:unit tests/ai/unit/components/FilePreview.test.ts --run`
 预期：FAIL，报错组件不存在
 
-- [ ] **步骤 3：安装 PDF.js 依赖**
+- [x] **步骤 3：安装 PDF.js 依赖**
 
 运行：`cd web/vue && pnpm add pdfjs-dist`
 
-- [ ] **步骤 4：实现 PDF 查看器组件**
+- [x] **步骤 4：实现 PDF 查看器组件**
 
 创建文件：
 
@@ -1963,7 +1963,7 @@ const nextPage = () => {
 </template>
 ```
 
-- [ ] **步骤 5：实现图片查看器组件**
+- [x] **步骤 5：实现图片查看器组件**
 
 创建文件：
 
@@ -2023,7 +2023,7 @@ const rotateImage = () => {
 </template>
 ```
 
-- [ ] **步骤 6：实现 FilePreview 主组件**
+- [x] **步骤 6：实现 FilePreview 主组件**
 
 创建文件：
 
@@ -2099,7 +2099,7 @@ const downloadFile = () => {
 </template>
 ```
 
-- [ ] **步骤 7：更新文件组件索引**
+- [x] **步骤 7：更新文件组件索引**
 
 修改 `src/components/ai-elements/file/index.ts`：
 
@@ -2112,12 +2112,12 @@ export { default as PdfViewer } from './PdfViewer.vue'
 export { default as ImageViewer } from './ImageViewer.vue'
 ```
 
-- [ ] **步骤 8：运行测试验证通过**
+- [x] **步骤 8：运行测试验证通过**
 
 运行：`cd web/vue && pnpm test:unit tests/ai/unit/components/FilePreview.test.ts --run`
 预期：测试 PASS
 
-- [ ] **步骤 9：Commit**
+- [x] **步骤 9：Commit**
 
 ```bash
 git add web/vue/src/components/ai-elements/file/ \
