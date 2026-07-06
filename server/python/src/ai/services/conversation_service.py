@@ -5,11 +5,14 @@
 """
 
 import uuid
+from collections.abc import AsyncGenerator
+from typing import Any
 
 from loguru import logger
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from ai.components.skill.context_manager import skill_context_manager
 from ai.models.conversation import Conversation
 from ai.models.enums import ConversationMode, ConversationStatus
 from ai.models.message import Message
@@ -237,6 +240,113 @@ class ConversationService:
         )
         _logger.info(f"更新会话名称: {conversation_id} -> {name}")
         return True
+
+    async def chat_with_skill(
+        self,
+        conversation_id: str,
+        user_message: str,
+        skill_ids: list[str],
+        user_id: str,
+        tenant_id: str,
+    ) -> AsyncGenerator[dict[str, Any], None]:
+        """带 Skill 的对话
+
+        Args:
+            conversation_id: 会话 ID
+            user_message: 用户消息
+            skill_ids: Skill ID 列表
+            user_id: 用户 ID
+            tenant_id: 租户 ID
+
+        Yields:
+            dict[str, Any]: 对话结果流
+        """
+        if not skill_ids:
+            yield {
+                "type": "error",
+                "error": "未指定 Skill",
+                "conversation_id": conversation_id,
+            }
+            return
+
+        try:
+            skill_contexts = []
+            for skill_id in skill_ids:
+                context = await skill_context_manager.load_skill(
+                    skill_id=skill_id,
+                    user_id=user_id,
+                    tenant_id=tenant_id,
+                    conversation_id=conversation_id,
+                )
+                skill_contexts.append(context)
+
+            if len(skill_contexts) == 1:
+                result = await skill_context_manager.invoke_skill(
+                    skill_ids[0], user_message
+                )
+            else:
+                result = await self._invoke_multi_skills(
+                    skill_contexts, user_message
+                )
+
+            yield {
+                "type": "chunk",
+                "content": result,
+                "conversation_id": conversation_id,
+                "skill_ids": skill_ids,
+            }
+
+            yield {
+                "type": "complete",
+                "message": result,
+                "conversation_id": conversation_id,
+                "skill_ids": skill_ids,
+            }
+
+        except Exception as e:
+            yield {
+                "type": "error",
+                "error": str(e),
+                "conversation_id": conversation_id,
+                "skill_ids": skill_ids,
+            }
+
+    async def _invoke_multi_skills(
+        self,
+        skill_contexts: list[Any],
+        user_message: str,
+    ) -> str:
+        """多 Skill 组合调用
+
+        Args:
+            skill_contexts: Skill 上下文列表
+            user_message: 用户消息
+
+        Returns:
+            str: 组合结果
+        """
+        # 简化实现：依次调用每个 Skill 并组合结果
+        results = []
+        for context in skill_contexts:
+            result = await skill_context_manager.invoke_skill(
+                context.skill_id, user_message
+            )
+            results.append(f"[{context.skill_name}] {result}")
+
+        return "\n\n".join(results)
+
+    async def _get_llm_for_skill(self, skill_context: Any) -> Any:
+        """获取 Skill 对应的 LLM 实例
+
+        Args:
+            skill_context: Skill 上下文
+
+        Returns:
+            LLM 实例
+        """
+        # TODO: 根据 Skill 配置获取对应的 LLM 实例
+        # 当前返回 None，后续可扩展
+        return None
 
 
 # 服务单例
