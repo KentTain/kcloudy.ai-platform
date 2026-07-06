@@ -2704,7 +2704,7 @@ Co-Authored-By: Happy <yesreply@happy.engineering>"
 **文件：**
 - 创建：`web/vue/tests/ai/e2e/phase2-extension.spec.ts`
 
-- [ ] **步骤 1：编写端到端测试**
+- [x] **步骤 1：编写端到端测试**
 
 创建测试：
 
@@ -2766,12 +2766,12 @@ test.describe('Phase 2 E2E', () => {
 })
 ```
 
-- [ ] **步骤 2：运行 E2E 测试**
+- [x] **步骤 2：运行 E2E 测试**
 
 运行：`cd web/vue && pnpm test:e2e tests/ai/e2e/phase2-extension.spec.ts`
 预期：所有测试 PASS
 
-- [ ] **步骤 3：Commit**
+- [x] **步骤 3：Commit**
 
 ```bash
 git add web/vue/tests/ai/e2e/phase2-extension.spec.ts
