@@ -105,6 +105,7 @@ class RemotePluginResponse(BaseModel):
     author: str = Field(..., description="作者")
     icon: str | None = Field(default=None, description="图标")
     plugin_type: str = Field(..., description="插件类型")
+    skill_type: str | None = Field(default=None, description="Skill 类型：knowledge | script")
     tags: list[str] = Field(default_factory=list, description="标签列表")
     downloads: int | None = Field(default=None, description="下载次数")
     download_url: str = Field(..., description="下载地址")
@@ -120,6 +121,7 @@ class RemotePluginResponse(BaseModel):
             author=info.author,
             icon=info.icon,
             plugin_type=info.plugin_type,
+            skill_type=getattr(info, "skill_type", None),
             tags=info.tags,
             downloads=info.downloads,
             download_url=info.download_url,

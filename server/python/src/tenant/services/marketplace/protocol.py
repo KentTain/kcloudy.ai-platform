@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from typing import TYPE_CHECKING, Protocol
 
@@ -20,13 +20,15 @@ class RemotePluginInfo:
     version: str  # 版本
     author: str  # 作者
     icon: str | None  # 图标 URL
-    plugin_type: str  # tool/model/agent
-    tags: list[str]  # 标签
-    downloads: int | None  # 下载量
+    plugin_type: str  # tool/model/agent/skill
     manifest_url: str | None  # 清单文件 URL
     download_url: str  # 下载地址
     created_at: datetime | None
     updated_at: datetime | None
+    skill_type: str | None = None  # Skill 类型：knowledge(知识文档) | script(简单脚本)
+    skill_metadata: dict | None = None  # Skill 特有元数据
+    tags: list[str] = field(default_factory=list)  # 标签
+    downloads: int | None = None  # 下载量
 
 
 @dataclass
