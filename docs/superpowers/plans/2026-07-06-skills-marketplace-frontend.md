@@ -1363,9 +1363,9 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 **前置依赖：** 计划 1（后端基础）和计划 2（运行时与 LangChain 集成）已完成。
 
 **完整计划系列：**
-- 计划 1：后端基础（Phase 1-3）✅ 已完成
-- 计划 2：运行时与 LangChain 集成（Phase 4-6）✅ 已完成
-- 计划 3：前端集成（Phase 7）✅ 本计划
+- 计划 1：后端基础（Phase 1-3），计划文档：`docs/superpowers/plans/2026-07-06-skills-marketplace-backend-foundation.md` ✅ 已完成
+- 计划 2：运行时与 LangChain 集成（Phase 4-6），计划文档：`docs/superpowers/plans/2026-07-06-skills-marketplace-runtime-langchain.md` ✅ 已完成
+- 计划 3：前端集成（Phase 7），计划文档：`docs/superpowers/plans/2026-07-06-skills-marketplace-frontend.md` ✅ 本计划
 
 **两种执行方式：**
 

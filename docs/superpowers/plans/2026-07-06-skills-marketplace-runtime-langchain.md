@@ -2981,7 +2981,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 **前置依赖：** 计划 1（后端基础）已完成。
 
 **后续计划：**
-- 计划 3：前端集成（Phase 7）
+- 计划 3：前端集成（Phase 7），计划文档：`docs/superpowers/plans/2026-07-06-skills-marketplace-frontend.md`
 
 **两种执行方式：**
 

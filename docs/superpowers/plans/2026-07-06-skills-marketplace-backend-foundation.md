@@ -1610,7 +1610,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 - 修改：`server/python/src/tenant/services/marketplace/adapters/__init__.py`
 - 测试：无（由集成测试覆盖）
 
-- [ ] **步骤 1：更新适配器 __init__.py 导出**
+- [ ] **步骤 1：更新适配器 **init**.py 导出**
 
 修改 `server/python/src/tenant/services/marketplace/adapters/__init__.py`，新增三个适配器的导入：
 
@@ -2104,7 +2104,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 **本计划覆盖范围：** Phase 1-3（数据模型 + 存储服务 + 市场适配器），共 9 个任务，能独立产出可测试的后端基础功能。
 
 **后续计划：**
-- 计划 2：运行时与 LangChain 集成（Phase 4-6）
+- 计划 2：运行时与 LangChain 集成（Phase 4-6），计划文档：`docs/superpowers/plans/2026-07-06-skills-marketplace-runtime-langchain.md`
 - 计划 3：前端集成（Phase 7）
 
 **两种执行方式：**
