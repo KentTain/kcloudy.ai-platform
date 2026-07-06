@@ -1007,7 +1007,7 @@ Co-Authored-By: Happy <yesreply@happy.engineering>"
 - 创建：`web/vue/src/ai/composables/useChunkedUpload.ts`
 - 创建：`web/vue/tests/ai/unit/composables/useChunkedUpload.test.ts`
 
-- [ ] **步骤 1：编写 useChunkedUpload 测试**
+- [x] **步骤 1：编写 useChunkedUpload 测试**
 
 创建测试：
 
@@ -1059,12 +1059,12 @@ describe('useChunkedUpload', () => {
 })
 ```
 
-- [ ] **步骤 2：运行测试验证失败**
+- [x] **步骤 2：运行测试验证失败**
 
 运行：`cd web/vue && pnpm test:unit tests/ai/unit/composables/useChunkedUpload.test.ts --run`
 预期：FAIL，报错模块不存在
 
-- [ ] **步骤 3：实现 useChunkedUpload**
+- [x] **步骤 3：实现 useChunkedUpload**
 
 创建文件：
 
@@ -1235,16 +1235,16 @@ export function useChunkedUpload() {
 }
 ```
 
-- [ ] **步骤 4：安装依赖**
+- [x] **步骤 4：安装依赖**
 
 运行：`cd web/vue && pnpm add spark-md5 && pnpm add -D @types/spark-md5`
 
-- [ ] **步骤 5：运行测试验证通过**
+- [x] **步骤 5：运行测试验证通过**
 
 运行：`cd web/vue && pnpm test:unit tests/ai/unit/composables/useChunkedUpload.test.ts --run`
 预期：测试 PASS
 
-- [ ] **步骤 6：Commit**
+- [x] **步骤 6：Commit**
 
 ```bash
 git add web/vue/src/ai/composables/useChunkedUpload.ts \
