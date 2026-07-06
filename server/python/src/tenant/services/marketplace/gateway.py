@@ -12,6 +12,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from tenant.models import TenantPluginDefinition, TenantPluginMarketplace
 from tenant.services.marketplace.adapters.dify_adapter import DifyAdapter
 from tenant.services.marketplace.adapters.modelscope_adapter import ModelScopeAdapter
+from tenant.services.marketplace.adapters.agentskills_adapter import AgentSkillsAdapter
+from tenant.services.marketplace.adapters.local_skill_adapter import LocalSkillAdapter
+from tenant.services.marketplace.adapters.modelscope_skill_adapter import (
+    ModelScopeSkillAdapter,
+)
 from tenant.services.marketplace.protocol import (
     MarketplaceAdapter,
     MarketplaceTestResult,
@@ -29,6 +34,9 @@ class MarketplaceGateway:
     _adapters: dict[str, type] = {
         "dify": DifyAdapter,
         "modelscope": ModelScopeAdapter,
+        "agentskills": AgentSkillsAdapter,
+        "modelscope-skill": ModelScopeSkillAdapter,
+        "local-skill": LocalSkillAdapter,
     }
 
     def _get_adapter(self, market_type: str) -> MarketplaceAdapter:
@@ -361,6 +369,112 @@ class MarketplaceGateway:
             "new_version": local_def.local_version or old_version,
             "status": "updated" if sync_result["success"] else "failed",
         }
+
+    async def sync_skill_from_marketplace(
+        self,
+        session: AsyncSession,
+        marketplace_id: str,
+        skill_id: str,
+    ) -> TenantPluginDefinition:
+        """从市场同步单个 Skill 到本地
+
+        Args:
+            session: 数据库会话
+            marketplace_id: 市场 ID
+            skill_id: Skill ID（格式：author/name）
+
+        Returns:
+            TenantPluginDefinition: 创建或更新的插件定义
+
+        Raises:
+            ValueError: 市场不存在或 Skill 不存在
+        """
+        from tenant.services.plugin_storage_service import plugin_storage_service
+
+        marketplace = await self.get_marketplace(session, marketplace_id)
+        if not marketplace:
+            raise ValueError(f"市场不存在: {marketplace_id}")
+        if not marketplace.is_enabled:
+            raise ValueError(f"市场已禁用: {marketplace.name}")
+
+        adapter = self._get_adapter(marketplace.type)
+        config = self._build_adapter_config(marketplace)
+
+        # 1. 获取 Skill 元数据
+        skill_info = await adapter.get_plugin(config, skill_id)
+        if not skill_info:
+            raise ValueError(f"Skill 不存在: {skill_id}")
+
+        # 2. 下载 Skill 包
+        skill_data, checksum = await adapter.download_plugin(
+            config, skill_id, version=skill_info.version
+        )
+
+        # 3. 上传到 MinIO
+        storage_key = await plugin_storage_service.upload_skill_package(
+            skill_id=skill_id,
+            skill_data=skill_data,
+            checksum=checksum,
+            version=skill_info.version,
+        )
+
+        # 4. 构建 declaration
+        skill_runtime = "none" if skill_info.skill_type == "knowledge" else "sandbox"
+        declaration = {
+            "skill": {
+                "skill_type": skill_info.skill_type or "knowledge",
+                "runtime": skill_runtime,
+            },
+            "metadata": {
+                "name": skill_info.name,
+                "description": skill_info.description,
+                "version": skill_info.version,
+                "author": skill_info.author,
+                "tags": skill_info.tags,
+            },
+        }
+
+        # 5. 检查是否已存在
+        existing = await session.execute(
+            select(TenantPluginDefinition).where(
+                TenantPluginDefinition.plugin_id == skill_id,
+                TenantPluginDefinition.is_enabled == True,  # noqa: E712
+            )
+        )
+        existing_def = existing.scalar_one_or_none()
+
+        if existing_def:
+            # 更新现有记录
+            existing_def.declaration = declaration
+            existing_def.skill_type = skill_info.skill_type
+            existing_def.runtime_type = skill_runtime
+            existing_def.remote_version = skill_info.version
+            existing_def.local_version = skill_info.version
+            existing_def.update_available = False
+            existing_def.source_type = "remote"
+            existing_def.marketplace_id = marketplace_id
+            await session.flush()
+            return existing_def
+
+        # 6. 创建新记录
+        new_def = TenantPluginDefinition(
+            plugin_id=skill_id,
+            plugin_unique_identifier=f"{skill_id}:{skill_info.version}@{checksum}",
+            declaration=declaration,
+            refers=0,
+            install_type="remote",
+            manifest_type="skill",
+            skill_type=skill_info.skill_type,
+            runtime_type=skill_runtime,
+            marketplace_id=marketplace_id,
+            remote_plugin_id=skill_id,
+            remote_version=skill_info.version,
+            local_version=skill_info.version,
+            source_type="remote",
+        )
+        session.add(new_def)
+        await session.flush()
+        return new_def
 
 
 # 单例实例
