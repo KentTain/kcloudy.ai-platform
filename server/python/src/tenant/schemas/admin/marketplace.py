@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import ClassVar
 
 from framework.schemas import BaseModel, BasePaginatedQuery
 from pydantic import Field
@@ -64,12 +65,19 @@ class MarketplaceResponse(BaseModel):
     last_sync_at: datetime | None = Field(default=None, description="最后同步时间")
     last_sync_status: str | None = Field(default=None, description="最后同步状态")
     description: str | None = Field(default=None, description="市场描述")
+    supported_types: list[str] = Field(default_factory=list, description="市场支持的插件类型")
     created_at: datetime | None = Field(default=None, description="创建时间")
     updated_at: datetime | None = Field(default=None, description="更新时间")
+
+    SKILL_MARKET_TYPES: ClassVar[set[str]] = {"agentskills", "modelscope-skill", "local-skill"}
 
     @classmethod
     def from_entity(cls, entity) -> MarketplaceResponse:
         """从实体转换"""
+        supported_types = (
+            ["skill"] if entity.type in cls.SKILL_MARKET_TYPES
+            else ["tool", "model", "agent", "extension"]
+        )
         return cls(
             id=entity.id,
             name=entity.name,
@@ -81,6 +89,7 @@ class MarketplaceResponse(BaseModel):
             last_sync_at=entity.last_sync_at,
             last_sync_status=entity.last_sync_status,
             description=entity.description,
+            supported_types=supported_types,
             created_at=entity.created_at,
             updated_at=entity.updated_at,
         )
@@ -175,6 +184,34 @@ class ApplyUpdateResult(BaseModel):
     old_version: str = Field(..., description="旧版本")
     new_version: str = Field(..., description="新版本")
     status: str = Field(..., description="状态")
+
+
+# ==================== 插件定义响应 ====================
+
+
+class PluginDefinitionResponse(BaseModel):
+    """插件定义响应（简要）"""
+
+    plugin_id: str = Field(..., description="插件ID")
+    plugin_unique_identifier: str = Field(..., description="插件唯一标识符")
+    manifest_type: str | None = Field(default=None, description="清单类型")
+    skill_type: str | None = Field(default=None, description="Skill 类型")
+    runtime_type: str | None = Field(default=None, description="运行时类型")
+    source_type: str = Field(default="remote", description="来源类型")
+    is_enabled: bool = Field(default=True, description="是否启用")
+
+    @classmethod
+    def from_entity(cls, entity) -> PluginDefinitionResponse:
+        """从实体转换"""
+        return cls(
+            plugin_id=entity.plugin_id,
+            plugin_unique_identifier=entity.plugin_unique_identifier,
+            manifest_type=entity.manifest_type,
+            skill_type=entity.skill_type,
+            runtime_type=entity.runtime_type,
+            source_type=entity.source_type,
+            is_enabled=entity.is_enabled,
+        )
 
 
 # ==================== 查询 Schema ====================

@@ -40,30 +40,23 @@ function formatDate(dateStr?: string): string {
 
 // 获取市场类型图标
 function getTypeIcon(type: string) {
-  switch (type) {
-    case "official":
-      return CheckCircle;
-    case "community":
-      return Globe;
-    case "private":
-      return Server;
-    default:
-      return Globe;
-  }
+  if (type.startsWith("local")) return Server;
+  if (type === "dify" || type === "agentskills") return CheckCircle;
+  return Globe;
 }
 
 // 获取市场类型标签
+const typeLabelMap: Record<string, string> = {
+  dify: "Dify 市场",
+  modelscope: "ModelScope 市场",
+  agentskills: "AgentSkills 市场",
+  "modelscope-skill": "ModelScope Skill",
+  "local-skill": "本地 Skill 目录",
+  "local-plugin": "本地 Plugin 目录",
+};
+
 function getTypeLabel(type: string): string {
-  switch (type) {
-    case "official":
-      return "官方";
-    case "community":
-      return "社区";
-    case "private":
-      return "私有";
-    default:
-      return type;
-  }
+  return typeLabelMap[type] || type;
 }
 
 // 列定义
@@ -261,7 +254,7 @@ const handleCheckUpdates = async (marketplace: Marketplace) => {
 
 // 浏览远程插件
 const handleBrowse = (marketplace: Marketplace) => {
-  router.push(`/admin/marketplaces/${marketplace.id}/plugins`);
+  router.push(`/admin/marketplaces/${marketplace.id}/browse`);
 };
 
 // 编辑

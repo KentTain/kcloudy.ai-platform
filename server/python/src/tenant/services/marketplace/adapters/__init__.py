@@ -7,6 +7,7 @@ from tenant.services.marketplace.adapters.modelscope_skill_adapter import (
     ModelScopeSkillAdapter,
 )
 from tenant.services.marketplace.adapters.local_skill_adapter import LocalSkillAdapter
+from tenant.services.marketplace.adapters.local_plugin_adapter import LocalPluginAdapter
 
 __all__ = [
     "DifyAdapter",
@@ -14,4 +15,5 @@ __all__ = [
     "AgentSkillsAdapter",
     "ModelScopeSkillAdapter",
     "LocalSkillAdapter",
+    "LocalPluginAdapter",
 ]

@@ -13,6 +13,7 @@ export interface Marketplace {
   last_sync_at?: string;
   last_sync_status?: string;
   description?: string;
+  supported_types?: string[];
   created_at?: string;
   updated_at?: string;
 }

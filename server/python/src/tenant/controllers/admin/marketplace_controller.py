@@ -27,6 +27,7 @@ from tenant.schemas.admin.marketplace import (
     MarketplaceResponse,
     MarketplaceTestResponse,
     MarketplaceUpdate,
+    PluginDefinitionResponse,
     PluginUpdateResponse,
     RemotePluginResponse,
     SyncPluginsRequest,
@@ -301,5 +302,33 @@ async def apply_update(
         )
         await session.commit()
         return ApiResponse.success(data=ApplyUpdateResult(**result).model_dump())
+    except ValueError as e:
+        return ApiResponse.fail(msg=str(e))
+
+
+@router.post("/marketplaces/{marketplace_id}/skills/{skill_id:path}/sync")
+async def sync_skill_from_marketplace(
+    marketplace_id: str,
+    skill_id: str,
+    _perm: None = Depends(require_admin_permission("tenant:marketplace:write")),
+    session: AsyncSession = Depends(get_db_session),
+) -> ApiResponse:
+    """
+    从市场同步单个 Skill
+
+    场景：平台管理员从远程市场同步单个 Skill 到本地
+    WHEN 管理员请求 POST /tenant/admin/v1/marketplaces/{id}/skills/{skillId}/sync
+    THEN 同步 Skill 并返回创建的插件定义
+    """
+    try:
+        definition = await marketplace_gateway.sync_skill_from_marketplace(
+            session=session,
+            marketplace_id=marketplace_id,
+            skill_id=skill_id,
+        )
+        await session.commit()
+        return ApiResponse.success(
+            data=PluginDefinitionResponse.from_entity(definition).model_dump()
+        )
     except ValueError as e:
         return ApiResponse.fail(msg=str(e))

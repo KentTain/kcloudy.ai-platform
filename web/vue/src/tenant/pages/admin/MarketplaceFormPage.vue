@@ -26,7 +26,7 @@ const saving = ref(false);
 const form = ref({
   name: "",
   code: "",
-  type: "community",
+  type: "dify",
   url: "",
   description: "",
   is_enabled: true,
@@ -35,12 +35,25 @@ const form = ref({
 // 表单验证错误
 const errors = ref<Record<string, string>>({});
 
-// 市场类型选项
+// 市场类型选项（与后端适配器类型对齐）
 const typeOptions = [
-  { value: "official", label: "官方市场" },
-  { value: "community", label: "社区市场" },
-  { value: "private", label: "私有市场" },
+  { value: "dify", label: "Dify 市场" },
+  { value: "modelscope", label: "ModelScope 市场" },
+  { value: "agentskills", label: "AgentSkills 市场" },
+  { value: "modelscope-skill", label: "ModelScope Skill" },
+  { value: "local-skill", label: "本地 Skill 目录" },
+  { value: "local-plugin", label: "本地 Plugin 目录" },
 ];
+
+// 是否为本地类型（使用路径而非 URL）
+const isLocalType = computed(
+  () => form.value.type === "local-skill" || form.value.type === "local-plugin",
+);
+
+// URL 字段占位符
+const urlPlaceholder = computed(() =>
+  isLocalType.value ? "例如: /data/plugins 或 file:///data/plugins" : "例如: https://marketplace.dify.ai",
+);
 
 // 加载市场详情（编辑模式）
 const loadMarketplace = async () => {
@@ -54,7 +67,7 @@ const loadMarketplace = async () => {
       form.value = {
         name: data.name,
         code: data.code,
-        type: data.type || "community",
+        type: data.type || "dify",
         url: data.url,
         description: data.description || "",
         is_enabled: data.is_enabled,
@@ -83,8 +96,8 @@ const validateForm = (): boolean => {
   }
 
   if (!form.value.url.trim()) {
-    errors.value.url = "请输入市场地址";
-  } else {
+    errors.value.url = isLocalType.value ? "请输入目录路径" : "请输入市场地址";
+  } else if (!isLocalType.value) {
     try {
       new URL(form.value.url);
     } catch {
@@ -223,23 +236,23 @@ onMounted(() => {
             </SelectContent>
           </Select>
           <p class="text-muted-foreground text-xs">
-            官方市场由平台维护，社区市场由社区维护，私有市场为自建市场
+            选择市场适配器类型。本地类型扫描服务器目录，远程类型连接外部市场 API
           </p>
         </div>
 
         <!-- 市场地址 -->
         <div class="space-y-2">
-          <Label for="url">市场地址 <span class="text-destructive">*</span></Label>
+          <Label for="url">{{ isLocalType ? '目录路径' : '市场地址' }} <span class="text-destructive">*</span></Label>
           <Input
             id="url"
             v-model="form.url"
-            placeholder="例如: https://marketplace.dify.ai"
+            :placeholder="urlPlaceholder"
             data-testid="url-input"
             :class="{ 'border-destructive': errors.url }"
           />
           <p v-if="errors.url" class="text-destructive text-xs">{{ errors.url }}</p>
           <p v-else class="text-muted-foreground text-xs">
-            插件市场的 API 地址，需要支持 Dify 插件市场协议
+            {{ isLocalType ? '本地插件包或 Skill 文件所在的目录路径' : '插件市场的 API 地址，需要支持对应市场协议' }}
           </p>
         </div>
 
