@@ -122,5 +122,15 @@ class TenantPluginDefinition(BaseModel, AuditMixin, ActiveRecordMixin):
         server_default=sa.text("'local'"),
         comment="来源类型：local, remote",
     )
+    skill_type: Mapped[str | None] = mapped_column(
+        String(16),
+        nullable=True,
+        comment="Skill 类型：knowledge(知识文档) | script(简单脚本)。仅 plugin_type='skill' 时使用",
+    )
+    runtime_type: Mapped[str | None] = mapped_column(
+        String(16),
+        nullable=True,
+        comment="运行时类型：none(零隔离) | sandbox(轻量级沙箱) | local(本地进程)",
+    )
 
     __table_args__ = ({"comment": "插件定义表"},)
