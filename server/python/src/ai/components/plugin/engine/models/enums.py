@@ -26,6 +26,8 @@ class RuntimeType(EnumBase):
     LOCAL = "local"
     REMOTE = "remote"
     CONTAINER = "container"
+    SANDBOX = "sandbox"  # 轻量级沙箱（Skill 脚本）
+    NONE = "none"  # 零隔离（Skill 知识文档）
 
 
 class PluginType(EnumBase):
@@ -36,6 +38,7 @@ class PluginType(EnumBase):
     AGENT = "agent"  # AI代理插件
     OAUTH = "oauth"  # OAuth认证插件
     ENDPOINT = "endpoint"  # 端点插件
+    SKILL = "skill"  # 技能插件（知识文档 + 简单脚本）
 
 
 class InstallType(EnumBase):
