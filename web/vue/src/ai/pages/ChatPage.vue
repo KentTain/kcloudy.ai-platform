@@ -14,6 +14,8 @@ import { Message, MessageContent, MessageActions, MessageAction } from "@/compon
 import { PromptInput, PromptInputTextarea, PromptInputSubmit } from "@/components/ai-elements/prompt-input";
 import { MessageResponse } from "@/components/ai-elements/message";
 import { ThinkingBlock } from "@/components/ai-elements/thinking";
+import { MessageFeedback } from "@/components/ai-elements/metadata";
+import { FilePreview } from "@/components/ai-elements/file";
 import { useChat } from "@/ai/composables";
 import { useConversationStore } from "@/ai/stores";
 import { RotateCcw, Square, Trash2, PanelRight, Plus, Loader2 } from "lucide-vue-next";
@@ -54,6 +56,13 @@ const panelOpen = ref(true);
 const deleteDialogOpen = ref(false);
 const conversationToDelete = ref<ConversationType | null>(null);
 const deleteLoading = ref(false);
+
+// 文件预览状态
+const previewFile = ref<{
+  mediaType: string;
+  url: string;
+  filename?: string;
+} | null>(null);
 
 // 使用 useChat composable
 const { messages, isLoading, error, sendMessage, stop, regenerate, setInput, reload } = useChat({
@@ -306,6 +315,10 @@ const mergeToolParts = (parts: (ToolCallPart | ToolResultPart)[]): (ToolCallPart
                   />
                 </MessageContent>
                 <MessageActions v-if="message.role === 'assistant'">
+                  <!-- 反馈组件 -->
+                  <MessageFeedback :message-id="message.id" />
+
+                  <!-- 重新生成按钮 -->
                   <MessageAction tooltip="重新生成" @click="handleRegenerate">
                     <RotateCcw class="size-4" />
                   </MessageAction>

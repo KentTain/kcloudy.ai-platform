@@ -2511,7 +2511,7 @@ Co-Authored-By: Happy <yesreply@happy.engineering>"
 **文件：**
 - 修改：`web/vue/src/ai/pages/ChatPage.vue`
 
-- [ ] **步骤 1：集成 MessageFeedback 组件**
+- [x] **步骤 1：集成 MessageFeedback 组件**
 
 修改 ChatPage.vue，在消息操作区域添加反馈组件：
 
@@ -2544,7 +2544,7 @@ import { MessageFeedback } from '@/components/ai-elements/metadata'
 </template>
 ```
 
-- [ ] **步骤 2：集成 FilePreview 组件**
+- [x] **步骤 2：集成 FilePreview 组件**
 
 添加文件预览功能：
 
@@ -2587,7 +2587,7 @@ const handleFilePreview = (file: any) => {
 </template>
 ```
 
-- [ ] **步骤 3：Commit**
+- [x] **步骤 3：Commit**
 
 ```bash
 git add web/vue/src/ai/pages/ChatPage.vue
