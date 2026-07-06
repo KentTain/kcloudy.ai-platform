@@ -51,7 +51,7 @@
 - 修改：`server/python/src/ai/components/plugin/engine/models/enums.py`
 - 测试：无（枚举扩展，由后续任务测试）
 
-- [ ] **步骤 1：扩展 PluginType 枚举**
+- [x] **步骤 1：扩展 PluginType 枚举**
 
 修改 `server/python/src/ai/components/plugin/engine/models/enums.py`，在 `PluginType` 类中新增 `SKILL` 成员：
 
@@ -67,7 +67,7 @@ class PluginType(EnumBase):
     SKILL = "skill"  # 技能插件（知识文档 + 简单脚本）
 ```
 
-- [ ] **步骤 2：扩展 RuntimeType 枚举**
+- [x] **步骤 2：扩展 RuntimeType 枚举**
 
 在同一文件的 `RuntimeType` 类中新增 `SANDBOX` 和 `NONE` 成员：
 
@@ -82,19 +82,19 @@ class RuntimeType(EnumBase):
     NONE = "none"  # 零隔离（Skill 知识文档）
 ```
 
-- [ ] **步骤 3：验证枚举扩展正确**
+- [x] **步骤 3：验证枚举扩展正确**
 
 运行：`cd server/python && uv run python -c "from ai.components.plugin.engine.models.enums import PluginType, RuntimeType; print([e.value for e in PluginType]); print([e.value for e in RuntimeType])"`
 
 预期：输出包含 `skill`、`sandbox`、`none`
 
-- [ ] **步骤 4：运行现有测试确认无回归**
+- [x] **步骤 4：运行现有测试确认无回归**
 
 运行：`cd server/python && uv run pytest tests/ai/ -v -k "enum" --no-header 2>&1 | tail -10`
 
 预期：现有测试通过（如无相关测试则无失败）
 
-- [ ] **步骤 5：Commit**
+- [x] **步骤 5：Commit**
 
 ```bash
 cd server/python
@@ -114,7 +114,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 - 创建：`server/python/src/ai/components/plugin/engine/core/exceptions.py`
 - 测试：无（异常定义，由运行时测试覆盖）
 
-- [ ] **步骤 1：创建异常体系文件**
+- [x] **步骤 1：创建异常体系文件**
 
 创建 `server/python/src/ai/components/plugin/engine/core/exceptions.py`：
 
@@ -179,13 +179,13 @@ class SkillTimeoutError(SkillError):
         super().__init__(f"Skill 执行超时 [{skill_id}]: {timeout}s")
 ```
 
-- [ ] **步骤 2：验证模块导入正确**
+- [x] **步骤 2：验证模块导入正确**
 
 运行：`cd server/python && uv run python -c "from ai.components.plugin.engine.core.exceptions import SkillError, SkillNotFoundError, SkillPreparationError, SkillInvocationError, SkillSecurityError, SkillTimeoutError; print('导入成功')"`
 
 预期：输出"导入成功"
 
-- [ ] **步骤 3：Commit**
+- [x] **步骤 3：Commit**
 
 ```bash
 cd server/python
@@ -205,7 +205,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 - 创建：`server/python/src/ai/components/plugin/engine/core/runtime/knowledge_skill_runtime.py`
 - 测试：`server/python/tests/ai/unit/runtime/test_knowledge_skill_runtime.py`
 
-- [ ] **步骤 1：编写失败的测试**
+- [x] **步骤 1：编写失败的测试**
 
 创建 `server/python/tests/ai/unit/runtime/test_knowledge_skill_runtime.py`：
 
@@ -359,13 +359,13 @@ class TestKnowledgeSkillRuntime:
         assert metrics["failure_count"] == 1
 ```
 
-- [ ] **步骤 2：运行测试验证失败**
+- [x] **步骤 2：运行测试验证失败**
 
 运行：`cd server/python && uv run pytest tests/ai/unit/runtime/test_knowledge_skill_runtime.py -v`
 
 预期：FAIL，报错 `ModuleNotFoundError: No module named 'ai.components.plugin.engine.core.runtime.knowledge_skill_runtime'`
 
-- [ ] **步骤 3：实现 KnowledgeSkillRuntime**
+- [x] **步骤 3：实现 KnowledgeSkillRuntime**
 
 创建 `server/python/src/ai/components/plugin/engine/core/runtime/knowledge_skill_runtime.py`：
 
@@ -712,13 +712,13 @@ class KnowledgeSkillRuntime(PluginRuntime):
             raise SkillPreparationError(self.plugin_id, f"获取 LLM 失败: {e}")
 ```
 
-- [ ] **步骤 4：运行测试验证通过**
+- [x] **步骤 4：运行测试验证通过**
 
 运行：`cd server/python && uv run pytest tests/ai/unit/runtime/test_knowledge_skill_runtime.py -v`
 
 预期：7 个测试全部 PASS
 
-- [ ] **步骤 5：Commit**
+- [x] **步骤 5：Commit**
 
 ```bash
 cd server/python
@@ -739,7 +739,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 - 创建：`server/python/src/ai/components/plugin/engine/core/runtime/sandbox_skill_runtime.py`
 - 测试：`server/python/tests/ai/unit/runtime/test_sandbox_skill_runtime.py`
 
-- [ ] **步骤 1：编写失败的测试**
+- [x] **步骤 1：编写失败的测试**
 
 创建 `server/python/tests/ai/unit/runtime/test_sandbox_skill_runtime.py`：
 
@@ -870,13 +870,13 @@ class TestSandboxSkillRuntime:
         assert metrics["runtime_type"] == "sandbox"
 ```
 
-- [ ] **步骤 2：运行测试验证失败**
+- [x] **步骤 2：运行测试验证失败**
 
 运行：`cd server/python && uv run pytest tests/ai/unit/runtime/test_sandbox_skill_runtime.py -v`
 
 预期：FAIL，报错 `ModuleNotFoundError: No module named 'ai.components.plugin.engine.core.runtime.sandbox_skill_runtime'`
 
-- [ ] **步骤 3：实现 SandboxSkillRuntime**
+- [x] **步骤 3：实现 SandboxSkillRuntime**
 
 创建 `server/python/src/ai/components/plugin/engine/core/runtime/sandbox_skill_runtime.py`：
 
@@ -1335,13 +1335,13 @@ else:
         self.recent_errors = self.recent_errors[-10:]
 ```
 
-- [ ] **步骤 4：运行测试验证通过**
+- [x] **步骤 4：运行测试验证通过**
 
 运行：`cd server/python && uv run pytest tests/ai/unit/runtime/test_sandbox_skill_runtime.py -v`
 
 预期：9 个测试全部 PASS
 
-- [ ] **步骤 5：Commit**
+- [x] **步骤 5：Commit**
 
 ```bash
 cd server/python
@@ -1362,7 +1362,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 - 修改：`server/python/src/ai/components/plugin/engine/core/runtime/factory.py`
 - 测试：`server/python/tests/ai/unit/runtime/test_runtime_factory.py`
 
-- [ ] **步骤 1：编写失败的测试**
+- [x] **步骤 1：编写失败的测试**
 
 创建 `server/python/tests/ai/unit/runtime/test_runtime_factory.py`：
 
@@ -1466,13 +1466,13 @@ class TestRuntimeFactory:
             factory.create_runtime(info, Path("/tmp/test"))
 ```
 
-- [ ] **步骤 2：运行测试验证失败**
+- [x] **步骤 2：运行测试验证失败**
 
 运行：`cd server/python && uv run pytest tests/ai/unit/runtime/test_runtime_factory.py -v`
 
 预期：FAIL，`create_runtime` 未路由 Skill 类型
 
-- [ ] **步骤 3：扩展运行时工厂**
+- [x] **步骤 3：扩展运行时工厂**
 
 修改 `server/python/src/ai/components/plugin/engine/core/runtime/factory.py`，替换整个文件内容：
 
@@ -1564,19 +1564,19 @@ class RuntimeFactory:
         return RuntimeType.LOCAL.value
 ```
 
-- [ ] **步骤 4：运行测试验证通过**
+- [x] **步骤 4：运行测试验证通过**
 
 运行：`cd server/python && uv run pytest tests/ai/unit/runtime/test_runtime_factory.py -v`
 
 预期：3 个测试全部 PASS
 
-- [ ] **步骤 5：运行现有运行时测试确认无回归**
+- [x] **步骤 5：运行现有运行时测试确认无回归**
 
 运行：`cd server/python && uv run pytest tests/ai/unit/runtime/ -v --no-header 2>&1 | tail -20`
 
 预期：所有运行时测试通过
 
-- [ ] **步骤 6：Commit**
+- [x] **步骤 6：Commit**
 
 ```bash
 cd server/python
@@ -1597,7 +1597,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 - 创建：`server/python/src/ai/components/skill/chain_builder.py`
 - 测试：`server/python/tests/ai/unit/skill/test_chain_builder.py`
 
-- [ ] **步骤 1：创建 skill 组件包初始化文件**
+- [x] **步骤 1：创建 skill 组件包初始化文件**
 
 创建 `server/python/src/ai/components/skill/__init__.py`：
 
@@ -1617,7 +1617,7 @@ __all__ = [
 ]
 ```
 
-- [ ] **步骤 2：编写失败的测试**
+- [x] **步骤 2：编写失败的测试**
 
 创建 `server/python/tests/ai/unit/skill/test_chain_builder.py`：
 
@@ -1693,13 +1693,13 @@ class TestSkillChainBuilder:
         assert chain is not None
 ```
 
-- [ ] **步骤 3：运行测试验证失败**
+- [x] **步骤 3：运行测试验证失败**
 
 运行：`cd server/python && uv run pytest tests/ai/unit/skill/test_chain_builder.py -v`
 
 预期：FAIL，报错 `ModuleNotFoundError: No module named 'ai.components.skill'`
 
-- [ ] **步骤 4：实现 SkillChainBuilder**
+- [x] **步骤 4：实现 SkillChainBuilder**
 
 创建 `server/python/src/ai/components/skill/chain_builder.py`：
 
@@ -1855,13 +1855,13 @@ class SkillChainBuilder:
         return "\n".join(lines)
 ```
 
-- [ ] **步骤 5：运行测试验证通过**
+- [x] **步骤 5：运行测试验证通过**
 
 运行：`cd server/python && uv run pytest tests/ai/unit/skill/test_chain_builder.py -v`
 
 预期：5 个测试全部 PASS
 
-- [ ] **步骤 6：Commit**
+- [x] **步骤 6：Commit**
 
 ```bash
 cd server/python
@@ -1881,7 +1881,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 - 创建：`server/python/src/ai/components/skill/context_manager.py`
 - 测试：`server/python/tests/ai/unit/skill/test_context_manager.py`
 
-- [ ] **步骤 1：编写失败的测试**
+- [x] **步骤 1：编写失败的测试**
 
 创建 `server/python/tests/ai/unit/skill/test_context_manager.py`：
 
@@ -1985,13 +1985,13 @@ class TestSkillContextManager:
         assert isinstance(mock_context.examples, dict)
 ```
 
-- [ ] **步骤 2：运行测试验证失败**
+- [x] **步骤 2：运行测试验证失败**
 
 运行：`cd server/python && uv run pytest tests/ai/unit/skill/test_context_manager.py -v`
 
 预期：FAIL，报错 `ModuleNotFoundError: No module named 'ai.components.skill.context_manager'`
 
-- [ ] **步骤 3：实现 SkillContextManager**
+- [x] **步骤 3：实现 SkillContextManager**
 
 创建 `server/python/src/ai/components/skill/context_manager.py`：
 
@@ -2273,13 +2273,13 @@ class SkillContextManager:
 skill_context_manager = SkillContextManager()
 ```
 
-- [ ] **步骤 4：运行测试验证通过**
+- [x] **步骤 4：运行测试验证通过**
 
 运行：`cd server/python && uv run pytest tests/ai/unit/skill/test_context_manager.py -v`
 
 预期：7 个测试全部 PASS
 
-- [ ] **步骤 5：Commit**
+- [x] **步骤 5：Commit**
 
 ```bash
 cd server/python
@@ -2299,7 +2299,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 - 修改：`server/python/src/ai/services/conversation_service.py`
 - 测试：`server/python/tests/ai/unit/services/test_conversation_skill.py`
 
-- [ ] **步骤 1：编写失败的测试**
+- [x] **步骤 1：编写失败的测试**
 
 创建 `server/python/tests/ai/unit/services/test_conversation_skill.py`：
 
@@ -2399,13 +2399,13 @@ class TestConversationServiceSkill:
         assert results[0]["type"] == "error"
 ```
 
-- [ ] **步骤 2：运行测试验证失败**
+- [x] **步骤 2：运行测试验证失败**
 
 运行：`cd server/python && uv run pytest tests/ai/unit/services/test_conversation_skill.py -v`
 
 预期：FAIL，`ConversationService` 无 `chat_with_skill` 方法
 
-- [ ] **步骤 3：扩展对话服务**
+- [x] **步骤 3：扩展对话服务**
 
 在 `server/python/src/ai/services/conversation_service.py` 文件顶部新增导入：
 
@@ -2553,13 +2553,13 @@ from ai.components.skill.context_manager import skill_context_manager
             return None
 ```
 
-- [ ] **步骤 4：运行测试验证通过**
+- [x] **步骤 4：运行测试验证通过**
 
 运行：`cd server/python && uv run pytest tests/ai/unit/services/test_conversation_skill.py -v`
 
 预期：3 个测试全部 PASS
 
-- [ ] **步骤 5：Commit**
+- [x] **步骤 5：Commit**
 
 ```bash
 cd server/python
@@ -2581,7 +2581,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 - 修改：`server/python/src/ai/module.py`
 - 测试：无（由集成测试覆盖）
 
-- [ ] **步骤 1：创建 Skill Schema**
+- [x] **步骤 1：创建 Skill Schema**
 
 创建 `server/python/src/ai/schemas/skill.py`：
 
@@ -2625,7 +2625,7 @@ class SkillInvokeChunkResponse(BaseModel):
     skill_ids: list[str] | None = Field(default=None, description="Skill ID 列表")
 ```
 
-- [ ] **步骤 2：创建 Skill 控制器**
+- [x] **步骤 2：创建 Skill 控制器**
 
 创建 `server/python/src/ai/controllers/console/skill_controller.py`：
 
@@ -2737,7 +2737,7 @@ async def preview_skill(
     )
 ```
 
-- [ ] **步骤 3：注册 Skill 路由**
+- [x] **步骤 3：注册 Skill 路由**
 
 修改 `server/python/src/ai/module.py`，在 `get_routers` 方法中新增 Skill 路由导入和注册。
 
@@ -2753,13 +2753,13 @@ from ai.controllers.console.skill_controller import router as console_skill_rout
 (console_skill_router, "", ["Skills"]),
 ```
 
-- [ ] **步骤 4：验证路由注册正确**
+- [x] **步骤 4：验证路由注册正确**
 
 运行：`cd server/python && uv run python -c "from ai.controllers.console.skill_controller import router; print([r.path for r in router.routes])"`
 
 预期：输出包含 `/ai/console/v1/skills/invoke` 和 `/ai/console/v1/skills/{skill_id}/preview`
 
-- [ ] **步骤 5：Commit**
+- [x] **步骤 5：Commit**
 
 ```bash
 cd server/python
@@ -2779,7 +2779,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 **文件：**
 - 创建：`server/python/tests/ai/integration/test_skill_invocation_flow.py`
 
-- [ ] **步骤 1：编写集成测试**
+- [x] **步骤 1：编写集成测试**
 
 创建 `server/python/tests/ai/integration/test_skill_invocation_flow.py`：
 
@@ -2939,19 +2939,19 @@ class TestSkillInvocationFlow:
         assert context.invoke_count == 1
 ```
 
-- [ ] **步骤 2：运行集成测试**
+- [x] **步骤 2：运行集成测试**
 
 运行：`cd server/python && uv run pytest tests/ai/integration/test_skill_invocation_flow.py -v`
 
 预期：5 个测试全部 PASS
 
-- [ ] **步骤 3：运行全部 Skill 相关测试确认整体通过**
+- [x] **步骤 3：运行全部 Skill 相关测试确认整体通过**
 
 运行：`cd server/python && uv run pytest tests/ai/unit/runtime/ tests/ai/unit/skill/ tests/ai/integration/test_skill_invocation_flow.py -v --no-header 2>&1 | tail -30`
 
 预期：所有测试通过
 
-- [ ] **步骤 4：Commit**
+- [x] **步骤 4：Commit**
 
 ```bash
 cd server/python

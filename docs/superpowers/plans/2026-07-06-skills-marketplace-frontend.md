@@ -43,7 +43,7 @@
 - 修改：`web/vue/src/tenant/api/plugin.ts`
 - 测试：无（API 扩展，由组件测试覆盖）
 
-- [ ] **步骤 1：在 plugin.ts 中新增 Skill 类型定义**
+- [x] **步骤 1：在 plugin.ts 中新增 Skill 类型定义**
 
 在 `web/vue/src/tenant/api/plugin.ts` 文件末尾新增 Skill 相关类型和 API 函数：
 
@@ -178,13 +178,13 @@ export async function invokeSkillStream(
 }
 ```
 
-- [ ] **步骤 2：验证 API 文件语法正确**
+- [x] **步骤 2：验证 API 文件语法正确**
 
 运行：`cd web/vue && pnpm check 2>&1 | head -20`
 
 预期：无类型错误（如有错误，根据提示修正）
 
-- [ ] **步骤 3：Commit**
+- [x] **步骤 3：Commit**
 
 ```bash
 cd web/vue
@@ -205,7 +205,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 - 创建：`web/vue/src/ai/components/SkillCard.vue`
 - 测试：`web/vue/tests/ai/unit/components/test_skill_card.vue.ts`
 
-- [ ] **步骤 1：编写失败的测试**
+- [x] **步骤 1：编写失败的测试**
 
 创建 `web/vue/tests/ai/unit/components/test_skill_card.vue.ts`：
 
@@ -325,13 +325,13 @@ describe('SkillCard', () => {
 });
 ```
 
-- [ ] **步骤 2：运行测试验证失败**
+- [x] **步骤 2：运行测试验证失败**
 
 运行：`cd web/vue && pnpm test:unit tests/ai/unit/components/test_skill_card.vue.ts --run`
 
 预期：FAIL，组件不存在
 
-- [ ] **步骤 3：实现 SkillCard 组件**
+- [x] **步骤 3：实现 SkillCard 组件**
 
 创建 `web/vue/src/ai/components/SkillCard.vue`：
 
@@ -456,13 +456,13 @@ const formatDownloads = (num: number | null): string => {
 </template>
 ```
 
-- [ ] **步骤 4：运行测试验证通过**
+- [x] **步骤 4：运行测试验证通过**
 
 运行：`cd web/vue && pnpm test:unit tests/ai/unit/components/test_skill_card.vue.ts --run`
 
 预期：8 个测试全部 PASS
 
-- [ ] **步骤 5：Commit**
+- [x] **步骤 5：Commit**
 
 ```bash
 cd web/vue
@@ -482,7 +482,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 - 创建：`web/vue/src/ai/components/SkillPreviewDialog.vue`
 - 测试：无（由集成测试覆盖）
 
-- [ ] **步骤 1：实现 SkillPreviewDialog 组件**
+- [x] **步骤 1：实现 SkillPreviewDialog 组件**
 
 创建 `web/vue/src/ai/components/SkillPreviewDialog.vue`：
 
@@ -599,13 +599,13 @@ watch(
 </template>
 ```
 
-- [ ] **步骤 2：验证组件语法正确**
+- [x] **步骤 2：验证组件语法正确**
 
 运行：`cd web/vue && pnpm check 2>&1 | head -20`
 
 预期：无类型错误
 
-- [ ] **步骤 3：Commit**
+- [x] **步骤 3：Commit**
 
 ```bash
 cd web/vue
@@ -625,7 +625,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 - 创建：`web/vue/src/tenant/pages/admin/SkillMarketplacePage.vue`
 - 测试：无（由 E2E 测试覆盖）
 
-- [ ] **步骤 1：实现 Skill 市场浏览页面**
+- [x] **步骤 1：实现 Skill 市场浏览页面**
 
 创建 `web/vue/src/tenant/pages/admin/SkillMarketplacePage.vue`：
 
@@ -813,13 +813,13 @@ onMounted(() => {
 </template>
 ```
 
-- [ ] **步骤 2：验证页面语法正确**
+- [x] **步骤 2：验证页面语法正确**
 
 运行：`cd web/vue && pnpm check 2>&1 | head -20`
 
 预期：无类型错误
 
-- [ ] **步骤 3：Commit**
+- [x] **步骤 3：Commit**
 
 ```bash
 cd web/vue
@@ -839,7 +839,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 - 创建：`web/vue/src/ai/components/SkillInvocationPanel.vue`
 - 测试：无（由集成测试覆盖）
 
-- [ ] **步骤 1：实现 Skill 调用面板组件**
+- [x] **步骤 1：实现 Skill 调用面板组件**
 
 创建 `web/vue/src/ai/components/SkillInvocationPanel.vue`：
 
@@ -1023,13 +1023,13 @@ loadInstalledSkills();
 </template>
 ```
 
-- [ ] **步骤 2：验证组件语法正确**
+- [x] **步骤 2：验证组件语法正确**
 
 运行：`cd web/vue && pnpm check 2>&1 | head -20`
 
 预期：无类型错误
 
-- [ ] **步骤 3：Commit**
+- [x] **步骤 3：Commit**
 
 ```bash
 cd web/vue
@@ -1049,7 +1049,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 - 创建：`web/vue/src/components/chat/ChatWithSkill.vue`
 - 测试：无（由 E2E 测试覆盖）
 
-- [ ] **步骤 1：实现聊天界面组件**
+- [x] **步骤 1：实现聊天界面组件**
 
 创建 `web/vue/src/components/chat/ChatWithSkill.vue`：
 
@@ -1222,13 +1222,13 @@ const handleSkillInvoked = (message: string) => {
 </template>
 ```
 
-- [ ] **步骤 2：验证组件语法正确**
+- [x] **步骤 2：验证组件语法正确**
 
 运行：`cd web/vue && pnpm check 2>&1 | head -20`
 
 预期：无类型错误
 
-- [ ] **步骤 3：Commit**
+- [x] **步骤 3：Commit**
 
 ```bash
 cd web/vue
@@ -1249,7 +1249,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 - 修改：`web/vue/src/ai/router/index.ts`
 - 测试：无（路由配置，由 E2E 测试覆盖）
 
-- [ ] **步骤 1：在 tenant 路由中注册 Skill 市场页面**
+- [x] **步骤 1：在 tenant 路由中注册 Skill 市场页面**
 
 查看 `web/vue/src/tenant/router/index.ts` 现有路由结构，在插件市场相关路由后新增 Skill 市场路由：
 
@@ -1267,7 +1267,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 },
 ```
 
-- [ ] **步骤 2：在 ai 路由中注册 Skill 聊天页面**
+- [x] **步骤 2：在 ai 路由中注册 Skill 聊天页面**
 
 查看 `web/vue/src/ai/router/index.ts` 现有路由结构，新增 Skill 聊天路由：
 
@@ -1284,19 +1284,19 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 },
 ```
 
-- [ ] **步骤 3：验证路由配置正确**
+- [x] **步骤 3：验证路由配置正确**
 
 运行：`cd web/vue && pnpm check 2>&1 | head -20`
 
 预期：无类型错误
 
-- [ ] **步骤 4：运行前端单元测试确认无回归**
+- [x] **步骤 4：运行前端单元测试确认无回归**
 
 运行：`cd web/vue && pnpm test:unit --run 2>&1 | tail -20`
 
 预期：现有测试全部通过
 
-- [ ] **步骤 5：Commit**
+- [x] **步骤 5：Commit**
 
 ```bash
 cd web/vue

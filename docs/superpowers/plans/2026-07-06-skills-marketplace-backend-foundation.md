@@ -47,13 +47,13 @@
 - 修改：`server/python/src/tenant/schemas/admin/marketplace.py`
 - 测试：无（数据类扩展，由后续任务测试）
 
-- [ ] **步骤 1：查看现有 RemotePluginInfo 定义**
+- [x] **步骤 1：查看现有 RemotePluginInfo 定义**
 
 运行：`cat server/python/src/tenant/services/marketplace/protocol.py`
 
 确认现有 `RemotePluginInfo` 数据类的字段结构（第 13-29 行）。
 
-- [ ] **步骤 2：扩展 RemotePluginInfo 数据类**
+- [x] **步骤 2：扩展 RemotePluginInfo 数据类**
 
 在 `server/python/src/tenant/services/marketplace/protocol.py` 文件中，修改 `RemotePluginInfo` 数据类，在 `plugin_type` 字段后新增 Skill 特有字段：
 
@@ -119,19 +119,19 @@ class RemotePluginResponse(BaseModel):
         )
 ```
 
-- [ ] **步骤 3：验证修改不破坏现有代码**
+- [x] **步骤 3：验证修改不破坏现有代码**
 
 运行：`cd server/python && uv run python -c "from tenant.services.marketplace.protocol import RemotePluginInfo; print(RemotePluginInfo.__dataclass_fields__.keys())"`
 
 预期：输出包含 `skill_type` 和 `skill_metadata` 字段
 
-- [ ] **步骤 4：运行现有测试确认无回归**
+- [x] **步骤 4：运行现有测试确认无回归**
 
 运行：`cd server/python && uv run pytest tests/tenant/ -v -k "marketplace or adapter" --no-header 2>&1 | tail -20`
 
 预期：现有测试全部通过
 
-- [ ] **步骤 5：Commit**
+- [x] **步骤 5：Commit**
 
 ```bash
 cd server/python
@@ -151,7 +151,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 - 修改：`server/python/src/tenant/models/plugin_definition.py`
 - 测试：无（模型扩展，由迁移和后续任务测试）
 
-- [ ] **步骤 1：在 PluginDefinition 模型中新增 Skill 字段**
+- [x] **步骤 1：在 PluginDefinition 模型中新增 Skill 字段**
 
 在 `server/python/src/tenant/models/plugin_definition.py` 文件的 `TenantPluginDefinition` 类中，在 `source_type` 字段后新增两个字段：
 
@@ -168,13 +168,13 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
     )
 ```
 
-- [ ] **步骤 2：验证模型定义正确**
+- [x] **步骤 2：验证模型定义正确**
 
 运行：`cd server/python && uv run python -c "from tenant.models.plugin_definition import TenantPluginDefinition; print([c.name for c in TenantPluginDefinition.__table__.columns])"`
 
 预期：输出列表包含 `skill_type` 和 `runtime_type`
 
-- [ ] **步骤 3：Commit**
+- [x] **步骤 3：Commit**
 
 ```bash
 cd server/python
@@ -194,7 +194,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 - 创建：`server/python/src/tenant/migrations/versions/003_add_skill_support.py`
 - 测试：通过迁移命令验证
 
-- [ ] **步骤 1：查看现有迁移文件格式并确认编号**
+- [x] **步骤 1：查看现有迁移文件格式并确认编号**
 
 运行：`ls server/python/src/tenant/migrations/versions/`
 
@@ -204,7 +204,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 
 了解迁移文件的头部格式和 revision/down_revision 设置。
 
-- [ ] **步骤 2：创建迁移文件**
+- [x] **步骤 2：创建迁移文件**
 
 创建 `server/python/src/tenant/migrations/versions/003_add_skill_support.py`：
 
@@ -260,13 +260,13 @@ def downgrade() -> None:
     op.drop_column("plugin_definitions", "skill_type")
 ```
 
-- [ ] **步骤 3：验证迁移脚本语法**
+- [x] **步骤 3：验证迁移脚本语法**
 
 运行：`cd server/python && uv run python -c "import ast; ast.parse(open('src/tenant/migrations/versions/003_add_skill_support.py').read()); print('语法正确')"`
 
 预期：输出"语法正确"
 
-- [ ] **步骤 4：执行迁移（如有数据库环境）**
+- [x] **步骤 4：执行迁移（如有数据库环境）**
 
 运行：`cd server/python && uv run python manage.py db migrate --module tenant`
 
@@ -274,7 +274,7 @@ def downgrade() -> None:
 
 如果数据库不可用，跳过此步骤，在集成环境验证。
 
-- [ ] **步骤 5：Commit**
+- [x] **步骤 5：Commit**
 
 ```bash
 cd server/python
@@ -294,7 +294,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 - 修改：`server/python/src/tenant/services/plugin_storage_service.py`
 - 测试：`server/python/tests/tenant/unit/services/test_plugin_storage_skill.py`
 
-- [ ] **步骤 1：编写失败的测试**
+- [x] **步骤 1：编写失败的测试**
 
 创建 `server/python/tests/tenant/unit/services/test_plugin_storage_skill.py`：
 
@@ -405,13 +405,13 @@ class TestSkillStorageService:
         assert "Single Skill" in documents["SKILL.md"]
 ```
 
-- [ ] **步骤 2：运行测试验证失败**
+- [x] **步骤 2：运行测试验证失败**
 
 运行：`cd server/python && uv run pytest tests/tenant/unit/services/test_plugin_storage_skill.py -v`
 
 预期：FAIL，报错 `AttributeError: 'PluginStorageService' object has no attribute 'upload_skill_package'`
 
-- [ ] **步骤 3：实现 Skill 存储方法**
+- [x] **步骤 3：实现 Skill 存储方法**
 
 在 `server/python/src/tenant/services/plugin_storage_service.py` 文件的 `PluginStorageService` 类中，在 `download_package` 方法后新增以下方法：
 
@@ -507,13 +507,13 @@ class TestSkillStorageService:
         return documents
 ```
 
-- [ ] **步骤 4：运行测试验证通过**
+- [x] **步骤 4：运行测试验证通过**
 
 运行：`cd server/python && uv run pytest tests/tenant/unit/services/test_plugin_storage_skill.py -v`
 
 预期：4 个测试全部 PASS
 
-- [ ] **步骤 5：Commit**
+- [x] **步骤 5：Commit**
 
 ```bash
 cd server/python
@@ -534,7 +534,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 - 创建：`server/python/src/tenant/services/marketplace/adapters/agentskills_adapter.py`
 - 测试：`server/python/tests/tenant/unit/marketplace/test_agentskills_adapter.py`
 
-- [ ] **步骤 1：编写失败的测试**
+- [x] **步骤 1：编写失败的测试**
 
 创建 `server/python/tests/tenant/unit/marketplace/test_agentskills_adapter.py`：
 
@@ -670,13 +670,13 @@ class TestAgentSkillsAdapter:
         assert skill.skill_type == "knowledge"
 ```
 
-- [ ] **步骤 2：运行测试验证失败**
+- [x] **步骤 2：运行测试验证失败**
 
 运行：`cd server/python && uv run pytest tests/tenant/unit/marketplace/test_agentskills_adapter.py -v`
 
 预期：FAIL，报错 `ModuleNotFoundError: No module named 'tenant.services.marketplace.adapters.agentskills_adapter'`
 
-- [ ] **步骤 3：实现 AgentSkills 适配器**
+- [x] **步骤 3：实现 AgentSkills 适配器**
 
 创建 `server/python/src/tenant/services/marketplace/adapters/agentskills_adapter.py`：
 
@@ -870,13 +870,13 @@ class AgentSkillsAdapter(MarketplaceAdapter):
         return results
 ```
 
-- [ ] **步骤 4：运行测试验证通过**
+- [x] **步骤 4：运行测试验证通过**
 
 运行：`cd server/python && uv run pytest tests/tenant/unit/marketplace/test_agentskills_adapter.py -v`
 
 预期：6 个测试全部 PASS
 
-- [ ] **步骤 5：Commit**
+- [x] **步骤 5：Commit**
 
 ```bash
 cd server/python
@@ -896,7 +896,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 - 创建：`server/python/src/tenant/services/marketplace/adapters/modelscope_skill_adapter.py`
 - 测试：`server/python/tests/tenant/unit/marketplace/test_modelscope_skill_adapter.py`
 
-- [ ] **步骤 1：编写失败的测试**
+- [x] **步骤 1：编写失败的测试**
 
 创建 `server/python/tests/tenant/unit/marketplace/test_modelscope_skill_adapter.py`：
 
@@ -994,13 +994,13 @@ class TestModelScopeSkillAdapter:
         assert result.plugin_count == 0
 ```
 
-- [ ] **步骤 2：运行测试验证失败**
+- [x] **步骤 2：运行测试验证失败**
 
 运行：`cd server/python && uv run pytest tests/tenant/unit/marketplace/test_modelscope_skill_adapter.py -v`
 
 预期：FAIL，报错 `ModuleNotFoundError: No module named 'tenant.services.marketplace.adapters.modelscope_skill_adapter'`
 
-- [ ] **步骤 3：实现 ModelScope Skill 适配器**
+- [x] **步骤 3：实现 ModelScope Skill 适配器**
 
 创建 `server/python/src/tenant/services/marketplace/adapters/modelscope_skill_adapter.py`：
 
@@ -1229,13 +1229,13 @@ class ModelScopeSkillAdapter(MarketplaceAdapter):
         return results
 ```
 
-- [ ] **步骤 4：运行测试验证通过**
+- [x] **步骤 4：运行测试验证通过**
 
 运行：`cd server/python && uv run pytest tests/tenant/unit/marketplace/test_modelscope_skill_adapter.py -v`
 
 预期：5 个测试全部 PASS
 
-- [ ] **步骤 5：Commit**
+- [x] **步骤 5：Commit**
 
 ```bash
 cd server/python
@@ -1255,7 +1255,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 - 创建：`server/python/src/tenant/services/marketplace/adapters/local_skill_adapter.py`
 - 测试：`server/python/tests/tenant/unit/marketplace/test_local_skill_adapter.py`
 
-- [ ] **步骤 1：编写失败的测试**
+- [x] **步骤 1：编写失败的测试**
 
 创建 `server/python/tests/tenant/unit/marketplace/test_local_skill_adapter.py`：
 
@@ -1386,13 +1386,13 @@ class TestLocalSkillAdapter:
         assert skills[0].name == "test-skill"
 ```
 
-- [ ] **步骤 2：运行测试验证失败**
+- [x] **步骤 2：运行测试验证失败**
 
 运行：`cd server/python && uv run pytest tests/tenant/unit/marketplace/test_local_skill_adapter.py -v`
 
 预期：FAIL，报错 `ModuleNotFoundError: No module named 'tenant.services.marketplace.adapters.local_skill_adapter'`
 
-- [ ] **步骤 3：实现本地文件扫描适配器**
+- [x] **步骤 3：实现本地文件扫描适配器**
 
 创建 `server/python/src/tenant/services/marketplace/adapters/local_skill_adapter.py`：
 
@@ -1626,13 +1626,13 @@ class LocalSkillAdapter(MarketplaceAdapter):
         return []
 ```
 
-- [ ] **步骤 4：运行测试验证通过**
+- [x] **步骤 4：运行测试验证通过**
 
 运行：`cd server/python && uv run pytest tests/tenant/unit/marketplace/test_local_skill_adapter.py -v`
 
 预期：6 个测试全部 PASS
 
-- [ ] **步骤 5：Commit**
+- [x] **步骤 5：Commit**
 
 ```bash
 cd server/python
@@ -1653,7 +1653,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 - 修改：`server/python/src/tenant/services/marketplace/adapters/__init__.py`
 - 测试：无（由集成测试覆盖）
 
-- [ ] **步骤 1：更新适配器 **init**.py 导出**
+- [x] **步骤 1：更新适配器 **init**.py 导出**
 
 修改 `server/python/src/tenant/services/marketplace/adapters/__init__.py`，新增三个适配器的导入：
 
@@ -1677,7 +1677,7 @@ __all__ = [
 ]
 ```
 
-- [ ] **步骤 2：在 Gateway 中注册新适配器**
+- [x] **步骤 2：在 Gateway 中注册新适配器**
 
 修改 `server/python/src/tenant/services/marketplace/gateway.py`，更新导入和 `_adapters` 字典：
 
@@ -1703,7 +1703,7 @@ from tenant.services.marketplace.adapters.modelscope_skill_adapter import (
     }
 ```
 
-- [ ] **步骤 3：新增 sync_skill_from_marketplace 方法**
+- [x] **步骤 3：新增 sync_skill_from_marketplace 方法**
 
 在 `server/python/src/tenant/services/marketplace/gateway.py` 的 `MarketplaceGateway` 类中，在 `apply_update` 方法后新增以下方法：
 
@@ -1815,19 +1815,19 @@ from tenant.services.marketplace.adapters.modelscope_skill_adapter import (
         return new_def
 ```
 
-- [ ] **步骤 4：验证 Gateway 修改正确**
+- [x] **步骤 4：验证 Gateway 修改正确**
 
 运行：`cd server/python && uv run python -c "from tenant.services.marketplace.gateway import marketplace_gateway; print(list(marketplace_gateway._adapters.keys()))"`
 
 预期：输出 `['dify', 'modelscope', 'agentskills', 'modelscope-skill', 'local-skill']`
 
-- [ ] **步骤 5：运行现有测试确认无回归**
+- [x] **步骤 5：运行现有测试确认无回归**
 
 运行：`cd server/python && uv run pytest tests/tenant/ -v -k "marketplace or gateway" --no-header 2>&1 | tail -20`
 
 预期：现有测试全部通过
 
-- [ ] **步骤 6：Commit**
+- [x] **步骤 6：Commit**
 
 ```bash
 cd server/python
@@ -1847,7 +1847,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 **文件：**
 - 创建：`server/python/tests/tenant/integration/test_skill_sync_flow.py`
 
-- [ ] **步骤 1：编写集成测试**
+- [x] **步骤 1：编写集成测试**
 
 创建 `server/python/tests/tenant/integration/test_skill_sync_flow.py`：
 
@@ -2049,7 +2049,7 @@ class TestSkillSyncFlow:
                 )
 ```
 
-- [ ] **步骤 2：确认 mock_db_session fixture 可用**
+- [x] **步骤 2：确认 mock_db_session fixture 可用**
 
 运行：`cd server/python && cat tests/conftest.py 2>/dev/null | grep -A 10 "mock_db_session" || echo "需要创建 fixture"`
 
@@ -2066,7 +2066,7 @@ def mock_db_session():
 
 并修改测试中对 `mock_db_session.execute` 的 Mock，确保 `get_marketplace` 能返回模拟市场。具体实现时根据现有 conftest.py 调整。
 
-- [ ] **步骤 3：运行集成测试**
+- [x] **步骤 3：运行集成测试**
 
 运行：`cd server/python && uv run pytest tests/tenant/integration/test_skill_sync_flow.py -v`
 
@@ -2074,13 +2074,13 @@ def mock_db_session():
 
 如果因 fixture 问题失败，根据实际 conftest.py 调整 mock 策略。
 
-- [ ] **步骤 4：运行全部新增测试确认整体通过**
+- [x] **步骤 4：运行全部新增测试确认整体通过**
 
 运行：`cd server/python && uv run pytest tests/tenant/unit/marketplace/ tests/tenant/unit/services/test_plugin_storage_skill.py tests/tenant/integration/test_skill_sync_flow.py -v`
 
 预期：所有测试通过
 
-- [ ] **步骤 5：Commit**
+- [x] **步骤 5：Commit**
 
 ```bash
 cd server/python
