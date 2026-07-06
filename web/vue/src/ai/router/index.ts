@@ -28,6 +28,12 @@ export const aiRoutes: RouteRecordRaw[] = [
     component: () => import("@/ai/pages/ModelConfigPage.vue"),
     meta: { title: "模型配置", icon: "cpu", requiresAuth: true },
   },
+  {
+    path: "ai/skills/chat/:conversationId",
+    name: "AISkillChat",
+    component: () => import("@/components/chat/ChatWithSkill.vue"),
+    meta: { title: "Skill 对话", hidden: true, requiresAuth: true },
+  },
 ];
 
 export default aiRoutes;

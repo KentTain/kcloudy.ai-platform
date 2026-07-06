@@ -138,6 +138,12 @@ export const adminRoutes: RouteRecordRaw[] = [
         component: () => import("@/tenant/pages/admin/RemotePluginBrowsePage.vue"),
         meta: { title: "浏览远程插件", hidden: true, requiresAdminAuth: true, permissions: ["tenant:marketplace:read"] },
       },
+      {
+        path: "marketplaces/:id/skills",
+        name: "AdminSkillMarketplace",
+        component: () => import("@/tenant/pages/admin/SkillMarketplacePage.vue"),
+        meta: { title: "Skill 市场", hidden: true, requiresAdminAuth: true, permissions: ["tenant:marketplace:read"] },
+      },
     ],
   },
 ];
