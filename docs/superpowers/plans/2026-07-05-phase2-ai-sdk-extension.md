@@ -786,12 +786,12 @@ from ai.controllers.v1.files.chunk_upload import router as chunk_upload_router
 router.include_router(chunk_upload_router)
 ```
 
-- [ ] **步骤 5：运行测试验证通过**
+- [x] **步骤 5：运行测试验证通过**
 
 运行：`cd server/python && uv run pytest tests/ai/unit/controllers/v1/files/test_chunk_upload.py -v`
 预期：测试 PASS
 
-- [ ] **步骤 6：Commit**
+- [x] **步骤 6：Commit**
 
 ```bash
 git add server/python/src/ai/controllers/v1/files/chunk_upload.py \
