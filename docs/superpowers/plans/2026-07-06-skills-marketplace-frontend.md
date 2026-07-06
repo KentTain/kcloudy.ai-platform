@@ -64,11 +64,6 @@ export interface RemoteSkillInfo {
   download_url: string;
 }
 
-export interface SkillListResponse {
-  skills: RemoteSkillInfo[];
-  total: number;
-}
-
 export interface SkillPreviewResponse {
   skill_id: string;
   name: string;
@@ -81,23 +76,18 @@ export interface SkillPreviewResponse {
 
 /**
  * 获取远程 Skill 列表
+ *
+ * 复用现有 GET /marketplaces/{id}/plugins API，通过 type=skill 过滤。
+ * skill_type（knowledge/script）由前端在客户端过滤。
  */
-export async function getRemoteSkills(
+export const getRemoteSkills = (
   marketplaceId: string,
-  params?: {
-    keyword?: string;
-    skill_type?: 'knowledge' | 'script';
-    page?: number;
-    page_size?: number;
-  }
-): Promise<ApiResponse<SkillListResponse>> {
-  const query = new URLSearchParams();
-  if (params?.keyword) query.set('keyword', params.keyword);
-  if (params?.skill_type) query.set('skill_type', params.skill_type);
-  if (params?.page) query.set('page', String(params.page));
-  if (params?.page_size) query.set('page_size', String(params.page_size));
-  return rawGet(`/tenant/admin/v1/marketplaces/${marketplaceId}/skills?${query.toString()}`);
-}
+  params?: { keyword?: string; page?: number; page_size?: number }
+) =>
+  rawGet<ApiResponse<RemoteSkillInfo[]>>(
+    `/tenant/admin/v1/marketplaces/${marketplaceId}/plugins`,
+    { params: { ...params, type: 'skill' } }
+  );
 
 /**
  * 从市场同步 Skill
@@ -695,10 +685,9 @@ const loadRemoteSkills = async () => {
   try {
     const res = await getRemoteSkills(marketplaceId.value, {
       keyword: searchKeyword.value || undefined,
-      skill_type: selectedTab.value === 'all' ? undefined : selectedTab.value,
     });
     if (res.code === 200 && res.data) {
-      remoteSkills.value = res.data.skills;
+      remoteSkills.value = res.data;
     } else {
       notifyError(res.msg || '加载 Skill 列表失败');
     }
@@ -905,7 +894,7 @@ const loadInstalledSkills = async () => {
 };
 
 const toggleSkill = (skill: PluginDefinition) => {
-  const index = selectedSkills.value.findIndex((s) => s.id === skill.id);
+  const index = selectedSkills.value.findIndex((s) => s.plugin_id === skill.plugin_id);
   if (index > -1) {
     selectedSkills.value.splice(index, 1);
   } else {
@@ -918,8 +907,8 @@ const toggleSkill = (skill: PluginDefinition) => {
   }
 };
 
-const isSkillSelected = (skillId: string) => {
-  return selectedSkills.value.some((s) => s.id === skillId);
+const isSkillSelected = (pluginId: string) => {
+  return selectedSkills.value.some((s) => s.plugin_id === pluginId);
 };
 
 const handleInvoke = async () => {
@@ -976,12 +965,12 @@ loadInstalledSkills();
       <div class="flex flex-wrap gap-2">
         <Badge
           v-for="skill in selectedSkills"
-          :key="skill.id"
+          :key="skill.plugin_id"
           variant="default"
           class="cursor-pointer"
           @click="toggleSkill(skill)"
         >
-          {{ skill.plugin_id }}
+          {{ skill.name || skill.plugin_id }}
           <X class="ml-1 h-3 w-3" />
         </Badge>
       </div>
@@ -998,12 +987,12 @@ loadInstalledSkills();
       <div v-else class="space-y-2">
         <div
           v-for="skill in installedSkills"
-          :key="skill.id"
+          :key="skill.plugin_id"
           class="cursor-pointer rounded-lg border p-3 transition-colors hover:bg-accent"
-          :class="{ 'border-primary bg-accent': isSkillSelected(skill.id) }"
+          :class="{ 'border-primary bg-accent': isSkillSelected(skill.plugin_id) }"
           @click="toggleSkill(skill)"
         >
-          <div class="font-medium">{{ skill.plugin_id }}</div>
+          <div class="font-medium">{{ skill.name || skill.plugin_id }}</div>
           <div class="mt-1 text-xs text-muted-foreground">
             {{ skill.manifest_type || 'skill' }}
           </div>
@@ -1130,11 +1119,19 @@ const handleSend = async () => {
       const data = await response.json();
       assistantMessage.content = data.data?.content || data.data?.message || '响应为空';
     } else {
-      assistantMessage.content = '请求失败';
+      // 移除占位消息
+      const index = messages.value.indexOf(assistantMessage);
+      if (index > -1) {
+        messages.value.splice(index, 1);
+      }
       notifyError('发送消息失败');
     }
   } catch (error) {
-    assistantMessage.content = '网络错误';
+    // 移除占位消息
+    const index = messages.value.indexOf(assistantMessage);
+    if (index > -1) {
+      messages.value.splice(index, 1);
+    }
     notifyError('网络错误');
   } finally {
     sending.value = false;
@@ -1344,13 +1341,21 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 - `RemoteSkillInfo` 在任务 1 定义，任务 2、4 一致使用
 - `PluginDefinition` 复用现有类型，任务 1、4、5 一致使用
 - `skill_type` 枚举值 `knowledge | script` 前后端一致
-- API 路径 `/tenant/admin/v1/marketplaces/:id/skills` 和 `/ai/console/v1/skills/invoke` 与后端计划一致
+- API 路径 `/tenant/admin/v1/marketplaces/{id}/plugins?type=skill`（复用现有 API 过滤）和 `/ai/console/v1/skills/invoke`（新增）与后端计划一致
+- 前端 `getRemoteSkills` 复用现有 `getRemotePlugins` 模式，通过 `type: 'skill'` 参数过滤，无需新增后端 API 端点
 - SkillCard 组件 `emit('install')` 和 `emit('preview')` 事件在任务 2 定义，任务 4 一致使用
 - SkillInvocationPanel 组件 `emit('invoked')` 和 `emit('close')` 事件在任务 5 定义，任务 6 一致使用
 
 ### 修复记录
 
-无需修复，计划与规格一致。
+**2026-07-06 审核修复：**
+
+| 问题 | 修复内容 |
+|------|---------|
+| 任务 1 `getRemoteSkills` API 路径错误 | 改为复用现有 `GET /marketplaces/{id}/plugins?type=skill` API，使用 `rawGet` + `{ params: { type: 'skill' } }` 模式，无需新增后端端点；移除 `SkillListResponse` 包装类型，直接返回 `RemoteSkillInfo[]` |
+| 任务 4 `loadRemoteSkills` 访问 `res.data.skills` | 调整为 `res.data`（API 直接返回数组），移除 `skill_type` 参数（改为前端客户端过滤） |
+| 任务 5 `SkillInvocationPanel` 使用 `id` 而非 `plugin_id` | 统一使用 `plugin_id`，Skill 列表显示优化为 `name || plugin_id` |
+| 任务 6 `ChatWithSkill` 失败时保留错误消息 | 改为失败时移除占位消息，避免显示"请求失败"等无效内容 |
 
 ---
 

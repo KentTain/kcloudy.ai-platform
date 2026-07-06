@@ -681,11 +681,14 @@ class KnowledgeSkillRuntime(PluginRuntime):
         return f"skills/global/{self.plugin_id}/{self.plugin_version}/skill.zip"
 
     async def _get_llm(self) -> Any:
-        """获取 LLM 实例"""
+        """获取 LLM 实例
+
+        Raises:
+            SkillPreparationError: LLM 获取失败
+        """
         from ai.services.model_config_service import ModelConfigService
 
         model_config_service = ModelConfigService()
-        # 获取默认 LLM 配置（实际实现根据现有服务调整）
         try:
             from framework.database.dependencies import get_db_session
 
@@ -697,11 +700,16 @@ class KnowledgeSkillRuntime(PluginRuntime):
                 llm = await model_config_service.get_langchain_llm(
                     session, tenant_id
                 )
+                if llm is None:
+                    raise SkillPreparationError(
+                        self.plugin_id, "未获取到可用的 LLM 配置"
+                    )
                 return llm
+        except SkillPreparationError:
+            raise
         except Exception as e:
-            logger.warning(f"获取 LLM 失败，使用默认配置: {e}")
-            # 降级处理：返回 None，由调用方处理
-            return None
+            logger.error(f"获取 LLM 失败: {e}")
+            raise SkillPreparationError(self.plugin_id, f"获取 LLM 失败: {e}")
 ```
 
 - [ ] **步骤 4：运行测试验证通过**
@@ -1250,6 +1258,7 @@ class SandboxSkillRuntime(PluginRuntime):
         """构建包装脚本
 
         将用户脚本包装在安全环境中执行，通过标准输出返回 JSON 结果。
+        在脚本开头设置内存限制（仅 Linux/Unix 支持，Windows 跳过）。
         """
         input_data = invoke_request.get("input", {})
         context = invoke_request.get("context", {})
@@ -1258,10 +1267,18 @@ class SandboxSkillRuntime(PluginRuntime):
         input_json = json.dumps(input_data)
         context_json = json.dumps(context)
 
-        # 构建包装脚本
+        # 构建包装脚本（含内存限制）
         wrapper = f"""
 import json
 import sys
+
+# 资源限制：设置内存上限（仅 Linux/Unix 支持，Windows 跳过）
+try:
+    import resource
+    memory_limit_bytes = {self.memory_limit_mb} * 1024 * 1024
+    resource.setrlimit(resource.RLIMIT_AS, (memory_limit_bytes, memory_limit_bytes))
+except (ImportError, AttributeError, ValueError):
+    pass
 
 # 输入数据
 input_data = json.loads('{input_json}')
@@ -1488,7 +1505,7 @@ class RuntimeFactory:
             RuntimeType.LOCAL.value: LocalPluginRuntime,
         }
 
-    async def create_runtime(
+    def create_runtime(
         self, plugin_info: PluginInfo, workspace_dir: Path
     ) -> PluginRuntime:
         """
@@ -2116,8 +2133,8 @@ class SkillContextManager:
         skill_context.invoke_count += 1
         skill_context.last_invoked_at = datetime.now()
 
-        # 获取或构建 Chain
-        chain = self._get_or_build_chain(skill_context)
+        # 获取或构建 Chain（异步，必要时主动获取 LLM）
+        chain = await self._get_or_build_chain(skill_context)
 
         # 执行
         result = await chain.ainvoke(
@@ -2150,13 +2167,18 @@ class SkillContextManager:
 
         return None
 
-    def _get_or_build_chain(self, context: SkillExecutionContext) -> Any:
-        """获取或构建 Chain（带缓存）"""
+    async def _get_or_build_chain(self, context: SkillExecutionContext) -> Any:
+        """获取或构建 Chain（带缓存）
+
+        LLM 优先使用注入实例，未注入时主动从模型配置服务获取。
+        """
         cache_key = f"chain_{context.skill_id}"
 
         if cache_key not in context.chain_cache:
-            # 构建 Chain（LLM 由调用方注入或使用默认）
-            llm = self._get_llm()
+            # 获取 LLM（优先注入，否则主动获取）
+            llm = self._get_injected_llm()
+            if llm is None:
+                llm = await self._fetch_llm_from_config()
             if llm is None:
                 raise RuntimeError("LLM 未初始化，无法构建 Chain")
 
@@ -2171,13 +2193,29 @@ class SkillContextManager:
 
         return context.chain_cache[cache_key]
 
-    def _get_llm(self) -> Any:
-        """获取 LLM 实例
-
-        实际实现从模型配置服务获取，此处返回 None 由调用方处理。
-        """
-        # 委托给运行时或服务层注入 LLM
+    def _get_injected_llm(self) -> Any:
+        """获取注入的 LLM 实例"""
         return getattr(self, "_llm", None)
+
+    async def _fetch_llm_from_config(self) -> Any:
+        """从模型配置服务主动获取 LLM
+
+        当调用方未通过 set_llm 注入 LLM 时，主动从模型配置服务获取。
+        """
+        try:
+            from ai.services.model_config_service import ModelConfigService
+            from framework.database.dependencies import get_db_session
+            from framework.common.ctx import get_tenant_id
+
+            model_config_service = ModelConfigService()
+            async with get_db_session() as session:
+                tenant_id = get_tenant_id()
+                return await model_config_service.get_langchain_llm(
+                    session, tenant_id
+                )
+        except Exception as e:
+            logger.error(f"主动获取 LLM 失败: {e}")
+            return None
 
     def set_llm(self, llm: Any) -> None:
         """设置 LLM 实例"""
@@ -2834,10 +2872,10 @@ class TestSkillInvocationFlow:
         )
 
         # 第一次调用：构建 Chain
-        chain1 = context_manager._get_or_build_chain(context)
+        chain1 = await context_manager._get_or_build_chain(context)
 
         # 第二次调用：使用缓存的 Chain
-        chain2 = context_manager._get_or_build_chain(context)
+        chain2 = await context_manager._get_or_build_chain(context)
 
         # 验证是同一个 Chain 实例
         assert chain1 is chain2
@@ -2968,7 +3006,14 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 
 ### 修复记录
 
-无需修复，计划与规格一致。
+**2026-07-06 审核修复：**
+
+| 问题 | 修复内容 |
+|------|---------|
+| 任务 3 `_get_llm` 返回 None | 修改为失败时抛出 `SkillPreparationError`，而非返回 None 导致后续调用失败 |
+| 任务 4 沙箱缺少内存限制 | 在 `_build_wrapper_script` 中添加 `resource.setrlimit(resource.RLIMIT_AS, ...)` 设置内存上限（Linux/Unix 支持，Windows 跳过） |
+| 任务 5 `create_runtime` 签名为 async | 移除 `async` 关键字，与基类 `RuntimeFactory.create_runtime` 同步方法签名一致 |
+| 任务 7 ContextManager 单例初始化问题 | 将 `_get_or_build_chain` 改为异步方法，未注入 LLM 时主动通过 `_fetch_llm_from_config` 从模型配置服务获取；同时更新集成测试中调用处为 `await` |
 
 ---
 

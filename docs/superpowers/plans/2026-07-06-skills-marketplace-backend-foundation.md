@@ -40,10 +40,11 @@
 
 ---
 
-## 任务 1：扩展 RemotePluginInfo 协议
+## 任务 1：扩展 RemotePluginInfo 协议与响应 Schema
 
 **文件：**
 - 修改：`server/python/src/tenant/services/marketplace/protocol.py`
+- 修改：`server/python/src/tenant/schemas/admin/marketplace.py`
 - 测试：无（数据类扩展，由后续任务测试）
 
 - [ ] **步骤 1：查看现有 RemotePluginInfo 定义**
@@ -79,6 +80,44 @@ class RemotePluginInfo:
 ```
 
 注意：需要在文件顶部导入 `field`：`from dataclasses import dataclass, field`
+
+同时扩展 `RemotePluginResponse` Schema，新增 `skill_type` 字段并更新 `from_info` 方法，使前端通过现有 `GET /marketplaces/{id}/plugins` API 能获取 Skill 类型信息：
+
+在 `server/python/src/tenant/schemas/admin/marketplace.py` 文件的 `RemotePluginResponse` 类中，在 `plugin_type` 字段后新增 `skill_type` 字段，并更新 `from_info` 方法：
+
+```python
+class RemotePluginResponse(BaseModel):
+    """远程插件响应"""
+
+    plugin_id: str = Field(..., description="插件ID")
+    name: str = Field(..., description="插件名称")
+    description: str | None = Field(default=None, description="插件描述")
+    version: str = Field(..., description="插件版本")
+    author: str = Field(..., description="作者")
+    icon: str | None = Field(default=None, description="图标")
+    plugin_type: str = Field(..., description="插件类型")
+    skill_type: str | None = Field(default=None, description="Skill 类型：knowledge | script")
+    tags: list[str] = Field(default_factory=list, description="标签列表")
+    downloads: int | None = Field(default=None, description="下载次数")
+    download_url: str = Field(..., description="下载地址")
+
+    @classmethod
+    def from_info(cls, info) -> RemotePluginResponse:
+        """从插件信息转换"""
+        return cls(
+            plugin_id=info.plugin_id,
+            name=info.name,
+            description=info.description,
+            version=info.version,
+            author=info.author,
+            icon=info.icon,
+            plugin_type=info.plugin_type,
+            skill_type=getattr(info, "skill_type", None),
+            tags=info.tags,
+            downloads=info.downloads,
+            download_url=info.download_url,
+        )
+```
 
 - [ ] **步骤 3：验证修改不破坏现有代码**
 
@@ -155,7 +194,11 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 - 创建：`server/python/src/tenant/migrations/versions/003_add_skill_support.py`
 - 测试：通过迁移命令验证
 
-- [ ] **步骤 1：查看现有迁移文件格式**
+- [ ] **步骤 1：查看现有迁移文件格式并确认编号**
+
+运行：`ls server/python/src/tenant/migrations/versions/`
+
+确认现有迁移文件编号（当前为 `001_initial_schema.py`、`002_add_installed_at_to_plugin_installations.py`），新增迁移文件编号为 `003`，无冲突。
 
 运行：`cat server/python/src/tenant/migrations/versions/002_add_installed_at_to_plugin_installations.py`
 
@@ -2093,7 +2136,13 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 
 ### 修复记录
 
-无需修复，计划与规格一致。
+**2026-07-06 审核修复：**
+
+| 问题 | 修复内容 |
+|------|---------|
+| 任务 1 未扩展 RemotePluginResponse | 新增步骤 2 第二部分，扩展 `RemotePluginResponse` Schema，添加 `skill_type` 字段并更新 `from_info` 方法，使前端通过现有 `GET /marketplaces/{id}/plugins` API 能获取 Skill 类型信息 |
+| 任务 3 步骤 1 未确认迁移编号 | 增加查看现有迁移文件列表的步骤，确认编号 `003` 与现有 `001`、`002` 无冲突 |
+| 审核误报：Gateway 缺少 select 导入 | 确认 `select` 已在 `gateway.py:9` 导入，无需修复 |
 
 ---
 
