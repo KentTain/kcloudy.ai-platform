@@ -261,3 +261,114 @@ export const uninstallPluginInstallation = (tenantId: string, pluginId: string) 
     `/tenant/admin/v1/plugin-installations/${tenantId}/${pluginId}`,
   );
 
+// ==================== Skill 相关类型 ====================
+
+export interface RemoteSkillInfo {
+  plugin_id: string;
+  name: string;
+  description: string | null;
+  version: string;
+  author: string;
+  plugin_type: 'skill';
+  skill_type: 'knowledge' | 'script';
+  tags: string[];
+  downloads: number | null;
+  icon: string | null;
+  download_url: string;
+}
+
+export interface SkillPreviewResponse {
+  skill_id: string;
+  name: string;
+  description: string | null;
+  skill_type: 'knowledge' | 'script';
+  documents: Record<string, string>;
+}
+
+// ==================== Skill API 函数 ====================
+
+export const getRemoteSkills = (
+  marketplaceId: string,
+  params?: { keyword?: string; page?: number; page_size?: number }
+) =>
+  rawGet<ApiResponse<RemoteSkillInfo[]>>(
+    `/tenant/admin/v1/marketplaces/${marketplaceId}/plugins`,
+    { params: { ...params, type: 'skill' } }
+  );
+
+export async function syncSkillFromMarketplace(
+  marketplaceId: string,
+  skillId: string
+): Promise<ApiResponse<PluginDefinition>> {
+  return rawPost(`/tenant/admin/v1/marketplaces/${marketplaceId}/skills/${encodeURIComponent(skillId)}/sync`);
+}
+
+export async function getInstalledSkills(): Promise<ApiResponse<PluginDefinition[]>> {
+  return rawGet('/tenant/admin/v1/plugins?plugin_type=skill');
+}
+
+export async function previewSkill(
+  skillId: string
+): Promise<ApiResponse<SkillPreviewResponse>> {
+  return rawGet(`/ai/console/v1/skills/${encodeURIComponent(skillId)}/preview`);
+}
+
+export async function invokeSkillStream(
+  request: {
+    conversation_id: string;
+    skill_ids: string[];
+    user_message: string;
+  },
+  onChunk: (chunk: string) => void,
+  onComplete: (fullMessage: string) => void,
+  onError: (error: string) => void
+): Promise<void> {
+  try {
+    const response = await fetch('/ai/console/v1/skills/invoke', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(request),
+    });
+
+    if (!response.ok) {
+      onError(`HTTP ${response.status}`);
+      return;
+    }
+
+    const reader = response.body?.getReader();
+    if (!reader) {
+      onError('无法读取响应流');
+      return;
+    }
+
+    const decoder = new TextDecoder();
+    let fullMessage = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      const chunk = decoder.decode(value);
+      const lines = chunk.split('\n').filter(line => line.startsWith('data: '));
+
+      for (const line of lines) {
+        try {
+          const data = JSON.parse(line.slice(6));
+          if (data.type === 'chunk' && data.content) {
+            fullMessage += data.content;
+            onChunk(data.content);
+          } else if (data.type === 'complete') {
+            onComplete(fullMessage || data.message || '');
+          } else if (data.type === 'error') {
+            onError(data.error || '调用失败');
+          }
+        } catch (e) {
+          // 忽略解析错误的行
+        }
+      }
+    }
+  } catch (error) {
+    onError(error instanceof Error ? error.message : '网络错误');
+  }
+}
+
