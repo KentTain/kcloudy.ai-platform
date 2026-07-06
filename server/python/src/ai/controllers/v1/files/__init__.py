@@ -7,7 +7,9 @@ from fastapi import APIRouter
 
 from ai.controllers.v1.files.upload import router as upload_router
 from ai.controllers.v1.files.chunk_upload import router as chunk_upload_router
+from ai.controllers.v1.files.merge_chunks import router as merge_chunks_router
 
 router = APIRouter(prefix="/files", tags=["文件管理"])
 router.include_router(upload_router)
 router.include_router(chunk_upload_router)
+router.include_router(merge_chunks_router)

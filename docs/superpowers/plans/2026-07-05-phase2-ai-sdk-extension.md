@@ -818,7 +818,7 @@ Co-Authored-By: Happy <yesreply@happy.engineering>"
 - 创建：`server/python/src/ai/controllers/v1/files/merge_chunks.py`
 - 创建：`server/python/tests/ai/unit/controllers/v1/files/test_merge_chunks.py`
 
-- [ ] **步骤 1：编写合并分片测试**
+- [x] **步骤 1：编写合并分片测试**
 
 创建测试：
 
@@ -875,12 +875,12 @@ class TestMergeChunks:
         assert response.status_code == 400
 ```
 
-- [ ] **步骤 2：运行测试验证失败**
+- [x] **步骤 2：运行测试验证失败**
 
 运行：`cd server/python && uv run pytest tests/ai/unit/controllers/v1/files/test_merge_chunks.py -v`
 预期：FAIL，报错 404
 
-- [ ] **步骤 3：实现合并分片接口**
+- [x] **步骤 3：实现合并分片接口**
 
 创建文件：
 
@@ -966,7 +966,7 @@ async def merge_chunks(
         )
 ```
 
-- [ ] **步骤 4：注册路由**
+- [x] **步骤 4：注册路由**
 
 修改 `src/ai/controllers/v1/files/__init__.py`：
 
@@ -976,12 +976,12 @@ from ai.controllers.v1.files.merge_chunks import router as merge_chunks_router
 router.include_router(merge_chunks_router)
 ```
 
-- [ ] **步骤 5：运行测试验证通过**
+- [x] **步骤 5：运行测试验证通过**
 
 运行：`cd server/python && uv run pytest tests/ai/unit/controllers/v1/files/test_merge_chunks.py -v`
 预期：测试 PASS
 
-- [ ] **步骤 6：Commit**
+- [x] **步骤 6：Commit**
 
 ```bash
 git add server/python/src/ai/controllers/v1/files/merge_chunks.py \
