@@ -2357,7 +2357,7 @@ Co-Authored-By: Happy <yesreply@happy.engineering>"
 - 修改：`web/vue/src/components/ai-elements/source/SourceRenderer.vue`
 - 创建：`web/vue/tests/ai/unit/components/SourceRendererEnhanced.test.ts`
 
-- [ ] **步骤 1：编写增强功能测试**
+- [x] **步骤 1：编写增强功能测试**
 
 创建测试：
 
@@ -2407,12 +2407,12 @@ describe('SourceRenderer Enhanced', () => {
 })
 ```
 
-- [ ] **步骤 2：运行测试验证失败**
+- [x] **步骤 2：运行测试验证失败**
 
 运行：`cd web/vue && pnpm test:unit tests/ai/unit/components/SourceRendererEnhanced.test.ts --run`
 预期：FAIL，报错功能未实现
 
-- [ ] **步骤 3：增强 SourceRenderer 组件**
+- [x] **步骤 3：增强 SourceRenderer 组件**
 
 修改文件：
 
@@ -2480,12 +2480,12 @@ const handlePreview = (event: Event) => {
 </template>
 ```
 
-- [ ] **步骤 4：运行测试验证通过**
+- [x] **步骤 4：运行测试验证通过**
 
 运行：`cd web/vue && pnpm test:unit tests/ai/unit/components/SourceRendererEnhanced.test.ts --run`
 预期：测试 PASS
 
-- [ ] **步骤 5：Commit**
+- [x] **步骤 5：Commit**
 
 ```bash
 git add web/vue/src/components/ai-elements/source/SourceRenderer.vue \
