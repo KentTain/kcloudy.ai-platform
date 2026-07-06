@@ -52,6 +52,7 @@ class AIModule:
         from ai.controllers.console.runtime_states import (
             router as runtime_states_router,
         )
+        from ai.controllers.console.skill_controller import router as console_skill_router
         from ai.controllers.inner.plugin import router as inner_plugin_router
         from ai.controllers.inner.plugin_management import (
             router as inner_plugin_management_router,
@@ -107,6 +108,8 @@ class AIModule:
             (files_router, "/ai/console/v1", ["文件管理"]),
             # Console API - 元数据接口
             (metadata_router, "/ai/console/v1", ["元数据"]),
+            # Console API - Skill 调用和预览接口
+            (console_skill_router, "", ["Skills"]),
         ]
 
     def get_middlewares(self) -> list[type]:
