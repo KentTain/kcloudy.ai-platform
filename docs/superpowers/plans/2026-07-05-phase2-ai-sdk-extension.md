@@ -2611,7 +2611,7 @@ Co-Authored-By: Happy <yesreply@happy.engineering>"
 **文件：**
 - 创建：`server/python/tests/ai/integration/test_phase2_integration.py`
 
-- [ ] **步骤 1：编写完整流程集成测试**
+- [x] **步骤 1：编写完整流程集成测试**
 
 创建测试：
 
@@ -2675,12 +2675,12 @@ class TestPhase2Integration:
         assert "url" in response.json()["data"]
 ```
 
-- [ ] **步骤 2：运行集成测试**
+- [x] **步骤 2：运行集成测试**
 
 运行：`cd server/python && uv run pytest tests/ai/integration/test_phase2_integration.py -v`
 预期：所有测试 PASS
 
-- [ ] **步骤 3：Commit**
+- [x] **步骤 3：Commit**
 
 ```bash
 git add server/python/tests/ai/integration/test_phase2_integration.py
