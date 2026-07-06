@@ -636,7 +636,7 @@ Co-Authored-By: Happy <yesreply@happy.engineering>"
 - 创建：`server/python/tests/ai/unit/controllers/v1/files/test_chunk_upload.py`
 - 创建：`server/python/tests/ai/unit/controllers/v1/files/test_merge_chunks.py`
 
-- [ ] **步骤 1：编写分片上传测试**
+- [x] **步骤 1：编写分片上传测试**
 
 创建测试：
 
@@ -691,12 +691,12 @@ class TestChunkUpload:
         assert 1 in data["data"]["uploadedChunks"]
 ```
 
-- [ ] **步骤 2：运行测试验证失败**
+- [x] **步骤 2：运行测试验证失败**
 
 运行：`cd server/python && uv run pytest tests/ai/unit/controllers/v1/files/test_chunk_upload.py -v`
 预期：FAIL，报错 404
 
-- [ ] **步骤 3：实现分片上传接口**
+- [x] **步骤 3：实现分片上传接口**
 
 创建文件：
 
@@ -776,7 +776,7 @@ async def get_upload_state(
     })
 ```
 
-- [ ] **步骤 4：注册路由**
+- [x] **步骤 4：注册路由**
 
 修改 `src/ai/controllers/v1/files/__init__.py`：
 

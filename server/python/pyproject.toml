@@ -50,6 +50,7 @@ dependencies = [
   "gevent>=24.0.0",
   # 模型市场
   "modelscope>=1.10.0",
+  "aiofiles>=25.1.0",
 ]
 
 [project.scripts]
