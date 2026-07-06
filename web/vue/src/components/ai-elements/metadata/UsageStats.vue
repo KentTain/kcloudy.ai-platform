@@ -2,8 +2,9 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { ThumbsUpIcon, ThumbsDownIcon } from 'lucide-vue-next'
-import { Card, CardHeader, CardTitle, CardContent, Badge, Button } from '@/components'
-import { client } from '@/framework/api/client'
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
+import { Badge } from '@/components'
+import { get } from '@/framework/api/client'
 
 const startDate = ref<Date>()
 const endDate = ref<Date>()
@@ -18,14 +19,12 @@ const stats = ref({
 })
 
 const fetchStats = async () => {
-  const { data } = await client.get('/ai/console/v1/metadata/usage-stats', {
+  stats.value = await get<typeof stats.value>('/ai/console/v1/metadata/usage-stats', {
     params: {
       start_date: startDate.value?.toISOString(),
       end_date: endDate.value?.toISOString(),
     },
   })
-
-  stats.value = data
 }
 
 onMounted(fetchStats)

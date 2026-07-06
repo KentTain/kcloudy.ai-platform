@@ -3,7 +3,7 @@
 import { ref } from 'vue'
 import { ThumbsUpIcon, ThumbsDownIcon, MessageSquareIcon } from 'lucide-vue-next'
 import { Button, Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components'
-import { client } from '@/framework/api/client'
+import { apiClient } from '@/framework/api/client'
 
 const props = defineProps<{
   messageId: string
@@ -22,7 +22,7 @@ const showFeedbackDialog = ref(false)
 const handleRate = async (rating: number) => {
   localRating.value = rating
 
-  await client.post('/ai/console/v1/metadata/feedback', {
+  await apiClient.post('/ai/console/v1/metadata/feedback', {
     message_id: props.messageId,
     rating,
   })
@@ -31,7 +31,7 @@ const handleRate = async (rating: number) => {
 }
 
 const submitFeedback = async () => {
-  await client.post('/ai/console/v1/metadata/feedback', {
+  await apiClient.post('/ai/console/v1/metadata/feedback', {
     message_id: props.messageId,
     rating: localRating.value,
     feedback: feedbackText.value,
