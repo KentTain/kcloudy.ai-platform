@@ -12,7 +12,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from tenant.models import TenantPluginDefinition, TenantPluginMarketplace
 from tenant.services.marketplace.adapters.dify_adapter import DifyAdapter
-from tenant.services.marketplace.adapters.modelscope_adapter import ModelScopeAdapter
 from tenant.services.marketplace.adapters.agentskills_adapter import AgentSkillsAdapter
 from tenant.services.marketplace.adapters.local_skill_adapter import LocalSkillAdapter
 from tenant.services.marketplace.adapters.local_plugin_adapter import LocalPluginAdapter
@@ -38,7 +37,6 @@ class MarketplaceGateway:
 
     _adapters: dict[str, type] = {
         "dify": DifyAdapter,
-        "modelscope": ModelScopeAdapter,
         "agentskills": AgentSkillsAdapter,
         "modelscope-skill": ModelScopeSkillAdapter,
         "modelscope-mcp": ModelScopeMcpAdapter,

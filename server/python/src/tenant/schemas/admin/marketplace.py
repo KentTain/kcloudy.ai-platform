@@ -73,7 +73,6 @@ class MarketplaceResponse(BaseModel):
     # 不是顶层类型，故不出现在此。
     MARKET_SUPPORTED_TYPES: ClassVar[dict[str, list[str]]] = {
         "dify": ["tool", "model", "agent"],
-        "modelscope": ["model"],
         "modelscope-mcp": ["mcp"],
         "agentskills": ["skill"],
         "modelscope-skill": ["skill"],
