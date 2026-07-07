@@ -69,14 +69,23 @@ class MarketplaceResponse(BaseModel):
     created_at: datetime | None = Field(default=None, description="创建时间")
     updated_at: datetime | None = Field(default=None, description="更新时间")
 
-    SKILL_MARKET_TYPES: ClassVar[set[str]] = {"agentskills", "modelscope-skill", "local-skill"}
+    # 各市场类型可供应的顶层插件类型。oauth/endpoint 是清单内提供者能力，
+    # 不是顶层类型，故不出现在此。
+    MARKET_SUPPORTED_TYPES: ClassVar[dict[str, list[str]]] = {
+        "dify": ["tool", "model", "agent"],
+        "modelscope": ["model"],
+        "modelscope-mcp": ["mcp"],
+        "agentskills": ["skill"],
+        "modelscope-skill": ["skill"],
+        "local-skill": ["skill"],
+        "local-plugin": ["tool", "model", "agent"],
+    }
 
     @classmethod
     def from_entity(cls, entity) -> MarketplaceResponse:
         """从实体转换"""
-        supported_types = (
-            ["skill"] if entity.type in cls.SKILL_MARKET_TYPES
-            else ["tool", "model", "agent", "extension"]
+        supported_types = cls.MARKET_SUPPORTED_TYPES.get(
+            entity.type, ["tool", "model", "agent"]
         )
         return cls(
             id=entity.id,

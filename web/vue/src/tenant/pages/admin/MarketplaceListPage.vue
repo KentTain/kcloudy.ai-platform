@@ -48,9 +48,10 @@ function getTypeIcon(type: string) {
 // 获取市场类型标签
 const typeLabelMap: Record<string, string> = {
   dify: "Dify 市场",
-  modelscope: "ModelScope 市场",
+  modelscope: "ModelScope 模型市场",
   agentskills: "AgentSkills 市场",
   "modelscope-skill": "ModelScope Skill",
+  "modelscope-mcp": "ModelScope MCP",
   "local-skill": "本地 Skill 目录",
   "local-plugin": "本地 Plugin 目录",
 };

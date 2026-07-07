@@ -100,30 +100,30 @@ class TestSkillSyncFlow:
                         mock_result.scalar_one_or_none.return_value = None
                         mock_db_session.execute.return_value = mock_result
 
-                        # 执行同步
-                        result = await marketplace_gateway.sync_skill_from_marketplace(
-                            mock_db_session, "market-001", "community/airtable"
+                        # 执行同步（直接调用 sync_plugins）
+                        result = await marketplace_gateway.sync_plugins(
+                            mock_db_session,
+                            "market-001",
+                            [{"plugin_id": "community/airtable", "plugin_type": "skill"}],
                         )
 
-                        # 验证结果
-                        assert result is not None
-                        assert result.plugin_id == "community/airtable"
-                        assert result.skill_type == "knowledge"
-                        assert result.runtime_type == "none"
-                        assert result.manifest_type == "skill"
-                        assert result.source_type == "remote"
-                        assert result.install_type == "remote"
+                        # 验证同步成功
+                        assert len(result["success"]) == 1
+                        assert result["success"][0]["plugin_id"] == "community/airtable"
 
-                        # 验证 declaration 内容
-                        assert "skill" in result.declaration
-                        assert result.declaration["skill"]["skill_type"] == "knowledge"
-                        assert result.declaration["skill"]["runtime"] == "none"
-
-                        # 验证 session.add 被调用
+                        # 验证 session.add 被调用，并检查创建的定义
                         mock_db_session.add.assert_called_once()
-
-                        # 验证 session.flush 被调用
-                        mock_db_session.flush.assert_called_once()
+                        added_def = mock_db_session.add.call_args[0][0]
+                        assert added_def.plugin_id == "community/airtable"
+                        assert added_def.skill_type == "knowledge"
+                        assert added_def.runtime_type == "none"
+                        assert added_def.manifest_type == "skill"
+                        assert added_def.source_type == "remote"
+                        assert added_def.install_type == "remote"
+                        # 验证 declaration 内容
+                        assert "skill" in added_def.declaration
+                        assert added_def.declaration["skill"]["skill_type"] == "knowledge"
+                        assert added_def.declaration["skill"]["runtime"] == "none"
 
     @pytest.mark.asyncio
     async def test_sync_skill_updates_existing_definition(
@@ -135,7 +135,6 @@ class TestSkillSyncFlow:
         # 准备现有插件定义
         existing_def = MagicMock(spec=TenantPluginDefinition)
         existing_def.plugin_id = "community/airtable"
-        existing_def.version = "1.0.0"
         existing_def.skill_type = "knowledge"
         existing_def.runtime_type = "none"
         existing_def.remote_version = "1.0.0"
@@ -192,27 +191,31 @@ class TestSkillSyncFlow:
                             "skills/community/airtable/1.1.0/package.zip"
                         )
 
-                        # Mock 数据库查询（返回现有记录）
+                        # Mock 数据库查询（返回现有记录，版本不同触发更新）
                         mock_result = MagicMock()
                         mock_result.scalar_one_or_none.return_value = existing_def
                         mock_db_session.execute.return_value = mock_result
 
                         # 执行同步
-                        result = await marketplace_gateway.sync_skill_from_marketplace(
-                            mock_db_session, "market-001", "community/airtable"
+                        result = await marketplace_gateway.sync_plugins(
+                            mock_db_session,
+                            "market-001",
+                            [{"plugin_id": "community/airtable", "plugin_type": "skill"}],
                         )
 
-                        # 验证结果
-                        assert result is existing_def
-                        assert result.remote_version == "1.1.0"
-                        assert result.skill_type == "knowledge"
-                        assert result.runtime_type == "none"
+                        # 验证同步成功
+                        assert len(result["success"]) == 1
 
-                        # 验证 session.add 未被调用
+                        # 验证现有定义被更新
+                        assert existing_def.remote_version == "1.1.0"
+                        assert existing_def.local_version == "1.1.0"
+                        assert existing_def.skill_type == "knowledge"
+                        assert existing_def.runtime_type == "none"
+                        assert existing_def.manifest_type == "skill"
+                        assert existing_def.source_type == "remote"
+
+                        # 验证 session.add 未被调用（更新而非新增）
                         mock_db_session.add.assert_not_called()
-
-                        # 验证 session.flush 被调用
-                        mock_db_session.flush.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_sync_skill_with_script_type(self, mock_db_session, mock_marketplace):
@@ -271,20 +274,23 @@ class TestSkillSyncFlow:
                         mock_db_session.execute.return_value = mock_result
 
                         # 执行同步
-                        result = await marketplace_gateway.sync_skill_from_marketplace(
-                            mock_db_session, "market-001", "community/calculator"
+                        result = await marketplace_gateway.sync_plugins(
+                            mock_db_session,
+                            "market-001",
+                            [{"plugin_id": "community/calculator", "plugin_type": "skill"}],
                         )
 
-                        # 验证结果
-                        assert result is not None
-                        assert result.plugin_id == "community/calculator"
-                        assert result.skill_type == "script"
-                        assert result.runtime_type == "sandbox"
+                        # 验证同步成功
+                        assert len(result["success"]) == 1
 
-                        # 验证 declaration 内容
-                        assert "skill" in result.declaration
-                        assert result.declaration["skill"]["skill_type"] == "script"
-                        assert result.declaration["skill"]["runtime"] == "sandbox"
+                        # 验证创建的定义
+                        mock_db_session.add.assert_called_once()
+                        added_def = mock_db_session.add.call_args[0][0]
+                        assert added_def.plugin_id == "community/calculator"
+                        assert added_def.skill_type == "script"
+                        assert added_def.runtime_type == "sandbox"
+                        assert added_def.declaration["skill"]["skill_type"] == "script"
+                        assert added_def.declaration["skill"]["runtime"] == "sandbox"
 
     @pytest.mark.asyncio
     async def test_sync_skill_marketplace_not_found(self, mock_db_session):
@@ -322,8 +328,13 @@ class TestSkillSyncFlow:
                 with patch.object(
                     marketplace_gateway, "_build_adapter_config", return_value={}
                 ):
-                    # 执行并验证异常
-                    with pytest.raises(ValueError, match="Skill 不存在"):
-                        await marketplace_gateway.sync_skill_from_marketplace(
-                            mock_db_session, "market-001", "non-existent/skill"
-                        )
+                    # 执行同步并验证失败结果
+                    result = await marketplace_gateway.sync_plugins(
+                        mock_db_session,
+                        "market-001",
+                        [{"plugin_id": "non-existent/skill", "plugin_type": "skill"}],
+                    )
+
+                    assert len(result["failed"]) == 1
+                    assert "远程插件不存在" in result["failed"][0]["message"]
+

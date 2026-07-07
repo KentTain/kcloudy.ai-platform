@@ -6,6 +6,9 @@ from tenant.services.marketplace.adapters.agentskills_adapter import AgentSkills
 from tenant.services.marketplace.adapters.modelscope_skill_adapter import (
     ModelScopeSkillAdapter,
 )
+from tenant.services.marketplace.adapters.modelscope_mcp_adapter import (
+    ModelScopeMcpAdapter,
+)
 from tenant.services.marketplace.adapters.local_skill_adapter import LocalSkillAdapter
 from tenant.services.marketplace.adapters.local_plugin_adapter import LocalPluginAdapter
 
@@ -14,6 +17,7 @@ __all__ = [
     "ModelScopeAdapter",
     "AgentSkillsAdapter",
     "ModelScopeSkillAdapter",
+    "ModelScopeMcpAdapter",
     "LocalSkillAdapter",
     "LocalPluginAdapter",
 ]

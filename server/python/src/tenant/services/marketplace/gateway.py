@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from datetime import datetime
 from typing import TYPE_CHECKING, Any
 
@@ -17,6 +18,9 @@ from tenant.services.marketplace.adapters.local_skill_adapter import LocalSkillA
 from tenant.services.marketplace.adapters.local_plugin_adapter import LocalPluginAdapter
 from tenant.services.marketplace.adapters.modelscope_skill_adapter import (
     ModelScopeSkillAdapter,
+)
+from tenant.services.marketplace.adapters.modelscope_mcp_adapter import (
+    ModelScopeMcpAdapter,
 )
 from tenant.services.marketplace.protocol import (
     MarketplaceAdapter,
@@ -37,6 +41,7 @@ class MarketplaceGateway:
         "modelscope": ModelScopeAdapter,
         "agentskills": AgentSkillsAdapter,
         "modelscope-skill": ModelScopeSkillAdapter,
+        "modelscope-mcp": ModelScopeMcpAdapter,
         "local-skill": LocalSkillAdapter,
         "local-plugin": LocalPluginAdapter,
     }
@@ -253,7 +258,7 @@ class MarketplaceGateway:
                     skipped.append({"plugin_id": plugin_id, "reason": "相同版本已存在"})
                     continue
 
-                # 3. 下载插件包
+                # 3. 下载插件包 / 获取清单
                 package_data, checksum = await adapter.download_plugin(config, plugin_id)
 
                 # 4. 根据类型选择不同的存储和声明策略
@@ -279,6 +284,15 @@ class MarketplaceGateway:
                             "tags": remote_info.tags,
                         },
                     }
+                    manifest_type_value = "skill"
+                    skill_type_value = remote_info.skill_type
+                    runtime_type_value = skill_runtime
+                elif plugin_type == "mcp":
+                    # MCP 类型：远程服务引用，无安装包；download_plugin 返回连接清单 JSON
+                    declaration = json.loads(package_data)
+                    manifest_type_value = "mcp"
+                    skill_type_value = None
+                    runtime_type_value = "remote"
                 else:
                     # Plugin 类型：解析包 + 使用 plugin 存储路径
                     package_info = plugin_package_service.parse_package_from_bytes(package_data)
@@ -288,6 +302,9 @@ class MarketplaceGateway:
                         package_data=package_data,
                     )
                     declaration = package_info.declaration
+                    manifest_type_value = plugin_type
+                    skill_type_value = None
+                    runtime_type_value = None
 
                 # 5. 创建/更新 plugin_definitions 记录
                 if existing_def:
@@ -297,10 +314,9 @@ class MarketplaceGateway:
                     existing_def.update_available = False
                     existing_def.source_type = "remote"
                     existing_def.marketplace_id = marketplace_id
-                    if plugin_type == "skill":
-                        existing_def.skill_type = remote_info.skill_type
-                        existing_def.runtime_type = skill_runtime
-                        existing_def.manifest_type = "skill"
+                    existing_def.skill_type = skill_type_value
+                    existing_def.runtime_type = runtime_type_value
+                    existing_def.manifest_type = manifest_type_value
                 else:
                     new_def = TenantPluginDefinition(
                         plugin_id=plugin_id,
@@ -308,14 +324,14 @@ class MarketplaceGateway:
                         declaration=declaration,
                         refers=0,
                         install_type="remote",
-                        manifest_type="skill" if plugin_type == "skill" else plugin_type,
+                        manifest_type=manifest_type_value,
                         marketplace_id=marketplace_id,
                         remote_plugin_id=plugin_id,
                         remote_version=remote_info.version,
                         local_version=remote_info.version,
                         source_type="remote",
-                        skill_type=remote_info.skill_type if plugin_type == "skill" else None,
-                        runtime_type=skill_runtime if plugin_type == "skill" else None,
+                        skill_type=skill_type_value,
+                        runtime_type=runtime_type_value,
                     )
                     session.add(new_def)
 

@@ -58,7 +58,7 @@ const hasPluginTab = computed(
     supportedTypes.value.includes("tool") ||
     supportedTypes.value.includes("model") ||
     supportedTypes.value.includes("agent") ||
-    supportedTypes.value.includes("extension"),
+    supportedTypes.value.includes("mcp"),
 );
 
 const activeTab = ref<string>("");
@@ -92,9 +92,10 @@ const loadMarketplace = async () => {
 // 市场类型标签
 const typeLabelMap: Record<string, string> = {
   dify: "Dify 市场",
-  modelscope: "ModelScope 市场",
+  modelscope: "ModelScope 模型市场",
   agentskills: "AgentSkills 市场",
   "modelscope-skill": "ModelScope Skill",
+  "modelscope-mcp": "ModelScope MCP",
   "local-skill": "本地 Skill 目录",
   "local-plugin": "本地 Plugin 目录",
 };
@@ -120,8 +121,8 @@ function getTypeLabel(type: string): string {
       return "模型";
     case "agent":
       return "Agent";
-    case "extension":
-      return "扩展";
+    case "mcp":
+      return "MCP";
     default:
       return type;
   }
@@ -514,7 +515,7 @@ onMounted(() => {
                   <SelectItem value="tool">工具</SelectItem>
                   <SelectItem value="model">模型</SelectItem>
                   <SelectItem value="agent">Agent</SelectItem>
-                  <SelectItem value="extension">扩展</SelectItem>
+                  <SelectItem value="mcp">MCP</SelectItem>
                 </SelectContent>
               </Select>
               <Button variant="outline" data-testid="search-btn" @click="handlePluginSearch">

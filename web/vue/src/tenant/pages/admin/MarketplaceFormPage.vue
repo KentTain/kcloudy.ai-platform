@@ -38,9 +38,10 @@ const errors = ref<Record<string, string>>({});
 // 市场类型选项（与后端适配器类型对齐）
 const typeOptions = [
   { value: "dify", label: "Dify 市场" },
-  { value: "modelscope", label: "ModelScope 市场" },
-  { value: "agentskills", label: "AgentSkills 市场" },
+  { value: "modelscope", label: "ModelScope 模型市场" },
   { value: "modelscope-skill", label: "ModelScope Skill" },
+  { value: "modelscope-mcp", label: "ModelScope MCP" },
+  { value: "agentskills", label: "AgentSkills 市场" },
   { value: "local-skill", label: "本地 Skill 目录" },
   { value: "local-plugin", label: "本地 Plugin 目录" },
 ];

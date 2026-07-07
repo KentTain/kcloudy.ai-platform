@@ -26,13 +26,17 @@ from framework.database.mixins.tenant import TenantMixin
 
 
 class PluginType(str, Enum):
-    """插件类型枚举"""
+    """插件类型枚举
+
+    顶层插件分类。oauth/endpoint 不是类型，而是插件包清单内声明的
+    提供者能力，故不在此枚举。
+    """
 
     MODEL = "model"  # AI模型插件（LLM、Embedding等）
     TOOL = "tool"  # 工具插件
     AGENT = "agent"  # AI代理插件
-    OAUTH = "oauth"  # OAuth认证插件
-    ENDPOINT = "endpoint"  # 端点插件
+    MCP = "mcp"  # MCP 服务插件（独立的 MCP server 资源）
+    SKILL = "skill"  # 技能插件（知识文档 + 简单脚本）
 
 
 class InstallType(str, Enum):
