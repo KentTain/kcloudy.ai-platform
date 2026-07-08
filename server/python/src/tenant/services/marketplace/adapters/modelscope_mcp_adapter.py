@@ -1,8 +1,12 @@
 """ModelScope MCP 市场适配器
 
 魔搭社区提供独立的 MCP server 市场，与模型市场、Skill 市场并列。
-本适配器仅负责 MCP server 资源的浏览与同步，不复用 ModelScopeAdapter
-（后者只覆盖模型）。
+本适配器符合 ModelScope OpenAPI 规范（https://modelscope.cn/docs/openapi）。
+
+关键特性：
+- MCP 列表使用 PUT 方法，请求体传参
+- MCP 连接信息通过 get_operational_url=true 参数获取
+- MCP 服务是远程服务，无安装包，返回连接配置清单
 """
 
 from __future__ import annotations
@@ -28,7 +32,9 @@ if TYPE_CHECKING:
 
 
 class ModelScopeMcpAdapter(MarketplaceAdapter):
-    """ModelScope MCP 市场适配器（兼容 modelscope.cn/mcp API）"""
+    """ModelScope MCP 市场适配器（符合官方 OpenAPI 规范）"""
+
+    API_BASE = "https://modelscope.cn/openapi/v1"
 
     @property
     def market_type(self) -> str:
@@ -37,7 +43,7 @@ class ModelScopeMcpAdapter(MarketplaceAdapter):
 
     def _build_headers(self, config: dict) -> dict[str, str]:
         """构建请求头"""
-        headers = {"Accept": "application/json"}
+        headers = {"Accept": "application/json", "Content-Type": "application/json"}
         auth_config = config.get("auth_config", {})
         api_token = auth_config.get("api_token", "")
         if api_token:
@@ -46,7 +52,7 @@ class ModelScopeMcpAdapter(MarketplaceAdapter):
 
     def _get_base_url(self, config: dict) -> str:
         """获取 API 基础 URL"""
-        return config.get("url", "https://modelscope.cn/api/v1")
+        return config.get("url", self.API_BASE)
 
     async def test_connection(self, config: dict) -> MarketplaceTestResult:
         """测试市场连接"""
@@ -55,17 +61,18 @@ class ModelScopeMcpAdapter(MarketplaceAdapter):
         start_time = time.time()
 
         try:
+            # 使用 PUT 方法，请求体传参
             async with httpx.AsyncClient(timeout=30.0) as client:
-                response = await client.get(
-                    f"{base_url}/mcpServers",
+                response = await client.put(
+                    f"{base_url}/mcp/servers",
                     headers=headers,
-                    params={"PageNumber": 1, "PageSize": 1},
+                    json={"page_number": 1, "page_size": 1},
                 )
                 latency_ms = int((time.time() - start_time) * 1000)
 
                 if response.status_code == 200:
                     data = response.json()
-                    total = data.get("Data", {}).get("TotalCount", 0)
+                    total = data.get("data", {}).get("total_count", 0)
                     return MarketplaceTestResult(
                         success=True,
                         message="连接成功",
@@ -96,36 +103,40 @@ class ModelScopeMcpAdapter(MarketplaceAdapter):
         """获取远程 MCP server 列表"""
         headers = self._build_headers(config)
         base_url = self._get_base_url(config)
-        params: dict[str, Any] = {"PageNumber": page, "PageSize": page_size}
 
+        # PUT 请求体传参
+        body: dict[str, Any] = {"page_number": page, "page_size": page_size}
         if keyword:
-            params["Name"] = keyword
+            body["search"] = keyword
 
         async with httpx.AsyncClient(timeout=30.0) as client:
-            response = await client.get(
-                f"{base_url}/mcpServers",
+            response = await client.put(
+                f"{base_url}/mcp/servers",
                 headers=headers,
-                params=params,
+                json=body,
             )
             response.raise_for_status()
             data = response.json()
 
-        servers_data = data.get("Data", {}).get("McpServers", []) or data.get("Data", {}).get("Servers", [])
-        total = data.get("Data", {}).get("TotalCount", 0)
+        # 解析响应：data.mcp_server_list
+        servers_data = data.get("data", {}).get("mcp_server_list", [])
+        total = data.get("data", {}).get("total_count", 0)
         plugins = [self._parse_mcp(item) for item in servers_data]
 
         return plugins, total
 
     async def get_plugin(self, config: dict, plugin_id: str) -> RemotePluginInfo | None:
-        """获取单个 MCP server 详情"""
+        """获取单个 MCP server 详情（含连接信息）"""
         headers = self._build_headers(config)
         base_url = self._get_base_url(config)
 
         try:
             async with httpx.AsyncClient(timeout=30.0) as client:
+                # 必须传 get_operational_url=true 才能获取连接信息
                 response = await client.get(
-                    f"{base_url}/mcpServers/{plugin_id}",
+                    f"{base_url}/mcp/servers/{plugin_id}",
                     headers=headers,
+                    params={"get_operational_url": "true"},
                 )
 
                 if response.status_code == 404:
@@ -133,7 +144,7 @@ class ModelScopeMcpAdapter(MarketplaceAdapter):
 
                 response.raise_for_status()
                 data = response.json()
-                return self._parse_mcp(data.get("Data", {}))
+                return self._parse_mcp_detail(data.get("data", {}))
 
         except httpx.HTTPStatusError as e:
             if e.response.status_code == 404:
@@ -155,10 +166,16 @@ class ModelScopeMcpAdapter(MarketplaceAdapter):
         if not remote_info:
             raise ValueError(f"MCP server {plugin_id} not found")
 
+        # 从 skill_metadata 获取连接信息
+        metadata = remote_info.skill_metadata or {}
+        transport = metadata.get("transport_type", "streamable_http")
+        auth_required = metadata.get("auth_required", False)
+
         manifest = {
             "mcp": {
                 "server_url": remote_info.download_url,
-                "transport": self._extract_transport(remote_info),
+                "transport": transport,
+                "auth_required": auth_required,
             },
             "metadata": {
                 "name": remote_info.name,
@@ -204,38 +221,59 @@ class ModelScopeMcpAdapter(MarketplaceAdapter):
         return results
 
     def _parse_mcp(self, item: dict) -> RemotePluginInfo:
-        """解析 MCP server 数据"""
-        plugin_id = item.get("Id", "") or item.get("Name", "")
-        name = item.get("ChineseName") or item.get("Name", "")
-        author = item.get("Owner", "")
-        # MCP server 的访问端点
-        server_url = item.get("ServerUrl") or item.get("Endpoint") or item.get("Url", "")
-        transport = item.get("Transport") or item.get("Protocol", "streamable_http")
-
+        """解析 MCP server 列表数据（不包含连接信息）"""
         return RemotePluginInfo(
-            plugin_id=plugin_id,
-            name=name,
-            description=item.get("Description", ""),
-            version=item.get("Version", "latest"),
-            author=author,
-            icon=item.get("Logo"),
-            plugin_type="mcp",  # MCP 市场的插件类型固定为 "mcp"
-            tags=item.get("Tags", []),
-            downloads=item.get("Downloads"),
+            plugin_id=item.get("id", ""),
+            name=item.get("chinese_name") or item.get("name", ""),
+            description=item.get("description", ""),
+            version="latest",
+            author=item.get("publisher", ""),
+            icon=item.get("logo_url"),
+            plugin_type="mcp",
+            tags=item.get("tags", []),
+            downloads=item.get("view_count"),
             manifest_url=None,
-            download_url=server_url,
-            created_at=self._parse_datetime(item.get("CreateTime")),
-            updated_at=self._parse_datetime(item.get("UpdateTime")),
+            download_url="",  # 列表不包含连接信息
+            created_at=None,
+            updated_at=None,
         )
 
-    def _extract_transport(self, info: RemotePluginInfo) -> str:
-        """从下载 URL 推导传输方式"""
-        url = (info.download_url or "").lower()
-        if url.startswith("ws://") or url.startswith("wss://"):
-            return "websocket"
-        if "/sse" in url:
-            return "sse"
-        return "streamable_http"
+    def _parse_mcp_detail(self, item: dict) -> RemotePluginInfo:
+        """解析 MCP server 详情数据（包含连接信息）"""
+        # 从 operational_urls 获取连接信息
+        server_url = ""
+        transport = "streamable_http"
+        auth_required = False
+
+        operational_urls = item.get("operational_urls", [])
+        if operational_urls:
+            # 取第一个可用的连接
+            first_url = operational_urls[0]
+            server_url = first_url.get("url", "")
+            transport = first_url.get("transport_type", "streamable_http")
+            auth_required = first_url.get("auth_required", False)
+
+        return RemotePluginInfo(
+            plugin_id=item.get("id", ""),
+            name=item.get("chinese_name") or item.get("name", ""),
+            description=item.get("description", ""),
+            version="latest",
+            author=item.get("author") or item.get("publisher", ""),
+            icon=item.get("logo_url"),
+            plugin_type="mcp",
+            tags=item.get("tags", []),
+            downloads=item.get("view_count"),
+            manifest_url=None,
+            download_url=server_url,
+            created_at=None,
+            updated_at=None,
+            skill_metadata={
+                "transport_type": transport,
+                "auth_required": auth_required,
+                "is_hosted": item.get("is_hosted", False),
+                "is_verified": item.get("is_verified", False),
+            },
+        )
 
     def _parse_datetime(self, value: str | None) -> datetime | None:
         """解析时间字符串"""
