@@ -94,7 +94,7 @@ class SkillScanner:
         zip_buffer = BytesIO()
         with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zipf:
             for file_path in skill.skill_dir.rglob("*"):
-                if file_path.is_file():
+                if file_path.is_file() and ".git" not in file_path.parts:
                     arcname = file_path.relative_to(skill.skill_dir)
                     zipf.write(file_path, arcname)
 

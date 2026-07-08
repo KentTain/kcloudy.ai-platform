@@ -8,6 +8,7 @@ from loguru import logger
 
 from tenant.services.marketplace.git_sync_service import GitSyncService
 from tenant.services.marketplace.protocol import (
+    MarketplaceAdapter,
     MarketplaceTestResult,
     PluginUpdateInfo,
     RemotePluginInfo,
@@ -18,7 +19,7 @@ if TYPE_CHECKING:
     from collections.abc import Sequence
 
 
-class GitSkillsAdapter:
+class GitSkillsAdapter(MarketplaceAdapter):
     """Git 仓库 Skill 适配器
 
     从 Git 仓库同步并扫描 SKILL.md 文件，提供插件市场协议接口。

@@ -33,8 +33,10 @@ class GitPythonBackend:
         Returns:
             元组 (仓库路径, 提交 SHA)
         """
-        # GitPython 克隆
-        repo = self.git.Repo.clone_from(repo_url, target_path, branch=ref)
+        # GitPython 克隆（在线程池中执行以避免阻塞事件循环）
+        repo = await asyncio.to_thread(
+            self.git.Repo.clone_from, repo_url, target_path, branch=ref
+        )
 
         # 如果指定了子目录，配置稀疏检出
         if subdir:
@@ -56,17 +58,15 @@ class GitPythonBackend:
         Returns:
             提交 SHA
         """
-        repo = self.git.Repo(repo_path)
+        repo = await asyncio.to_thread(self.git.Repo, repo_path)
 
-        # 拉取最新代码
-        origin = repo.remotes.origin
-        origin.fetch()
+        # 在线程池中执行 fetch + checkout
+        def _sync_fetch_checkout():
+            origin = repo.remotes.origin
+            origin.fetch()
+            repo.git.checkout(ref)
 
-        # 切换到指定引用
-        repo.git.checkout(ref)
-
-        # 拉取更新
-        repo.git.pull("origin", ref)
+        await asyncio.to_thread(_sync_fetch_checkout)
 
         # 如果指定了子目录，更新稀疏检出
         if subdir:
@@ -83,16 +83,19 @@ class GitPythonBackend:
             repo: GitPython 仓库对象
             subdir: 子目录路径
         """
-        # 启用稀疏检出
-        repo.git.config("core.sparseCheckout", "true")
+        def _sync_setup():
+            # 启用稀疏检出
+            repo.git.config("core.sparseCheckout", "true")
 
-        # 写入稀疏检出配置
-        sparse_checkout_file = repo.git_dir / "info" / "sparse-checkout"
-        sparse_checkout_file.parent.mkdir(parents=True, exist_ok=True)
-        sparse_checkout_file.write_text(f"{subdir}\n", encoding="utf-8")
+            # 写入稀疏检出配置
+            sparse_checkout_file = repo.git_dir / "info" / "sparse-checkout"
+            sparse_checkout_file.parent.mkdir(parents=True, exist_ok=True)
+            sparse_checkout_file.write_text(f"{subdir}\n", encoding="utf-8")
 
-        # 重新应用稀疏检出
-        repo.git.read_tree("-mu", "HEAD")
+            # 重新应用稀疏检出
+            repo.git.read_tree("-mu", "HEAD")
+
+        await asyncio.to_thread(_sync_setup)
 
 
 class SubprocessGitBackend:
@@ -195,8 +198,9 @@ class SubprocessGitBackend:
             target_path: 目标路径
             subdir: 子目录路径
         """
-        # 初始化仓库
-        await self._run_git_command(["git", "init"], target_path.parent)
+        # 初始化仓库（先创建目标目录，再在目标目录内执行 git init）
+        target_path.mkdir(parents=True, exist_ok=True)
+        await self._run_git_command(["git", "init"], target_path)
         await self._run_git_command(["git", "remote", "add", "origin", repo_url], target_path)
 
         # 启用稀疏检出
