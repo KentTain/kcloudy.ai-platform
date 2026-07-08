@@ -51,7 +51,7 @@
 - 创建：`server/python/src/tenant/services/marketplace/skill_scanner.py`
 - 测试：`server/python/tests/tenant/unit/marketplace/test_skill_scanner.py`
 
-- [ ] **步骤 1：编写失败的测试 - SkillMeta 数据类**
+- [x] **步骤 1：编写失败的测试 - SkillMeta 数据类**
 
 ```python
 # tests/tenant/unit/marketplace/test_skill_scanner.py

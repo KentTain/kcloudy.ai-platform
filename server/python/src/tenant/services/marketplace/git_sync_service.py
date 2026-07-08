@@ -3,6 +3,8 @@ from __future__ import annotations
 from pathlib import Path
 import re
 import hashlib
+import asyncio
+import subprocess
 from loguru import logger
 
 
@@ -129,6 +131,53 @@ class GitSyncService:
         """
         backend = await self._get_git_backend()
         return await backend.fetch_and_checkout(repo_path, ref, subdir)
+
+    async def check_repo_accessible(self, repo_url: str, ref: str) -> bool:
+        """检查远程仓库和指定分支是否可访问
+
+        Args:
+            repo_url: 仓库 URL
+            ref: Git 引用（分支名）
+
+        Returns:
+            True 如果仓库和分支可访问，否则 False
+        """
+        try:
+            cmd = ["git", "ls-remote", "--exit-code", repo_url, f"refs/heads/{ref}"]
+            proc = await asyncio.create_subprocess_exec(
+                *cmd,
+                stdout=asyncio.subprocess.DEVNULL,
+                stderr=asyncio.subprocess.DEVNULL,
+            )
+            await proc.wait()
+            return proc.returncode == 0
+        except Exception:
+            return False
+
+    async def get_remote_commit_sha(self, repo_url: str, ref: str) -> str:
+        """获取远程仓库指定分支的最新提交 SHA
+
+        Args:
+            repo_url: 仓库 URL
+            ref: Git 引用（分支名）
+
+        Returns:
+            提交 SHA 字符串，获取失败返回空字符串
+        """
+        try:
+            cmd = ["git", "ls-remote", repo_url, f"refs/heads/{ref}"]
+            proc = await asyncio.create_subprocess_exec(
+                *cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+            stdout, _ = await proc.communicate()
+            line = stdout.decode().strip()
+            if line:
+                return line.split("\t")[0]
+            return ""
+        except Exception:
+            return ""
 
     async def _get_git_backend(self):
         """
