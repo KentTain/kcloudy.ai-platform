@@ -205,6 +205,31 @@ class TenantSettings(BaseSettings):
     )
 
 
+class SkillsGitSettings(BaseSettings):
+    """Skills Git 配置"""
+
+    default_repo: str = Field(
+        default="https://github.com/anthropics/skills.git",
+        description="GitSkillsAdapter 默认仓库",
+    )
+    default_ref: str = Field(default="main", description="默认 Git 引用")
+    cache_dir: str = Field(
+        default="./cache/skills", description="Skill 仓库缓存目录"
+    )
+    cache_ttl_days: int = Field(default=30, description="缓存保留天数")
+    cleanup_on_startup: bool = Field(
+        default=True, description="启动时是否清理过期缓存"
+    )
+
+
+class SkillsSettings(BaseSettings):
+    """Skills 配置"""
+
+    git: SkillsGitSettings = Field(
+        default_factory=SkillsGitSettings, description="Skills Git 配置"
+    )
+
+
 class JWTSettings(BaseSettings):
     """JWT 配置"""
 
@@ -423,6 +448,11 @@ class Settings(BaseSettings):
     # 代码沙箱配置
     code_sandbox: CodeSandboxSettings = Field(
         default_factory=CodeSandboxSettings, description="代码沙箱配置"
+    )
+
+    # Skills 配置
+    skills: SkillsSettings = Field(
+        default_factory=SkillsSettings, description="Skills 配置"
     )
 
     # 日志配置

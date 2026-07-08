@@ -95,3 +95,121 @@ async def test_sync_repo_existing_cache():
             repo_path, commit_sha = await service.sync_repo("https://github.com/test/repo.git", ref="main")
             assert commit_sha == "def456"
             mock_fetch.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_check_repo_accessible_branch():
+    """测试检查分支可访问性"""
+    service = GitSyncService()
+
+    # 模拟分支存在
+    with patch("asyncio.create_subprocess_exec", new_callable=AsyncMock) as mock_proc:
+        mock_process = AsyncMock()
+        mock_process.returncode = 0
+        mock_process.wait = AsyncMock()
+        mock_proc.return_value = mock_process
+
+        result = await service.check_repo_accessible("https://github.com/test/repo.git", "main")
+        assert result is True
+
+
+@pytest.mark.asyncio
+async def test_check_repo_accessible_tag():
+    """测试检查标签可访问性（分支不存在但标签存在）"""
+    service = GitSyncService()
+
+    call_count = 0
+
+    async def mock_create_subprocess(*args, **kwargs):
+        nonlocal call_count
+        call_count += 1
+        mock_process = AsyncMock()
+        # 第一次调用（分支）返回非0，第二次调用（标签）返回0
+        mock_process.returncode = 0 if call_count == 2 else 1
+        mock_process.wait = AsyncMock()
+        return mock_process
+
+    with patch("asyncio.create_subprocess_exec", side_effect=mock_create_subprocess):
+        result = await service.check_repo_accessible("https://github.com/test/repo.git", "v1.0.0")
+        assert result is True
+
+
+@pytest.mark.asyncio
+async def test_check_repo_accessible_not_found():
+    """测试分支和标签都不存在"""
+    service = GitSyncService()
+
+    with patch("asyncio.create_subprocess_exec", new_callable=AsyncMock) as mock_proc:
+        mock_process = AsyncMock()
+        mock_process.returncode = 1
+        mock_process.wait = AsyncMock()
+        mock_proc.return_value = mock_process
+
+        result = await service.check_repo_accessible("https://github.com/test/repo.git", "nonexistent")
+        assert result is False
+
+
+@pytest.mark.asyncio
+async def test_get_remote_commit_sha():
+    """测试获取远程 commit SHA"""
+    service = GitSyncService()
+
+    mock_process = AsyncMock()
+    mock_process.communicate = AsyncMock(return_value=(b"abc123def456\trefs/heads/main", b""))
+    mock_process.returncode = 0
+
+    with patch("asyncio.create_subprocess_exec", new_callable=AsyncMock, return_value=mock_process):
+        sha = await service.get_remote_commit_sha("https://github.com/test/repo.git", "main")
+        assert sha == "abc123def456"
+
+
+@pytest.mark.asyncio
+async def test_get_remote_commit_sha_tag():
+    """测试获取标签对应的 commit SHA"""
+    service = GitSyncService()
+
+    call_count = 0
+
+    async def mock_create_subprocess(*args, **kwargs):
+        nonlocal call_count
+        call_count += 1
+        mock_process = AsyncMock()
+        if call_count == 1:
+            # 分支查询返回空
+            mock_process.communicate = AsyncMock(return_value=(b"", b""))
+        else:
+            # 标签查询返回结果
+            mock_process.communicate = AsyncMock(return_value=(b"tag_sha123\trefs/tags/v1.0.0", b""))
+        return mock_process
+
+    with patch("asyncio.create_subprocess_exec", side_effect=mock_create_subprocess):
+        sha = await service.get_remote_commit_sha("https://github.com/test/repo.git", "v1.0.0")
+        assert sha == "tag_sha123"
+
+
+def test_cleanup_expired():
+    """测试清理过期缓存"""
+    import time
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        cache_dir = Path(tmpdir)
+        service = GitSyncService(cache_dir=cache_dir)
+
+        # 创建新缓存（不应被清理）
+        fresh_dir = cache_dir / "repo1" / "main"
+        fresh_dir.mkdir(parents=True)
+        (fresh_dir / "SKILL.md").write_text("---\nname: fresh\n---\n", encoding="utf-8")
+
+        # 创建过期缓存（修改时间为 31 天前）
+        old_dir = cache_dir / "repo2" / "main"
+        old_dir.mkdir(parents=True)
+        (old_dir / "SKILL.md").write_text("---\nname: old\n---\n", encoding="utf-8")
+        import os
+        old_mtime = time.time() - 31 * 86400
+        os.utime(old_dir, (old_mtime, old_mtime))
+
+        removed = service.cleanup_expired(ttl_days=30)
+
+        assert removed == 1
+        assert fresh_dir.exists()
+        assert not old_dir.exists()

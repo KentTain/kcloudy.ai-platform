@@ -100,7 +100,7 @@ Content
         assert plugin.plugin_id == "testauthor/test-skill"
         assert plugin.name == "test-skill"
         assert plugin.description == "A test skill"
-        assert plugin.version == "main"  # ref 作为版本
+        assert plugin.version == "1.0.0"  # 使用 skill.version
         assert plugin.author == "testauthor"
         assert plugin.plugin_type == "skill"
         assert plugin.tags == ["python"]

@@ -4,7 +4,9 @@ from pathlib import Path
 import re
 import hashlib
 import asyncio
+import shutil
 import subprocess
+import time
 from loguru import logger
 
 
@@ -39,8 +41,8 @@ class GitSyncService:
             repo = match.group(3)
             repo_name = f"{host}_{owner}_{repo}"
         else:
-            # 对于无法解析的 URL，使用哈希值作为仓库名
-            repo_hash = hashlib.md5(repo_url.encode()).hexdigest()[:12]
+            # 对于无法解析的 URL，使用 SHA256 哈希值作为仓库名
+            repo_hash = hashlib.sha256(repo_url.encode()).hexdigest()[:12]
             repo_name = repo_hash
 
         return self.cache_dir / repo_name / ref
@@ -133,17 +135,31 @@ class GitSyncService:
         return await backend.fetch_and_checkout(repo_path, ref, subdir)
 
     async def check_repo_accessible(self, repo_url: str, ref: str) -> bool:
-        """检查远程仓库和指定分支是否可访问
+        """检查远程仓库和指定引用是否可访问
+
+        同时检查分支（refs/heads/）和标签（refs/tags/）。
 
         Args:
             repo_url: 仓库 URL
-            ref: Git 引用（分支名）
+            ref: Git 引用（分支名或标签名）
 
         Returns:
-            True 如果仓库和分支可访问，否则 False
+            True 如果仓库和引用可访问，否则 False
         """
         try:
+            # 先检查分支
             cmd = ["git", "ls-remote", "--exit-code", repo_url, f"refs/heads/{ref}"]
+            proc = await asyncio.create_subprocess_exec(
+                *cmd,
+                stdout=asyncio.subprocess.DEVNULL,
+                stderr=asyncio.subprocess.DEVNULL,
+            )
+            await proc.wait()
+            if proc.returncode == 0:
+                return True
+
+            # 再检查标签
+            cmd = ["git", "ls-remote", "--exit-code", repo_url, f"refs/tags/{ref}"]
             proc = await asyncio.create_subprocess_exec(
                 *cmd,
                 stdout=asyncio.subprocess.DEVNULL,
@@ -155,16 +171,19 @@ class GitSyncService:
             return False
 
     async def get_remote_commit_sha(self, repo_url: str, ref: str) -> str:
-        """获取远程仓库指定分支的最新提交 SHA
+        """获取远程仓库指定引用的最新提交 SHA
+
+        同时检查分支和标签。
 
         Args:
             repo_url: 仓库 URL
-            ref: Git 引用（分支名）
+            ref: Git 引用（分支名或标签名）
 
         Returns:
             提交 SHA 字符串，获取失败返回空字符串
         """
         try:
+            # 先查分支
             cmd = ["git", "ls-remote", repo_url, f"refs/heads/{ref}"]
             proc = await asyncio.create_subprocess_exec(
                 *cmd,
@@ -175,6 +194,23 @@ class GitSyncService:
             line = stdout.decode().strip()
             if line:
                 return line.split("\t")[0]
+
+            # 再查标签
+            cmd = ["git", "ls-remote", repo_url, f"refs/tags/{ref}"]
+            proc = await asyncio.create_subprocess_exec(
+                *cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+            stdout, _ = await proc.communicate()
+            line = stdout.decode().strip()
+            if line:
+                # 标签可能是 annotated tag，返回 ^{} 行（指向的 commit）
+                for l in line.split("\n"):
+                    if l.endswith("^{}"):
+                        return l.split("\t")[0]
+                return line.split("\t")[0]
+
             return ""
         except Exception:
             return ""
@@ -195,3 +231,36 @@ class GitSyncService:
         except ImportError:
             from tenant.services.marketplace.git_backends import SubprocessGitBackend
             return SubprocessGitBackend()
+
+    def cleanup_expired(self, ttl_days: int = 30) -> int:
+        """清理过期缓存目录
+
+        Args:
+            ttl_days: 缓存保留天数，超过此天数的缓存将被清理
+
+        Returns:
+            清理的目录数量
+        """
+        if not self.cache_dir.exists():
+            return 0
+
+        cutoff = time.time() - ttl_days * 86400
+        removed = 0
+
+        # 遍历 cache_dir 下的仓库目录（两层结构: repo_name/ref/）
+        for repo_dir in self.cache_dir.iterdir():
+            if not repo_dir.is_dir():
+                continue
+            for ref_dir in repo_dir.iterdir():
+                if not ref_dir.is_dir():
+                    continue
+                # 使用目录修改时间判断过期
+                try:
+                    if ref_dir.stat().st_mtime < cutoff:
+                        shutil.rmtree(ref_dir)
+                        removed += 1
+                        logger.info(f"清理过期缓存: {ref_dir}")
+                except OSError as e:
+                    logger.warning(f"清理缓存失败: {ref_dir}, 错误: {e}")
+
+        return removed

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import re
 import zipfile
 from dataclasses import dataclass, field
 from io import BytesIO
@@ -57,10 +58,20 @@ class SkillScanner:
         name = front_matter.get("name")
         if not name:
             raise ValueError("Invalid SKILL.md format: missing 'name' field")
+        if not re.match(r"^[a-zA-Z0-9][a-zA-Z0-9\-]*$", str(name)):
+            raise ValueError(
+                f"Invalid SKILL.md format: 'name' must start with alphanumeric "
+                f"and contain only letters, digits, and hyphens, got: {name}"
+            )
 
         description = front_matter.get("description")
         if not description:
             raise ValueError("Invalid SKILL.md format: missing 'description' field")
+        if len(str(description)) > 500:
+            raise ValueError(
+                f"Invalid SKILL.md format: 'description' exceeds 500 characters "
+                f"({len(str(description))} chars)"
+            )
 
         version = front_matter.get("version", "1.0.0")
         author = front_matter.get("author", "unknown")

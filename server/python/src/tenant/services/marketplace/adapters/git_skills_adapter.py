@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import time
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 from loguru import logger
@@ -13,7 +15,7 @@ from tenant.services.marketplace.protocol import (
     PluginUpdateInfo,
     RemotePluginInfo,
 )
-from tenant.services.marketplace.skill_scanner import SkillScanner
+from tenant.services.marketplace.skill_scanner import SkillMeta, SkillScanner
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -34,8 +36,23 @@ class GitSkillsAdapter(MarketplaceAdapter):
         git_sync: GitSyncService | None = None,
         scanner: SkillScanner | None = None,
     ):
-        self.git_sync = git_sync or GitSyncService()
+        # 尝试从应用配置读取默认值
+        try:
+            from framework.configs.settings import get_settings
+            settings = get_settings()
+            git_cfg = settings.skills.git
+            self._default_repo = git_cfg.default_repo
+            self._default_ref = git_cfg.default_ref
+            cache_dir = Path(git_cfg.cache_dir)
+        except Exception:
+            self._default_repo = self.DEFAULT_REPO
+            self._default_ref = self.DEFAULT_REF
+            cache_dir = None
+
+        self.git_sync = git_sync or GitSyncService(cache_dir=cache_dir)
         self.scanner = scanner or SkillScanner()
+        self._skills_cache: dict[str, tuple[list[SkillMeta], float]] = {}
+        self._cache_ttl: float = 60.0  # 缓存 60 秒
 
     @property
     def market_type(self) -> str:
@@ -44,11 +61,29 @@ class GitSkillsAdapter(MarketplaceAdapter):
 
     def _get_repo_url(self, config: dict) -> str:
         """从配置获取仓库 URL"""
-        return config.get("repo_url", self.DEFAULT_REPO)
+        return config.get("repo_url", self._default_repo)
 
     def _get_ref(self, config: dict) -> str:
         """从配置获取 Git 引用"""
-        return config.get("ref", self.DEFAULT_REF)
+        return config.get("ref", self._default_ref)
+
+    async def _get_skills(self, repo_url: str, ref: str) -> list[SkillMeta]:
+        """获取 skill 列表（带 TTL 缓存）
+
+        同一 repo_url+ref 在 TTL 内不会重复 sync + scan。
+        """
+        cache_key = f"{repo_url}:{ref}"
+        now = time.time()
+
+        if cache_key in self._skills_cache:
+            skills, ts = self._skills_cache[cache_key]
+            if now - ts < self._cache_ttl:
+                return skills
+
+        local_path, _ = await self.git_sync.sync_repo(repo_url, ref)
+        skills = self.scanner.scan_skills(local_path)
+        self._skills_cache[cache_key] = (skills, now)
+        return skills
 
     def _to_remote_plugin_info(
         self, skill: "SkillMeta", repo_url: str, ref: str
@@ -70,7 +105,7 @@ class GitSkillsAdapter(MarketplaceAdapter):
             plugin_id=plugin_id,
             name=skill.name,
             description=skill.description,
-            version=ref,  # 用 ref 作为版本标识
+            version=skill.version,
             author=skill.author,
             icon=None,
             plugin_type="skill",
@@ -138,11 +173,7 @@ class GitSkillsAdapter(MarketplaceAdapter):
         ref = self._get_ref(config)
 
         try:
-            # 同步仓库
-            local_path, _ = await self.git_sync.sync_repo(repo_url, ref)
-
-            # 扫描 SKILL.md
-            skills = self.scanner.scan_skills(local_path)
+            skills = await self._get_skills(repo_url, ref)
 
             # 关键词过滤
             if keyword:
@@ -185,8 +216,7 @@ class GitSkillsAdapter(MarketplaceAdapter):
         ref = self._get_ref(config)
 
         try:
-            local_path, _ = await self.git_sync.sync_repo(repo_url, ref)
-            skills = self.scanner.scan_skills(local_path)
+            skills = await self._get_skills(repo_url, ref)
 
             for skill in skills:
                 current_plugin_id = f"{skill.author}/{skill.name}"
@@ -222,8 +252,7 @@ class GitSkillsAdapter(MarketplaceAdapter):
         repo_url = self._get_repo_url(config)
         ref = self._get_ref(config)
 
-        local_path, _ = await self.git_sync.sync_repo(repo_url, ref)
-        skills = self.scanner.scan_skills(local_path)
+        skills = await self._get_skills(repo_url, ref)
 
         for skill in skills:
             current_plugin_id = f"{skill.author}/{skill.name}"

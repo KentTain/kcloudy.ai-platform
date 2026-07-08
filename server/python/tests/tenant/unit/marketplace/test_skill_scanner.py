@@ -218,3 +218,56 @@ description: Test skill for zipping
             assert "SKILL.md" in names
             assert "helper.py" in names
             assert "docs/readme.md" in names
+
+
+def test_parse_skill_file_invalid_name_chars():
+    """验证 name 包含非法字符时抛出异常"""
+    scanner = SkillScanner()
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        skill_file = Path(tmpdir) / "SKILL.md"
+        skill_file.write_text("""---
+name: invalid name!
+description: Has invalid name
+---
+# Test
+""", encoding="utf-8")
+
+        with pytest.raises(ValueError, match="'name' must start with alphanumeric"):
+            scanner.parse_skill_file(skill_file)
+
+
+def test_parse_skill_file_description_too_long():
+    """验证 description 超过 500 字符时抛出异常"""
+    scanner = SkillScanner()
+
+    long_desc = "x" * 501
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        skill_file = Path(tmpdir) / "SKILL.md"
+        skill_file.write_text(f"""---
+name: test-skill
+description: {long_desc}
+---
+# Test
+""", encoding="utf-8")
+
+        with pytest.raises(ValueError, match="exceeds 500 characters"):
+            scanner.parse_skill_file(skill_file)
+
+
+def test_parse_skill_file_name_with_hyphens():
+    """验证 name 允许连字符"""
+    scanner = SkillScanner()
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        skill_file = Path(tmpdir) / "SKILL.md"
+        skill_file.write_text("""---
+name: my-cool-skill
+description: Valid name with hyphens
+---
+# Test
+""", encoding="utf-8")
+
+        skill = scanner.parse_skill_file(skill_file)
+        assert skill.name == "my-cool-skill"
