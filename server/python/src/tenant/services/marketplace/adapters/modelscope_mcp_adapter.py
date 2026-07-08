@@ -57,7 +57,7 @@ class ModelScopeMcpAdapter(MarketplaceAdapter):
         try:
             async with httpx.AsyncClient(timeout=30.0) as client:
                 response = await client.get(
-                    f"{base_url}/mcp/servers",
+                    f"{base_url}/mcpServers",
                     headers=headers,
                     params={"PageNumber": 1, "PageSize": 1},
                 )
@@ -103,7 +103,7 @@ class ModelScopeMcpAdapter(MarketplaceAdapter):
 
         async with httpx.AsyncClient(timeout=30.0) as client:
             response = await client.get(
-                f"{base_url}/mcp/servers",
+                f"{base_url}/mcpServers",
                 headers=headers,
                 params=params,
             )
@@ -124,7 +124,7 @@ class ModelScopeMcpAdapter(MarketplaceAdapter):
         try:
             async with httpx.AsyncClient(timeout=30.0) as client:
                 response = await client.get(
-                    f"{base_url}/mcp/servers/{plugin_id}",
+                    f"{base_url}/mcpServers/{plugin_id}",
                     headers=headers,
                 )
 
