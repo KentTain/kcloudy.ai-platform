@@ -514,7 +514,77 @@ event_callback: Callable[[str, dict], None]
 
 ---
 
-## 十二、总结
+## 十二、动态技能管理
+
+### 12.1 skill_manage 工具
+
+Hermes 提供了 `skill_manage` 工具，允许模型在对话过程中动态管理技能：
+
+```python
+def skill_manage(
+    action: str,            # create / update / delete / patch
+    name: str,
+    content: str = None,
+    category: str = None,
+    file_path: str = None,
+    file_content: str = None,
+    old_string: str = None,
+    new_string: str = None,
+    replace_all: bool = False,
+    absorbed_into: str = None,
+) -> str
+```
+
+**支持的 action**：
+
+| Action | 说明 |
+|--------|------|
+| `create` | 创建新技能 |
+| `update` | 更新已有技能 |
+| `delete` | 删除技能 |
+| `patch` | 部分修改技能（支持 diff） |
+
+### 12.2 技能相关组件
+
+| 文件 | 职责 |
+|------|------|
+| `tools/skill_manager_tool.py` | `skill_manage` 工具实现 |
+| `agent/skill_bundles.py` | 技能打包加载 |
+| `agent/skill_preprocessing.py` | 技能预处理（模板渲染、命令提取） |
+| `agent/skill_commands.py` | 技能命令注册 |
+
+### 12.3 技能生命周期
+
+```
+1. 模型调用 skill_manage(action="create", name="...", content="...")
+2. 技能文件写入 .claude/skills/ 目录
+3. 技能预处理（提取命令、渲染模板）
+4. 技能注册到工具集
+5. 后续对话中模型可调用该技能
+```
+
+---
+
+## 十三、工具集管理
+
+### 13.1 工具集配置
+
+```python
+# Agent 配置
+enabled_toolsets: List[str] = None
+disabled_toolsets: List[str] = None
+```
+
+### 13.2 工具集查找
+
+```python
+def get_toolset_for_tool(tool_name: str) -> Optional[str]:
+    """根据工具名查找所属工具集"""
+```
+
+---
+
+## 十四、总结
 
 Hermes 的对话接口设计体现了以下核心优势：
 
@@ -525,5 +595,6 @@ Hermes 的对话接口设计体现了以下核心优势：
 5. **可观测性**：丰富的回调、钩子和日志机制
 6. **容错性**：完善的错误处理、重试和中断机制
 7. **性能优化**：缓存、压缩、并行执行等优化策略
+8. **动态技能**：模型可在对话中自主管理技能，实现能力演进
 
 这些设计使得 Hermes 能够处理复杂的对话场景，同时保持代码的可维护性和可扩展性。

@@ -242,6 +242,8 @@ await publisher.publish(event)
 - Service 负责事务边界、业务校验和跨模型协作
 - Model 使用 framework 的数据库基类、Mixin
 - Schema 区分请求 DTO、响应 VO 和内部数据结构
+- ai对话的消息格式遵循 Vercel AI SDK 标准
+- 在AI对话接口中，前后端已经完整采用 @ai-sdk/vue 的 UIMessage data stream protocol，不应改动
 
 ## 测试
 

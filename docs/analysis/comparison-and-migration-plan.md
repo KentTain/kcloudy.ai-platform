@@ -1,684 +1,482 @@
-# 对话接口对比分析：Hermes vs AI Platform
+# 对话接口对比分析：Hermes vs AI Platform（修正版）
 
-## 一、架构对比
-
-### 1.1 整体架构差异
-
-| 维度 | Hermes | AI Platform |
-|------|--------|-------------|
-| **架构风格** | 事件驱动 + 适配器模式 | 服务层 + 数据库持久化 |
-| **核心组件** | AIAgent + Conversation Loop | ChatService + ConversationService |
-| **消息模型** | 内存中的消息列表 + 可选持久化 | 数据库持久化 (PostgreSQL) |
-| **流事件** | 结构化流事件 (dataclass) | 简单的 SSE 流式响应 |
-| **平台支持** | 多平台适配器 | 单一 Web 平台 |
-
-### 1.2 核心流程对比
-
-#### Hermes 流程
-
-```
-用户消息 → Platform Adapter → Gateway
-         → StreamEvents → AIAgent.run_conversation()
-         → Tool Execution → LLM API
-         → 流式回调 → Platform Adapter → 用户
-```
-
-#### AI Platform 流程
-
-```
-用户消息 → API Controller → ChatService
-         → ConversationService → LLMService.stream()
-         → SSE 响应 → 前端
-```
+> **修订说明**：初版方案存在两处关键误判，本版予以修正：
+> 1. **误判 AI SDK 协议**：初版提出自定义 `StreamEvent`（MessageChunk/ToolCallChunk 等）替换流式协议。经核实，本项目前后端已完整采用 AI SDK UIMessage data stream protocol，自定义事件会破坏协议导致前端无法解析。本版改为"对外协议不变，仅增强后端内部能力"。
+> 2. **误判工具循环缺失**：初版认为本项目"完全缺失工具循环"。经核实，`AgentFactory.create_executor()` 基于 LangChain `create_agent` 已自带工具循环，`UIMessageChunkCallbackHandler` 已将工具事件转换为 `tool-call`/`tool-result`。真正的问题是 `llm.py` 调用时未传入 `tools`，以及工具/技能的加载机制是静态一次性的，不支持运行时动态管理。
 
 ---
 
-## 二、功能差距分析
+## 一、核心结论
 
-### 2.1 核心功能缺失项
+| 维度 | 初版判断 | 修正后判断 |
+|------|---------|-----------|
+| 流式协议 | 需自定义 StreamEvent | **已用 AI SDK UIMessageChunk，不应改动** |
+| 工具循环 | 完全缺失 | **已具备（LangChain create_agent），只是没喂工具** |
+| 思考过程 | 未实现 | **已实现（thinking-* 事件 + 前端重组）** |
+| 工具调用 UI | 需新建 | **已有（ToolCallItem 等组件）** |
+| 会话持久化 | 强制 DB | 已有，符合本项目定位 |
+| 工具供给 | - | **真正缺失：无工具加载机制** |
+| 动态技能管理 | - | **真正缺失：无 skill_manage 类工具** |
 
-| 功能 | Hermes | AI Platform | 差距评估 |
-|------|--------|-------------|---------|
-| **工具循环** | ✅ 多轮工具调用 | ❌ 未实现 | 🔴 严重 |
-| **流事件系统** | ✅ 结构化事件 | ⚠️ 简单流式 | 🟡 中等 |
-| **对话中断** | ✅ 支持 | ❌ 未实现 | 🟡 中等 |
-| **对话引导** | ✅ Steering | ❌ 未实现 | 🟡 中等 |
-| **对话压缩** | ✅ 自动压缩 | ❌ 未实现 | 🟡 中等 |
-| **多模态支持** | ✅ 完整 | ⚠️ 部分 | 🟡 中等 |
-| **平台适配器** | ✅ 多平台 | ❌ 单平台 | 🟢 低 |
-| **会话持久化** | ⚠️ 可选 | ✅ 强制 | - |
-| **消息分支** | ✅ 支持 | ❌ 未实现 | 🟢 低 |
-| **推理过程** | ✅ thinking blocks | ❌ 未实现 | 🟡 中等 |
-
-### 2.2 工具循环实现差距
-
-**Hermes 工具循环：**
-
-```python
-# 支持多轮工具调用
-while api_call_count < max_iterations:
-    # 1. 调用 LLM
-    response = await llm_call(messages)
-
-    # 2. 检查是否有工具调用
-    if tool_calls := response.tool_calls:
-        # 3. 执行工具
-        results = await execute_tools(tool_calls)
-
-        # 4. 将结果追加到消息历史
-        messages.append(tool_results)
-
-        # 5. 继续循环，让模型处理工具结果
-        api_call_count += 1
-    else:
-        # 没有工具调用，返回最终响应
-        break
-```
-
-**AI Platform 当前状态：**
-
-```python
-# 仅支持单次 LLM 调用
-async def stream(...):
-    async for chunk in model_instance.invoke_llm(...):
-        yield chunk  # 直接流式返回，无工具循环
-```
-
-**差距：** 完全缺失工具循环机制
+**改造重心从"重建对话引擎"收缩为"补齐工具供给 + 动态技能管理"两块。**
 
 ---
 
-## 三、数据模型对比
+## 二、本项目已有能力清单（纠正误判）
 
-### 3.1 消息模型
+### 2.1 AI SDK UIMessageChunk 协议（前后端完整）
 
-#### Hermes SessionMessage
+**后端输出**（`server/python/src/ai/controllers/v1/chat/llm.py` `_sse_generator`）：
+
+```
+data: {"type":"start","messageId":"..."}
+data: {"type":"text-start","id":"..."}
+data: {"type":"text-delta","id":"...","delta":"..."}
+data: {"type":"text-end","id":"..."}
+data: {"type":"thinking-start","id":"...","stepType":"..."}
+data: {"type":"thinking-delta","id":"...","delta":"..."}
+data: {"type":"thinking-end","id":"..."}
+data: {"type":"tool-call","toolCallId":"...","toolName":"...","args":{...}}
+data: {"type":"tool-result","toolCallId":"...","result":"..."}
+data: {"type":"finish","finishReason":"stop","usage":{...}}
+data: [DONE]
+```
+
+**事件类型定义**（`server/python/src/ai/controllers/v1/chat/event_types.py`）：
+
+```python
+class EventType(str, Enum):
+    START = "start"
+    TEXT_START = "text-start"
+    TEXT_DELTA = "text-delta"
+    TEXT_END = "text-end"
+    TOOL_CALL = "tool-call"
+    TOOL_RESULT = "tool-result"
+    FINISH = "finish"
+    ERROR = "error"
+    THINKING_START = "thinking-start"
+    THINKING_DELTA = "thinking-delta"
+    THINKING_END = "thinking-end"
+    SOURCE_URL = "source-url"
+    SOURCE_DOCUMENT = "source-document"
+    FILE_UPLOAD_START = "file-upload-start"
+    FILE_UPLOAD_END = "file-upload-end"
+    DATA = "data"
+    WARNING = "warning"
+```
+
+**前端消费**（`web/vue/src/ai/composables/useChat.ts`）：
 
 ```typescript
-interface SessionMessage {
-  role: 'user' | 'assistant' | 'system' | 'tool'
-  content: string | null
-  reasoning?: string           // 推理过程
-  reasoning_content?: string   // 推理内容
-  tool_calls?: ToolCall[]      // 工具调用
-  tool_call_id?: string        // 工具调用 ID
-  tool_name?: string           // 工具名称
-  timestamp?: number
-  // ... 更多字段
-}
+import { Chat } from "@ai-sdk/vue";
+import { DefaultChatTransport, type UIMessage as AiUIMessage } from "ai";
+
+const transport = new DefaultChatTransport<AiUIMessage>({
+  api: "/api/ai/console/v1/chat-messages",
+  body: { model: currentModel },
+});
+const chat = new Chat({ id, transport, messages, onFinish, onError });
 ```
 
-#### AI Platform Message
+### 2.2 工具循环（LangChain Agent 自带）
+
+**Agent 工厂**（`server/python/src/extended/langchain/agents/agent_factory.py`）：
 
 ```python
-class Message(BaseModel):
-    id: str
-    conversation_id: str
-    role: MessageRole  # USER, ASSISTANT, SYSTEM
-    content: str | None
-    status: MessageStatus  # PENDING, COMPLETED, FAILED
-    query: str | None
-    answer: str | None
-    token_count: int | None
-    message_metadata: dict | None
+class AgentFactory:
+    def create_executor(
+        self,
+        tools: list | None = None,          # ← 工具在此注入
+        checkpointer: BaseCheckpointSaver | None = None,
+        prompt: str | SystemMessage | None = None,
+    ) -> CompiledStateGraph:
+        kwargs: dict[str, Any] = {"model": self.model}
+        if tools:
+            kwargs["tools"] = tools
+        return create_agent(**kwargs)        # ← LangChain create_agent 自带工具循环
 ```
 
-**差距：**
-- 缺少 `tool` 角色
-- 缺少 `tool_calls` 字段
-- 缺少 `reasoning` 字段
-- 数据库模型不支持工具调用消息
+`create_agent` 内部已实现"模型决策 → 工具调用 → 结果回填 → 再决策"的循环，无需自建。
 
-### 3.2 消息部分 (Message Parts)
+**事件流转**（`llm.py` `run_llm_task`）：
 
-#### Hermes ChatMessagePart
-
-```typescript
-type ChatMessagePart =
-  | TextPart
-  | ReasoningPart
-  | ToolCallPart
-  | ToolResultPart
-  | SourceUrlPart
-  | SourceDocumentPart
-  | FilePart
-  | DataPart
+```python
+agent = agent_factory.create_executor()      # ← 当前未传 tools
+async for event in agent.astream_events(
+    {"input": query}, version="v2",
+    callbacks=[callback_handler],
+):
+    ...
 ```
 
-#### AI Platform 当前状态
+### 2.3 工具事件转换（Callback Handler）
 
-- 仅支持简单的 `content` 字符串
-- 无结构化的消息部分
+**`server/python/src/extended/langchain/callbacks/ui_message_chunk_callback.py`**：
 
-**差距：** 完全缺失消息部分机制
+| LangChain 事件 | AI SDK 输出 |
+|---------------|------------|
+| `on_llm_new_token` | `text-delta` |
+| `on_tool_start` | `tool-call`（`toolCallId`=run_id, `toolName`, `args`） |
+| `on_tool_end` | `tool-result` |
+| `on_tool_error` | `tool-result`（错误） |
+| `on_chain_start` | `thinking-start` |
+| `on_chain_end` | `thinking-end` |
+
+### 2.4 工具调用 UI（已存在）
+
+- `web/vue/src/ai/components/ToolCallItem.vue` - 工具调用项
+- `web/vue/src/components/ai-elements/tool/Tool.vue` - 工具容器
+- `web/vue/src/components/ai-elements/tool/ToolInput.vue` - 参数展示
+- `web/vue/src/components/ai-elements/tool/ToolOutput.vue` - 结果展示
+- `web/vue/src/components/ai-elements/tool/ToolStatusBadge.vue` - 状态徽章（`input-streaming`/`input-available`/`output-available`/`output-error` 等）
+
+### 2.5 其他已有能力
+
+| 能力 | 实现位置 |
+|------|---------|
+| 会话创建/恢复 | `conversation_service.get_or_create` |
+| 消息持久化 | `chat_service.create_messages` / `update_assistant_message` |
+| 消息状态机 | `MessageStatus`：PENDING/COMPLETED/STOPPED/ERROR |
+| 停止生成 | `POST /{conversation_id}/stop` + `asyncio` 任务取消 |
+| 思考过程重组 | `useChat.ts` `processThinkingEvents` |
+| 会话命名 | `chat_service.update_conversation_name` |
+| 多模态消息部分 | `UIMessagePart` 类型体系（text/thinking/tool-call/tool-result/source-*/file/data） |
 
 ---
 
-## 四、流式响应对比
+## 三、真正的差距分析
 
-### 4.1 Hermes 流事件
+### 3.1 工具供给机制缺失（核心差距）
 
-```python
-# 结构化的流事件
-MessageChunk(text="你好")      # 文本增量
-MessageStop(final=False)       # 消息段结束
-ToolCallChunk(tool_name="read_file")  # 工具调用开始
-ToolCallFinish(tool_name="read_file") # 工具调用结束
-```
-
-**优点：**
-- 类型安全
-- 易于解析和处理
-- 支持复杂的流式场景
-
-### 4.2 AI Platform SSE
+**现状**：`llm.py` 中 `agent_factory.create_executor()` **未传入 tools**，导致 agent 无工具可用。
 
 ```python
-# 简单的 SSE 流
-async for chunk in llm_service.stream(...):
-    yield f"data: {chunk.text}\n\n"
+# llm.py 当前代码
+agent_factory = AgentFactory(model)
+agent = agent_factory.create_executor()   # ← 无 tools 参数
 ```
 
-**缺点：**
-- 缺少结构化信息
-- 无法区分文本、工具调用、推理等不同类型
-- 前端需要自行解析
+**缺失环节**：
+- 无工具注册表（Tool Registry）
+- 无按租户/应用/插件配置加载工具的机制
+- 无工具与 `plugin_installations`（租户已安装插件）的关联
+- 工具集在 agent 创建时静态绑定，不支持运行时变更
+
+**Hermes 对应能力**：
+- `enabled_toolsets` / `disabled_toolsets` 配置驱动工具集
+- 工具按 toolset 分组管理（`get_toolset_for_tool`）
+- 工具元数据注册（`model_tools.py`）
+
+### 3.2 动态技能管理缺失（核心差距）
+
+**现状**：本项目无"技能"概念，工具（若有）只能在 agent 创建时静态注入，对话过程中无法增删改。
+
+**Hermes 对应能力**：
+
+| 文件 | 职责 |
+|------|------|
+| `tools/skill_manager_tool.py` | `skill_manage` 工具，支持 `create/update/delete/patch` 技能 |
+| `agent/skill_bundles.py` | 技能打包加载 |
+| `agent/skill_preprocessing.py` | 技能预处理 |
+| `agent/skill_commands.py` | 技能命令注册 |
+
+`skill_manage` 工具签名（Hermes）：
+
+```python
+def skill_manage(
+    action: str,            # create / update / delete / patch
+    name: str,
+    content: str = None,
+    category: str = None,
+    file_path: str = None,
+    file_content: str = None,
+    old_string: str = None,
+    new_string: str = None,
+    replace_all: bool = False,
+    absorbed_into: str = None,
+) -> str
+```
+
+**关键差异**：Hermes 的技能是**模型可自主管理**的运行时资源，本项目的工具是**开发者预置**的静态资源。
+
+### 3.3 次要差距（非阻塞）
+
+| 差距 | Hermes | 本项目 | 优先级 |
+|------|--------|--------|--------|
+| Steering（对话引导） | `agent.steer()` | 无 | P2 |
+| 对话压缩 | `conversation_compression.py` | 无 | P2 |
+| 消息分支 | `branchGroupId` | 无 | P3 |
+| 多平台适配 | BasePlatformAdapter | 不需要 | - |
+| 迭代预算 | `iteration_budget` | 无显式限制 | P2 |
 
 ---
 
-## 五、改造方案
+## 四、修正后的改造方案
 
-### 5.1 总体策略
+### 4.1 总体原则
 
 ```
-Phase 1: 基础能力补齐（高优先级）
-├── 工具循环机制
-├── 流事件系统
-└── 消息模型扩展
-
-Phase 2: 核心功能增强（中优先级）
-├── 对话中断
-├── 对话压缩
-└── 推理过程展示
-
-Phase 3: 高级特性（低优先级）
-├── 平台适配器
-├── 消息分支
-└── Steering 机制
+对外协议：AI SDK UIMessageChunk 不变
+改造焦点：后端工具供给 + 动态技能管理
+前端改动：最小化（主要复用现有组件）
 ```
 
-### 5.2 Phase 1 详细设计
+### 4.2 Phase 1：工具供给机制（P0）
 
-#### 5.2.1 工具循环实现
+**目标**：让 agent 有工具可用，工具按租户配置加载。
 
-**新增文件：** `server/python/src/ai/services/conversation_loop.py`
+#### 4.2.1 工具注册表
+
+**新增**：`server/python/src/ai/tools/registry.py`
 
 ```python
-class ConversationLoop:
-    """对话循环管理器"""
+class ToolRegistry:
+    """工具注册表 - 管理工具的注册、查询、加载"""
 
-    def __init__(
-        self,
-        llm_service: LLMService,
-        tool_executor: ToolExecutor,
-        max_iterations: int = 10,
-    ):
-        self.llm_service = llm_service
-        self.tool_executor = tool_executor
-        self.max_iterations = max_iterations
+    _tools: dict[str, ToolDescriptor] = {}
 
-    async def run(
-        self,
-        messages: List[PromptMessage],
-        tools: List[PromptMessageTool] | None = None,
-        stream_callback: Callable[[StreamEvent], None] | None = None,
-    ) -> AsyncGenerator[StreamEvent, None]:
-        """运行对话循环"""
+    @classmethod
+    def register(cls, name: str, tool: BaseTool, *, category: str = "builtin"):
+        """注册工具"""
 
-        iteration = 0
+    @classmethod
+    def get_tools(cls, names: list[str]) -> list[BaseTool]:
+        """按名称批量获取工具"""
 
-        while iteration < self.max_iterations:
-            # 1. 调用 LLM
-            response = await self.llm_service.invoke(
-                prompt_messages=messages,
-                tools=tools,
-                stream=True,
-            )
-
-            # 2. 处理流式响应
-            tool_calls = []
-            async for chunk in response:
-                # 转换为流事件
-                event = self._chunk_to_event(chunk)
-
-                # 发送事件
-                if stream_callback:
-                    stream_callback(event)
-                yield event
-
-                # 收集工具调用
-                if chunk.tool_calls:
-                    tool_calls.extend(chunk.tool_calls)
-
-            # 3. 检查是否有工具调用
-            if not tool_calls:
-                # 没有工具调用，返回最终响应
-                yield MessageStop(final=True)
-                break
-
-            # 4. 执行工具
-            for tc in tool_calls:
-                yield ToolCallChunk(
-                    tool_name=tc.function.name,
-                    args=tc.function.arguments,
-                )
-
-                result = await self.tool_executor.execute(
-                    tool_name=tc.function.name,
-                    args=tc.function.arguments,
-                )
-
-                yield ToolCallFinish(
-                    tool_name=tc.function.name,
-                    result_preview=result[:100],
-                )
-
-                # 将工具结果添加到消息
-                messages.append(ToolMessage(
-                    content=result,
-                    tool_call_id=tc.id,
-                ))
-
-            iteration += 1
-
-        # 超过迭代限制
-        if iteration >= self.max_iterations:
-            yield ErrorEvent(message="达到最大迭代次数")
+    @classmethod
+    def list_available(cls, tenant_id: str, app_id: str) -> list[ToolDescriptor]:
+        """列出租户可用工具（含插件提供的工具）"""
 ```
 
-#### 5.2.2 流事件定义
+#### 4.2.2 工具加载器
 
-**新增文件：** `server/python/src/ai/events/stream_events.py`
+**新增**：`server/python/src/ai/tools/loader.py`
 
 ```python
-from dataclasses import dataclass
-from typing import Any, Dict, Optional
+class ToolLoader:
+    """按租户上下文加载工具集"""
 
-@dataclass(frozen=True)
-class MessageChunk:
-    """文本增量块"""
-    type: str = "message_chunk"
-    text: str = ""
+    async def load_for_context(
+        self,
+        session: AsyncSession,
+        tenant_id: str,
+        app_id: str,
+    ) -> list[BaseTool]:
+        """
+        加载租户可用工具：
+        1. 内置工具（搜索、计算等）
+        2. 已安装插件提供的工具（关联 plugin_installations）
+        3. 动态技能转换的工具（Phase 2）
+        """
+```
 
-@dataclass(frozen=True)
-class MessageStop:
-    """消息结束"""
-    type: str = "message_stop"
-    final: bool = False
+#### 4.2.3 接入对话流程
 
-@dataclass(frozen=True)
-class ToolCallChunk:
-    """工具调用开始"""
-    type: str = "tool_call_chunk"
-    tool_name: str = ""
-    tool_call_id: str = ""
-    args: Optional[Dict[str, Any]] = None
+**修改**：`server/python/src/ai/controllers/v1/chat/llm.py`
 
-@dataclass(frozen=True)
-class ToolCallFinish:
-    """工具调用结束"""
-    type: str = "tool_call_finish"
-    tool_name: str = ""
-    tool_call_id: str = ""
-    result_preview: Optional[str] = None
-    is_error: bool = False
-
-@dataclass(frozen=True)
-class ReasoningChunk:
-    """推理过程增量"""
-    type: str = "reasoning_chunk"
-    text: str = ""
-
-@dataclass(frozen=True)
-class ErrorEvent:
-    """错误事件"""
-    type: str = "error"
-    message: str = ""
-
-StreamEvent = (
-    MessageChunk
-    | MessageStop
-    | ToolCallChunk
-    | ToolCallFinish
-    | ReasoningChunk
-    | ErrorEvent
+```python
+# 加载工具
+tool_loader = ToolLoader()
+tools = await tool_loader.load_for_context(
+    session=session,
+    tenant_id=tenant_id,
+    app_id=DEFAULT_APP_ID,
 )
+
+# 注入 agent
+agent = agent_factory.create_executor(tools=tools)   # ← 传入 tools
 ```
 
-#### 5.2.3 消息模型扩展
+> **注意**：`UIMessageChunkCallbackHandler` 已能处理工具事件，无需改动。前端 `ToolCallItem` 已能渲染，无需改动。
 
-**修改文件：** `server/python/src/ai/models/message.py`
+### 4.3 Phase 2：动态技能管理（P1）
+
+**目标**：支持模型在对话中动态创建、更新、删除技能，并将技能动态注入工具集。
+
+#### 4.3.1 技能模型
+
+**新增**：`server/python/src/ai/models/skill.py`
 
 ```python
-class MessageRole(str, Enum):
-    """消息角色"""
-    USER = "user"
-    ASSISTANT = "assistant"
-    SYSTEM = "system"
-    TOOL = "tool"  # 新增
+class Skill(BaseModel, ActiveRecordMixin, TenantMixin):
+    """技能模型"""
+    __tablename__ = "skills"
 
-class Message(BaseModel, ActiveRecordMixin, TenantMixin):
-    """消息模型"""
-
-    # ... 现有字段 ...
-
-    # 新增字段
-    tool_calls: Mapped[list | None] = mapped_column(
-        postgresql.JSONB,
-        nullable=True,
-        comment="工具调用列表"
-    )
-    tool_call_id: Mapped[str | None] = mapped_column(
-        String(100),
-        nullable=True,
-        comment="工具调用 ID（tool 角色消息）"
-    )
-    reasoning: Mapped[str | None] = mapped_column(
-        Text,
-        nullable=True,
-        comment="推理过程"
-    )
+    app_id: Mapped[str] = mapped_column(StringUUID, index=True)
+    name: Mapped[str] = mapped_column(String(100))
+    category: Mapped[str] = mapped_column(String(50))
+    content: Mapped[str] = mapped_column(Text)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # 是否为对话中动态创建
+    is_dynamic: Mapped[bool] = mapped_column(Boolean, default=False)
 ```
 
-#### 5.2.4 API 端点改造
+#### 4.3.2 技能管理工具
 
-**修改文件：** `server/python/src/ai/controllers/v1/chat/llm.py`
+**新增**：`server/python/src/ai/tools/skill_manage_tool.py`
+
+参照 Hermes `skill_manage`，实现 `create/update/delete/patch` 四个 action，作为 LangChain `BaseTool` 注册到 `ToolRegistry`。
 
 ```python
-@router.post("/chat")
-async def chat(
-    request: ChatRequest,
-    db: AsyncSession = Depends(get_db),
-) -> StreamingResponse:
-    """聊天接口（支持工具循环）"""
+class SkillManageTool(BaseTool):
+    name = "skill_manage"
+    description = "管理技能：创建、更新、删除、修改"
 
-    async def event_stream():
-        # 1. 获取或创建会话
-        conversation, _ = await ConversationService.get_or_create(
-            session=db,
-            conversation_id=request.conversation_id,
-            tenant_id=request.tenant_id,
-            user_id=request.user_id,
-        )
-
-        # 2. 获取消息历史
-        messages = await Message.list_by_conversation(
-            session=db,
-            conversation_id=conversation.id,
-        )
-
-        # 3. 转换为 PromptMessage
-        prompt_messages = to_prompt_messages(messages, request.message)
-
-        # 4. 获取可用工具
-        tools = await get_available_tools(
-            tenant_id=request.tenant_id,
-            app_id=conversation.app_id,
-        )
-
-        # 5. 运行对话循环
-        loop = ConversationLoop(
-            llm_service=LLMService(request.tenant_id),
-            tool_executor=ToolExecutor(),
-        )
-
-        async for event in loop.run(
-            messages=prompt_messages,
-            tools=tools,
-        ):
-            # 序列化为 SSE 格式
-            yield f"data: {event.to_json()}\n\n"
-
-        # 6. 持久化消息
-        # ... 保存用户消息和助手消息 ...
-
-    return StreamingResponse(
-        event_stream(),
-        media_type="text/event-stream",
-    )
+    async def _arun(self, action: str, name: str, **kwargs) -> str:
+        if action == "create":
+            return await self._create_skill(...)
+        elif action == "update":
+            return await self._update_skill(...)
+        # ...
 ```
 
-### 5.3 前端改造
+#### 4.3.3 技能动态注入
 
-#### 5.3.1 流事件处理
+技能创建后，下次 agent 调用时由 `ToolLoader` 加载为工具。对于需要即时生效的场景，可在技能创建后通过事件通知刷新工具缓存。
 
-**新增文件：** `web/vue/src/ai/composables/useStreamEvents.ts`
+#### 4.3.4 技能预处理（可选）
 
-```typescript
-import type { StreamEvent } from '@/ai/types/events'
+参照 Hermes `skill_preprocessing.py`，对技能内容做模板渲染、命令提取等预处理，转换为可执行工具。
 
-export function useStreamEvents() {
-  const messages = ref<Message[]>([])
-  const currentMessage = ref<Message | null>(null)
-  const isProcessing = ref(false)
+### 4.4 Phase 3：高级特性（P2/P3，可选）
 
-  function handleEvent(event: StreamEvent) {
-    switch (event.type) {
-      case 'message_chunk':
-        // 追加文本
-        if (currentMessage.value) {
-          currentMessage.value.content += event.text
-        }
-        break
-
-      case 'tool_call_chunk':
-        // 添加工具调用部分
-        if (currentMessage.value) {
-          currentMessage.value.parts.push({
-            type: 'tool-call',
-            toolName: event.tool_name,
-            toolCallId: event.tool_call_id,
-            args: event.args,
-            status: 'running',
-          })
-        }
-        break
-
-      case 'tool_call_finish':
-        // 更新工具调用状态
-        if (currentMessage.value) {
-          const part = currentMessage.value.parts.find(
-            p => p.type === 'tool-call' && p.toolCallId === event.tool_call_id
-          )
-          if (part) {
-            part.status = 'completed'
-            part.result = event.result_preview
-          }
-        }
-        break
-
-      case 'message_stop':
-        if (event.final && currentMessage.value) {
-          messages.value.push(currentMessage.value)
-          currentMessage.value = null
-          isProcessing.value = false
-        }
-        break
-    }
-  }
-
-  return {
-    messages,
-    currentMessage,
-    isProcessing,
-    handleEvent,
-  }
-}
-```
-
-#### 5.3.2 消息渲染组件
-
-**新增文件：** `web/vue/src/ai/components/MessagePart.vue`
-
-```vue
-<template>
-  <div class="message-part">
-    <!-- 文本部分 -->
-    <div v-if="part.type === 'text'" class="prose">
-      {{ part.text }}
-    </div>
-
-    <!-- 工具调用部分 -->
-    <div v-else-if="part.type === 'tool-call'" class="tool-call">
-      <div class="tool-header">
-        <span class="tool-name">{{ part.toolName }}</span>
-        <Badge :variant="part.status === 'running' ? 'default' : 'success'">
-          {{ part.status === 'running' ? '执行中...' : '已完成' }}
-        </Badge>
-      </div>
-      <Collapsible v-if="part.args">
-        <pre>{{ JSON.stringify(part.args, null, 2) }}</pre>
-      </Collapsible>
-      <div v-if="part.result" class="tool-result">
-        <pre>{{ part.result }}</pre>
-      </div>
-    </div>
-
-    <!-- 推理部分 -->
-    <Collapsible v-else-if="part.type === 'reasoning'" title="推理过程">
-      <div class="reasoning">
-        {{ part.text }}
-      </div>
-    </Collapsible>
-  </div>
-</template>
-```
+| 特性 | 实现思路 | 优先级 |
+|------|---------|--------|
+| 迭代预算 | 包装 `create_agent` 限制最大工具调用轮次 | P2 |
+| 对话压缩 | 长对话时调用摘要模型压缩历史 | P2 |
+| Steering | 通过前端注入 + `tool-result` 追加引导文本 | P2 |
+| 消息分支 | 扩展 `Message` 模型增加 `branch_group_id` | P3 |
 
 ---
 
-## 六、改造工作量估算
+## 五、工作量估算（修正后）
 
-### 6.1 后端改造
-
-| 任务 | 文件数 | 预估工时 | 优先级 |
-|------|-------|---------|--------|
-| 流事件定义 | 1 | 4h | P0 |
-| 工具循环实现 | 1 | 16h | P0 |
-| 消息模型扩展 | 2 | 8h | P0 |
-| 工具执行器 | 1 | 12h | P0 |
-| API 端点改造 | 2 | 8h | P0 |
-| 对话中断机制 | 2 | 12h | P1 |
-| 对话压缩 | 2 | 16h | P1 |
-| 推理过程支持 | 2 | 8h | P1 |
-| **小计** | **13** | **84h** | |
-
-### 6.2 前端改造
+### 5.1 后端
 
 | 任务 | 文件数 | 预估工时 | 优先级 |
 |------|-------|---------|--------|
-| 流事件处理 Hook | 1 | 8h | P0 |
-| 消息部分类型定义 | 1 | 4h | P0 |
-| 消息部分渲染组件 | 3 | 16h | P0 |
-| 聊天页面改造 | 1 | 12h | P0 |
-| 工具调用 UI | 2 | 16h | P1 |
-| 推理过程展示 | 2 | 8h | P1 |
-| **小计** | **10** | **64h** | |
+| 工具注册表 | 1 | 6h | P0 |
+| 工具加载器 | 1 | 10h | P0 |
+| llm.py 接入工具 | 1 | 4h | P0 |
+| 内置工具实现（搜索等） | 2 | 12h | P0 |
+| 技能模型 + 迁移 | 2 | 6h | P1 |
+| skill_manage 工具 | 1 | 12h | P1 |
+| 技能动态注入 | 1 | 8h | P1 |
+| 迭代预算 | 1 | 4h | P2 |
+| 对话压缩 | 2 | 12h | P2 |
+| **小计** | **12** | **74h** | |
 
-### 6.3 测试与文档
+### 5.2 前端
+
+| 任务 | 文件数 | 预估工时 | 优先级 |
+|------|-------|---------|--------|
+| 工具调用 UI 适配（复用现有） | 1 | 4h | P0 |
+| 技能管理界面（可选） | 2 | 12h | P1 |
+| **小计** | **3** | **16h** | |
+
+### 5.3 测试与文档
 
 | 任务 | 预估工时 |
 |------|---------|
-| 单元测试 | 24h |
-| 集成测试 | 16h |
-| API 文档 | 8h |
-| **小计** | **48h** |
+| 单元测试 | 16h |
+| 集成测试 | 12h |
+| 文档更新 | 4h |
+| **小计** | **32h** |
 
-### 6.4 总计
+### 5.4 总计
 
-| 阶段 | 工时 | 人员 | 周期 |
-|------|------|------|------|
-| Phase 1 (P0) | 120h | 1 人 | 3 周 |
-| Phase 2 (P1) | 76h | 1 人 | 2 周 |
-| **总计** | **196h** | **1 人** | **5 周** |
+| 阶段 | 工时 | 周期 |
+|------|------|------|
+| Phase 1 (P0) 工具供给 | 48h | 1.5 周 |
+| Phase 2 (P1) 动态技能 | 50h | 1.5 周 |
+| Phase 3 (P2) 高级特性 | 24h | 1 周 |
+| **总计** | **122h** | **4 周** |
 
----
-
-## 七、风险评估
-
-### 7.1 技术风险
-
-| 风险 | 影响 | 缓解措施 |
-|------|------|---------|
-| 工具循环可能导致无限循环 | 高 | 实现严格的迭代限制和超时机制 |
-| 流事件序列化性能 | 中 | 使用高效的序列化库，缓存常用事件 |
-| 数据库模型迁移 | 中 | 编写迁移脚本，提供回滚方案 |
-| 前端状态管理复杂度 | 中 | 使用 Pinia Store 管理状态，编写单元测试 |
-
-### 7.2 兼容性风险
-
-| 风险 | 影响 | 缓解措施 |
-|------|------|---------|
-| 现有 API 客户端不兼容 | 高 | 提供新旧两个 API 版本，逐步迁移 |
-| 消息模型变更影响现有数据 | 高 | 编写数据迁移脚本，提供降级方案 |
-| 前端组件接口变更 | 中 | 使用 TypeScript 严格检查，逐步重构 |
+> 对比初版估算的 196h，修正后缩减约 38%，主要源于删除了不必要的协议重建和已有能力重写。
 
 ---
 
-## 八、实施建议
+## 六、风险与注意事项
 
-### 8.1 分阶段实施
+### 6.1 协议兼容性红线
+
+**任何改造不得破坏 AI SDK UIMessageChunk 协议**。具体约束：
+
+- 后端必须继续输出 `EventType` 枚举定义的标准事件
+- 不得引入 `MessageChunk`/`ToolCallChunk` 等自定义事件类型
+- 工具调用必须通过 `tool-call` / `tool-result` 事件传递
+- `UIMessageChunkCallbackHandler` 的事件映射逻辑保持稳定
+
+### 6.2 工具加载性能
+
+- 工具加载应缓存（按 tenant_id + app_id），避免每次请求查库
+- 插件工具加载涉及 `plugin_installations`，需注意租户隔离
+- 动态技能转工具的预处理结果应缓存
+
+### 6.3 技能安全
+
+- `skill_manage` 工具需权限控制（避免模型随意删除关键技能）
+- 动态创建的技能内容需校验（防止注入）
+- 参照 Hermes 的 `_validate_name` / `_validate_category` / `_validate_frontmatter` 校验逻辑
+
+### 6.4 LangChain 版本兼容
+
+- `create_agent` / `astream_events(version="v2")` 依赖 LangChain 版本
+- 工具循环行为受 LangChain 版本影响，升级需回归测试
+
+---
+
+## 七、实施建议
+
+### 7.1 分阶段交付
 
 ```
-Week 1-2: Phase 1 基础设施
-├── 流事件定义
-├── 消息模型扩展
-└── 工具循环核心逻辑
+Week 1: Phase 1 工具供给
+├── 工具注册表 + 加载器
+├── 内置工具实现
+├── llm.py 接入
+└── 端到端验证（模型能调用工具）
 
-Week 3: Phase 1 集成
-├── API 端点改造
-├── 前端流事件处理
-└── 基础测试
+Week 2-3: Phase 2 动态技能
+├── 技能模型 + 迁移
+├── skill_manage 工具
+├── 技能动态注入
+└── 端到端验证（模型能管理技能）
 
-Week 4-5: Phase 2 增强
-├── 对话中断
+Week 4: Phase 3 高级特性（按需）
+├── 迭代预算
 ├── 对话压缩
-└── 推理过程
-
-Week 6+: Phase 3 高级特性
-├── 平台适配器
-├── Steering
-└── 消息分支
+└── Steering
 ```
 
-### 8.2 质量保证
+### 7.2 验收标准
 
-1. **代码审查**：所有变更必须经过 Code Review
-2. **单元测试**：核心逻辑测试覆盖率 > 80%
-3. **集成测试**：编写端到端测试用例
-4. **性能测试**：模拟高并发场景，验证流式响应性能
-5. **文档更新**：同步更新 API 文档和开发指南
+| 阶段 | 验收项 |
+|------|--------|
+| Phase 1 | 模型能调用内置工具，前端 `ToolCallItem` 正确渲染工具调用与结果 |
+| Phase 2 | 模型能通过 `skill_manage` 创建技能，新技能在后续对话中可作为工具调用 |
+| Phase 3 | 迭代预算生效；长对话能自动压缩；Steering 能影响模型决策 |
 
-### 8.3 监控与告警
+### 7.3 质量保证
 
-1. **流式响应延迟**：监控 SSE 连接时长
-2. **工具执行耗时**：记录每个工具的执行时间
-3. **迭代次数**：监控对话循环迭代次数分布
-4. **错误率**：追踪各类错误的发生频率
+- 工具加载与技能管理需单元测试覆盖
+- 端到端测试验证 AI SDK 协议未被破坏
+- 工具调用链路需集成测试（模型决策 → 工具执行 → 结果回填 → 再决策）
 
 ---
 
-## 九、总结
+## 八、总结
 
-AI Platform 与 Hermes 在对话接口能力上存在显著差距，主要体现在：
+本项目对话接口的实际情况远比初版判断的成熟：
 
-1. **工具循环机制**：AI Platform 完全缺失，这是最关键的差距
-2. **流事件系统**：AI Platform 的流式响应过于简单，无法支持复杂场景
-3. **消息模型**：缺少对工具调用消息的支持
+1. **协议层**：AI SDK UIMessageChunk 前后端完整，无需改动
+2. **引擎层**：LangChain `create_agent` 已提供工具循环，无需自建
+3. **展示层**：工具调用 UI、思考过程、流式渲染均已具备
 
-改造工作量约 **5 周**，建议分三个阶段实施：
+真正需要补齐的是**工具供给**和**动态技能管理**两块后端能力：
 
-- **Phase 1**（3 周）：补齐核心能力，实现工具循环和流事件系统
-- **Phase 2**（2 周）：增强功能，支持对话中断、压缩和推理过程
-- **Phase 3**（持续）：高级特性，逐步对齐 Hermes 的完整能力
+- **Phase 1**（1.5 周）：让 agent 有工具可用，打通"租户配置 → 工具加载 → agent 注入"链路
+- **Phase 2**（1.5 周）：引入 `skill_manage` 类工具，支持模型在对话中动态管理技能
+- **Phase 3**（1 周，可选）：迭代预算、对话压缩等高级特性
 
-改造完成后，AI Platform 将具备与 Hermes 相当的对话能力，能够支持复杂的工具调用场景和更好的用户体验。
+改造完成后，本项目将具备与 Hermes 相当的工具调用与技能管理能力，同时保持 AI SDK 协议的兼容性，前端几乎无需改动。
