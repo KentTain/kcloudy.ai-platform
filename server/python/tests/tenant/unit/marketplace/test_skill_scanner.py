@@ -1,6 +1,10 @@
 """SkillScanner 单元测试"""
 
+import hashlib
 import tempfile
+import zipfile
+from io import BytesIO
+
 import pytest
 from pathlib import Path
 from tenant.services.marketplace.skill_scanner import SkillMeta, SkillScanner
@@ -114,3 +118,103 @@ description: [invalid yaml
 
         with pytest.raises(ValueError, match="YAML parse error"):
             scanner.parse_skill_file(skill_file)
+
+
+def test_scan_skills_multiple():
+    """验证扫描多个 skill 目录"""
+    scanner = SkillScanner()
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        base_dir = Path(tmpdir)
+
+        skill1_dir = base_dir / "skill1"
+        skill1_dir.mkdir()
+        (skill1_dir / "SKILL.md").write_text("""---
+name: skill-one
+description: First skill
+author: author1
+---
+# Skill One
+""", encoding="utf-8")
+
+        skill2_dir = base_dir / "skill2"
+        skill2_dir.mkdir()
+        (skill2_dir / "SKILL.md").write_text("""---
+name: skill-two
+description: Second skill
+author: author2
+---
+# Skill Two
+""", encoding="utf-8")
+
+        (base_dir / "other_dir").mkdir()
+
+        skills = scanner.scan_skills(base_dir)
+
+        assert len(skills) == 2
+        skill_names = [s.name for s in skills]
+        assert "skill-one" in skill_names
+        assert "skill-two" in skill_names
+
+
+def test_scan_skills_nested():
+    """验证递归扫描嵌套目录"""
+    scanner = SkillScanner()
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        base_dir = Path(tmpdir)
+
+        nested_dir = base_dir / "category" / "subcategory" / "skill"
+        nested_dir.mkdir(parents=True)
+        (nested_dir / "SKILL.md").write_text("""---
+name: nested-skill
+description: Nested skill
+---
+# Nested
+""", encoding="utf-8")
+
+        skills = scanner.scan_skills(base_dir)
+
+        assert len(skills) == 1
+        assert skills[0].name == "nested-skill"
+
+
+def test_zip_skill():
+    """验证将 skill 目录打包为 ZIP"""
+    scanner = SkillScanner()
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        skill_dir = Path(tmpdir)
+        skill_file = skill_dir / "SKILL.md"
+        skill_file.write_text("""---
+name: test-skill
+description: Test skill for zipping
+---
+# Test Skill
+""", encoding="utf-8")
+
+        (skill_dir / "helper.py").write_text("# helper code", encoding="utf-8")
+        subdir = skill_dir / "docs"
+        subdir.mkdir()
+        (subdir / "readme.md").write_text("# Docs", encoding="utf-8")
+
+        skill = SkillMeta(
+            name="test-skill",
+            description="Test skill for zipping",
+            skill_dir=skill_dir,
+        )
+
+        zip_data, checksum = scanner.zip_skill(skill)
+
+        assert isinstance(zip_data, bytes)
+        assert isinstance(checksum, str)
+        assert len(checksum) == 64
+
+        expected_checksum = hashlib.sha256(zip_data).hexdigest()
+        assert checksum == expected_checksum
+
+        with zipfile.ZipFile(BytesIO(zip_data)) as zf:
+            names = zf.namelist()
+            assert "SKILL.md" in names
+            assert "helper.py" in names
+            assert "docs/readme.md" in names

@@ -2,10 +2,14 @@
 
 from __future__ import annotations
 
+import hashlib
+import zipfile
 from dataclasses import dataclass, field
+from io import BytesIO
 from pathlib import Path
 
 import yaml
+from loguru import logger
 
 
 @dataclass
@@ -70,3 +74,30 @@ class SkillScanner:
             tags=tags if isinstance(tags, list) else [],
             skill_dir=skill_file.parent,
         )
+
+    def scan_skills(self, base_dir: Path) -> list[SkillMeta]:
+        """递归扫描目录中的所有 SKILL.md"""
+        skills = []
+        for skill_file in base_dir.rglob("SKILL.md"):
+            try:
+                skill = self.parse_skill_file(skill_file)
+                skills.append(skill)
+            except ValueError as e:
+                logger.warning(f"Failed to parse {skill_file}: {e}")
+        return skills
+
+    def zip_skill(self, skill: SkillMeta) -> tuple[bytes, str]:
+        """将 skill 目录打包为 ZIP"""
+        if not skill.skill_dir:
+            raise ValueError("skill_dir is not set")
+
+        zip_buffer = BytesIO()
+        with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zipf:
+            for file_path in skill.skill_dir.rglob("*"):
+                if file_path.is_file():
+                    arcname = file_path.relative_to(skill.skill_dir)
+                    zipf.write(file_path, arcname)
+
+        zip_data = zip_buffer.getvalue()
+        checksum = hashlib.sha256(zip_data).hexdigest()
+        return zip_data, checksum
