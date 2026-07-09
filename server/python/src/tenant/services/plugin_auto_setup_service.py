@@ -53,24 +53,23 @@ class PluginAutoSetupService:
 
         for plugin_config in config.plugins:
             try:
-                # 步骤1: 安装插件（幂等）
-                installation = await self._install_plugin(session, plugin_config)
+                # 步骤1: 安装插件（幂等，已安装则跳过安装步骤）
+                newly_installed = await self._install_plugin(session, plugin_config)
 
-                if not installation:
+                if newly_installed:
+                    # 新安装：提交事务使安装记录对后续 Provider 可见
+                    await session.commit()
+                else:
                     result.skipped_count += 1
-                    continue
 
-                # 安装使用独立事务：提交后供后续配置/启动的 Provider 可见
-                await session.commit()
-
-                # 步骤2: 配置凭证
+                # 步骤2: 配置凭证（始终执行，幂等更新）
                 if plugin_config.credentials:
                     await self._configure_credentials(
                         plugin_config.plugin_id,
                         plugin_config.credentials,
                     )
 
-                # 步骤3: 启动插件
+                # 步骤3: 启动插件（始终执行，幂等启动）
                 if plugin_config.auto_start:
                     await self._start_plugin(plugin_config.plugin_id)
 
@@ -88,7 +87,7 @@ class PluginAutoSetupService:
         self,
         session: AsyncSession,
         config: PluginAutoSetupItem,
-    ) -> TenantPluginInstallation | None:
+    ) -> bool:
         """
         安装插件（幂等）
 
@@ -97,7 +96,7 @@ class PluginAutoSetupService:
             config: 插件配置
 
         Returns:
-            新建的安装记录；已安装时返回 None
+            是否新安装（已安装返回 False）
 
         Raises:
             ValueError: 插件定义不存在
@@ -111,8 +110,8 @@ class PluginAutoSetupService:
         )
 
         if existing:
-            _logger.debug(f"插件已安装，跳过: {config.plugin_id}")
-            return None
+            _logger.debug(f"插件已安装，跳过安装步骤: {config.plugin_id}")
+            return False
 
         # 2. 获取插件定义
         definition = await TenantPluginDefinition.one_by_field(
@@ -134,7 +133,7 @@ class PluginAutoSetupService:
         session.add(installation)
         await session.flush()
 
-        return installation
+        return True
 
     async def _configure_credentials(
         self,

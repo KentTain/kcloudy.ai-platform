@@ -85,25 +85,46 @@ async def test_setup_plugins_plugin_not_found(mock_session, auto_setup_config):
 
 @pytest.mark.asyncio
 async def test_setup_plugins_already_installed(mock_session, auto_setup_config):
-    """测试插件已安装-跳过"""
+    """测试插件已安装-跳过安装但仍执行配置和启动"""
     service = PluginAutoSetupService()
     mock_installation = MagicMock()
     mock_installation.plugin_id = "langgenius-tongyi"
 
+    mock_config_provider = MagicMock()
+    mock_config_provider.configure_plugin = AsyncMock()
+    mock_installation_provider = MagicMock()
+    mock_installation_provider.start_installation = AsyncMock()
+
     with patch(
         "tenant.services.plugin_auto_setup_service.TenantPluginInstallation.first_by_fields",
         new=AsyncMock(return_value=mock_installation),
+    ), patch(
+        "tenant.services.plugin_auto_setup_service.get_plugin_config_provider",
+        return_value=mock_config_provider,
+    ), patch(
+        "tenant.services.plugin_auto_setup_service.get_plugin_installation_provider",
+        return_value=mock_installation_provider,
     ):
         result = await service.setup_plugins(mock_session, auto_setup_config)
 
     assert result.skipped_count == 1
-    assert result.success_count == 0
+    assert result.success_count == 1
     mock_session.commit.assert_not_awaited()
+    # 凭证配置和启动仍应执行（幂等更新）
+    mock_config_provider.configure_plugin.assert_awaited_once_with(
+        tenant_id="test-tenant",
+        plugin_id="langgenius-tongyi",
+        plugin_config={"api_key": "test-key"},
+        runtime_config=None,
+    )
+    mock_installation_provider.start_installation.assert_awaited_once_with(
+        "test-tenant", "langgenius-tongyi"
+    )
 
 
 @pytest.mark.asyncio
 async def test_install_plugin_success(mock_session):
-    """测试插件安装成功"""
+    """测试插件安装成功-返回 True"""
     service = PluginAutoSetupService()
     mock_definition = MagicMock()
     mock_definition.plugin_id = "langgenius-tongyi"
@@ -122,8 +143,7 @@ async def test_install_plugin_success(mock_session):
             PluginAutoSetupItem(plugin_id="langgenius-tongyi"),
         )
 
-    assert result is not None
-    assert result.plugin_id == "langgenius-tongyi"
+    assert result is True
     mock_session.add.assert_called_once()
     mock_session.flush.assert_awaited_once()
 
