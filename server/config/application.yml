@@ -171,6 +171,7 @@ redis:
 
 # 租户配置
 tenant:
+  default-tenant-id: "00000000-0000-0000-0000-000000000000"
   # 扩展的跳过租户中间件路径前缀列表（追加到系统内置路径之后）
   # 系统内置路径包括：/health、/docs、/redoc、/openapi.json、/tenant/admin/、/iam/console/v1/auth/* 等
   # 如需添加额外的跳过路径，在此配置

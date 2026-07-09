@@ -52,7 +52,6 @@ plugin:
 
   auto_setup:
     enabled: true
-    tenant_id: "default"  # 目标租户 ID
     plugins:
       - plugin_id: "langgenius-tongyi"
         auto_install: true
@@ -87,8 +86,14 @@ plugin:
 | 字段 | 类型 | 说明 |
 |------|------|------|
 | `enabled` | bool | 总开关，控制整个自动设置流程 |
-| `tenant_id` | str | 目标租户 ID，默认为 `default` |
 | `plugins[].plugin_id` | str | 插件 ID |
+
+**租户配置**：使用现有的 `tenant.default-tenant-id` 配置项，在 `application.yml` 中定义：
+
+```yaml
+tenant:
+  default-tenant-id: "00000000-0000-0000-0000-000000000000"
+```
 | `plugins[].auto_install` | bool | 是否自动安装 |
 | `plugins[].auto_start` | bool | 是否自动启动 |
 | `plugins[].credentials` | dict | 凭证配置，支持环境变量 |
@@ -136,7 +141,7 @@ plugin:
    - 验证失败不回滚安装记录
 
 4. **租户 ID 处理**：
-   - 通过配置指定目标租户 ID（默认为 `default`）
+   - 使用现有的 `tenant.default-tenant-id` 配置项
    - 启动时设置租户上下文，确保所有操作在正确的租户下执行
 
 5. **安装流程复用**：
