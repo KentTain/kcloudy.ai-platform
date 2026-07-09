@@ -223,6 +223,11 @@ async def lifespan(app: FastAPI):
                          if k != "all_passed" and not v.get("passed")]
                 phase.details["验证状态"] = f"⚠ 部分缺失: {failed}"
                 write_warning(f"数据完整性验证未通过，部分功能可能异常: {failed}")
+
+        # 启动后台插件验证任务（仅迁移完成时；应用就绪后验证已启动插件的连通性）
+        app.state.plugin_verification_task = asyncio.create_task(
+            _run_plugin_verification_background()
+        )
     else:
         write_warning("检测到迁移缺失，跳过模块定义同步和数据初始化")
         write_info("请运行迁移后重启应用: uv run python manage.py db migrate --all --yes")
@@ -234,11 +239,6 @@ async def lifespan(app: FastAPI):
         modules=modules,
         address=f"http://{server_config.host}:{server_config.port}",
         docs_path="/docs",
-    )
-
-    # 启动后台插件验证任务（应用就绪后验证已启动插件的连通性）
-    app.state.plugin_verification_task = asyncio.create_task(
-        _run_plugin_verification_background()
     )
 
     yield
@@ -418,6 +418,9 @@ async def _run_plugin_auto_setup(phase) -> None:
         _logger.exception(f"插件自动设置失败: {e}")
         phase.details["设置状态"] = f"失败: {e}"
         write_error(f"插件自动设置失败: {e}")
+    finally:
+        # 复原租户上下文，避免泄漏到后续启动阶段
+        TenantContext.clear()
 
 
 async def _run_plugin_verification_background() -> None:
