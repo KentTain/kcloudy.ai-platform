@@ -4,6 +4,7 @@ FastAPI Web 应用工厂
 通过动态模块扫描与装配创建应用，替代硬编码 import。
 """
 
+import asyncio
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -20,6 +21,7 @@ from framework.database.migration_validator import StartupMigrationValidator
 from framework.middlewares.test_user_middleware import TestUserMiddleware
 from framework.module import get_registry, load_modules
 from framework.module.sync_service import ModuleDefinitionSyncService
+from framework.tenant.context import TenantContext
 from framework.tenant.middleware import TenantMiddleware
 from framework.tenant.sync_protocols import register_module_auto_assigner
 from framework.tenant.tenant_protocols import (
@@ -122,6 +124,21 @@ async def lifespan(app: FastAPI):
             _logger.exception(f"PluginInstallationProvider 注册失败: {e}")
             phase.details["PluginInstallationProvider"] = "不可用"
 
+        # 注册 PluginConfigProvider（由 AI 模块实现）
+        try:
+            from framework.tenant.plugin_protocols import (
+                register_plugin_config_provider,
+            )
+            from ai.services.plugin_config_provider import (
+                plugin_config_provider_impl,
+            )
+
+            register_plugin_config_provider(plugin_config_provider_impl)
+            phase.details["PluginConfigProvider"] = "已注册"
+        except ImportError as e:
+            _logger.exception(f"PluginConfigProvider 注册失败: {e}")
+            phase.details["PluginConfigProvider"] = "不可用"
+
         # 注册 ModuleDefinitionSyncProvider（由 Tenant 模块实现）
         try:
             from framework.tenant.sync_protocols import (
@@ -183,6 +200,10 @@ async def lifespan(app: FastAPI):
             # 启动时扫描插件目录并注册到数据库
             await _run_plugin_scan_at_startup(phase)
 
+        with timer.phase("插件自动设置", order=4.55) as phase:
+            # 扫描后自动安装、配置凭证并启动插件
+            await _run_plugin_auto_setup(phase)
+
         with timer.phase("监听器初始化", order=4.6) as phase:
             # 启动各模块的事件监听器
             await _setup_listeners(phase)
@@ -215,7 +236,21 @@ async def lifespan(app: FastAPI):
         docs_path="/docs",
     )
 
+    # 启动后台插件验证任务（应用就绪后验证已启动插件的连通性）
+    app.state.plugin_verification_task = asyncio.create_task(
+        _run_plugin_verification_background()
+    )
+
     yield
+
+    # 取消后台插件验证任务
+    verification_task = getattr(app.state, "plugin_verification_task", None)
+    if verification_task and not verification_task.done():
+        verification_task.cancel()
+        try:
+            await verification_task
+        except asyncio.CancelledError:
+            pass
 
     # 清理监听器
     await _cleanup_listeners()
@@ -342,6 +377,87 @@ async def _run_plugin_scan_at_startup(phase) -> None:
         _logger.exception(f"插件目录扫描失败: {e}")
         phase.details["扫描状态"] = f"失败: {e}"
         write_error(f"插件目录扫描失败，部分插件可能不可用: {e}")
+
+
+async def _run_plugin_auto_setup(phase) -> None:
+    """
+    执行插件自动设置（安装 -> 配置 -> 启动）
+
+    根据配置自动安装、配置凭证并启动插件。失败不阻止应用启动，仅记录错误。
+
+    Args:
+        phase: 启动计时器阶段对象，用于记录设置详情
+    """
+    config = settings.plugin.auto_setup
+
+    if not config.enabled:
+        phase.details["设置状态"] = "已禁用"
+        return
+
+    # 设置租户上下文（setup_plugins 内部读取 TenantContext.get_tenant_id()）
+    tenant_id = settings.tenant.default_tenant_id
+    TenantContext.set_tenant_id(tenant_id)
+
+    try:
+        from tenant.services.plugin_auto_setup_service import plugin_auto_setup_service
+
+        async with get_task_session() as session:
+            result = await plugin_auto_setup_service.setup_plugins(session, config)
+            await session.commit()
+
+        phase.details["设置状态"] = (
+            f"成功 {result.success_count} 个, "
+            f"跳过 {result.skipped_count} 个, "
+            f"失败 {result.failed_count} 个"
+        )
+        if result.success_count > 0:
+            write_success(f"插件自动设置完成: {result.success_count} 个")
+        if result.failed_count > 0:
+            write_warning(f"部分插件设置失败: {result.errors}")
+    except Exception as e:
+        _logger.exception(f"插件自动设置失败: {e}")
+        phase.details["设置状态"] = f"失败: {e}"
+        write_error(f"插件自动设置失败: {e}")
+
+
+async def _run_plugin_verification_background() -> None:
+    """
+    后台验证已启动插件的连通性
+
+    作为独立 asyncio 任务运行，需自包含租户上下文（不能依赖继承）。
+    验证失败不阻止应用启动，仅记录日志。
+    """
+    config = settings.plugin.auto_setup
+
+    if not config.enabled or not config.verification.enabled:
+        return
+
+    # 独立 asyncio 任务需自包含租户上下文
+    TenantContext.set_tenant_id(settings.tenant.default_tenant_id)
+
+    # 等待应用完全启动
+    await asyncio.sleep(2)
+
+    try:
+        from ai.services.plugin_verification_service import plugin_verification_service
+
+        plugin_ids = [p.plugin_id for p in config.plugins if p.auto_start]
+        if not plugin_ids:
+            return
+
+        _logger.info(f"开始后台验证插件: {plugin_ids}")
+        results = await plugin_verification_service.verify_all_plugins(
+            plugin_ids, config.verification
+        )
+        for plugin_id, is_valid in results.items():
+            if not is_valid:
+                await plugin_verification_service.handle_verification_failure(
+                    plugin_id, config.verification.on_failure
+                )
+        success_count = sum(1 for v in results.values() if v)
+        _logger.info(f"插件验证完成: 成功 {success_count}/{len(results)}")
+    except Exception as e:
+        _logger.exception(f"插件验证异常: {e}")
 
 
 async def _setup_listeners(phase) -> None:
