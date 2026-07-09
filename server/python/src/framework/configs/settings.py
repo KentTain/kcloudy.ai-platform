@@ -11,6 +11,7 @@ from pydantic import Field
 
 from framework.configs.base import BaseSettings
 from framework.configs.encryption import EncryptionSettings
+from framework.configs.plugin_auto_setup import PluginAutoSetupConfig
 
 # ==============================================================================
 # 基础设施配置
@@ -380,6 +381,12 @@ class PluginSettings(BaseSettings):
     http_proxy: str | None = Field(default=None, description="HTTP 代理")
     https_proxy: str | None = Field(default=None, description="HTTPS 代理")
     no_proxy: str | None = Field(default=None, description="不使用代理的地址")
+
+    # 自动设置配置
+    auto_setup: PluginAutoSetupConfig = Field(
+        default_factory=PluginAutoSetupConfig,
+        description="插件自动设置配置"
+    )
 
 
 class CodeSandboxSettings(BaseSettings):
