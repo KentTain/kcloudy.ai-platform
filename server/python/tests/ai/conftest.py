@@ -132,7 +132,7 @@ def gpustack_api_key():
     """
     return os.environ.get(
         "E2E_GPUSTACK_API_KEY",
-        "gpustack_14d9f2aee5629a0f_465d73985f7b8f370caecd9e3de838ec",
+        "gpustack_f9b456d0ca5869c7_72d281b4f43bb6460bb844fb0ec8d6b0",
     )
 
 
@@ -144,6 +144,32 @@ def gpustack_endpoint():
     优先从环境变量 E2E_GPUSTACK_ENDPOINT 读取，如果未配置则使用默认测试配置。
     """
     return os.environ.get("E2E_GPUSTACK_ENDPOINT", "https://llm-stack.flydiysz.cn")
+
+
+@pytest.fixture(scope="session")
+def siliconflow_api_key():
+    """
+    获取硅基流动 API Key（session 级别）。
+
+    优先从环境变量 E2E_SILICONFLOW_API_KEY 读取，如果未配置则使用默认测试配置。
+    """
+    return os.environ.get(
+        "E2E_SILICONFLOW_API_KEY",
+        "sk-bifzulciqgpdtgtogsvedtjajjxujgmlgolelkltlazcjvet",
+    )
+
+
+@pytest.fixture(scope="session")
+def deepseek_api_key():
+    """
+    获取深度求索 API Key（session 级别）。
+
+    优先从环境变量 E2E_DEEPSEEK_API_KEY 读取，如果未配置则使用默认测试配置。
+    """
+    return os.environ.get(
+        "E2E_DEEPSEEK_API_KEY",
+        "sk-97165b4e09a141b981557daf6161b9ae",
+    )
 
 
 # GPUStack 可用模型列表（从实际测试获取）
@@ -206,6 +232,66 @@ def gpustack_api_key_available(gpustack_api_key, gpustack_endpoint):
         ctx.verify_mode = ssl.CERT_NONE
 
         with urllib.request.urlopen(req, timeout=10, context=ctx) as resp:
+            return resp.status == 200
+    except urllib.error.HTTPError:
+        return False
+    except Exception:
+        return False
+
+
+@pytest.fixture(scope="session")
+def siliconflow_api_key_available(siliconflow_api_key):
+    """检测硅基流动 API Key 是否可用（session 级别，同步检测）"""
+    try:
+        payload = json.dumps(
+            {
+                "model": "Qwen/Qwen2.5-7B-Instruct",
+                "messages": [{"role": "user", "content": "hi"}],
+                "max_tokens": 1,
+            }
+        ).encode("utf-8")
+
+        req = urllib.request.Request(
+            "https://api.siliconflow.cn/v1/chat/completions",
+            data=payload,
+            headers={
+                "Authorization": f"Bearer {siliconflow_api_key}",
+                "Content-Type": "application/json",
+            },
+            method="POST",
+        )
+
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            return resp.status == 200
+    except urllib.error.HTTPError:
+        return False
+    except Exception:
+        return False
+
+
+@pytest.fixture(scope="session")
+def deepseek_api_key_available(deepseek_api_key):
+    """检测深度求索 API Key 是否可用（session 级别，同步检测）"""
+    try:
+        payload = json.dumps(
+            {
+                "model": "deepseek-chat",
+                "messages": [{"role": "user", "content": "hi"}],
+                "max_tokens": 1,
+            }
+        ).encode("utf-8")
+
+        req = urllib.request.Request(
+            "https://api.deepseek.com/v1/chat/completions",
+            data=payload,
+            headers={
+                "Authorization": f"Bearer {deepseek_api_key}",
+                "Content-Type": "application/json",
+            },
+            method="POST",
+        )
+
+        with urllib.request.urlopen(req, timeout=10) as resp:
             return resp.status == 200
     except urllib.error.HTTPError:
         return False

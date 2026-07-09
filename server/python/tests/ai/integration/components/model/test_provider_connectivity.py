@@ -190,3 +190,156 @@ class TestGPUStackConnectivity:
         data = response.json()
         results = data.get("results", [])
         assert len(results) == 3
+
+
+# =============================================================================
+# 硅基流动 (SiliconFlow) 测试
+# =============================================================================
+
+
+@pytest.mark.integration
+class TestSiliconFlowConnectivity:
+    """硅基流动 API 连通性测试"""
+
+    BASE_URL = "https://api.siliconflow.cn/v1"
+
+    @pytest.mark.asyncio
+    async def test_list_models(
+        self,
+        siliconflow_api_key_available: bool,
+        siliconflow_api_key: str,
+    ):
+        """测试模型列表接口"""
+        if not siliconflow_api_key_available:
+            pytest.skip("SiliconFlow API Key 不可用")
+
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            response = await client.get(
+                f"{self.BASE_URL}/models",
+                headers={"Authorization": f"Bearer {siliconflow_api_key}"},
+            )
+
+        assert response.status_code == 200
+        data = response.json()
+        models = data.get("data", [])
+        assert len(models) > 0
+
+    @pytest.mark.asyncio
+    async def test_chat_completion(
+        self,
+        siliconflow_api_key_available: bool,
+        siliconflow_api_key: str,
+    ):
+        """测试聊天补全接口（Qwen/Qwen2.5-7B-Instruct）"""
+        if not siliconflow_api_key_available:
+            pytest.skip("SiliconFlow API Key 不可用")
+
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.post(
+                f"{self.BASE_URL}/chat/completions",
+                headers={
+                    "Authorization": f"Bearer {siliconflow_api_key}",
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "model": "Qwen/Qwen2.5-7B-Instruct",
+                    "messages": [{"role": "user", "content": "你好"}],
+                    "max_tokens": 10,
+                },
+            )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert "choices" in data
+        assert len(data["choices"]) > 0
+
+    @pytest.mark.asyncio
+    async def test_embedding(
+        self,
+        siliconflow_api_key_available: bool,
+        siliconflow_api_key: str,
+    ):
+        """测试 Embedding 接口（BAAI/bge-large-zh-v1.5）"""
+        if not siliconflow_api_key_available:
+            pytest.skip("SiliconFlow API Key 不可用")
+
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            response = await client.post(
+                f"{self.BASE_URL}/embeddings",
+                headers={
+                    "Authorization": f"Bearer {siliconflow_api_key}",
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "model": "BAAI/bge-large-zh-v1.5",
+                    "input": "测试文本",
+                    "encoding_format": "float",
+                },
+            )
+
+        assert response.status_code == 200
+        data = response.json()
+        embedding = data["data"][0]["embedding"]
+        assert len(embedding) == 1024
+
+
+# =============================================================================
+# 深度求索 (DeepSeek) 测试
+# =============================================================================
+
+
+@pytest.mark.integration
+class TestDeepSeekConnectivity:
+    """深度求索 API 连通性测试"""
+
+    BASE_URL = "https://api.deepseek.com/v1"
+
+    @pytest.mark.asyncio
+    async def test_list_models(
+        self,
+        deepseek_api_key_available: bool,
+        deepseek_api_key: str,
+    ):
+        """测试模型列表接口"""
+        if not deepseek_api_key_available:
+            pytest.skip("DeepSeek API Key 不可用")
+
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            response = await client.get(
+                f"{self.BASE_URL}/models",
+                headers={"Authorization": f"Bearer {deepseek_api_key}"},
+            )
+
+        assert response.status_code == 200
+        data = response.json()
+        models = data.get("data", [])
+        assert len(models) > 0
+
+    @pytest.mark.asyncio
+    async def test_chat_completion(
+        self,
+        deepseek_api_key_available: bool,
+        deepseek_api_key: str,
+    ):
+        """测试聊天补全接口（deepseek-chat）"""
+        if not deepseek_api_key_available:
+            pytest.skip("DeepSeek API Key 不可用")
+
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.post(
+                f"{self.BASE_URL}/chat/completions",
+                headers={
+                    "Authorization": f"Bearer {deepseek_api_key}",
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "model": "deepseek-chat",
+                    "messages": [{"role": "user", "content": "你好"}],
+                    "max_tokens": 10,
+                },
+            )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert "choices" in data
+        assert len(data["choices"]) > 0
