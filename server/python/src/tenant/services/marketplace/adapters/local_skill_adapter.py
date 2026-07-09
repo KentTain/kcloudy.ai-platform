@@ -2,13 +2,9 @@
 
 from __future__ import annotations
 
-import hashlib
-import zipfile
-from io import BytesIO
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
-import yaml
 from loguru import logger
 
 from tenant.services.marketplace.protocol import (
@@ -17,6 +13,7 @@ from tenant.services.marketplace.protocol import (
     PluginUpdateInfo,
     RemotePluginInfo,
 )
+from tenant.services.marketplace.skill_scanner import SkillScanner
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -26,97 +23,16 @@ class LocalSkillAdapter(MarketplaceAdapter):
     """本地文件 Skill 扫描适配器
 
     从本地文件系统扫描 SKILL.md 文件并返回 Skill 信息。
-    支持递归扫描目录，解析 YAML front matter。
+    复用 SkillScanner 进行扫描和打包。
     """
+
+    def __init__(self, scanner: SkillScanner | None = None):
+        self.scanner = scanner or SkillScanner()
 
     @property
     def market_type(self) -> str:
         """市场类型标识"""
         return "local-skill"
-
-    def _parse_skill_file(self, skill_file: Path) -> dict[str, Any]:
-        """解析 SKILL.md 文件，提取元数据
-
-        Args:
-            skill_file: SKILL.md 文件路径
-
-        Returns:
-            包含 Skill 元数据的字典
-
-        Raises:
-            ValueError: 文件格式无效
-        """
-        if not skill_file.exists():
-            raise ValueError(f"Skill file not found: {skill_file}")
-
-        content = skill_file.read_text(encoding="utf-8")
-
-        # 检查是否以 --- 开头
-        if not content.startswith("---"):
-            raise ValueError("Invalid SKILL.md format: missing front matter delimiter")
-
-        # 提取 front matter
-        parts = content.split("---", 2)
-        if len(parts) < 3:
-            raise ValueError("Invalid SKILL.md format: malformed front matter")
-
-        front_matter_text = parts[1].strip()
-
-        try:
-            front_matter = yaml.safe_load(front_matter_text)
-        except yaml.YAMLError as e:
-            raise ValueError(f"Invalid SKILL.md format: YAML parse error: {e}") from e
-
-        if not isinstance(front_matter, dict):
-            raise ValueError("Invalid SKILL.md format: front matter must be a YAML map")
-
-        # 提取必需字段
-        name = front_matter.get("name")
-        if not name:
-            raise ValueError("Invalid SKILL.md format: missing 'name' field")
-
-        # 提取可选字段，设置默认值
-        author = front_matter.get("author", "local")
-        version = front_matter.get("version", "1.0.0")
-        description = front_matter.get("description", "")
-
-        # 提取 tags
-        tags = []
-        metadata = front_matter.get("metadata", {})
-        if isinstance(metadata, dict):
-            hermes = metadata.get("hermes", {})
-            if isinstance(hermes, dict):
-                tags = hermes.get("tags", [])
-
-        return {
-            "name": name,
-            "description": description,
-            "version": version,
-            "author": author,
-            "tags": tags if isinstance(tags, list) else [],
-        }
-
-    def _scan_skills(self, base_dir: Path) -> list[dict[str, Any]]:
-        """扫描目录中的所有 SKILL.md 文件
-
-        Args:
-            base_dir: 基础目录路径
-
-        Returns:
-            Skill 元数据列表
-        """
-        skills = []
-
-        # 递归查找所有 SKILL.md 文件
-        for skill_file in base_dir.rglob("SKILL.md"):
-            try:
-                skill_data = self._parse_skill_file(skill_file)
-                skill_data["_path"] = skill_file.parent
-                skills.append(skill_data)
-            except ValueError as e:
-                logger.warning(f"Failed to parse {skill_file}: {e}")
-
-        return skills
 
     async def test_connection(self, config: dict) -> MarketplaceTestResult:
         """测试市场连接
@@ -142,7 +58,7 @@ class LocalSkillAdapter(MarketplaceAdapter):
                 return MarketplaceTestResult(success=False, message=f"路径不是目录: {path}")
 
             # 扫描 Skill 文件
-            skills = self._scan_skills(path)
+            skills = self.scanner.scan_skills(path)
 
             return MarketplaceTestResult(
                 success=True,
@@ -179,33 +95,33 @@ class LocalSkillAdapter(MarketplaceAdapter):
 
         try:
             path = self._parse_url(url)
-            skills = self._scan_skills(path)
+            skills = self.scanner.scan_skills(path)
 
             # 过滤关键词
             if keyword:
                 keyword_lower = keyword.lower()
                 skills = [
                     s for s in skills
-                    if keyword_lower in s.get("name", "").lower()
-                    or keyword_lower in s.get("description", "").lower()
+                    if keyword_lower in s.name.lower()
+                    or keyword_lower in s.description.lower()
                 ]
 
             # 转换为 RemotePluginInfo
             plugins = []
             for skill in skills:
-                skill_dir = skill.get("_path", path)
-                plugin_id = f"{skill['author']}/{skill['name']}"
+                skill_dir = skill.skill_dir or path
+                plugin_id = f"{skill.author}/{skill.name}"
 
                 plugins.append(RemotePluginInfo(
                     plugin_id=plugin_id,
-                    name=skill["name"],
-                    description=skill.get("description", ""),
-                    version=skill.get("version", "1.0.0"),
-                    author=skill["author"],
+                    name=skill.name,
+                    description=skill.description,
+                    version=skill.version,
+                    author=skill.author,
                     icon=None,
                     plugin_type="skill",
                     skill_type="knowledge",  # 默认为知识文档
-                    tags=skill.get("tags", []),
+                    tags=skill.tags,
                     downloads=None,
                     manifest_url=None,
                     download_url=f"file://{skill_dir}",
@@ -240,24 +156,24 @@ class LocalSkillAdapter(MarketplaceAdapter):
 
         try:
             path = self._parse_url(url)
-            skills = self._scan_skills(path)
+            skills = self.scanner.scan_skills(path)
 
             # 查找匹配的 Skill
             for skill in skills:
-                current_plugin_id = f"{skill['author']}/{skill['name']}"
+                current_plugin_id = f"{skill.author}/{skill.name}"
                 if current_plugin_id == plugin_id:
-                    skill_dir = skill.get("_path", path)
+                    skill_dir = skill.skill_dir or path
 
                     return RemotePluginInfo(
                         plugin_id=plugin_id,
-                        name=skill["name"],
-                        description=skill.get("description", ""),
-                        version=skill.get("version", "1.0.0"),
-                        author=skill["author"],
+                        name=skill.name,
+                        description=skill.description,
+                        version=skill.version,
+                        author=skill.author,
                         icon=None,
                         plugin_type="skill",
                         skill_type="knowledge",
-                        tags=skill.get("tags", []),
+                        tags=skill.tags,
                         downloads=None,
                         manifest_url=None,
                         download_url=f"file://{skill_dir}",
@@ -278,7 +194,7 @@ class LocalSkillAdapter(MarketplaceAdapter):
     ) -> tuple[bytes, str]:
         """下载插件包
 
-        将 Skill 目录打包为 ZIP 文件。
+        将 Skill 目录打包为 ZIP 文件，复用 SkillScanner.zip_skill。
 
         Args:
             config: 市场配置
@@ -293,26 +209,13 @@ class LocalSkillAdapter(MarketplaceAdapter):
             raise ValueError("市场地址不能为空")
 
         path = self._parse_url(url)
-        skills = self._scan_skills(path)
+        skills = self.scanner.scan_skills(path)
 
         # 查找匹配的 Skill
         for skill in skills:
-            current_plugin_id = f"{skill['author']}/{skill['name']}"
+            current_plugin_id = f"{skill.author}/{skill.name}"
             if current_plugin_id == plugin_id:
-                skill_dir = skill.get("_path", path)
-
-                # 打包为 ZIP
-                zip_buffer = BytesIO()
-                with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zipf:
-                    for file_path in skill_dir.rglob("*"):
-                        if file_path.is_file():
-                            arcname = file_path.relative_to(skill_dir)
-                            zipf.write(file_path, arcname)
-
-                zip_data = zip_buffer.getvalue()
-                checksum = hashlib.sha256(zip_data).hexdigest()
-
-                return zip_data, checksum
+                return self.scanner.zip_skill(skill)
 
         raise ValueError(f"Plugin not found: {plugin_id}")
 

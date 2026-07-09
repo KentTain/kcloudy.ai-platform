@@ -179,3 +179,14 @@ tenant:
   # skip-tenant-setting-path:
   #   - "/api/public/"
   #   - "/webhook/"
+
+# Skills Git 配置（GitSkillsAdapter / ModelScopeSkillAdapter 共用）
+skills:
+  git:
+    # GitSkillsAdapter 默认仓库（当市场配置未指定 url 时使用）
+    default_repo: "https://github.com/anthropics/skills.git"
+    default_ref: "main"
+    # 缓存配置
+    cache_dir: "./cache/skills"
+    cache_ttl_days: 30
+    cleanup_on_startup: true

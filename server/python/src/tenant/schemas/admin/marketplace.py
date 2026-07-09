@@ -74,7 +74,7 @@ class MarketplaceResponse(BaseModel):
     MARKET_SUPPORTED_TYPES: ClassVar[dict[str, list[str]]] = {
         "dify": ["tool", "model", "agent"],
         "modelscope-mcp": ["mcp"],
-        "agentskills": ["skill"],
+        "git-skills": ["skill"],
         "modelscope-skill": ["skill"],
         "local-skill": ["skill"],
         "local-plugin": ["tool", "model", "agent"],

@@ -19,12 +19,14 @@ from typing import TYPE_CHECKING, Any
 import httpx
 from loguru import logger
 
+from tenant.services.marketplace.git_sync_service import GitSyncService
 from tenant.services.marketplace.protocol import (
     MarketplaceAdapter,
     MarketplaceTestResult,
     PluginUpdateInfo,
     RemotePluginInfo,
 )
+from tenant.services.marketplace.skill_scanner import SkillScanner
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -34,6 +36,14 @@ class ModelScopeSkillAdapter(MarketplaceAdapter):
     """ModelScope Skill 市场适配器（符合官方 OpenAPI 规范）"""
 
     API_BASE = "https://modelscope.cn/openapi/v1"
+
+    def __init__(
+        self,
+        git_sync: GitSyncService | None = None,
+        scanner: SkillScanner | None = None,
+    ):
+        self.git_sync = git_sync or GitSyncService()
+        self.scanner = scanner or SkillScanner()
 
     @property
     def market_type(self) -> str:
@@ -152,24 +162,41 @@ class ModelScopeSkillAdapter(MarketplaceAdapter):
         plugin_id: str,
         version: str | None = None,
     ) -> tuple[bytes, str]:
-        """生成 Skill 声明清单
+        """下载 Skill 包
 
-        Skill 不是传统插件包，而是配置清单和安装指令。
-        source_url 是源码地址，不能用于下载。
+        当 skill_metadata 中有 source_url 时，使用 git sparse-checkout
+        拉取并 ZIP 打包；否则兜底返回声明清单。
         """
         skill_info = await self.get_plugin(config, plugin_id)
         if not skill_info:
             raise ValueError(f"Skill {plugin_id} not found")
 
-        # 从 skill_metadata 获取元数据
+        metadata = skill_info.skill_metadata or {}
+        source_url = metadata.get("source_url", "")
+
+        if not source_url:
+            return self._generate_declaration(skill_info)
+
+        # 有 source_url：通过 GitSyncService 拉取并打包
+        repo_url, ref, subdir = self.git_sync.parse_source_url(source_url)
+        skill_dir, commit_sha = await self.git_sync.sync_repo(repo_url, ref=ref, subdir=subdir)
+        skills = self.scanner.scan_skills(skill_dir)
+        if not skills:
+            raise ValueError(f"No SKILL.md found in {source_url}")
+        return self.scanner.zip_skill(skills[0])
+
+    def _generate_declaration(self, skill_info: RemotePluginInfo) -> tuple[bytes, str]:
+        """兜底：返回 JSON 声明清单
+
+        当 source_url 不可用时，生成包含安装指令的声明清单。
+        """
         metadata = skill_info.skill_metadata or {}
         category = metadata.get("category", "")
 
-        # 生成声明清单
         declaration = {
             "skill": {
                 "skill_type": self._infer_skill_type(category),
-                "runtime": "none",  # Skill 通过 CLI 安装，不需要 runtime
+                "runtime": "none",
             },
             "metadata": {
                 "name": skill_info.name,

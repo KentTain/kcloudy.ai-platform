@@ -1,7 +1,7 @@
 """插件市场适配器"""
 
 from tenant.services.marketplace.adapters.dify_adapter import DifyAdapter
-from tenant.services.marketplace.adapters.agentskills_adapter import AgentSkillsAdapter
+from tenant.services.marketplace.adapters.git_skills_adapter import GitSkillsAdapter
 from tenant.services.marketplace.adapters.modelscope_skill_adapter import (
     ModelScopeSkillAdapter,
 )
@@ -13,7 +13,7 @@ from tenant.services.marketplace.adapters.local_plugin_adapter import LocalPlugi
 
 __all__ = [
     "DifyAdapter",
-    "AgentSkillsAdapter",
+    "GitSkillsAdapter",
     "ModelScopeSkillAdapter",
     "ModelScopeMcpAdapter",
     "LocalSkillAdapter",
