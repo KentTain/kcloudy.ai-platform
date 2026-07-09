@@ -702,3 +702,41 @@ web-config:
   settings:
     # 人员选择器模式(org-tree,user-list)
     personnel-picker-mode: ""
+
+# 插件配置
+plugin:
+  # 启动时自动扫描插件目录并注册到数据库
+  scan_on_startup: true
+  scan_directory: "server/plugins"
+
+  # 插件自动设置：启动时自动安装、配置凭证、启动插件
+  auto_setup:
+    enabled: true
+    plugins:
+      - plugin_id: "langgenius-tongyi"
+        auto_install: true
+        auto_start: true
+        credentials:
+          api_key: "${TONGYI_API_KEY:}"
+      - plugin_id: "langgenius-gpustack"
+        auto_install: true
+        auto_start: true
+        credentials:
+          api_key: "${GPUSTACK_API_KEY:}"
+          endpoint: "${GPUSTACK_ENDPOINT:https://llm-stack.flydiysz.cn}"
+      - plugin_id: "langgenius-siliconflow"
+        auto_install: true
+        auto_start: true
+        credentials:
+          api_key: "${SILICONFLOW_API_KEY:}"
+      - plugin_id: "langgenius-deepseek"
+        auto_install: true
+        auto_start: true
+        credentials:
+          api_key: "${DEEPSEEK_API_KEY:}"
+
+    # 插件验证：启动后验证已启动插件的连通性
+    verification:
+      enabled: true
+      timeout: 10
+      on_failure: "warn"
