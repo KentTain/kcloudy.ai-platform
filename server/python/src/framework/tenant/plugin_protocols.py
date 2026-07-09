@@ -236,3 +236,75 @@ def get_plugin_installation_provider() -> PluginInstallationProvider:
             "Call register_plugin_installation_provider() at startup."
         )
     return _plugin_installation_provider
+
+
+# ============== PluginConfigProvider Protocol ==============
+
+
+class PluginConfigProvider(Protocol):
+    """
+    插件配置提供者协议
+
+    抽象插件凭证配置操作，支持：
+    - 本地部署：直接数据库访问
+    - 分布式部署：通过 RPC/HTTP 调用 AI 模块
+    """
+
+    async def configure_plugin(
+        self,
+        tenant_id: str,
+        plugin_id: str,
+        plugin_config: dict | None,
+        runtime_config: dict | None,
+    ) -> PluginConfigDTO:
+        """
+        配置插件凭证（委托给 AI 模块的 plugin_config_service）
+
+        Args:
+            tenant_id: 租户 ID
+            plugin_id: 插件 ID
+            plugin_config: 插件配置（如 API Key、Endpoint 等）
+            runtime_config: 运行时配置（如超时时间、重试次数等）
+
+        Returns:
+            PluginConfigDTO
+        """
+        ...
+
+
+# ============== 全局注册 ==============
+
+_plugin_config_provider: PluginConfigProvider | None = None
+
+
+def register_plugin_config_provider(
+    provider: PluginConfigProvider,
+) -> None:
+    """
+    注册插件配置提供者
+
+    应用启动时调用，注入具体实现。
+
+    Args:
+        provider: PluginConfigProvider 实现实例
+    """
+    global _plugin_config_provider
+    _plugin_config_provider = provider
+
+
+def get_plugin_config_provider() -> PluginConfigProvider:
+    """
+    获取插件配置提供者
+
+    Returns:
+        PluginConfigProvider 实例
+
+    Raises:
+        RuntimeError: 未注册时抛出
+    """
+    if _plugin_config_provider is None:
+        raise RuntimeError(
+            "PluginConfigProvider not registered. "
+            "Call register_plugin_config_provider() at startup."
+        )
+    return _plugin_config_provider
