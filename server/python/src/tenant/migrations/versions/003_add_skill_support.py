@@ -47,10 +47,14 @@ def upgrade() -> None:
     )
 
     # 添加部分索引，仅对 skill 类型查询优化
-    op.execute(
-        f"CREATE INDEX idx_plugin_definitions_skill_type "
-        f"ON {MODULE_SCHEMA}.plugin_definitions (plugin_type, skill_type) "
-        f"WHERE plugin_type = 'skill';"
+    # 注意：plugin_type 字段存在于 plugin_installations 表，而非 plugin_definitions 表
+    # 此处为 skill_type 字段创建索引以优化按技能类型查询
+    op.create_index(
+        "idx_plugin_definitions_skill_type",
+        "plugin_definitions",
+        ["skill_type"],
+        schema=MODULE_SCHEMA,
+        postgresql_where=sa.text("skill_type IS NOT NULL"),
     )
 
 
