@@ -100,19 +100,17 @@ const tenantColumns: ColumnDef<Tenant>[] = [
   {
     id: "actions",
     header: "操作",
-    size: 80,
-    cell: ({ row }) => {
-      const tenant = row.original;
-      return h(TenantRowActions, {
-        row: tenant,
+    size: 180,
+    cell: ({ row }) =>
+      h(TenantRowActions, {
+        row: row.original,
         canEdit: canEdit.value,
-        onDetail: () => handleDetail(tenant),
-        onEdit: () => handleEdit(tenant),
-        onActivate: () => handleActivate(tenant),
-        onDeactivate: () => handleDeactivate(tenant),
-        onDelete: () => handleDelete(tenant),
-      });
-    },
+        onDetail: handleDetail,
+        onEdit: handleEdit,
+        onActivate: handleActivate,
+        onDeactivate: handleDeactivate,
+        onDelete: handleDelete,
+      }),
   },
 ];
 

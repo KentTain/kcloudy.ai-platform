@@ -12,7 +12,6 @@ import {
   RefreshCw,
   RotateCcw,
   Search,
-  Trash2,
   Users,
 } from "@lucide/vue";
 import type { ColumnDef } from "@tanstack/vue-table";
@@ -30,6 +29,7 @@ import {
   uninstallPluginInstallation,
 } from "@/tenant/api/plugin";
 import type { PluginInstallation, PluginInstallationQuery } from "@/tenant/api/plugin";
+import { PluginInstallationRowActions } from "@/tenant/components";
 
 // 搜索筛选
 const searchForm = ref<PluginInstallationQuery>({
@@ -126,28 +126,16 @@ const columns: ColumnDef<PluginInstallation>[] = [
   {
     id: "actions",
     header: "操作",
-    size: 120,
+    size: 100,
     cell: ({ row }) => {
       const installation = row.original;
       const key = `${installation.tenant_id}:${installation.plugin_id}`;
       const isUninstalling = uninstallingKeys.value.has(key);
-      const isActive = installation.status === "ACTIVE";
-
-      return h(
-        Button,
-        {
-          variant: "ghost",
-          size: "sm",
-          class: "text-destructive hover:text-destructive",
-          disabled: isActive || isUninstalling,
-          title: isActive ? "运行中的插件禁止卸载，请先停止" : undefined,
-          onClick: () => handleUninstall(installation),
-        },
-        () => [
-          h(Trash2, { class: "mr-1 h-3.5 w-3.5" }),
-          isUninstalling ? "卸载中" : "卸载",
-        ]
-      );
+      return h(PluginInstallationRowActions, {
+        row: installation,
+        isUninstalling,
+        onUninstall: handleUninstall,
+      });
     },
   },
 ];

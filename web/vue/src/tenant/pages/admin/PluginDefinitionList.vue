@@ -1,20 +1,14 @@
 ﻿<script setup lang="ts">
 import {
-  Eye,
+  CheckCircle,
+  FolderSearch,
   Package,
-  Pencil,
   RefreshCw,
   RotateCcw,
   Search,
-  Trash2,
-  CheckCircle,
   Star,
-  Users,
   Upload,
-  FolderSearch,
-  Download,
-  Play,
-  Square,
+  Users,
 } from "@lucide/vue";
 import type { ColumnDef } from "@tanstack/vue-table";
 import { h, ref } from "vue";
@@ -41,6 +35,7 @@ import {
   updatePluginDefinition,
 } from "@/tenant/api/plugin";
 import type { PluginDefinition, PluginStatistics } from "@/tenant/api/plugin";
+import { PluginDefinitionRowActions } from "@/tenant/components";
 import InstallToTenantsDialog from "./InstallToTenantsDialog.vue";
 import BatchStartStopDialog from "./BatchStartStopDialog.vue";
 
@@ -215,52 +210,18 @@ const columns: ColumnDef<PluginDefinition>[] = [
   {
     id: "actions",
     header: "操作",
-    size: 240,
-    cell: ({ row }) => {
-      const plugin = row.original;
-      return h("div", { class: "flex items-center gap-1" }, [
-        h(
-          Button,
-          { variant: "ghost", size: "sm", onClick: () => handleDetail(plugin) },
-          () => [h(Eye, { class: "mr-1 h-3.5 w-3.5" }), "详情"]
-        ),
-        h(
-          Button,
-          { variant: "ghost", size: "sm", onClick: () => handleToggleEnabled(plugin) },
-          () => [h(CheckCircle, { class: "mr-1 h-3.5 w-3.5" }), plugin.is_enabled ? "禁用" : "启用"]
-        ),
-        h(
-          Button,
-          { variant: "ghost", size: "sm", onClick: () => handleInstallToTenants(plugin) },
-          () => [h(Download, { class: "mr-1 h-3.5 w-3.5" }), "安装"]
-        ),
-        h(
-          Button,
-          { variant: "ghost", size: "sm", onClick: () => handleBatchStart(plugin) },
-          () => [h(Play, { class: "mr-1 h-3.5 w-3.5" }), "启动"]
-        ),
-        h(
-          Button,
-          { variant: "ghost", size: "sm", onClick: () => handleBatchStop(plugin) },
-          () => [h(Square, { class: "mr-1 h-3.5 w-3.5" }), "停止"]
-        ),
-        h(
-          Button,
-          { variant: "ghost", size: "sm", onClick: () => handleEdit(plugin) },
-          () => [h(Pencil, { class: "mr-1 h-3.5 w-3.5" }), "编辑"]
-        ),
-        h(
-          Button,
-          {
-            variant: "ghost",
-            size: "sm",
-            class: "text-destructive hover:text-destructive",
-            onClick: () => handleDelete(plugin),
-          },
-          () => [h(Trash2, { class: "mr-1 h-3.5 w-3.5" }), "删除"]
-        ),
-      ]);
-    },
+    size: 180,
+    cell: ({ row }) =>
+      h(PluginDefinitionRowActions, {
+        row: row.original,
+        onDetail: handleDetail,
+        onToggleEnabled: handleToggleEnabled,
+        onInstall: handleInstallToTenants,
+        onStart: handleBatchStart,
+        onStop: handleBatchStop,
+        onEdit: handleEdit,
+        onDelete: handleDelete,
+      }),
   },
 ];
 

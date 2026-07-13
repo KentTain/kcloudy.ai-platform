@@ -40,6 +40,7 @@ import type {
 } from '@/tenant/types/resource'
 import { notifySuccess, notifyError } from '@/framework/utils/feedback'
 import { Button, Input, Label, Card, Badge, DataTable, useDataTable } from '@/components'
+import { ResourceConfigRowActions } from '@/tenant/components'
 import {
   Select,
   SelectContent,
@@ -60,7 +61,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components'
-import { Plus, Pencil, Trash2, Plug, RefreshCw, Search, Layers, CheckCircle, Ban } from '@lucide/vue'
+import { Plus, RefreshCw, Search, Layers, CheckCircle, Ban } from '@lucide/vue'
 
 // 资源类型定义
 type ResourceType = 'database' | 'storage' | 'cache' | 'queue' | 'pubsub'
@@ -232,15 +233,14 @@ const databaseColumns: ColumnDef<DatabaseConfig>[] = [
     size: 200,
     cell: ({ row }) => {
       const item = row.original
-      return h('div', { class: 'flex items-center gap-1' }, [
-        h(Button, {
-          variant: 'ghost', size: 'sm',
-          disabled: testingId.value === item.id && testLoading.value,
-          onClick: () => handleTestConnection(item, 'database'),
-        }, () => [h(Plug, { class: 'mr-1 h-3.5 w-3.5' }), '测试']),
-        h(Button, { variant: 'ghost', size: 'sm', onClick: () => openEditDialog(item) }, () => [h(Pencil, { class: 'mr-1 h-3.5 w-3.5' }), '编辑']),
-        h(Button, { variant: 'ghost', size: 'sm', class: 'text-destructive hover:text-destructive', onClick: () => openDeleteDialog(item) }, () => [h(Trash2, { class: 'mr-1 h-3.5 w-3.5' }), '删除']),
-      ])
+      return h(ResourceConfigRowActions, {
+        row: item,
+        resourceType: 'database',
+        isTesting: testingId.value === item.id && testLoading.value,
+        onTest: handleTestConnection,
+        onEdit: openEditDialog,
+        onDelete: openDeleteDialog,
+      })
     },
   },
 ]
@@ -265,15 +265,14 @@ const storageColumns: ColumnDef<StorageConfig>[] = [
     size: 200,
     cell: ({ row }) => {
       const item = row.original
-      return h('div', { class: 'flex items-center gap-1' }, [
-        h(Button, {
-          variant: 'ghost', size: 'sm',
-          disabled: testingId.value === item.id && testLoading.value,
-          onClick: () => handleTestConnection(item, 'storage'),
-        }, () => [h(Plug, { class: 'mr-1 h-3.5 w-3.5' }), '测试']),
-        h(Button, { variant: 'ghost', size: 'sm', onClick: () => openEditDialog(item) }, () => [h(Pencil, { class: 'mr-1 h-3.5 w-3.5' }), '编辑']),
-        h(Button, { variant: 'ghost', size: 'sm', class: 'text-destructive hover:text-destructive', onClick: () => openDeleteDialog(item) }, () => [h(Trash2, { class: 'mr-1 h-3.5 w-3.5' }), '删除']),
-      ])
+      return h(ResourceConfigRowActions, {
+        row: item,
+        resourceType: 'storage',
+        isTesting: testingId.value === item.id && testLoading.value,
+        onTest: handleTestConnection,
+        onEdit: openEditDialog,
+        onDelete: openDeleteDialog,
+      })
     },
   },
 ]
@@ -298,15 +297,14 @@ const cacheColumns: ColumnDef<CacheConfig>[] = [
     size: 200,
     cell: ({ row }) => {
       const item = row.original
-      return h('div', { class: 'flex items-center gap-1' }, [
-        h(Button, {
-          variant: 'ghost', size: 'sm',
-          disabled: testingId.value === item.id && testLoading.value,
-          onClick: () => handleTestConnection(item, 'cache'),
-        }, () => [h(Plug, { class: 'mr-1 h-3.5 w-3.5' }), '测试']),
-        h(Button, { variant: 'ghost', size: 'sm', onClick: () => openEditDialog(item) }, () => [h(Pencil, { class: 'mr-1 h-3.5 w-3.5' }), '编辑']),
-        h(Button, { variant: 'ghost', size: 'sm', class: 'text-destructive hover:text-destructive', onClick: () => openDeleteDialog(item) }, () => [h(Trash2, { class: 'mr-1 h-3.5 w-3.5' }), '删除']),
-      ])
+      return h(ResourceConfigRowActions, {
+        row: item,
+        resourceType: 'cache',
+        isTesting: testingId.value === item.id && testLoading.value,
+        onTest: handleTestConnection,
+        onEdit: openEditDialog,
+        onDelete: openDeleteDialog,
+      })
     },
   },
 ]
@@ -331,15 +329,14 @@ const queueColumns: ColumnDef<QueueConfig>[] = [
     size: 200,
     cell: ({ row }) => {
       const item = row.original
-      return h('div', { class: 'flex items-center gap-1' }, [
-        h(Button, {
-          variant: 'ghost', size: 'sm',
-          disabled: testingId.value === item.id && testLoading.value,
-          onClick: () => handleTestConnection(item, 'queue'),
-        }, () => [h(Plug, { class: 'mr-1 h-3.5 w-3.5' }), '测试']),
-        h(Button, { variant: 'ghost', size: 'sm', onClick: () => openEditDialog(item) }, () => [h(Pencil, { class: 'mr-1 h-3.5 w-3.5' }), '编辑']),
-        h(Button, { variant: 'ghost', size: 'sm', class: 'text-destructive hover:text-destructive', onClick: () => openDeleteDialog(item) }, () => [h(Trash2, { class: 'mr-1 h-3.5 w-3.5' }), '删除']),
-      ])
+      return h(ResourceConfigRowActions, {
+        row: item,
+        resourceType: 'queue',
+        isTesting: testingId.value === item.id && testLoading.value,
+        onTest: handleTestConnection,
+        onEdit: openEditDialog,
+        onDelete: openDeleteDialog,
+      })
     },
   },
 ]
@@ -383,15 +380,14 @@ const pubsubColumns: ColumnDef<PubsubConfig>[] = [
     size: 200,
     cell: ({ row }) => {
       const item = row.original
-      return h('div', { class: 'flex items-center gap-1' }, [
-        h(Button, {
-          variant: 'ghost', size: 'sm',
-          disabled: testingId.value === item.id && testLoading.value,
-          onClick: () => handleTestConnection(item, 'pubsub'),
-        }, () => [h(Plug, { class: 'mr-1 h-3.5 w-3.5' }), '测试']),
-        h(Button, { variant: 'ghost', size: 'sm', onClick: () => openEditDialog(item) }, () => [h(Pencil, { class: 'mr-1 h-3.5 w-3.5' }), '编辑']),
-        h(Button, { variant: 'ghost', size: 'sm', class: 'text-destructive hover:text-destructive', onClick: () => openDeleteDialog(item) }, () => [h(Trash2, { class: 'mr-1 h-3.5 w-3.5' }), '删除']),
-      ])
+      return h(ResourceConfigRowActions, {
+        row: item,
+        resourceType: 'pubsub',
+        isTesting: testingId.value === item.id && testLoading.value,
+        onTest: handleTestConnection,
+        onEdit: openEditDialog,
+        onDelete: openDeleteDialog,
+      })
     },
   },
 ]

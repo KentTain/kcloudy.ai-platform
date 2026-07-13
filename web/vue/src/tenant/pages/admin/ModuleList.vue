@@ -1,13 +1,10 @@
 <script setup lang="ts">
 import {
-  Eye,
   Package,
-  Pencil,
   Plus,
   RefreshCw,
   RotateCcw,
   Search,
-  Trash2,
   CheckCircle,
   Star,
   Users,
@@ -24,6 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { confirmAction, notifyError, notifySuccess } from "@/framework/utils/feedback";
+import { ModuleRowActions } from "@/tenant/components";
 import { createPaginatedResponse } from "@/framework/api/types";
 import { deleteModule, getModules } from "@/tenant/api/module";
 import type { Module } from "@/tenant/types/admin";
@@ -102,31 +100,13 @@ const moduleColumns: ColumnDef<Module>[] = [
     id: "actions",
     header: "操作",
     size: 160,
-    cell: ({ row }) => {
-      const module = row.original;
-      return h("div", { class: "flex items-center gap-1" }, [
-        h(
-          Button,
-          { variant: "ghost", size: "sm", onClick: () => handleDetail(module) },
-          () => [h(Eye, { class: "mr-1 h-3.5 w-3.5" }), "详情"]
-        ),
-        h(
-          Button,
-          { variant: "ghost", size: "sm", onClick: () => handleEdit(module) },
-          () => [h(Pencil, { class: "mr-1 h-3.5 w-3.5" }), "编辑"]
-        ),
-        h(
-          Button,
-          {
-            variant: "ghost",
-            size: "sm",
-            class: "text-destructive hover:text-destructive",
-            onClick: () => handleDelete(module),
-          },
-          () => [h(Trash2, { class: "mr-1 h-3.5 w-3.5" }), "删除"]
-        ),
-      ]);
-    },
+    cell: ({ row }) =>
+      h(ModuleRowActions, {
+        row: row.original,
+        onDetail: handleDetail,
+        onEdit: handleEdit,
+        onDelete: handleDelete,
+      }),
   },
 ];
 

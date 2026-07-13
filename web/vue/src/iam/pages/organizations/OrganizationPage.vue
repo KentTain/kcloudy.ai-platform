@@ -20,10 +20,6 @@ import {
   Info,
   Search,
   UserPlus,
-  Eye,
-  UserCheck,
-  UserX,
-  X,
 } from "@lucide/vue"
 import AppPage from "@/framework/layouts/components/AppPage.vue"
 import {
@@ -39,6 +35,7 @@ import {
   type OrgTreeNode,
   type PeopleItem,
 } from "@/components"
+import { ChildOrgRowActions, OrgMemberRowActions } from "@/iam/components"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import {
@@ -193,18 +190,11 @@ const childOrgColumns: ColumnDef<Organization>[] = [
     id: "actions",
     header: "操作",
     size: 80,
-    cell: ({ row }) => {
-      const org = row.original
-      return h(
-        Button,
-        {
-          variant: "ghost",
-          size: "sm",
-          onClick: () => viewChildOrganization(org),
-        },
-        () => [h(Eye, { class: "mr-1 h-3.5 w-3.5" }), "查看"]
-      )
-    },
+    cell: ({ row }) =>
+      h(ChildOrgRowActions, {
+        row: row.original,
+        onView: viewChildOrganization,
+      }),
   },
 ]
 
@@ -263,51 +253,13 @@ const memberColumns: ColumnDef<OrganizationUser>[] = [
     id: "actions",
     header: "操作",
     size: 160,
-    cell: ({ row }) => {
-      const member = row.original
-      const buttons = []
-
-      if (member.status === "active") {
-        buttons.push(
-          h(
-            Button,
-            {
-              variant: "ghost",
-              size: "sm",
-              onClick: () => handleDisableMember(member),
-            },
-            () => [h(UserX, { class: "mr-1 h-3.5 w-3.5" }), "停用"]
-          )
-        )
-      } else {
-        buttons.push(
-          h(
-            Button,
-            {
-              variant: "ghost",
-              size: "sm",
-              onClick: () => handleEnableMember(member),
-            },
-            () => [h(UserCheck, { class: "mr-1 h-3.5 w-3.5" }), "启用"]
-          )
-        )
-      }
-
-      buttons.push(
-        h(
-          Button,
-          {
-            variant: "ghost",
-            size: "sm",
-            class: "text-destructive hover:text-destructive",
-            onClick: () => handleRemoveMember(member),
-          },
-          () => [h(X, { class: "mr-1 h-3.5 w-3.5" }), "移除"]
-        )
-      )
-
-      return h("div", { class: "flex items-center gap-1" }, buttons)
-    },
+    cell: ({ row }) =>
+      h(OrgMemberRowActions, {
+        row: row.original,
+        onDisable: handleDisableMember,
+        onEnable: handleEnableMember,
+        onRemove: handleRemoveMember,
+      }),
   },
 ]
 

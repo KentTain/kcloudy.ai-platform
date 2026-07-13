@@ -13,7 +13,6 @@ import {
   Shield,
   Users,
   Menu,
-  Settings,
 } from "@lucide/vue"
 import AppPage from "@/framework/layouts/components/AppPage.vue"
 import {
@@ -43,6 +42,7 @@ import {
   assignRolePermissions,
 } from "@/iam/api/role"
 import { getMenus } from "@/iam/api/menu"
+import { PermissionRoleRowActions } from "@/iam/components"
 
 // ========== 状态 ==========
 
@@ -130,18 +130,11 @@ const roleColumns: ColumnDef<Role>[] = [
     id: "actions",
     header: "操作",
     size: 120,
-    cell: ({ row }) => {
-      const role = row.original
-      return h(
-        Button,
-        {
-          variant: "outline",
-          size: "sm",
-          onClick: () => handleAssignPermissions(role),
-        },
-        () => [h(Settings, { class: "mr-1 h-3.5 w-3.5" }), "分配权限"]
-      )
-    },
+    cell: ({ row }) =>
+      h(PermissionRoleRowActions, {
+        row: row.original,
+        onAssignPermissions: handleAssignPermissions,
+      }),
   },
 ]
 

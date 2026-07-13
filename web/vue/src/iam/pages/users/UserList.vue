@@ -18,11 +18,6 @@ import {
   Building2,
   Search,
   RotateCcw,
-  Pencil,
-  Trash2,
-  KeyRound,
-  ShieldCheck,
-  ShieldOff,
 } from "@lucide/vue"
 import AppPage from "@/framework/layouts/components/AppPage.vue"
 import {
@@ -57,6 +52,7 @@ import {
 } from "@/iam/api/user"
 import { getOrganizationTree } from "@/iam/api/organization"
 import UserFormDialog, { type UserSubmitData } from "@/iam/components/UserFormDialog.vue"
+import { UserRowActions } from "@/iam/components"
 
 // ========== 状态 ==========
 
@@ -218,58 +214,16 @@ const userColumns: ColumnDef<User>[] = [
   {
     id: "actions",
     header: "操作",
-    size: 180,
-    cell: ({ row }) => {
-      const user = row.original
-      const buttons = [
-        h(
-          Button,
-          { variant: "ghost", size: "sm", onClick: () => handleEdit(user) },
-          () => h(Pencil, { class: "h-3.5 w-3.5" })
-        ),
-      ]
-
-      if (user.status === "active") {
-        buttons.push(
-          h(
-            Button,
-            { variant: "ghost", size: "sm", onClick: () => handleDisable(user) },
-            () => h(ShieldOff, { class: "h-3.5 w-3.5" })
-          )
-        )
-      } else {
-        buttons.push(
-          h(
-            Button,
-            { variant: "ghost", size: "sm", onClick: () => handleEnable(user) },
-            () => h(ShieldCheck, { class: "h-3.5 w-3.5" })
-          )
-        )
-      }
-
-      buttons.push(
-        h(
-          Button,
-          { variant: "ghost", size: "sm", onClick: () => handleResetPassword(user) },
-          () => h(KeyRound, { class: "h-3.5 w-3.5" })
-        )
-      )
-
-      buttons.push(
-        h(
-          Button,
-          {
-            variant: "ghost",
-            size: "sm",
-            class: "text-destructive hover:text-destructive",
-            onClick: () => handleDelete(user),
-          },
-          () => h(Trash2, { class: "h-3.5 w-3.5" })
-        )
-      )
-
-      return h("div", { class: "flex items-center gap-1" }, buttons)
-    },
+    size: 160,
+    cell: ({ row }) =>
+      h(UserRowActions, {
+        row: row.original,
+        onEdit: handleEdit,
+        onDisable: handleDisable,
+        onEnable: handleEnable,
+        onResetPassword: handleResetPassword,
+        onDelete: handleDelete,
+      }),
   },
 ]
 

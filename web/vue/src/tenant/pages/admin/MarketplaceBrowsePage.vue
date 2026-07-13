@@ -3,7 +3,6 @@ import {
   ArrowLeft,
   Search,
   RotateCcw,
-  Download,
   Package,
   CheckCircle,
   Loader2,
@@ -14,6 +13,7 @@ import type { ColumnDef } from "@tanstack/vue-table";
 import { h, ref, computed, onMounted, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { Badge, Button, DataTable, Input, useDataTable } from "@/components";
+import { MarketplacePluginRowActions } from "@/tenant/components";
 import { Card } from "@/components/ui/card";
 import {
   Select,
@@ -208,18 +208,11 @@ const pluginColumns: ColumnDef<RemotePlugin>[] = [
     id: "actions",
     header: "操作",
     size: 100,
-    cell: ({ row }) => {
-      const plugin = row.original;
-      return h(
-        Button,
-        {
-          variant: "ghost",
-          size: "sm",
-          onClick: () => handleSyncSinglePlugin(plugin),
-        },
-        () => [h(Download, { class: "mr-1 h-3.5 w-3.5" }), "同步"],
-      );
-    },
+    cell: ({ row }) =>
+      h(MarketplacePluginRowActions, {
+        row: row.original,
+        onSync: handleSyncSinglePlugin,
+      }),
   },
 ];
 

@@ -1,5 +1,8 @@
-/**
- * 租户模块组件导出
- */
-
-export { default as TenantRowActions } from "./tenants/TenantRowActions.vue";
+export { default as TenantRowActions } from "./tenants/TenantRowActions.vue"
+export { default as ModuleRowActions } from "./admin/ModuleRowActions.vue"
+export { default as MarketplaceRowActions } from "./admin/MarketplaceRowActions.vue"
+export { default as PluginDefinitionRowActions } from "./admin/PluginDefinitionRowActions.vue"
+export { default as PluginInstallationRowActions } from "./admin/PluginInstallationRowActions.vue"
+export { default as ResourceConfigRowActions } from "./admin/ResourceConfigRowActions.vue"
+export { default as MarketplacePluginRowActions } from "./marketplace-browse/MarketplacePluginRowActions.vue"
+export { default as RemotePluginRowActions } from "./remote-plugin-browse/RemotePluginRowActions.vue"

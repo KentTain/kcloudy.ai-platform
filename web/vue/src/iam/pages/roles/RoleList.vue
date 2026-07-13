@@ -17,7 +17,6 @@ import {
   Trash2,
   Settings,
   UserPlus,
-  X,
   ChevronRight,
   ChevronDown,
   Menu,
@@ -62,6 +61,7 @@ import { getPermissions } from "@/iam/api/permission"
 import { getMenus } from "@/iam/api/menu"
 import { getOrganizationTree, getOrganizationMembers } from "@/iam/api/organization"
 import { getUsers } from "@/iam/api/user"
+import { RoleMemberRowActions } from "@/iam/components"
 
 // ========== 类型定义 ==========
 
@@ -318,20 +318,12 @@ const memberColumns: ColumnDef<RoleMember>[] = [
   {
     id: "actions",
     header: "操作",
-    size: 100,
-    cell: ({ row }) => {
-      const member = row.original
-      return h(
-        Button,
-        {
-          variant: "ghost",
-          size: "sm",
-          class: "text-destructive hover:text-destructive",
-          onClick: () => handleRemoveMember(member),
-        },
-        () => [h(X, { class: "h-3.5 w-3.5 mr-1" }), "移除"]
-      )
-    },
+    size: 80,
+    cell: ({ row }) =>
+      h(RoleMemberRowActions, {
+        row: row.original,
+        onRemove: handleRemoveMember,
+      }),
   },
 ]
 

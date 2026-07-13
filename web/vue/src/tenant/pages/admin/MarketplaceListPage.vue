@@ -2,10 +2,6 @@
 import {
   Plus,
   RefreshCw,
-  Pencil,
-  Trash2,
-  ExternalLink,
-  Wifi,
   Globe,
   Server,
   CheckCircle,
@@ -16,6 +12,7 @@ import type { ColumnDef } from "@tanstack/vue-table";
 import { h, ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { Badge, Button, Card, DataTable, useDataTable } from "@/components";
+import { MarketplaceRowActions } from "@/tenant/components";
 import { confirmAction, notifyError, notifySuccess } from "@/framework/utils/feedback";
 import { createPaginatedResponse } from "@/framework/api/types";
 import {
@@ -133,64 +130,21 @@ const columns: ColumnDef<Marketplace>[] = [
   {
     id: "actions",
     header: "操作",
-    size: 280,
+    size: 180,
     cell: ({ row }) => {
       const marketplace = row.original;
       const isTesting = testingIds.value.has(marketplace.id);
       const testResult = testResults.value.get(marketplace.id);
-
-      return h("div", { class: "flex items-center gap-1" }, [
-        h(
-          Button,
-          {
-            variant: "ghost",
-            size: "sm",
-            onClick: () => handleBrowse(marketplace),
-            disabled: !marketplace.is_enabled,
-          },
-          () => [h(ExternalLink, { class: "mr-1 h-3.5 w-3.5" }), "浏览"]
-        ),
-        h(
-          Button,
-          {
-            variant: "ghost",
-            size: "sm",
-            onClick: () => handleCheckUpdates(marketplace),
-            disabled: !marketplace.is_enabled,
-          },
-          () => [h(RefreshCw, { class: "mr-1 h-3.5 w-3.5" }), "检查更新"]
-        ),
-        h(
-          Button,
-          {
-            variant: "ghost",
-            size: "sm",
-            onClick: () => handleTest(marketplace),
-            disabled: isTesting,
-          },
-          () => [
-            isTesting
-              ? h(Clock, { class: "mr-1 h-3.5 w-3.5 animate-spin" })
-              : h(Wifi, { class: "mr-1 h-3.5 w-3.5" }),
-            testResult?.success ? "正常" : "测试",
-          ]
-        ),
-        h(
-          Button,
-          { variant: "ghost", size: "sm", onClick: () => handleEdit(marketplace) },
-          () => [h(Pencil, { class: "mr-1 h-3.5 w-3.5" }), "编辑"]
-        ),
-        h(
-          Button,
-          {
-            variant: "ghost",
-            size: "sm",
-            class: "text-destructive hover:text-destructive",
-            onClick: () => handleDelete(marketplace),
-          },
-          () => [h(Trash2, { class: "mr-1 h-3.5 w-3.5" }), "删除"]
-        ),
-      ]);
+      return h(MarketplaceRowActions, {
+        row: marketplace,
+        isTesting,
+        testSuccess: testResult?.success ?? false,
+        onBrowse: handleBrowse,
+        onCheckUpdates: handleCheckUpdates,
+        onTest: handleTest,
+        onEdit: handleEdit,
+        onDelete: handleDelete,
+      });
     },
   },
 ];

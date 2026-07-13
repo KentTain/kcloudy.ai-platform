@@ -40,6 +40,8 @@ export {
   CheckboxTree,
   DescriptionList,
   type DescriptionItem,
+  RowActions,
+  type RowAction,
 } from "./common/data-display";
 
 // 反馈组件
