@@ -164,3 +164,61 @@ async def test_verify_single_plugin_exception(verification_service):
         result = await verification_service._verify_single_plugin("langgenius-tongyi", 10)
 
     assert result is False
+
+
+@pytest.mark.asyncio
+async def test_update_runtime_state_exists(verification_service):
+    """测试更新运行时状态-记录存在"""
+    mock_runtime = MagicMock()
+    mock_runtime.status = "running"
+    mock_session = AsyncMock()
+    mock_session.commit = AsyncMock()
+    mock_cm = MagicMock()
+    mock_cm.__aenter__ = AsyncMock(return_value=mock_session)
+    mock_cm.__aexit__ = AsyncMock(return_value=False)
+
+    mock_model_cls = MagicMock()
+    mock_model_cls.first_by_fields = AsyncMock(return_value=mock_runtime)
+
+    with patch(
+        "ai.services.plugin_verification_service.get_task_session",
+        return_value=mock_cm,
+    ), patch.dict(
+        "sys.modules",
+        {"ai.models.plugin_runtime_state": MagicMock(
+            PluginRuntimeState=mock_model_cls
+        )},
+    ), patch(
+        "ai.models.plugin_runtime_state.PluginRuntimeState",
+        mock_model_cls,
+        create=True,
+    ):
+        await verification_service._update_runtime_state("langgenius-tongyi", "DEGRADED")
+
+    assert mock_runtime.status == "DEGRADED"
+    mock_session.commit.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_update_runtime_state_not_exists(verification_service):
+    """测试更新运行时状态-记录不存在"""
+    mock_session = AsyncMock()
+    mock_session.commit = AsyncMock()
+    mock_cm = MagicMock()
+    mock_cm.__aenter__ = AsyncMock(return_value=mock_session)
+    mock_cm.__aexit__ = AsyncMock(return_value=False)
+
+    mock_model_cls = MagicMock()
+    mock_model_cls.first_by_fields = AsyncMock(return_value=None)
+
+    with patch(
+        "ai.services.plugin_verification_service.get_task_session",
+        return_value=mock_cm,
+    ), patch(
+        "ai.models.plugin_runtime_state.PluginRuntimeState",
+        mock_model_cls,
+        create=True,
+    ):
+        await verification_service._update_runtime_state("langgenius-tongyi", "DEGRADED")
+
+    mock_session.commit.assert_not_awaited()
