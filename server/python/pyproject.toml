@@ -49,6 +49,8 @@ dependencies = [
   "docstring_parser~=0.16.0",
   "gevent>=24.0.0",
   "aiofiles>=25.1.0",
+  # Git 操作
+  "GitPython>=3.1.0",
 ]
 
 [project.scripts]
