@@ -2,14 +2,10 @@
 import {
   Building2,
   Clock,
-  Pencil,
   Plus,
   RefreshCw,
   RotateCcw,
   Search,
-  ShieldCheck,
-  ShieldOff,
-  Trash2,
   UserX,
 } from "@lucide/vue";
 import type { ColumnDef } from "@tanstack/vue-table";
@@ -28,6 +24,7 @@ import { confirmAction } from "@/framework/utils/feedback";
 import { getTenants } from "@/tenant/api/tenant";
 import { useTenantStore } from "@/tenant/stores/tenant";
 import type { Tenant, TenantListStats } from "@/tenant/types";
+import TenantRowActions from "./TenantRowActions.vue";
 
 const router = useRouter();
 const tenantStore = useTenantStore();
@@ -103,61 +100,18 @@ const tenantColumns: ColumnDef<Tenant>[] = [
   {
     id: "actions",
     header: "操作",
-    size: 200,
+    size: 80,
     cell: ({ row }) => {
       const tenant = row.original;
-      const buttons = [
-        h(
-          Button,
-          { variant: "ghost", size: "sm", onClick: () => handleDetail(tenant) },
-          () => "详情"
-        ),
-      ];
-
-      if (canEdit.value) {
-        buttons.push(
-          h(Button, { variant: "ghost", size: "sm", onClick: () => handleEdit(tenant) }, () => [
-            h(Pencil, { class: "mr-1 h-3.5 w-3.5" }),
-            "编辑",
-          ])
-        );
-      }
-
-      if (canEdit.value && tenant.status === "inactive") {
-        buttons.push(
-          h(Button, { variant: "ghost", size: "sm", onClick: () => handleActivate(tenant) }, () => [
-            h(ShieldCheck, { class: "mr-1 h-3.5 w-3.5" }),
-            "激活",
-          ])
-        );
-      }
-
-      if (canEdit.value && tenant.status === "active") {
-        buttons.push(
-          h(
-            Button,
-            { variant: "ghost", size: "sm", onClick: () => handleDeactivate(tenant) },
-            () => [h(ShieldOff, { class: "mr-1 h-3.5 w-3.5" }), "停用"]
-          )
-        );
-      }
-
-      if (canEdit.value) {
-        buttons.push(
-          h(
-            Button,
-            {
-              variant: "ghost",
-              size: "sm",
-              class: "text-destructive hover:text-destructive",
-              onClick: () => handleDelete(tenant),
-            },
-            () => [h(Trash2, { class: "mr-1 h-3.5 w-3.5" }), "删除"]
-          )
-        );
-      }
-
-      return h("div", { class: "flex items-center gap-1" }, buttons);
+      return h(TenantRowActions, {
+        row: tenant,
+        canEdit: canEdit.value,
+        onDetail: () => handleDetail(tenant),
+        onEdit: () => handleEdit(tenant),
+        onActivate: () => handleActivate(tenant),
+        onDeactivate: () => handleDeactivate(tenant),
+        onDelete: () => handleDelete(tenant),
+      });
     },
   },
 ];
