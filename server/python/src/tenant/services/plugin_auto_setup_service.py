@@ -53,14 +53,15 @@ class PluginAutoSetupService:
 
         for plugin_config in config.plugins:
             try:
-                # 步骤1: 安装插件（幂等，已安装则跳过安装步骤）
-                newly_installed = await self._install_plugin(session, plugin_config)
+                # 步骤1: 安装插件（当 auto_install=True 时执行，幂等）
+                if plugin_config.auto_install:
+                    newly_installed = await self._install_plugin(session, plugin_config)
 
-                if newly_installed:
-                    # 新安装：提交事务使安装记录对后续 Provider 可见
-                    await session.commit()
-                else:
-                    result.skipped_count += 1
+                    if newly_installed:
+                        # 新安装：提交事务使安装记录对后续 Provider 可见
+                        await session.commit()
+                    else:
+                        result.skipped_count += 1
 
                 # 步骤2: 配置凭证（始终执行，幂等更新）
                 if plugin_config.credentials:
@@ -69,7 +70,7 @@ class PluginAutoSetupService:
                         plugin_config.credentials,
                     )
 
-                # 步骤3: 启动插件（始终执行，幂等启动）
+                # 步骤3: 启动插件（当 auto_start=True 时执行，幂等）
                 if plugin_config.auto_start:
                     await self._start_plugin(plugin_config.plugin_id)
 

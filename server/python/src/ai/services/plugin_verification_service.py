@@ -110,8 +110,22 @@ class PluginVerificationService:
             plugin_id: 插件ID
             state: 状态
         """
-        # TODO: 实现运行时状态更新
-        _logger.info(f"更新插件状态: {plugin_id} -> {state}")
+        from ai.models.plugin_runtime_state import PluginRuntimeState
+
+        tenant_id = TenantContext.get_tenant_id()
+
+        async with get_task_session() as session:
+            runtime_state = await PluginRuntimeState.first_by_fields(
+                session,
+                {"tenant_id": tenant_id, "plugin_id": plugin_id},
+            )
+
+            if runtime_state:
+                runtime_state.status = state
+                await session.commit()
+                _logger.info(f"插件运行时状态已更新: {plugin_id} -> {state}")
+            else:
+                _logger.warning(f"插件运行时状态记录不存在，跳过更新: {plugin_id}")
 
 
 # 单例实例

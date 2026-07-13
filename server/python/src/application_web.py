@@ -461,6 +461,8 @@ async def _run_plugin_verification_background() -> None:
         _logger.info(f"插件验证完成: 成功 {success_count}/{len(results)}")
     except Exception as e:
         _logger.exception(f"插件验证异常: {e}")
+    finally:
+        TenantContext.clear()
 
 
 async def _setup_listeners(phase) -> None:

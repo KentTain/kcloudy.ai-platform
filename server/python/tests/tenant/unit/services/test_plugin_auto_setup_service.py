@@ -170,6 +170,47 @@ async def test_configure_credentials_delegates_to_provider():
 
 
 @pytest.mark.asyncio
+async def test_setup_plugins_auto_install_false(mock_session):
+    """测试 auto_install=False 时跳过安装但仍执行凭证配置和启动"""
+    service = PluginAutoSetupService()
+    config = PluginAutoSetupConfig(
+        enabled=True,
+        plugins=[
+            PluginAutoSetupItem(
+                plugin_id="langgenius-tongyi",
+                auto_install=False,
+                auto_start=True,
+                credentials={"api_key": "test-key"},
+            )
+        ],
+        verification=VerificationConfig(enabled=False),
+    )
+
+    mock_config_provider = MagicMock()
+    mock_config_provider.configure_plugin = AsyncMock()
+    mock_installation_provider = MagicMock()
+    mock_installation_provider.start_installation = AsyncMock()
+
+    with patch(
+        "tenant.services.plugin_auto_setup_service.get_plugin_config_provider",
+        return_value=mock_config_provider,
+    ), patch(
+        "tenant.services.plugin_auto_setup_service.get_plugin_installation_provider",
+        return_value=mock_installation_provider,
+    ):
+        result = await service.setup_plugins(mock_session, config)
+
+    assert result.success_count == 1
+    assert result.skipped_count == 0
+    # 不应调用安装相关方法
+    mock_session.add.assert_not_called()
+    mock_session.commit.assert_not_awaited()
+    # 凭证配置和启动仍应执行
+    mock_config_provider.configure_plugin.assert_awaited_once()
+    mock_installation_provider.start_installation.assert_awaited_once()
+
+
+@pytest.mark.asyncio
 async def test_setup_plugins_full_success(mock_session, auto_setup_config):
     """测试完整成功流程：安装-提交-配置-启动"""
     service = PluginAutoSetupService()
