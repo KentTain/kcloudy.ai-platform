@@ -24,7 +24,7 @@ import { confirmAction } from "@/framework/utils/feedback";
 import { getTenants } from "@/tenant/api/tenant";
 import { useTenantStore } from "@/tenant/stores/tenant";
 import type { Tenant, TenantListStats } from "@/tenant/types";
-import TenantRowActions from "./TenantRowActions.vue";
+import TenantRowActions from "@/tenant/components/tenants/TenantRowActions.vue";
 
 const router = useRouter();
 const tenantStore = useTenantStore();
