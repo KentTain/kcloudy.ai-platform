@@ -115,7 +115,6 @@ def pytest_ignore_collect(collection_path, config):
         "/tests/demo/studies/langchain_study/",
         "/tests/demo/studies/langgraph_study/",
         "/tests/extended/langchain/",
-        "/tests/ai/controllers/v1/chat/test_llm.py",
         "/tests/ai/unit/controllers/v1/chat/test_llm.py",
     ]
 

@@ -8,32 +8,104 @@ tests/
 │
 ├── ai/                        # AI 模块测试
 │   ├── conftest.py            # AI 模块独有配置：API Key、测试数据、Mock fixtures
-│   ├── unit/                  # 单元测试
-│   ├── integration/           # 集成测试
+│   ├── unit/                  # 单元测试（按功能分类）
+│   │   ├── controllers/       # 控制器测试
+│   │   ├── services/          # 服务层测试
+│   │   ├── models/            # 数据模型测试
+│   │   ├── schemas/           # Schema 测试
+│   │   ├── components/        # 组件测试
+│   │   ├── listeners/         # 监听器测试
+│   │   ├── tasks/             # 任务测试
+│   │   ├── utils/             # 工具测试
+│   │   ├── module/            # 模块定义测试
+│   │   ├── runtime/           # 运行时测试
+│   │   ├── sdk/               # SDK 测试
+│   │   └── skill/             # 技能测试
+│   ├── integration/           # 集成测试（按功能分类）
 │   └── e2e/                   # E2E 测试
 │       └── conftest.py        # E2E 独有配置：pytest 标记、插件测试 fixtures
 │
 ├── demo/                      # Demo 模块测试
 │   ├── fixtures/              # 测试夹具和数据
-│   ├── unit/                  # 单元测试
+│   ├── unit/                  # 单元测试（按功能分类）
+│   │   ├── controllers/       # 控制器测试
+│   │   ├── services/          # 服务层测试
+│   │   ├── models/            # 数据模型测试
+│   │   ├── listeners/         # 监听器测试
+│   │   ├── tasks/             # 任务测试
+│   │   ├── cache/             # 缓存测试
+│   │   ├── configs/           # 配置测试
+│   │   ├── serialization/     # 序列化测试
+│   │   └── utils/             # 工具测试
 │   ├── integration/           # 集成测试
 │   ├── examples/              # 示例代码测试
 │   └── studies/               # 代码预研
 │
 ├── framework/                 # Framework 模块测试
 │   ├── fixtures/              # 测试夹具
-│   ├── unit/                  # 单元测试
-│   └── integration/           # 集成测试
+│   ├── unit/                  # 单元测试（按功能分类）
+│   │   ├── audit/             # 审计测试
+│   │   ├── cache/             # 缓存测试
+│   │   ├── clients/           # 客户端测试
+│   │   ├── common/            # 公共测试
+│   │   ├── configs/           # 配置测试
+│   │   ├── core/              # 核心测试
+│   │   ├── database/          # 数据库测试
+│   │   ├── module/            # 模块定义测试
+│   │   ├── schemas/           # Schema 测试
+│   │   ├── storage/           # 存储测试
+│   │   ├── tenant/            # 租户测试
+│   │   └── utils/             # 工具测试
+│   └── integration/           # 集成测试（按功能分类）
 │
 ├── iam/                       # IAM 模块测试
 │   ├── conftest.py            # IAM 模块独有配置：测试租户、用户清理
-│   ├── unit/                  # 单元测试
-│   └── integration/           # 集成测试
+│   ├── unit/                  # 单元测试（按功能分类）
+│   │   ├── controllers/       # 控制器测试
+│   │   ├── services/          # 服务层测试
+│   │   ├── models/            # 数据模型测试
+│   │   ├── schemas/           # Schema 测试
+│   │   ├── module/            # 模块定义测试
+│   │   ├── providers/         # Provider 测试
+│   │   └── utils/             # 工具测试
+│   └── integration/           # 集成测试（按功能分类）
+│       ├── controllers/       # 控制器集成测试
+│       └── services/          # 服务集成测试
 │
 └── tenant/                    # Tenant 模块测试
     ├── conftest.py            # Tenant 模块独有配置：Mock 插件存储服务
-    └── unit/                  # 单元测试
+    ├── unit/                  # 单元测试（按功能分类）
+    │   ├── controllers/       # 控制器测试
+    │   ├── services/          # 服务层测试
+    │   ├── models/            # 数据模型测试
+    │   ├── listeners/         # 监听器测试
+    │   ├── middlewares/       # 中间件测试
+    │   ├── marketplace/       # 插件市场测试
+    │   ├── module/            # 模块定义测试
+    │   └── utils/             # 工具测试
+    └── integration/           # 集成测试（按功能分类）
+        ├── controllers/       # 控制器集成测试
+        ├── services/          # 服务集成测试
+        ├── module/            # 模块集成测试
+        └── marketplace/       # 插件市场集成测试
 ```
+
+### 目录层级规范
+
+测试目录采用 **测试类型 + 功能分类** 的两级组织方式：
+
+```
+tests/{模块}/{测试类型}/{功能分类}/test_*.py
+```
+
+- **测试类型**：`unit/`（单元测试）、`integration/`（集成测试）、`e2e/`（端到端测试）
+- **功能分类**：`controllers/`、`services/`、`models/`、`schemas/` 等，统一使用复数形式
+
+示例：
+- `tests/ai/unit/controllers/v1/chat/test_llm.py`
+- `tests/iam/integration/services/test_rbac_flow.py`
+- `tests/tenant/unit/services/test_tenant_service.py`
+
 
 ## conftest.py 层级结构
 

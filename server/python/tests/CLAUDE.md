@@ -78,6 +78,34 @@ uv run pytest -v --tb=short tests/ai/e2e/
 | 预研测试 | `tests/demo/studies/` | 技术探索，不作为正式功能验证的唯一依据 |
 | 夹具 | `tests/{module}/fixtures/` | 测试数据、文件资源、辅助函数 |
 
+## 功能分类目录
+
+每个测试类型目录（unit/integration）下按功能分类组织测试文件，统一使用复数形式命名：
+
+| 目录名 | 用途 | 示例 |
+| --- | --- | --- |
+| `controllers/` | 控制器测试 | `tests/ai/unit/controllers/` |
+| `services/` | 服务层测试 | `tests/iam/unit/services/` |
+| `models/` | 数据模型测试 | `tests/ai/unit/models/` |
+| `schemas/` | Schema/DTO 测试 | `tests/iam/unit/schemas/` |
+| `listeners/` | 消息监听器测试 | `tests/demo/unit/listeners/` |
+| `tasks/` | 定时任务测试 | `tests/ai/unit/tasks/` |
+| `middlewares/` | 中间件测试 | `tests/tenant/unit/middlewares/` |
+| `utils/` | 工具函数测试 | `tests/framework/unit/utils/` |
+| `components/` | 组件测试（AI 模块特有） | `tests/ai/unit/components/` |
+| `clients/` | HTTP 客户端测试 | `tests/framework/unit/clients/` |
+| `module/` | 模块定义测试 | `tests/iam/unit/module/` |
+| `providers/` | Provider 测试 | `tests/iam/unit/providers/` |
+| `configs/` | 配置测试 | `tests/framework/unit/configs/` |
+| `marketplace/` | 插件市场测试（tenant 模块特有） | `tests/tenant/unit/marketplace/` |
+
+**目录层级规范**：`tests/{模块}/{测试类型}/{功能分类}/test_*.py`
+
+示例：
+- `tests/ai/unit/controllers/v1/chat/test_llm.py`
+- `tests/iam/integration/services/test_rbac_flow.py`
+- `tests/tenant/unit/services/test_tenant_service.py`
+
 ## pytest 标记
 
 | 标记 | 说明 |
