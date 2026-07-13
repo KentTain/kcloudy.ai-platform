@@ -155,7 +155,10 @@ This is the actual content.
             )
 
             await runtime.prepare()
-            await runtime.start()
+
+            # Mock _get_llm 避免初始化真实 OpenAI 客户端（缺少 API Key）
+            with patch.object(runtime, "_get_llm", return_value=MagicMock()):
+                await runtime.start()
 
             # Mock chain.astream
             async def mock_astream(*args, **kwargs):

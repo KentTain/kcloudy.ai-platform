@@ -146,11 +146,21 @@ class TestPluginConfigService:
         mock_result.scalar_one_or_none.return_value = mock_plugin_config
         mock_session.execute.return_value = mock_result
 
-        result = await service.test_plugin(
-            session=mock_session,
-            tenant_id="test_tenant",
-            plugin_id="test/plugin",
-        )
+        # Mock PluginManagerFactory 避免依赖 PluginInstallationProvider
+        with patch(
+            "ai.components.plugin.engine.core.plugin_manager.PluginManagerFactory"
+        ) as mock_factory:
+            mock_manager = MagicMock()
+            mock_manager.test_plugin_connection = AsyncMock(
+                return_value=(True, "连接成功")
+            )
+            mock_factory.get_manager = AsyncMock(return_value=mock_manager)
+
+            result = await service.test_plugin(
+                session=mock_session,
+                tenant_id="test_tenant",
+                plugin_id="test/plugin",
+            )
 
         # 验证结果
         assert isinstance(result, PluginTestResponse)

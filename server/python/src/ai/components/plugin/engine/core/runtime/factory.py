@@ -96,9 +96,15 @@ class RuntimeFactory:
         Raises:
             ValueError: 不支持的 Skill 类型
         """
-        # TODO: 后续根据 Skill 功能完善 declaration 获取逻辑
-        # 当前 Skill 功能未完整实现，使用默认 knowledge 类型
-        skill_type = "knowledge"
+        # 从 declaration 中获取 skill_type，未配置时默认 knowledge
+        configuration = plugin_info.config.configuration
+        declaration = getattr(configuration, "declaration", None) or {}
+        skill_config = declaration.get("skill", {}) if isinstance(declaration, dict) else {}
+        skill_type = (
+            skill_config.get("skill_type", "knowledge")
+            if isinstance(skill_config, dict)
+            else "knowledge"
+        )
 
         if skill_type == "knowledge":
             return KnowledgeSkillRuntime(plugin_info, workspace_dir)
