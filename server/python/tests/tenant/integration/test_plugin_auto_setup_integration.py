@@ -73,28 +73,30 @@ class TestPluginAutoSetupIntegration:
         plugin_id = "langgenius/tongyi"
 
         # -------------------------------------------------------------------------
-        # 步骤 1：预置插件定义（上传插件包）
+        # 步骤 1：预置插件定义（上传插件包并安装，然后卸载保留定义）
         # -------------------------------------------------------------------------
         tongyi_path: Path = plugin_package_path("tongyi")
 
-        # 上传插件包创建定义
-        from tenant.services.plugin_definition_service import PluginDefinitionService
-
-        definition_service = PluginDefinitionService()
-
-        with open(tongyi_path, "rb") as f:
-            plugin_content = f.read()
-
-        # 通过上传创建插件定义
-        definition = await definition_service.upload_plugin(
-            session=e2e_session,
-            plugin_content=plugin_content,
-            filename="langgenius-tongyi_0.2.0.zip",
+        # 使用 helper 安装插件（会同时创建插件定义）
+        installed_plugin_id = await helper.install_plugin_from_path(
+            e2e_session,
+            str(tongyi_path),
         )
+        assert installed_plugin_id == plugin_id
 
-        assert definition is not None, "插件定义创建失败"
-        assert definition.plugin_id == plugin_id
+        # 卸载插件但保留插件定义
+        from ai.services.plugin import plugin_management_service
+
+        await plugin_management_service.uninstall_plugin(e2e_session, plugin_id)
         await e2e_session.commit()
+
+        # 验证插件定义仍存在
+        from tenant.models.plugin_definition import TenantPluginDefinition
+
+        definition = await TenantPluginDefinition.one_by_field(
+            e2e_session, "plugin_id", plugin_id
+        )
+        assert definition is not None, "插件定义应存在"
 
         # -------------------------------------------------------------------------
         # 步骤 2：执行自动设置服务
@@ -228,20 +230,17 @@ class TestPluginAutoSetupIntegration:
         # -------------------------------------------------------------------------
         tongyi_path: Path = plugin_package_path("tongyi")
 
-        from tenant.services.plugin_definition_service import PluginDefinitionService
-
-        definition_service = PluginDefinitionService()
-
-        with open(tongyi_path, "rb") as f:
-            plugin_content = f.read()
-
-        definition = await definition_service.upload_plugin(
-            session=e2e_session,
-            plugin_content=plugin_content,
-            filename="langgenius-tongyi_0.2.0.zip",
+        # 使用 helper 安装插件（会同时创建插件定义）
+        installed_plugin_id = await helper.install_plugin_from_path(
+            e2e_session,
+            str(tongyi_path),
         )
+        assert installed_plugin_id == plugin_id
 
-        assert definition is not None, "插件定义创建失败"
+        # 卸载插件但保留插件定义
+        from ai.services.plugin import plugin_management_service
+
+        await plugin_management_service.uninstall_plugin(e2e_session, plugin_id)
         await e2e_session.commit()
 
         # -------------------------------------------------------------------------

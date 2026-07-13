@@ -67,8 +67,18 @@ class RuntimeFactory:
         Returns:
             是否为 Skill 类型插件
         """
-        declaration = plugin_info.config.configuration.declaration
-        return "skill" in declaration
+        if not plugin_info.config or not plugin_info.config.configuration:
+            return False
+
+        # 通过检查 plugins 扩展配置中是否有 skill 配置来判断
+        # Note: 当前 PluginType 只有 Plugin，Skill 类型通过其他方式判断
+        # TODO: 后续根据 Skill 功能完善判断逻辑
+        plugins = plugin_info.config.configuration.plugins
+        if plugins:
+            # 检查是否有 skill 相关的扩展配置
+            return hasattr(plugins, 'skills') and bool(plugins.skills)
+
+        return False
 
     def _create_skill_runtime(
         self, plugin_info: PluginInfo, workspace_dir: Path
@@ -86,9 +96,9 @@ class RuntimeFactory:
         Raises:
             ValueError: 不支持的 Skill 类型
         """
-        declaration = plugin_info.config.configuration.declaration
-        skill_config = declaration.get("skill", {})
-        skill_type = skill_config.get("skill_type", "knowledge")
+        # TODO: 后续根据 Skill 功能完善 declaration 获取逻辑
+        # 当前 Skill 功能未完整实现，使用默认 knowledge 类型
+        skill_type = "knowledge"
 
         if skill_type == "knowledge":
             return KnowledgeSkillRuntime(plugin_info, workspace_dir)
