@@ -35,13 +35,24 @@ class PluginRuntime(abc.ABC):
 
         plugin_config = plugin_info.config
 
+        # 兼容处理：config 可能是 dict 或对象
+        configuration = None
+        if isinstance(plugin_config, dict):
+            configuration = plugin_config.get('configuration', {})
+        elif hasattr(plugin_config, 'configuration'):
+            configuration = plugin_config.configuration
+        else:
+            configuration = {}
+
         # 存储插件信息
-        self.plugin_id = (
-            f"{plugin_config.configuration.author}/{plugin_config.configuration.name}"
-        )
-        self.plugin_author = plugin_config.configuration.author
-        self.plugin_name = plugin_config.configuration.name
-        self.plugin_version = plugin_config.configuration.version
+        author = configuration.get('author', 'unknown') if isinstance(configuration, dict) else getattr(configuration, 'author', 'unknown')
+        name = configuration.get('name', 'unknown') if isinstance(configuration, dict) else getattr(configuration, 'name', 'unknown')
+        version = configuration.get('version', '0.0.0') if isinstance(configuration, dict) else getattr(configuration, 'version', '0.0.0')
+
+        self.plugin_id = f"{author}/{name}"
+        self.plugin_author = author
+        self.plugin_name = name
+        self.plugin_version = version
 
         # 获取带插件信息的logger
         self._plugin_logger: Logger = self._get_plugin_logger()
@@ -55,8 +66,7 @@ class PluginRuntime(abc.ABC):
 
         self.plugin_config = plugin_config
 
-        self.plugin_name = plugin_config.configuration.name
-        self.plugin_version = plugin_config.configuration.version
+        # plugin_name 和 plugin_version 已在上面从 configuration 中提取并设置
 
         self.workspace_dir: Path = workspace_dir
 

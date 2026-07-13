@@ -111,15 +111,34 @@ class LocalPluginRuntime(PluginRuntime):
         self._output_task: asyncio.Task | None = None
 
         # 权限管理
-        if (
-            self.plugin_config.configuration.resource
-            and self.plugin_config.configuration.resource.permission
-        ):
-            self.permissions = PluginPermissions(
-                self.plugin_config.configuration.resource.permission
-            )
+        # 兼容处理：plugin_config 可能是 dict 或对象
+        configuration = None
+        if isinstance(self.plugin_config, dict):
+            configuration = self.plugin_config.get('configuration', {})
+        elif hasattr(self.plugin_config, 'configuration'):
+            configuration = self.plugin_config.configuration
         else:
-            self.permissions = PluginPermissions({})
+            configuration = {}
+
+        # 获取 resource 配置
+        resource = None
+        if isinstance(configuration, dict):
+            resource = configuration.get('resource', {})
+        elif hasattr(configuration, 'resource'):
+            resource = configuration.resource
+        else:
+            resource = {}
+
+        # 获取 permission 配置
+        permission = None
+        if isinstance(resource, dict):
+            permission = resource.get('permission', {})
+        elif hasattr(resource, 'permission'):
+            permission = resource.permission
+        else:
+            permission = {}
+
+        self.permissions = PluginPermissions(permission)
 
         # 预处理状态标记文件
         self._prepared_marker_file: Path | None = None

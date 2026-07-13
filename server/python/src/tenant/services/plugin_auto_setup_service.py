@@ -122,19 +122,61 @@ class PluginAutoSetupService:
         if not definition:
             raise ValueError(f"插件定义不存在: {config.plugin_id}")
 
-        # 3. 创建安装记录
-        installation = TenantPluginInstallation(
-            tenant_id=tenant_id,
-            plugin_id=config.plugin_id,
-            plugin_unique_identifier=definition.plugin_unique_identifier,
-            status="PENDING",
-            auto_start=config.auto_start,
-            plugin_type=definition.install_type,
-        )
-        session.add(installation)
-        await session.flush()
+        # 3. 从 MinIO 下载插件包并调用 PluginManager 安装
+        # 注意：这里直接调用 AI 模块的 PluginManager，违反了模块间依赖规则。
+        # 这是一个过渡期的实现，未来应该通过 Inner API 或事件机制解耦。
+        from ai.components.plugin.engine.core.plugin_manager import PluginManagerFactory
+        from tenant.services.plugin_storage_service import plugin_storage_service
 
-        return True
+        # 从 plugin_unique_identifier 解析版本号
+        # 支持两种格式：
+        # 1. {plugin_id}:{version}@{checksum} - 完整格式
+        # 2. {plugin_id}@{version} - 简化格式
+        identifier = definition.plugin_unique_identifier
+
+        # 尝试格式1: {plugin_id}:{version}@{checksum}
+        if ":" in identifier:
+            # 格式: {plugin_id}:{version}@{checksum}
+            parts = identifier.split(":")
+            if len(parts) >= 2:
+                version_part = parts[1].split("@")[0]  # 提取版本号
+            else:
+                raise ValueError(f"无效的插件唯一标识符: {identifier}")
+        elif "@" in identifier:
+            # 格式: {plugin_id}@{version}
+            parts = identifier.split("@")
+            if len(parts) >= 2:
+                version_part = parts[1]  # 直接取版本号
+            else:
+                raise ValueError(f"无效的插件唯一标识符: {identifier}")
+        else:
+            # 无法解析，使用默认值
+            version_part = "latest"
+            _logger.warning(f"无法解析插件版本，使用默认值: {identifier}")
+
+        try:
+            # 下载插件包
+            package_data = await plugin_storage_service.download_package(
+                config.plugin_id, version_part
+            )
+            _logger.info(f"从 MinIO 下载插件包成功: {config.plugin_id}:{version_part}")
+
+            # 获取插件管理器
+            manager = await PluginManagerFactory.get_manager(tenant_id, session)
+
+            # 调用 PluginManager.install_plugin 安装插件
+            await manager.install_plugin(
+                session=session,
+                plugin_package=package_data,
+                install_request=None,  # 无需安装请求，插件定义已经存在
+            )
+
+            _logger.info(f"插件安装成功: {config.plugin_id}")
+            return True
+
+        except Exception as e:
+            _logger.error(f"插件安装失败: {config.plugin_id}, 错误: {e}")
+            raise
 
     async def _configure_credentials(
         self,

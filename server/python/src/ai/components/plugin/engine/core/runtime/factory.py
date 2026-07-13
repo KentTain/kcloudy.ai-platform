@@ -67,16 +67,32 @@ class RuntimeFactory:
         Returns:
             是否为 Skill 类型插件
         """
-        if not plugin_info.config or not plugin_info.config.configuration:
+        if not plugin_info.config:
             return False
 
-        # 通过检查 plugins 扩展配置中是否有 skill 配置来判断
-        # Note: 当前 PluginType 只有 Plugin，Skill 类型通过其他方式判断
-        # TODO: 后续根据 Skill 功能完善判断逻辑
-        plugins = plugin_info.config.configuration.plugins
+        # 兼容处理：config 可能是 dict 或对象
+        configuration = None
+        if isinstance(plugin_info.config, dict):
+            configuration = plugin_info.config.get('configuration')
+        elif hasattr(plugin_info.config, 'configuration'):
+            configuration = plugin_info.config.configuration
+
+        if not configuration:
+            return False
+
+        # 兼容处理：configuration 可能是 dict 或对象
+        plugins = None
+        if isinstance(configuration, dict):
+            plugins = configuration.get('plugins')
+        elif hasattr(configuration, 'plugins'):
+            plugins = configuration.plugins
+
         if plugins:
             # 检查是否有 skill 相关的扩展配置
-            return hasattr(plugins, 'skills') and bool(plugins.skills)
+            if isinstance(plugins, dict):
+                return bool(plugins.get('skills'))
+            elif hasattr(plugins, 'skills'):
+                return bool(plugins.skills)
 
         return False
 

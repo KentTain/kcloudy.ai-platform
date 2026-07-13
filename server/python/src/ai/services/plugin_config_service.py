@@ -58,9 +58,38 @@ class PluginConfigService:
         )
         config = result.scalar_one_or_none()
 
+        # 从插件定义获取完整声明信息
+        from tenant.models.plugin_definition import TenantPluginDefinition
+
+        definition_result = await session.execute(
+            select(TenantPluginDefinition).where(
+                TenantPluginDefinition.plugin_id == plugin_id
+            )
+        )
+        definition = definition_result.scalar_one_or_none()
+
+        # 构建完整的插件配置
+        full_plugin_config = {}
+        if definition and definition.declaration:
+            # 从声明中提取配置
+            declaration = definition.declaration
+
+            # 复制配置字段
+            if "configuration" in declaration:
+                full_plugin_config["configuration"] = declaration["configuration"]
+            if "tools_configuration" in declaration:
+                full_plugin_config["tools_configuration"] = declaration["tools_configuration"]
+            if "models_configuration" in declaration:
+                full_plugin_config["models_configuration"] = declaration["models_configuration"]
+            if "agent_strategies_configuration" in declaration:
+                full_plugin_config["agent_strategies_configuration"] = declaration["agent_strategies_configuration"]
+
+        # 合并用户提供的凭证配置
+        if plugin_config:
+            full_plugin_config.update(plugin_config)
+
         if not config:
             # 创建新配置
-            # 注意：plugin_unique_identifier 需要从安装记录中获取，这里暂时使用默认值
             from framework.tenant.plugin_protocols import get_plugin_installation_provider
 
             provider = get_plugin_installation_provider()
@@ -76,17 +105,25 @@ class PluginConfigService:
                 tenant_id=tenant_id,
                 plugin_id=plugin_id,
                 plugin_unique_identifier=plugin_unique_identifier,
-                plugin_config=plugin_config,
+                plugin_config=full_plugin_config,
                 runtime_config=runtime_config,
             )
             session.add(config)
         else:
-            # 更新现有配置
-            config.plugin_config = plugin_config
-            config.runtime_config = runtime_config
-            # 重置验证状态
+            # 更新现有配置：合并声明信息和凭证
             if config.plugin_config:
-                config.plugin_config["validated"] = None
+                # 保留现有的声明信息，更新凭证
+                existing_config = config.plugin_config.copy()
+                # 只更新凭证相关字段
+                if plugin_config:
+                    for key, value in plugin_config.items():
+                        existing_config[key] = value
+                    existing_config["validated"] = None
+                config.plugin_config = existing_config
+            else:
+                config.plugin_config = full_plugin_config
+
+            config.runtime_config = runtime_config
 
         await session.flush()
 
