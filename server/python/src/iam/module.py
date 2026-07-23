@@ -58,6 +58,9 @@ class IAMModule:
         from iam.controllers.admin.notification_controller import (
             router as admin_notification_router,
         )
+        from iam.controllers.admin.permission_request_controller import (
+            router as admin_permission_request_router,
+        )
 
         # Console 层
         from iam.controllers.console.auth_controller import (
@@ -78,6 +81,9 @@ class IAMModule:
         from iam.controllers.console.notification_controller import (
             router as console_notification_router,
         )
+        from iam.controllers.console.permission_request_controller import (
+            router as console_permission_request_router,
+        )
         from iam.controllers.inner.organization_controller import (
             router as inner_organization_router,
         )
@@ -93,6 +99,9 @@ class IAMModule:
 
         # Inner 层
         from iam.controllers.inner.user_controller import router as inner_user_router
+        from iam.controllers.inner.permission_request_controller import (
+            router as inner_permission_request_router,
+        )
 
         return [
             # Admin 层路由
@@ -108,12 +117,14 @@ class IAMModule:
                 ["Admin - SystemSetting"],
             ),
             (admin_notification_router, "/iam/admin/v1", ["Admin - Notification"]),
+            (admin_permission_request_router, "/iam/admin/v1", ["Admin - PermissionRequest"]),
             # Console 层路由
             (console_auth_router, "/iam/console/v1", ["Console - Auth"]),
             (console_oauth_router, "/iam/console/v1", ["Console - OAuth"]),
             (console_org_user_router, "/iam/console/v1", ["Console - OrgUser"]),
             (console_user_router, "/iam/console/v1", ["Console - User"]),
             (console_notification_router, "/iam/console/v1", ["Console - Notification"]),
+            (console_permission_request_router, "/iam/console/v1", ["Console - PermissionRequest"]),
             (
                 console_system_setting_router,
                 "/iam/console/v1/system-settings",
@@ -129,6 +140,7 @@ class IAMModule:
                 ["Inner - Tenant Permission"],
             ),
             (inner_tenant_role_router, "/iam/inner/v1", ["Inner - Tenant Role"]),
+            (inner_permission_request_router, "/iam/inner/v1", ["Inner - PermissionRequest"]),
         ]
 
     def get_middlewares(self) -> list[type]:
