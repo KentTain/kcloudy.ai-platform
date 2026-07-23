@@ -1,13 +1,29 @@
-"""
-企业知识库管理模块数据库模型
-"""
+"""document 模块数据库模型"""
 
-from framework.database.core import create_base_model, create_module_base
+# 注意：framework.database.core 是命名空间包（无 __init__.py），
+# create_base_model / create_module_base 由 framework.database 重新导出。
+# 与 iam/models/__init__.py 保持一致的导入路径。
+from framework.database import create_base_model, create_module_base
 
-# 创建模块级 Base，指定 schema 为 "document"
 Base = create_module_base(schema="document")
-
-# 创建数据模型基类
 BaseModel = create_base_model(Base)
 
-__all__ = ["Base", "BaseModel"]
+from .enums import (
+    DocumentProcessingStatus,
+    DocumentStatus,
+    DocumentType,
+    FolderLifecycleStatus,
+    LibraryMemberRole,
+    LibraryMemberStatus,
+    LibraryRoleKind,
+    LibraryType,
+    MetadataFieldType,
+    PermissionLevel,
+    RecycleItemStatus,
+    ResourceAclEffect,
+    ResourceAclStatus,
+    ResourceType,
+)
+from .library import Library, LibraryMember
+
+__all__ = ["Base", "BaseModel", "Library", "LibraryMember"]
