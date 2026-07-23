@@ -8,8 +8,12 @@ Framework 权限引擎基础设施
 """
 
 from framework.permission.policy_evaluator import PolicyEvaluator, PolicyResult
+from framework.permission.engine import PermissionEngine, PermissionEngineProtocol, PermissionCheckResult
 
 __all__ = [
     "PolicyEvaluator",
     "PolicyResult",
+    "PermissionEngine",
+    "PermissionEngineProtocol",
+    "PermissionCheckResult",
 ]
