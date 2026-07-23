@@ -8,7 +8,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 from framework.events.domain_events import ModuleAssigned, ModuleUnassigned
-from tenant.services.tenant_module_service import TenantModuleService
+from tenant.services.tenant import TenantModuleService
 
 
 class TestAssignModule:

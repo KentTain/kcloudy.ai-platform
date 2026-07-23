@@ -53,6 +53,16 @@ server/python/
 │   │   ├── migrations/         # 数据库迁移
 │   │   ├── listeners/          # 消息监听器
 │   │   └── tasks/              # 定时任务
+│   ├── document/               # 文档库模块
+│   │   ├── module.py           # 模块声明
+│   │   ├── app.py              # 独立应用工厂
+│   │   ├── controllers/        # API 控制器
+│   │   ├── services/           # 业务逻辑层
+│   │   ├── models/             # 数据库模型（iam schema）
+│   │   ├── schemas/            # Pydantic 模型
+│   │   ├── migrations/         # 数据库迁移
+│   │   ├── initializers/       # 初始化器
+│   │   └── middlewares/        # 中间件
 │   ├── iam/                    # IAM 身份认证模块
 │   │   ├── module.py           # 模块声明
 │   │   ├── app.py              # 独立应用工厂
@@ -104,6 +114,8 @@ server/python/
 | framework | - | 基础设施模块：配置、缓存、存储、队列等 |
 | tenant | `tenant` | 租户模块：资源配置、模块（角色、菜单、权限）、租户、插件等 |
 | iam | `iam` | 身份认证模块：组织、角色、用户、菜单、权限管理 |
+| document | `document` | 文档库模块：管理个人和团队文档库，支持文件夹、文件、上传、预览、成员、权限、审计和回收站 |
+| ai | `ai` | AI 能力模块 ：模型配置、插件使用、模型对话、知识库检索 |
 | demo | `demo` | 业务演示模块：知识库管理示例 |
 
 ### 模块结构

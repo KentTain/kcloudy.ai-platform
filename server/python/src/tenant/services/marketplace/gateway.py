@@ -213,8 +213,8 @@ class MarketplaceGateway:
         plugins: list[dict[str, str]],
     ) -> dict[str, Any]:
         """同步选中插件（支持 Plugin 和 Skill 类型）"""
-        from tenant.services.plugin_package_service import plugin_package_service
-        from tenant.services.plugin_storage_service import plugin_storage_service
+        from tenant.services.plugin import plugin_package_service
+        from tenant.services.plugin import plugin_storage_service
 
         marketplace = await self.get_marketplace(session, marketplace_id)
         if not marketplace:

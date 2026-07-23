@@ -10,12 +10,12 @@ import logging
 from typing import Any
 
 from ai.components.plugin.engine.models.request import InstallRequest
-from ai.services.install_task_service import install_task_service
+from ai.services.plugin import install_task_service
 from framework.database.dependencies import get_task_session
 from framework.events.domain_events import PluginInstallationFailed
 from framework.events.publisher import get_event_publisher
 from framework.tenant.context import TenantContext
-from tenant.services.plugin_storage_service import plugin_storage_service
+from tenant.services.plugin import plugin_storage_service
 
 _logger = logging.getLogger(__name__)
 

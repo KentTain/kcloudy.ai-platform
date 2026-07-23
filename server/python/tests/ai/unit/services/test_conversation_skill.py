@@ -3,7 +3,7 @@
 import pytest
 from unittest.mock import AsyncMock, patch, MagicMock
 
-from ai.services.conversation_service import ConversationService
+from ai.services.conversation import ConversationService
 
 
 class TestConversationServiceSkill:

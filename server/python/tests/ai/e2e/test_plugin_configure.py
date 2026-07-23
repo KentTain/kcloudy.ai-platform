@@ -26,7 +26,7 @@ import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ai.models.plugin import PluginCredential
-from ai.services.credential_service import credential_service
+from ai.services.plugin import credential_service
 
 
 class TestCredentialServiceCore:

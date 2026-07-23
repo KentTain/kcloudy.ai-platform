@@ -11,34 +11,45 @@ from framework.database import create_base_model, create_module_base
 Base = create_module_base("tenant")
 BaseModel = create_base_model(Base)
 
-# 导入模型（必须在 Base 和 BaseModel 定义之后）
-from .cache_config import CacheConfig
-from .database_config import DatabaseConfig
-from .enums import TenantStatus
-from .module import Module
-from .module_menu import ModuleMenu
-from .module_menu_permission import ModuleMenuPermission
-from .module_permission import ModulePermission
-from .module_role import ModuleRole
-from .module_role_permission import ModuleRolePermission
-from .pubsub_config import PubSubConfig
-from .queue_config import QueueConfig
-from .storage_config import StorageConfig
-from .tenant import Tenant
-from .tenant_admin import TenantAdmin
-from .tenant_business_config import TenantBusinessConfig
-from .tenant_config import TenantConfig
-from .tenant_module import TenantModule
-from .plugin_definition import TenantPluginDefinition
-from .plugin_installation import TenantPluginInstallation
-from .plugin_marketplace import TenantPluginMarketplace
-from .plugin_package import TenantPluginPackage
+# 导入枚举（保留在根目录）
+from .enums import TenantStatus, PluginInstallType
+
+# 导入模型（从子目录）
+from .tenant import (
+    Tenant,
+    TenantAdmin,
+    TenantBusinessConfig,
+    TenantConfig,
+    TenantModule,
+)
+from .resource import (
+    CacheConfig,
+    DatabaseConfig,
+    PubSubConfig,
+    QueueConfig,
+    StorageConfig,
+)
+from .module import (
+    Module,
+    ModuleMenu,
+    ModuleMenuPermission,
+    ModulePermission,
+    ModuleRole,
+    ModuleRolePermission,
+)
+from .plugin import (
+    TenantPluginDefinition,
+    TenantPluginInstallation,
+    TenantPluginMarketplace,
+    TenantPluginPackage,
+)
 
 __all__ = [
     "Base",
     "BaseModel",
     # 枚举
     "TenantStatus",
+    "PluginInstallType",
     # 租户相关
     "Tenant",
     "TenantConfig",

@@ -49,7 +49,7 @@ async def lifespan(app: FastAPI):
 
     # 注册 TenantProvider
     try:
-        from tenant.services.tenant_provider_impl import tenant_provider_impl
+        from tenant.services.tenant import tenant_provider_impl
 
         register_tenant_provider(tenant_provider_impl)
     except ImportError:

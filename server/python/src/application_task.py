@@ -114,7 +114,7 @@ async def run_task(module_names: list[str] | None = None) -> None:
 def _get_tenant_provider():
     """获取 TenantProvider 实现"""
     try:
-        from tenant.services.tenant_provider_impl import tenant_provider_impl
+        from tenant.services.tenant import tenant_provider_impl
 
         return tenant_provider_impl
     except ImportError:

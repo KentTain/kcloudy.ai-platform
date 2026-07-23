@@ -27,7 +27,7 @@ from framework.events.domain_events import (
 )
 from framework.events.publisher import get_event_publisher
 from framework.tenant.context import TenantContext
-from tenant.models.plugin_installation import TenantPluginInstallation
+from tenant.models.plugin import TenantPluginInstallation
 
 
 # 测试配置

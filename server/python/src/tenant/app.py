@@ -9,7 +9,7 @@ from fastapi import FastAPI
 from framework.configs import get_settings
 from framework.tenant.tenant_protocols import register_tenant_provider
 from tenant.module import TenantModule
-from tenant.services.tenant_provider_impl import TenantProviderImpl
+from tenant.services.tenant import TenantProviderImpl
 
 
 def create_app() -> FastAPI:

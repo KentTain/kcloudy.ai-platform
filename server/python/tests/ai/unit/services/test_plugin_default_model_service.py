@@ -4,8 +4,8 @@ import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ai.services.plugin_default_model_service import plugin_default_model_service
-from ai.models.plugin_default_model import PluginDefaultModel
+from ai.services.plugin import plugin_default_model_service
+from ai.models.plugin import PluginDefaultModel
 
 
 class TestPluginDefaultModelService:

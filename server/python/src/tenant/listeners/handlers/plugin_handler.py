@@ -12,7 +12,7 @@ from typing import Any
 from framework.database.dependencies import get_listener_session
 from framework.events.base import EventStream
 from framework.tenant.context import TenantContext
-from tenant.models.plugin_installation import TenantPluginInstallation
+from tenant.models.plugin import TenantPluginInstallation
 
 _logger = logging.getLogger(__name__)
 

@@ -32,7 +32,7 @@ from ai.schemas.plugin_default_model import (
     PluginDefaultModelResponse,
 )
 from ai.services import plugin_management_service
-from ai.services.install_task_service import install_task_service
+from ai.services.plugin import install_task_service
 from framework.common.exceptions import BadRequestError
 from framework.common.response import ApiResponse
 from framework.database.dependencies import get_db_session

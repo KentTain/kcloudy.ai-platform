@@ -10,7 +10,7 @@ from framework.configs.plugin_auto_setup import (
     VerificationConfig,
 )
 from framework.tenant.context import TenantContext
-from tenant.services.plugin_auto_setup_service import (
+from tenant.services.plugin import (
     PluginAutoSetupService,
     StartupSetupResult,
 )

@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 from framework.configs.plugin_auto_setup import VerificationConfig
 from framework.tenant.context import TenantContext
-from ai.services.plugin_verification_service import PluginVerificationService
+from ai.services.plugin import PluginVerificationService
 
 
 @pytest.fixture

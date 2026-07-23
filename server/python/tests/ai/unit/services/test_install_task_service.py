@@ -23,10 +23,10 @@ from ai.schemas.plugin import (
     InstallTaskDetailVo,
     InstallTaskListResponse,
 )
-from ai.services.install_task_service import INSTALL_STEPS, InstallTaskService
+from ai.services.plugin import INSTALL_STEPS, InstallTaskService
 from framework.common.exceptions import BadRequestError, NotFoundError
-from tenant.models.plugin_definition import TenantPluginDefinition
-from tenant.models.plugin_installation import TenantPluginInstallation
+from tenant.models.plugin import TenantPluginDefinition
+from tenant.models.plugin import TenantPluginInstallation
 
 
 class TestCreateInstallTask:

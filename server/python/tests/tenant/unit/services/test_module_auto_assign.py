@@ -123,7 +123,7 @@ class TestTenantServiceCreate:
     @pytest.mark.asyncio
     async def test_create_calls_auto_assigner(self, mock_session):
         """创建租户时调用模块自动分配"""
-        from tenant.services.tenant_service import TenantService
+        from tenant.services.tenant import TenantService
 
         mock_session.refresh = AsyncMock()
 
@@ -167,7 +167,7 @@ class TestTenantServiceCreate:
     @pytest.mark.asyncio
     async def test_create_without_assigner_still_works(self, mock_session):
         """没有注册分配器时创建租户仍然正常工作"""
-        from tenant.services.tenant_service import TenantService
+        from tenant.services.tenant import TenantService
 
         mock_session.refresh = AsyncMock()
 

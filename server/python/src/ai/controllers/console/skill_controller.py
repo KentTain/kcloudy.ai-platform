@@ -13,7 +13,7 @@ from fastapi.responses import ORJSONResponse, StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ai.schemas.skill import SkillInvokeRequest, SkillPreviewResponse
-from ai.services.conversation_service import ConversationService
+from ai.services.conversation import ConversationService
 from framework.common.ctx import get_tenant_id, get_user_id
 from framework.database.dependencies import get_db_session
 
@@ -71,10 +71,10 @@ async def preview_skill(
     Returns:
         ORJSONResponse: Skill 预览信息
     """
-    from tenant.services.plugin_definition_service import (
+    from tenant.services.plugin import (
         plugin_definition_service,
     )
-    from tenant.services.plugin_storage_service import plugin_storage_service
+    from tenant.services.plugin import plugin_storage_service
 
     skill_def = await plugin_definition_service.get_by_plugin_id(
         session, skill_id

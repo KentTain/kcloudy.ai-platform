@@ -12,7 +12,7 @@ from unittest.mock import MagicMock
 
 from framework.database.types.enum import EnumType
 from tenant.models.enums import TenantAdminRole
-from tenant.models.tenant_admin import TenantAdmin
+from tenant.models.tenant import TenantAdmin
 
 
 class TestTenantAdminRoleField:

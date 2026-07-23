@@ -1,7 +1,7 @@
 """消息模型单元测试"""
 
 
-from ai.models.message import Message
+from ai.models.conversation import Message
 
 
 class TestMessageModel:

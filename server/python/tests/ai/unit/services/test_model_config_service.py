@@ -4,7 +4,7 @@ import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ai.services.model_config_service import ModelConfigService
+from ai.services.model import ModelConfigService
 from ai_plugin.sdk.entities.model import ModelType
 
 

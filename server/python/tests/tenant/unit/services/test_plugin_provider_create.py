@@ -11,7 +11,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 from framework.tenant.plugin_protocols import PluginInstallationDTO
-from tenant.services.plugin_provider import PluginInstallationProviderImpl
+from tenant.services.plugin import PluginInstallationProviderImpl
 
 
 @pytest.fixture

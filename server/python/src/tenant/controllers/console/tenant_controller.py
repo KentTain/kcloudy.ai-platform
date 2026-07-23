@@ -15,7 +15,7 @@ from tenant.schemas.console.tenant import (
     SwitchTenantResponse,
     UserTenantResponse,
 )
-from tenant.services.tenant_service import TenantService
+from tenant.services.tenant import TenantService
 
 router = APIRouter()
 

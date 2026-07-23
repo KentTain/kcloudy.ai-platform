@@ -17,7 +17,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from ai.components.model.services.llm_service import LLMService
 from ai.components.plugin.engine.models.enums import PluginStatus
-from ai.services.plugin_config_service import plugin_config_service
+from ai.services.plugin import plugin_config_service
 from ai_plugin.sdk.entities.model.message import (
     SystemPromptMessage,
     UserPromptMessage,
@@ -535,7 +535,7 @@ class TestPluginFullLifecycle:
         # 验证 AI 侧配置已删除
         from sqlalchemy import select
 
-        from ai.models.plugin_config import PluginConfig as AIPluginConfig
+        from ai.models.plugin import PluginConfig as AIPluginConfig
 
         config_result = await e2e_session.execute(
             select(AIPluginConfig).where(

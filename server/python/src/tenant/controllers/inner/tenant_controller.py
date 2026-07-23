@@ -16,7 +16,7 @@ from framework.common.response import ApiResponse
 from framework.database.dependencies import get_db_session
 from framework.tenant.context import SimpleTenant
 from tenant.models import Tenant, TenantStatus
-from tenant.services.tenant_service import TenantService
+from tenant.services.tenant import TenantService
 
 router = APIRouter()
 

@@ -18,9 +18,8 @@ from ai.components.model.internal.entities.provider_entities import (
     CustomProviderConfiguration,
 )
 from ai.components.model.internal.model_provider_factory import ModelProviderFactory
-from ai.models.plugin import PluginCredential
-from ai.models.plugin_default_model import PluginDefaultModel
-from ai.services.credential_service import credential_service
+from ai.models.plugin import PluginCredential, PluginDefaultModel
+from ai.services.plugin import credential_service
 from ai_plugin.sdk.entities.model import ModelType
 from ai_plugin.sdk.entities.model.provider import (
     CredentialFormSchema,

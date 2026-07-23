@@ -6,7 +6,7 @@ import pytest
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from tenant.services.plugin_startup_scan_service import (
+from tenant.services.plugin import (
     StartupScanResult,
     scan_plugins_at_startup,
 )

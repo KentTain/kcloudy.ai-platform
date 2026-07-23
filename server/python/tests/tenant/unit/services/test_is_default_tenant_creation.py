@@ -8,7 +8,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from tenant.services.tenant_service import TenantService
+from tenant.services.tenant import TenantService
 
 
 class TestTenantCreateAutoDefault:

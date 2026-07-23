@@ -11,7 +11,7 @@ from fastapi.responses import ORJSONResponse
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ai.models.message_metadata import MessageMetadata
+from ai.models.conversation import MessageMetadata
 from ai.schemas.metadata import UsageStatsResponse
 from framework.database.dependencies import get_db_session
 from framework.tenant.context import TenantContext

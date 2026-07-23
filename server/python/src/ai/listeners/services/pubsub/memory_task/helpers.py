@@ -76,7 +76,7 @@ async def cleanup_task_resources(
 
 async def stop_message_by_id(message_id: str) -> bool:
     """将指定消息的状态更新为 stopped"""
-    from ai.models.message import Message
+    from ai.models.conversation import Message
 
     try:
         async with get_session() as session:

@@ -7,7 +7,7 @@ import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ai.services.plugin_config_service import PluginConfigService
+from ai.services.plugin import PluginConfigService
 from ai.schemas.plugin_config import (
     PluginConfigResponse,
     PluginTestResponse,

@@ -2,7 +2,7 @@
 
 import pytest
 
-from ai.models.message_metadata import MessageMetadata
+from ai.models.conversation import MessageMetadata
 
 
 class TestMessageMetadata:

@@ -21,7 +21,7 @@ class TestPluginProviderRefactored:
         2. 使用 framework.clients.ai_client
         """
         # 导入被测模块
-        from tenant.services.plugin_provider import PluginInstallationProviderImpl
+        from tenant.services.plugin import PluginInstallationProviderImpl
 
         # Mock AI 客户端
         mock_client = MagicMock()
@@ -77,7 +77,7 @@ class TestPluginProviderRefactored:
         1. 不再直接导入 ai.services.plugin
         2. 使用 framework.clients.ai_client
         """
-        from tenant.services.plugin_provider import PluginInstallationProviderImpl
+        from tenant.services.plugin import PluginInstallationProviderImpl
 
         mock_client = MagicMock()
         mock_client.stop_plugin = AsyncMock(
@@ -129,8 +129,8 @@ class TestPluginDefinitionServiceRefactored:
         1. 不再直接导入 ai.models
         2. 使用 framework.clients.ai_client 批量安装
         """
-        from tenant.services.plugin_definition_service import PluginDefinitionService
-        from tenant.models.plugin_definition import TenantPluginDefinition
+        from tenant.services.plugin import PluginDefinitionService
+        from tenant.models.plugin import TenantPluginDefinition
         from tenant.models.tenant import Tenant
 
         # Mock 数据
@@ -227,8 +227,8 @@ class TestDependencyVerification:
             content = f.read()
 
         # 验证不包含直接导入 ai.models
-        assert "from ai.models.plugin_config import" not in content
-        assert "from ai.models.plugin_runtime_state import" not in content
+        assert "from ai.models.plugin import" not in content
+        assert "from ai.models.plugin import" not in content
 
     def test_tenant_uses_ai_client(self):
         """

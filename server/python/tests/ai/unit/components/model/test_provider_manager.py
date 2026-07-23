@@ -7,7 +7,7 @@ import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from ai.components.model.internal.provider_manager import ProviderManager
-from ai.models.plugin_default_model import PluginDefaultModel
+from ai.models.plugin import PluginDefaultModel
 
 
 class TestProviderManagerRewrite:

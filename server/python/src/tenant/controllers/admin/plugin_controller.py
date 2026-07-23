@@ -39,10 +39,10 @@ from tenant.schemas.plugin import (
     UpdatePluginDefinitionRequest,
     UploadPluginResponse,
 )
-from tenant.services.plugin_definition_service import plugin_definition_service
-from tenant.services.plugin_installation_service import plugin_installation_service
-from tenant.services.plugin_package_service import plugin_package_service
-from tenant.services.plugin_statistics_service import plugin_statistics_service
+from tenant.services.plugin import plugin_definition_service
+from tenant.services.plugin import plugin_installation_service
+from tenant.services.plugin import plugin_package_service
+from tenant.services.plugin import plugin_statistics_service
 
 router = APIRouter()
 

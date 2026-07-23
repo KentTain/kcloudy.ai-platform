@@ -17,7 +17,7 @@ from ai.schemas.plugin_config import (
     PluginStopResponse,
     PluginTestResponse,
 )
-from ai.services.plugin_config_service import plugin_config_service
+from ai.services.plugin import plugin_config_service
 from framework.common.ctx import get_tenant_id
 from framework.common.response import ApiResponse
 from framework.database.dependencies import get_db_session

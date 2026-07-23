@@ -2,7 +2,7 @@
 
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
-from tenant.services.plugin_storage_service import PluginStorageService
+from tenant.services.plugin import PluginStorageService
 
 
 class TestSkillStorageService:

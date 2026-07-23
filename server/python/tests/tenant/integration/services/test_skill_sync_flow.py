@@ -10,7 +10,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from tenant.models.plugin_marketplace import TenantPluginMarketplace
+from tenant.models.plugin import TenantPluginMarketplace
 from tenant.services.marketplace.gateway import marketplace_gateway
 from tenant.services.marketplace.protocol import RemotePluginInfo
 
@@ -130,7 +130,7 @@ class TestSkillSyncFlow:
         self, mock_db_session, mock_marketplace
     ):
         """测试同步 Skill 更新现有插件定义"""
-        from tenant.models.plugin_definition import TenantPluginDefinition
+        from tenant.models.plugin import TenantPluginDefinition
 
         # 准备现有插件定义
         existing_def = MagicMock(spec=TenantPluginDefinition)

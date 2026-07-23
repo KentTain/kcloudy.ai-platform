@@ -906,7 +906,7 @@ class UserService:
 
         # 获取租户详细信息（跨模块调用通过 inner 接口）
         tenant_ids = [ut["tenant_id"] for ut in user_tenants]
-        from tenant.services.tenant_service import tenant_service
+        from tenant.services.tenant import tenant_service
         tenants_info = await tenant_service.get_tenants_by_ids(session, tenant_ids)
 
         # 构建租户响应列表

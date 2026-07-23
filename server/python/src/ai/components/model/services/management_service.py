@@ -11,8 +11,8 @@ from __future__ import annotations
 from loguru import logger
 
 from ai.components.model.internal.provider_manager import ProviderManager
-from ai.models.plugin_default_model import PluginDefaultModel
-from ai.services.plugin_default_model_service import plugin_default_model_service
+from ai.models.plugin import PluginDefaultModel
+from ai.services.plugin import plugin_default_model_service
 from ai_plugin.sdk.entities.model import ModelType
 
 _logger = logger.bind(name=__name__)

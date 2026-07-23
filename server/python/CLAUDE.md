@@ -31,16 +31,18 @@ Python 后端使用 FastAPI + SQLAlchemy 2.0 构建，是 AI Platform 的 Python
 | framework | 基础设施模块 | - | [src/framework/CLAUDE.md](src/framework/CLAUDE.md) |
 | tenant | 租户管理模块 | tenant | [src/tenant/CLAUDE.md](src/tenant/CLAUDE.md) |
 | iam | 身份认证与权限模块 | iam | [src/iam/CLAUDE.md](src/iam/CLAUDE.md) |
+| document | 文档库模块 | iam | [src/document/CLAUDE.md](src/document/CLAUDE.md) |
 | ai | AI 能力模块 | ai | [src/ai/CLAUDE.md](src/ai/CLAUDE.md) |
 | demo | AI 助手平台演示模块 | demo | [src/demo/CLAUDE.md](src/demo/CLAUDE.md) |
 
 ## 依赖边界
 
 ```
-demo / iam / ai ──▶ framework
-demo / iam / ai ──▶ tenant
-framework ──X──▶ demo / iam / ai / tenant
-tenant ──X──▶ demo / iam / ai 
+ai ──▶ document
+demo / iam / document / ai ──▶ framework
+demo / iam / document / ai ──▶ tenant
+framework ──X──▶ demo / iam / document / ai / tenant
+tenant ──X──▶ demo / iam / document / ai 
 ```
 
 - 业务模块可以依赖 `framework`

@@ -52,8 +52,7 @@ from ai.components.plugin.engine.models.enums import PluginType as DBPluginType
 from ai.components.plugin.engine.models.plugin import PluginInfo
 from ai.components.plugin.engine.models.request import InstallRequest
 from ai.components.plugin.engine.utils.logger import get_logger
-from ai.models.plugin_config import PluginConfig as AIPluginConfig
-from ai.models.plugin_runtime_state import PluginRuntimeState
+from ai.models.plugin import PluginConfig as AIPluginConfig, PluginRuntimeState
 from ai_plugin.server.core.entities.plugin.setup import PluginAsset
 from framework.configs import get_settings
 from framework.events.domain_events import PluginInstallationFailed
@@ -1848,7 +1847,7 @@ class TenantPluginManager:
             # 如果内存中没有，尝试从数据库获取
             if not version and session:
                 from sqlalchemy import select
-                from ai.models.plugin_config import PluginConfig as AIPluginConfig
+                from ai.models.plugin import PluginConfig as AIPluginConfig
 
                 result = await session.execute(
                     select(AIPluginConfig).where(

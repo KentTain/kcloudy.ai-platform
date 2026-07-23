@@ -70,7 +70,7 @@ class TenantClient:
             # 单体模式：直接调用 Service
             from framework.database.dependencies import get_task_session
             from framework.tenant.context import SimpleTenant
-            from tenant.services.tenant_service import TenantService
+            from tenant.services.tenant import TenantService
 
             async with get_task_session() as session:
                 tenant = await TenantService.get_by_id(session, tenant_id)
@@ -121,7 +121,7 @@ class TenantClient:
         else:
             # 单体模式
             from framework.database.dependencies import get_task_session
-            from tenant.services.tenant_service import TenantService
+            from tenant.services.tenant import TenantService
 
             async with get_task_session() as session:
                 tenants = await TenantService.get_tenants_batch(session, tenant_ids)

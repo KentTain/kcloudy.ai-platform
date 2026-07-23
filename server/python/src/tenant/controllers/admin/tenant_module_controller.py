@@ -15,7 +15,7 @@ from tenant.schemas.admin.tenant_module import (
     AssignModuleRequest,
     TenantModuleResponse,
 )
-from tenant.services.tenant_module_service import TenantModuleService
+from tenant.services.tenant import TenantModuleService
 
 router = APIRouter()
 

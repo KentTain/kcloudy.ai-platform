@@ -2,35 +2,70 @@
 Tenant 模块服务层
 """
 
-from .cache_config_service import CacheConfigService, cache_config_service
-from .database_config_service import DatabaseConfigService, database_config_service
-from .module_menu_permission_service import (
+from .module import (
+    ModuleDefinitionSyncProviderImpl,
     ModuleMenuPermissionService,
-    module_menu_permission_service,
-)
-from .module_menu_service import ModuleMenuService, module_menu_service
-from .module_permission_service import (
+    ModuleMenuService,
     ModulePermissionService,
+    ModuleRoleService,
+    ModuleService,
+    module_definition_sync_provider_impl,
+    module_menu_permission_service,
+    module_menu_service,
     module_permission_service,
+    module_role_service,
+    module_service,
 )
-from .module_role_service import ModuleRoleService, module_role_service
-from .module_service import ModuleService, module_service
-from .pubsub_config_service import PubSubConfigService, pubsub_config_service
-from .queue_config_service import QueueConfigService, queue_config_service
-from .storage_config_service import StorageConfigService, storage_config_service
-from .plugin_definition_service import PluginDefinitionService, plugin_definition_service
-from .plugin_package_service import PluginPackageService, plugin_package_service
-from .plugin_storage_service import PluginStorageService, plugin_storage_service
-from .tenant_module_service import TenantModuleService, tenant_module_service
-from .tenant_provider_impl import TenantProviderImpl, tenant_provider_impl
-from .tenant_service import TenantService, tenant_service
+from .plugin import (
+    PluginAutoSetupService,
+    PluginDefinitionService,
+    PluginInstallationService,
+    PluginInstallationProviderImpl,
+    PluginPackageService,
+    PluginStatisticsService,
+    PluginStorageService,
+    StartupScanResult,
+    plugin_auto_setup_service,
+    plugin_definition_service,
+    plugin_installation_service,
+    plugin_installation_provider_impl,
+    plugin_package_service,
+    plugin_statistics_service,
+    plugin_storage_service,
+    scan_plugins_at_startup,
+)
+from .resource import (
+    BaseResourceService,
+    CacheConfigService,
+    DatabaseConfigService,
+    PubSubConfigService,
+    QueueConfigService,
+    StorageConfigService,
+    cache_config_service,
+    database_config_service,
+    pubsub_config_service,
+    queue_config_service,
+    storage_config_service,
+)
+from .tenant import (
+    TenantModuleService,
+    TenantProviderImpl,
+    TenantService,
+    tenant_module_service,
+    tenant_provider_impl,
+    tenant_service,
+)
 
 __all__ = [
+    # 租户服务
     "TenantService",
     "tenant_service",
     "TenantProviderImpl",
     "tenant_provider_impl",
+    "TenantModuleService",
+    "tenant_module_service",
     # 资源配置服务
+    "BaseResourceService",
     "DatabaseConfigService",
     "database_config_service",
     "StorageConfigService",
@@ -52,14 +87,23 @@ __all__ = [
     "module_permission_service",
     "ModuleRoleService",
     "module_role_service",
-    # 租户模块分配服务
-    "TenantModuleService",
-    "tenant_module_service",
-    # 插件定义服务
+    "ModuleDefinitionSyncProviderImpl",
+    "module_definition_sync_provider_impl",
+    # 插件服务
     "PluginDefinitionService",
     "plugin_definition_service",
+    "PluginInstallationService",
+    "plugin_installation_service",
     "PluginPackageService",
     "plugin_package_service",
     "PluginStorageService",
     "plugin_storage_service",
+    "PluginStatisticsService",
+    "plugin_statistics_service",
+    "PluginInstallationProviderImpl",
+    "plugin_installation_provider_impl",
+    "PluginAutoSetupService",
+    "plugin_auto_setup_service",
+    "StartupScanResult",
+    "scan_plugins_at_startup",
 ]

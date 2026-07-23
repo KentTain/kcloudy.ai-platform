@@ -14,7 +14,7 @@ from pathlib import Path
 
 import pytest
 
-from tenant.services.plugin_package_service import (
+from tenant.services.plugin import (
     PluginPackageService,
     PluginPackageInfo,
 )

@@ -30,7 +30,7 @@ import pytest
 from ai.components.plugin.engine.core.plugin_manager import PluginManagerFactory
 from ai.components.plugin.engine.models.enums import PluginStatus
 from ai.components.plugin.engine.models.request import InstallRequest
-from ai.services.plugin_config_service import plugin_config_service
+from ai.services.plugin import plugin_config_service
 from ai_plugin.sdk.entities.model.message import UserPromptMessage
 from framework.tenant.context import TenantContext
 from framework.tenant.plugin_protocols import get_plugin_installation_provider

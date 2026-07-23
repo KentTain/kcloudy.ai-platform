@@ -73,7 +73,7 @@ class AdminAuthService:
             return None
 
         # 查询角色权限
-        from tenant.services.module_service import ModuleService
+        from tenant.services.module import ModuleService
 
         tenant_module = await ModuleService.get_by_code(session, "tenant")
         permissions = await AdminAuthService._get_role_permissions(
@@ -169,7 +169,7 @@ class AdminAuthService:
         role = admin.role
 
         # 获取权限
-        from tenant.services.module_service import ModuleService
+        from tenant.services.module import ModuleService
 
         tenant_module = await ModuleService.get_by_code(session, "tenant")
         permissions = await AdminAuthService._get_role_permissions(
@@ -215,7 +215,7 @@ class AdminAuthService:
         if not module:
             return []
 
-        from tenant.services.module_menu_service import ModuleMenuService
+        from tenant.services.module import ModuleMenuService
 
         # 获取该模块的所有菜单（包括不可见菜单，用于面包屑导航）
         all_menus = await ModuleMenuService.list_menus(session, module.id)

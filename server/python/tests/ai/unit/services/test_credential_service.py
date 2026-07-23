@@ -4,7 +4,7 @@ from unittest.mock import patch
 
 import pytest
 
-from ai.services.credential_service import CredentialService
+from ai.services.plugin import CredentialService
 
 
 class TestCredentialServiceEncrypt:

@@ -23,8 +23,8 @@ from framework.database.core.engine import setup_engine
 from framework.database.core.engine_pool import init_default_engine
 from ai.components.plugin.engine.models.enums import PluginStatus
 from ai.components.plugin.engine.models.request import InstallRequest
-from ai.models.plugin_config import PluginConfig as AIPluginConfig
-from ai.models.plugin_runtime_state import PluginRuntimeState
+from ai.models.plugin import PluginConfig as AIPluginConfig
+from ai.models.plugin import PluginRuntimeState
 from framework.configs import get_settings
 from framework.storage import get_storage_provider
 from framework.tenant.context import TenantContext
@@ -492,8 +492,8 @@ class TestPluginInstall:
         """
         from sqlalchemy import delete
 
-        from ai.models.plugin_config import PluginConfig as AIPluginConfig
-        from ai.models.plugin_runtime_state import PluginRuntimeState
+        from ai.models.plugin import PluginConfig as AIPluginConfig
+        from ai.models.plugin import PluginRuntimeState
         from framework.tenant.plugin_protocols import get_plugin_installation_provider
 
         # 1. 停止插件

@@ -14,7 +14,7 @@ from framework.tenant.exceptions import (
     TenantNotFoundError,
 )
 from tenant.models import Tenant, TenantStatus
-from tenant.services.tenant_service import TenantService
+from tenant.services.tenant import TenantService
 
 
 class TestGetById:

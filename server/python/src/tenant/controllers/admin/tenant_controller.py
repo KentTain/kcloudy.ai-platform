@@ -31,9 +31,9 @@ from tenant.schemas.admin.tenant import (
     TenantStatsResponse,
     TenantUpdate,
 )
-from tenant.services.module_menu_service import ModuleMenuService
-from tenant.services.module_service import ModuleService
-from tenant.services.tenant_service import TenantService
+from tenant.services.module import ModuleMenuService
+from tenant.services.module import ModuleService
+from tenant.services.tenant import TenantService
 
 router = APIRouter()
 

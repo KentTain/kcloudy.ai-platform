@@ -16,7 +16,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from ai.components.model.services.llm_service import LLMService
 from ai.components.plugin.engine.models.enums import PluginStatus
-from ai.services.plugin_config_service import plugin_config_service
+from ai.services.plugin import plugin_config_service
 from ai_plugin.sdk.entities.model.message import (
     SystemPromptMessage,
     UserPromptMessage,
@@ -29,7 +29,7 @@ from framework.configs.plugin_auto_setup import (
 )
 from framework.tenant.context import TenantContext
 from framework.tenant.plugin_protocols import get_plugin_installation_provider
-from tenant.services.plugin_auto_setup_service import (
+from tenant.services.plugin import (
     PluginAutoSetupService,
     StartupSetupResult,
 )
@@ -91,7 +91,7 @@ class TestPluginAutoSetupIntegration:
         await e2e_session.commit()
 
         # 验证插件定义仍存在
-        from tenant.models.plugin_definition import TenantPluginDefinition
+        from tenant.models.plugin import TenantPluginDefinition
 
         definition = await TenantPluginDefinition.one_by_field(
             e2e_session, "plugin_id", plugin_id

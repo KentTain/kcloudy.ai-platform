@@ -7,10 +7,10 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from tenant.services.module_menu_service import ModuleMenuService
-from tenant.services.module_permission_service import ModulePermissionService
-from tenant.services.module_role_service import ModuleRoleService
-from tenant.services.module_service import ModuleService
+from tenant.services.module import ModuleMenuService
+from tenant.services.module import ModulePermissionService
+from tenant.services.module import ModuleRoleService
+from tenant.services.module import ModuleService
 
 
 class TestModuleService:

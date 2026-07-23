@@ -365,7 +365,7 @@ async def plugin_provider():
     try:
         get_plugin_installation_provider()
     except RuntimeError:
-        from tenant.services.plugin_provider import (
+        from tenant.services.plugin import (
             plugin_installation_provider_impl,
         )
 
@@ -555,7 +555,7 @@ def registered_provider():
     from framework.tenant.plugin_protocols import (
         register_plugin_installation_provider,
     )
-    from tenant.services.plugin_provider import plugin_installation_provider_impl
+    from tenant.services.plugin import plugin_installation_provider_impl
 
     register_plugin_installation_provider(plugin_installation_provider_impl)
     return plugin_installation_provider_impl

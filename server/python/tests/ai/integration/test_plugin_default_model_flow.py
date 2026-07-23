@@ -8,8 +8,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ai.components.model.internal.provider_manager import ProviderManager
-from ai.models.plugin_default_model import PluginDefaultModel
-from ai.services.plugin_default_model_service import plugin_default_model_service
+from ai.models.plugin import PluginDefaultModel
+from ai.services.plugin import plugin_default_model_service
 from ai_plugin.sdk.entities.model import ModelType
 
 

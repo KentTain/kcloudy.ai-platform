@@ -8,11 +8,11 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 from framework.common.exceptions import ConflictError
-from tenant.services.cache_config_service import CacheConfigService
-from tenant.services.database_config_service import DatabaseConfigService
-from tenant.services.pubsub_config_service import PubSubConfigService
-from tenant.services.queue_config_service import QueueConfigService
-from tenant.services.storage_config_service import StorageConfigService
+from tenant.services.resource import CacheConfigService
+from tenant.services.resource import DatabaseConfigService
+from tenant.services.resource import PubSubConfigService
+from tenant.services.resource import QueueConfigService
+from tenant.services.resource import StorageConfigService
 
 
 class TestDatabaseConfigService:

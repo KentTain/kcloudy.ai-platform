@@ -11,25 +11,25 @@ from framework.database import create_base_model, create_module_base
 Base = create_module_base("ai")
 BaseModel = create_base_model(Base)
 
-# 导入模型（必须在 Base 和 BaseModel 定义之后）
-from .conversation import Conversation
+# 导入枚举（保留在根目录）
 from .enums import ConversationMode, ConversationStatus, MessageRole, MessageStatus
-from .message import Message
-from .message_metadata import MessageMetadata
+
+# 导入模型（从子目录）
+from .conversation import Conversation, Message, MessageMetadata
 from .plugin import (
     CredentialScope,
     InstallType,
+    PluginConfig,
     PluginCredential,
+    PluginDefaultModel,
     PluginInstallTask,
+    PluginRuntimeState,
     PluginStatus,
     PluginType,
     RuntimeType,
     SourceType,
     TaskStatus,
 )
-from .plugin_config import PluginConfig
-from .plugin_default_model import PluginDefaultModel
-from .plugin_runtime_state import PluginRuntimeState
 
 __all__ = [
     # Base
@@ -43,12 +43,6 @@ __all__ = [
     "TaskStatus",
     "PluginStatus",
     "CredentialScope",
-    # 插件相关
-    "PluginConfig",
-    "PluginDefaultModel",
-    "PluginInstallTask",
-    "PluginCredential",
-    "PluginRuntimeState",
     # 会话相关
     "ConversationStatus",
     "ConversationMode",
@@ -57,4 +51,10 @@ __all__ = [
     "Conversation",
     "Message",
     "MessageMetadata",
+    # 插件相关
+    "PluginConfig",
+    "PluginDefaultModel",
+    "PluginInstallTask",
+    "PluginCredential",
+    "PluginRuntimeState",
 ]

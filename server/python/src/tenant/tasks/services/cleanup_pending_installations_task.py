@@ -6,7 +6,7 @@ from loguru import logger
 from sqlalchemy import select
 
 from framework.database.dependencies import get_task_session
-from tenant.models.plugin_installation import TenantPluginInstallation
+from tenant.models.plugin import TenantPluginInstallation
 
 _logger = logger.bind(name=__name__)
 

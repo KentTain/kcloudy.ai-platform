@@ -13,7 +13,7 @@ from ai.components.plugin.engine.core.runtime.base import (
     PluginRuntimeState,
 )
 from ai.components.plugin.engine.models.plugin import PluginInfo
-from tenant.services.plugin_storage_service import plugin_storage_service
+from tenant.services.plugin.plugin_storage_service import plugin_storage_service
 
 
 class KnowledgeSkillRuntime(PluginRuntime):

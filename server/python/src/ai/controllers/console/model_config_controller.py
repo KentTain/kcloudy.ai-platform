@@ -13,7 +13,7 @@ from ai.schemas.model_config import (
     BatchSetDefaultModelRequest,
     EnabledModelsRequest,
 )
-from ai.services.model_config_service import model_config_service
+from ai.services.model import model_config_service
 from framework.common.exceptions import BadRequestError
 from framework.common.response import ApiResponse
 from framework.database.dependencies import get_db_session

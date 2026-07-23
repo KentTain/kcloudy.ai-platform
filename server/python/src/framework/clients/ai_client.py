@@ -160,8 +160,8 @@ class AIClient:
             # 单体模式：直接调用 AI Service
             from sqlalchemy import select
 
-            from ai.models.plugin_config import PluginConfig
-            from ai.models.plugin_runtime_state import PluginRuntimeState
+            from ai.models.plugin import PluginConfig
+            from ai.models.plugin import PluginRuntimeState
             from framework.tenant.context import TenantContext
 
             success = []

@@ -2,7 +2,7 @@
 
 import pytest
 
-from ai.models.plugin_default_model import PluginDefaultModel
+from ai.models.plugin import PluginDefaultModel
 
 
 class TestPluginDefaultModel:
