@@ -8,6 +8,7 @@ from framework.database import create_base_model, create_module_base
 Base = create_module_base(schema="document")
 BaseModel = create_base_model(Base)
 
+from .document import Document, DocumentVersion
 from .enums import (
     DocumentProcessingStatus,
     DocumentStatus,
@@ -27,4 +28,12 @@ from .enums import (
 from .folder import Folder
 from .library import Library, LibraryMember
 
-__all__ = ["Base", "BaseModel", "Library", "LibraryMember", "Folder"]
+__all__ = [
+    "Base",
+    "BaseModel",
+    "Library",
+    "LibraryMember",
+    "Folder",
+    "Document",
+    "DocumentVersion",
+]
