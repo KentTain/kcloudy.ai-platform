@@ -3,3 +3,4 @@ export { default as RoleMemberRowActions } from "./roles/RoleMemberRowActions.vu
 export { default as PermissionRoleRowActions } from "./permissions/PermissionRoleRowActions.vue"
 export { default as ChildOrgRowActions } from "./organizations/ChildOrgRowActions.vue"
 export { default as OrgMemberRowActions } from "./organizations/OrgMemberRowActions.vue"
+export { default as PermissionTroubleshootPanel } from "./PermissionTroubleshootPanel.vue"
