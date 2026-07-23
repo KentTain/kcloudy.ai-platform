@@ -159,3 +159,45 @@ class PermissionRequestStatus(str, EnumBase):
         }
         return labels.get(self, self.name)
 
+
+class PolicyType(str, EnumBase):
+    """策略类型枚举"""
+
+    CLASSIFICATION = "classification"
+    DOWNLOAD = "download"
+    PREVIEW = "preview"
+    DLP = "dlp"
+    WATERMARK = "watermark"
+    INGESTION = "ingestion"
+    QA = "qa"
+    RETENTION = "retention"
+
+    @property
+    def label(self) -> str:
+        labels = {
+            PolicyType.CLASSIFICATION: "分类策略",
+            PolicyType.DOWNLOAD: "下载策略",
+            PolicyType.PREVIEW: "预览策略",
+            PolicyType.DLP: "防泄漏策略",
+            PolicyType.WATERMARK: "水印策略",
+            PolicyType.INGESTION: "入库策略",
+            PolicyType.QA: "问答策略",
+            PolicyType.RETENTION: "保留策略",
+        }
+        return labels.get(self, self.name)
+
+
+class PolicyEffect(str, EnumBase):
+    """策略效果枚举"""
+
+    ALLOW = "allow"
+    DENY = "deny"
+
+    @property
+    def label(self) -> str:
+        labels = {
+            PolicyEffect.ALLOW: "允许",
+            PolicyEffect.DENY: "拒绝",
+        }
+        return labels.get(self, self.name)
+
