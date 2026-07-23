@@ -28,6 +28,8 @@ from .enums import (
 from .folder import Folder
 from .library import Library, LibraryMember
 from .permission import LibraryRole, LibraryRoleMember, ResourceAcl
+from .persona import Persona
+from .tag import Tag, TagGroup
 
 __all__ = [
     "Base",
@@ -40,4 +42,7 @@ __all__ = [
     "LibraryRole",
     "LibraryRoleMember",
     "ResourceAcl",
+    "Tag",
+    "TagGroup",
+    "Persona",
 ]
