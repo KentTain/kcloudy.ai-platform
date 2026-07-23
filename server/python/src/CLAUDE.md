@@ -13,19 +13,22 @@
 | framework | 底层基础设施模块 | - | [framework/CLAUDE.md](framework/CLAUDE.md) |
 | tenant | 租户管理模块 | tenant | [tenant/CLAUDE.md](tenant/CLAUDE.md) |
 | iam | 身份认证与权限模块 | iam | [iam/CLAUDE.md](iam/CLAUDE.md) |
+| document | 文档库管理模块 | document | [document/CLAUDE.md](document/CLAUDE.md) |
 | ai | AI 能力模块 | ai | [ai/CLAUDE.md](ai/CLAUDE.md) |
 | demo | AI 助手平台演示模块 | demo | [demo/CLAUDE.md](demo/CLAUDE.md) |
 
 ## 依赖边界
 
 ```
-demo / iam / ai ──▶ framework
-demo / iam ──▶ tenant
-framework ──X──▶ demo / iam / tenant
+demo / iam / document / ai ──▶ framework
+demo / iam / document ──▶ tenant
+ai ──▶ document（通过 inner 接口回查源文件权限）
+framework ──X──▶ demo / iam / document / ai / tenant
 ```
 
 - 业务模块可以依赖 `framework`
-- `framework` 禁止依赖业务模块
+- `framework` 禁止依赖业务模块（通过延迟导入或 inner 接口实现依赖倒置）
+- `ai` 依赖 `document` inner 接口回查源文件权限，不放大权限
 - 可复用基础能力优先放入 `framework`
 
 ## 入口文件

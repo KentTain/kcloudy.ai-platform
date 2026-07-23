@@ -56,6 +56,9 @@ IAM 模块 API 路由遵循 `/{模块}/{类型}/v1/{功能}` 格式：
 | 权限控制 | 基于角色的访问控制 |
 | 组织架构 | 组织、用户、用户租户关系管理 |
 | OAuth 集成 | 第三方 OAuth 连接与用户同步 |
+| 站内信 | Notification / NotificationRead 消息通知 |
+| 权限申请 | PermissionRequest / PermissionCacheEvent，含审批回调 inner 接口 |
+| 企业 Policy | Policy 策略管理，deny 优先合并规则 |
 
 ## 数据库模型
 
@@ -69,6 +72,10 @@ IAM 模块 API 路由遵循 `/{模块}/{类型}/v1/{功能}` 格式：
 | UserTenant | 用户-租户关联 | iam.user_tenants |
 | RolePermission | 角色-权限关联 | iam.role_permissions |
 | MenuPermission | 菜单-权限关联 | iam.menu_permissions |
+| Notification | 站内信 | iam.notifications |
+| NotificationRead | 站内信阅读状态 | iam.notification_reads |
+| PermissionRequest | 权限申请 | iam.permission_requests |
+| Policy | 企业策略 | iam.policies |
 
 ## 角色编码规范
 
@@ -115,6 +122,56 @@ ModuleMenuPermission.module_permission_id → Permission.ref_id
 - Controller 只处理路由、参数校验、鉴权依赖和响应封装
 - Service 负责事务边界、业务校验和跨模型协作
 - Organization 模型继承 `TreeNodeMixin`，树字段由 Mixin 自动维护
+
+## 站内信
+
+IAM 模块提供站内信能力，支持系统通知和业务消息推送。
+
+| 模型 | 说明 | Schema |
+|------|------|--------|
+| Notification | 通知消息实体 | iam.notifications |
+| NotificationRead | 通知阅读状态 | iam.notification_reads |
+
+### 接口
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| GET | `/iam/console/v1/notifications` | 获取当前用户通知列表 |
+| POST | `/iam/console/v1/notifications/{id}/read` | 标记通知已读 |
+| POST | `/iam/console/v1/notifications/read-all` | 全部标记已读 |
+| GET | `/iam/console/v1/notifications/unread-count` | 获取未读数量 |
+
+## 权限申请
+
+IAM 模块提供权限申请与审批流程，支持用户发起权限申请、管理员审批。
+
+| 模型 | 说明 | Schema |
+|------|------|--------|
+| PermissionRequest | 权限申请实体 | iam.permission_requests |
+| PermissionCacheEvent | 权限缓存失效事件 | — |
+
+### 审批回调 inner 接口
+
+权限申请审批后，通过 inner 接口回调业务模块（如 document）更新资源权限缓存：
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| POST | `/iam/inner/v1/permission-requests/{id}/approve` | 审批通过（内部调用） |
+| POST | `/iam/inner/v1/permission-requests/{id}/reject` | 审批拒绝（内部调用） |
+
+## 企业 Policy
+
+IAM 模块提供企业级策略管理，支持 deny 优先的合并规则。Policy 用于控制组织级、租户级的安全与访问策略。
+
+| 模型 | 说明 | Schema |
+|------|------|--------|
+| Policy | 策略实体 | iam.policies |
+
+### 规则
+
+- 多层 Policy 合并时，**deny 规则优先**：任一层 deny 即最终 deny
+- Policy 层级：组织 > 租户 > 默认，高层级覆盖低层级
+- Policy 变更后发布 `PermissionCacheEvent` 失效权限缓存
 
 ## 测试
 

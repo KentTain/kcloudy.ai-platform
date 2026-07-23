@@ -30,13 +30,14 @@ Vue 前端使用 Vue 3 + TypeScript + Vite 构建，提供 AI 助手平台演示
 | framework | 基础设施：UI框架、路由、状态管理 | [src/framework/CLAUDE.md](src/framework/CLAUDE.md) |
 | tenant | 租户管理模块 | [src/tenant/CLAUDE.md](src/tenant/CLAUDE.md) |
 | iam | 身份认证与权限模块 | [src/iam/CLAUDE.md](src/iam/CLAUDE.md) |
+| document | 文档库管理模块 | [src/document/CLAUDE.md](src/document/CLAUDE.md) |
 | demo | 业务演示模块 | [src/demo/CLAUDE.md](src/demo/CLAUDE.md) |
 
 ## 依赖边界
 
 ```
-demo / iam / tenant ──▶ framework
-framework ──X──▶ demo / iam / tenant
+demo / iam / document / tenant ──▶ framework
+framework ──X──▶ demo / iam / document / tenant
 ```
 
 - 业务模块可以依赖 `framework`

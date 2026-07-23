@@ -13,6 +13,7 @@
 | framework | 基础设施：UI框架、路由、状态管理 | [framework/CLAUDE.md](framework/CLAUDE.md) |
 | tenant | 租户管理模块 | [tenant/CLAUDE.md](tenant/CLAUDE.md) |
 | iam | 身份认证与权限模块 | [iam/CLAUDE.md](iam/CLAUDE.md) |
+| document | 文档库管理模块 | [document/CLAUDE.md](document/CLAUDE.md) |
 | ai | AI 对话模块 | [ai/CLAUDE.md](ai/CLAUDE.md) |
 | demo | 业务演示模块 | [demo/CLAUDE.md](demo/CLAUDE.md) |
 | components | 通用组件（跨模块共享） | 见下方「通用组件清单」 |
@@ -190,8 +191,8 @@ import CodeBlock from '@/components/ai-elements/code-block/CodeBlock.vue';
 ## 依赖边界
 
 ```
-demo / ai / iam / tenant ──▶ framework
-framework ──X──▶ demo / ai / iam / tenant
+demo / ai / iam / document / tenant ──▶ framework
+framework ──X──▶ demo / ai / iam / document / tenant
 ```
 
 - 业务模块可以依赖 `framework`
