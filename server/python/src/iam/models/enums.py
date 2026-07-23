@@ -90,3 +90,72 @@ class UserTenantRole(str, EnumBase):
         }
         return labels.get(self, self.name)
 
+
+class NotificationType(str, EnumBase):
+    """站内信类型枚举"""
+
+    IMPORT_REVIEW_PENDING = "import_review_pending"
+    IMPORT_REVIEW_APPROVED = "import_review_approved"
+    IMPORT_REVIEW_REJECTED = "import_review_rejected"
+    PERMISSION_REQUEST_PENDING = "permission_request_pending"
+    PERMISSION_REQUEST_APPROVED = "permission_request_approved"
+    PERMISSION_REQUEST_REJECTED = "permission_request_rejected"
+    SYSTEM = "system"
+
+    @property
+    def label(self) -> str:
+        labels = {
+            NotificationType.IMPORT_REVIEW_PENDING: "导入审核待处理",
+            NotificationType.IMPORT_REVIEW_APPROVED: "导入审核已通过",
+            NotificationType.IMPORT_REVIEW_REJECTED: "导入审核已拒绝",
+            NotificationType.PERMISSION_REQUEST_PENDING: "权限申请待审批",
+            NotificationType.PERMISSION_REQUEST_APPROVED: "权限申请已通过",
+            NotificationType.PERMISSION_REQUEST_REJECTED: "权限申请已拒绝",
+            NotificationType.SYSTEM: "系统通知",
+        }
+        return labels.get(self, self.name)
+
+
+class PermissionRequestType(str, EnumBase):
+    """权限申请类型枚举"""
+
+    LIBRARY_JOIN = "library_join"
+    LIBRARY_RESOURCE = "library_resource"
+    LIBRARY_ROLE = "library_role"
+    KNOWLEDGE_BASE_JOIN = "knowledge_base_join"
+    KNOWLEDGE_BASE_ROLE = "knowledge_base_role"
+
+    @property
+    def label(self) -> str:
+        labels = {
+            PermissionRequestType.LIBRARY_JOIN: "加入文库",
+            PermissionRequestType.LIBRARY_RESOURCE: "文库资源权限",
+            PermissionRequestType.LIBRARY_ROLE: "文库角色",
+            PermissionRequestType.KNOWLEDGE_BASE_JOIN: "加入知识库",
+            PermissionRequestType.KNOWLEDGE_BASE_ROLE: "知识库角色",
+        }
+        return labels.get(self, self.name)
+
+
+class PermissionRequestStatus(str, EnumBase):
+    """权限申请状态枚举"""
+
+    PENDING = "pending"
+    APPROVED = "approved"
+    REJECTED = "rejected"
+    APPLYING = "applying"
+    APPLIED = "applied"
+    APPLY_FAILED = "apply_failed"
+
+    @property
+    def label(self) -> str:
+        labels = {
+            PermissionRequestStatus.PENDING: "待审批",
+            PermissionRequestStatus.APPROVED: "已通过",
+            PermissionRequestStatus.REJECTED: "已拒绝",
+            PermissionRequestStatus.APPLYING: "生效中",
+            PermissionRequestStatus.APPLIED: "已生效",
+            PermissionRequestStatus.APPLY_FAILED: "生效失败",
+        }
+        return labels.get(self, self.name)
+

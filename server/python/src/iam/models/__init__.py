@@ -17,15 +17,20 @@ BaseModel = create_base_model(Base)
 from .audit_log import AuditLog
 from .organization import Organization, UserOrganization
 from .enums import (
+    NotificationType,
     OrganizationStatus,
     OAuthProvider,
+    PermissionRequestStatus,
+    PermissionRequestType,
     RoleCode,
     TenantStatus,
     UserStatus,
 )
 from .menu import Menu, MenuPermission
+from .notification import Notification, NotificationRead
 from .oauth_connection import OAuthConnection
 from .permission import Permission, RolePermission, UserRole
+from .permission_request import PermissionCacheEvent, PermissionRequest
 from .role import Role
 from .system_setting import SystemSetting
 from .system_setting_attribute import SystemSettingAttribute
@@ -42,6 +47,9 @@ __all__ = [
     "RoleCode",
     "OrganizationStatus",
     "TenantStatus",  # 保留，用于 IAM 模块验证租户状态
+    "NotificationType",
+    "PermissionRequestType",
+    "PermissionRequestStatus",
     # 用户相关
     "User",
     "OAuthConnection",
@@ -62,4 +70,10 @@ __all__ = [
     "SystemSettingAttribute",
     # 审计日志
     "AuditLog",
+    # 站内信
+    "Notification",
+    "NotificationRead",
+    # 权限申请
+    "PermissionRequest",
+    "PermissionCacheEvent",
 ]
