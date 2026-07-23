@@ -90,6 +90,30 @@ export const iamRoutes: RouteRecordRaw[] = [
         meta: { title: "审计日志", icon: "audit", requiresAuth: true },
       },
 
+      // 站内信
+      {
+        path: "notifications",
+        name: "NotificationManagement",
+        component: () => import("@/iam/pages/notifications/NotificationList.vue"),
+        meta: { title: "站内信", icon: "bell", requiresAuth: true },
+      },
+
+      // 权限申请
+      {
+        path: "permission-requests",
+        name: "PermissionRequestManagement",
+        component: () => import("@/iam/pages/permission-requests/PermissionRequestList.vue"),
+        meta: { title: "权限申请", icon: "shield", requiresAuth: true },
+      },
+
+      // 企业策略
+      {
+        path: "policies",
+        name: "PolicyManagement",
+        component: () => import("@/iam/pages/policies/PolicyList.vue"),
+        meta: { title: "企业策略", icon: "shield", requiresAuth: true },
+      },
+
       // 个人中心
       {
         path: "profile",

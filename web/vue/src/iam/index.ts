@@ -40,6 +40,17 @@ export type {
   OrganizationUpdate,
   OrganizationQuery,
   LoginHistoryPaginatedQuery,
+  NotificationItem,
+  NotificationQuery,
+  NotificationMarkReadRequest,
+  PermissionRequestItem,
+  PermissionRequestCreate,
+  PermissionRequestQuery,
+  PermissionRequestApproval,
+  PolicyItem,
+  PolicyCreate,
+  PolicyUpdate,
+  PolicyQuery,
 } from "./types";
 
 // 导出认证 API
@@ -86,4 +97,32 @@ export {
   createOrganization,
   updateOrganization,
   deleteOrganization,
+} from "./api";
+
+// 导出站内信 API
+export {
+  getNotifications,
+  getUnreadCount,
+  markRead,
+  markAllRead,
+} from "./api";
+
+// 导出权限申请 API
+export {
+  getPermissionRequests,
+  getPendingApprovals,
+  submitPermissionRequest,
+  approvePermissionRequest,
+  rejectPermissionRequest,
+} from "./api";
+
+// 导出企业策略 API
+export {
+  getPolicies,
+  getPolicy,
+  createPolicy,
+  updatePolicy,
+  deletePolicy,
+  enablePolicy,
+  disablePolicy,
 } from "./api";

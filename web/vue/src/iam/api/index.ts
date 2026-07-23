@@ -8,3 +8,6 @@ export * from "./permission";
 export * from "./organization";
 export * from "./menu";
 export * from "./auditLog";
+export * from "./notification";
+export * from "./permissionRequest";
+export * from "./policy";

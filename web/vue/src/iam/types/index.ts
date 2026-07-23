@@ -349,3 +349,35 @@ export interface AuditLogPaginatedQuery extends BasePaginatedQuery {
   start_time?: string;
   end_time?: string;
 }
+
+// ============================================
+// 站内信类型
+// ============================================
+
+export type {
+  NotificationItem,
+  NotificationQuery,
+  NotificationMarkReadRequest,
+} from "./notification";
+
+// ============================================
+// 权限申请类型
+// ============================================
+
+export type {
+  PermissionRequestItem,
+  PermissionRequestCreate,
+  PermissionRequestQuery,
+  PermissionRequestApproval,
+} from "./permissionRequest";
+
+// ============================================
+// 企业 Policy 类型
+// ============================================
+
+export type {
+  PolicyItem,
+  PolicyCreate,
+  PolicyUpdate,
+  PolicyQuery,
+} from "./policy";
