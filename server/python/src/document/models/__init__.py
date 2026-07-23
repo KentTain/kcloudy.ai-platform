@@ -24,6 +24,7 @@ from .enums import (
     ResourceAclStatus,
     ResourceType,
 )
+from .folder import Folder
 from .library import Library, LibraryMember
 
-__all__ = ["Base", "BaseModel", "Library", "LibraryMember"]
+__all__ = ["Base", "BaseModel", "Library", "LibraryMember", "Folder"]
