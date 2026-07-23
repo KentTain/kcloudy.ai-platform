@@ -27,6 +27,7 @@ from .enums import (
 )
 from .folder import Folder
 from .library import Library, LibraryMember
+from .permission import LibraryRole, LibraryRoleMember, ResourceAcl
 
 __all__ = [
     "Base",
@@ -36,4 +37,7 @@ __all__ = [
     "Folder",
     "Document",
     "DocumentVersion",
+    "LibraryRole",
+    "LibraryRoleMember",
+    "ResourceAcl",
 ]
