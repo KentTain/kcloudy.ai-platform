@@ -61,6 +61,9 @@ class IAMModule:
         from iam.controllers.admin.permission_request_controller import (
             router as admin_permission_request_router,
         )
+        from iam.controllers.admin.policy_controller import (
+            router as admin_policy_router,
+        )
 
         # Console 层
         from iam.controllers.console.auth_controller import (
@@ -118,6 +121,7 @@ class IAMModule:
             ),
             (admin_notification_router, "/iam/admin/v1", ["Admin - Notification"]),
             (admin_permission_request_router, "/iam/admin/v1", ["Admin - PermissionRequest"]),
+            (admin_policy_router, "/iam/admin/v1", ["Admin - Policy"]),
             # Console 层路由
             (console_auth_router, "/iam/console/v1", ["Console - Auth"]),
             (console_oauth_router, "/iam/console/v1", ["Console - OAuth"]),
