@@ -55,6 +55,9 @@ class IAMModule:
             router as admin_system_setting_router,
         )
         from iam.controllers.admin.user_controller import router as admin_user_router
+        from iam.controllers.admin.notification_controller import (
+            router as admin_notification_router,
+        )
 
         # Console 层
         from iam.controllers.console.auth_controller import (
@@ -71,6 +74,9 @@ class IAMModule:
         )
         from iam.controllers.console.user_controller import (
             router as console_user_router,
+        )
+        from iam.controllers.console.notification_controller import (
+            router as console_notification_router,
         )
         from iam.controllers.inner.organization_controller import (
             router as inner_organization_router,
@@ -101,11 +107,13 @@ class IAMModule:
                 "/iam/admin/v1/system-settings",
                 ["Admin - SystemSetting"],
             ),
+            (admin_notification_router, "/iam/admin/v1", ["Admin - Notification"]),
             # Console 层路由
             (console_auth_router, "/iam/console/v1", ["Console - Auth"]),
             (console_oauth_router, "/iam/console/v1", ["Console - OAuth"]),
             (console_org_user_router, "/iam/console/v1", ["Console - OrgUser"]),
             (console_user_router, "/iam/console/v1", ["Console - User"]),
+            (console_notification_router, "/iam/console/v1", ["Console - Notification"]),
             (
                 console_system_setting_router,
                 "/iam/console/v1/system-settings",
