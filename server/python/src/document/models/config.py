@@ -1,6 +1,6 @@
 """文档库配置模型"""
 
-from sqlalchemy import Index, String
+from sqlalchemy import Index, String, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -15,7 +15,11 @@ class ConfigItem(BaseModel, TimestampMixin, AuditMixin, TenantMixin, ActiveRecor
     """文档库级配置表"""
 
     __tablename__ = "config_item"
-    __table_args__ = (Index("ix_config_item_library_id", "library_id"), {"comment": "文档库级配置表"})
+    __table_args__ = (
+        Index("ix_config_item_library_id", "library_id"),
+        UniqueConstraint("library_id", "config_key", name="uq_config_item_library_key"),
+        {"comment": "文档库级配置表"},
+    )
 
     library_id: Mapped[str] = mapped_column(String(36), nullable=False, comment="文档库ID")
     config_key: Mapped[str] = mapped_column(String(128), nullable=False, comment="配置键")
