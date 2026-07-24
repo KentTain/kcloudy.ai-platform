@@ -20,7 +20,11 @@ class MemberService:
         role: str = LibraryMemberRole.MEMBER,
         remarks: str | None = None,
     ) -> LibraryMember:
-        """添加成员"""
+        """添加成员
+
+        跨租户校验在控制器层通过 iam inner 接口完成
+        （service 层不直接调用 iam），当前仅校验重复成员。
+        """
         tenant_id = get_tenant_id()
 
         # 检查是否已是成员

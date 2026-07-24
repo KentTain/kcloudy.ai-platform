@@ -5,8 +5,8 @@ from datetime import datetime, timezone
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from document.models import RecycleItem
-from document.models.enums import RecycleItemStatus
+from document.models import Document, Folder, RecycleItem
+from document.models.enums import FolderLifecycleStatus, RecycleItemStatus, ResourceType
 from framework.common.ctx import get_tenant_id, get_user_id
 
 
@@ -67,15 +67,113 @@ class RecycleService:
 
     @staticmethod
     async def restore(session: AsyncSession, item_id: str) -> None:
-        """恢复回收站项目"""
+        """恢复回收站项目
+
+        恢复逻辑：
+          1. 检查 original_parent_id 是否仍存在（Folder/Document 查询）
+          2. 如果不存在，恢复到库根（folder_id=None / parent_id="root"）
+          3. 名称冲突时追加后缀 "_restored"
+        """
         item = await RecycleService._get_item(session, item_id)
         if item is None:
             raise ValueError("回收站项目不存在")
+
+        # 检查原父资源是否仍存在
+        parent_exists = await RecycleService._check_parent_exists(session, item)
+
+        if not parent_exists:
+            # 原父资源已不存在，恢复到库根
+            await RecycleService._restore_to_root(session, item)
+        else:
+            # 原父资源存在，检查名称冲突
+            await RecycleService._restore_with_name_check(session, item)
+
         user_id = get_user_id()
         item.status = RecycleItemStatus.RESTORED
         item.restored_by = user_id
         item.restored_at = datetime.now(timezone.utc)
         await session.flush()
+
+    @staticmethod
+    async def _check_parent_exists(session: AsyncSession, item: RecycleItem) -> bool:
+        """检查 original_parent_id 对应的资源是否仍存在"""
+        if item.original_parent_id is None:
+            return True  # 无父资源，视为根目录
+        if item.resource_type == ResourceType.DOCUMENT:
+            # 文档的父资源是文件夹
+            stmt = select(Folder).where(
+                Folder.id == item.original_parent_id,
+                Folder.lifecycle_status == FolderLifecycleStatus.ACTIVE,
+            )
+            result = (await session.execute(stmt)).scalar_one_or_none()
+            return result is not None
+        elif item.resource_type == ResourceType.FOLDER:
+            # 文件夹的父资源是另一个文件夹
+            stmt = select(Folder).where(
+                Folder.id == item.original_parent_id,
+                Folder.lifecycle_status == FolderLifecycleStatus.ACTIVE,
+            )
+            result = (await session.execute(stmt)).scalar_one_or_none()
+            return result is not None
+        return False
+
+    @staticmethod
+    async def _restore_to_root(session: AsyncSession, item: RecycleItem) -> None:
+        """恢复到库根目录（folder_id=None / parent_id="root"）"""
+        if item.resource_type == ResourceType.DOCUMENT:
+            stmt = select(Document).where(Document.id == item.resource_id)
+            doc = (await session.execute(stmt)).scalar_one_or_none()
+            if doc is not None:
+                doc.folder_id = None
+        elif item.resource_type == ResourceType.FOLDER:
+            stmt = select(Folder).where(Folder.id == item.resource_id)
+            folder = (await session.execute(stmt)).scalar_one_or_none()
+            if folder is not None:
+                folder.parent_id = "root"
+
+    @staticmethod
+    async def _restore_with_name_check(session: AsyncSession, item: RecycleItem) -> None:
+        """恢复到原位置，名称冲突时追加后缀 '_restored'"""
+        if item.resource_type == ResourceType.DOCUMENT:
+            stmt = select(Document).where(Document.id == item.resource_id)
+            doc = (await session.execute(stmt)).scalar_one_or_none()
+            if doc is None:
+                return
+            # 检查同文件夹下同名文档
+            name_exists = await RecycleService._check_doc_name_conflict(session, doc)
+            if name_exists:
+                doc.name = f"{doc.name}_restored"
+        elif item.resource_type == ResourceType.FOLDER:
+            stmt = select(Folder).where(Folder.id == item.resource_id)
+            folder = (await session.execute(stmt)).scalar_one_or_none()
+            if folder is None:
+                return
+            # 检查同父文件夹下同名文件夹
+            name_exists = await RecycleService._check_folder_name_conflict(session, folder)
+            if name_exists:
+                folder.name = f"{folder.name}_restored"
+
+    @staticmethod
+    async def _check_doc_name_conflict(session: AsyncSession, doc: Document) -> bool:
+        """检查文档名称是否在同文件夹下冲突"""
+        conditions = [
+            Document.folder_id == doc.folder_id,
+            Document.name == doc.name,
+            Document.id != doc.id,
+        ]
+        stmt = select(func.count(Document.id)).where(*conditions)
+        return (await session.execute(stmt)).scalar() > 0
+
+    @staticmethod
+    async def _check_folder_name_conflict(session: AsyncSession, folder: Folder) -> bool:
+        """检查文件夹名称是否在同父级下冲突"""
+        conditions = [
+            Folder.parent_id == folder.parent_id,
+            Folder.name == folder.name,
+            Folder.id != folder.id,
+        ]
+        stmt = select(func.count(Folder.id)).where(*conditions)
+        return (await session.execute(stmt)).scalar() > 0
 
     @staticmethod
     async def purge(session: AsyncSession, item_id: str) -> None:

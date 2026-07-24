@@ -6,7 +6,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from document.models import Document
-from document.models.enums import DocumentStatus
+from document.models.enums import DocumentProcessingStatus, DocumentStatus
 from framework.common.ctx import get_tenant_id, get_user_id
 from framework.storage.tenant_storage import TenantMinioStorage
 
@@ -57,7 +57,10 @@ class DocumentService:
 
     @staticmethod
     async def get_by_id(session: AsyncSession, doc_id: str) -> Document | None:
-        stmt = select(Document).where(Document.id == doc_id)
+        stmt = select(Document).where(
+            Document.id == doc_id,
+            Document.lifecycle_status != DocumentStatus.TRASHED,
+        )
         return (await session.execute(stmt)).scalar_one_or_none()
 
     @staticmethod
@@ -68,7 +71,10 @@ class DocumentService:
         page: int = 1,
         page_size: int = 50,
     ) -> tuple[list[Document], int]:
-        conditions = [Document.library_id == library_id]
+        conditions = [
+            Document.library_id == library_id,
+            Document.lifecycle_status != DocumentStatus.TRASHED,
+        ]
         if folder_id:
             conditions.append(Document.folder_id == folder_id)
         total = (await session.execute(
@@ -85,6 +91,42 @@ class DocumentService:
         if doc is None:
             raise ValueError("文档不存在")
         doc.lifecycle_status = DocumentStatus.TRASHED
+        await session.flush()
+
+    @staticmethod
+    async def move(
+        session: AsyncSession,
+        doc_id: str,
+        target_folder_id: str | None,
+        tenant_id: str,
+    ) -> Document:
+        """移动文档到目标文件夹（target_folder_id=None 表示库根目录）"""
+        stmt = select(Document).where(
+            Document.id == doc_id,
+            Document.tenant_id == tenant_id,
+        )
+        doc = (await session.execute(stmt)).scalar_one_or_none()
+        if doc is None:
+            raise ValueError("文档不存在")
+        doc.folder_id = target_folder_id
+        await session.flush()
+        return doc
+
+    @staticmethod
+    async def trigger_index_task(
+        session: AsyncSession,
+        doc_id: str,
+        tenant_id: str,
+    ) -> None:
+        """触发切片索引任务（更新 processing_status 为 PENDING_PARSE）"""
+        stmt = select(Document).where(
+            Document.id == doc_id,
+            Document.tenant_id == tenant_id,
+        )
+        doc = (await session.execute(stmt)).scalar_one_or_none()
+        if doc is None:
+            raise ValueError("文档不存在")
+        doc.processing_status = DocumentProcessingStatus.PENDING_PARSE
         await session.flush()
 
 

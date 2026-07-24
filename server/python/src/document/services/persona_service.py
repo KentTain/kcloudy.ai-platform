@@ -74,7 +74,7 @@ class PersonaService:
 
     @staticmethod
     async def delete(session: AsyncSession, persona_id: str) -> None:
-        """删除人设"""
+        """删除人设（Persona 无 status 字段，使用硬删除（非回收站资源））"""
         persona = await PersonaService.get_by_id(session, persona_id)
         if persona is None:
             raise ValueError("人设不存在")

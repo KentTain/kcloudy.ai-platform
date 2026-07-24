@@ -268,3 +268,6 @@ def _pick_highest_level(levels: list[str]) -> str:
     if not levels:
         return "none"
     return max(levels, key=lambda lv: _LEVEL_PRIORITY.get(lv, 0))
+
+
+permission_service = PermissionService()
