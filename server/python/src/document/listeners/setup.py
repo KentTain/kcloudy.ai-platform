@@ -1,10 +1,9 @@
-"""
-消息监听器生命周期管理
-"""
+"""document 模块消息监听器注册"""
 
 
 async def setup_listeners() -> None:
-    """启动消息监听器"""
+    """注册消息监听器（权限缓存失效等）"""
+    # TODO: 接入 framework pubsub
     pass
 
 

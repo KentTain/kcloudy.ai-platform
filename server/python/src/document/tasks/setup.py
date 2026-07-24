@@ -1,10 +1,9 @@
-"""
-定时任务生命周期管理
-"""
+"""document 模块定时任务注册"""
 
 
 async def setup_tasks() -> None:
-    """启动定时任务"""
+    """注册定时任务（索引恢复补偿、回收站自动清理）"""
+    # TODO: 接入 framework scheduler
     pass
 
 
