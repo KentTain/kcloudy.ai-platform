@@ -8,9 +8,18 @@ import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from document.services.permission_service import PermissionService, DocumentPermissionChecker
-from document.models.enums import LibraryMemberRole, PermissionLevel
-from framework.permission.engine import PermissionEngine, PermissionCheckResult
+from document.services.permission_service import (
+    ACTION_LEVEL_MAP,
+    PermissionService,
+    DocumentPermissionChecker,
+    _pick_highest_level,
+)
+from document.models.enums import LibraryMemberRole, ResourceAclEffect
+from framework.permission.engine import (
+    PermissionCheckResult,
+    PermissionEngine,
+    PermissionEngineProtocol,
+)
 
 
 # ---------------------------------------------------------------------------
@@ -28,129 +37,95 @@ def _make_checker(session: AsyncMock, library_id: str = "lib-1") -> DocumentPerm
     return DocumentPermissionChecker(session=session, library_id=library_id)
 
 
+def _make_mock_acl(effect: str, action: str) -> MagicMock:
+    """构造 mock ACL 对象"""
+    acl = MagicMock()
+    acl.effect = effect
+    acl.action = action
+    return acl
+
+
+def _setup_session_with_acls(session: AsyncMock, acls: list[MagicMock]) -> None:
+    """配置 session 返回指定 ACL 列表"""
+    mock_result = MagicMock()
+    mock_scalars = MagicMock()
+    mock_scalars.all.return_value = acls
+    mock_result.scalars.return_value = mock_scalars
+    session.execute = AsyncMock(return_value=mock_result)
+
+
 # ---------------------------------------------------------------------------
-# PermissionService 核心判定测试
+# PermissionService 门面委托测试
 # ---------------------------------------------------------------------------
 
 
 @pytest.mark.asyncio
 class TestPermissionService:
-    """权限判定引擎测试（高层门面）"""
+    """权限判定引擎测试（高层门面 - 委托 DocumentPermissionChecker）"""
 
-    async def test_owner_has_full_editable(self):
-        """owner 全部资源可编辑"""
+    async def test_no_policies_delegates_to_checker(self):
+        """无 policies 时委托给 DocumentPermissionChecker"""
         service = _make_service()
         session = AsyncMock()
-        with patch.object(service, "_get_member_role", new_callable=AsyncMock, return_value=LibraryMemberRole.OWNER):
+        with patch.object(
+            DocumentPermissionChecker, "check_resource_permission",
+            new_callable=AsyncMock, return_value="editable",
+        ):
             result = await service.check_permission(
                 session, user_id="u1", library_id="lib-1",
                 resource_type="document", resource_id="d1", operation="download",
             )
         assert result == "editable"
 
-    async def test_admin_has_full_editable(self):
-        """admin 全部资源可编辑"""
+    async def test_with_policies_uses_engine(self):
+        """有 policies 时委托给 PermissionEngine"""
         service = _make_service()
         session = AsyncMock()
-        with patch.object(service, "_get_member_role", new_callable=AsyncMock, return_value=LibraryMemberRole.ADMIN):
-            result = await service.check_permission(
-                session, user_id="u1", library_id="lib-1",
-                resource_type="document", resource_id="d1", operation="edit",
-            )
-        assert result == "editable"
-
-    async def test_member_permission_from_acl_inheritance(self):
-        """普通成员通过继承链计算权限，取最高等级"""
-        service = _make_service()
-        session = AsyncMock()
-        with patch.object(service, "_get_member_role", new_callable=AsyncMock, return_value=LibraryMemberRole.MEMBER), \
-             patch.object(service, "_compute_resource_permission", new_callable=AsyncMock, return_value="editable"), \
-             patch.object(service, "_has_direct_deny", new_callable=AsyncMock, return_value=False):
+        with patch.object(
+            DocumentPermissionChecker, "check_resource_permission",
+            new_callable=AsyncMock, return_value="editable",
+        ):
             result = await service.check_permission(
                 session, user_id="u1", library_id="lib-1",
                 resource_type="document", resource_id="d1", operation="download",
+                policies=[{"id": "p1", "effect": "allow", "enabled": True, "conditions": []}],
             )
         assert result == "editable"
 
-    async def test_no_permission_returns_none(self):
-        """非成员无权限返回 none"""
+    async def test_engine_deny_returns_none(self):
+        """PermissionEngine deny 时返回 none"""
         service = _make_service()
         session = AsyncMock()
-        with patch.object(service, "_get_member_role", new_callable=AsyncMock, return_value=None), \
-             patch.object(service, "_compute_resource_permission", new_callable=AsyncMock, return_value="none"):
+        deny_policy = {
+            "id": "p-deny-1",
+            "effect": "deny",
+            "enabled": True,
+            "conditions": [{"field": "resource_type", "op": "eq", "value": "document"}],
+        }
+        with patch.object(
+            DocumentPermissionChecker, "check_resource_permission",
+            new_callable=AsyncMock, return_value="editable",
+        ):
             result = await service.check_permission(
                 session, user_id="u1", library_id="lib-1",
-                resource_type="document", resource_id="d1", operation="download",
+                resource_type="document", resource_id="d1", operation="read",
+                policies=[deny_policy],
             )
-        assert result == "none"
-
-    async def test_deny_acl_overrides_allow(self):
-        """显式 deny 覆盖继承 allow"""
-        service = _make_service()
-        result = service._merge_permission_levels(inherited="editable", direct_deny=True)
-        assert result == "none"
-
-    async def test_highest_permission_wins(self):
-        """多个权限来源取最高等级"""
-        service = _make_service()
-        result = service._pick_highest_level(["readonly", "editable", "none"])
-        assert result == "editable"
-
-    async def test_all_deny_returns_none(self):
-        """所有来源均为 none/deny 返回 none"""
-        service = _make_service()
-        result = service._pick_highest_level(["none", "none", "none"])
         assert result == "none"
 
     async def test_permission_not_amplified_for_non_member(self):
         """非文档库成员返回 none（不放大权限）"""
         service = _make_service()
         session = AsyncMock()
-        with patch.object(service, "_get_member_role", new_callable=AsyncMock, return_value=None):
+        with patch.object(
+            DocumentPermissionChecker, "check_resource_permission",
+            new_callable=AsyncMock, return_value="none",
+        ):
             result = await service.check_permission(
                 session, user_id="outsider", library_id="lib-1",
                 resource_type="document", resource_id="d1", operation="read",
             )
         assert result == "none"
-
-    async def test_inheritance_truncated_when_disabled(self):
-        """关闭继承后父级权限截断 — mock 返回 none 验证流程"""
-        service = _make_service()
-        session = AsyncMock()
-        with patch.object(service, "_get_member_role", new_callable=AsyncMock, return_value=LibraryMemberRole.MEMBER), \
-             patch.object(service, "_compute_resource_permission", new_callable=AsyncMock, return_value="none"), \
-             patch.object(service, "_has_direct_deny", new_callable=AsyncMock, return_value=False):
-            result = await service.check_permission(
-                session, user_id="u1", library_id="lib-1",
-                resource_type="document", resource_id="d1", operation="read",
-            )
-            assert result == "none"
-
-    async def test_member_with_readonly(self):
-        """普通成员获得 readonly 权限"""
-        service = _make_service()
-        session = AsyncMock()
-        with patch.object(service, "_get_member_role", new_callable=AsyncMock, return_value=LibraryMemberRole.VIEWER), \
-             patch.object(service, "_compute_resource_permission", new_callable=AsyncMock, return_value="readonly"), \
-             patch.object(service, "_has_direct_deny", new_callable=AsyncMock, return_value=False):
-            result = await service.check_permission(
-                session, user_id="u1", library_id="lib-1",
-                resource_type="document", resource_id="d1", operation="read",
-            )
-        assert result == "readonly"
-
-    async def test_contributor_role(self):
-        """contributor 角色走普通成员判定流程"""
-        service = _make_service()
-        session = AsyncMock()
-        with patch.object(service, "_get_member_role", new_callable=AsyncMock, return_value=LibraryMemberRole.CONTRIBUTOR), \
-             patch.object(service, "_compute_resource_permission", new_callable=AsyncMock, return_value="editable"), \
-             patch.object(service, "_has_direct_deny", new_callable=AsyncMock, return_value=False):
-            result = await service.check_permission(
-                session, user_id="u1", library_id="lib-1",
-                resource_type="document", resource_id="d1", operation="edit",
-            )
-        assert result == "editable"
 
 
 # ---------------------------------------------------------------------------
@@ -165,9 +140,7 @@ class TestDocumentPermissionChecker:
     async def test_implements_protocol(self):
         """DocumentPermissionChecker 满足 PermissionEngineProtocol"""
         checker = _make_checker(AsyncMock())
-        assert isinstance(checker, DocumentPermissionChecker)
-        # 验证有 check_resource_permission 方法
-        assert hasattr(checker, "check_resource_permission")
+        assert isinstance(checker, PermissionEngineProtocol)
 
     async def test_owner_returns_editable(self):
         """owner 角色返回 editable"""
@@ -176,6 +149,16 @@ class TestDocumentPermissionChecker:
         with patch.object(checker, "_get_member_role", new_callable=AsyncMock, return_value=LibraryMemberRole.OWNER):
             result = await checker.check_resource_permission(
                 user_id="u1", resource_type="document", resource_id="d1", operation="read",
+            )
+        assert result == "editable"
+
+    async def test_admin_returns_editable(self):
+        """admin 角色返回 editable"""
+        session = AsyncMock()
+        checker = _make_checker(session)
+        with patch.object(checker, "_get_member_role", new_callable=AsyncMock, return_value=LibraryMemberRole.ADMIN):
+            result = await checker.check_resource_permission(
+                user_id="u1", resource_type="document", resource_id="d1", operation="edit",
             )
         assert result == "editable"
 
@@ -194,11 +177,139 @@ class TestDocumentPermissionChecker:
         session = AsyncMock()
         checker = _make_checker(session)
         with patch.object(checker, "_get_member_role", new_callable=AsyncMock, return_value=LibraryMemberRole.MEMBER), \
-             patch.object(checker, "_compute_resource_permission", new_callable=AsyncMock, return_value="readonly"), \
-             patch.object(checker, "_has_direct_deny", new_callable=AsyncMock, return_value=False):
+             patch.object(checker, "_compute_resource_permission", new_callable=AsyncMock, return_value="readonly"):
             result = await checker.check_resource_permission(
                 user_id="u1", resource_type="document", resource_id="d1", operation="read",
             )
+        assert result == "readonly"
+
+    async def test_member_with_readonly(self):
+        """普通成员获得 readonly 权限"""
+        session = AsyncMock()
+        checker = _make_checker(session)
+        with patch.object(checker, "_get_member_role", new_callable=AsyncMock, return_value=LibraryMemberRole.VIEWER), \
+             patch.object(checker, "_compute_resource_permission", new_callable=AsyncMock, return_value="readonly"):
+            result = await checker.check_resource_permission(
+                user_id="u1", resource_type="document", resource_id="d1", operation="read",
+            )
+        assert result == "readonly"
+
+    async def test_contributor_role(self):
+        """contributor 角色走普通成员判定流程"""
+        session = AsyncMock()
+        checker = _make_checker(session)
+        with patch.object(checker, "_get_member_role", new_callable=AsyncMock, return_value=LibraryMemberRole.CONTRIBUTOR), \
+             patch.object(checker, "_compute_resource_permission", new_callable=AsyncMock, return_value="editable"):
+            result = await checker.check_resource_permission(
+                user_id="u1", resource_type="document", resource_id="d1", operation="edit",
+            )
+        assert result == "editable"
+
+    async def test_inheritance_truncated_when_disabled(self):
+        """关闭继承后资源权限截断 — 验证不查父级 ACL 场景
+
+        当 folder 的 acl_inherit_enabled=False 时，_compute_resource_permission
+        只查当前资源的 ACL，不查父级，若无直授权则返回 none。
+        """
+        session = AsyncMock()
+        checker = _make_checker(session)
+        with patch.object(checker, "_get_member_role", new_callable=AsyncMock, return_value=LibraryMemberRole.MEMBER), \
+             patch.object(checker, "_compute_resource_permission", new_callable=AsyncMock, return_value="none"):
+            result = await checker.check_resource_permission(
+                user_id="u1", resource_type="document", resource_id="d1", operation="read",
+            )
+        assert result == "none"
+
+    async def test_deny_acl_short_circuits_to_none(self):
+        """deny ACL 短路返回 none"""
+        session = AsyncMock()
+        checker = _make_checker(session)
+        with patch.object(checker, "_get_member_role", new_callable=AsyncMock, return_value=LibraryMemberRole.MEMBER), \
+             patch.object(checker, "_compute_resource_permission", new_callable=AsyncMock, return_value="none"):
+            result = await checker.check_resource_permission(
+                user_id="u1", resource_type="document", resource_id="d1", operation="edit",
+            )
+        assert result == "none"
+
+
+# ---------------------------------------------------------------------------
+# _compute_resource_permission 内部逻辑测试
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+class TestComputeResourcePermission:
+    """_compute_resource_permission 内部逻辑测试（C2 + C3 修复验证）"""
+
+    async def test_deny_acl_short_circuits(self):
+        """deny ACL 短路返回 none，即使后续有 allow"""
+        session = AsyncMock()
+        checker = _make_checker(session)
+        acls = [
+            _make_mock_acl(ResourceAclEffect.ALLOW, "edit"),
+            _make_mock_acl(ResourceAclEffect.DENY, "edit"),
+        ]
+        _setup_session_with_acls(session, acls)
+        result = await checker._compute_resource_permission(
+            user_id="u1", resource_type="document", resource_id="d1", operation="edit",
+        )
+        assert result == "none"
+
+    async def test_allow_read_action_maps_to_readonly(self):
+        """allow + read action 映射为 readonly"""
+        session = AsyncMock()
+        checker = _make_checker(session)
+        acls = [_make_mock_acl(ResourceAclEffect.ALLOW, "read")]
+        _setup_session_with_acls(session, acls)
+        result = await checker._compute_resource_permission(
+            user_id="u1", resource_type="document", resource_id="d1", operation="read",
+        )
+        assert result == "readonly"
+
+    async def test_allow_edit_action_maps_to_editable(self):
+        """allow + edit action 映射为 editable"""
+        session = AsyncMock()
+        checker = _make_checker(session)
+        acls = [_make_mock_acl(ResourceAclEffect.ALLOW, "edit")]
+        _setup_session_with_acls(session, acls)
+        result = await checker._compute_resource_permission(
+            user_id="u1", resource_type="document", resource_id="d1", operation="edit",
+        )
+        assert result == "editable"
+
+    async def test_no_acls_returns_none(self):
+        """无 ACL 记录返回 none"""
+        session = AsyncMock()
+        checker = _make_checker(session)
+        _setup_session_with_acls(session, [])
+        result = await checker._compute_resource_permission(
+            user_id="u1", resource_type="document", resource_id="d1", operation="read",
+        )
+        assert result == "none"
+
+    async def test_mixed_readonly_and_editable_takes_editable(self):
+        """多个 allow ACL 取最高等级"""
+        session = AsyncMock()
+        checker = _make_checker(session)
+        acls = [
+            _make_mock_acl(ResourceAclEffect.ALLOW, "read"),
+            _make_mock_acl(ResourceAclEffect.ALLOW, "edit"),
+        ]
+        _setup_session_with_acls(session, acls)
+        result = await checker._compute_resource_permission(
+            user_id="u1", resource_type="document", resource_id="d1", operation="edit",
+        )
+        assert result == "editable"
+
+    async def test_unknown_action_defaults_to_readonly(self):
+        """未知 action 默认映射为 readonly"""
+        session = AsyncMock()
+        checker = _make_checker(session)
+        acls = [_make_mock_acl(ResourceAclEffect.ALLOW, "unknown_action")]
+        _setup_session_with_acls(session, acls)
+        result = await checker._compute_resource_permission(
+            user_id="u1", resource_type="document", resource_id="d1", operation="unknown_action",
+        )
         assert result == "readonly"
 
 
@@ -249,8 +360,7 @@ class TestPermissionEngineIntegration:
         session = AsyncMock()
         checker = _make_checker(session)
         with patch.object(checker, "_get_member_role", new_callable=AsyncMock, return_value=LibraryMemberRole.VIEWER), \
-             patch.object(checker, "_compute_resource_permission", new_callable=AsyncMock, return_value="readonly"), \
-             patch.object(checker, "_has_direct_deny", new_callable=AsyncMock, return_value=False):
+             patch.object(checker, "_compute_resource_permission", new_callable=AsyncMock, return_value="readonly"):
             engine = PermissionEngine(resource_checker=checker)
             result = await engine.check(
                 user_id="u1", resource_type="document", resource_id="d1", operation="edit",
@@ -272,45 +382,40 @@ class TestPermissionEngineIntegration:
 
 
 # ---------------------------------------------------------------------------
-# 辅助方法测试
+# 辅助函数测试
 # ---------------------------------------------------------------------------
 
 
-class TestHelperMethods:
-    """辅助方法单元测试"""
+class TestHelperFunctions:
+    """模块级辅助函数单元测试"""
 
     def test_pick_highest_level_editable_wins(self):
         """editable > readonly > none"""
-        service = _make_service()
-        assert service._pick_highest_level(["none", "readonly", "editable"]) == "editable"
+        assert _pick_highest_level(["none", "readonly", "editable"]) == "editable"
 
     def test_pick_highest_level_readonly_wins_over_none(self):
         """readonly > none"""
-        service = _make_service()
-        assert service._pick_highest_level(["none", "readonly"]) == "readonly"
+        assert _pick_highest_level(["none", "readonly"]) == "readonly"
 
     def test_pick_highest_level_empty_list(self):
         """空列表返回 none"""
-        service = _make_service()
-        assert service._pick_highest_level([]) == "none"
+        assert _pick_highest_level([]) == "none"
 
-    def test_merge_permission_levels_deny_overrides(self):
-        """deny 覆盖继承 allow"""
-        service = _make_service()
-        assert service._merge_permission_levels(inherited="editable", direct_deny=True) == "none"
+    def test_pick_highest_level_all_none(self):
+        """所有来源均为 none 返回 none"""
+        assert _pick_highest_level(["none", "none", "none"]) == "none"
 
-    def test_merge_permission_levels_no_deny(self):
-        """无 deny 返回继承权限"""
-        service = _make_service()
-        assert service._merge_permission_levels(inherited="readonly", direct_deny=False) == "readonly"
+    def test_action_level_map_readonly_actions(self):
+        """read/preview/download 映射到 readonly"""
+        assert ACTION_LEVEL_MAP["read"] == "readonly"
+        assert ACTION_LEVEL_MAP["preview"] == "readonly"
+        assert ACTION_LEVEL_MAP["download"] == "readonly"
 
-    def test_permission_level_map(self):
-        """PermissionLevel 枚举映射到字符串"""
-        from document.services.permission_service import LEVEL_MAP
-        assert LEVEL_MAP[PermissionLevel.UNCONFIGURED] == "none"
-        assert LEVEL_MAP[PermissionLevel.NONE] == "none"
-        assert LEVEL_MAP[PermissionLevel.READONLY] == "readonly"
-        assert LEVEL_MAP[PermissionLevel.EDITABLE] == "editable"
+    def test_action_level_map_editable_actions(self):
+        """edit/delete/write 映射到 editable"""
+        assert ACTION_LEVEL_MAP["edit"] == "editable"
+        assert ACTION_LEVEL_MAP["delete"] == "editable"
+        assert ACTION_LEVEL_MAP["write"] == "editable"
 
 
 # ---------------------------------------------------------------------------
@@ -326,7 +431,13 @@ class TestDiagnose:
         """editable 权限排障输出"""
         service = _make_service()
         session = AsyncMock()
-        with patch.object(service, "_get_member_role", new_callable=AsyncMock, return_value=LibraryMemberRole.OWNER):
+        with patch.object(
+            DocumentPermissionChecker, "check_resource_permission",
+            new_callable=AsyncMock, return_value="editable",
+        ), patch.object(
+            DocumentPermissionChecker, "_get_member_role",
+            new_callable=AsyncMock, return_value=LibraryMemberRole.OWNER,
+        ):
             diag = await service.diagnose(
                 session, user_id="u1", library_id="lib-1",
                 resource_type="document", resource_id="d1", operation="edit",
@@ -338,9 +449,13 @@ class TestDiagnose:
         """readonly + read 操作 → 允许"""
         service = _make_service()
         session = AsyncMock()
-        with patch.object(service, "_get_member_role", new_callable=AsyncMock, return_value=LibraryMemberRole.VIEWER), \
-             patch.object(service, "_compute_resource_permission", new_callable=AsyncMock, return_value="readonly"), \
-             patch.object(service, "_has_direct_deny", new_callable=AsyncMock, return_value=False):
+        with patch.object(
+            DocumentPermissionChecker, "check_resource_permission",
+            new_callable=AsyncMock, return_value="readonly",
+        ), patch.object(
+            DocumentPermissionChecker, "_get_member_role",
+            new_callable=AsyncMock, return_value=LibraryMemberRole.VIEWER,
+        ):
             diag = await service.diagnose(
                 session, user_id="u1", library_id="lib-1",
                 resource_type="document", resource_id="d1", operation="read",
@@ -352,9 +467,13 @@ class TestDiagnose:
         """readonly + edit 操作 → 拒绝"""
         service = _make_service()
         session = AsyncMock()
-        with patch.object(service, "_get_member_role", new_callable=AsyncMock, return_value=LibraryMemberRole.VIEWER), \
-             patch.object(service, "_compute_resource_permission", new_callable=AsyncMock, return_value="readonly"), \
-             patch.object(service, "_has_direct_deny", new_callable=AsyncMock, return_value=False):
+        with patch.object(
+            DocumentPermissionChecker, "check_resource_permission",
+            new_callable=AsyncMock, return_value="readonly",
+        ), patch.object(
+            DocumentPermissionChecker, "_get_member_role",
+            new_callable=AsyncMock, return_value=LibraryMemberRole.VIEWER,
+        ):
             diag = await service.diagnose(
                 session, user_id="u1", library_id="lib-1",
                 resource_type="document", resource_id="d1", operation="edit",
