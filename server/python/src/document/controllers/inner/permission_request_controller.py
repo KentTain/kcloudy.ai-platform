@@ -10,8 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from framework.common.response import ApiResponse
 from framework.database.dependencies import get_db_session
 from document.schemas.inner import PermissionApplyCallbackRequest
-from document.services.member_service import member_service
-from document.services.permission_config_service import permission_config_service
+from document.services.permission_request_service import permission_request_service
 
 router = APIRouter()
 
@@ -30,36 +29,15 @@ async def apply_permission_request(
     - library_role: 将用户添加到权限组
     """
     try:
-        if data.request_type == "library_join":
-            role = data.requested_role or "member"
-            await member_service.add_member(
-                session,
-                library_id=data.target_resource_id,
-                user_id=data.applicant_id,
-                user_name=data.applicant_id,
-                role=role,
-            )
-        elif data.request_type == "library_resource":
-            action = data.requested_permission or "read"
-            await permission_config_service.create_resource_acl(
-                session,
-                library_id=data.extra_data.get("library_id", ""),
-                resource_type=data.extra_data.get("resource_type", "document"),
-                resource_id=data.target_resource_id,
-                subject_id=data.applicant_id,
-                subject_type="user",
-                action=action,
-            )
-        elif data.request_type == "library_role":
-            await permission_config_service.add_role_member(
-                session,
-                library_id=data.extra_data.get("library_id", ""),
-                role_id=data.target_resource_id,
-                user_id=data.applicant_id,
-            )
-        else:
-            raise HTTPException(status_code=400, detail=f"不支持的申请类型: {data.request_type}")
-
+        await permission_request_service.apply_callback(
+            session,
+            request_type=data.request_type,
+            target_resource_id=data.target_resource_id,
+            applicant_id=data.applicant_id,
+            requested_role=data.requested_role,
+            requested_permission=data.requested_permission,
+            extra_data=data.extra_data,
+        )
         await session.commit()
         return ApiResponse.success()
     except ValueError as e:

@@ -63,8 +63,9 @@ async def list_role_members(
     )
 
 
-@router.post("/roles/{role_id}/members")
+@router.post("/libraries/{library_id}/roles/{role_id}/members")
 async def add_role_member(
+    library_id: str,
     role_id: str,
     data: LibraryRoleMemberAdd,
     session: AsyncSession = Depends(get_db_session),
@@ -73,7 +74,7 @@ async def add_role_member(
     try:
         member = await permission_config_service.add_role_member(
             session,
-            library_id=data.library_id,
+            library_id=library_id,
             role_id=role_id,
             user_id=data.user_id,
         )

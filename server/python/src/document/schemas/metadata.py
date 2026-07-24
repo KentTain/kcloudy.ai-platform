@@ -10,7 +10,6 @@ from framework.schemas import BaseModel, BasePaginatedQuery
 class MetadataFieldDefine(BaseModel):
     """定义元数据字段请求"""
 
-    library_id: str = Field(..., description="文档库ID")
     name: str = Field(..., description="字段名称")
     field_type: str = Field(..., description="字段类型")
     is_required: bool = Field(default=False, description="是否必填")
@@ -21,7 +20,6 @@ class MetadataFieldDefine(BaseModel):
 class MetadataSet(BaseModel):
     """设置元数据请求"""
 
-    library_id: str = Field(..., description="文档库ID")
     resource_type: str = Field(..., description="资源类型")
     resource_id: str = Field(..., description="资源ID")
     field_id: str = Field(..., description="字段ID")
@@ -32,7 +30,6 @@ class MetadataSet(BaseModel):
 class MetadataBatchSet(BaseModel):
     """批量设置元数据请求"""
 
-    library_id: str = Field(..., description="文档库ID")
     resource_type: str = Field(..., description="资源类型")
     resource_id: str = Field(..., description="资源ID")
     items: list[MetadataSet] = Field(default_factory=list, description="元数据项")

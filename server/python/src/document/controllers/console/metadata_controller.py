@@ -54,8 +54,9 @@ async def list_fields(
     )
 
 
-@router.post("/metadata")
+@router.post("/libraries/{library_id}/metadata")
 async def set_metadata(
+    library_id: str,
     data: MetadataSet,
     session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
@@ -63,7 +64,7 @@ async def set_metadata(
     try:
         metadata = await metadata_service.set_metadata(
             session,
-            library_id=data.library_id,
+            library_id=library_id,
             resource_type=data.resource_type,
             resource_id=data.resource_id,
             field_id=data.field_id,
@@ -76,8 +77,9 @@ async def set_metadata(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.post("/metadata/batch")
+@router.post("/libraries/{library_id}/metadata/batch")
 async def batch_set_metadata(
+    library_id: str,
     data: MetadataBatchSet,
     session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
@@ -86,7 +88,7 @@ async def batch_set_metadata(
         items_dicts = [item.model_dump() for item in data.items]
         results = await metadata_service.batch_set(
             session,
-            library_id=data.library_id,
+            library_id=library_id,
             resource_type=data.resource_type,
             resource_id=data.resource_id,
             items=items_dicts,

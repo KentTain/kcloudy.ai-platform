@@ -121,6 +121,33 @@ class LibraryService:
         return (await session.execute(stmt)).scalar_one_or_none()
 
     @staticmethod
+    async def update(
+        session: AsyncSession,
+        library_id: str,
+        name: str | None = None,
+        description: str | None = None,
+        icon: str | None = None,
+        enabled: bool | None = None,
+        allow_submit_to_kb: bool | None = None,
+    ) -> Library:
+        """更新文档库"""
+        lib = await LibraryService.get_by_id(session, library_id)
+        if lib is None:
+            raise ValueError("文档库不存在")
+        if name is not None:
+            lib.name = name
+        if description is not None:
+            lib.description = description
+        if icon is not None:
+            lib.icon = icon
+        if enabled is not None:
+            lib.enabled = enabled
+        if allow_submit_to_kb is not None:
+            lib.allow_submit_to_kb = allow_submit_to_kb
+        await session.flush()
+        return lib
+
+    @staticmethod
     async def soft_delete(session: AsyncSession, library_id: str) -> None:
         """软删除文档库（设 enabled=False）"""
         lib = await LibraryService.get_by_id(session, library_id)

@@ -76,23 +76,20 @@ async def update_library(
     session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """更新文档库"""
-    library = await library_service.get_by_id(session, library_id)
-    if not library:
-        raise HTTPException(status_code=404, detail="文档库不存在")
-
-    if data.name is not None:
-        library.name = data.name
-    if data.description is not None:
-        library.description = data.description
-    if data.icon is not None:
-        library.icon = data.icon
-    if data.enabled is not None:
-        library.enabled = data.enabled
-    if data.allow_submit_to_kb is not None:
-        library.allow_submit_to_kb = data.allow_submit_to_kb
-
-    await session.commit()
-    return ApiResponse.success(data=LibraryResponse.model_validate(library).model_dump())
+    try:
+        library = await library_service.update(
+            session,
+            library_id=library_id,
+            name=data.name,
+            description=data.description,
+            icon=data.icon,
+            enabled=data.enabled,
+            allow_submit_to_kb=data.allow_submit_to_kb,
+        )
+        await session.commit()
+        return ApiResponse.success(data=LibraryResponse.model_validate(library).model_dump())
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 @router.delete("/libraries/{library_id}")

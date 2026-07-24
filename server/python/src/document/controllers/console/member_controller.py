@@ -2,42 +2,14 @@
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import ORJSONResponse
-from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from framework.common.response import ApiResponse
 from framework.database.dependencies import get_db_session
+from document.schemas.member import MemberCreate, MemberResponse, MemberRoleUpdate
 from document.services.member_service import member_service
 
 router = APIRouter()
-
-
-class MemberAddRequest(BaseModel):
-    """添加成员请求"""
-
-    user_id: str = Field(..., description="用户ID")
-    user_name: str = Field(..., description="用户名")
-    role: str = Field(default="member", description="角色")
-    remarks: str | None = Field(default=None, description="备注")
-
-
-class MemberRoleUpdate(BaseModel):
-    """更新成员角色请求"""
-
-    role: str = Field(..., description="新角色")
-
-
-class MemberResponse(BaseModel):
-    """成员响应"""
-
-    id: str
-    library_id: str
-    user_id: str
-    user_name: str
-    role: str
-    status: str = "active"
-    remarks: str | None = None
-    created_at: str | None = None
 
 
 @router.get("/libraries/{library_id}/members")
@@ -65,7 +37,7 @@ async def list_members(
 @router.post("/libraries/{library_id}/members")
 async def add_member(
     library_id: str,
-    data: MemberAddRequest,
+    data: MemberCreate,
     session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """添加成员"""

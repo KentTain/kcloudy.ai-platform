@@ -15,13 +15,13 @@ router = APIRouter()
 @router.get("/libraries")
 async def list_libraries(
     query: LibraryPaginatedQuery = Depends(),
-    tenant_id: str = "",
+    tenant_id: str | None = None,
     session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """管理端查看所有租户的文档库"""
     items, total = await library_service.list_libraries(
         session,
-        tenant_id=tenant_id or None,
+        tenant_id=tenant_id,
         page=query.page,
         page_size=query.page_size,
         keyword=query.keyword,

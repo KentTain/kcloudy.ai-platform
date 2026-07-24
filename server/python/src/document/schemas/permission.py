@@ -10,7 +10,6 @@ from framework.schemas import BaseModel
 class LibraryRoleCreate(BaseModel):
     """创建权限组请求"""
 
-    library_id: str = Field(..., description="文档库ID")
     code: str = Field(..., description="权限组编码")
     name: str = Field(..., description="权限组名称")
     description: str | None = Field(default=None, description="描述")
@@ -19,15 +18,12 @@ class LibraryRoleCreate(BaseModel):
 class LibraryRoleMemberAdd(BaseModel):
     """添加权限组成员请求"""
 
-    library_id: str = Field(..., description="文档库ID")
-    role_id: str = Field(..., description="权限组ID")
     user_id: str = Field(..., description="用户ID")
 
 
 class ResourceAclCreate(BaseModel):
     """创建资源 ACL 请求"""
 
-    library_id: str = Field(..., description="文档库ID")
     resource_type: str = Field(..., description="资源类型")
     resource_id: str = Field(..., description="资源ID")
     subject_id: str = Field(..., description="授权对象ID")
@@ -40,7 +36,6 @@ class ResourceAclCreate(BaseModel):
 class InheritanceUpdate(BaseModel):
     """更新权限继承请求"""
 
-    library_id: str = Field(..., description="文档库ID")
     resource_type: str = Field(..., description="资源类型")
     resource_id: str = Field(..., description="资源ID")
     inherit_enabled: bool = Field(..., description="是否启用继承")
@@ -55,7 +50,7 @@ class LibraryRoleResponse(BaseModel):
     code: str
     name: str
     description: str | None = None
-    permissions: dict = {}
+    permissions: dict = Field(default_factory=dict, description="权限定义")
     created_at: datetime
 
 

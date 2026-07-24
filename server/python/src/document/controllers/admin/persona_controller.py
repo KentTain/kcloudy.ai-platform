@@ -21,7 +21,7 @@ router = APIRouter()
 @router.get("/personas")
 async def list_personas(
     query: PersonaPaginatedQuery = Depends(),
-    tenant_id: str = "",
+    tenant_id: str | None = None,
     session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """管理端查看人设列表"""
@@ -98,7 +98,7 @@ async def delete_persona(
 
 @router.get("/personas/options")
 async def list_persona_options(
-    tenant_id: str = "",
+    tenant_id: str | None = None,
     session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """查看人设选项列表（下拉选择用）"""

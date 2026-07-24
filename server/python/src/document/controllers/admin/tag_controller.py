@@ -15,7 +15,7 @@ router = APIRouter()
 @router.get("/tags")
 async def list_tags(
     query: TagPaginatedQuery = Depends(),
-    tenant_id: str = "",
+    tenant_id: str | None = None,
     session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """管理端查看标签列表"""
@@ -72,7 +72,7 @@ async def delete_tag(
 
 @router.get("/tag-groups")
 async def list_tag_groups(
-    tenant_id: str = "",
+    tenant_id: str | None = None,
     session: AsyncSession = Depends(get_db_session),
 ) -> ORJSONResponse:
     """查看标签分组列表"""

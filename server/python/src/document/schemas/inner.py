@@ -1,5 +1,7 @@
 """内部接口 Schema"""
 
+from typing import Any
+
 from pydantic import Field
 
 from framework.schemas import BaseModel
@@ -27,4 +29,4 @@ class PermissionApplyCallbackRequest(BaseModel):
     applicant_id: str = Field(..., description="申请人ID")
     requested_role: str | None = Field(default=None, description="申请角色")
     requested_permission: str | None = Field(default=None, description="申请权限")
-    extra_data: dict = Field(default_factory=dict, description="额外数据")
+    extra_data: dict[str, Any] = Field(default_factory=dict, description="额外数据")
