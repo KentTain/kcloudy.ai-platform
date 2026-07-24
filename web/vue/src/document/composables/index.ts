@@ -1,30 +1,24 @@
 /**
- * 企业知识库管理模块 Composables
+ * 文档库管理模块 Composables
  */
 
-import { ref } from "vue";
-import { useDocumentLibraryStore, useKnowledgeBaseStore, useReviewStore } from "../stores";
+import { useLibraryStore } from "../stores/library";
+import { useFolderStore } from "../stores/folder";
+import { useTagStore } from "../stores/tag";
+import { usePersonaStore } from "../stores/persona";
 
 export function useDocumentLibrary() {
-  const store = useDocumentLibraryStore();
-  return {
-    libraries: store.libraries,
-    loading: store.loading,
-  };
+  return useLibraryStore();
 }
 
-export function useKnowledgeBase() {
-  const store = useKnowledgeBaseStore();
-  return {
-    knowledgeBases: store.knowledgeBases,
-    loading: store.loading,
-  };
+export function useDocumentFolder() {
+  return useFolderStore();
 }
 
-export function useReview() {
-  const store = useReviewStore();
-  return {
-    reviews: store.reviews,
-    loading: store.loading,
-  };
+export function useDocumentTag() {
+  return useTagStore();
+}
+
+export function useDocumentPersona() {
+  return usePersonaStore();
 }
