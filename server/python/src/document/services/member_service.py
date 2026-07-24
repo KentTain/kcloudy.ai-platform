@@ -80,9 +80,11 @@ class MemberService:
         user_id: str,
     ) -> LibraryMember | None:
         """获取成员信息"""
+        tenant_id = get_tenant_id()
         stmt = select(LibraryMember).where(
             LibraryMember.library_id == library_id,
             LibraryMember.user_id == user_id,
+            LibraryMember.tenant_id == tenant_id,
             LibraryMember.status == LibraryMemberStatus.ACTIVE,
         )
         return (await session.execute(stmt)).scalar_one_or_none()
@@ -95,8 +97,10 @@ class MemberService:
         page_size: int = 50,
     ) -> tuple[list[LibraryMember], int]:
         """列出文档库成员"""
+        tenant_id = get_tenant_id()
         conditions = [
             LibraryMember.library_id == library_id,
+            LibraryMember.tenant_id == tenant_id,
             LibraryMember.status == LibraryMemberStatus.ACTIVE,
         ]
         total = (await session.execute(

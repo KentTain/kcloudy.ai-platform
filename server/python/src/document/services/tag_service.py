@@ -40,12 +40,14 @@ class TagService:
     @staticmethod
     async def get_by_id(session: AsyncSession, tag_id: str) -> Tag | None:
         """按 ID 查询标签"""
-        stmt = select(Tag).where(Tag.id == tag_id, Tag.status == "active")
+        tenant_id = get_tenant_id()
+        stmt = select(Tag).where(Tag.id == tag_id, Tag.tenant_id == tenant_id, Tag.status == "active")
         return (await session.execute(stmt)).scalar_one_or_none()
 
     @staticmethod
     async def delete(session: AsyncSession, tag_id: str) -> None:
         """删除标签（已被引用时拒绝）"""
+        tenant_id = get_tenant_id()
         tag = await TagService.get_by_id(session, tag_id)
         if tag is None:
             raise ValueError("标签不存在")

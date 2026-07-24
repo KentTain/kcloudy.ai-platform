@@ -1,10 +1,12 @@
 """文件夹服务（基于 TreeNodeMixin）"""
 
-from sqlalchemy import select
+import sqlalchemy
+from sqlalchemy import select, update as sa_update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from document.models import Folder
-from framework.common.ctx import get_tenant_id
+from document.models import Folder, RecycleItem
+from document.models.enums import FolderLifecycleStatus, ResourceType
+from framework.common.ctx import get_tenant_id, get_user_id
 
 
 class FolderService:
@@ -79,14 +81,44 @@ class FolderService:
         )
 
     @staticmethod
-    async def delete(session: AsyncSession, folder_id: str) -> int:
-        """删除文件夹（软删除，含子孙）"""
+    async def delete(session: AsyncSession, folder_id: str) -> str:
+        """软删除文件夹及所有子孙（lifecycle_status=TRASHED），并创建回收站记录"""
         tenant_id = get_tenant_id()
-        return await Folder.delete_node(
-            session,
-            id=folder_id,
-            extra_conditions=[Folder.tenant_id == tenant_id],
+        folder = await Folder.one_node(
+            session, folder_id, extra_conditions=[Folder.tenant_id == tenant_id]
         )
+        if not folder:
+            raise ValueError("文件夹不存在")
+
+        # 软删除：将 folder 及所有子孙的 lifecycle_status 设为 TRASHED
+        descendant_prefix = folder.descendant_parent_ids_prefix()
+        conditions = [
+            Folder.tenant_id == tenant_id,
+            Folder.lifecycle_status == FolderLifecycleStatus.ACTIVE,
+            sqlalchemy.or_(
+                Folder.id == folder_id,
+                Folder.parent_ids.like(f"{descendant_prefix}%"),
+            ),
+        ]
+        await session.execute(
+            sa_update(Folder)
+            .where(*conditions)
+            .values(lifecycle_status=FolderLifecycleStatus.TRASHED)
+        )
+
+        # 创建回收站记录
+        recycle_item = RecycleItem(
+            library_id=folder.library_id,
+            resource_type=ResourceType.FOLDER,
+            resource_id=folder_id,
+            original_parent_id=folder.parent_id if not folder.is_root_node() else None,
+            original_path=folder.tree_names,
+            deleted_by=get_user_id(),
+            tenant_id=tenant_id,
+        )
+        session.add(recycle_item)
+        await session.flush()
+        return recycle_item.id
 
     @staticmethod
     async def list_tree(session: AsyncSession, library_id: str) -> list:

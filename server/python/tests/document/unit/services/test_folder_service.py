@@ -57,12 +57,36 @@ class TestFolderService:
             assert folder.name == "新名称"
 
     async def test_delete_folder(self):
-        """删除文件夹"""
+        """删除文件夹（软删除，创建回收站记录）"""
         session = AsyncMock(spec=AsyncSession)
-        with patch("document.services.folder_service.Folder.delete_node", new_callable=AsyncMock) as mock_delete:
-            mock_delete.return_value = 3
-            count = await FolderService.delete(session, folder_id="f1")
-            assert count == 3
+
+        mock_folder = MagicMock()
+        mock_folder.id = "f1"
+        mock_folder.library_id = "lib-1"
+        mock_folder.parent_ids = "root,"
+        mock_folder.tree_names = "测试文件夹"
+        mock_folder.is_root_node.return_value = False
+        mock_folder.parent_id = "root"
+        mock_folder.descendant_parent_ids_prefix.return_value = "root,f1,"
+
+        async def mock_flush():
+            """模拟 flush 后为 RecycleItem 赋予 id"""
+            for call_args in session.add.call_args_list:
+                item = call_args[0][0]
+                if hasattr(item, "resource_type"):
+                    item.id = "recycle-1"
+
+        with patch("document.services.folder_service.Folder.one_node", new_callable=AsyncMock) as mock_one_node, \
+             patch("document.services.folder_service.get_tenant_id", return_value="t1"), \
+             patch("document.services.folder_service.get_user_id", return_value="u1"):
+            mock_one_node.return_value = mock_folder
+            session.execute = AsyncMock()
+            session.add = MagicMock()
+            session.flush = mock_flush
+            recycle_id = await FolderService.delete(session, folder_id="f1")
+            assert recycle_id == "recycle-1"
+            mock_one_node.assert_called_once()
+            session.add.assert_called_once()
 
     async def test_list_tree(self):
         """获取文件夹树"""

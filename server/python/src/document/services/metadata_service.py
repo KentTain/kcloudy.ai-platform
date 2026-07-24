@@ -62,6 +62,7 @@ class MetadataService:
         stmt = select(ResourceMetadata).where(
             ResourceMetadata.resource_id == resource_id,
             ResourceMetadata.field_id == field_id,
+            ResourceMetadata.tenant_id == tenant_id,
         )
         existing = (await session.execute(stmt)).scalar_one_or_none()
 
@@ -114,10 +115,12 @@ class MetadataService:
         resource_id: str,
     ) -> list[ResourceMetadata]:
         """查询资源元数据"""
+        tenant_id = get_tenant_id()
         stmt = select(ResourceMetadata).where(
             ResourceMetadata.library_id == library_id,
             ResourceMetadata.resource_type == resource_type,
             ResourceMetadata.resource_id == resource_id,
+            ResourceMetadata.tenant_id == tenant_id,
         )
         return list((await session.execute(stmt)).scalars().all())
 
@@ -132,8 +135,10 @@ class MetadataService:
         page_size: int = 50,
     ) -> tuple[list[ResourceMetadata], int]:
         """按元数据搜索资源"""
+        tenant_id = get_tenant_id()
         conditions = [
             ResourceMetadata.library_id == library_id,
+            ResourceMetadata.tenant_id == tenant_id,
             ResourceMetadata.field_name == field_name,
             ResourceMetadata.value == value,
         ]
@@ -155,7 +160,11 @@ class MetadataService:
     @staticmethod
     async def get_field(session: AsyncSession, field_id: str) -> LibraryMetadataField | None:
         """获取元数据字段定义"""
-        stmt = select(LibraryMetadataField).where(LibraryMetadataField.id == field_id)
+        tenant_id = get_tenant_id()
+        stmt = select(LibraryMetadataField).where(
+            LibraryMetadataField.id == field_id,
+            LibraryMetadataField.tenant_id == tenant_id,
+        )
         return (await session.execute(stmt)).scalar_one_or_none()
 
     @staticmethod
@@ -164,9 +173,10 @@ class MetadataService:
         library_id: str,
     ) -> list[LibraryMetadataField]:
         """查询文档库的元数据字段列表"""
+        tenant_id = get_tenant_id()
         stmt = (
             select(LibraryMetadataField)
-            .where(LibraryMetadataField.library_id == library_id)
+            .where(LibraryMetadataField.library_id == library_id, LibraryMetadataField.tenant_id == tenant_id)
             .order_by(LibraryMetadataField.sort_order, LibraryMetadataField.created_at)
         )
         return list((await session.execute(stmt)).scalars().all())

@@ -57,8 +57,10 @@ class DocumentService:
 
     @staticmethod
     async def get_by_id(session: AsyncSession, doc_id: str) -> Document | None:
+        tenant_id = get_tenant_id()
         stmt = select(Document).where(
             Document.id == doc_id,
+            Document.tenant_id == tenant_id,
             Document.lifecycle_status != DocumentStatus.TRASHED,
         )
         return (await session.execute(stmt)).scalar_one_or_none()
@@ -71,8 +73,10 @@ class DocumentService:
         page: int = 1,
         page_size: int = 50,
     ) -> tuple[list[Document], int]:
+        tenant_id = get_tenant_id()
         conditions = [
             Document.library_id == library_id,
+            Document.tenant_id == tenant_id,
             Document.lifecycle_status != DocumentStatus.TRASHED,
         ]
         if folder_id:
@@ -81,7 +85,11 @@ class DocumentService:
             select(func.count(Document.id)).where(*conditions)
         )).scalar() or 0
         offset = (page - 1) * page_size
-        stmt = select(Document).where(*conditions).offset(offset).limit(page_size)
+        stmt = (
+            select(Document).where(*conditions)
+            .order_by(Document.created_at.desc())
+            .offset(offset).limit(page_size)
+        )
         return list((await session.execute(stmt)).scalars().all()), total
 
     @staticmethod

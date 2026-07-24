@@ -21,9 +21,10 @@ class PermissionConfigService:
         library_id: str,
     ) -> list[LibraryRole]:
         """查询文档库权限组列表"""
+        tenant_id = get_tenant_id()
         stmt = (
             select(LibraryRole)
-            .where(LibraryRole.library_id == library_id, LibraryRole.status == "active")
+            .where(LibraryRole.library_id == library_id, LibraryRole.tenant_id == tenant_id, LibraryRole.status == "active")
             .order_by(LibraryRole.role_kind, LibraryRole.created_at)
         )
         return list((await session.execute(stmt)).scalars().all())
@@ -65,8 +66,10 @@ class PermissionConfigService:
         library_id: str,
     ) -> LibraryRole | None:
         """获取全员权限组"""
+        tenant_id = get_tenant_id()
         stmt = select(LibraryRole).where(
             LibraryRole.library_id == library_id,
+            LibraryRole.tenant_id == tenant_id,
             LibraryRole.role_kind == LibraryRoleKind.ALL_MEMBERS,
             LibraryRole.status == "active",
         )
@@ -80,7 +83,11 @@ class PermissionConfigService:
         role_id: str,
     ) -> list[LibraryRoleMember]:
         """查询权限组成员"""
-        stmt = select(LibraryRoleMember).where(LibraryRoleMember.role_id == role_id)
+        tenant_id = get_tenant_id()
+        stmt = select(LibraryRoleMember).where(
+            LibraryRoleMember.role_id == role_id,
+            LibraryRoleMember.tenant_id == tenant_id,
+        )
         return list((await session.execute(stmt)).scalars().all())
 
     @staticmethod
@@ -112,7 +119,8 @@ class PermissionConfigService:
         resource_id: str | None = None,
     ) -> list[ResourceAcl]:
         """查询资源 ACL 列表"""
-        conditions = [ResourceAcl.library_id == library_id, ResourceAcl.status == ResourceAclStatus.ACTIVE]
+        tenant_id = get_tenant_id()
+        conditions = [ResourceAcl.library_id == library_id, ResourceAcl.tenant_id == tenant_id, ResourceAcl.status == ResourceAclStatus.ACTIVE]
         if resource_type:
             conditions.append(ResourceAcl.resource_type == resource_type)
         if resource_id:
@@ -167,6 +175,7 @@ class PermissionConfigService:
             # 关闭继承：标记继承来源的 ACL 为 disabled
             stmt = select(ResourceAcl).where(
                 ResourceAcl.library_id == library_id,
+                ResourceAcl.tenant_id == tenant_id,
                 ResourceAcl.resource_id == resource_id,
                 ResourceAcl.inherited_from_resource_id.isnot(None),
                 ResourceAcl.status == ResourceAclStatus.ACTIVE,

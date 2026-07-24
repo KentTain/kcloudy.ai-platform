@@ -112,7 +112,12 @@ class LibraryService:
 
     @staticmethod
     async def get_by_id(session: AsyncSession, library_id: str) -> Library | None:
-        stmt = select(Library).where(Library.id == library_id, Library.enabled.is_(True))
+        tenant_id = get_tenant_id()
+        stmt = select(Library).where(
+            Library.id == library_id,
+            Library.tenant_id == tenant_id,
+            Library.enabled.is_(True),
+        )
         return (await session.execute(stmt)).scalar_one_or_none()
 
     @staticmethod

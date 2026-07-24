@@ -48,8 +48,10 @@ class RecycleService:
         page_size: int = 50,
     ) -> tuple[list[RecycleItem], int]:
         """查看回收站列表"""
+        tenant_id = get_tenant_id()
         conditions = [
             RecycleItem.library_id == library_id,
+            RecycleItem.tenant_id == tenant_id,
             RecycleItem.status == RecycleItemStatus.IN_RECYCLE,
         ]
         total = (await session.execute(
@@ -99,18 +101,12 @@ class RecycleService:
         """检查 original_parent_id 对应的资源是否仍存在"""
         if item.original_parent_id is None:
             return True  # 无父资源，视为根目录
-        if item.resource_type == ResourceType.DOCUMENT:
-            # 文档的父资源是文件夹
+        if item.resource_type in (ResourceType.DOCUMENT, ResourceType.FOLDER):
+            # 文档和文件夹的父资源都是文件夹
+            tenant_id = get_tenant_id()
             stmt = select(Folder).where(
                 Folder.id == item.original_parent_id,
-                Folder.lifecycle_status == FolderLifecycleStatus.ACTIVE,
-            )
-            result = (await session.execute(stmt)).scalar_one_or_none()
-            return result is not None
-        elif item.resource_type == ResourceType.FOLDER:
-            # 文件夹的父资源是另一个文件夹
-            stmt = select(Folder).where(
-                Folder.id == item.original_parent_id,
+                Folder.tenant_id == tenant_id,
                 Folder.lifecycle_status == FolderLifecycleStatus.ACTIVE,
             )
             result = (await session.execute(stmt)).scalar_one_or_none()
@@ -120,13 +116,20 @@ class RecycleService:
     @staticmethod
     async def _restore_to_root(session: AsyncSession, item: RecycleItem) -> None:
         """恢复到库根目录（folder_id=None / parent_id="root"）"""
+        tenant_id = get_tenant_id()
         if item.resource_type == ResourceType.DOCUMENT:
-            stmt = select(Document).where(Document.id == item.resource_id)
+            stmt = select(Document).where(
+                Document.id == item.resource_id,
+                Document.tenant_id == tenant_id,
+            )
             doc = (await session.execute(stmt)).scalar_one_or_none()
             if doc is not None:
                 doc.folder_id = None
         elif item.resource_type == ResourceType.FOLDER:
-            stmt = select(Folder).where(Folder.id == item.resource_id)
+            stmt = select(Folder).where(
+                Folder.id == item.resource_id,
+                Folder.tenant_id == tenant_id,
+            )
             folder = (await session.execute(stmt)).scalar_one_or_none()
             if folder is not None:
                 folder.parent_id = "root"
@@ -134,8 +137,12 @@ class RecycleService:
     @staticmethod
     async def _restore_with_name_check(session: AsyncSession, item: RecycleItem) -> None:
         """恢复到原位置，名称冲突时追加后缀 '_restored'"""
+        tenant_id = get_tenant_id()
         if item.resource_type == ResourceType.DOCUMENT:
-            stmt = select(Document).where(Document.id == item.resource_id)
+            stmt = select(Document).where(
+                Document.id == item.resource_id,
+                Document.tenant_id == tenant_id,
+            )
             doc = (await session.execute(stmt)).scalar_one_or_none()
             if doc is None:
                 return
@@ -144,7 +151,10 @@ class RecycleService:
             if name_exists:
                 doc.name = f"{doc.name}_restored"
         elif item.resource_type == ResourceType.FOLDER:
-            stmt = select(Folder).where(Folder.id == item.resource_id)
+            stmt = select(Folder).where(
+                Folder.id == item.resource_id,
+                Folder.tenant_id == tenant_id,
+            )
             folder = (await session.execute(stmt)).scalar_one_or_none()
             if folder is None:
                 return
@@ -156,10 +166,12 @@ class RecycleService:
     @staticmethod
     async def _check_doc_name_conflict(session: AsyncSession, doc: Document) -> bool:
         """检查文档名称是否在同文件夹下冲突"""
+        tenant_id = get_tenant_id()
         conditions = [
             Document.folder_id == doc.folder_id,
             Document.name == doc.name,
             Document.id != doc.id,
+            Document.tenant_id == tenant_id,
         ]
         stmt = select(func.count(Document.id)).where(*conditions)
         return (await session.execute(stmt)).scalar() > 0
@@ -167,10 +179,12 @@ class RecycleService:
     @staticmethod
     async def _check_folder_name_conflict(session: AsyncSession, folder: Folder) -> bool:
         """检查文件夹名称是否在同父级下冲突"""
+        tenant_id = get_tenant_id()
         conditions = [
             Folder.parent_id == folder.parent_id,
             Folder.name == folder.name,
             Folder.id != folder.id,
+            Folder.tenant_id == tenant_id,
         ]
         stmt = select(func.count(Folder.id)).where(*conditions)
         return (await session.execute(stmt)).scalar() > 0
@@ -203,8 +217,10 @@ class RecycleService:
     @staticmethod
     async def _get_item(session: AsyncSession, item_id: str) -> RecycleItem | None:
         """获取回收站项目"""
+        tenant_id = get_tenant_id()
         stmt = select(RecycleItem).where(
             RecycleItem.id == item_id,
+            RecycleItem.tenant_id == tenant_id,
             RecycleItem.status == RecycleItemStatus.IN_RECYCLE,
         )
         return (await session.execute(stmt)).scalar_one_or_none()

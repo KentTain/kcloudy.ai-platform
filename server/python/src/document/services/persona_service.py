@@ -39,7 +39,8 @@ class PersonaService:
 
     @staticmethod
     async def get_by_id(session: AsyncSession, persona_id: str) -> Persona | None:
-        stmt = select(Persona).where(Persona.id == persona_id)
+        tenant_id = get_tenant_id()
+        stmt = select(Persona).where(Persona.id == persona_id, Persona.tenant_id == tenant_id)
         return (await session.execute(stmt)).scalar_one_or_none()
 
     @staticmethod
