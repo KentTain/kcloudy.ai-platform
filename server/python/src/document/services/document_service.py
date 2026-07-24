@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from document.models import Document
 from document.models.enums import DocumentProcessingStatus, DocumentStatus
 from framework.common.ctx import get_tenant_id, get_user_id
+from framework.permission.audit_writer import write_audit
 from framework.storage.tenant_storage import TenantMinioStorage
 
 
@@ -53,6 +54,13 @@ class DocumentService:
         )
         session.add(doc)
         await session.flush()
+        await write_audit(
+            session=session,
+            business_domain="document",
+            operation_type="create",
+            resource_type="document",
+            resource_name=filename,
+        )
         return doc
 
     @staticmethod
@@ -100,6 +108,14 @@ class DocumentService:
             raise ValueError("文档不存在")
         doc.lifecycle_status = DocumentStatus.TRASHED
         await session.flush()
+        await write_audit(
+            session=session,
+            business_domain="document",
+            operation_type="delete",
+            resource_type="document",
+            resource_name="",
+            resource_id=doc_id,
+        )
 
     @staticmethod
     async def move(
@@ -118,6 +134,14 @@ class DocumentService:
             raise ValueError("文档不存在")
         doc.folder_id = target_folder_id
         await session.flush()
+        await write_audit(
+            session=session,
+            business_domain="document",
+            operation_type="move",
+            resource_type="document",
+            resource_name="",
+            resource_id=doc_id,
+        )
         return doc
 
     @staticmethod
@@ -136,6 +160,15 @@ class DocumentService:
             raise ValueError("文档不存在")
         doc.processing_status = DocumentProcessingStatus.PENDING_PARSE
         await session.flush()
+        await write_audit(
+            session=session,
+            business_domain="document",
+            operation_type="update",
+            resource_type="document",
+            resource_name="",
+            resource_id=doc_id,
+            detail={"action": "trigger_index"},
+        )
 
 
 document_service = DocumentService()

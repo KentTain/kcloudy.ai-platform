@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from document.models import Document, Folder, RecycleItem
 from document.models.enums import FolderLifecycleStatus, RecycleItemStatus, ResourceType
 from framework.common.ctx import get_tenant_id, get_user_id
+from framework.permission.audit_writer import write_audit
 
 
 class RecycleService:
@@ -95,6 +96,13 @@ class RecycleService:
         item.restored_by = user_id
         item.restored_at = datetime.now(timezone.utc)
         await session.flush()
+        await write_audit(
+            session=session,
+            business_domain="document",
+            operation_type="restore",
+            resource_type="recycle_item",
+            resource_name=item_id,
+        )
 
     @staticmethod
     async def _check_parent_exists(session: AsyncSession, item: RecycleItem) -> bool:
@@ -197,6 +205,13 @@ class RecycleService:
             raise ValueError("回收站项目不存在")
         item.status = RecycleItemStatus.PURGED
         await session.flush()
+        await write_audit(
+            session=session,
+            business_domain="document",
+            operation_type="purge",
+            resource_type="recycle_item",
+            resource_name=item_id,
+        )
 
     @staticmethod
     async def clear(session: AsyncSession, library_id: str) -> int:
@@ -212,7 +227,16 @@ class RecycleService:
         for item in items:
             item.status = RecycleItemStatus.PURGED
         await session.flush()
-        return len(items)
+        count = len(items)
+        await write_audit(
+            session=session,
+            business_domain="document",
+            operation_type="purge",
+            resource_type="recycle_item",
+            resource_name=library_id,
+            detail={"cleared_count": count},
+        )
+        return count
 
     @staticmethod
     async def _get_item(session: AsyncSession, item_id: str) -> RecycleItem | None:

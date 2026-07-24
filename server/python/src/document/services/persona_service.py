@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from document.models import Persona
 from framework.common.ctx import get_tenant_id, get_user_id
+from framework.permission.audit_writer import write_audit
 
 
 class PersonaService:
@@ -35,6 +36,13 @@ class PersonaService:
         )
         session.add(persona)
         await session.flush()
+        await write_audit(
+            session=session,
+            business_domain="document",
+            operation_type="create",
+            resource_type="persona",
+            resource_name=name,
+        )
         return persona
 
     @staticmethod
@@ -71,6 +79,13 @@ class PersonaService:
             persona.description = description
 
         await session.flush()
+        await write_audit(
+            session=session,
+            business_domain="document",
+            operation_type="update",
+            resource_type="persona",
+            resource_name=persona_id,
+        )
         return persona
 
     @staticmethod
@@ -81,6 +96,13 @@ class PersonaService:
             raise ValueError("人设不存在")
         await session.delete(persona)
         await session.flush()
+        await write_audit(
+            session=session,
+            business_domain="document",
+            operation_type="delete",
+            resource_type="persona",
+            resource_name=persona_id,
+        )
 
     @staticmethod
     async def list_personas(

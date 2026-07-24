@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from document.models import LibraryRole, LibraryRoleMember, ResourceAcl
 from document.models.enums import LibraryRoleKind, ResourceAclEffect, ResourceAclStatus
 from framework.common.ctx import get_tenant_id, get_user_id
+from framework.permission.audit_writer import write_audit
 
 
 class PermissionConfigService:
@@ -58,6 +59,13 @@ class PermissionConfigService:
         )
         session.add(role)
         await session.flush()
+        await write_audit(
+            session=session,
+            business_domain="document",
+            operation_type="create",
+            resource_type="permission_role",
+            resource_name=name,
+        )
         return role
 
     @staticmethod
@@ -107,6 +115,13 @@ class PermissionConfigService:
         )
         session.add(member)
         await session.flush()
+        await write_audit(
+            session=session,
+            business_domain="document",
+            operation_type="create",
+            resource_type="permission_role_member",
+            resource_name=user_id,
+        )
         return member
 
     # ==================== 资源 ACL ====================
@@ -158,6 +173,13 @@ class PermissionConfigService:
         )
         session.add(acl)
         await session.flush()
+        await write_audit(
+            session=session,
+            business_domain="document",
+            operation_type="create",
+            resource_type="resource_acl",
+            resource_name=resource_id,
+        )
         return acl
 
     @staticmethod
@@ -186,6 +208,14 @@ class PermissionConfigService:
                 acl.status = ResourceAclStatus.DISABLED
 
         await session.flush()
+        await write_audit(
+            session=session,
+            business_domain="document",
+            operation_type="update",
+            resource_type="resource_acl",
+            resource_name=resource_id,
+            detail={"inherit_enabled": inherit_enabled},
+        )
 
 
 permission_config_service = PermissionConfigService()

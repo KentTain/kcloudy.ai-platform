@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from document.models import LibraryMember
 from document.models.enums import LibraryMemberRole, LibraryMemberStatus
 from framework.common.ctx import get_tenant_id, get_user_id
+from framework.permission.audit_writer import write_audit
 
 
 class MemberService:
@@ -43,6 +44,13 @@ class MemberService:
         )
         session.add(member)
         await session.flush()
+        await write_audit(
+            session=session,
+            business_domain="document",
+            operation_type="create",
+            resource_type="member",
+            resource_name=user_name,
+        )
         return member
 
     @staticmethod
@@ -55,6 +63,13 @@ class MemberService:
             raise ValueError("不能移除 owner")
         member.status = LibraryMemberStatus.INACTIVE
         await session.flush()
+        await write_audit(
+            session=session,
+            business_domain="document",
+            operation_type="delete",
+            resource_type="member",
+            resource_name=user_id,
+        )
 
     @staticmethod
     async def update_member_role(
@@ -71,6 +86,14 @@ class MemberService:
             raise ValueError("不能修改 owner 角色")
         member.role = new_role
         await session.flush()
+        await write_audit(
+            session=session,
+            business_domain="document",
+            operation_type="update",
+            resource_type="member",
+            resource_name=user_id,
+            detail={"new_role": new_role},
+        )
         return member
 
     @staticmethod

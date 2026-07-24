@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from document.models import Library, LibraryMember
 from document.models.enums import LibraryMemberRole, LibraryMemberStatus, LibraryType
 from framework.common.ctx import get_tenant_id, get_user_id
+from framework.permission.audit_writer import write_audit
 
 
 class LibraryService:
@@ -47,6 +48,13 @@ class LibraryService:
         )
         session.add(library)
         await session.flush()
+        await write_audit(
+            session=session,
+            business_domain="document",
+            operation_type="create",
+            resource_type="library",
+            resource_name=name,
+        )
 
         # 创建者自动成为 owner
         member = LibraryMember(
@@ -145,6 +153,14 @@ class LibraryService:
         if allow_submit_to_kb is not None:
             lib.allow_submit_to_kb = allow_submit_to_kb
         await session.flush()
+        await write_audit(
+            session=session,
+            business_domain="document",
+            operation_type="update",
+            resource_type="library",
+            resource_name=lib.name,
+            resource_id=library_id,
+        )
         return lib
 
     @staticmethod
@@ -155,6 +171,14 @@ class LibraryService:
             raise ValueError("文档库不存在")
         lib.enabled = False
         await session.flush()
+        await write_audit(
+            session=session,
+            business_domain="document",
+            operation_type="delete",
+            resource_type="library",
+            resource_name=lib.name,
+            resource_id=library_id,
+        )
 
 
 library_service = LibraryService()

@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from document.models import Tag, TagGroup
 from framework.common.ctx import get_tenant_id, get_user_id
+from framework.permission.audit_writer import write_audit
 
 
 class TagService:
@@ -35,6 +36,13 @@ class TagService:
         )
         session.add(tag)
         await session.flush()
+        await write_audit(
+            session=session,
+            business_domain="document",
+            operation_type="create",
+            resource_type="tag",
+            resource_name=name,
+        )
         return tag
 
     @staticmethod
@@ -57,6 +65,13 @@ class TagService:
             raise ValueError("标签被人设引用，不可删除")
         tag.status = "deleted"
         await session.flush()
+        await write_audit(
+            session=session,
+            business_domain="document",
+            operation_type="delete",
+            resource_type="tag",
+            resource_name=tag_id,
+        )
 
     @staticmethod
     async def list_tags(

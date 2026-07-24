@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from document.models import LibraryMetadataField, ResourceMetadata
 from document.models.enums import MetadataFieldType
 from framework.common.ctx import get_tenant_id, get_user_id
+from framework.permission.audit_writer import write_audit
 
 
 class MetadataService:
@@ -35,6 +36,13 @@ class MetadataService:
         )
         session.add(field)
         await session.flush()
+        await write_audit(
+            session=session,
+            business_domain="document",
+            operation_type="create",
+            resource_type="metadata_field",
+            resource_name=name,
+        )
         return field
 
     @staticmethod
@@ -69,6 +77,13 @@ class MetadataService:
         if existing:
             existing.value = value
             await session.flush()
+            await write_audit(
+                session=session,
+                business_domain="document",
+                operation_type="update",
+                resource_type="metadata",
+                resource_name=field_name,
+            )
             return existing
 
         metadata = ResourceMetadata(
@@ -82,6 +97,13 @@ class MetadataService:
         )
         session.add(metadata)
         await session.flush()
+        await write_audit(
+            session=session,
+            business_domain="document",
+            operation_type="update",
+            resource_type="metadata",
+            resource_name=field_name,
+        )
         return metadata
 
     @staticmethod

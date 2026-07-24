@@ -86,7 +86,7 @@ class TestFolderService:
             recycle_id = await FolderService.delete(session, folder_id="f1")
             assert recycle_id == "recycle-1"
             mock_one_node.assert_called_once()
-            session.add.assert_called_once()
+            assert session.add.call_count == 2
 
     async def test_list_tree(self):
         """获取文件夹树"""

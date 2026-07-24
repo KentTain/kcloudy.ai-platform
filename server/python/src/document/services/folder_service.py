@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from document.models import Folder, RecycleItem
 from document.models.enums import FolderLifecycleStatus, ResourceType
 from framework.common.ctx import get_tenant_id, get_user_id
+from framework.permission.audit_writer import write_audit
 
 
 class FolderService:
@@ -33,18 +34,34 @@ class FolderService:
             },
             extra_conditions=[Folder.tenant_id == tenant_id],
         )
+        await write_audit(
+            session=session,
+            business_domain="document",
+            operation_type="create",
+            resource_type="folder",
+            resource_name=name,
+        )
         return folder
 
     @staticmethod
     async def rename(session: AsyncSession, folder_id: str, name: str) -> Folder:
         """重命名文件夹"""
         tenant_id = get_tenant_id()
-        return await Folder.update_node(
+        folder = await Folder.update_node(
             session,
             id=folder_id,
             source={"name": name},
             extra_conditions=[Folder.tenant_id == tenant_id],
         )
+        await write_audit(
+            session=session,
+            business_domain="document",
+            operation_type="update",
+            resource_type="folder",
+            resource_name=name,
+            resource_id=folder_id,
+        )
+        return folder
 
     @staticmethod
     async def move(session: AsyncSession, folder_id: str, new_parent_id: str) -> Folder:
@@ -73,12 +90,21 @@ class FolderService:
             if target.parent_ids.startswith(current_descendant_prefix):
                 raise ValueError("不允许形成循环引用")
 
-        return await Folder.update_node(
+        result = await Folder.update_node(
             session,
             id=folder_id,
             source={"parent_id": new_parent_id},
             extra_conditions=extra_conditions,
         )
+        await write_audit(
+            session=session,
+            business_domain="document",
+            operation_type="move",
+            resource_type="folder",
+            resource_name="",
+            resource_id=folder_id,
+        )
+        return result
 
     @staticmethod
     async def delete(session: AsyncSession, folder_id: str) -> str:
@@ -118,6 +144,14 @@ class FolderService:
         )
         session.add(recycle_item)
         await session.flush()
+        await write_audit(
+            session=session,
+            business_domain="document",
+            operation_type="delete",
+            resource_type="folder",
+            resource_name="",
+            resource_id=folder_id,
+        )
         return recycle_item.id
 
     @staticmethod
